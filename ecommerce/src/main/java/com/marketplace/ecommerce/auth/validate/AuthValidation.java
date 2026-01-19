@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class Validation {
+public class AuthValidation {
     private final AccountRepository accountRepository;
     public void validate(AccountCreateRequest request){
         long startTime = System.currentTimeMillis();

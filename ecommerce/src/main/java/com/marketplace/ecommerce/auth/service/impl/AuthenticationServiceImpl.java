@@ -15,7 +15,7 @@ import com.marketplace.ecommerce.auth.repository.UserRepository;
 import com.marketplace.ecommerce.auth.service.AuthenticationService;
 import com.marketplace.ecommerce.auth.service.EmailService;
 import com.marketplace.ecommerce.auth.service.TokenService;
-import com.marketplace.ecommerce.auth.validate.Validation;
+import com.marketplace.ecommerce.auth.validate.AuthValidation;
 import com.marketplace.ecommerce.auth.valueObjects.AccountStatus;
 import com.marketplace.ecommerce.common.exception.CustomException;
 import com.marketplace.ecommerce.common.exception.RoleNotFoundException;
@@ -42,7 +42,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final UserRepository userRepository;
     private final TokenService tokenService;
     private final AuthenticationManager authenticationManager;
-    private final Validation validation;
+    private final AuthValidation validation;
     private final EmailService emailService;
     private final RoleRepository roleRepository;
 

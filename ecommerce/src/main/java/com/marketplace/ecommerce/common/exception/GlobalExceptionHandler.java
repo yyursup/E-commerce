@@ -67,7 +67,8 @@ public class GlobalExceptionHandler {
     // =========================
     @ExceptionHandler({
             UserNotFoundException.class,
-            UsernameNotFoundException.class
+            UsernameNotFoundException.class,
+            KycNotFoundException.class
     })
     public ResponseEntity<ErrorResponse> handleUserNotFound(
             Exception ex,

@@ -2,6 +2,7 @@ package com.marketplace.ecommerce.request.entity;
 
 import com.marketplace.ecommerce.auth.entity.User;
 import com.marketplace.ecommerce.request.valueObjects.RequestStatus;
+import com.marketplace.ecommerce.request.valueObjects.RequestType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -14,7 +15,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDateTime;
 import java.util.UUID;
 @Entity
-@Table(name = "seller_requests")
+@Table(name = "requests")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -30,9 +31,6 @@ public class Request {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(name = "shop_name", nullable = false, length = 255)
-    private String shopName;
-
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
@@ -42,6 +40,10 @@ public class Request {
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 50)
     private RequestStatus status = RequestStatus.PENDING;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "request_type", nullable = false, length = 50)
+    private RequestType type;
 
     @Column(name = "rejection_reason", columnDefinition = "TEXT")
     private String rejectionReason;

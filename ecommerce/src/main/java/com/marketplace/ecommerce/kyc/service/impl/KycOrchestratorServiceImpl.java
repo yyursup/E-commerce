@@ -15,7 +15,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-public class KycOrchesServiceImpl implements KycOrchestratorService {
+public class KycOrchestratorServiceImpl implements KycOrchestratorService {
 
     private final UploadFileService uploadService;
     private final CardLivenessService cardLivenessService;

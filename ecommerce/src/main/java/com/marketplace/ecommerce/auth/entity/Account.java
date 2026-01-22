@@ -52,6 +52,9 @@ public class Account extends BaseEntity implements UserDetails, Serializable {
     @Column(name = "is_active")
     private Boolean isActive = true;
 
+    @Column(name = "accountVerified")
+    private Boolean accountVerified = false;
+
     @Override
     public String getPassword() {
         return passwordHash;

@@ -1,5 +1,6 @@
 package com.marketplace.ecommerce.request.entity;
 
+import com.marketplace.ecommerce.auth.entity.Account;
 import com.marketplace.ecommerce.auth.entity.User;
 import com.marketplace.ecommerce.request.valueObjects.RequestStatus;
 import com.marketplace.ecommerce.request.valueObjects.RequestType;
@@ -28,8 +29,8 @@ public class Request {
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @JoinColumn(name = "account_id", nullable = false)
+    private Account account;
 
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
@@ -50,7 +51,7 @@ public class Request {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reviewed_by")
-    private User reviewedBy;
+    private Account reviewedBy;
 
     @Column(name = "reviewed_at")
     private LocalDateTime reviewedAt;

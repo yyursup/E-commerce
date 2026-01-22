@@ -2,14 +2,15 @@ package com.marketplace.ecommerce.kyc.controller;
 
 import com.marketplace.ecommerce.common.CurrentUserInfo;
 import com.marketplace.ecommerce.config.CurrentUser;
-import com.marketplace.ecommerce.file.SimpleLocalFileStore;
-import com.marketplace.ecommerce.kyc.dto.request.ClassifyRequest;
 import com.marketplace.ecommerce.kyc.dto.request.KycThumbnailAttachRequest;
 import com.marketplace.ecommerce.kyc.entity.EKycSession;
+import com.marketplace.ecommerce.kyc.service.CompareKycService;
+import com.marketplace.ecommerce.kyc.service.KycOrchestratorService;
 import com.marketplace.ecommerce.kyc.service.KycOrchestrator;
 import com.marketplace.ecommerce.kyc.valueObjects.KycDocumentType;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -22,7 +23,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class KycController {
     private final KycOrchestrator orchestrator;
-    private final SimpleLocalFileStore fileStore;
+    private final KycOrchestratorService orchestratorService;
+    private final CompareKycService compareKycService;
 
 
     @PostMapping("/sessions:start")
@@ -125,7 +127,7 @@ public class KycController {
             @PathVariable UUID sessionId,
             @CurrentUser CurrentUserInfo u
     ) {
-        Map<String, Object> out = orchestrator.compare(sessionId, u.getAccountId());
+        Map<String, Object> out = compareKycService.compare(sessionId, u.getAccountId());
         return ResponseEntity.ok(out);
     }
 
@@ -139,6 +141,26 @@ public class KycController {
                 "success", true,
                 "session", session
         ));
+    }
+
+    @PostMapping(
+            value = "/sessions/{sessionId}/fullFlow"
+    )
+    public ResponseEntity<Map<String, Object>> uploadFrontVerifyAndAttach(
+            @PathVariable UUID sessionId,
+            @RequestPart("file") @NotNull MultipartFile file,
+            @RequestPart(value = "title", required = false) String title,
+            @RequestPart(value = "description", required = false) String description,
+            @CurrentUser CurrentUserInfo u
+    ) {
+        Map<String, Object> out = orchestratorService.uploadFileAndAttach(
+                sessionId,
+                u.getAccountId(),
+                file,
+                title,
+                description
+        );
+        return ResponseEntity.ok(out);
     }
 
 }

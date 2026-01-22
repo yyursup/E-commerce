@@ -22,6 +22,10 @@ import java.util.Objects;
 @RequiredArgsConstructor
 @Slf4j
 public class VNPTClientImpl implements VNPTClient {
+
+    private final RestClient vnptRestClient;
+    private final EKycConfig cfg;
+
     @Override
     public UploadResponse addFile(MultipartFile file, String title, String description) {
         try {
@@ -56,8 +60,21 @@ public class VNPTClientImpl implements VNPTClient {
         }
     }
 
-    private final RestClient vnptRestClient;
-    private final EKycConfig cfg;
+    @Override
+    public CardLivenessResponse cardLiveness(String imgHash, String session) {
+        CardLivenessRequest req = new CardLivenessRequest();
+        req.setImg(imgHash);
+        req.setClientSession(session);
+
+        CardLivenessResponse res = vnptRestClient.post()
+                .uri("/ai/v1/card/liveness")
+                .body(req)
+                .retrieve()
+                .body(CardLivenessResponse.class);
+
+        return java.util.Objects.requireNonNull(res, "VNPT cardLiveness returned null");
+    }
+
 
     // Lombok @RequiredArgsConstructor không cho custom init WebClient field dễ đọc,
     // nên dùng constructor explicit để build WebClient đúng baseUrl + headers.

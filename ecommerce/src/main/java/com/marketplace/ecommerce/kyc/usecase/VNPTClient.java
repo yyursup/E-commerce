@@ -7,6 +7,8 @@ public interface VNPTClient {
 
     UploadResponse addFile(MultipartFile file, String title, String description);
 
+    CardLivenessResponse cardLiveness(String imgHash, String session);
+
     ClassifyResponse classify(String imgHash, String session);
 
     OcrFrontResponse ocrFront(String imgHash, int type, String session);

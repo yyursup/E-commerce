@@ -1,6 +1,8 @@
 package com.marketplace.ecommerce.kyc.service.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.marketplace.ecommerce.auth.entity.Account;
+import com.marketplace.ecommerce.auth.repository.AccountRepository;
 import com.marketplace.ecommerce.common.exception.KycNotFoundException;
 import com.marketplace.ecommerce.kyc.dto.response.*;
 import com.marketplace.ecommerce.kyc.entity.EKycDocument;
@@ -33,6 +35,7 @@ public class KycOrchestratorService implements KycOrchestrator {
     private final KycDocumentRepository docs;
     private final VNPTClient vnpt;
     private final ObjectMapper om;
+    private final AccountRepository accountRepository;
 
 
     public String uploadToVnptAndAttach(
@@ -105,6 +108,7 @@ public class KycOrchestratorService implements KycOrchestrator {
         out.put("name", res.getObj() != null ? res.getObj().getName() : null);
         out.put("confidence", res.getObj() != null ? res.getObj().getConfidence() : null);
         out.put("source", "LIVE");
+        out.put("type", res.getObj() != null ? res.getObj().getType() : null);
         return out;
     }
 
@@ -206,10 +210,16 @@ public class KycOrchestratorService implements KycOrchestrator {
         boolean passed = matched && prob >= 95.0;
 
         s.setStatus(passed ? KycStatus.VERIFIED : KycStatus.REJECTED);
-
         // lưu trace tối giản để debug
         s.setProviderTrace(toJsonSafe(res));
         sessions.save(s);
+
+        if (passed) {
+            Account account = accountRepository.findById(accountId)
+                    .orElseThrow(() -> new IllegalStateException("No account found"));
+            account.setAccountVerified(true);
+            accountRepository.save(account);
+        }
 
         Map<String, Object> out = new HashMap<>();
         out.put("isMatch", matched);

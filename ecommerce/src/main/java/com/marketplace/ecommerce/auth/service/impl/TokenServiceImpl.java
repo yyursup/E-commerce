@@ -35,6 +35,7 @@ public class TokenServiceImpl implements TokenService {
                 .subject(account.getUsername() + "")
                 .issuedAt(new Date(currentTime))
                 .claim("role", account.getRole().getRoleName())
+                .claim("accountId", account.getId())
                 .expiration(new Date(currentTime + 1000 * 60 * 60 * 12))
                 .signWith(getSignInKey())
                 .compact();

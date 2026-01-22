@@ -2,6 +2,7 @@ package com.marketplace.ecommerce.kyc.service;
 
 import com.marketplace.ecommerce.kyc.entity.EKycSession;
 import com.marketplace.ecommerce.kyc.valueObjects.KycDocumentType;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Map;
 import java.util.UUID;
@@ -15,6 +16,15 @@ public interface KycOrchestrator {
             UUID accountId,
             KycDocumentType type,
             String fileHash
+    );
+
+    String uploadToVnptAndAttach(
+            UUID sessionId,
+            UUID accountId,
+            KycDocumentType type,
+            MultipartFile file,
+            String title,
+            String description
     );
 
     Map<String, Object> classify(UUID sessionId, UUID accountId, String fileHash);

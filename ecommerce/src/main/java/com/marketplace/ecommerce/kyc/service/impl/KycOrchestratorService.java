@@ -16,7 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
+import org.springframework.web.multipart.MultipartFile;
 
 
 import java.util.HashMap;
@@ -33,6 +33,24 @@ public class KycOrchestratorService implements KycOrchestrator {
     private final KycDocumentRepository docs;
     private final VNPTClient vnpt;
     private final ObjectMapper om;
+
+
+    public String uploadToVnptAndAttach(
+            UUID sessionId,
+            UUID accountId,
+            KycDocumentType type,
+            MultipartFile file,
+            String title,
+            String description
+    ) {
+
+        UploadResponse up = vnpt.addFile(file, title, description);
+        String hash = up.getObject().getHash();
+
+        attachFile(sessionId, accountId, type, hash);
+
+        return hash;
+    }
 
     public UUID start(UUID accountId) {
         EKycSession s = new EKycSession();
@@ -99,7 +117,7 @@ public class KycOrchestratorService implements KycOrchestrator {
             throw new IllegalStateException("No active front file hash found");
         }
 
-       OcrFrontResponse res = vnpt.ocrFront(activeHash, type, sessionId.toString());
+        OcrFrontResponse res = vnpt.ocrFront(activeHash, type, sessionId.toString());
 
         log.info("VNPT OCR Front ok. sessionId={}, hasObj={}", sessionId, res.getObj() != null);
 
@@ -130,7 +148,7 @@ public class KycOrchestratorService implements KycOrchestrator {
             throw new IllegalStateException("No active back file hash found");
         }
 
-       OcrBackResponse res = vnpt.ocrBack(activeHash, type, sessionId.toString());
+        OcrBackResponse res = vnpt.ocrBack(activeHash, type, sessionId.toString());
 
         OcrBackResponse.Obj o = res.getObj();
         Map<String, Object> out = new HashMap<>();

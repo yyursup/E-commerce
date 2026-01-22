@@ -1,8 +1,12 @@
 package com.marketplace.ecommerce.kyc.usecase;
 
 import com.marketplace.ecommerce.kyc.dto.response.*;
+import org.springframework.web.multipart.MultipartFile;
 
 public interface VNPTClient {
+
+    UploadResponse addFile(MultipartFile file, String title, String description);
+
     ClassifyResponse classify(String imgHash, String session);
 
     OcrFrontResponse ocrFront(String imgHash, int type, String session);

@@ -7,7 +7,7 @@ import java.util.UUID;
 
 @Data
 public class CurrentUserInfo {
-    private UUID id;
+    private UUID accountId;
     private String username;
     private String role;
 

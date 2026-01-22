@@ -84,7 +84,7 @@ public class JwtFilter extends OncePerRequestFilter {
             Account account = tokenService.getAccountFromToken(token);
 
             CurrentUserInfo info = new CurrentUserInfo();
-            info.setId(account.getId());
+            info.setAccountId(account.getId());
             info.setUsername(account.getUsername());
             info.setRole(account.getRole().getRoleName());
 

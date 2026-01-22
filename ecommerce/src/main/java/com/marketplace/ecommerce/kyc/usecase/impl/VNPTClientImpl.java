@@ -5,15 +5,56 @@ import com.marketplace.ecommerce.kyc.dto.request.*;
 import com.marketplace.ecommerce.kyc.dto.response.*;
 import com.marketplace.ecommerce.kyc.usecase.VNPTClient;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.multipart.MultipartFile;
 
 
 import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class VNPTClientImpl implements VNPTClient {
+    @Override
+    public UploadResponse addFile(MultipartFile file, String title, String description) {
+        try {
+            if (file == null || file.isEmpty()) {
+                throw new IllegalArgumentException("file is empty");
+            }
+
+            var form = new LinkedMultiValueMap<String, Object>();
+
+            // IMPORTANT: multipart part must have filename
+            ByteArrayResource filePart = new ByteArrayResource(file.getBytes()) {
+                @Override
+                public String getFilename() {
+                    return file.getOriginalFilename() != null ? file.getOriginalFilename() : "upload";
+                }
+            };
+
+            form.add("file", filePart);
+            if (title != null && !title.isBlank()) form.add("title", title);
+            if (description != null && !description.isBlank()) form.add("description", description);
+
+            UploadResponse res = vnptRestClient.post()
+                    .uri("/file-service/v1/addFile")
+                    .contentType(MediaType.MULTIPART_FORM_DATA)
+                    .body(form)
+                    .retrieve()
+                    .body(UploadResponse.class);
+
+            return Objects.requireNonNull(res, "VNPT addFile returned null");
+        } catch (Exception e) {
+            throw new RuntimeException("VNPT addFile failed: " + e.getMessage(), e);
+        }
+    }
 
     private final RestClient vnptRestClient;
     private final EKycConfig cfg;
@@ -38,19 +79,29 @@ public class VNPTClientImpl implements VNPTClient {
 
     @Override
     public OcrFrontResponse ocrFront(String imgHash, int type, String session) {
-        OcrFrontRequest req = new OcrFrontRequest();
-        req.setImgFront(imgHash);
-        req.setType(type);
-        req.setClientSession(session);
-        req.setToken(cfg.getTokenKey());
+        try {
+            OcrFrontRequest req = new OcrFrontRequest();
+            req.setImgFront(imgHash);
+            req.setType(type);
+            req.setClientSession(session);
+            req.setToken(cfg.getTokenKey());
 
-        OcrFrontResponse res = vnptRestClient.post()
-                .uri("/ai/v1/ocr/id/front")
-                .body(req)
-                .retrieve()
-                .body(OcrFrontResponse.class);
+            OcrFrontResponse res = vnptRestClient.post()
+                    .uri("/ai/v1/ocr/id/front")
+                    .body(req)
+                    .retrieve()
+                    .body(OcrFrontResponse.class);
 
-        return Objects.requireNonNull(res, "VNPT ocrFront returned null");
+            return java.util.Objects.requireNonNull(res, "VNPT ocrFront returned null");
+
+        } catch (ResourceAccessException e) {
+            Throwable root = e.getMostSpecificCause(); // rất quan trọng
+            log.error("[VNPT] ResourceAccessException rootCause={}", root, e);
+            throw e;
+        } catch (RestClientException e) {
+            log.error("[VNPT] RestClientException", e);
+            throw e;
+        }
     }
 
     @Override

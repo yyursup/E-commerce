@@ -4,5 +4,6 @@ public enum RequestType {
     SELLER_REGISTRATION,
     UPDATE_SHOP,
     WITHDRAW,
-    APPEAL
+    APPEAL,
+    REPORT
 }

@@ -5,7 +5,7 @@ import com.marketplace.ecommerce.config.CurrentUser;
 import com.marketplace.ecommerce.request.dto.request.CreateReportRequest;
 import com.marketplace.ecommerce.request.dto.request.RegisterSellerRequest;
 import com.marketplace.ecommerce.request.dto.response.CreateRequestResponse;
-import com.marketplace.ecommerce.request.dto.response.RejectRequestResponse;
+import com.marketplace.ecommerce.request.dto.response.RequestResponse;
 import com.marketplace.ecommerce.request.dto.response.RequestDetailsResponse;
 import com.marketplace.ecommerce.request.service.RegisterSellerService;
 import com.marketplace.ecommerce.request.service.ReportService;
@@ -45,7 +45,7 @@ public class RequestController {
 
     @PutMapping("reject")
     @PreAuthorize("hasRole('ADMIN')")
-    public RejectRequestResponse reject(
+    public RequestResponse reject(
             @CurrentUser CurrentUserInfo u,
             @RequestParam UUID requestId,
             @RequestParam String response
@@ -55,12 +55,12 @@ public class RequestController {
 
     @PutMapping("approve")
     @PreAuthorize("hasRole('ADMIN')")
-    public void approve(
+    public RequestResponse approve(
             @CurrentUser CurrentUserInfo u,
             @RequestParam UUID requestId,
             @RequestParam String response
     ) {
-        requestService.approveSellerRegistration(u.getAccountId(), requestId, response);
+        return requestService.approveSellerRegistration(requestId, u.getAccountId(), response);
     }
 
     @GetMapping

@@ -39,9 +39,9 @@ public class RequestServiceImpl implements RequestService {
     private final RequestPolicy requestValidation;
     private final ShopService shopService;
 
-    public void approveSellerRegistration(UUID requestId, UUID adminAccountId, String response) {
+    public RequestResponse approveSellerRegistration(UUID requestId, UUID adminAccountId, String response) {
 
-        Account admin = accountRepository.findById(adminAccountId).orElseThrow(() -> new CustomException("Admin account not found"));
+        Account acc = accountRepository.findById(adminAccountId).orElseThrow(() -> new CustomException("Account not found"));
 
         Request req = requestRepository.findById(requestId).orElseThrow(() -> new CustomException("Request not found: " + requestId));
 
@@ -52,7 +52,9 @@ public class RequestServiceImpl implements RequestService {
         ctx.sellerDetail().setCreatedShopId(savedShop.getId());
         sellerRepository.save(ctx.sellerDetail());
 
-        markApprovedRequest(req, admin, response);
+        markApprovedRequest(req, acc, response);
+
+        return RequestResponse.from(req);
     }
 
     public void markApprovedRequest(Request req, Account admin, String response) {
@@ -64,7 +66,7 @@ public class RequestServiceImpl implements RequestService {
     }
 
     @Override
-    public RejectRequestResponse rejectRequest(UUID adminAccountId, UUID requestId, String response) {
+    public RequestResponse rejectRequest(UUID adminAccountId, UUID requestId, String response) {
         Account acc = accountRepository.findById(adminAccountId).orElseThrow(() -> new CustomException("Account not found"));
 
         Request request = requestRepository.findById(requestId).orElseThrow(() -> new CustomException("Request not found"));
@@ -76,7 +78,7 @@ public class RequestServiceImpl implements RequestService {
 
         requestRepository.save(request);
 
-        return RejectRequestResponse.from(request);
+        return RequestResponse.from(request);
     }
 
 
@@ -116,15 +118,7 @@ public class RequestServiceImpl implements RequestService {
     @Override
     public Request createRequest(Account account, CreateSendRequest request) {
 
-        Request re = Request.builder()
-                .account(account)
-                .type(request.getRequestType())
-                .status(RequestStatus.PENDING)
-                .description(request.getDescription())
-                .coverImageUrl(request.getCoverImage())
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
-                .build();
+        Request re = Request.builder().account(account).type(request.getRequestType()).status(RequestStatus.PENDING).description(request.getDescription()).coverImageUrl(request.getCoverImage()).createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build();
 
         return requestRepository.save(re);
     }

@@ -13,7 +13,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class RejectRequestResponse {
+public class RequestResponse {
     private UUID requestId;
     private RequestType type;
     private RequestStatus status;
@@ -25,13 +25,13 @@ public class RejectRequestResponse {
 
     private UUID reviewedBy;
     private LocalDateTime reviewedAt;
-    private String rejectionReason;
+    private String response;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    public static RejectRequestResponse from(Request request) {
-        return RejectRequestResponse.builder()
+    public static RequestResponse from(Request request) {
+        return RequestResponse.builder()
                 .requestId(request.getId())
                 .type(request.getType())
                 .status(request.getStatus())
@@ -40,7 +40,7 @@ public class RejectRequestResponse {
                 .accountId(request.getAccount().getId())
                 .reviewedBy(request.getReviewedBy().getId())
                 .reviewedAt(request.getReviewedAt())
-                .rejectionReason(request.getResponse())
+                .response(request.getResponse())
                 .updatedAt(request.getUpdatedAt())
                 .build();
     }

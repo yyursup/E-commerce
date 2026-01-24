@@ -58,6 +58,7 @@ public class RequestPolicy {
 
         User user = userRepository.findByAccountId(ownerAccount.getId())
                 .orElseThrow(() -> new CustomException("User profile not found for account: " + ownerAccount.getId()));
+
         if (shopRepository.existsByUserId(user.getId())) {
             throw new CustomException("This user already has a shop");
         }

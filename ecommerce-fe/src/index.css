@@ -1,0 +1,35 @@
+@import "tailwindcss";
+
+/* Class-based dark mode */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Slick Carousel */
+@import "slick-carousel/slick/slick.css";
+@import "slick-carousel/slick/slick-theme.css";
+
+/* AOS */
+@import "aos/dist/aos.css";
+
+/* Base */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Slick overrides */
+.slick-dots li button:before {
+  font-size: 10px;
+}
+.slick-prev:before,
+.slick-next:before {
+  font-size: 24px;
+}

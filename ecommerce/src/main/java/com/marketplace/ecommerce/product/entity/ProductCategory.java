@@ -34,7 +34,6 @@ public class ProductCategory {
     @JoinColumn(name = "parent_id")
     private ProductCategory parent;
 
-
     @Column(name = "name", nullable = false, unique = true, length = 255)
     private String name;
 

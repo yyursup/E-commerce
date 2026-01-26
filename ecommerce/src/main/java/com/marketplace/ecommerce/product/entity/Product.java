@@ -3,10 +3,7 @@ package com.marketplace.ecommerce.product.entity;
 import com.marketplace.ecommerce.product.valueObjects.ProductStatus;
 import com.marketplace.ecommerce.shop.entity.Shop;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -19,13 +16,14 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "products", uniqueConstraints = {
-    @UniqueConstraint(columnNames = "sku")
+        @UniqueConstraint(columnNames = "sku")
 })
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
+@Builder
 public class Product {
 
     @Id
@@ -57,6 +55,7 @@ public class Product {
     @Column(name = "base_price", nullable = false, precision = 12, scale = 2)
     private BigDecimal basePrice;
 
+    @Builder.Default
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Set<ProductImage> images = new HashSet<>();
 

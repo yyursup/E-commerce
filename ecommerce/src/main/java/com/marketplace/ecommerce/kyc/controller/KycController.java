@@ -144,9 +144,9 @@ public class KycController {
     }
 
     @PostMapping(
-            value = "/sessions/{sessionId}/fullFlow"
+            value = "/sessions/{sessionId}/fullFlow-upload"
     )
-    public ResponseEntity<Map<String, Object>> uploadFrontVerifyAndAttach(
+    public ResponseEntity<Map<String, Object>> uploadAndCheckImages(
             @PathVariable UUID sessionId,
             @RequestPart("file") @NotNull MultipartFile file,
             @RequestPart(value = "title", required = false) String title,

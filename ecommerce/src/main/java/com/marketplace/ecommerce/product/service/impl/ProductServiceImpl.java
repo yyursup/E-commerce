@@ -60,6 +60,7 @@ public class ProductServiceImpl implements ProductService {
                 .description(request.getDescription())
                 .basePrice(request.getBasePrice())
                 .sku(request.getSku())
+                .quantity(request.getStockQuantity())
                 .status(ProductStatus.PUBLISHED)
                 .productCategory(category)
                 .createdAt(LocalDateTime.now())

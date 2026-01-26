@@ -42,6 +42,9 @@ public class Product {
     @Column(name = "name", nullable = false, length = 255)
     private String name;
 
+    @Column(name = "quantity", nullable = false)
+    private Integer quantity = 0;
+
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 

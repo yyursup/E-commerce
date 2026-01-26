@@ -17,6 +17,8 @@ import com.marketplace.ecommerce.auth.service.EmailService;
 import com.marketplace.ecommerce.auth.service.TokenService;
 import com.marketplace.ecommerce.auth.validate.AuthValidation;
 import com.marketplace.ecommerce.auth.valueObjects.AccountStatus;
+import com.marketplace.ecommerce.cart.entity.Cart;
+import com.marketplace.ecommerce.cart.repository.CartRepository;
 import com.marketplace.ecommerce.common.exception.CustomException;
 import com.marketplace.ecommerce.common.exception.RoleNotFoundException;
 import jakarta.transaction.Transactional;
@@ -30,6 +32,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -45,6 +48,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final AuthValidation validation;
     private final EmailService emailService;
     private final RoleRepository roleRepository;
+    private final CartRepository cartRepository;
 
     @Override
     public AccountCreateResponse verifyAccount(VerifyRequest request) {
@@ -64,6 +68,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             emailService.clearOtp(request.getEmail());
         }
         account.setStatus(AccountStatus.ACTIVE);
+        account.setIsActive(true);
         emailService.clearOtp(request.getEmail());
         Account savedAccount = accountRepository.save(account);
 
@@ -72,7 +77,14 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .phoneNumber(savedAccount.getPhoneNumber())
                 .account(savedAccount)
                 .build();
-        userRepository.save(user);
+        User userSaved = userRepository.save(user);
+
+        Cart cart = Cart.builder()
+                .user(userSaved)
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        cartRepository.save(cart);
 
         return AccountCreateResponse.from(savedAccount);
     }

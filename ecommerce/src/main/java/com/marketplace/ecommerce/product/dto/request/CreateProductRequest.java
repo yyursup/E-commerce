@@ -31,8 +31,10 @@ public class CreateProductRequest {
     @Digits(integer = 10, fraction = 2, message = "Base price format is invalid")
     private BigDecimal basePrice;
 
+    @NotNull(message = "Stock quantity must not be null")
     @Min(value = 0, message = "Stock quantity must be greater than or equal to 0")
     private Integer stockQuantity;
+
 
     @Valid
     private List<ProductImageRequest> images;

@@ -3,6 +3,7 @@ package com.marketplace.ecommerce.auth.repository;
 import com.marketplace.ecommerce.auth.entity.UserAddress;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -43,4 +44,21 @@ public interface UserAddressRepository extends JpaRepository<UserAddress, UUID> 
             @Param("id") UUID id,
             @Param("userId") UUID userId
     );
+
+    List<UserAddress> findAllByUserIdAndDeletedFalseOrderByIsDefaultDescIdDesc(UUID userId);
+
+    boolean existsByUserIdAndDeletedFalse(UUID userId);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+    update UserAddress a
+    set a.isDefault = false
+    where a.user.id = :userId
+      and a.deleted = false
+      and a.id <> :addressId
+      and a.isDefault = true
+""")
+    int unsetDefaultExcept(UUID userId, UUID addressId);
+
+
 }

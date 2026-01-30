@@ -19,8 +19,11 @@ public interface CartRepository extends JpaRepository<Cart, UUID> {
                 from Cart c
                 left join fetch c.items i
                 left join fetch i.product p
+                left join fetch p.shop s
                 left join fetch p.images img
                 where c.user.id = :userId
             """)
     Optional<Cart> findByUserIdWithItems(@Param("userId") UUID userId);
+
+
 }

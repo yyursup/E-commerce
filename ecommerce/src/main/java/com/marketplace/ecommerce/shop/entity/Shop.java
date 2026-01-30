@@ -51,6 +51,12 @@ public class Shop {
     @Column(name = "address", length = 255)
     private String address;
 
+    @Column(name = "district_id")
+    private Integer districtId;  // Mã quận/huyện GHN
+
+    @Column(name = "ward_code", length = 20)
+    private String wardCode;  // Mã phường/xã GHN
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 50)
     private ShopStatus status = ShopStatus.ACTIVE;

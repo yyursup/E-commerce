@@ -16,8 +16,6 @@ public interface ReviewReportRepository extends JpaRepository<ReviewReport, UUID
 
     boolean existsByReviewIdAndReporterId(UUID reviewId, UUID reporterId);
 
-    boolean existsByReviewIdAndReporterIp(UUID reviewId, String reporterIp);
-
     long countByReviewId(UUID reviewId);
 
     long countByStatus(ReviewReportStatus status);

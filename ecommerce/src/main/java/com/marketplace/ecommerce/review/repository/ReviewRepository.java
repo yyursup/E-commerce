@@ -43,12 +43,6 @@ public interface ReviewRepository extends JpaRepository<Review, UUID> {
             Pageable pageable
     );
 
-    boolean existsByUserIdAndProductIdAndSubOrderId(UUID userId, UUID productId, UUID subOrderId);
-
-    boolean existsByUserIdAndProductIdAndSubOrderIdAndStatus(
-            UUID userId, UUID productId, UUID subOrderId, ReviewStatus status
-    );
-
     Optional<Review> findByUserIdAndProductIdAndSubOrderId(
             UUID userId, UUID productId, UUID subOrderId
     );

@@ -36,6 +36,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
@@ -122,6 +123,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Transactional
     public OrderResponse convertCartToOrder(UUID accountId, CreateOrderRequest request) {
         Shop shop = shopRepository.findById(request.getShopId())
                 .orElseThrow(() -> new CustomException("Shop not found."));
@@ -164,6 +166,7 @@ public class OrderServiceImpl implements OrderService {
         order.setShippingWard(addr.getWard());
         order.setShippingDistrictId(addr.getDistrictId());
         order.setShippingWardCode(addr.getWardCode());
+        order.setCreatedAt(LocalDateTime.now());
 
         order.setNotes(request.getNotes());
         order.setSubtotal(subtotal);
@@ -189,6 +192,7 @@ public class OrderServiceImpl implements OrderService {
             BigDecimal unitPrice = product.getBasePrice();
             orderItem.setUnitPrice(unitPrice);
             orderItem.calculateTotalPrice();
+            orderItem.setCreatedAt(LocalDateTime.now());
             order.getItems().add(orderItem);
             orderItemsRepository.save(orderItem);
         }

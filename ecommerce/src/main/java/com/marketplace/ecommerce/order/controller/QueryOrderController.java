@@ -35,15 +35,15 @@ public class QueryOrderController {
         return ResponseEntity.ok(queryOrderService.listOrdersForUser(c.getAccountId(), status));
     }
 
-    @GetMapping("/shops/{shopId}")
+    @GetMapping("/shops/orders/{orderId}")
     public ResponseEntity<OrderResponse> getShopOrder(
             @CurrentUser CurrentUserInfo c,
-            @RequestParam("orderId") UUID orderId
+            @PathVariable UUID orderId
     ) {
         return ResponseEntity.ok(queryOrderService.getOrderByIdAndShop(orderId, c.getAccountId()));
     }
 
-    @GetMapping("/shops/{shopId}")
+    @GetMapping("/shops")
     public ResponseEntity<List<OrderResponse>> listShopOrders(
             @CurrentUser CurrentUserInfo c,
             @RequestParam(value = "status", required = false) OrderStatus status

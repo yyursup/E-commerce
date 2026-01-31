@@ -1,9 +1,11 @@
 ﻿import api from './client'
 
-export const login = payload => api.post('/auth/login', payload)
+const AUTH_BASE = '/auth'
 
-export const register = payload => api.post('/auth/register', payload)
+export const login = payload => api.post(`${AUTH_BASE}/login`, payload)
 
-export const verify = payload => api.post('/auth/verify', payload)
+export const register = payload => api.post(`${AUTH_BASE}/register`, payload)
 
-export const getUsers = () => api.get('/auth/users')
+export const verify = payload => api.post(`${AUTH_BASE}/verify`, payload)
+
+export const getUsers = () => api.get(`${AUTH_BASE}/users`)

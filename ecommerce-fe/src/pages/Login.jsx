@@ -1,13 +1,18 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
-import { HiOutlineMail, HiOutlineLockClosed } from 'react-icons/hi'
+import { HiOutlineUser, HiOutlineLockClosed } from 'react-icons/hi'
 import { useThemeStore } from '../store/useThemeStore'
+import { useAuthStore } from '../store/useAuthStore'
 import { cn } from '../lib/cn'
+import authService from '../services/auth'
 
 export default function Login() {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
+  const navigate = useNavigate()
+  const login = useAuthStore((s) => s.login)
+
   const {
     register,
     handleSubmit,
@@ -15,8 +20,18 @@ export default function Login() {
   } = useForm()
 
   const onSubmit = async (data) => {
-    await new Promise((r) => setTimeout(r, 800))
-    toast.success(`Chào bạn! (demo: ${data.email})`)
+    try {
+      const res = await authService.login(data)
+      const userPayload = { email: res.email, role: res.role }
+      login(res.token, userPayload)
+
+      toast.success(`Chào mừng trở lại, ${res.email}!`)
+      navigate('/')
+    } catch (error) {
+      console.error('Login error:', error)
+      const message = error.message || 'Đăng nhập thất bại. Kiểm tra lại thông tin.'
+      toast.error(message)
+    }
   }
 
   return (
@@ -55,52 +70,52 @@ export default function Login() {
                 isDark ? 'text-slate-400' : 'text-stone-500',
               )}
             >
-              Nhập email và mật khẩu để tiếp tục
+              Nhập tên đăng nhập để tiếp tục
             </p>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <div>
               <label
-                htmlFor="email"
+                htmlFor="username"
                 className={cn(
                   'mb-1.5 block text-sm font-medium',
                   isDark ? 'text-slate-300' : 'text-stone-700',
                 )}
               >
-                Email
+                Tên đăng nhập
               </label>
               <div className="relative">
-                <HiOutlineMail
+                <HiOutlineUser
                   className={cn(
                     'absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2',
                     isDark ? 'text-slate-500' : 'text-stone-400',
                   )}
                 />
                 <input
-                  id="email"
-                  type="email"
-                  autoComplete="email"
-                  placeholder="you@example.com"
+                  id="username"
+                  type="text"
+                  autoComplete="username"
+                  placeholder="username"
                   className={cn(
                     'w-full rounded-xl border py-3 pl-10 pr-4 text-sm outline-none transition placeholder:opacity-60',
                     isDark
                       ? 'border-slate-600 bg-slate-800/50 text-white placeholder:text-slate-500 focus:border-amber-500/60 focus:ring-2 focus:ring-amber-500/20'
                       : 'border-stone-300 bg-stone-50/80 text-stone-900 placeholder:text-stone-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20',
-                    errors.email && 'border-red-500/70 focus:border-red-500 focus:ring-red-500/20',
+                    errors.username && 'border-red-500/70 focus:border-red-500 focus:ring-red-500/20',
                   )}
-                  {...register('email', {
-                    required: 'Vui lòng nhập email',
-                    pattern: {
-                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                      message: 'Email không hợp lệ',
+                  {...register('username', {
+                    required: 'Vui lòng nhập tên đăng nhập',
+                    minLength: {
+                      value: 3,
+                      message: 'Ít nhất 3 ký tự',
                     },
                   })}
                 />
               </div>
-              {errors.email && (
+              {errors.username && (
                 <p className="mt-1.5 text-sm text-red-500">
-                  {errors.email.message}
+                  {errors.username.message}
                 </p>
               )}
             </div>

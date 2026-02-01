@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
@@ -6,23 +6,40 @@ import {
   HiOutlineMail,
   HiOutlineLockClosed,
   HiOutlineUser,
+  HiOutlinePhone,
 } from 'react-icons/hi'
 import { useThemeStore } from '../store/useThemeStore'
 import { cn } from '../lib/cn'
+import authService from '../services/auth'
 
 export default function Register() {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
+  const navigate = useNavigate()
   const {
     register,
     handleSubmit,
     watch,
+    setError,
     formState: { errors, isSubmitting },
   } = useForm()
   const password = watch('password')
 
   const onSubmit = async (data) => {
-    await new Promise((r) => setTimeout(r, 800))
-    toast.success(`Tạo tài khoản thành công! (demo: ${data.email})`)
+    try {
+      await authService.register(data)
+      toast.success('Đăng ký thành công! Vui lòng xác thực tài khoản.')
+      navigate('/verify', { state: { email: data.email } })
+    } catch (error) {
+      console.error('Register error:', error)
+      const errorMessage = error.message || 'Đăng ký thất bại. Vui lòng thử lại.'
+      toast.error(errorMessage)
+
+      // If validation errors come from backend, set them here
+      if (error.errors) {
+        // Example: backend returns { errors: { email: "Email already exists" } }
+        // You might need to adjust based on actual backend error structure
+      }
+    }
   }
 
   return (
@@ -87,7 +104,7 @@ export default function Register() {
                   id="name"
                   type="text"
                   autoComplete="name"
-                  placeholder="John Doe"
+                  placeholder="Nguyễn Văn A"
                   className={cn(
                     'w-full rounded-xl border py-3 pl-10 pr-4 text-sm outline-none transition placeholder:opacity-60',
                     isDark
@@ -97,13 +114,59 @@ export default function Register() {
                   )}
                   {...register('name', {
                     required: 'Vui lòng nhập họ tên',
-                    minLength: { value: 2, message: 'Ít nhất 2 ký tự' },
+                    minLength: { value: 3, message: 'Ít nhất 3 ký tự' },
+                    maxLength: { value: 50, message: 'Tối đa 50 ký tự' },
                   })}
                 />
               </div>
               {errors.name && (
                 <p className="mt-1.5 text-sm text-red-500">
                   {errors.name.message}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label
+                htmlFor="phoneNumber"
+                className={cn(
+                  'mb-1.5 block text-sm font-medium',
+                  isDark ? 'text-slate-300' : 'text-stone-700',
+                )}
+              >
+                Số điện thoại
+              </label>
+              <div className="relative">
+                <HiOutlinePhone
+                  className={cn(
+                    'absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2',
+                    isDark ? 'text-slate-500' : 'text-stone-400',
+                  )}
+                />
+                <input
+                  id="phoneNumber"
+                  type="tel"
+                  autoComplete="tel"
+                  placeholder="0912345678"
+                  className={cn(
+                    'w-full rounded-xl border py-3 pl-10 pr-4 text-sm outline-none transition placeholder:opacity-60',
+                    isDark
+                      ? 'border-slate-600 bg-slate-800/50 text-white placeholder:text-slate-500 focus:border-amber-500/60 focus:ring-2 focus:ring-amber-500/20'
+                      : 'border-stone-300 bg-stone-50/80 text-stone-900 placeholder:text-stone-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20',
+                    errors.phoneNumber && 'border-red-500/70 focus:border-red-500 focus:ring-red-500/20',
+                  )}
+                  {...register('phoneNumber', {
+                    required: 'Vui lòng nhập số điện thoại',
+                    pattern: {
+                      value: /(84|0[3|5|7|8|9])+(\d{8})/,
+                      message: 'Số điện thoại không hợp lệ (VN)',
+                    },
+                  })}
+                />
+              </div>
+              {errors.phoneNumber && (
+                <p className="mt-1.5 text-sm text-red-500">
+                  {errors.phoneNumber.message}
                 </p>
               )}
             </div>
@@ -274,3 +337,4 @@ export default function Register() {
     </div>
   )
 }
+

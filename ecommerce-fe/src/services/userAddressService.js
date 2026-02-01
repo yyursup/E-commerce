@@ -1,6 +1,6 @@
 import axiosClient from '../api/axiosClient';
 
-const BASE_URL = '/v1/address';
+const BASE_URL = '/api/v1/address';
 
 export const userAddressService = {
 

@@ -3,13 +3,16 @@ import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { userAddressService } from '../services/userAddressService';
 import { locationService } from '../services/locationService';
+import { useAuthStore } from '../store/useAuthStore';
 import { cn } from '../lib/cn';
 import { HiOutlineTrash, HiOutlinePencil, HiPlus } from 'react-icons/hi';
 
 export default function AddressManager({ isDark }) {
+    const { isAuthenticated, token } = useAuthStore();
     const [addresses, setAddresses] = useState([]);
     const [editingId, setEditingId] = useState(null);
     const [isAdding, setIsAdding] = useState(false);
+    const [loading, setLoading] = useState(false);
 
     // Location Data
     const [provinces, setProvinces] = useState([]);
@@ -17,43 +20,53 @@ export default function AddressManager({ isDark }) {
     const [wards, setWards] = useState([]);
 
     // Form for add/edit
-    // Watch location fields to trigger updates
     const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm();
 
     const selectedProvinceId = watch('provinceId');
     const selectedDistrictId = watch('districtId');
 
     const fetchAddresses = async () => {
+        // Only fetch if user is authenticated and has token
+        if (!isAuthenticated || !token) {
+            setAddresses([]);
+            return;
+        }
+
         try {
+            setLoading(true);
             const res = await userAddressService.listMyAddresses();
-            setAddresses(res.data);
+            setAddresses(res.data || []);
         } catch (error) {
             console.error("Failed to load addresses", error);
-            // toast.error('Không thể tải danh sách địa chỉ');
+            if (error.response?.status !== 401) {
+                toast.error('Không thể tải danh sách địa chỉ');
+            }
+            setAddresses([]);
+        } finally {
+            setLoading(false);
         }
     };
 
     const fetchProvinces = async () => {
         try {
             const res = await locationService.getProvinces();
-            // Ensure we handle array response correctly
-            setProvinces(Array.isArray(res.data) ? res.data : (res.data?.data || []));
+            setProvinces(Array.isArray(res.data) ? res.data : []);
         } catch (error) {
             console.error("Failed to load provinces", error);
         }
     }
 
     useEffect(() => {
-        fetchAddresses();
+        if (isAuthenticated && token) {
+            fetchAddresses();
+        }
         fetchProvinces();
-    }, []);
+    }, [isAuthenticated, token]);
 
-    // Load Districts when Province changes
     useEffect(() => {
         if (selectedProvinceId) {
             locationService.getDistricts(selectedProvinceId).then(res => {
-                setDistricts(Array.isArray(res.data) ? res.data : (res.data?.data || []));
-                // We don't verify if key exists because React Hook Form handles value retention
+                setDistricts(Array.isArray(res.data) ? res.data : []);
             }).catch(console.error);
         } else {
             setDistricts([]);
@@ -65,7 +78,7 @@ export default function AddressManager({ isDark }) {
     useEffect(() => {
         if (selectedDistrictId) {
             locationService.getWards(selectedDistrictId).then(res => {
-                setWards(Array.isArray(res.data) ? res.data : (res.data?.data || []));
+                setWards(Array.isArray(res.data) ? res.data : []);
             }).catch(console.error);
         } else {
             setWards([]);
@@ -97,22 +110,32 @@ export default function AddressManager({ isDark }) {
 
     const onDelete = async (id) => {
         if (!window.confirm('Bạn có chắc chắn muốn xóa địa chỉ này?')) return;
+        if (!isAuthenticated || !token) {
+            toast.error('Vui lòng đăng nhập để thực hiện thao tác này');
+            return;
+        }
         try {
             await userAddressService.deleteMyAddress(id);
             toast.success('Đã xóa địa chỉ');
             fetchAddresses();
         } catch (error) {
-            toast.error('Xóa thất bại');
+            console.error('Delete address error:', error);
+            toast.error(error.response?.data?.message || 'Xóa thất bại');
         }
     };
 
     const onSetDefault = async (id) => {
+        if (!isAuthenticated || !token) {
+            toast.error('Vui lòng đăng nhập để thực hiện thao tác này');
+            return;
+        }
         try {
             await userAddressService.setDefault(id);
             toast.success('Đã đặt làm mặc định');
             fetchAddresses();
         } catch (error) {
-            toast.error('Lỗi khi đặt mặc định');
+            console.error('Set default address error:', error);
+            toast.error(error.response?.data?.message || 'Lỗi khi đặt mặc định');
         }
     };
 
@@ -134,6 +157,11 @@ export default function AddressManager({ isDark }) {
             isDefault: data.isDefault
         };
 
+        if (!isAuthenticated || !token) {
+            toast.error('Vui lòng đăng nhập để thực hiện thao tác này');
+            return;
+        }
+
         try {
             if (editingId) {
                 await userAddressService.updateMyAddress(editingId, payload);
@@ -148,8 +176,8 @@ export default function AddressManager({ isDark }) {
             reset({ isDefault: false });
             fetchAddresses();
         } catch (error) {
-            console.error(error);
-            toast.error('Có lỗi xảy ra. Vui lòng kiểm tra lại.');
+            console.error('Save address error:', error);
+            toast.error(error.response?.data?.message || 'Có lỗi xảy ra. Vui lòng kiểm tra lại.');
         }
     };
 
@@ -305,7 +333,15 @@ export default function AddressManager({ isDark }) {
                     </div>
                 ))}
             </div>
-            {addresses.length === 0 && !isAdding && (
+            {loading && (
+                <div className="text-center py-10">
+                    <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-amber-500 border-r-transparent"></div>
+                    <p className={cn("mt-4 text-sm", isDark ? "text-slate-400" : "text-stone-600")}>
+                        Đang tải địa chỉ...
+                    </p>
+                </div>
+            )}
+            {!loading && addresses.length === 0 && !isAdding && (
                 <div className="text-center py-10">
                     <p className={cn("text-gray-500", isDark ? "text-slate-400" : "")}>Chưa có địa chỉ nào. Hãy thêm địa chỉ mới để nhận hàng.</p>
                 </div>

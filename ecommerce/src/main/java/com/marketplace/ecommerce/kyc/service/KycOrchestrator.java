@@ -22,9 +22,7 @@ public interface KycOrchestrator {
             UUID sessionId,
             UUID accountId,
             KycDocumentType type,
-            MultipartFile file,
-            String title,
-            String description
+            MultipartFile file
     );
 
     Map<String, Object> classify(UUID sessionId, UUID accountId, String fileHash);

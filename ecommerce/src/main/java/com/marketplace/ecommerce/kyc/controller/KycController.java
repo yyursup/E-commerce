@@ -149,16 +149,12 @@ public class KycController {
     public ResponseEntity<Map<String, Object>> uploadAndCheckImages(
             @PathVariable UUID sessionId,
             @RequestPart("file") @NotNull MultipartFile file,
-            @RequestPart(value = "title", required = false) String title,
-            @RequestPart(value = "description", required = false) String description,
             @CurrentUser CurrentUserInfo u
     ) {
         Map<String, Object> out = orchestratorService.uploadFileAndAttach(
                 sessionId,
                 u.getAccountId(),
-                file,
-                title,
-                description
+                file
         );
         return ResponseEntity.ok(out);
     }

@@ -19,7 +19,9 @@ public class GHNCreateOrderRequest {
     private String to_phone;              // SĐT người nhận
     private String to_address;            // Địa chỉ chi tiết
     private String to_ward_code;          // Mã phường/xã
-    private String to_district_id;        // Mã quận/huyện
+    private String to_district_id;
+    private Integer from_district_id;
+    private String from_ward_code;
     private Integer cod_amount;           // Số tiền thu hộ (VNĐ) - nếu có COD
     private Integer weight;               // Cân nặng (gram)
     private Integer length;                // Chiều dài (cm)

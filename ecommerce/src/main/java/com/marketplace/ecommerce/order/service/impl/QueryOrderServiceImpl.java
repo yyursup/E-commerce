@@ -7,7 +7,7 @@ import com.marketplace.ecommerce.order.dto.response.OrderResponse;
 import com.marketplace.ecommerce.order.entity.Order;
 import com.marketplace.ecommerce.order.repository.OrderRepository;
 import com.marketplace.ecommerce.order.service.QueryOrderService;
-import com.marketplace.ecommerce.shipping.valueObjects.OrderStatus;
+import com.marketplace.ecommerce.order.valueObjects.OrderStatus;
 import com.marketplace.ecommerce.shop.entity.Shop;
 import com.marketplace.ecommerce.shop.repository.ShopRepository;
 import lombok.RequiredArgsConstructor;

@@ -3,6 +3,7 @@ package com.marketplace.ecommerce.shipping.service.impl;
 import com.marketplace.ecommerce.cart.entity.CartItem;
 import com.marketplace.ecommerce.common.exception.CustomException;
 import com.marketplace.ecommerce.order.entity.Order;
+import com.marketplace.ecommerce.order.entity.OrderItem;
 import com.marketplace.ecommerce.shipping.dto.request.GHNCalculateFeeRequest;
 import com.marketplace.ecommerce.shipping.dto.request.GHNCreateOrderRequest;
 import com.marketplace.ecommerce.shipping.dto.response.GHNCalculateFeeResponse;
@@ -14,7 +15,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
+
 
 @Service
 @RequiredArgsConstructor
@@ -46,10 +49,30 @@ public class ShippingServiceImpl implements ShippingService {
             throw new CustomException("Missing information about the district and wardCode (district_id, ward_code).");
         }
 
+        List<GHNCreateOrderRequest.GHNItem> ghnItems = new ArrayList<>();
+        for (OrderItem orderItem : order.getItems()) {
+            int productWeight = orderItem.getProduct().getWeight() != null
+                    ? orderItem.getProduct().getWeight() : 500;
+            int itemWeight = productWeight * orderItem.getQuantity();
+            String productName = orderItem.getProductName() != null && !orderItem.getProductName().isBlank()
+                    ? orderItem.getProductName() : "Sản phẩm";
+            GHNCreateOrderRequest.GHNItem apply = GHNCreateOrderRequest.GHNItem.builder()
+                    .name(productName)
+                    .quantity(orderItem.getQuantity())
+                    .weight(itemWeight)
+                    .length(20)
+                    .width(20)
+                    .height(10)
+                    .build();
+            ghnItems.add(apply);
+        }
+
         return GHNCreateOrderRequest.builder()
                 .payment_type_id(1)
                 .note(order.getNotes() != null ? order.getNotes() : "")
                 .required_note("CHOTHUHANG")
+                .from_district_id(fromDistrictId)
+                .from_ward_code(fromWardCode)
                 .to_name(order.getShippingName())
                 .to_phone(order.getShippingPhone())
                 .to_address(order.getShippingAddress())
@@ -60,6 +83,7 @@ public class ShippingServiceImpl implements ShippingService {
                 .service_type_id(2)
                 .insurance_value(order.getSubtotal().intValue())
                 .client_order_code(order.getOrderNumber())
+                .items(ghnItems)
                 .build();
     }
 
@@ -90,7 +114,7 @@ public class ShippingServiceImpl implements ShippingService {
                 .to_district_id(toDistrictId)
                 .to_ward_code(toWardCode)
                 .weight(totalWeight)
-                .service_type_id(2) // tạm hardcode
+                .service_type_id(2)
                 .build();
 
         try {

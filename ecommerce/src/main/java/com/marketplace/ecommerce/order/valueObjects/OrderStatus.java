@@ -1,4 +1,4 @@
-package com.marketplace.ecommerce.shipping.valueObjects;
+package com.marketplace.ecommerce.order.valueObjects;
 
 public enum OrderStatus {
     PENDING,
@@ -8,5 +8,6 @@ public enum OrderStatus {
     DELIVERED,
     CANCELLED,
     REFUNDED,
-    PENDING_PAYMENT
+    PENDING_PAYMENT,
+    SHIPPING
 }

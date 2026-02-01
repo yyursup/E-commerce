@@ -1,10 +1,11 @@
 package com.marketplace.ecommerce.order.repository;
 
 import com.marketplace.ecommerce.order.entity.Order;
-import com.marketplace.ecommerce.shipping.valueObjects.OrderStatus;
+import com.marketplace.ecommerce.order.valueObjects.OrderStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -28,5 +29,9 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
     List<Order> findAllByOrderByCreatedAtDesc();
 
     List<Order> findByStatusOrderByCreatedAtDesc(OrderStatus status);
+
+    Optional<Order> findByGhnOrderCode(String ghnOrderCode);
+
+    List<Order> findByStatusAndReceivedByBuyerFalseAndDeliveredAtBefore(OrderStatus orderStatus, LocalDateTime threshold);
 
 }

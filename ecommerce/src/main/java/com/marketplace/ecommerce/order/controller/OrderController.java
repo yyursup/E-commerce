@@ -35,6 +35,31 @@ public class OrderController {
         return ResponseEntity.ok(orderService.updateOrderStatus(c.getAccountId(), orderId, status));
     }
 
+    @PatchMapping("/{orderId}/received")
+    public ResponseEntity<Void> markReceivedByBuyer(
+            @CurrentUser CurrentUserInfo c,
+            @PathVariable UUID orderId
+    ) {
+        orderService.markReceivedByBuyer(orderId, c.getAccountId());
+        return ResponseEntity.noContent().build();
+    }
 
+    @PostMapping("/{orderId}/ghn/retry")
+    public ResponseEntity<OrderResponse> retryCreateGhnOrder(
+            @CurrentUser CurrentUserInfo c,
+            @PathVariable UUID orderId
+    ) {
+        return ResponseEntity.ok(orderService.retryCreateGhnOrder(orderId, c.getAccountId()));
+    }
 
+    @PutMapping("/{orderId}/ghn/code")
+    public ResponseEntity<OrderResponse> setGhnOrderCodeManually(
+            @CurrentUser CurrentUserInfo c,
+            @PathVariable UUID orderId,
+            @RequestParam String ghnOrderCode
+    ) {
+        return ResponseEntity.ok(
+                orderService.setGhnOrderCodeManually(orderId, ghnOrderCode, c.getAccountId())
+        );
+    }
 }

@@ -13,6 +13,7 @@ import {
   HiOutlineX,
   HiChevronDown,
   HiOutlineLogout,
+  HiOutlineIdentification,
 } from 'react-icons/hi'
 import { cn } from '../lib/cn'
 import { useThemeStore } from '../store/useThemeStore'
@@ -21,7 +22,7 @@ import { useCartStore } from '../store/useCartStore'
 
 const navLinks = [
   { to: '/', label: 'Trang chủ' },
-  { to: '/#products', label: 'AirPods & Tai nghe' },
+  { to: '/products', label: 'AirPods & Tai nghe' },
   { to: '/#deals', label: 'Ưu đãi' },
 ]
 
@@ -205,6 +206,30 @@ export default function Navbar() {
                     </p>
                   </div>
                   <MenuItem>
+                    <Link
+                      to="/seller/register"
+                      className={cn(
+                        'flex w-full items-center gap-2 px-4 py-2.5 text-sm transition-colors',
+                        isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-stone-600 hover:bg-stone-50'
+                      )}
+                    >
+                      <HiOutlineShoppingBag className="h-4 w-4" />
+                      Đăng ký bán hàng
+                    </Link>
+                  </MenuItem>
+                  <MenuItem>
+                    <Link
+                      to="/kyc"
+                      className={cn(
+                        'flex w-full items-center gap-2 px-4 py-2.5 text-sm transition-colors',
+                        isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-stone-600 hover:bg-stone-50'
+                      )}
+                    >
+                      <HiOutlineIdentification className="h-4 w-4" />
+                      Xác minh danh tính (KYC)
+                    </Link>
+                  </MenuItem>
+                  <MenuItem>
                     <button className={cn(
                       'flex w-full items-center gap-2 px-4 py-2.5 text-sm transition-colors',
                       isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-stone-600 hover:bg-stone-50'
@@ -212,6 +237,18 @@ export default function Navbar() {
                       <HiOutlineHeart className="h-4 w-4" />
                       Yêu thích
                     </button>
+                  </MenuItem>
+                  <MenuItem>
+                    <Link
+                      to="/profile"
+                      className={cn(
+                        'flex w-full items-center gap-2 px-4 py-2.5 text-sm transition-colors',
+                        isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-stone-600 hover:bg-stone-50'
+                      )}
+                    >
+                      <HiOutlineUser className="h-4 w-4" />
+                      Tài khoản
+                    </Link>
                   </MenuItem>
                   <MenuItem>
                     <button className={cn(
@@ -310,6 +347,27 @@ export default function Navbar() {
                   <div className="px-4 py-2 text-sm text-stone-500 dark:text-slate-400">
                     Xin chào, <span className="font-semibold text-stone-900 dark:text-white">{user?.email}</span>
                   </div>
+                  <Link
+                    to="/seller/register"
+                    onClick={() => setMobileOpen(false)}
+                    className="rounded-lg px-4 py-3 text-left text-sm font-medium text-stone-700 hover:bg-stone-50 dark:text-slate-300 dark:hover:bg-slate-800"
+                  >
+                    Đăng ký bán hàng
+                  </Link>
+                  <Link
+                    to="/kyc"
+                    onClick={() => setMobileOpen(false)}
+                    className="rounded-lg px-4 py-3 text-left text-sm font-medium text-stone-700 hover:bg-stone-50 dark:text-slate-300 dark:hover:bg-slate-800"
+                  >
+                    Xác minh danh tính (KYC)
+                  </Link>
+                  <Link
+                    to="/profile"
+                    onClick={() => setMobileOpen(false)}
+                    className="rounded-lg px-4 py-3 text-left text-sm font-medium text-stone-700 hover:bg-stone-50 dark:text-slate-300 dark:hover:bg-slate-800"
+                  >
+                    Tài khoản
+                  </Link>
                   <button
                     onClick={handleLogout}
                     className="rounded-lg px-4 py-3 text-left text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-slate-800"

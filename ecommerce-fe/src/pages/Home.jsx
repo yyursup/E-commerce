@@ -15,43 +15,70 @@ const promoBannerImages = [
   'https://images.unsplash.com/photo-1624258919367-5dc28f5dc293?w=600&h=300&fit=crop',
 ]
 
-// Loading Skeleton
-const ProductSkeleton = () => {
-  const isDark = useThemeStore((s) => s.theme) === 'dark'
-  return (
-    <div className={cn("rounded-2xl border p-4", isDark ? "border-slate-800 bg-slate-900" : "border-stone-100 bg-white")}>
-      <div className={cn("aspect-square rounded-xl", isDark ? "bg-slate-800" : "bg-stone-200")} />
-      <div className={cn("mt-4 h-4 w-3/4 rounded-lg", isDark ? "bg-slate-800" : "bg-stone-200")} />
-      <div className={cn("mt-2 h-4 w-1/2 rounded-lg", isDark ? "bg-slate-800" : "bg-stone-200")} />
-    </div>
-  )
-}
-
 export default function Home() {
   const [promoModalOpen, setPromoModalOpen] = useState(false)
   const [quickViewProduct, setQuickViewProduct] = useState(null)
   const [welcomeModalOpen, setWelcomeModalOpen] = useState(false)
-  const isDark = useThemeStore((s) => s.theme) === 'dark'
-
-  // Products State
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const isDark = useThemeStore((s) => s.theme) === 'dark'
 
-  // Fetch Products
+  // Fetch products from API
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         setLoading(true)
-        const res = await productService.getAllProducts({ page: 0, size: 10 })
-        // Backend returns Page<ProductResponse>, content is in res.content
-        setProducts(res.content || [])
-      } catch (error) {
-        console.error('Failed to fetch products:', error)
-        toast.error('Không thể tải danh sách sản phẩm')
+        setError(null)
+        const response = await productService.getProducts({
+          page: 0,
+          size: 20,
+          sortBy: 'createdAt',
+          sortDir: 'desc',
+        })
+        
+        // Map API response to component format
+        const mappedProducts = response.content?.map((product) => {
+          // Get thumbnail image or first image
+          const thumbnailImage = product.images?.find(img => img.isThumbnail) || product.images?.[0]
+          const imageUrl = thumbnailImage?.imageUrl || 'https://images.unsplash.com/photo-1587523459887-e669248cf666?w=400&h=400&fit=crop'
+          
+          // Price is in VND, keep as is
+          const price = product.basePrice ? Number(product.basePrice) : 0
+          
+          // Determine badge based on status or other logic
+          let badge = null
+          if (product.status === 'PUBLISHED') {
+            // You can add logic here to determine badge
+            badge = 'Bestseller' // Default badge
+          }
+          
+          return {
+            id: product.id,
+            name: product.name,
+            price: price,
+            image: imageUrl,
+            badge: badge,
+            rating: 4.5, // Default rating, can be enhanced later
+            description: product.description,
+            basePrice: product.basePrice,
+            shopName: product.shopName,
+            categoryName: product.categoryName,
+            // Keep original product data for quick view
+            originalProduct: product,
+          }
+        }) || []
+        
+        setProducts(mappedProducts)
+      } catch (err) {
+        console.error('Error fetching products:', err)
+        setError(err.message || 'Không thể tải danh sách sản phẩm')
+        toast.error('Không thể tải danh sách sản phẩm. Vui lòng thử lại sau.')
       } finally {
         setLoading(false)
       }
     }
+
     fetchProducts()
   }, [])
 
@@ -71,8 +98,7 @@ export default function Home() {
 
   const handleQuickView = (product) => setQuickViewProduct(product)
   const handleAddToCart = (product) => {
-    // This handler handles the QuickView addToCart logic if needed
-    // The ProductCard handles its own addToCart via stick
+    toast.success(`${product.name} đã thêm vào giỏ (demo)`)
     setQuickViewProduct(null)
   }
 
@@ -207,34 +233,51 @@ export default function Home() {
             AirPods, AirPods Pro, AirPods Max chính hãng. Bán chạy nhất.
           </p>
         </div>
-
         {loading ? (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {[...Array(6)].map((_, i) => <ProductSkeleton key={i} />)}
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-amber-500 border-r-transparent"></div>
+              <p className={cn('mt-4 text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
+                Đang tải sản phẩm...
+              </p>
+            </div>
           </div>
-        ) : products.length > 0 ? (
+        ) : error ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <p className={cn('text-sm', isDark ? 'text-red-400' : 'text-red-600')}>
+                {error}
+              </p>
+              <button
+                onClick={() => window.location.reload()}
+                className={cn(
+                  'mt-4 rounded-xl px-4 py-2 text-sm font-medium',
+                  isDark
+                    ? 'bg-slate-700 text-white hover:bg-slate-600'
+                    : 'bg-stone-200 text-stone-700 hover:bg-stone-300',
+                )}
+              >
+                Thử lại
+              </button>
+            </div>
+          </div>
+        ) : products.length === 0 ? (
+          <div className="flex items-center justify-center py-12">
+            <p className={cn('text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
+              Chưa có sản phẩm nào
+            </p>
+          </div>
+        ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {products.map((product, i) => (
               <ProductCard
                 key={product.id}
-                product={product} // Pass full product data (including id, name, price, images)
+                product={product}
                 onQuickView={handleQuickView}
                 dataAos="fade-up"
                 dataAosDelay={i % 3 === 0 ? 0 : (i % 3) * 100}
               />
             ))}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className={cn("mb-4 rounded-full p-4", isDark ? "bg-slate-800" : "bg-stone-100")}>
-              <svg className={cn("h-8 w-8", isDark ? "text-slate-400" : "text-stone-400")} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-              </svg>
-            </div>
-            <h3 className={cn("text-lg font-medium", isDark ? "text-white" : "text-stone-900")}>Chưa có sản phẩm nào</h3>
-            <p className={cn("mt-1 max-w-sm text-sm", isDark ? "text-slate-400" : "text-stone-500")}>
-              Hiện tại cửa hàng chưa có sản phẩm nào. Vui lòng quay lại sau.
-            </p>
           </div>
         )}
       </section>

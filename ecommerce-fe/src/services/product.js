@@ -1,17 +1,25 @@
-import api from '../lib/axios'
+import api from '../lib/axios';
+
+const PRODUCT_BASE = '/api/v1/product';
 
 const productService = {
-    getAllProducts: async (params) => {
-        // Endpoint based on ProductController: /api/v1/product
-        // Query params: page, size, etc.
-        const response = await api.get('/api/v1/product', { params })
-        return response.data
-    },
+  getProducts: async (params = {}) => {
+    try {
+      const response = await api.get(PRODUCT_BASE, { params });
+      return response.data;
+    } catch (error) {
+      throw error.response ? error.response.data : error;
+    }
+  },
 
-    getProductById: async (id) => {
-        const response = await api.get(`/api/v1/product/${id}`)
-        return response.data
-    },
-}
+  getProductById: async (productId) => {
+    try {
+      const response = await api.get(`${PRODUCT_BASE}/${productId}`);
+      return response.data;
+    } catch (error) {
+      throw error.response ? error.response.data : error;
+    }
+  },
+};
 
-export default productService
+export default productService;

@@ -10,6 +10,9 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.util.List;
 
 @Service
@@ -19,9 +22,11 @@ public class GHNClientImpl implements GHNClient {
 
     private final RestClient ghnRestClient;
     private final GHNConfig cfg;
+    private final ObjectMapper objectMapper;
 
     @Override
     public GHNCalculateFeeResponse calculateFee(GHNCalculateFeeRequest request) {
+
         requireTokenAndShop();
 
         GHNCommonResponse<GHNCalculateFeeResponse> res = ghnRestClient.post()
@@ -34,7 +39,6 @@ public class GHNClientImpl implements GHNClient {
 
         return unwrap(res, "calculateFee");
     }
-
     @Override
     public GHNCreateOrderResponse createOrder(GHNCreateOrderRequest request) {
         requireTokenAndShop();
@@ -44,8 +48,7 @@ public class GHNClientImpl implements GHNClient {
                 .header("ShopId", String.valueOf(cfg.getShopId()))
                 .body(request)
                 .retrieve()
-                .body(new ParameterizedTypeReference<GHNCommonResponse<GHNCreateOrderResponse>>() {
-                });
+                .body(new ParameterizedTypeReference<GHNCommonResponse<GHNCreateOrderResponse>>() {});
 
         return unwrap(res, "createOrder");
     }

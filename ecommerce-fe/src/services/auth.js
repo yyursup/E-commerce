@@ -4,9 +4,8 @@ const authService = {
     register: async (data) => {
         try {
             // Backend expects: username, password, email, phoneNumber
-            // Frontend form data maps nicely, but ensures fields match AccountCreateRequest
             const response = await api.post('/api/v1/auth/register', {
-                username: data.name, // Mapping 'name' from form to 'username' for backend
+                username: data.username,
                 email: data.email,
                 password: data.password,
                 phoneNumber: data.phoneNumber,

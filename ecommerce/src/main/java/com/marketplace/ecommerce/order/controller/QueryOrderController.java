@@ -4,7 +4,7 @@ import com.marketplace.ecommerce.common.CurrentUserInfo;
 import com.marketplace.ecommerce.config.CurrentUser;
 import com.marketplace.ecommerce.order.dto.response.OrderResponse;
 import com.marketplace.ecommerce.order.service.QueryOrderService;
-import com.marketplace.ecommerce.shipping.valueObjects.OrderStatus;
+import com.marketplace.ecommerce.order.valueObjects.OrderStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;

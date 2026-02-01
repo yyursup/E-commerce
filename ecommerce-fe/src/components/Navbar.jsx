@@ -18,6 +18,7 @@ import {
 import { cn } from '../lib/cn'
 import { useThemeStore } from '../store/useThemeStore'
 import { useAuthStore } from '../store/useAuthStore'
+import { useCartStore } from '../store/useCartStore'
 
 const navLinks = [
   { to: '/', label: 'Trang chủ' },
@@ -31,6 +32,8 @@ export default function Navbar() {
   const isDark = theme === 'dark'
 
   const { user, isAuthenticated, logout } = useAuthStore()
+  const items = useCartStore((s) => s.items) || []
+  const totalItems = items.reduce((acc, item) => acc + item.quantity, 0)
   const navigate = useNavigate()
 
   const handleLogout = () => {
@@ -92,6 +95,24 @@ export default function Navbar() {
 
         {/* Right: theme + dropdown + mobile menu */}
         <div className="flex items-center gap-2">
+          {/* Cart Button */}
+          <Link
+            to="/cart"
+            className={cn(
+              'group relative flex h-9 w-9 items-center justify-center rounded-xl transition-colors',
+              isDark
+                ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white'
+                : 'bg-stone-100 text-stone-600 hover:bg-stone-200 hover:text-stone-900',
+            )}
+          >
+            <HiOutlineShoppingBag className="h-5 w-5" />
+            {totalItems > 0 && (
+              <span className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-white shadow-sm ring-2 ring-white dark:ring-slate-900">
+                {totalItems}
+              </span>
+            )}
+          </Link>
+
           {/* Theme toggle */}
           <button
             onClick={toggleTheme}

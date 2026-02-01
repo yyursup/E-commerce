@@ -6,6 +6,7 @@ import ProductDetail from './pages/product-detail/ProductDetail'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Verify from './pages/Verify'
+import Cart from './pages/Cart'
 import SellerRegister from './pages/SellerRegister'
 import Kyc from './pages/Kyc'
 import Profile from './pages/Profile'
@@ -20,6 +21,7 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/verify" element={<Verify />} />
+        <Route path="/cart" element={<Cart />} />
         <Route path="/seller/register" element={<SellerRegister />} />
         <Route path="/kyc" element={<Kyc />} />
         <Route path="/profile" element={<Profile />} />

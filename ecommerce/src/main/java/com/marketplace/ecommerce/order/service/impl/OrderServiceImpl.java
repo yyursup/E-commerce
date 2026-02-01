@@ -16,6 +16,7 @@ import com.marketplace.ecommerce.order.entity.OrderItem;
 import com.marketplace.ecommerce.order.repository.OrderItemsRepository;
 import com.marketplace.ecommerce.order.repository.OrderRepository;
 import com.marketplace.ecommerce.order.service.OrderService;
+import com.marketplace.ecommerce.platform.service.PlatformSettingService;
 import com.marketplace.ecommerce.product.entity.Product;
 import com.marketplace.ecommerce.product.repository.ProductRepository;
 import com.marketplace.ecommerce.shipping.dto.request.GHNCreateOrderRequest;
@@ -33,6 +34,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -53,7 +55,7 @@ public class OrderServiceImpl implements OrderService {
     private final GHNClient ghnClient;
     private final UserAddressRepository userAddressRepository;
     private final ShippingService shippingService;
-
+    private final PlatformSettingService platformSettingService;
 
     @Override
     @Transactional
@@ -277,6 +279,10 @@ public class OrderServiceImpl implements OrderService {
         order.setNotes(request.getNotes());
         order.setSubtotal(subtotal);
         order.setShippingFee(shippingFee);
+        BigDecimal commissionRate = platformSettingService.getCommissionRate();
+        BigDecimal platformCommission = subtotal.multiply(commissionRate).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+        order.setPlatformCommission(platformCommission);
+        order.setCommissionRate(commissionRate.doubleValue());
         order.calculateTotal();
 
         order = orderRepository.save(order);

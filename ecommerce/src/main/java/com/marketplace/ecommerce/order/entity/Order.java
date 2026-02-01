@@ -84,6 +84,12 @@ public class Order {
     @Column(name = "ghn_order_code", length = 100)
     private String ghnOrderCode;
 
+    @Column(name = "platform_commission", precision = 12, scale = 2)
+    private BigDecimal platformCommission = BigDecimal.ZERO;
+
+    @Column(name = "commission_rate")
+    private Double commissionRate;
+
     @Column(name = "received_by_buyer", nullable = false)
     private boolean receivedByBuyer = false;
 

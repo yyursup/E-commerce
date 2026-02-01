@@ -50,9 +50,7 @@ public class KycController {
                 sessionId,
                 u.getAccountId(),
                 type,
-                file,
-                title,
-                description
+                file
         );
 
         return Map.of(

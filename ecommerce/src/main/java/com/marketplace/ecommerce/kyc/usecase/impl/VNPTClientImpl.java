@@ -27,7 +27,7 @@ public class VNPTClientImpl implements VNPTClient {
     private final EKycConfig cfg;
 
     @Override
-    public UploadResponse addFile(MultipartFile file, String title, String description) {
+    public UploadResponse addFile(MultipartFile file) {
         try {
             if (file == null || file.isEmpty()) {
                 throw new IllegalArgumentException("file is empty");
@@ -44,9 +44,6 @@ public class VNPTClientImpl implements VNPTClient {
             };
 
             form.add("file", filePart);
-            if (title != null && !title.isBlank()) form.add("title", title);
-            if (description != null && !description.isBlank()) form.add("description", description);
-
             UploadResponse res = vnptRestClient.post()
                     .uri("/file-service/v1/addFile")
                     .contentType(MediaType.MULTIPART_FORM_DATA)

@@ -13,8 +13,8 @@ public class UploadFileServiceImpl implements UploadFileService {
     private final VNPTClient vnpt;
 
     @Override
-    public String upload(MultipartFile file, String title, String description) {
-        UploadResponse up = vnpt.addFile(file, title, description);
+    public String upload(MultipartFile file) {
+        UploadResponse up = vnpt.addFile(file);
         String hash = up != null && up.getObject() != null ? up.getObject().getHash() : null;
         if (hash == null || hash.isBlank()) {
             throw new IllegalStateException("VNPT addFile returned empty hash");

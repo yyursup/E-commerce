@@ -5,7 +5,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 public interface VNPTClient {
 
-    UploadResponse addFile(MultipartFile file, String title, String description);
+    UploadResponse addFile(MultipartFile file);
 
     CardLivenessResponse cardLiveness(String imgHash, String session);
 

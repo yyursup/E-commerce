@@ -34,12 +34,10 @@ public class KycOrchestratorServiceImpl implements KycOrchestratorService {
     public Map<String, Object> uploadFileAndAttach(
             UUID sessionId,
             UUID accountId,
-            MultipartFile file,
-            String title,
-            String description
+            MultipartFile file
     ) {
         // 1) upload -> hash VNPT
-        String hash = uploadService.upload(file, title, description);
+        String hash = uploadService.upload(file);
         if (hash == null || hash.isBlank()) {
             return Map.of(
                     "ok", false,

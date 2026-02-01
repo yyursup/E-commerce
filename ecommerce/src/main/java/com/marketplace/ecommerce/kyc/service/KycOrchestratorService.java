@@ -9,8 +9,6 @@ public interface KycOrchestratorService {
     Map<String, Object> uploadFileAndAttach(
             UUID sessionId,
             UUID accountId,
-            MultipartFile file,
-            String title,
-            String description
+            MultipartFile file
     );
 }

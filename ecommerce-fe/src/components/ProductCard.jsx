@@ -1,12 +1,15 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
+import toast from 'react-hot-toast'
 import { HiOutlineHeart, HiOutlineShoppingCart, HiStar } from 'react-icons/hi'
 import { useThemeStore } from '../store/useThemeStore'
+import { useCartStore } from '../store/useCartStore'
 import { cn } from '../lib/cn'
 
 export default function ProductCard({ product, onQuickView, dataAos, dataAosDelay }) {
   const [hover, setHover] = useState(false)
   const isDark = useThemeStore((s) => s.theme) === 'dark'
+  const addToCart = useCartStore((s) => s.addToCart)
   const { name, price, oldPrice, image, badge, rating } = product
 
   return (
@@ -64,11 +67,23 @@ export default function ProductCard({ product, onQuickView, dataAos, dataAosDela
         >
           <button
             type="button"
-            onClick={() => onQuickView?.(product)}
+            onClick={() => {
+              try {
+                if (addToCart) {
+                  addToCart(product)
+                  toast.success(`Đã thêm ${name} vào giỏ hàng`)
+                } else {
+                  console.error('addToCart function is missing')
+                }
+              } catch (error) {
+                console.error('AddToCart Error:', error)
+                toast.error('Có lỗi xảy ra khi thêm vào giỏ')
+              }
+            }}
             className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-white/95 py-2.5 text-sm font-medium text-stone-800 shadow-lg backdrop-blur hover:bg-white"
           >
             <HiOutlineShoppingCart className="h-4 w-4" />
-            Xem nhanh
+            Thêm vào giỏ
           </button>
           <button
             type="button"

@@ -42,8 +42,6 @@ public class KycController {
             @PathVariable("id") UUID sessionId,
             @RequestParam("type") KycDocumentType type,
             @RequestParam("file") MultipartFile file,
-            @RequestParam(value = "title", required = false) String title,
-            @RequestParam(value = "description", required = false) String description,
             @CurrentUser CurrentUserInfo u
     ) {
         String vnptHash = orchestrator.uploadToVnptAndAttach(

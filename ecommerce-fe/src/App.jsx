@@ -1,6 +1,8 @@
 import { Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout'
 import Home from './pages/Home'
+import Products from './pages/products/Products'
+import ProductDetail from './pages/product-detail/ProductDetail'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Verify from './pages/Verify'
@@ -12,6 +14,8 @@ export default function App() {
     <Routes>
       <Route element={<Layout />}>
         <Route path="/" element={<Home />} />
+        <Route path="/products" element={<Products />} />
+        <Route path="/products/:productId" element={<ProductDetail />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/verify" element={<Verify />} />

@@ -85,13 +85,13 @@ export default function Register() {
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <div>
               <label
-                htmlFor="name"
+                htmlFor="username"
                 className={cn(
                   'mb-1.5 block text-sm font-medium',
                   isDark ? 'text-slate-300' : 'text-stone-700',
                 )}
               >
-                Họ tên
+                Tên đăng nhập
               </label>
               <div className="relative">
                 <HiOutlineUser
@@ -101,27 +101,37 @@ export default function Register() {
                   )}
                 />
                 <input
-                  id="name"
+                  id="username"
                   type="text"
-                  autoComplete="name"
-                  placeholder="Nguyễn Văn A"
+                  autoComplete="username"
+                  placeholder="username"
                   className={cn(
                     'w-full rounded-xl border py-3 pl-10 pr-4 text-sm outline-none transition placeholder:opacity-60',
                     isDark
                       ? 'border-slate-600 bg-slate-800/50 text-white placeholder:text-slate-500 focus:border-amber-500/60 focus:ring-2 focus:ring-amber-500/20'
                       : 'border-stone-300 bg-stone-50/80 text-stone-900 placeholder:text-stone-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20',
-                    errors.name && 'border-red-500/70 focus:border-red-500 focus:ring-red-500/20',
+                    errors.username && 'border-red-500/70 focus:border-red-500 focus:ring-red-500/20',
                   )}
-                  {...register('name', {
-                    required: 'Vui lòng nhập họ tên',
-                    minLength: { value: 3, message: 'Ít nhất 3 ký tự' },
-                    maxLength: { value: 50, message: 'Tối đa 50 ký tự' },
+                  {...register('username', {
+                    required: 'Vui lòng nhập tên đăng nhập',
+                    minLength: { 
+                      value: 3, 
+                      message: 'Tên đăng nhập phải có ít nhất 3 ký tự' 
+                    },
+                    maxLength: { 
+                      value: 50, 
+                      message: 'Tên đăng nhập tối đa 50 ký tự' 
+                    },
+                    pattern: {
+                      value: /^[a-zA-Z0-9_-]+$/,
+                      message: 'Tên đăng nhập chỉ được chứa chữ cái, số, dấu gạch dưới và dấu gạch ngang',
+                    },
                   })}
                 />
               </div>
-              {errors.name && (
+              {errors.username && (
                 <p className="mt-1.5 text-sm text-red-500">
-                  {errors.name.message}
+                  {errors.username.message}
                 </p>
               )}
             </div>

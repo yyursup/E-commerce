@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -12,9 +12,11 @@ import {
   HiOutlineMenu,
   HiOutlineX,
   HiChevronDown,
+  HiOutlineLogout,
 } from 'react-icons/hi'
 import { cn } from '../lib/cn'
 import { useThemeStore } from '../store/useThemeStore'
+import { useAuthStore } from '../store/useAuthStore'
 
 const navLinks = [
   { to: '/', label: 'Trang chủ' },
@@ -22,17 +24,19 @@ const navLinks = [
   { to: '/#deals', label: 'Ưu đãi' },
 ]
 
-const accountItems = [
-  { to: '/login', icon: HiOutlineUser, label: 'Đăng nhập' },
-  { to: '/register', icon: HiOutlineUser, label: 'Đăng ký' },
-  { icon: HiOutlineHeart, label: 'Yêu thích' },
-  { icon: HiOutlineCog, label: 'Cài đặt' },
-]
-
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const { theme, toggleTheme } = useThemeStore()
   const isDark = theme === 'dark'
+
+  const { user, isAuthenticated, logout } = useAuthStore()
+  const navigate = useNavigate()
+
+  const handleLogout = () => {
+    logout()
+    setMobileOpen(false)
+    navigate('/login')
+  }
 
   return (
     <header
@@ -87,7 +91,7 @@ export default function Navbar() {
 
         {/* Right: theme + dropdown + mobile menu */}
         <div className="flex items-center gap-2">
-          {/* Theme toggle – slide trái ↔ phải */}
+          {/* Theme toggle */}
           <button
             onClick={toggleTheme}
             aria-label="Toggle theme"
@@ -98,7 +102,6 @@ export default function Navbar() {
                 : 'bg-stone-200',
             )}
           >
-            {/* Nút trượt: light = trái, dark = phải */}
             <motion.div
               className="absolute left-1 h-6 w-6 rounded-full bg-amber-500 shadow-md"
               animate={{ x: isDark ? 24 : 0 }}
@@ -128,55 +131,91 @@ export default function Navbar() {
                   : 'text-stone-600 hover:bg-stone-100',
               )}
             >
-              Tài khoản
+              {isAuthenticated ? (
+                <span className="max-w-[150px] truncate">{user?.email || 'Tài khoản'}</span>
+              ) : (
+                'Tài khoản'
+              )}
               <HiChevronDown className="h-4 w-4" />
             </MenuButton>
             <MenuItems
               className={cn(
-                'absolute right-0 mt-2 w-52 origin-top-right rounded-xl border py-1 shadow-xl outline-none',
+                'absolute right-0 mt-2 w-56 origin-top-right rounded-xl border py-1 shadow-xl outline-none',
                 isDark
                   ? 'border-slate-700 bg-slate-800'
                   : 'border-stone-200 bg-white',
               )}
             >
-              {accountItems.map((item) => {
-                const Icon = item.icon
-                const content = (
-                  <span className="flex items-center gap-2">
-                    <Icon className="h-4 w-4" />
-                    {item.label}
-                  </span>
-                )
-                return (
-                  <MenuItem key={item.label}>
-                    {item.to ? (
-                      <Link
-                        to={item.to}
-                        className={cn(
-                          'flex w-full px-4 py-2.5 text-sm transition-colors',
-                          isDark
-                            ? 'text-slate-300 hover:bg-slate-700 hover:text-white'
-                            : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900',
-                        )}
-                      >
-                        {content}
-                      </Link>
-                    ) : (
-                      <button
-                        type="button"
-                        className={cn(
-                          'flex w-full px-4 py-2.5 text-left text-sm transition-colors',
-                          isDark
-                            ? 'text-slate-300 hover:bg-slate-700 hover:text-white'
-                            : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900',
-                        )}
-                      >
-                        {content}
-                      </button>
-                    )}
+              {!isAuthenticated ? (
+                <>
+                  <MenuItem>
+                    <Link
+                      to="/login"
+                      className={cn(
+                        'flex w-full items-center gap-2 px-4 py-2.5 text-sm transition-colors',
+                        isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-stone-600 hover:bg-stone-50'
+                      )}
+                    >
+                      <HiOutlineUser className="h-4 w-4" />
+                      Đăng nhập
+                    </Link>
                   </MenuItem>
-                )
-              })}
+                  <MenuItem>
+                    <Link
+                      to="/register"
+                      className={cn(
+                        'flex w-full items-center gap-2 px-4 py-2.5 text-sm transition-colors',
+                        isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-stone-600 hover:bg-stone-50'
+                      )}
+                    >
+                      <HiOutlineUser className="h-4 w-4" />
+                      Đăng ký
+                    </Link>
+                  </MenuItem>
+                </>
+              ) : (
+                <>
+                  <div className="px-4 py-2 border-b border-stone-100 dark:border-slate-700/50">
+                    <p className={cn("text-xs font-medium", isDark ? "text-slate-400" : "text-stone-500")}>
+                      Xin chào,
+                    </p>
+                    <p className={cn("truncate text-sm font-semibold", isDark ? "text-white" : "text-stone-900")}>
+                      {user?.email}
+                    </p>
+                  </div>
+                  <MenuItem>
+                    <button className={cn(
+                      'flex w-full items-center gap-2 px-4 py-2.5 text-sm transition-colors',
+                      isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-stone-600 hover:bg-stone-50'
+                    )}>
+                      <HiOutlineHeart className="h-4 w-4" />
+                      Yêu thích
+                    </button>
+                  </MenuItem>
+                  <MenuItem>
+                    <button className={cn(
+                      'flex w-full items-center gap-2 px-4 py-2.5 text-sm transition-colors',
+                      isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-stone-600 hover:bg-stone-50'
+                    )}>
+                      <HiOutlineCog className="h-4 w-4" />
+                      Cài đặt
+                    </button>
+                  </MenuItem>
+                  <div className="my-1 border-t border-stone-100 dark:border-slate-700/50" />
+                  <MenuItem>
+                    <button
+                      onClick={handleLogout}
+                      className={cn(
+                        'flex w-full items-center gap-2 px-4 py-2.5 text-sm text-red-500 transition-colors',
+                        isDark ? 'hover:bg-slate-700' : 'hover:bg-red-50'
+                      )}
+                    >
+                      <HiOutlineLogout className="h-4 w-4" />
+                      Đăng xuất
+                    </button>
+                  </MenuItem>
+                </>
+              )}
             </MenuItems>
           </Menu>
 
@@ -227,20 +266,37 @@ export default function Navbar() {
                 </Link>
               ))}
               <div className="my-2 border-t border-stone-200 dark:border-slate-700" />
-              <Link
-                to="/login"
-                onClick={() => setMobileOpen(false)}
-                className="rounded-lg px-4 py-3 text-sm font-medium text-amber-600 dark:text-amber-400"
-              >
-                Đăng nhập
-              </Link>
-              <Link
-                to="/register"
-                onClick={() => setMobileOpen(false)}
-                className="rounded-lg px-4 py-3 text-sm font-medium text-amber-600 dark:text-amber-400"
-              >
-                Đăng ký
-              </Link>
+
+              {!isAuthenticated ? (
+                <>
+                  <Link
+                    to="/login"
+                    onClick={() => setMobileOpen(false)}
+                    className="rounded-lg px-4 py-3 text-sm font-medium text-amber-600 dark:text-amber-400"
+                  >
+                    Đăng nhập
+                  </Link>
+                  <Link
+                    to="/register"
+                    onClick={() => setMobileOpen(false)}
+                    className="rounded-lg px-4 py-3 text-sm font-medium text-amber-600 dark:text-amber-400"
+                  >
+                    Đăng ký
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <div className="px-4 py-2 text-sm text-stone-500 dark:text-slate-400">
+                    Xin chào, <span className="font-semibold text-stone-900 dark:text-white">{user?.email}</span>
+                  </div>
+                  <button
+                    onClick={handleLogout}
+                    className="rounded-lg px-4 py-3 text-left text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-slate-800"
+                  >
+                    Đăng xuất
+                  </button>
+                </>
+              )}
             </div>
           </motion.div>
         )}

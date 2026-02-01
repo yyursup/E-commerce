@@ -13,6 +13,7 @@ import {
   HiOutlineX,
   HiChevronDown,
   HiOutlineLogout,
+  HiOutlineIdentification,
 } from 'react-icons/hi'
 import { cn } from '../lib/cn'
 import { useThemeStore } from '../store/useThemeStore'
@@ -184,6 +185,30 @@ export default function Navbar() {
                     </p>
                   </div>
                   <MenuItem>
+                    <Link
+                      to="/seller/register"
+                      className={cn(
+                        'flex w-full items-center gap-2 px-4 py-2.5 text-sm transition-colors',
+                        isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-stone-600 hover:bg-stone-50'
+                      )}
+                    >
+                      <HiOutlineShoppingBag className="h-4 w-4" />
+                      Đăng ký bán hàng
+                    </Link>
+                  </MenuItem>
+                  <MenuItem>
+                    <Link
+                      to="/kyc"
+                      className={cn(
+                        'flex w-full items-center gap-2 px-4 py-2.5 text-sm transition-colors',
+                        isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-stone-600 hover:bg-stone-50'
+                      )}
+                    >
+                      <HiOutlineIdentification className="h-4 w-4" />
+                      Xác minh danh tính (KYC)
+                    </Link>
+                  </MenuItem>
+                  <MenuItem>
                     <button className={cn(
                       'flex w-full items-center gap-2 px-4 py-2.5 text-sm transition-colors',
                       isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-stone-600 hover:bg-stone-50'
@@ -289,6 +314,20 @@ export default function Navbar() {
                   <div className="px-4 py-2 text-sm text-stone-500 dark:text-slate-400">
                     Xin chào, <span className="font-semibold text-stone-900 dark:text-white">{user?.email}</span>
                   </div>
+                  <Link
+                    to="/seller/register"
+                    onClick={() => setMobileOpen(false)}
+                    className="rounded-lg px-4 py-3 text-left text-sm font-medium text-stone-700 hover:bg-stone-50 dark:text-slate-300 dark:hover:bg-slate-800"
+                  >
+                    Đăng ký bán hàng
+                  </Link>
+                  <Link
+                    to="/kyc"
+                    onClick={() => setMobileOpen(false)}
+                    className="rounded-lg px-4 py-3 text-left text-sm font-medium text-stone-700 hover:bg-stone-50 dark:text-slate-300 dark:hover:bg-slate-800"
+                  >
+                    Xác minh danh tính (KYC)
+                  </Link>
                   <button
                     onClick={handleLogout}
                     className="rounded-lg px-4 py-3 text-left text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-slate-800"

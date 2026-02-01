@@ -1,10 +1,11 @@
+import { Link } from 'react-router-dom'
 import { HiOutlineShoppingCart, HiStar } from 'react-icons/hi'
 import { useThemeStore } from '../store/useThemeStore'
 import { cn } from '../lib/cn'
 
 export default function ProductQuickView({ product, onAddToCart }) {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
-  const { name, price, oldPrice, image, rating } = product
+  const { name, price, oldPrice, image, rating, id } = product
 
   return (
     <div className="flex flex-col gap-6 sm:flex-row">
@@ -30,21 +31,23 @@ export default function ProductQuickView({ product, onAddToCart }) {
             {rating} đánh giá
           </span>
         </div>
-        <h3
-          className={cn(
-            'text-lg font-semibold',
-            isDark ? 'text-white' : 'text-stone-900',
-          )}
-        >
-          {name}
-        </h3>
+        <Link to={`/products/${id}`}>
+          <h3
+            className={cn(
+              'text-lg font-semibold transition hover:text-amber-600 dark:hover:text-amber-400',
+              isDark ? 'text-white' : 'text-stone-900',
+            )}
+          >
+            {name}
+          </h3>
+        </Link>
         <div className="mt-2 flex items-baseline gap-2">
           <span className="text-xl font-bold text-amber-600 dark:text-amber-400">
-            ${price.toFixed(2)}
+            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price)}
           </span>
           {oldPrice && (
             <span className="text-sm text-stone-400 line-through dark:text-slate-500">
-              ${oldPrice.toFixed(2)}
+              {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(oldPrice)}
             </span>
           )}
         </div>
@@ -54,7 +57,7 @@ export default function ProductQuickView({ product, onAddToCart }) {
             isDark ? 'text-slate-400' : 'text-stone-600',
           )}
         >
-          Thêm vào giỏ để thanh toán. Miễn phí giao hàng đơn từ $50. AirPods & tai nghe Apple chính hãng.
+          Thêm vào giỏ để thanh toán. Miễn phí giao hàng đơn từ 1.000.000đ. AirPods & tai nghe Apple chính hãng.
         </p>
         <button
           type="button"

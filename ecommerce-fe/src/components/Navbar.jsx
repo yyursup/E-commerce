@@ -21,7 +21,7 @@ import { useAuthStore } from '../store/useAuthStore'
 
 const navLinks = [
   { to: '/', label: 'Trang chủ' },
-  { to: '/#products', label: 'AirPods & Tai nghe' },
+  { to: '/products', label: 'AirPods & Tai nghe' },
   { to: '/#deals', label: 'Ưu đãi' },
 ]
 

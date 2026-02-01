@@ -72,7 +72,7 @@ export default function Hero() {
               className="mt-8 flex flex-wrap items-center justify-center gap-4 lg:justify-start"
             >
               <Link
-                to="/#products"
+                to="/products"
                 className="group inline-flex items-center gap-2 rounded-xl bg-amber-500 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-amber-500/25 transition hover:bg-amber-600 active:scale-[0.98]"
               >
                 Xem AirPods & Tai nghe

@@ -6,9 +6,9 @@ import ProductCard from '../components/ProductCard'
 import Modal, { PromoModalContent } from '../components/Modal'
 import ProductQuickView from '../components/ProductQuickView'
 import Footer from '../components/Footer'
-import { products } from '../data/products'
 import { useThemeStore } from '../store/useThemeStore'
 import { cn } from '../lib/cn'
+import productService from '../services/product'
 
 const promoBannerImages = [
   'https://images.unsplash.com/photo-1587523459887-e669248cf666?w=600&h=300&fit=crop',
@@ -19,7 +19,68 @@ export default function Home() {
   const [promoModalOpen, setPromoModalOpen] = useState(false)
   const [quickViewProduct, setQuickViewProduct] = useState(null)
   const [welcomeModalOpen, setWelcomeModalOpen] = useState(false)
+  const [products, setProducts] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const isDark = useThemeStore((s) => s.theme) === 'dark'
+
+  // Fetch products from API
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        const response = await productService.getProducts({
+          page: 0,
+          size: 20,
+          sortBy: 'createdAt',
+          sortDir: 'desc',
+        })
+        
+        // Map API response to component format
+        const mappedProducts = response.content?.map((product) => {
+          // Get thumbnail image or first image
+          const thumbnailImage = product.images?.find(img => img.isThumbnail) || product.images?.[0]
+          const imageUrl = thumbnailImage?.imageUrl || 'https://images.unsplash.com/photo-1587523459887-e669248cf666?w=400&h=400&fit=crop'
+          
+          // Price is in VND, keep as is
+          const price = product.basePrice ? Number(product.basePrice) : 0
+          
+          // Determine badge based on status or other logic
+          let badge = null
+          if (product.status === 'PUBLISHED') {
+            // You can add logic here to determine badge
+            badge = 'Bestseller' // Default badge
+          }
+          
+          return {
+            id: product.id,
+            name: product.name,
+            price: price,
+            image: imageUrl,
+            badge: badge,
+            rating: 4.5, // Default rating, can be enhanced later
+            description: product.description,
+            basePrice: product.basePrice,
+            shopName: product.shopName,
+            categoryName: product.categoryName,
+            // Keep original product data for quick view
+            originalProduct: product,
+          }
+        }) || []
+        
+        setProducts(mappedProducts)
+      } catch (err) {
+        console.error('Error fetching products:', err)
+        setError(err.message || 'Không thể tải danh sách sản phẩm')
+        toast.error('Không thể tải danh sách sản phẩm. Vui lòng thử lại sau.')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchProducts()
+  }, [])
 
   // Show welcome/promo popup once per session
   useEffect(() => {
@@ -172,17 +233,53 @@ export default function Home() {
             AirPods, AirPods Pro, AirPods Max chính hãng. Bán chạy nhất.
           </p>
         </div>
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {products.map((product, i) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              onQuickView={handleQuickView}
-              dataAos="fade-up"
-              dataAosDelay={i % 3 === 0 ? 0 : (i % 3) * 100}
-            />
-          ))}
-        </div>
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-amber-500 border-r-transparent"></div>
+              <p className={cn('mt-4 text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
+                Đang tải sản phẩm...
+              </p>
+            </div>
+          </div>
+        ) : error ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <p className={cn('text-sm', isDark ? 'text-red-400' : 'text-red-600')}>
+                {error}
+              </p>
+              <button
+                onClick={() => window.location.reload()}
+                className={cn(
+                  'mt-4 rounded-xl px-4 py-2 text-sm font-medium',
+                  isDark
+                    ? 'bg-slate-700 text-white hover:bg-slate-600'
+                    : 'bg-stone-200 text-stone-700 hover:bg-stone-300',
+                )}
+              >
+                Thử lại
+              </button>
+            </div>
+          </div>
+        ) : products.length === 0 ? (
+          <div className="flex items-center justify-center py-12">
+            <p className={cn('text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
+              Chưa có sản phẩm nào
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {products.map((product, i) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                onQuickView={handleQuickView}
+                dataAos="fade-up"
+                dataAosDelay={i % 3 === 0 ? 0 : (i % 3) * 100}
+              />
+            ))}
+          </div>
+        )}
       </section>
 
       <Footer />

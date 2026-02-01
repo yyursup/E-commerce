@@ -5,13 +5,16 @@ import toast from 'react-hot-toast'
 import { HiOutlineUser, HiOutlineLockClosed } from 'react-icons/hi'
 import { useThemeStore } from '../store/useThemeStore'
 import { useAuthStore } from '../store/useAuthStore'
+import { useCartStore } from '../store/useCartStore'
 import { cn } from '../lib/cn'
 import authService from '../services/auth'
+import cartService from '../services/cart'
 
 export default function Login() {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
   const navigate = useNavigate()
   const login = useAuthStore((s) => s.login)
+  const { updateCartCount } = useCartStore()
 
   const {
     register,
@@ -24,6 +27,16 @@ export default function Login() {
       const res = await authService.login(data)
       const userPayload = { email: res.email, role: res.role }
       login(res.token, userPayload)
+
+      // Fetch cart after login to update count
+      try {
+        const cartData = await cartService.getCart()
+        updateCartCount(cartData)
+      } catch (cartError) {
+        // Cart might be empty, that's okay
+        console.log('Cart fetch error (might be empty):', cartError)
+        updateCartCount(null)
+      }
 
       toast.success(`Chào mừng trở lại, ${res.email}!`)
       navigate('/')

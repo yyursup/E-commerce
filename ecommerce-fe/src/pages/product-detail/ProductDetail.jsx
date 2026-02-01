@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import toast from 'react-hot-toast'
 import {
   HiOutlineShoppingCart,
@@ -11,11 +11,15 @@ import {
   HiOutlineCheckCircle,
   HiOutlineTruck,
   HiOutlineShieldCheck,
+  HiCheck,
 } from 'react-icons/hi'
 import ProductImageGallery from './components/ProductImageGallery'
 import { useThemeStore } from '../../store/useThemeStore'
+import { useAuthStore } from '../../store/useAuthStore'
+import { useCartStore } from '../../store/useCartStore'
 import { cn } from '../../lib/cn'
 import productService from '../../services/product'
+import cartService from '../../services/cart'
 
 export default function ProductDetail() {
   const { productId } = useParams()
@@ -26,6 +30,11 @@ export default function ProductDetail() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [quantity, setQuantity] = useState(1)
+  const [addingToCart, setAddingToCart] = useState(false)
+  const [showAddAnimation, setShowAddAnimation] = useState(false)
+  const { isAuthenticated } = useAuthStore()
+  const { updateCartCount, incrementCount } = useCartStore()
+  const addButtonRef = useRef(null)
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -48,9 +57,40 @@ export default function ProductDetail() {
     }
   }, [productId])
 
-  const handleAddToCart = () => {
-    // TODO: Implement add to cart functionality
-    toast.success(`${product.name} đã thêm vào giỏ hàng`)
+  const handleAddToCart = async () => {
+    if (!isAuthenticated) {
+      toast.error('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng')
+      navigate('/login')
+      return
+    }
+
+    if (!product || !product.id) {
+      toast.error('Thông tin sản phẩm không hợp lệ')
+      return
+    }
+
+    try {
+      setAddingToCart(true)
+      const cartResponse = await cartService.addToCart(product.id, quantity)
+      
+      // Update cart count in store
+      updateCartCount(cartResponse)
+      
+      // Show success animation
+      setShowAddAnimation(true)
+      toast.success(`Đã thêm ${quantity} ${product.name} vào giỏ hàng`)
+      
+      // Hide animation after 1.5s
+      setTimeout(() => {
+        setShowAddAnimation(false)
+      }, 1500)
+    } catch (error) {
+      console.error('Error adding to cart:', error)
+      const errorMessage = error?.message || error?.response?.data?.message || 'Không thể thêm sản phẩm vào giỏ hàng'
+      toast.error(errorMessage)
+    } finally {
+      setAddingToCart(false)
+    }
   }
 
   const handleBuyNow = () => {
@@ -310,16 +350,42 @@ export default function ProductDetail() {
             {/* Action Buttons */}
             <div className="flex flex-col gap-3 sm:flex-row">
               <button
+                ref={addButtonRef}
                 onClick={handleAddToCart}
+                disabled={addingToCart}
                 className={cn(
-                  'flex flex-1 items-center justify-center gap-2 rounded-xl px-6 py-3.5 font-semibold transition',
+                  'relative flex flex-1 items-center justify-center gap-2 rounded-xl px-6 py-3.5 font-semibold transition',
                   isDark
-                    ? 'bg-amber-500 text-white hover:bg-amber-600'
-                    : 'bg-amber-500 text-white hover:bg-amber-600',
+                    ? 'bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50'
+                    : 'bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50',
                 )}
               >
-                <HiOutlineShoppingCart className="h-5 w-5" />
-                Thêm vào giỏ hàng
+                <AnimatePresence mode="wait">
+                  {showAddAnimation ? (
+                    <motion.div
+                      key="check"
+                      initial={{ scale: 0, rotate: -180 }}
+                      animate={{ scale: 1, rotate: 0 }}
+                      exit={{ scale: 0, rotate: 180 }}
+                      transition={{ duration: 0.3 }}
+                      className="flex items-center gap-2"
+                    >
+                      <HiCheck className="h-5 w-5" />
+                      <span>Đã thêm</span>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="cart"
+                      initial={{ scale: 1 }}
+                      animate={{ scale: addingToCart ? 0.95 : 1 }}
+                      transition={{ duration: 0.2 }}
+                      className="flex items-center gap-2"
+                    >
+                      <HiOutlineShoppingCart className="h-5 w-5" />
+                      {addingToCart ? 'Đang thêm...' : 'Thêm vào giỏ hàng'}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </button>
               <button
                 onClick={handleBuyNow}

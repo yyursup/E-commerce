@@ -14,12 +14,10 @@ export default function AddressManager({ isDark }) {
     const [isAdding, setIsAdding] = useState(false);
     const [loading, setLoading] = useState(false);
 
-    // Location Data
     const [provinces, setProvinces] = useState([]);
     const [districts, setDistricts] = useState([]);
     const [wards, setWards] = useState([]);
 
-    // Form for add/edit
     const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm();
 
     const selectedProvinceId = watch('provinceId');
@@ -89,22 +87,15 @@ export default function AddressManager({ isDark }) {
         setEditingId(addr.id);
         setIsAdding(false);
 
-        // Map fields from Address Interface to Form
         setValue('receiverName', addr.receiverName);
         setValue('receiverPhone', addr.receiverPhone);
         setValue('addressLine', addr.addressLine);
         setValue('isDefault', addr.isDefault || false);
 
-        // Set location IDs if available
         if (addr.districtId) setValue('districtId', addr.districtId);
         if (addr.wardCode) setValue('wardCode', addr.wardCode);
 
-        // For province, simpler to rely on user re-selecting if not provided, 
-        // as we can't derive ProvinceID from DistrictID easily without a lookup.
-        // But if backend sends provinceId (optional in typical flows), set it.
-        // If not, the District dropdown might be empty until Province is picked. 
-        // Improvement: If we had a full address tree or provinceId in response, we'd set it.
-        // Assuming user might need to re-select province to edit location if ID is missing.
+
         if (addr.provinceId) setValue('provinceId', addr.provinceId);
     };
 

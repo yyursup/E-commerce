@@ -1,63 +1,41 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
 
-export const useCartStore = create(
-    persist(
-        (set, get) => ({
-            items: [],
+export const useCartStore = create((set, get) => ({
+    totalItems: 0,
+    cartId: null,
 
-            addToCart: (product) => {
-                const { items } = get()
-                const safeItems = items || []
-                const existingItem = safeItems.find((item) => item.id === product.id)
+    // Update cart count from backend response
+    updateCartCount: (cartResponse) => {
+        if (cartResponse) {
+            set({
+                totalItems: cartResponse.totalItems || 0,
+                cartId: cartResponse.id || null,
+            })
+        } else {
+            set({
+                totalItems: 0,
+                cartId: null,
+            })
+        }
+    },
 
-                if (existingItem) {
-                    set({
-                        items: safeItems.map((item) =>
-                            item.id === product.id
-                                ? { ...item, quantity: item.quantity + 1 }
-                                : item,
-                        ),
-                    })
-                } else {
-                    set({ items: [...safeItems, { ...product, quantity: 1 }] })
-                }
-            },
+    // Increment count (when adding to cart)
+    incrementCount: (quantity = 1) => {
+        const { totalItems } = get()
+        set({ totalItems: totalItems + quantity })
+    },
 
-            removeFromCart: (productId) => {
-                const { items } = get()
-                set({
-                    items: (items || []).filter((item) => item.id !== productId),
-                })
-            },
+    // Decrement count (when removing from cart)
+    decrementCount: (quantity = 1) => {
+        const { totalItems } = get()
+        set({ totalItems: Math.max(0, totalItems - quantity) })
+    },
 
-            updateQuantity: (productId, quantity) => {
-                if (quantity < 1) return
-                const { items } = get()
-                set({
-                    items: (items || []).map((item) =>
-                        item.id === productId ? { ...item, quantity } : item,
-                    ),
-                })
-            },
-
-            clearCart: () => set({ items: [] }),
-
-            getTotalItems: () => {
-                const { items } = get()
-                return (items || []).reduce((total, item) => total + item.quantity, 0)
-            },
-
-            getTotalPrice: () => {
-                const { items } = get()
-                return (items || []).reduce(
-                    (total, item) => total + item.price * item.quantity,
-                    0,
-                )
-            },
-        }),
-        {
-            name: 'cart-storage',
-        },
-    ),
-)
+    // Reset cart count
+    resetCart: () => {
+        set({
+            totalItems: 0,
+            cartId: null,
+        })
+    },
+}))

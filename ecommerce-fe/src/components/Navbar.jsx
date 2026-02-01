@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -19,6 +19,7 @@ import { cn } from '../lib/cn'
 import { useThemeStore } from '../store/useThemeStore'
 import { useAuthStore } from '../store/useAuthStore'
 import { useCartStore } from '../store/useCartStore'
+import cartService from '../services/cart'
 
 const navLinks = [
   { to: '/', label: 'Trang chủ' },
@@ -32,12 +33,32 @@ export default function Navbar() {
   const isDark = theme === 'dark'
 
   const { user, isAuthenticated, logout } = useAuthStore()
-  const items = useCartStore((s) => s.items) || []
-  const totalItems = items.reduce((acc, item) => acc + item.quantity, 0)
+  const { totalItems, updateCartCount, resetCart } = useCartStore()
   const navigate = useNavigate()
+
+  // Fetch cart when authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      const fetchCart = async () => {
+        try {
+          const cartData = await cartService.getCart()
+          updateCartCount(cartData)
+        } catch (error) {
+          // Cart might be empty or error, reset count
+          console.log('Cart fetch error:', error)
+          updateCartCount(null)
+        }
+      }
+      fetchCart()
+    } else {
+      // Reset cart when logged out
+      resetCart()
+    }
+  }, [isAuthenticated, updateCartCount, resetCart])
 
   const handleLogout = () => {
     logout()
+    resetCart() // Clear cart count on logout
     setMobileOpen(false)
     navigate('/login')
   }

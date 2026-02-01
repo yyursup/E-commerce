@@ -1,11 +1,61 @@
-import { Link } from 'react-router-dom'
-import { HiOutlineShoppingCart, HiStar } from 'react-icons/hi'
+import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
+import toast from 'react-hot-toast'
+import { HiOutlineShoppingCart, HiStar, HiCheck } from 'react-icons/hi'
 import { useThemeStore } from '../store/useThemeStore'
+import { useAuthStore } from '../store/useAuthStore'
+import { useCartStore } from '../store/useCartStore'
 import { cn } from '../lib/cn'
+import cartService from '../services/cart'
 
 export default function ProductQuickView({ product, onAddToCart }) {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
+  const { isAuthenticated } = useAuthStore()
+  const { updateCartCount } = useCartStore()
+  const navigate = useNavigate()
+  const [addingToCart, setAddingToCart] = useState(false)
+  const [showAddAnimation, setShowAddAnimation] = useState(false)
   const { name, price, oldPrice, image, rating, id } = product
+
+  const handleAddToCartClick = async () => {
+    if (!isAuthenticated) {
+      toast.error('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng')
+      navigate('/login')
+      return
+    }
+
+    if (!product || !product.id) {
+      toast.error('Thông tin sản phẩm không hợp lệ')
+      return
+    }
+
+    try {
+      setAddingToCart(true)
+      const cartResponse = await cartService.addToCart(product.id, 1)
+      
+      // Update cart count in store
+      updateCartCount(cartResponse)
+      
+      // Show success animation
+      setShowAddAnimation(true)
+      toast.success(`Đã thêm ${product.name} vào giỏ hàng`)
+      
+      // Hide animation after 1.5s
+      setTimeout(() => {
+        setShowAddAnimation(false)
+      }, 1500)
+      
+      // Call parent callback if provided
+      onAddToCart?.(product)
+    } catch (error) {
+      console.error('Error adding to cart:', error)
+      const errorMessage = error?.message || error?.response?.data?.message || 'Không thể thêm sản phẩm vào giỏ hàng'
+      toast.error(errorMessage)
+    } finally {
+      setAddingToCart(false)
+    }
+  }
 
   return (
     <div className="flex flex-col gap-6 sm:flex-row">
@@ -61,11 +111,36 @@ export default function ProductQuickView({ product, onAddToCart }) {
         </p>
         <button
           type="button"
-          onClick={() => onAddToCart?.(product)}
-          className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 py-3 text-sm font-semibold text-white transition hover:bg-amber-600"
+          onClick={handleAddToCartClick}
+          disabled={addingToCart}
+          className="relative mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 py-3 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50"
         >
-          <HiOutlineShoppingCart className="h-5 w-5" />
-          Thêm vào giỏ
+          <AnimatePresence mode="wait">
+            {showAddAnimation ? (
+              <motion.div
+                key="check"
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                exit={{ scale: 0, rotate: 180 }}
+                transition={{ duration: 0.3 }}
+                className="flex items-center gap-2"
+              >
+                <HiCheck className="h-5 w-5" />
+                <span>Đã thêm</span>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="cart"
+                initial={{ scale: 1 }}
+                animate={{ scale: addingToCart ? 0.95 : 1 }}
+                transition={{ duration: 0.2 }}
+                className="flex items-center gap-2"
+              >
+                <HiOutlineShoppingCart className="h-5 w-5" />
+                {addingToCart ? 'Đang thêm...' : 'Thêm vào giỏ'}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </button>
       </div>
     </div>

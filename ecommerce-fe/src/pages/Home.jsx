@@ -7,8 +7,11 @@ import Modal, { PromoModalContent } from '../components/Modal'
 import ProductQuickView from '../components/ProductQuickView'
 import Footer from '../components/Footer'
 import { useThemeStore } from '../store/useThemeStore'
+import { useAuthStore } from '../store/useAuthStore'
+import { useCartStore } from '../store/useCartStore'
 import { cn } from '../lib/cn'
 import productService from '../services/product'
+import cartService from '../services/cart'
 
 const promoBannerImages = [
   'https://images.unsplash.com/photo-1587523459887-e669248cf666?w=600&h=300&fit=crop',
@@ -22,7 +25,6 @@ export default function Home() {
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const isDark = useThemeStore((s) => s.theme) === 'dark'
 
   // Fetch products from API
   useEffect(() => {
@@ -96,10 +98,34 @@ export default function Home() {
 
   const [dealsIndex, setDealsIndex] = useState(0)
 
+  const { isAuthenticated } = useAuthStore()
+  const { updateCartCount } = useCartStore()
+  const isDark = useThemeStore((s) => s.theme) === 'dark'
+
   const handleQuickView = (product) => setQuickViewProduct(product)
-  const handleAddToCart = (product) => {
-    toast.success(`${product.name} đã thêm vào giỏ (demo)`)
-    setQuickViewProduct(null)
+  
+  const handleAddToCart = async (product) => {
+    if (!isAuthenticated) {
+      toast.error('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng')
+      return
+    }
+
+    if (!product || !product.id) {
+      toast.error('Thông tin sản phẩm không hợp lệ')
+      return
+    }
+
+    try {
+      const cartResponse = await cartService.addToCart(product.id, 1)
+      // Update cart count in store
+      updateCartCount(cartResponse)
+      toast.success(`Đã thêm ${product.name} vào giỏ hàng`)
+      setQuickViewProduct(null)
+    } catch (error) {
+      console.error('Error adding to cart:', error)
+      const errorMessage = error?.message || error?.response?.data?.message || 'Không thể thêm sản phẩm vào giỏ hàng'
+      toast.error(errorMessage)
+    }
   }
 
   // Deals carousel autoplay

@@ -42,12 +42,10 @@ public class KycOrchestratorService implements KycOrchestrator {
             UUID sessionId,
             UUID accountId,
             KycDocumentType type,
-            MultipartFile file,
-            String title,
-            String description
+            MultipartFile file
     ) {
 
-        UploadResponse up = vnpt.addFile(file, title, description);
+        UploadResponse up = vnpt.addFile(file);
         String hash = up.getObject().getHash();
 
         attachFile(sessionId, accountId, type, hash);

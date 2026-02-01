@@ -42,13 +42,17 @@ public class KycController {
             @PathVariable("id") UUID sessionId,
             @RequestParam("type") KycDocumentType type,
             @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "title", required = false) String title,
+            @RequestParam(value = "description", required = false) String description,
             @CurrentUser CurrentUserInfo u
     ) {
         String vnptHash = orchestrator.uploadToVnptAndAttach(
                 sessionId,
                 u.getAccountId(),
                 type,
-                file
+                file,
+                title,
+                description
         );
 
         return Map.of(
@@ -145,12 +149,16 @@ public class KycController {
     public ResponseEntity<Map<String, Object>> uploadAndCheckImages(
             @PathVariable UUID sessionId,
             @RequestPart("file") @NotNull MultipartFile file,
+            @RequestPart(value = "title", required = false) String title,
+            @RequestPart(value = "description", required = false) String description,
             @CurrentUser CurrentUserInfo u
     ) {
         Map<String, Object> out = orchestratorService.uploadFileAndAttach(
                 sessionId,
                 u.getAccountId(),
-                file
+                file,
+                title,
+                description
         );
         return ResponseEntity.ok(out);
     }

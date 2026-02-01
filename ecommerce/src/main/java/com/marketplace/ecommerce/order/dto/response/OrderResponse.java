@@ -1,8 +1,7 @@
 package com.marketplace.ecommerce.order.dto.response;
 
-import com.marketplace.ecommerce.cart.dto.response.CartItemResponse;
 import com.marketplace.ecommerce.order.entity.Order;
-import com.marketplace.ecommerce.shipping.valueObjects.OrderStatus;
+import com.marketplace.ecommerce.order.valueObjects.OrderStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

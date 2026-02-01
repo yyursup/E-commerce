@@ -1,8 +1,7 @@
 package com.marketplace.ecommerce.order.service;
 
-import com.marketplace.ecommerce.auth.entity.User;
 import com.marketplace.ecommerce.order.dto.response.OrderResponse;
-import com.marketplace.ecommerce.shipping.valueObjects.OrderStatus;
+import com.marketplace.ecommerce.order.valueObjects.OrderStatus;
 
 import java.util.List;
 import java.util.UUID;

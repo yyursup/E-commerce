@@ -14,5 +14,13 @@ public interface OrderService {
 
     OrderResponse updateOrderStatus(UUID accountId ,UUID orderId, String status);
 
+    void markReceivedByBuyer(UUID orderId, UUID accountId);
+
+    void autoMarkReceivedOrders();
+
+    OrderResponse retryCreateGhnOrder(UUID orderId, UUID accountId);
+
+    OrderResponse setGhnOrderCodeManually(UUID orderId, String ghnOrderCode, UUID accountId);
+
 
 }

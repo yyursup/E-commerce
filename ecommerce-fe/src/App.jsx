@@ -4,6 +4,8 @@ import Home from './pages/Home'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Verify from './pages/Verify'
+import SellerRegister from './pages/SellerRegister'
+import Kyc from './pages/Kyc'
 
 export default function App() {
   return (
@@ -13,6 +15,8 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/verify" element={<Verify />} />
+        <Route path="/seller/register" element={<SellerRegister />} />
+        <Route path="/kyc" element={<Kyc />} />
       </Route>
     </Routes>
   )

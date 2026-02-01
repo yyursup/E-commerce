@@ -13,6 +13,8 @@ public class UploadResponse {
     @Data
     public static class Obj {
         private String fileName;
+        private String title;
+        private String description;
         private String hash;
         private String fileType;
         private String uploadedDate;

@@ -21,9 +21,40 @@ const requestService = {
     }
   },
 
+  getAdminRequests: async (params) => {
+    try {
+      const response = await api.get(`${REQUEST_BASE}/admin`, { params });
+      return response.data;
+    } catch (error) {
+      throw error.response ? error.response.data : error;
+    }
+  },
+
   getRequestDetails: async (requestId) => {
     try {
       const response = await api.get(`${REQUEST_BASE}/${requestId}`);
+      return response.data;
+    } catch (error) {
+      throw error.response ? error.response.data : error;
+    }
+  },
+
+  approveRequest: async (requestId, responseText) => {
+    try {
+      const response = await api.put(`${REQUEST_BASE}/approve`, null, {
+        params: { requestId, response: responseText },
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response ? error.response.data : error;
+    }
+  },
+
+  rejectRequest: async (requestId, responseText) => {
+    try {
+      const response = await api.put(`${REQUEST_BASE}/reject`, null, {
+        params: { requestId, response: responseText },
+      });
       return response.data;
     } catch (error) {
       throw error.response ? error.response.data : error;

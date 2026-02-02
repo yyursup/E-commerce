@@ -71,6 +71,12 @@ public class RequestController {
         return requestService.getRequests(u.getAccountId(), pageable);
     }
 
+    @GetMapping("/admin")
+    @PreAuthorize("hasRole('ADMIN')")
+    public Page<CreateRequestResponse> getAllRequests(Pageable pageable) {
+        return requestService.getAllRequests(pageable);
+    }
+
     @GetMapping("/{id}")
     public RequestDetailsResponse getDetails(
             @PathVariable UUID id,

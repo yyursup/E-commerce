@@ -112,7 +112,25 @@ public class RequestServiceImpl implements RequestService {
 
     @Override
     public Page<CreateRequestResponse> getRequests(UUID accountId, Pageable pageable) {
-        return requestRepository.findAllRequestByAccountId(accountId, pageable).map(r -> CreateRequestResponse.builder().accountId(accountId).type(r.getType()).status(r.getStatus()).createdAt(LocalDateTime.from(r.getCreatedAt())).build());
+        return requestRepository.findAllRequestByAccountId(accountId, pageable).map(r -> CreateRequestResponse.builder()
+                .requestId(r.getId())
+                .accountId(accountId)
+                .type(r.getType())
+                .status(r.getStatus())
+                .createdAt(LocalDateTime.from(r.getCreatedAt()))
+                .build());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<CreateRequestResponse> getAllRequests(Pageable pageable) {
+        return requestRepository.findAll(pageable).map(r -> CreateRequestResponse.builder()
+                .requestId(r.getId())
+                .accountId(r.getAccount() != null ? r.getAccount().getId() : null)
+                .type(r.getType())
+                .status(r.getStatus())
+                .createdAt(LocalDateTime.from(r.getCreatedAt()))
+                .build());
     }
 
     @Override

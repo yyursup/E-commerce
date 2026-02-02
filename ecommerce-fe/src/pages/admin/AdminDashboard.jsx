@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   HiOutlineUsers,
@@ -9,6 +10,7 @@ import {
   HiOutlineBan,
   HiOutlineCheckCircle,
 } from 'react-icons/hi'
+import { HiOutlineClipboardCheck } from 'react-icons/hi'
 import { useThemeStore } from '../../store/useThemeStore'
 import { useAuthStore } from '../../store/useAuthStore'
 import { cn } from '../../lib/cn'
@@ -35,7 +37,7 @@ export default function AdminDashboard() {
         setLoading(true)
         setError(null)
         const usersData = await authService.getAllUsers()
-        
+
         // Transform API response to match UI format
         // API returns: [{ email, role }]
         const transformedUsers = usersData.map((user, index) => ({
@@ -45,15 +47,15 @@ export default function AdminDashboard() {
           status: 'active', // API doesn't return status, defaulting to active
           createdAt: new Date().toLocaleDateString('vi-VN'), // API doesn't return createdAt
         }))
-        
+
         setUsers(transformedUsers)
-        
+
         // Calculate stats from users data
         const totalUsers = usersData.length
         const totalBusinesses = usersData.filter(u => u.role === 'BUSINESS').length
         const totalCustomers = usersData.filter(u => u.role === 'CUSTOMER').length
         const totalAdmins = usersData.filter(u => u.role === 'ADMIN').length
-        
+
         setStats({
           totalUsers,
           totalBusinesses,
@@ -136,6 +138,7 @@ export default function AdminDashboard() {
       ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
       : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
   }
+  const isDark = useThemeStore((state) => state.theme) === 'dark'
 
   return (
     <div
@@ -161,6 +164,13 @@ export default function AdminDashboard() {
             Chào mừng trở lại, {user?.email}
           </p>
         </div>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-semibold">Admin dashboard</h1>
+        <p className={cn('text-sm', isDark ? 'text-slate-400' : 'text-stone-500')}>
+          Manage platform requests and moderation tasks.
+        </p>
+      </div>
 
         {/* Stats Grid */}
         <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
@@ -404,6 +414,34 @@ export default function AdminDashboard() {
           )}
         </div>
       </div>
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2 }}
+        className={cn(
+          'rounded-2xl border p-6 shadow-sm',
+          isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white',
+        )}
+      >
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-semibold">Request approvals</h2>
+            <p className={cn('mt-1 text-sm', isDark ? 'text-slate-400' : 'text-stone-500')}>
+              Review and approve seller registrations or reports.
+            </p>
+          </div>
+          <Link
+            to="/admin/requests"
+            className={cn(
+              'inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition',
+              isDark ? 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30' : 'bg-amber-100 text-amber-700 hover:bg-amber-200',
+            )}
+          >
+            <HiOutlineClipboardCheck className="h-4 w-4" />
+            Open requests
+          </Link>
+        </div>
+      </motion.div>
     </div>
   )
 }

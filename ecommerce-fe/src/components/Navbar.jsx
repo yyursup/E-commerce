@@ -37,7 +37,6 @@ export default function Navbar() {
   const { user, isAuthenticated, logout } = useAuthStore()
   const { totalItems, updateCartCount, resetCart } = useCartStore()
   const navigate = useNavigate()
-  const isAdmin = user?.role === 'ADMIN'
 
   // Get user role
   const userRole = user?.role?.toUpperCase()

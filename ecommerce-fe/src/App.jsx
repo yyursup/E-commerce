@@ -28,15 +28,6 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/verify" element={<Verify />} />
-        <Route path="/cart" element={<Cart />} />
-        <Route path="/seller/register" element={<SellerRegister />} />
-        <Route path="/kyc" element={<Kyc />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/admin" element={<AdminLayout />}>
-          <Route index element={<AdminDashboard />} />
-          <Route path="requests" element={<AdminRequests />} />
-          <Route path="requests/:requestId" element={<AdminRequestDetail />} />
-        </Route>
 
         {/* Protected routes - require authentication */}
         <Route
@@ -84,13 +75,17 @@ export default function App() {
 
         {/* Admin routes - require ADMIN role only */}
         <Route
-          path="/admin/dashboard"
+          path="/admin"
           element={
             <ProtectedRoute requireAuth={true} allowedRoles={['ADMIN']}>
-              <AdminDashboard />
+              <AdminLayout />
             </ProtectedRoute>
           }
-        />
+        >
+          <Route index element={<AdminDashboard />} />
+          <Route path="requests" element={<AdminRequests />} />
+          <Route path="requests/:requestId" element={<AdminRequestDetail />} />
+        </Route>
       </Route>
     </Routes>
   )

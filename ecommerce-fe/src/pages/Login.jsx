@@ -34,7 +34,6 @@ export default function Login() {
         updateCartCount(cartData)
       } catch (cartError) {
         // Cart might be empty, that's okay
-        console.log('Cart fetch error (might be empty):', cartError)
         updateCartCount(null)
       }
 

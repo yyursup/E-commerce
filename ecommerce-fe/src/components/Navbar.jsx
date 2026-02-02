@@ -273,7 +273,7 @@ export default function Navbar() {
                   {isAdmin && (
                     <MenuItem>
                       <Link
-                        to="/admin/dashboard"
+                        to="/admin"
                         className={cn(
                           'flex w-full items-center gap-2 px-4 py-2.5 text-sm transition-colors',
                           isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-stone-600 hover:bg-stone-50'
@@ -459,7 +459,7 @@ export default function Navbar() {
                   {/* Admin Dashboard Link - Mobile */}
                   {isAdmin && (
                     <Link
-                      to="/admin/dashboard"
+                      to="/admin"
                       onClick={() => setMobileOpen(false)}
                       className="rounded-lg px-4 py-3 text-left text-sm font-medium text-stone-700 hover:bg-stone-50 dark:text-slate-300 dark:hover:bg-slate-800"
                     >

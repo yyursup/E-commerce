@@ -27,7 +27,7 @@ export default function Cart() {
         }
 
         fetchCart()
-    }, [isAuthenticated, navigate])
+    }, [isAuthenticated])
 
     const fetchCart = async () => {
         if (!isAuthenticated) return

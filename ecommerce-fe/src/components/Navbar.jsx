@@ -240,7 +240,7 @@ export default function Navbar() {
                   {isAdmin && (
                     <MenuItem>
                       <Link
-                      to="/admin"
+                        to="/admin"
                         className={cn(
                           'flex w-full items-center gap-2 px-4 py-2.5 text-sm transition-colors',
                           isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-stone-600 hover:bg-stone-50'
@@ -286,19 +286,31 @@ export default function Navbar() {
 
                   {/* Seller Register - only for CUSTOMER */}
                   {userRole === 'CUSTOMER' && (
+                    <MenuItem>
+                      <Link
+                        to="/seller/register"
+                        className={cn(
+                          'flex w-full items-center gap-2 px-4 py-2.5 text-sm transition-colors',
+                          isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-stone-600 hover:bg-stone-50'
+                        )}
+                      >
+                        <HiOutlineShoppingBag className="h-4 w-4" />
+                        Đăng ký bán hàng
+                      </Link>
+                    </MenuItem>
+                  )}
                   <MenuItem>
                     <Link
-                      to="/seller/register"
+                      to="/my-orders"
                       className={cn(
                         'flex w-full items-center gap-2 px-4 py-2.5 text-sm transition-colors',
                         isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-stone-600 hover:bg-stone-50'
                       )}
                     >
                       <HiOutlineShoppingBag className="h-4 w-4" />
-                      Đăng ký bán hàng
+                      Đơn hàng của tôi
                     </Link>
                   </MenuItem>
-                  )}
                   <MenuItem>
                     <button className={cn(
                       'flex w-full items-center gap-2 px-4 py-2.5 text-sm transition-colors',
@@ -456,14 +468,21 @@ export default function Navbar() {
 
                   {/* Seller Register - only for CUSTOMER - Mobile */}
                   {userRole === 'CUSTOMER' && (
+                    <Link
+                      to="/seller/register"
+                      onClick={() => setMobileOpen(false)}
+                      className="rounded-lg px-4 py-3 text-left text-sm font-medium text-stone-700 hover:bg-stone-50 dark:text-slate-300 dark:hover:bg-slate-800"
+                    >
+                      Đăng ký bán hàng
+                    </Link>
+                  )}
                   <Link
-                    to="/seller/register"
+                    to="/my-orders"
                     onClick={() => setMobileOpen(false)}
                     className="rounded-lg px-4 py-3 text-left text-sm font-medium text-stone-700 hover:bg-stone-50 dark:text-slate-300 dark:hover:bg-slate-800"
                   >
-                    Đăng ký bán hàng
+                    Đơn hàng của tôi
                   </Link>
-                  )}
                   <Link
                     to="/profile"
                     onClick={() => setMobileOpen(false)}

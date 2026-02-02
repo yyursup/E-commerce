@@ -16,6 +16,9 @@ import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminRequests from './pages/admin/AdminRequests'
 import AdminRequestDetail from './pages/admin/AdminRequestDetail'
 import BusinessDashboard from './pages/business/BusinessDashboard'
+import Checkout from './pages/Checkout'
+import PaymentResult from './pages/PaymentResult'
+import MyOrders from './pages/MyOrders'
 
 export default function App() {
   return (
@@ -35,6 +38,30 @@ export default function App() {
           element={
             <ProtectedRoute requireAuth={true}>
               <Cart />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/checkout"
+          element={
+            <ProtectedRoute requireAuth={true}>
+              <Checkout />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/payment/vnpay_return"
+          element={
+            <ProtectedRoute requireAuth={true}>
+              <PaymentResult />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/my-orders"
+          element={
+            <ProtectedRoute requireAuth={true}>
+              <MyOrders />
             </ProtectedRoute>
           }
         />
@@ -87,6 +114,6 @@ export default function App() {
           <Route path="requests/:requestId" element={<AdminRequestDetail />} />
         </Route>
       </Route>
-    </Routes>
+    </Routes >
   )
 }

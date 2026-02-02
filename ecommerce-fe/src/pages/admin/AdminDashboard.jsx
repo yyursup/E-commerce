@@ -138,7 +138,6 @@ export default function AdminDashboard() {
       ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
       : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
   }
-  const isDark = useThemeStore((state) => state.theme) === 'dark'
 
   return (
     <div
@@ -164,16 +163,10 @@ export default function AdminDashboard() {
             Chào mừng trở lại, {user?.email}
           </p>
         </div>
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Admin dashboard</h1>
-        <p className={cn('text-sm', isDark ? 'text-slate-400' : 'text-stone-500')}>
-          Manage platform requests and moderation tasks.
-        </p>
-      </div>
 
-        {/* Stats Grid */}
-        <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="space-y-6">
+            {/* Stats Grid */}
+          <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
           {statCards.map((stat, index) => {
             const Icon = stat.icon
             return (
@@ -220,10 +213,10 @@ export default function AdminDashboard() {
               </motion.div>
             )
           })}
-        </div>
+          </div>
 
-        {/* Users Management Section */}
-        <div
+          {/* Users Management Section */}
+          <div
           className={cn(
             'rounded-xl border',
             isDark ? 'border-slate-700 bg-slate-900' : 'border-stone-200 bg-white',
@@ -412,9 +405,9 @@ export default function AdminDashboard() {
               </p>
             </div>
           )}
-        </div>
-      </div>
-      <motion.div
+          </div>
+
+          <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
@@ -442,6 +435,8 @@ export default function AdminDashboard() {
           </Link>
         </div>
       </motion.div>
+        </div>
+      </div>
     </div>
   )
 }

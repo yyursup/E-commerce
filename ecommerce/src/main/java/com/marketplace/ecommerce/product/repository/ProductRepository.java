@@ -28,7 +28,6 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
                 set p.deleted = true
                 where p.id = :productId
                   and p.deleted = false
-                  and p.status = 'DELETED'
                   and p.shop.id in (
                       select s.id
                       from Shop s

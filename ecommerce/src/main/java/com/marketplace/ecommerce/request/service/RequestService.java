@@ -16,6 +16,8 @@ public interface RequestService {
 
     Page<CreateRequestResponse> getRequests(UUID accountId, Pageable pageable);
 
+    Page<CreateRequestResponse> getAllRequests(Pageable pageable);
+
     RequestDetailsResponse getDetails(UUID requestId);
 
     RequestResponse rejectRequest(UUID adminAccountId, UUID requestId, String response);

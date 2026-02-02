@@ -13,7 +13,6 @@ import {
   HiOutlineX,
   HiChevronDown,
   HiOutlineLogout,
-  HiOutlineIdentification,
   HiOutlineChartBar,
   HiOutlineShieldCheck,
 } from 'react-icons/hi'
@@ -301,18 +300,6 @@ export default function Navbar() {
                   </MenuItem>
                   )}
                   <MenuItem>
-                    <Link
-                      to="/kyc"
-                      className={cn(
-                        'flex w-full items-center gap-2 px-4 py-2.5 text-sm transition-colors',
-                        isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-stone-600 hover:bg-stone-50'
-                      )}
-                    >
-                      <HiOutlineIdentification className="h-4 w-4" />
-                      Xác minh danh tính (KYC)
-                    </Link>
-                  </MenuItem>
-                  <MenuItem>
                     <button className={cn(
                       'flex w-full items-center gap-2 px-4 py-2.5 text-sm transition-colors',
                       isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-stone-600 hover:bg-stone-50'
@@ -477,13 +464,6 @@ export default function Navbar() {
                     Đăng ký bán hàng
                   </Link>
                   )}
-                  <Link
-                    to="/kyc"
-                    onClick={() => setMobileOpen(false)}
-                    className="rounded-lg px-4 py-3 text-left text-sm font-medium text-stone-700 hover:bg-stone-50 dark:text-slate-300 dark:hover:bg-slate-800"
-                  >
-                    Xác minh danh tính (KYC)
-                  </Link>
                   <Link
                     to="/profile"
                     onClick={() => setMobileOpen(false)}

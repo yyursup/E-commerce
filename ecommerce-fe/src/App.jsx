@@ -10,6 +10,10 @@ import Cart from './pages/Cart'
 import SellerRegister from './pages/SellerRegister'
 import Kyc from './pages/Kyc'
 import Profile from './pages/Profile'
+import AdminLayout from './pages/admin/AdminLayout'
+import AdminDashboard from './pages/admin/AdminDashboard'
+import AdminRequests from './pages/admin/AdminRequests'
+import AdminRequestDetail from './pages/admin/AdminRequestDetail'
 
 export default function App() {
   return (
@@ -25,6 +29,11 @@ export default function App() {
         <Route path="/seller/register" element={<SellerRegister />} />
         <Route path="/kyc" element={<Kyc />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<AdminDashboard />} />
+          <Route path="requests" element={<AdminRequests />} />
+          <Route path="requests/:requestId" element={<AdminRequestDetail />} />
+        </Route>
       </Route>
     </Routes>
   )

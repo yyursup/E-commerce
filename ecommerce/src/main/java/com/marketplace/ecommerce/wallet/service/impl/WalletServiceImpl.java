@@ -1,5 +1,7 @@
 package com.marketplace.ecommerce.wallet.service.impl;
 
+import com.marketplace.ecommerce.auth.entity.User;
+import com.marketplace.ecommerce.auth.repository.UserRepository;
 import com.marketplace.ecommerce.common.exception.CustomException;
 import com.marketplace.ecommerce.order.entity.Order;
 import com.marketplace.ecommerce.payment.entity.Escrow;
@@ -11,6 +13,7 @@ import com.marketplace.ecommerce.payment.valueObjects.EscrowStatus;
 import com.marketplace.ecommerce.payment.valueObjects.ReferenceType;
 import com.marketplace.ecommerce.payment.valueObjects.TransactionStatus;
 import com.marketplace.ecommerce.payment.valueObjects.TransactionType;
+import com.marketplace.ecommerce.wallet.dto.response.WalletResponse;
 import com.marketplace.ecommerce.wallet.entity.Wallet;
 import com.marketplace.ecommerce.wallet.repository.WalletRepository;
 import com.marketplace.ecommerce.wallet.service.WalletService;
@@ -21,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +32,19 @@ public class WalletServiceImpl implements WalletService {
     private final WalletRepository walletRepo;
     private final EscrowRepository escrowRepo;
     private final TransactionRepository txRepo;
+    private final UserRepository userRepository;
+
+    @Override
+    @Transactional(readOnly = true)
+    public WalletResponse getWallet(UUID accountId) {
+        User user = userRepository.findByAccountId(accountId)
+                .orElseThrow(() -> new CustomException("User not found"));
+
+        Wallet w = walletRepo.findByUserId(user.getId())
+                .orElseThrow(() -> new CustomException("Wallet not found for userId=" + user.getId()));
+
+        return WalletResponse.from(w);
+    }
 
 
     @Override

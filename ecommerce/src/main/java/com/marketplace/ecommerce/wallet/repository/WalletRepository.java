@@ -24,4 +24,6 @@ public interface WalletRepository extends JpaRepository<Wallet, UUID> {
     Optional<Wallet> findSystemWalletForUpdate(@Param("type") WalletType type);
 
     Optional<Wallet> findByWalletType(WalletType walletType);
+
+    Optional<Wallet> findByUserId(UUID userId);
 }

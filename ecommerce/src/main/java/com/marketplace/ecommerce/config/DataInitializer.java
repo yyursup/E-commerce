@@ -22,6 +22,9 @@ import com.marketplace.ecommerce.product.valueObjects.ProductStatus;
 import com.marketplace.ecommerce.shop.entity.Shop;
 import com.marketplace.ecommerce.shop.repository.ShopRepository;
 import com.marketplace.ecommerce.shop.valueObjects.ShopStatus;
+import com.marketplace.ecommerce.wallet.entity.Wallet;
+import com.marketplace.ecommerce.wallet.repository.WalletRepository;
+import com.marketplace.ecommerce.wallet.valueObjects.WalletType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -49,6 +52,7 @@ public class DataInitializer implements CommandLineRunner {
     private final ProductImageRepository productImageRepository;
     private final CartRepository cartRepository;
     private final PasswordEncoder passwordEncoder;
+    private final WalletRepository walletRepository;
 
     @Override
     @Transactional
@@ -61,9 +65,9 @@ public class DataInitializer implements CommandLineRunner {
         Role adminRole = initializeRole("ADMIN", "Quản trị viên");
 
         // Initialize Accounts and Users
-        Account adminAccount = initializeAccount("admin", "admin@ecommerce.com", "0123456789", 
+        Account adminAccount = initializeAccount("admin", "admin@ecommerce.com", "0123456789",
                 "admin123@", adminRole);
-        initializeUser(adminAccount, "Admin User", "admin@ecommerce.com", 
+        User adminUser = initializeUser(adminAccount, "Admin User", "admin@ecommerce.com",
                 "0123456789", LocalDate.of(1990, 1, 1), GenderType.MALE, "123456789012");
 
         Account businessAccount1 = initializeAccount("seller", "seller@gmail.com", "0987654321",
@@ -77,8 +81,8 @@ public class DataInitializer implements CommandLineRunner {
                 "0901234567", LocalDate.of(1995, 3, 10), GenderType.MALE, "223344556677");
 
         // Initialize Shops
-        Shop shop1 = initializeShop(businessUser1, "Apple Store Vietnam", 
-                "Chuyên bán các sản phẩm Apple chính hãng: AirPods, iPhone, MacBook", 
+        Shop shop1 = initializeShop(businessUser1, "Apple Store Vietnam",
+                "Chuyên bán các sản phẩm Apple chính hãng: AirPods, iPhone, MacBook",
                 "https://example.com/apple-store-logo.jpg", "https://example.com/apple-store-cover.jpg",
                 "0987654321", "123 Đường Nguyễn Huệ, Quận 1", 1442, "1A0001", ShopStatus.ACTIVE);
 
@@ -90,65 +94,119 @@ public class DataInitializer implements CommandLineRunner {
         ProductCategory accessoriesCategory = initializeCategory(electronicsCategory, "Phụ Kiện");
 
         // Initialize Products - AirPods Series
-        Product product1 = initializeProduct(shop1, airpodsCategory, "AirPods Pro (2nd generation)", 
-                "AirPods Pro thế hệ 2 với chip H2, chống ồn chủ động, không gian âm thanh, chống nước IPX4. Pin sử dụng lên đến 6 giờ, hộp sạc MagSafe", 
+        Product product1 = initializeProduct(shop1, airpodsCategory, "AirPods Pro (2nd generation)",
+                "AirPods Pro thế hệ 2 với chip H2, chống ồn chủ động, không gian âm thanh, chống nước IPX4. Pin sử dụng lên đến 6 giờ, hộp sạc MagSafe",
                 "AIRPODS-PRO-2", 100, new BigDecimal("6990000"), 56, ProductStatus.PUBLISHED);
         initializeProductImage(product1, "https://images.unsplash.com/photo-1587523459887-e669248cf666?w=800&h=800&fit=crop", true, 1);
         initializeProductImage(product1, "https://images.unsplash.com/photo-1606741965326-cb990ae01bb2?w=800&h=800&fit=crop", false, 2);
         initializeProductImage(product1, "https://images.unsplash.com/photo-1624258919367-5dc28f5dc293?w=800&h=800&fit=crop", false, 3);
 
-        Product product2 = initializeProduct(shop1, airpodsCategory, "AirPods Max", 
-                "Tai nghe over-ear cao cấp với chip H1, chống ồn chủ động, không gian âm thanh, pin 20 giờ. Thiết kế sang trọng với khung nhôm", 
+        Product product2 = initializeProduct(shop1, airpodsCategory, "AirPods Max",
+                "Tai nghe over-ear cao cấp với chip H1, chống ồn chủ động, không gian âm thanh, pin 20 giờ. Thiết kế sang trọng với khung nhôm",
                 "AIRPODS-MAX", 50, new BigDecimal("12990000"), 384, ProductStatus.PUBLISHED);
         initializeProductImage(product2, "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&h=800&fit=crop", true, 1);
         initializeProductImage(product2, "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&h=800&fit=crop&q=80", false, 2);
         initializeProductImage(product2, "https://images.unsplash.com/photo-1611864583067-b002fdc4fa29?w=800&h=800&fit=crop", false, 3);
 
-        Product product3 = initializeProduct(shop1, airpodsCategory, "AirPods (3rd generation)", 
-                "AirPods thế hệ 3 với chip H1, chống nước IPX4, không gian âm thanh, pin 6 giờ. Thiết kế tinh tế, phù hợp mọi hoạt động", 
+        Product product3 = initializeProduct(shop1, airpodsCategory, "AirPods (3rd generation)",
+                "AirPods thế hệ 3 với chip H1, chống nước IPX4, không gian âm thanh, pin 6 giờ. Thiết kế tinh tế, phù hợp mọi hoạt động",
                 "AIRPODS-3RD", 150, new BigDecimal("4990000"), 46, ProductStatus.PUBLISHED);
         initializeProductImage(product3, "https://images.unsplash.com/photo-1606741965326-cb990ae01bb2?w=800&h=800&fit=crop", true, 1);
         initializeProductImage(product3, "https://images.unsplash.com/photo-1628588287089-c2925c16c52b?w=800&h=800&fit=crop", false, 2);
         initializeProductImage(product3, "https://images.unsplash.com/photo-1682939960849-60f4098b4b39?w=800&h=800&fit=crop", false, 3);
 
-        Product product4 = initializeProduct(shop1, airpodsCategory, "AirPods Pro (1st generation)", 
-                "AirPods Pro thế hệ 1 với chip H1, chống ồn chủ động, chống nước IPX4. Giá tốt, chất lượng đảm bảo", 
+        Product product4 = initializeProduct(shop1, airpodsCategory, "AirPods Pro (1st generation)",
+                "AirPods Pro thế hệ 1 với chip H1, chống ồn chủ động, chống nước IPX4. Giá tốt, chất lượng đảm bảo",
                 "AIRPODS-PRO-1", 80, new BigDecimal("5490000"), 56, ProductStatus.PUBLISHED);
         initializeProductImage(product4, "https://images.unsplash.com/photo-1587523459887-e669248cf666?w=800&h=800&fit=crop&q=80", true, 1);
         initializeProductImage(product4, "https://images.unsplash.com/photo-1606741965326-cb990ae01bb2?w=800&h=800&fit=crop&q=80", false, 2);
 
-        Product product5 = initializeProduct(shop1, airpodsCategory, "AirPods (2nd generation)", 
-                "AirPods thế hệ 2 với chip H1, hộp sạc không dây, pin 5 giờ. Thiết kế cổ điển, giá hợp lý", 
+        Product product5 = initializeProduct(shop1, airpodsCategory, "AirPods (2nd generation)",
+                "AirPods thế hệ 2 với chip H1, hộp sạc không dây, pin 5 giờ. Thiết kế cổ điển, giá hợp lý",
                 "AIRPODS-2ND", 120, new BigDecimal("3990000"), 40, ProductStatus.PUBLISHED);
         initializeProductImage(product5, "https://images.unsplash.com/photo-1628588287089-c2925c16c52b?w=800&h=800&fit=crop", true, 1);
         initializeProductImage(product5, "https://images.unsplash.com/photo-1682939960849-60f4098b4b39?w=800&h=800&fit=crop", false, 2);
 
-        Product product6 = initializeProduct(shop1, accessoriesCategory, "Hộp Sạc MagSafe cho AirPods", 
-                "Hộp sạc MagSafe chính hãng Apple, sạc không dây tiện lợi cho AirPods Pro và AirPods 3rd gen", 
+        Product product6 = initializeProduct(shop1, accessoriesCategory, "Hộp Sạc MagSafe cho AirPods",
+                "Hộp sạc MagSafe chính hãng Apple, sạc không dây tiện lợi cho AirPods Pro và AirPods 3rd gen",
                 "AIRPODS-MAGSAFE-CASE", 200, new BigDecimal("990000"), 38, ProductStatus.PUBLISHED);
         initializeProductImage(product6, "https://images.unsplash.com/photo-1611864583067-b002fdc4fa29?w=800&h=800&fit=crop", true, 1);
         initializeProductImage(product6, "https://images.unsplash.com/photo-1587523459887-e669248cf666?w=800&h=800&fit=crop&q=80", false, 2);
 
-        Product product7 = initializeProduct(shop1, accessoriesCategory, "Ốp Bảo Vệ AirPods Pro", 
-                "Ốp bảo vệ silicon cao cấp cho AirPods Pro, chống trầy xước, nhiều màu sắc", 
+        Product product7 = initializeProduct(shop1, accessoriesCategory, "Ốp Bảo Vệ AirPods Pro",
+                "Ốp bảo vệ silicon cao cấp cho AirPods Pro, chống trầy xước, nhiều màu sắc",
                 "AIRPODS-PRO-CASE", 300, new BigDecimal("250000"), 15, ProductStatus.PUBLISHED);
         initializeProductImage(product7, "https://images.unsplash.com/photo-1611864583067-b002fdc4fa29?w=800&h=800&fit=crop&q=80", true, 1);
         initializeProductImage(product7, "https://images.unsplash.com/photo-1628588287089-c2925c16c52b?w=800&h=800&fit=crop&q=80", false, 2);
 
         // Initialize User Addresses
-        initializeUserAddress(customerUser1, "Lê Văn Mua Hàng", "0901234567", 
-                "123 Đường Nguyễn Huệ, Phường Bến Nghé", "Hồ Chí Minh", "Quận 1", "Phường Bến Nghé", 
+        initializeUserAddress(customerUser1, "Lê Văn Mua Hàng", "0901234567",
+                "123 Đường Nguyễn Huệ, Phường Bến Nghé", "Hồ Chí Minh", "Quận 1", "Phường Bến Nghé",
                 1442, "1A0001", true);
 
-        initializeUserAddress(customerUser1, "Lê Văn Mua Hàng", "0901234567", 
-                "456 Đường Lê Lợi, Phường Bến Thành", "Hồ Chí Minh", "Quận 1", "Phường Bến Thành", 
+        initializeUserAddress(customerUser1, "Lê Văn Mua Hàng", "0901234567",
+                "456 Đường Lê Lợi, Phường Bến Thành", "Hồ Chí Minh", "Quận 1", "Phường Bến Thành",
                 1442, "1A0002", false);
 
         // Initialize Carts
         initializeCart(customerUser1);
         initializeCart(businessUser1);
+        // Initialize Wallet
+        initializeUserWallet(businessUser1);
+        initializeUserWallet(customerUser1);
+        initializeAdminEscrowWallet(adminUser);
 
         log.info("Data initialization completed successfully!");
+    }
+
+    private Wallet initializeUserWallet(User user) {
+        return walletRepository.findByUserId(user.getId())
+                .orElseGet(() -> {
+                    LocalDateTime now = LocalDateTime.now();
+                    Wallet w = Wallet.builder()
+                            .user(user)
+                            .currency("VND")
+                            .availableBalance(BigDecimal.ZERO)
+                            .lockedBalance(BigDecimal.ZERO)
+                            .walletType(WalletType.USER)
+                            .createdAt(now)
+                            .build();
+
+                    w.setCreatedAt(now);
+                    w.setUpdatedAt(now);
+
+                    Wallet saved = walletRepository.save(w);
+                    log.info("Created USER wallet for user: {}", user.getFullName());
+                    return saved;
+                });
+    }
+
+    private Wallet initializeAdminEscrowWallet(User user) {
+        return walletRepository.findByUserId(user.getId())
+                .map(existing -> {
+                    if (existing.getWalletType() != WalletType.ESCROW) {
+                        throw new IllegalStateException("Admin user already has non-ESCROW wallet");
+                    }
+                    return existing;
+                })
+                .orElseGet(() -> {
+                    LocalDateTime now = LocalDateTime.now();
+                    Wallet w = Wallet.builder()
+                            .user(user)
+                            .currency("VND")
+                            .availableBalance(BigDecimal.ZERO)
+                            .lockedBalance(BigDecimal.ZERO)
+                            .walletType(WalletType.ESCROW)
+                            .createdAt(now)
+                            .build();
+
+                    w.setCreatedAt(now);
+                    w.setUpdatedAt(now);
+
+                    Wallet saved = walletRepository.save(w);
+                    log.info("Created ESCROW wallet for admin: {}", user.getFullName());
+                    return saved;
+                });
     }
 
     private Role initializeRole(String roleName, String description) {
@@ -164,8 +222,8 @@ public class DataInitializer implements CommandLineRunner {
                 });
     }
 
-    private Account initializeAccount(String username, String email, String phoneNumber, 
-                                     String password, Role role) {
+    private Account initializeAccount(String username, String email, String phoneNumber,
+                                      String password, Role role) {
         return accountRepository.findByUsername(username)
                 .orElseGet(() -> {
                     Account account = Account.builder()
@@ -185,7 +243,7 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private User initializeUser(Account account, String fullName, String email, String phoneNumber,
-                               LocalDate dateOfBirth, GenderType gender, String identityCardNumber) {
+                                LocalDate dateOfBirth, GenderType gender, String identityCardNumber) {
         return userRepository.findByAccountId(account.getId())
                 .orElseGet(() -> {
                     User user = User.builder()
@@ -204,8 +262,8 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private Shop initializeShop(User user, String name, String description, String logoUrl,
-                               String coverImageUrl, String phoneNumber, String address,
-                               Integer districtId, String wardCode, ShopStatus status) {
+                                String coverImageUrl, String phoneNumber, String address,
+                                Integer districtId, String wardCode, ShopStatus status) {
         return shopRepository.findByUserId(user.getId())
                 .orElseGet(() -> {
                     LocalDateTime now = LocalDateTime.now();
@@ -232,7 +290,7 @@ public class DataInitializer implements CommandLineRunner {
 
     private ProductCategory initializeCategory(ProductCategory parent, String name) {
         return productCategoryRepository.findAll().stream()
-                .filter(cat -> cat.getName().equals(name) && 
+                .filter(cat -> cat.getName().equals(name) &&
                         (parent == null ? cat.getParent() == null : cat.getParent() != null && cat.getParent().getId().equals(parent.getId())))
                 .findFirst()
                 .orElseGet(() -> {
@@ -246,8 +304,8 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private Product initializeProduct(Shop shop, ProductCategory category, String name,
-                                    String description, String sku, Integer quantity,
-                                    BigDecimal basePrice, Integer weight, ProductStatus status) {
+                                      String description, String sku, Integer quantity,
+                                      BigDecimal basePrice, Integer weight, ProductStatus status) {
         return productRepository.findAll().stream()
                 .filter(p -> p.getSku().equals(sku) && !p.getDeleted())
                 .findFirst()
@@ -271,8 +329,8 @@ public class DataInitializer implements CommandLineRunner {
                 });
     }
 
-    private ProductImage initializeProductImage(Product product, String imageUrl, 
-                                               Boolean isThumbnail, Integer displayOrder) {
+    private ProductImage initializeProductImage(Product product, String imageUrl,
+                                                Boolean isThumbnail, Integer displayOrder) {
         return productImageRepository.findByProductAndImageUrl(product, imageUrl)
                 .orElseGet(() -> {
                     ProductImage image = ProductImage.builder()
@@ -288,18 +346,18 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private UserAddress initializeUserAddress(User user, String receiverName, String receiverPhone,
-                                             String addressLine, String city, String district, String ward,
-                                             Integer districtId, String wardCode, Boolean isDefault) {
+                                              String addressLine, String city, String district, String ward,
+                                              Integer districtId, String wardCode, Boolean isDefault) {
         // Check if address already exists
         var existingAddresses = userAddressRepository.findAllByUserIdAndDeletedFalseOrderByIsDefaultDescIdDesc(user.getId());
         var existing = existingAddresses.stream()
                 .filter(addr -> addr.getAddressLine().equals(addressLine) && !addr.getDeleted())
                 .findFirst();
-        
+
         if (existing.isPresent()) {
             return existing.get();
         }
-        
+
         // If setting as default, unset other default addresses
         if (isDefault && !existingAddresses.isEmpty()) {
             existingAddresses.stream()
@@ -309,7 +367,7 @@ public class DataInitializer implements CommandLineRunner {
                         userAddressRepository.save(addr);
                     });
         }
-        
+
         UserAddress address = new UserAddress();
         address.setUser(user);
         address.setReceiverName(receiverName);
@@ -322,7 +380,7 @@ public class DataInitializer implements CommandLineRunner {
         address.setWardCode(wardCode);
         address.setIsDefault(isDefault);
         address.setDeleted(false);
-        
+
         UserAddress saved = userAddressRepository.save(address);
         log.info("Created user address for user: {}", user.getFullName());
         return saved;

@@ -146,6 +146,7 @@ public class DataInitializer implements CommandLineRunner {
 
         // Initialize Carts
         initializeCart(customerUser1);
+        initializeCart(businessUser1);
 
         log.info("Data initialization completed successfully!");
     }
@@ -272,15 +273,18 @@ public class DataInitializer implements CommandLineRunner {
 
     private ProductImage initializeProductImage(Product product, String imageUrl, 
                                                Boolean isThumbnail, Integer displayOrder) {
-        ProductImage image = ProductImage.builder()
-                .product(product)
-                .imageUrl(imageUrl)
-                .isThumbnail(isThumbnail)
-                .displayOrder(displayOrder)
-                .build();
-        ProductImage saved = productImageRepository.save(image);
-        log.debug("Created product image: {} for product: {}", imageUrl, product.getName());
-        return saved;
+        return productImageRepository.findByProductAndImageUrl(product, imageUrl)
+                .orElseGet(() -> {
+                    ProductImage image = ProductImage.builder()
+                            .product(product)
+                            .imageUrl(imageUrl)
+                            .isThumbnail(isThumbnail)
+                            .displayOrder(displayOrder)
+                            .build();
+                    ProductImage saved = productImageRepository.save(image);
+                    log.debug("Created product image: {} for product: {}", imageUrl, product.getName());
+                    return saved;
+                });
     }
 
     private UserAddress initializeUserAddress(User user, String receiverName, String receiverPhone,

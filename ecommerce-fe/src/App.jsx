@@ -16,7 +16,6 @@ import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminRequests from './pages/admin/AdminRequests'
 import AdminRequestDetail from './pages/admin/AdminRequestDetail'
 import BusinessDashboard from './pages/business/BusinessDashboard'
-import AdminDashboard from './pages/admin/AdminDashboard'
 
 export default function App() {
   return (

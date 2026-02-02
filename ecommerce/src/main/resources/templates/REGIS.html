@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+    }
+
+    .email-container {
+      width: 100%;
+      background-color: #ffffff;
+      padding: 20px;
+      max-width: 600px;
+      margin: 0 auto;
+      border: 1px solid #dddddd;
+    }
+
+    .header {
+      text-align: center;
+      padding: 20px 0;
+      background-color: #112d4e;
+      color: #ffffff;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+
+    .content {
+      padding: 20px;
+      text-align: center;
+    }
+
+    .otp-box {
+      display: inline-block;
+      padding: 15px 30px;
+      background-color: #ff4b4b;
+      color: white;
+      font-size: 28px;
+      font-weight: bold;
+      border-radius: 8px;
+      margin: 20px 0;
+      letter-spacing: 4px;
+    }
+
+    .footer {
+      text-align: center;
+      padding: 20px;
+      font-size: 12px;
+      color: #888888;
+    }
+
+    .footer a {
+      color: #3f72af;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+<div class="email-container">
+  <div class="header">
+    <h1>Email Verification Code</h1>
+  </div>
+
+  <div class="content">
+    <p>Dear <strong>[[${name}]]</strong>,</p>
+    <p>Your one-time password (OTP) for verification is:</p>
+    <div class="otp-box">[[${otp}]]</div>
+    <p>This code is valid for 5 minutes. Please do not share it with anyone.</p>
+  </div>
+
+  <div class="footer">
+    <p>Thank you for choosing E-Commerce Marketplace.</p>
+    <p><a href="">Contact Support</a></p>
+  </div>
+</div>
+</body>
+</html>

@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout'
+import ProtectedRoute from './components/ProtectedRoute'
 import Home from './pages/Home'
 import Products from './pages/products/Products'
 import ProductDetail from './pages/product-detail/ProductDetail'
@@ -10,21 +11,74 @@ import Cart from './pages/Cart'
 import SellerRegister from './pages/SellerRegister'
 import Kyc from './pages/Kyc'
 import Profile from './pages/Profile'
+import BusinessDashboard from './pages/business/BusinessDashboard'
+import AdminDashboard from './pages/admin/AdminDashboard'
 
 export default function App() {
   return (
     <Routes>
       <Route element={<Layout />}>
+        {/* Public routes */}
         <Route path="/" element={<Home />} />
         <Route path="/products" element={<Products />} />
         <Route path="/products/:productId" element={<ProductDetail />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/verify" element={<Verify />} />
-        <Route path="/cart" element={<Cart />} />
-        <Route path="/seller/register" element={<SellerRegister />} />
-        <Route path="/kyc" element={<Kyc />} />
-        <Route path="/profile" element={<Profile />} />
+
+        {/* Protected routes - require authentication */}
+        <Route
+          path="/cart"
+          element={
+            <ProtectedRoute requireAuth={true}>
+              <Cart />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute requireAuth={true}>
+              <Profile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/seller/register"
+          element={
+            <ProtectedRoute requireAuth={true}>
+              <SellerRegister />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/kyc"
+          element={
+            <ProtectedRoute requireAuth={true}>
+              <Kyc />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Business routes - require BUSINESS or ADMIN role */}
+        <Route
+          path="/business/dashboard"
+          element={
+            <ProtectedRoute requireAuth={true} allowedRoles={['BUSINESS', 'ADMIN']}>
+              <BusinessDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Admin routes - require ADMIN role only */}
+        <Route
+          path="/admin/dashboard"
+          element={
+            <ProtectedRoute requireAuth={true} allowedRoles={['ADMIN']}>
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
       </Route>
     </Routes>
   )

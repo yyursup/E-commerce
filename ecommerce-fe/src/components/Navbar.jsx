@@ -14,6 +14,8 @@ import {
   HiChevronDown,
   HiOutlineLogout,
   HiOutlineIdentification,
+  HiOutlineChartBar,
+  HiOutlineShieldCheck,
 } from 'react-icons/hi'
 import { cn } from '../lib/cn'
 import { useThemeStore } from '../store/useThemeStore'
@@ -35,6 +37,11 @@ export default function Navbar() {
   const { user, isAuthenticated, logout } = useAuthStore()
   const { totalItems, updateCartCount, resetCart } = useCartStore()
   const navigate = useNavigate()
+  
+  // Get user role
+  const userRole = user?.role?.toUpperCase()
+  const isBusiness = userRole === 'BUSINESS' || userRole === 'ADMIN'
+  const isAdmin = userRole === 'ADMIN'
 
   // Fetch cart when authenticated
   useEffect(() => {
@@ -225,7 +232,47 @@ export default function Navbar() {
                     <p className={cn("truncate text-sm font-semibold", isDark ? "text-white" : "text-stone-900")}>
                       {user?.email}
                     </p>
+                    {userRole && (
+                      <p className={cn("text-xs mt-1", isDark ? "text-slate-500" : "text-stone-500")}>
+                        {userRole === 'ADMIN' ? 'Quản trị viên' : userRole === 'BUSINESS' ? 'Doanh nghiệp' : 'Khách hàng'}
+                      </p>
+                    )}
                   </div>
+                  
+                  {/* Business Dashboard Link */}
+                  {isBusiness && (
+                    <MenuItem>
+                      <Link
+                        to="/business/dashboard"
+                        className={cn(
+                          'flex w-full items-center gap-2 px-4 py-2.5 text-sm transition-colors',
+                          isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-stone-600 hover:bg-stone-50'
+                        )}
+                      >
+                        <HiOutlineChartBar className="h-4 w-4" />
+                        Dashboard Doanh Nghiệp
+                      </Link>
+                    </MenuItem>
+                  )}
+                  
+                  {/* Admin Dashboard Link */}
+                  {isAdmin && (
+                    <MenuItem>
+                      <Link
+                        to="/admin/dashboard"
+                        className={cn(
+                          'flex w-full items-center gap-2 px-4 py-2.5 text-sm transition-colors',
+                          isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-stone-600 hover:bg-stone-50'
+                        )}
+                      >
+                        <HiOutlineShieldCheck className="h-4 w-4" />
+                        Admin Dashboard
+                      </Link>
+                    </MenuItem>
+                  )}
+                  
+                  {/* Seller Register - only for CUSTOMER */}
+                  {userRole === 'CUSTOMER' && (
                   <MenuItem>
                     <Link
                       to="/seller/register"
@@ -238,6 +285,7 @@ export default function Navbar() {
                       Đăng ký bán hàng
                     </Link>
                   </MenuItem>
+                  )}
                   <MenuItem>
                     <Link
                       to="/kyc"
@@ -367,7 +415,37 @@ export default function Navbar() {
                 <>
                   <div className="px-4 py-2 text-sm text-stone-500 dark:text-slate-400">
                     Xin chào, <span className="font-semibold text-stone-900 dark:text-white">{user?.email}</span>
+                    {userRole && (
+                      <span className="ml-2 text-xs">
+                        ({userRole === 'ADMIN' ? 'Quản trị viên' : userRole === 'BUSINESS' ? 'Doanh nghiệp' : 'Khách hàng'})
+                      </span>
+                    )}
                   </div>
+                  
+                  {/* Business Dashboard Link - Mobile */}
+                  {isBusiness && (
+                    <Link
+                      to="/business/dashboard"
+                      onClick={() => setMobileOpen(false)}
+                      className="rounded-lg px-4 py-3 text-left text-sm font-medium text-stone-700 hover:bg-stone-50 dark:text-slate-300 dark:hover:bg-slate-800"
+                    >
+                      Dashboard Doanh Nghiệp
+                    </Link>
+                  )}
+                  
+                  {/* Admin Dashboard Link - Mobile */}
+                  {isAdmin && (
+                    <Link
+                      to="/admin/dashboard"
+                      onClick={() => setMobileOpen(false)}
+                      className="rounded-lg px-4 py-3 text-left text-sm font-medium text-stone-700 hover:bg-stone-50 dark:text-slate-300 dark:hover:bg-slate-800"
+                    >
+                      Admin Dashboard
+                    </Link>
+                  )}
+                  
+                  {/* Seller Register - only for CUSTOMER - Mobile */}
+                  {userRole === 'CUSTOMER' && (
                   <Link
                     to="/seller/register"
                     onClick={() => setMobileOpen(false)}
@@ -375,6 +453,7 @@ export default function Navbar() {
                   >
                     Đăng ký bán hàng
                   </Link>
+                  )}
                   <Link
                     to="/kyc"
                     onClick={() => setMobileOpen(false)}

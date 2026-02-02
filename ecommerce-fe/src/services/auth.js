@@ -1,4 +1,5 @@
 import api from '../lib/axios';
+import axiosClient from '../api/axiosClient';
 
 const authService = {
     register: async (data) => {
@@ -32,6 +33,16 @@ const authService = {
                 email: data.email,
                 otp: data.otp
             });
+            return response.data;
+        } catch (error) {
+            throw error.response ? error.response.data : error;
+        }
+    },
+
+    // Get all users (ADMIN only)
+    getAllUsers: async () => {
+        try {
+            const response = await axiosClient.get('/api/v1/auth/users');
             return response.data;
         } catch (error) {
             throw error.response ? error.response.data : error;

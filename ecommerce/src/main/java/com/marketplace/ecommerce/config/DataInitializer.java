@@ -84,7 +84,7 @@ public class DataInitializer implements CommandLineRunner {
         Shop shop1 = initializeShop(businessUser1, "Apple Store Vietnam",
                 "Chuyên bán các sản phẩm Apple chính hãng: AirPods, iPhone, MacBook",
                 "https://example.com/apple-store-logo.jpg", "https://example.com/apple-store-cover.jpg",
-                "0987654321", "123 Đường Nguyễn Huệ, Quận 1", 1442, "1A0001", ShopStatus.ACTIVE);
+                "0987654321", "123 Đường Nguyễn Huệ, Quận 1", 1442, "21012", ShopStatus.ACTIVE);
 
         // Initialize Product Categories
         ProductCategory electronicsCategory = initializeCategory(null, "Điện Tử");
@@ -142,11 +142,11 @@ public class DataInitializer implements CommandLineRunner {
         // Initialize User Addresses
         initializeUserAddress(customerUser1, "Lê Văn Mua Hàng", "0901234567",
                 "123 Đường Nguyễn Huệ, Phường Bến Nghé", "Hồ Chí Minh", "Quận 1", "Phường Bến Nghé",
-                1442, "1A0001", true);
+                1442, "21012", true);
 
         initializeUserAddress(customerUser1, "Lê Văn Mua Hàng", "0901234567",
                 "456 Đường Lê Lợi, Phường Bến Thành", "Hồ Chí Minh", "Quận 1", "Phường Bến Thành",
-                1442, "1A0002", false);
+                1442, "21012", false);
 
         // Initialize Carts
         initializeCart(customerUser1);

@@ -1,7 +1,9 @@
 package com.marketplace.ecommerce.request.service.impl;
 
 import com.marketplace.ecommerce.auth.entity.Account;
+import com.marketplace.ecommerce.auth.entity.Role;
 import com.marketplace.ecommerce.auth.repository.AccountRepository;
+import com.marketplace.ecommerce.auth.repository.RoleRepository;
 import com.marketplace.ecommerce.common.exception.CustomException;
 import com.marketplace.ecommerce.request.dto.request.CreateSendRequest;
 import com.marketplace.ecommerce.request.dto.response.*;
@@ -36,9 +38,11 @@ public class RequestServiceImpl implements RequestService {
     private final ReportRepository reportRepository;
     private final SellerRepository sellerRepository;
     private final AccountRepository accountRepository;
+    private final RoleRepository roleRepository;
     private final RequestPolicy requestValidation;
     private final ShopService shopService;
 
+    @Transactional
     public RequestResponse approveSellerRegistration(UUID requestId, UUID adminAccountId, String response) {
 
         Account acc = accountRepository.findById(adminAccountId).orElseThrow(() -> new CustomException("Account not found"));
@@ -51,6 +55,13 @@ public class RequestServiceImpl implements RequestService {
 
         ctx.sellerDetail().setCreatedShopId(savedShop.getId());
         sellerRepository.save(ctx.sellerDetail());
+
+        // Update account role from CUSTOMER to BUSINESS
+        Account ownerAccount = req.getAccount();
+        Role businessRole = roleRepository.findByRoleName("BUSINESS")
+                .orElseThrow(() -> new CustomException("BUSINESS role not found"));
+        ownerAccount.setRole(businessRole);
+        accountRepository.save(ownerAccount);
 
         markApprovedRequest(req, acc, response);
 

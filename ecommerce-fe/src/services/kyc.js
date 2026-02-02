@@ -34,6 +34,20 @@ const kycService = {
     }
   },
 
+  uploadWithType: async ({ sessionId, type, file, title, description }) => {
+    try {
+      const form = toFormData({ file, title, description, type });
+      const response = await api.post(
+        `${KYC_BASE}/session/${sessionId}/upload`,
+        form,
+        { headers: { 'Content-Type': 'multipart/form-data' } },
+      );
+      return response.data;
+    } catch (error) {
+      throw error.response ? error.response.data : error;
+    }
+  },
+
   compare: async (sessionId) => {
     try {
       const response = await api.post(`${KYC_BASE}/sessions/${sessionId}/compare`);

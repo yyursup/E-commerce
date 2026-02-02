@@ -9,8 +9,8 @@ import {
   HiOutlineShieldCheck,
   HiOutlineBan,
   HiOutlineCheckCircle,
+  HiOutlineClipboardCheck,
 } from 'react-icons/hi'
-import { HiOutlineClipboardCheck } from 'react-icons/hi'
 import { useThemeStore } from '../../store/useThemeStore'
 import { useAuthStore } from '../../store/useAuthStore'
 import { cn } from '../../lib/cn'

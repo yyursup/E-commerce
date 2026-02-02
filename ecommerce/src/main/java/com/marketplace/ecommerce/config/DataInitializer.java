@@ -19,6 +19,9 @@ import com.marketplace.ecommerce.product.repository.ProductCategoryRepository;
 import com.marketplace.ecommerce.product.repository.ProductImageRepository;
 import com.marketplace.ecommerce.product.repository.ProductRepository;
 import com.marketplace.ecommerce.product.valueObjects.ProductStatus;
+import com.marketplace.ecommerce.platform.constant.PlatformConstant;
+import com.marketplace.ecommerce.platform.entity.PlatformSetting;
+import com.marketplace.ecommerce.platform.repository.PlatformSettingRepository;
 import com.marketplace.ecommerce.shop.entity.Shop;
 import com.marketplace.ecommerce.shop.repository.ShopRepository;
 import com.marketplace.ecommerce.shop.valueObjects.ShopStatus;
@@ -53,6 +56,7 @@ public class DataInitializer implements CommandLineRunner {
     private final CartRepository cartRepository;
     private final PasswordEncoder passwordEncoder;
     private final WalletRepository walletRepository;
+    private final PlatformSettingRepository platformSettingRepository;
 
     @Override
     @Transactional
@@ -155,6 +159,9 @@ public class DataInitializer implements CommandLineRunner {
         initializeUserWallet(businessUser1);
         initializeUserWallet(customerUser1);
         initializeAdminEscrowWallet(adminUser);
+
+        // Initialize Platform Settings
+        initializePlatformSetting(PlatformConstant.KEY_COMMISSION_RATE, "10");
 
         log.info("Data initialization completed successfully!");
     }
@@ -395,6 +402,20 @@ public class DataInitializer implements CommandLineRunner {
                             .build();
                     Cart saved = cartRepository.save(cart);
                     log.info("Created cart for user: {}", user.getFullName());
+                    return saved;
+                });
+    }
+
+    private PlatformSetting initializePlatformSetting(String key, String value) {
+        return platformSettingRepository.findByKey(key)
+                .orElseGet(() -> {
+                    LocalDateTime now = LocalDateTime.now();
+                    PlatformSetting setting = new PlatformSetting();
+                    setting.setKey(key);
+                    setting.setValue(value);
+                    setting.setUpdatedAt(now);
+                    PlatformSetting saved = platformSettingRepository.save(setting);
+                    log.info("Created platform setting: {} = {}", key, value);
                     return saved;
                 });
     }

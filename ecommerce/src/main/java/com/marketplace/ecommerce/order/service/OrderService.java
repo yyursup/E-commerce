@@ -18,6 +18,8 @@ public interface OrderService {
 
     void autoMarkReceivedOrders();
 
+    void autoReceiveAndRelease(UUID orderId);
+
     OrderResponse retryCreateGhnOrder(UUID orderId, UUID accountId);
 
     OrderResponse setGhnOrderCodeManually(UUID orderId, String ghnOrderCode, UUID accountId);

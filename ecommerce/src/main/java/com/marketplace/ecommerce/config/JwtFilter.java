@@ -28,9 +28,12 @@ public class JwtFilter extends OncePerRequestFilter {
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
     private final List<String> publicEndpoints = List.of(
+            "/error",
+            "/favicon.ico",
             "/static/**",
             "/api/v1/auth/login",
-            "/api/v1/**"
+            "/api/v1/payment/vnpay/**",
+            "/payments/vnpay/callback"
     );
 
     public JwtFilter(

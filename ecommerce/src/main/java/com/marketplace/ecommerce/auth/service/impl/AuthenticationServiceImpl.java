@@ -21,6 +21,9 @@ import com.marketplace.ecommerce.cart.entity.Cart;
 import com.marketplace.ecommerce.cart.repository.CartRepository;
 import com.marketplace.ecommerce.common.exception.CustomException;
 import com.marketplace.ecommerce.common.exception.RoleNotFoundException;
+import com.marketplace.ecommerce.wallet.entity.Wallet;
+import com.marketplace.ecommerce.wallet.repository.WalletRepository;
+import com.marketplace.ecommerce.wallet.valueObjects.WalletType;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +35,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -49,6 +53,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final EmailService emailService;
     private final RoleRepository roleRepository;
     private final CartRepository cartRepository;
+    private final WalletRepository walletRepository;
 
     @Override
     public AccountCreateResponse verifyAccount(VerifyRequest request) {
@@ -78,6 +83,15 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .account(savedAccount)
                 .build();
         User userSaved = userRepository.save(user);
+
+        Wallet wallet = Wallet.builder()
+                .user(userSaved)
+                .walletType(WalletType.USER)
+                .availableBalance(BigDecimal.ZERO)
+                .lockedBalance(BigDecimal.ZERO)
+                .createdAt(LocalDateTime.now())
+                .build();
+        walletRepository.save(wallet);
 
         Cart cart = Cart.builder()
                 .user(userSaved)

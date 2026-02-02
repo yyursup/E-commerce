@@ -16,6 +16,7 @@ import com.marketplace.ecommerce.order.entity.OrderItem;
 import com.marketplace.ecommerce.order.repository.OrderItemsRepository;
 import com.marketplace.ecommerce.order.repository.OrderRepository;
 import com.marketplace.ecommerce.order.service.OrderService;
+import com.marketplace.ecommerce.payment.service.EscrowService;
 import com.marketplace.ecommerce.platform.service.PlatformSettingService;
 import com.marketplace.ecommerce.product.entity.Product;
 import com.marketplace.ecommerce.product.repository.ProductRepository;
@@ -31,6 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -56,6 +58,7 @@ public class OrderServiceImpl implements OrderService {
     private final UserAddressRepository userAddressRepository;
     private final ShippingService shippingService;
     private final PlatformSettingService platformSettingService;
+    private final EscrowService escrowService;
 
     @Override
     @Transactional
@@ -104,26 +107,44 @@ public class OrderServiceImpl implements OrderService {
         return OrderResponse.from(order);
     }
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void autoReceiveAndRelease(UUID orderId) {
+        Order order = orderRepository.findByIdForUpdate(orderId)
+                .orElseThrow(() -> new CustomException("Order not found"));
+
+        if (order.isReceivedByBuyer()) return;
+        if (order.getStatus() != OrderStatus.DELIVERED) {
+            return;
+        }
+
+        order.setReceivedByBuyer(true);
+        order.setReceivedAt(LocalDateTime.now());
+        order.setStatus(OrderStatus.COMPLETED);
+        orderRepository.save(order);
+        escrowService.releaseByOrder(order.getId());
+
+        log.info("Auto received + released order {}", order.getOrderNumber());
+    }
+
     @Transactional
     @Scheduled(cron = "0 0 * * * *")
     public void autoMarkReceivedOrders() {
 
         LocalDateTime threshold = LocalDateTime.now().minusDays(3);
 
-        List<Order> orders = orderRepository
-                .findByStatusAndReceivedByBuyerFalseAndDeliveredAtBefore(
+        List<UUID> orderIds = orderRepository
+                .findIdsByStatusAndReceivedByBuyerFalseAndDeliveredAtBefore(
                         OrderStatus.DELIVERED,
                         threshold
                 );
 
-        for (Order order : orders) {
-            order.setReceivedByBuyer(true);
-            order.setReceivedAt(LocalDateTime.now());
-
-            log.info("Auto received order {} after 3 days", order.getOrderNumber());
+        for (UUID orderId : orderIds) {
+            try {
+                autoReceiveAndRelease(orderId);
+            } catch (Exception e) {
+                log.warn("Auto receive failed for orderId={}", orderId, e);
+            }
         }
-
-        orderRepository.saveAll(orders);
     }
 
     @Override
@@ -149,6 +170,7 @@ public class OrderServiceImpl implements OrderService {
 
         order.setReceivedByBuyer(true);
         order.setReceivedAt(LocalDateTime.now());
+        escrowService.releaseByOrder(order.getId());
 
         orderRepository.save(order);
     }
@@ -289,13 +311,6 @@ public class OrderServiceImpl implements OrderService {
 
         for (CartItem cartItem : cartItems) {
             Product product = cartItem.getProduct();
-
-            if (product.getQuantity() != null) {
-                int newStock = product.getQuantity() - cartItem.getQuantity();
-                product.setQuantity(newStock);
-                productRepository.save(product);
-            }
-
             OrderItem orderItem = new OrderItem();
             orderItem.setOrder(order);
             orderItem.setProduct(product);

@@ -19,6 +19,9 @@ import com.marketplace.ecommerce.product.repository.ProductCategoryRepository;
 import com.marketplace.ecommerce.product.repository.ProductImageRepository;
 import com.marketplace.ecommerce.product.repository.ProductRepository;
 import com.marketplace.ecommerce.product.valueObjects.ProductStatus;
+import com.marketplace.ecommerce.platform.constant.PlatformConstant;
+import com.marketplace.ecommerce.platform.entity.PlatformSetting;
+import com.marketplace.ecommerce.platform.repository.PlatformSettingRepository;
 import com.marketplace.ecommerce.shop.entity.Shop;
 import com.marketplace.ecommerce.shop.repository.ShopRepository;
 import com.marketplace.ecommerce.shop.valueObjects.ShopStatus;
@@ -53,6 +56,7 @@ public class DataInitializer implements CommandLineRunner {
     private final CartRepository cartRepository;
     private final PasswordEncoder passwordEncoder;
     private final WalletRepository walletRepository;
+    private final PlatformSettingRepository platformSettingRepository;
 
     @Override
     @Transactional
@@ -75,6 +79,11 @@ public class DataInitializer implements CommandLineRunner {
         User businessUser1 = initializeUser(businessAccount1, "Nguyễn Văn Bán Hàng", "seller@gmail.com",
                 "0987654321", LocalDate.of(1985, 5, 15), GenderType.MALE, "987654321012");
 
+        Account businessAccount2 = initializeAccount("seller2", "seller2@gmail.com", "0912345678",
+                "seller123@", businessRole);
+        User businessUser2 = initializeUser(businessAccount2, "Trần Thị Kinh Doanh", "seller2@gmail.com",
+                "0912345678", LocalDate.of(1988, 8, 20), GenderType.FEMALE, "112233445566");
+
         Account customerAccount1 = initializeAccount("customer", "customer@gmail.com", "0901234567",
                 "customer123@", customerRole);
         User customerUser1 = initializeUser(customerAccount1, "Lê Văn Mua Hàng", "customer@gmail.com",
@@ -84,7 +93,12 @@ public class DataInitializer implements CommandLineRunner {
         Shop shop1 = initializeShop(businessUser1, "Apple Store Vietnam",
                 "Chuyên bán các sản phẩm Apple chính hãng: AirPods, iPhone, MacBook",
                 "https://example.com/apple-store-logo.jpg", "https://example.com/apple-store-cover.jpg",
-                "0987654321", "123 Đường Nguyễn Huệ, Quận 1", 1442, "1A0001", ShopStatus.ACTIVE);
+                "0987654321", "123 Đường Nguyễn Huệ, Quận 1", 1442, "21012", ShopStatus.ACTIVE);
+
+        Shop shop2 = initializeShop(businessUser2, "TechZone - Laptop & Smartphone",
+                "Cửa hàng chuyên bán laptop, điện thoại thông minh và phụ kiện công nghệ chính hãng",
+                "https://example.com/techzone-logo.jpg", "https://example.com/techzone-cover.jpg",
+                "0912345678", "456 Đường Lê Lợi, Quận 1", 1442, "21012", ShopStatus.ACTIVE);
 
         // Initialize Product Categories
         ProductCategory electronicsCategory = initializeCategory(null, "Điện Tử");
@@ -92,6 +106,10 @@ public class DataInitializer implements CommandLineRunner {
         ProductCategory headphonesCategory = initializeCategory(audioCategory, "Tai Nghe");
         ProductCategory airpodsCategory = initializeCategory(headphonesCategory, "AirPods");
         ProductCategory accessoriesCategory = initializeCategory(electronicsCategory, "Phụ Kiện");
+        ProductCategory laptopCategory = initializeCategory(electronicsCategory, "Laptop");
+        ProductCategory smartphoneCategory = initializeCategory(electronicsCategory, "Điện Thoại");
+        ProductCategory macbookCategory = initializeCategory(laptopCategory, "MacBook");
+        ProductCategory iphoneCategory = initializeCategory(smartphoneCategory, "iPhone");
 
         // Initialize Products - AirPods Series
         Product product1 = initializeProduct(shop1, airpodsCategory, "AirPods Pro (2nd generation)",
@@ -139,22 +157,75 @@ public class DataInitializer implements CommandLineRunner {
         initializeProductImage(product7, "https://images.unsplash.com/photo-1611864583067-b002fdc4fa29?w=800&h=800&fit=crop&q=80", true, 1);
         initializeProductImage(product7, "https://images.unsplash.com/photo-1628588287089-c2925c16c52b?w=800&h=800&fit=crop&q=80", false, 2);
 
+        // Initialize Products for Shop 2 - Laptops & Smartphones
+        Product product8 = initializeProduct(shop2, macbookCategory, "MacBook Pro 14 inch M3",
+                "MacBook Pro 14 inch với chip M3, 16GB RAM, 512GB SSD. Màn hình Liquid Retina XDR, pin 18 giờ",
+                "MACBOOK-PRO-14-M3", 30, new BigDecimal("49900000"), 1600, ProductStatus.PUBLISHED);
+        initializeProductImage(product8, "https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=800&h=800&fit=crop", true, 1);
+        initializeProductImage(product8, "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800&h=800&fit=crop", false, 2);
+        initializeProductImage(product8, "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=800&h=800&fit=crop", false, 3);
+
+        Product product9 = initializeProduct(shop2, macbookCategory, "MacBook Air 15 inch M2",
+                "MacBook Air 15 inch với chip M2, 8GB RAM, 256GB SSD. Thiết kế siêu mỏng, pin 18 giờ",
+                "MACBOOK-AIR-15-M2", 50, new BigDecimal("32900000"), 1500, ProductStatus.PUBLISHED);
+        initializeProductImage(product9, "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=800&h=800&fit=crop", true, 1);
+        initializeProductImage(product9, "https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=800&h=800&fit=crop", false, 2);
+        initializeProductImage(product9, "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800&h=800&fit=crop", false, 3);
+
+        Product product10 = initializeProduct(shop2, iphoneCategory, "iPhone 15 Pro Max 256GB",
+                "iPhone 15 Pro Max với chip A17 Pro, camera 48MP, màn hình Super Retina XDR 6.7 inch, pin lâu dài",
+                "IPHONE-15-PRO-MAX-256", 40, new BigDecimal("33990000"), 221, ProductStatus.PUBLISHED);
+        initializeProductImage(product10, "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=800&h=800&fit=crop", true, 1);
+        initializeProductImage(product10, "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&h=800&fit=crop", false, 2);
+        initializeProductImage(product10, "https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?w=800&h=800&fit=crop", false, 3);
+
+        Product product11 = initializeProduct(shop2, iphoneCategory, "iPhone 15 128GB",
+                "iPhone 15 với chip A16 Bionic, camera 48MP, màn hình Super Retina XDR 6.1 inch, chống nước IP68",
+                "IPHONE-15-128", 60, new BigDecimal("21990000"), 171, ProductStatus.PUBLISHED);
+        initializeProductImage(product11, "https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?w=800&h=800&fit=crop", true, 1);
+        initializeProductImage(product11, "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&h=800&fit=crop", false, 2);
+        initializeProductImage(product11, "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=800&h=800&fit=crop", false, 3);
+
+        Product product12 = initializeProduct(shop2, laptopCategory, "Dell XPS 13 Plus",
+                "Laptop Dell XPS 13 Plus với Intel Core i7, 16GB RAM, 512GB SSD, màn hình OLED 13.4 inch",
+                "DELL-XPS-13-PLUS", 25, new BigDecimal("34900000"), 1300, ProductStatus.PUBLISHED);
+        initializeProductImage(product12, "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=800&h=800&fit=crop", true, 1);
+        initializeProductImage(product12, "https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=800&h=800&fit=crop", false, 2);
+
+        Product product13 = initializeProduct(shop2, smartphoneCategory, "Samsung Galaxy S24 Ultra",
+                "Samsung Galaxy S24 Ultra với chip Snapdragon 8 Gen 3, camera 200MP, màn hình Dynamic AMOLED 6.8 inch, S Pen",
+                "SAMSUNG-S24-ULTRA", 35, new BigDecimal("28990000"), 233, ProductStatus.PUBLISHED);
+        initializeProductImage(product13, "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&h=800&fit=crop", true, 1);
+        initializeProductImage(product13, "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=800&h=800&fit=crop", false, 2);
+        initializeProductImage(product13, "https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?w=800&h=800&fit=crop", false, 3);
+
+        Product product14 = initializeProduct(shop2, accessoriesCategory, "Ốp Lưng iPhone 15 Pro Max",
+                "Ốp lưng trong suốt cao cấp cho iPhone 15 Pro Max, chống sốc, chống trầy xước",
+                "IPHONE-15-PRO-MAX-CASE", 200, new BigDecimal("450000"), 20, ProductStatus.PUBLISHED);
+        initializeProductImage(product14, "https://images.unsplash.com/photo-1601972602237-8c79241f5c9c?w=800&h=800&fit=crop", true, 1);
+        initializeProductImage(product14, "https://images.unsplash.com/photo-1601972602237-8c79241f5c9c?w=800&h=800&fit=crop&q=80", false, 2);
+
         // Initialize User Addresses
         initializeUserAddress(customerUser1, "Lê Văn Mua Hàng", "0901234567",
                 "123 Đường Nguyễn Huệ, Phường Bến Nghé", "Hồ Chí Minh", "Quận 1", "Phường Bến Nghé",
-                1442, "1A0001", true);
+                1442, "21012", true);
 
         initializeUserAddress(customerUser1, "Lê Văn Mua Hàng", "0901234567",
                 "456 Đường Lê Lợi, Phường Bến Thành", "Hồ Chí Minh", "Quận 1", "Phường Bến Thành",
-                1442, "1A0002", false);
+                1442, "21012", false);
 
         // Initialize Carts
         initializeCart(customerUser1);
         initializeCart(businessUser1);
+        initializeCart(businessUser2);
         // Initialize Wallet
         initializeUserWallet(businessUser1);
+        initializeUserWallet(businessUser2);
         initializeUserWallet(customerUser1);
         initializeAdminEscrowWallet(adminUser);
+
+        // Initialize Platform Settings
+        initializePlatformSetting(PlatformConstant.KEY_COMMISSION_RATE, "10");
 
         log.info("Data initialization completed successfully!");
     }
@@ -395,6 +466,20 @@ public class DataInitializer implements CommandLineRunner {
                             .build();
                     Cart saved = cartRepository.save(cart);
                     log.info("Created cart for user: {}", user.getFullName());
+                    return saved;
+                });
+    }
+
+    private PlatformSetting initializePlatformSetting(String key, String value) {
+        return platformSettingRepository.findByKey(key)
+                .orElseGet(() -> {
+                    LocalDateTime now = LocalDateTime.now();
+                    PlatformSetting setting = new PlatformSetting();
+                    setting.setKey(key);
+                    setting.setValue(value);
+                    setting.setUpdatedAt(now);
+                    PlatformSetting saved = platformSettingRepository.save(setting);
+                    log.info("Created platform setting: {} = {}", key, value);
                     return saved;
                 });
     }

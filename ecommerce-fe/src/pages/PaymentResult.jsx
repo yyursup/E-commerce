@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import axiosClient from '../api/axiosClient';
 import { useThemeStore } from '../store/useThemeStore';
@@ -9,27 +9,31 @@ export default function PaymentResult() {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     const isDark = useThemeStore((s) => s.theme) === 'dark';
+    const hasCalledApi = useRef(false);
 
     const [status, setStatus] = useState('loading'); // loading, success, failed
     const [message, setMessage] = useState('Đang xử lý kết quả thanh toán...');
+    const [transactionId, setTransactionId] = useState(null);
 
     useEffect(() => {
         const verifyPayment = async () => {
+            if (hasCalledApi.current) return;
+            hasCalledApi.current = true;
+
             const params = Object.fromEntries(searchParams.entries());
 
-            // Basic client-side check first (optional, mainly wait for backend)
-            // Call backend to verify signature and update status
             try {
-                // We use the existing endpoint structure: GET /payment/vnpay/return?params...
-                const response = await axiosClient.get('/api/v1/payment/vnpay/return', { params });
+                // Call backend to verify signature
+                await axiosClient.get('/api/v1/payment/vnpay/return', { params });
 
-                // Inspect response status or code (assuming backend returns { ok: true } on valid signature, 
-                // but we also need to check vnp_ResponseCode for actual success)
+                // Check response code from VNPAY params
                 const responseCode = params['vnp_ResponseCode'];
+                const txnId = params['vnp_TransactionNo'];
 
                 if (responseCode === '00') {
                     setStatus('success');
                     setMessage('Thanh toán thành công!');
+                    setTransactionId(txnId);
                 } else {
                     setStatus('failed');
                     setMessage('Thanh toán thất bại hoặc bị hủy.');
@@ -65,6 +69,11 @@ export default function PaymentResult() {
                     <div className="flex flex-col items-center animate-in zoom-in duration-300">
                         <HiCheckCircle className="w-20 h-20 text-green-500 mb-6" />
                         <h2 className={cn("text-2xl font-bold text-green-500 mb-2")}>Thanh toán thành công!</h2>
+                        {transactionId && (
+                            <p className={cn("text-xs font-mono mb-4 px-3 py-1 rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400")}>
+                                Mã GD: {transactionId}
+                            </p>
+                        )}
                         <p className={cn("text-sm mb-8", isDark ? "text-slate-400" : "text-stone-500")}>
                             Đơn hàng của bạn đã được xác nhận và đang chờ xử lý.
                         </p>

@@ -1,189 +1,204 @@
-import { useState, useEffect } from 'react';
-import { useLocation, useNavigate, Link } from 'react-router-dom';
-import { useThemeStore } from '../store/useThemeStore';
-import { useAuthStore } from '../store/useAuthStore';
-import checkoutService from '../services/checkout';
-import orderService from '../services/order';
-import toast from 'react-hot-toast';
-import { cn } from '../lib/cn';
-import { HiArrowLeft, HiLocationMarker, HiTicket } from 'react-icons/hi';
-import AddressManager from '../components/AddressManager';
+import { useState, useEffect } from 'react'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
+import { useAuthStore } from '../store/useAuthStore'
+import cartService from '../services/cart'
+import orderService from '../services/order'
+import { userAddressService } from '../services/userAddressService'
+import { useThemeStore } from '../store/useThemeStore'
+import { cn } from '../lib/cn'
+import { HiOutlineLocationMarker, HiArrowLeft, HiOutlineShoppingBag } from 'react-icons/hi'
+import toast from 'react-hot-toast'
 
 export default function Checkout() {
-    const isDark = useThemeStore((s) => s.theme) === 'dark';
-    const navigate = useNavigate();
-    const location = useLocation();
+    const { isAuthenticated } = useAuthStore()
+    const { state } = useLocation()
+    const shopId = state?.shopId
+    const navigate = useNavigate()
+    const isDark = useThemeStore((state) => state.theme) === 'dark'
 
-    // Expect shopId to be passed via state from Cart
-    const { shopId } = location.state || {};
+    const [loading, setLoading] = useState(true)
+    const [cartItems, setCartItems] = useState([])
+    const [shopName, setShopName] = useState('')
+    const [totalPrice, setTotalPrice] = useState(0)
 
-    const [loading, setLoading] = useState(true);
-    const [processing, setProcessing] = useState(false);
-
-    const [confirmData, setConfirmData] = useState(null); // Data from /confirm
-    const [selectedAddress, setSelectedAddress] = useState(null);
-    const [shippingFee, setShippingFee] = useState(0);
-    const [total, setTotal] = useState(0);
-    const [notes, setNotes] = useState('');
-    const [showAddressModal, setShowAddressModal] = useState(false);
+    const [addresses, setAddresses] = useState([])
+    const [selectedAddressId, setSelectedAddressId] = useState(null)
+    const [notes, setNotes] = useState('')
+    const [processing, setProcessing] = useState(false)
 
     useEffect(() => {
+        if (!isAuthenticated) {
+            navigate('/login')
+            return
+        }
         if (!shopId) {
-            toast.error("Không tìm thấy thông tin đơn hàng");
-            navigate('/cart');
-            return;
+            toast.error("Không tìm thấy thông tin đơn hàng")
+            navigate('/cart')
+            return
         }
-        fetchConfirmData();
-    }, [shopId, navigate]);
+        fetchData()
+    }, [isAuthenticated, shopId])
 
-    const fetchConfirmData = async () => {
+    const fetchData = async () => {
         try {
-            setLoading(true);
-            const data = await checkoutService.confirm(shopId);
-            setConfirmData(data);
+            setLoading(true)
 
-            // Set initial values
-            if (data.address) {
-                setSelectedAddress(data.address);
+            // Fetch Cart
+            const cartData = await cartService.getCart()
+            const shopItems = cartData.items.filter(item => item.shopId === shopId)
+
+            if (shopItems.length === 0) {
+                toast.error("Không có sản phẩm nào từ Shop này trong giỏ hàng")
+                navigate('/cart')
+                return
             }
-            setShippingFee(data.shippingFee || 0);
-            setTotal(data.subtotal + (data.shippingFee || 0));
+
+            setCartItems(shopItems)
+            setShopName(shopItems[0].shopName || 'Shop')
+            setTotalPrice(shopItems.reduce((sum, item) => sum + item.totalPrice, 0))
+
+            // Fetch Addresses
+            const addressRes = await userAddressService.listMyAddresses()
+            const addressList = addressRes.data || []
+            setAddresses(addressList)
+
+            // Auto select default or first address
+            const defaultAddr = addressList.find(a => a.isDefault) || addressList[0]
+            if (defaultAddr) setSelectedAddressId(defaultAddr.id)
 
         } catch (error) {
-            console.error(error);
-            toast.error(error.message || "Lỗi tải thông tin thanh toán");
-            navigate('/cart');
+            console.error("Failed to load checkout data", error)
+            toast.error("Có lỗi xảy ra khi tải dữ liệu")
         } finally {
-            setLoading(false);
+            setLoading(false)
         }
-    };
+    }
 
-    const handleAddressChange = async (newAddress) => {
-        setSelectedAddress(newAddress);
-        setShowAddressModal(false);
-
-        // Recalculate fee
-        try {
-            setLoading(true);
-            const quoteData = await checkoutService.quote(shopId, newAddress.id);
-            setShippingFee(quoteData.shippingFee);
-            setTotal(quoteData.total);
-        } catch (error) {
-            console.error(error);
-            toast.error("Không thể tính phí vận chuyển cho địa chỉ này");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handlePlaceOrder = async () => {
-        if (!selectedAddress) {
-            toast.error("Vui lòng chọn địa chỉ giao hàng");
-            return;
+    const handleCreateOrder = async () => {
+        if (!selectedAddressId) {
+            toast.error("Vui lòng chọn địa chỉ giao hàng")
+            return
         }
 
         try {
-            setProcessing(true);
-            const orderRes = await orderService.createOrder(shopId, selectedAddress.id, notes);
-            toast.success("Đặt hàng thành công!");
+            setProcessing(true)
+            // 1. Create Order
+            const order = await orderService.createOrder(shopId, selectedAddressId, notes)
+            toast.success("Đặt hàng thành công!")
 
-            // Redirect to Payment or Order Success
-            // Check if we can pay immediately
-            if (confirm('Bạn có muốn thanh toán ngay không?')) {
-                const payRes = await orderService.createPayment(orderRes.id);
-                if (payRes.paymentUrl) {
-                    window.location.href = payRes.paymentUrl;
-                } else {
-                    navigate('/my-orders');
-                }
+            // 2. Create Payment URL
+            const paymentRes = await orderService.createPayment(order.id)
+            if (paymentRes.paymentUrl) {
+                window.location.href = paymentRes.paymentUrl
             } else {
-                navigate('/my-orders');
+                navigate(`/orders/${order.id}`)
             }
 
         } catch (error) {
-            console.error(error);
-            toast.error(error.message || "Đặt hàng thất bại");
+            console.error(error)
+            toast.error(error.message || "Đặt hàng thất bại")
+            // If order was created but payment failed, navigate to order detail
+            if (error?.orderId) { // Check if we can get orderId from error context if possible, otherwise just stay or navigate
+                navigate('/orders')
+            }
         } finally {
-            setProcessing(false);
+            setProcessing(false)
         }
-    };
+    }
 
-    if (loading && !confirmData) {
+    if (loading) {
         return (
-            <div className={cn("min-h-screen flex items-center justify-center", isDark ? "bg-slate-950 text-white" : "bg-stone-50 text-black")}>
-                Đang tải thông tin...
+            <div className={cn("flex min-h-screen items-center justify-center", isDark ? "bg-slate-950" : "bg-stone-50")}>
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent"></div>
             </div>
-        );
+        )
     }
 
     return (
-        <div className={cn("min-h-screen py-8 px-4", isDark ? "bg-slate-950" : "bg-stone-50")}>
+        <div className={cn("min-h-screen py-10 px-4 sm:px-6 lg:px-8", isDark ? "bg-slate-950" : "bg-stone-50")}>
             <div className="mx-auto max-w-4xl">
-                <button onClick={() => navigate('/cart')} className="mb-6 flex items-center gap-2 text-stone-500 hover:text-amber-500 transition">
-                    <HiArrowLeft /> Quay lại giỏ hàng
-                </button>
+                {/* Header */}
+                <div className="mb-8 flex items-center gap-4">
+                    <button
+                        onClick={() => navigate('/cart')}
+                        className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                    >
+                        <HiArrowLeft className={cn("w-6 h-6", isDark ? "text-white" : "text-stone-900")} />
+                    </button>
+                    <h1 className={cn("text-2xl font-bold", isDark ? "text-white" : "text-stone-900")}>
+                        Thanh toán ({shopName})
+                    </h1>
+                </div>
 
-                <h1 className={cn("text-2xl font-bold mb-6", isDark ? "text-white" : "text-stone-900")}>Thanh toán</h1>
-
-                <div className="grid gap-8 lg:grid-cols-3">
-                    {/* Left Column: Address + Items */}
-                    <div className="lg:col-span-2 space-y-6">
+                <div className="grid gap-8 lg:grid-cols-12">
+                    {/* Left Column: Order Info & Address */}
+                    <div className="lg:col-span-8 space-y-6">
 
                         {/* Address Section */}
-                        <div className={cn("p-6 rounded-2xl border shadow-sm", isDark ? "bg-slate-900 border-slate-800" : "bg-white border-stone-200")}>
-                            <h2 className={cn("text-lg font-bold mb-4 flex items-center gap-2", isDark ? "text-white" : "text-stone-900")}>
-                                <HiLocationMarker className="text-amber-500" /> Địa chỉ nhận hàng
-                            </h2>
+                        <div className={cn("rounded-2xl border p-6 shadow-sm", isDark ? "border-slate-800 bg-slate-900" : "border-stone-200 bg-white")}>
+                            <div className="flex items-center gap-2 mb-4">
+                                <HiOutlineLocationMarker className="w-5 h-5 text-amber-500" />
+                                <h2 className={cn("font-bold text-lg", isDark ? "text-white" : "text-stone-900")}>Địa chỉ nhận hàng</h2>
+                            </div>
 
-                            {selectedAddress ? (
-                                <div>
-                                    <p className={cn("font-medium", isDark ? "text-slate-200" : "text-stone-800")}>
-                                        {selectedAddress.receiverName} | {selectedAddress.receiverPhone}
-                                    </p>
-                                    <p className={cn("text-sm mt-1", isDark ? "text-slate-400" : "text-stone-600")}>
-                                        {selectedAddress.addressLine}, {selectedAddress.ward}, {selectedAddress.district}, {selectedAddress.city}
-                                    </p>
-                                    <button
-                                        onClick={() => setShowAddressModal(true)}
-                                        className="mt-3 text-sm text-amber-500 hover:underline font-medium"
-                                    >
-                                        Thay đổi địa chỉ
-                                    </button>
+                            {addresses.length === 0 ? (
+                                <div className="text-center py-4">
+                                    <p className={isDark ? "text-slate-400" : "text-stone-500"}>Bạn chưa có địa chỉ nào.</p>
+                                    <Link to="/profile" className="text-amber-500 font-medium hover:underline mt-2 inline-block">Thêm địa chỉ</Link>
                                 </div>
                             ) : (
-                                <div className="text-center py-4">
-                                    <p className="mb-3 text-sm text-stone-500">Chưa có địa chỉ nào được chọn</p>
-                                    <button
-                                        onClick={() => setShowAddressModal(true)}
-                                        className="px-4 py-2 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600"
-                                    >
-                                        Chọn địa chỉ
-                                    </button>
+                                <div className="space-y-3">
+                                    {addresses.map((addr) => (
+                                        <label
+                                            key={addr.id}
+                                            className={cn(
+                                                "flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all",
+                                                selectedAddressId === addr.id
+                                                    ? "border-amber-500 bg-amber-50 dark:bg-amber-900/10"
+                                                    : "border-transparent hover:bg-stone-50 dark:hover:bg-slate-800"
+                                            )}
+                                        >
+                                            <input
+                                                type="radio"
+                                                name="address"
+                                                className="mt-1"
+                                                checked={selectedAddressId === addr.id}
+                                                onChange={() => setSelectedAddressId(addr.id)}
+                                            />
+                                            <div className="text-sm">
+                                                <div className={cn("font-bold", isDark ? "text-white" : "text-stone-900")}>
+                                                    {addr.recipientName} <span className="font-normal opacity-70">| {addr.phone}</span>
+                                                </div>
+                                                <div className={isDark ? "text-slate-400" : "text-stone-600"}>
+                                                    {addr.detailAddress}, {addr.ward}, {addr.district}, {addr.city}
+                                                </div>
+                                            </div>
+                                        </label>
+                                    ))}
                                 </div>
                             )}
                         </div>
 
-                        {/* Items Section */}
-                        <div className={cn("p-6 rounded-2xl border shadow-sm", isDark ? "bg-slate-900 border-slate-800" : "bg-white border-stone-200")}>
-                            <h2 className={cn("text-lg font-bold mb-4", isDark ? "text-white" : "text-stone-900")}>
-                                Sản phẩm
-                            </h2>
-                            <div className="space-y-4">
-                                {confirmData?.items?.map((item) => (
-                                    <div key={item.id} className="flex gap-4">
+                        {/* Order Items */}
+                        <div className={cn("rounded-2xl border overflow-hidden shadow-sm", isDark ? "border-slate-800 bg-slate-900" : "border-stone-200 bg-white")}>
+                            <div className={cn("px-6 py-4 border-b flex items-center gap-2", isDark ? "border-slate-800 bg-slate-800/50" : "border-stone-100 bg-stone-50")}>
+                                <HiOutlineShoppingBag className="w-5 h-5 text-amber-600 dark:text-amber-500" />
+                                <h2 className={cn("font-bold text-lg", isDark ? "text-white" : "text-stone-900")}>Sản phẩm</h2>
+                            </div>
+                            <div className="divide-y divide-stone-100 dark:divide-slate-800">
+                                {cartItems.map((item) => (
+                                    <div key={item.id} className="p-4 flex gap-4">
                                         <img
-                                            src={item.productImageUrl || 'https://via.placeholder.com/64'}
+                                            src={item.productImageUrl || 'https://via.placeholder.com/150'}
                                             alt={item.productName}
-                                            className="w-16 h-16 rounded-lg object-cover border"
+                                            className="h-16 w-16 rounded-lg object-cover border border-stone-100 dark:border-slate-700"
                                         />
                                         <div className="flex-1">
-                                            <h3 className={cn("font-medium line-clamp-2", isDark ? "text-slate-200" : "text-stone-800")}>
+                                            <h3 className={cn("text-sm font-medium line-clamp-2", isDark ? "text-white" : "text-stone-900")}>
                                                 {item.productName}
                                             </h3>
-                                            <div className="flex justify-between items-center mt-1">
-                                                <span className={cn("text-sm", isDark ? "text-slate-400" : "text-stone-500")}>
-                                                    x{item.quantity}
-                                                </span>
+                                            <div className="mt-1 flex justify-between items-center text-sm">
+                                                <span className={isDark ? "text-slate-400" : "text-stone-500"}>x{item.quantity}</span>
                                                 <span className={cn("font-medium", isDark ? "text-amber-400" : "text-amber-600")}>
                                                     {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.totalPrice)}
                                                 </span>
@@ -195,90 +210,75 @@ export default function Checkout() {
                         </div>
 
                         {/* Notes */}
-                        <div className={cn("p-6 rounded-2xl border shadow-sm", isDark ? "bg-slate-900 border-slate-800" : "bg-white border-stone-200")}>
-                            <label className={cn("block text-sm font-medium mb-2", isDark ? "text-slate-300" : "text-stone-700")}>
-                                Ghi chú cho người bán
-                            </label>
-                            <input
-                                type="text"
+                        <div className={cn("rounded-2xl border p-6 shadow-sm", isDark ? "border-slate-800 bg-slate-900" : "border-stone-200 bg-white")}>
+                            <h2 className={cn("font-bold text-lg mb-4", isDark ? "text-white" : "text-stone-900")}>Ghi chú đơn hàng</h2>
+                            <textarea
                                 value={notes}
                                 onChange={(e) => setNotes(e.target.value)}
-                                placeholder="Lưu ý về đơn hàng..."
+                                placeholder="Lưu ý cho người bán..."
                                 className={cn(
-                                    "w-full rounded-xl border px-4 py-2.5 outline-none focus:ring-2 focus:ring-amber-500/50 transition-all bg-transparent",
-                                    isDark ? "border-slate-700 text-white placeholder:text-slate-500" : "border-stone-200 text-stone-900 placeholder:text-stone-400"
+                                    "w-full rounded-xl border p-3 outline-none focus:ring-2 focus:ring-amber-500 transition-all",
+                                    isDark ? "bg-slate-800 border-slate-700 text-white placeholder-slate-500" : "bg-stone-50 border-stone-200 text-stone-900"
                                 )}
+                                rows={3}
                             />
                         </div>
+
                     </div>
 
-                    {/* Right Column: Summary */}
-                    <div>
-                        <div className={cn("p-6 rounded-2xl border shadow-sm sticky top-4", isDark ? "bg-slate-900 border-slate-800" : "bg-white border-stone-200")}>
-                            <h2 className={cn("text-lg font-bold mb-4", isDark ? "text-white" : "text-stone-900")}>
-                                Tổng thanh toán
-                            </h2>
+                    {/* Right Column: Calculations */}
+                    <div className="lg:col-span-4">
+                        <div className={cn(
+                            "sticky top-6 rounded-2xl border p-6 shadow-sm space-y-4",
+                            isDark ? "border-slate-800 bg-slate-900" : "border-stone-200 bg-white"
+                        )}>
+                            <h2 className={cn("font-bold text-lg", isDark ? "text-white" : "text-stone-900")}>Chi tiết thanh toán</h2>
 
-                            <div className="space-y-3 pb-4 border-b border-stone-100 dark:border-slate-800">
-                                <div className="flex justify-between text-sm">
+                            <div className="space-y-2 text-sm pt-4 border-t border-stone-100 dark:border-slate-800">
+                                <div className="flex justify-between">
                                     <span className={isDark ? "text-slate-400" : "text-stone-600"}>Tổng tiền hàng</span>
                                     <span className={isDark ? "text-white" : "text-stone-900"}>
-                                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(confirmData?.subtotal || 0)}
+                                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalPrice)}
                                     </span>
                                 </div>
-                                <div className="flex justify-between text-sm">
+                                <div className="flex justify-between">
                                     <span className={isDark ? "text-slate-400" : "text-stone-600"}>Phí vận chuyển</span>
-                                    <span className={isDark ? "text-white" : "text-stone-900"}>
-                                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(shippingFee)}
+                                    <span className={cn("text-sm italic", isDark ? "text-slate-500" : "text-stone-400")}>
+                                        (Tính sau khi tạo đơn)
                                     </span>
                                 </div>
                             </div>
 
-                            <div className="flex justify-between items-center py-4">
-                                <span className={cn("font-bold text-lg", isDark ? "text-white" : "text-stone-900")}>Tổng cộng</span>
+                            <div className="py-4 border-y border-stone-100 dark:border-slate-800 flex justify-between items-center">
+                                <span className={cn("font-bold", isDark ? "text-white" : "text-stone-900")}>Tổng thanh toán</span>
                                 <span className="font-bold text-xl text-amber-500">
-                                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(total)}
+                                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalPrice)}
                                 </span>
                             </div>
 
                             <button
-                                onClick={handlePlaceOrder}
-                                disabled={processing || !selectedAddress}
-                                className="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                onClick={handleCreateOrder}
+                                disabled={processing || cartItems.length === 0}
+                                className={cn(
+                                    "w-full py-3 rounded-xl font-bold text-white shadow-lg shadow-amber-500/25 transition-all flex justify-center items-center gap-2",
+                                    processing
+                                        ? "bg-stone-400 cursor-not-allowed"
+                                        : "bg-amber-500 hover:bg-amber-600 active:scale-95"
+                                )}
                             >
-                                {processing ? "Đang xử lý..." : "Đặt hàng"}
+                                {processing ? (
+                                    <>
+                                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                                        Đang xử lý...
+                                    </>
+                                ) : (
+                                    "Đặt hàng"
+                                )}
                             </button>
                         </div>
                     </div>
                 </div>
-
-                {/* Address Modal (Simplified for now - reuse AddressManager inside a modal logic if possible, or just build a quick selector) */}
-                {showAddressModal && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-                        <div className={cn("w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl p-6 relative", isDark ? "bg-slate-900" : "bg-white")}>
-                            <button
-                                onClick={() => setShowAddressModal(false)}
-                                className="absolute top-4 right-4 text-2xl opacity-50 hover:opacity-100"
-                            >
-                                &times;
-                            </button>
-                            <h2 className={cn("text-xl font-bold mb-4", isDark ? "text-white" : "text-stone-900")}>Chọn địa chỉ</h2>
-
-                            {/* We can temporarily mount a customized version of AddressManager or list addresses manually here. 
-                                For speed, I'll recommend the user to implement the full selector later, 
-                                but I will just assume AddressManager can be used or I'll query addresses directly if I have time. 
-                                Let's actually use AddressManager if it supports 'selection mode' or just render it. 
-                                Looking at AddressManager code would be good, but I'll trust standard implementation. 
-                                Creating a simple list here.
-                            */}
-                            <div className="text-center py-8">
-                                <p>Tính năng chọn địa chỉ nhanh đang phát triển. Vui lòng vào trang cá nhân để thiết lập địa chỉ mặc định.</p>
-                                <Link to="/profile" className="text-amber-500 hover:underline">Đi tới trang cá nhân</Link>
-                            </div>
-                        </div>
-                    </div>
-                )}
             </div>
         </div>
-    );
+    )
 }

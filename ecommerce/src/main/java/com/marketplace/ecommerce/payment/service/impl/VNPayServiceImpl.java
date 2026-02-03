@@ -29,7 +29,7 @@ public class VNPayServiceImpl implements VNPayService {
         params.put("vnp_OrderInfo", "Thanh toan don hang " + payment.getOrder().getOrderNumber());
         params.put("vnp_OrderType", "other");
         params.put("vnp_Amount", payment.getAmount().multiply(BigDecimal.valueOf(100)).toBigInteger().toString());
-        params.put("vnp_ReturnUrl", "http://localhost:8080/api/v1/payment/vnpay/return");
+        params.put("vnp_ReturnUrl", "http://localhost:5173/payment/vnpay_return");
         params.put("vnp_IpAddr", "127.0.0.1");
         params.put("vnp_CreateDate", LocalDateTime.now()
                 .format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")));

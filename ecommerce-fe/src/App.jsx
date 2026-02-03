@@ -15,10 +15,16 @@ import AdminLayout from './pages/admin/AdminLayout'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminRequests from './pages/admin/AdminRequests'
 import AdminRequestDetail from './pages/admin/AdminRequestDetail'
+import AdminOrders from './pages/admin/AdminOrders'
+import AdminOrderDetail from './pages/admin/AdminOrderDetail'
+import BusinessLayout from './pages/business/BusinessLayout'
 import BusinessDashboard from './pages/business/BusinessDashboard'
 import Checkout from './pages/Checkout'
 import PaymentResult from './pages/PaymentResult'
-import MyOrders from './pages/MyOrders'
+import ShopOrders from './pages/business/ShopOrders'
+import ShopOrderDetail from './pages/business/ShopOrderDetail'
+import MyOrders from './pages/orders/MyOrders'
+import OrderDetail from './pages/orders/OrderDetail'
 
 export default function App() {
   return (
@@ -74,6 +80,22 @@ export default function App() {
           }
         />
         <Route
+          path="/orders"
+          element={
+            <ProtectedRoute requireAuth={true}>
+              <MyOrders />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/orders/:orderId"
+          element={
+            <ProtectedRoute requireAuth={true}>
+              <OrderDetail />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/seller/register"
           element={
             <ProtectedRoute requireAuth={true}>
@@ -92,13 +114,17 @@ export default function App() {
 
         {/* Business routes - require BUSINESS or ADMIN role */}
         <Route
-          path="/business/dashboard"
+          path="/business"
           element={
             <ProtectedRoute requireAuth={true} allowedRoles={['BUSINESS', 'ADMIN']}>
-              <BusinessDashboard />
+              <BusinessLayout />
             </ProtectedRoute>
           }
-        />
+        >
+          <Route index element={<BusinessDashboard />} />
+          <Route path="orders" element={<ShopOrders />} />
+          <Route path="orders/:orderId" element={<ShopOrderDetail />} />
+        </Route>
 
         {/* Admin routes - require ADMIN role only */}
         <Route
@@ -112,6 +138,8 @@ export default function App() {
           <Route index element={<AdminDashboard />} />
           <Route path="requests" element={<AdminRequests />} />
           <Route path="requests/:requestId" element={<AdminRequestDetail />} />
+          <Route path="orders" element={<AdminOrders />} />
+          <Route path="orders/:orderId" element={<AdminOrderDetail />} />
         </Route>
       </Route>
     </Routes >

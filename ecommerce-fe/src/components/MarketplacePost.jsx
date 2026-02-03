@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   HiOutlineEye,
@@ -11,15 +12,30 @@ import {
 import { useThemeStore } from '../store/useThemeStore'
 import { useAuthStore } from '../store/useAuthStore'
 import { cn } from '../lib/cn'
-import TradeOffers from './TradeOffers'
 import toast from 'react-hot-toast'
 
 export default function MarketplacePost({ post, index }) {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
   const { isAuthenticated, user } = useAuthStore()
-  const [showOffers, setShowOffers] = useState(false)
+  const navigate = useNavigate()
 
   const isOwner = user?.id === post.userId
+
+  const handleCardClick = (e) => {
+    // Don't navigate if clicking on button or badge
+    if (
+      e.target.closest('a') ||
+      e.target.closest('button') ||
+      e.target.closest('[data-no-navigate]')
+    ) {
+      return
+    }
+    if (isAuthenticated) {
+      navigate(`/marketplace/${post.id}/offers`)
+    } else {
+      toast.error('Vui lòng đăng nhập để xem chi tiết')
+    }
+  }
 
   const getWantedTypeIcon = (type) => {
     switch (type) {
@@ -43,29 +59,21 @@ export default function MarketplacePost({ post, index }) {
     }
   }
 
-  const handleViewOffers = () => {
-    if (!isAuthenticated) {
-      toast.error('Vui lòng đăng nhập để xem offers')
-      return
-    }
-    setShowOffers(true)
-  }
-
   return (
-    <>
-      <motion.div
+    <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: index * 0.1 }}
+        onClick={handleCardClick}
         className={cn(
-          'group relative overflow-hidden rounded-2xl border transition-all duration-300',
+          'group relative overflow-hidden rounded-2xl border transition-all duration-300 cursor-pointer',
           isDark
             ? 'border-slate-700/50 bg-slate-800/50 hover:border-slate-600 hover:shadow-xl hover:shadow-black/20'
             : 'border-stone-200 bg-white hover:border-amber-200 hover:shadow-xl hover:shadow-amber-500/10',
         )}
       >
         {/* Status Badge */}
-        <div className="absolute right-4 top-4 z-10">
+        <div className="absolute right-4 top-4 z-10" data-no-navigate>
           {post.status === 'active' && (
             <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-semibold text-emerald-500">
               <HiOutlineCheckCircle className="h-3 w-3" />
@@ -171,28 +179,20 @@ export default function MarketplacePost({ post, index }) {
           </div>
 
           {isAuthenticated && (
-            <button
-              onClick={handleViewOffers}
+            <Link
+              to={`/marketplace/${post.id}/offers`}
+              onClick={(e) => e.stopPropagation()}
               className={cn(
-                'rounded-xl px-4 py-2 text-xs font-semibold transition-all',
+                'inline-block rounded-xl px-4 py-2 text-xs font-semibold transition-all text-center',
                 isOwner
                   ? 'bg-amber-500 text-white hover:bg-amber-600'
                   : 'bg-emerald-500 text-white hover:bg-emerald-600',
               )}
             >
               {isOwner ? 'Xem offers' : 'Đưa ra offer'}
-            </button>
+            </Link>
           )}
         </div>
       </motion.div>
-
-      {/* Trade Offers Modal */}
-      <TradeOffers
-        open={showOffers}
-        onClose={() => setShowOffers(false)}
-        post={post}
-        isOwner={isOwner}
-      />
-    </>
   )
 }

@@ -27,6 +27,7 @@ import MyOrders from './pages/orders/MyOrders'
 import OrderDetail from './pages/orders/OrderDetail'
 import Deals from './pages/Deals'
 import Marketplace from './pages/Marketplace'
+import OfferDetails from './pages/OfferDetails'
 
 export default function App() {
   return (
@@ -112,6 +113,14 @@ export default function App() {
           element={
             <ProtectedRoute requireAuth={true}>
               <Kyc />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/marketplace/:tradeId/offers"
+          element={
+            <ProtectedRoute requireAuth={true}>
+              <OfferDetails />
             </ProtectedRoute>
           }
         />

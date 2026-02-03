@@ -61,12 +61,19 @@ export default function AdminDashboard() {
         const totalCustomers = usersData.filter(u => u.role === 'CUSTOMER').length
         const totalAdmins = usersData.filter(u => u.role === 'ADMIN').length
 
+        // Mock data for stats (for demo purposes)
+        const mockStats = {
+          totalOrders: 42,
+          totalRevenue: 12500000,
+          pendingRequests: 3,
+        }
+
         setStats({
           totalUsers,
           totalBusinesses,
-          totalOrders: 0, // TODO: Fetch from order API
-          totalRevenue: 0, // TODO: Fetch from order API
-          pendingRequests: 0, // TODO: Fetch from request API
+          totalOrders: mockStats.totalOrders,
+          totalRevenue: mockStats.totalRevenue,
+          pendingRequests: mockStats.pendingRequests,
         })
       } catch (err) {
         console.error('Error fetching users:', err)

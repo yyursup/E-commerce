@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom'
 import ThemeSync from './ThemeSync'
 import Navbar from './Navbar'
+import ChatbotButton from './ChatbotButton'
 
 export default function Layout() {
   return (
@@ -8,6 +9,7 @@ export default function Layout() {
       <ThemeSync />
       <Navbar />
       <Outlet />
+      <ChatbotButton />
     </>
   )
 }

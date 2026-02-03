@@ -77,7 +77,7 @@ export default function Products() {
         // Map API response to component format
         const mappedProducts = response.content?.map((product) => {
           const thumbnailImage = product.images?.find(img => img.isThumbnail) || product.images?.[0]
-          const imageUrl = thumbnailImage?.imageUrl || 'https://images.unsplash.com/photo-1587523459887-e669248cf666?w=400&h=400&fit=crop'
+          const imageUrl = thumbnailImage?.imageUrl || '/product-placeholder.svg'
           const price = product.basePrice ? Number(product.basePrice) : 0
           
           let badge = null

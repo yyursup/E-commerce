@@ -220,9 +220,12 @@ export default function OrderDetail() {
               {order.items?.map((item) => (
                 <div key={item.id} className="flex gap-4">
                   <img
-                    src={item.productImageUrl || '/placeholder.png'}
+                    src={item.productImageUrl || '/product-placeholder.svg'}
                     alt={item.productName}
-                    className="h-20 w-20 rounded-lg object-cover"
+                    className="h-20 w-20 rounded-lg object-cover bg-stone-100 dark:bg-slate-800"
+                    onError={(e) => {
+                      e.target.src = '/product-placeholder.svg'
+                    }}
                   />
                   <div className="flex-1">
                     <Link
@@ -282,6 +285,29 @@ export default function OrderDetail() {
                   </span>
                 </div>
               </div>
+
+              {/* Payment Button for PENDING_PAYMENT */}
+              {order.status === 'PENDING_PAYMENT' && (
+                <div className="border-t pt-4 mt-4">
+                  <button
+                    onClick={async () => {
+                      try {
+                        const res = await orderService.createPayment(order.id);
+                        if (res.paymentUrl) {
+                          window.location.href = res.paymentUrl;
+                        } else {
+                          toast.error("Không thể tạo link thanh toán");
+                        }
+                      } catch (e) {
+                        toast.error(e.message || "Lỗi khi tạo thanh toán");
+                      }
+                    }}
+                    className="w-full rounded-xl bg-amber-500 py-3 font-bold text-white shadow-lg shadow-amber-500/25 transition-all hover:bg-amber-600 hover:shadow-xl hover:shadow-amber-500/30 active:scale-95"
+                  >
+                    Thanh toán ngay ({formatCurrency(order.total)})
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </motion.div>

@@ -18,14 +18,12 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
-
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class ShippingServiceImpl implements ShippingService {
 
     private final GHNClient ghnClient;
-
 
     public GHNCreateOrderRequest build(Order order) {
         int totalWeight = order.getItems().stream()
@@ -52,10 +50,12 @@ public class ShippingServiceImpl implements ShippingService {
         List<GHNCreateOrderRequest.GHNItem> ghnItems = new ArrayList<>();
         for (OrderItem orderItem : order.getItems()) {
             int productWeight = orderItem.getProduct().getWeight() != null
-                    ? orderItem.getProduct().getWeight() : 500;
+                    ? orderItem.getProduct().getWeight()
+                    : 500;
             int itemWeight = productWeight * orderItem.getQuantity();
             String productName = orderItem.getProductName() != null && !orderItem.getProductName().isBlank()
-                    ? orderItem.getProductName() : "Sản phẩm";
+                    ? orderItem.getProductName()
+                    : "Sản phẩm";
             GHNCreateOrderRequest.GHNItem apply = GHNCreateOrderRequest.GHNItem.builder()
                     .name(productName)
                     .quantity(orderItem.getQuantity())
@@ -95,7 +95,7 @@ public class ShippingServiceImpl implements ShippingService {
         Integer fromDistrictId = shop.getDistrictId();
         String fromWardCode = shop.getWardCode();
         if (fromDistrictId == null || fromWardCode == null || fromWardCode.isBlank()) {
-            fromDistrictId = 1442;    // fallback
+            fromDistrictId = 1442; // fallback
             fromWardCode = "21012";
             log.warn("Shop {} missing district/ward, using default", shop.getName());
         }

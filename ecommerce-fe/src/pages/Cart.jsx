@@ -1,182 +1,143 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
-import toast from 'react-hot-toast'
-import { HiOutlineTrash, HiMinus, HiPlus, HiArrowLeft } from 'react-icons/hi'
-import { useThemeStore } from '../store/useThemeStore'
 import { useAuthStore } from '../store/useAuthStore'
 import { useCartStore } from '../store/useCartStore'
-import { cn } from '../lib/cn'
 import cartService from '../services/cart'
+import { useThemeStore } from '../store/useThemeStore'
+import { cn } from '../lib/cn'
+import { motion, AnimatePresence } from 'framer-motion'
+import { HiOutlineTrash, HiMinus, HiPlus, HiArrowRight, HiOutlineShoppingBag, HiTicket } from 'react-icons/hi'
+import toast from 'react-hot-toast'
 
 export default function Cart() {
-    const isDark = useThemeStore((s) => s.theme) === 'dark'
     const { isAuthenticated } = useAuthStore()
-    const { updateCartCount } = useCartStore()
+    const { updateCartCount } = useCartStore() // Only use available methods
+    const isDark = useThemeStore((state) => state.theme) === 'dark'
     const navigate = useNavigate()
+
+    // Local state management
     const [cart, setCart] = useState(null)
     const [loading, setLoading] = useState(true)
-    const [error, setError] = useState(null)
-    const [updatingItems, setUpdatingItems] = useState(new Set())
 
-    useEffect(() => {
-        if (!isAuthenticated) {
-            toast.error('Vui lòng đăng nhập để xem giỏ hàng')
-            navigate('/login')
-            return
-        }
-
-        fetchCart()
-    }, [isAuthenticated])
+    const items = cart?.items || []
+    const total = cart?.totalPrice || 0
 
     const fetchCart = async () => {
-        if (!isAuthenticated) return
-
         try {
             setLoading(true)
-            setError(null)
             const data = await cartService.getCart()
             setCart(data)
-            // Update cart count in store
-            updateCartCount(data)
-        } catch (err) {
-            console.error('Error fetching cart:', err)
-            setError(err.message || 'Không thể tải giỏ hàng')
-            toast.error('Không thể tải giỏ hàng')
+            updateCartCount(data) // Sync with Navbar
+        } catch (error) {
+            console.error("Failed to fetch cart", error)
+            toast.error("Không thể tải giỏ hàng")
         } finally {
             setLoading(false)
         }
     }
 
-    const handleIncreaseQuantity = async (cartItemId) => {
-        if (updatingItems.has(cartItemId)) return
+    useEffect(() => {
+        if (isAuthenticated) {
+            fetchCart()
+        }
+    }, [isAuthenticated])
+
+    const handleQuantityChange = async (itemId, currentQty, change) => {
+        const newQty = currentQty + change
+        if (newQty < 1) return
+        if (newQty > 10) {
+            toast.error("Số lượng tối đa là 10 sản phẩm")
+            return
+        }
 
         try {
-            setUpdatingItems(prev => new Set(prev).add(cartItemId))
-            const data = await cartService.increaseQuantity(cartItemId)
+            // Optimistic update (optional) or just wait for reload
+            // For simplicity, wait for API
+            let data;
+            if (change > 0) {
+                data = await cartService.increaseQuantity(itemId)
+            } else {
+                data = await cartService.decreaseQuantity(itemId)
+            }
             setCart(data)
-            // Update cart count in store
             updateCartCount(data)
-            toast.success('Đã cập nhật số lượng')
-        } catch (err) {
-            console.error('Error increasing quantity:', err)
-            toast.error(err?.response?.data?.message || 'Không thể cập nhật số lượng')
-        } finally {
-            setUpdatingItems(prev => {
-                const next = new Set(prev)
-                next.delete(cartItemId)
-                return next
-            })
+        } catch (error) {
+            toast.error('Không thể cập nhật số lượng')
         }
     }
 
-    const handleDecreaseQuantity = async (cartItemId) => {
-        if (updatingItems.has(cartItemId)) return
-
-        try {
-            setUpdatingItems(prev => new Set(prev).add(cartItemId))
-            const data = await cartService.decreaseQuantity(cartItemId)
-            setCart(data)
-            // Update cart count in store
-            updateCartCount(data)
-            toast.success('Đã cập nhật số lượng')
-        } catch (err) {
-            console.error('Error decreasing quantity:', err)
-            toast.error(err?.response?.data?.message || 'Không thể cập nhật số lượng')
-        } finally {
-            setUpdatingItems(prev => {
-                const next = new Set(prev)
-                next.delete(cartItemId)
-                return next
-            })
+    const handleRemoveItem = async (itemId) => {
+        if (confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')) {
+            try {
+                const data = await cartService.removeItem(itemId)
+                setCart(data)
+                updateCartCount(data)
+                toast.success('Đã xóa sản phẩm')
+            } catch (error) {
+                toast.error('Không thể xóa sản phẩm')
+            }
         }
     }
 
-    const handleRemoveItem = async (cartItemId) => {
-        if (updatingItems.has(cartItemId)) return
-
-        try {
-            setUpdatingItems(prev => new Set(prev).add(cartItemId))
-            const data = await cartService.removeItem(cartItemId)
-            setCart(data)
-            // Update cart count in store
-            updateCartCount(data)
-            toast.success('Đã xóa sản phẩm khỏi giỏ hàng')
-        } catch (err) {
-            console.error('Error removing item:', err)
-            toast.error(err?.response?.data?.message || 'Không thể xóa sản phẩm')
-        } finally {
-            setUpdatingItems(prev => {
-                const next = new Set(prev)
-                next.delete(cartItemId)
-                return next
-            })
-        }
+    const handleCheckout = (shopId) => {
+        navigate('/checkout', { state: { shopId } });
     }
 
-    const items = cart?.items || []
-    const totalPrice = cart?.totalPrice ? Number(cart.totalPrice) : 0
+    if (!isAuthenticated) {
+        return (
+            <div className={cn("flex min-h-[60vh] flex-col items-center justify-center p-4 text-center", isDark ? "bg-slate-950" : "bg-stone-50")}>
+                <div className="mb-6 rounded-full bg-amber-100 p-6 dark:bg-amber-900/20">
+                    <HiOutlineShoppingBag className="h-12 w-12 text-amber-600 dark:text-amber-500" />
+                </div>
+                <h2 className={cn("mb-2 text-2xl font-bold", isDark ? "text-white" : "text-stone-900")}>
+                    Bạn chưa đăng nhập
+                </h2>
+                <p className={cn("mb-8 max-w-sm", isDark ? "text-slate-400" : "text-stone-500")}>
+                    Vui lòng đăng nhập để xem giỏ hàng và thực hiện mua sắm
+                </p>
+                <Link
+                    to="/login"
+                    className="rounded-full bg-amber-500 px-8 py-3 font-bold text-white transition hover:bg-amber-600 hover:shadow-lg hover:shadow-amber-500/25"
+                >
+                    Đăng nhập ngay
+                </Link>
+            </div>
+        )
+    }
 
     if (loading) {
         return (
-            <div className={cn(
-                'flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center p-4',
-                isDark ? 'bg-slate-950 text-slate-300' : 'bg-stone-50 text-stone-600'
-            )}>
-                <div className="text-center">
-                    <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-amber-500 border-r-transparent"></div>
-                    <p className={cn('mt-4 text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
-                        Đang tải giỏ hàng...
-                    </p>
-                </div>
+            <div className={cn("flex min-h-screen items-center justify-center", isDark ? "bg-slate-950" : "bg-stone-50")}>
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent"></div>
             </div>
         )
     }
 
-    if (error) {
+    // Handle Empty Cart
+    if (!items || items.length === 0) {
         return (
-            <div className={cn(
-                'flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center p-4',
-                isDark ? 'bg-slate-950 text-slate-300' : 'bg-stone-50 text-stone-600'
-            )}>
-                <div className="text-center">
-                    <p className={cn('text-sm', isDark ? 'text-red-400' : 'text-red-600')}>
-                        {error}
-                    </p>
-                    <button
-                        onClick={fetchCart}
-                        className={cn(
-                            'mt-4 rounded-xl px-4 py-2 text-sm font-medium',
-                            isDark
-                                ? 'bg-slate-700 text-white hover:bg-slate-600'
-                                : 'bg-stone-200 text-stone-700 hover:bg-stone-300',
-                        )}
-                    >
-                        Thử lại
-                    </button>
-                </div>
-            </div>
-        )
-    }
+            <div className={cn("flex min-h-[60vh] flex-col items-center justify-center p-4 text-center", isDark ? "bg-slate-950" : "bg-stone-50")}>
+                <motion.div
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="mb-6"
+                >
+                    <img
+                        src="https://cdni.iconscout.com/illustration/premium/thumb/empty-cart-2130356-1800917.png"
+                        alt="Empty Cart"
+                        className="w-64 opacity-80 grayscale mix-blend-luminosity hover:grayscale-0 transition-all duration-500"
+                    />
+                </motion.div>
 
-    if (items.length === 0) {
-        return (
-            <div className={cn(
-                'flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center p-4',
-                isDark ? 'bg-slate-950 text-slate-300' : 'bg-stone-50 text-stone-600'
-            )}>
-                <img
-                    src="https://cdni.iconscout.com/illustration/premium/thumb/empty-cart-2130356-1800917.png"
-                    alt="Empty Cart"
-                    className="mb-8 w-64 opacity-80 mix-blend-multiply dark:mix-blend-normal"
-                />
-                <h2 className="text-2xl font-bold">Giỏ hàng trống</h2>
-                <p className="mt-2 text-center text-sm opacity-80">
+                <h2 className={cn("mb-2 text-xl font-bold", isDark ? "text-white" : "text-stone-900")}>
+                    Giỏ hàng trống
+                </h2>
+                <p className={cn("mb-8 text-sm", isDark ? "text-slate-400" : "text-stone-500")}>
                     Có vẻ như bạn chưa thêm sản phẩm nào vào giỏ hàng.
                 </p>
                 <Link
                     to="/"
-                    className="mt-6 rounded-xl bg-amber-500 px-6 py-3 font-semibold text-white transition hover:bg-amber-600"
+                    className="rounded-xl bg-stone-900 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-stone-800 dark:bg-white dark:text-stone-900 dark:hover:bg-stone-200"
                 >
                     Tiếp tục mua sắm
                 </Link>
@@ -184,130 +145,181 @@ export default function Cart() {
         )
     }
 
+    // Group items by Shop
+    const groupedItems = items.reduce((groups, item) => {
+        const shopName = item.shopName || 'Unknown Shop';
+        const shopId = item.shopId;
+        if (!groups[shopName]) {
+            groups[shopName] = {
+                shopId,
+                shopName,
+                items: []
+            };
+        }
+        groups[shopName].items.push(item);
+        return groups;
+    }, {});
+
     return (
-        <div className={cn('min-h-screen px-4 py-8 sm:px-6 lg:px-8', isDark ? 'bg-slate-950' : 'bg-stone-50')}>
-            <div className="mx-auto max-w-4xl">
-                <h1 className={cn('mb-8 text-3xl font-bold', isDark ? 'text-white' : 'text-stone-900')}>
-                    Giỏ hàng ({items.length} sản phẩm)
+        <div className={cn("min-h-screen py-10 px-4 sm:px-6 lg:px-8", isDark ? "bg-slate-950" : "bg-stone-50")}>
+            <div className="mx-auto max-w-7xl">
+                <h1 className={cn("mb-8 text-3xl font-bold", isDark ? "text-white" : "text-stone-900")}>
+                    Giỏ hàng của bạn
+                    <span className="ml-3 text-lg font-normal text-stone-500">
+                        ({items.length} sản phẩm)
+                    </span>
                 </h1>
 
-                <div className="grid gap-8 lg:grid-cols-3">
-                    {/* Cart Items List */}
-                    <div className="space-y-4 lg:col-span-2">
+                <div className="grid gap-8 lg:grid-cols-12">
+                    {/* Left Column: Cart Items List */}
+                    <div className="lg:col-span-8 space-y-6">
                         <AnimatePresence>
-                            {items.map((item) => (
+                            {Object.values(groupedItems).map((group) => (
                                 <motion.div
-                                    key={item.id}
-                                    layout
+                                    key={group.shopName}
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, x: -20 }}
                                     className={cn(
-                                        'flex gap-4 rounded-2xl border p-4 shadow-sm transition-colors',
-                                        isDark
-                                            ? 'border-slate-800 bg-slate-900'
-                                            : 'border-stone-200 bg-white',
+                                        "overflow-hidden rounded-2xl border shadow-sm transition-all",
+                                        isDark ? "border-slate-800 bg-slate-900" : "border-stone-200 bg-white"
                                     )}
                                 >
-                                    <Link to={`/products/${item.productId}`} className="h-24 w-24 shrink-0 overflow-hidden rounded-xl border border-stone-100 dark:border-slate-700">
-                                        <img
-                                            src={item.productImageUrl || 'https://images.unsplash.com/photo-1587523459887-e669248cf666?w=400&h=400&fit=crop'}
-                                            alt={item.productName}
-                                            className="h-full w-full object-cover"
-                                        />
-                                    </Link>
-
-                                    <div className="flex flex-1 flex-col justify-between">
-                                        <div>
-                                            <Link to={`/products/${item.productId}`}>
-                                                <h3 className={cn('font-semibold line-clamp-1 transition hover:text-amber-600 dark:hover:text-amber-400', isDark ? 'text-slate-100' : 'text-stone-800')}>
-                                                    {item.productName}
-                                                </h3>
-                                            </Link>
-                                            <p className="mt-1 font-medium text-amber-600 dark:text-amber-400">
-                                                {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(item.unitPrice || 0))}
-                                            </p>
-                                        </div>
-
-                                        <div className="flex items-center justify-between">
-                                            <div className={cn(
-                                                'flex items-center gap-3 rounded-lg border px-2 py-1',
-                                                isDark ? 'border-slate-700 bg-slate-800' : 'border-stone-200 bg-stone-50'
-                                            )}>
-                                                <button
-                                                    onClick={() => handleDecreaseQuantity(item.id)}
-                                                    disabled={item.quantity <= 1 || updatingItems.has(item.id)}
-                                                    className={cn('p-1', isDark ? 'hover:text-white disabled:opacity-30' : 'hover:text-black disabled:opacity-30')}
-                                                >
-                                                    <HiMinus className="h-3 w-3" />
-                                                </button>
-                                                <span className={cn('min-w-[1.5rem] text-center text-sm font-medium', isDark ? 'text-white' : 'text-stone-900')}>
-                                                    {item.quantity}
-                                                </span>
-                                                <button
-                                                    onClick={() => handleIncreaseQuantity(item.id)}
-                                                    disabled={updatingItems.has(item.id)}
-                                                    className={cn('p-1', isDark ? 'hover:text-white disabled:opacity-30' : 'hover:text-black disabled:opacity-30')}
-                                                >
-                                                    <HiPlus className="h-3 w-3" />
-                                                </button>
+                                    {/* Header: Shop Name */}
+                                    <div className={cn("px-6 py-4 border-b flex justify-between items-center", isDark ? "border-slate-800 bg-slate-800/50" : "border-stone-100 bg-stone-50")}>
+                                        <div className="flex items-center gap-2">
+                                            <div className="p-1.5 bg-amber-100 rounded-lg dark:bg-amber-900/30">
+                                                <HiOutlineShoppingBag className="w-5 h-5 text-amber-600 dark:text-amber-500" />
                                             </div>
-
-                                            <button
-                                                onClick={() => handleRemoveItem(item.id)}
-                                                disabled={updatingItems.has(item.id)}
-                                                className="rounded-lg p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-30"
-                                                title="Xóa sản phẩm"
-                                            >
-                                                <HiOutlineTrash className="h-5 w-5" />
-                                            </button>
+                                            <span className={cn("font-bold text-lg", isDark ? "text-white" : "text-stone-800")}>
+                                                {group.shopName}
+                                            </span>
                                         </div>
+                                        {/* Checkout Button for this shop */}
+                                        <button
+                                            onClick={() => handleCheckout(group.shopId)}
+                                            disabled={!group.shopId}
+                                            className={cn(
+                                                "px-4 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center gap-2",
+                                                group.shopId
+                                                    ? "bg-amber-500 text-white hover:bg-amber-600 shadow-lg shadow-amber-500/20"
+                                                    : "bg-stone-200 text-stone-400 cursor-not-allowed"
+                                            )}
+                                        >
+                                            Mua từ Shop này <HiArrowRight />
+                                        </button>
+                                    </div>
+
+                                    {/* Items List */}
+                                    <div className="divide-y divide-stone-100 dark:divide-slate-800">
+                                        {group.items.map((item) => (
+                                            <div key={item.id} className="p-6 transition-colors hover:bg-stone-50/50 dark:hover:bg-slate-800/50">
+                                                <div className="flex gap-4 sm:gap-6">
+                                                    {/* Product Image */}
+                                                    <div className="shrink-0">
+                                                        <img
+                                                            src={item.productImageUrl || '/product-placeholder.svg'}
+                                                            alt={item.productName}
+                                                            className="h-24 w-24 rounded-xl object-cover border border-stone-100 shadow-sm dark:border-slate-700 bg-stone-100 dark:bg-slate-800"
+                                                            onError={(e) => {
+                                                              e.target.src = '/product-placeholder.svg'
+                                                            }}
+                                                        />
+                                                    </div>
+
+                                                    {/* Product Info */}
+                                                    <div className="flex flex-1 flex-col justify-between">
+                                                        <div>
+                                                            <div className="flex justify-between items-start">
+                                                                <h3 className={cn("text-base font-medium line-clamp-2 pr-4", isDark ? "text-white" : "text-stone-900")}>
+                                                                    <Link to={`/products/${item.productId}`} className="hover:text-amber-500 transition-colors">
+                                                                        {item.productName}
+                                                                    </Link>
+                                                                </h3>
+                                                                <button
+                                                                    onClick={() => handleRemoveItem(item.id)}
+                                                                    className="p-2 text-stone-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-all dark:hover:bg-red-900/20"
+                                                                    title="Xóa sản phẩm"
+                                                                >
+                                                                    <HiOutlineTrash className="h-5 w-5" />
+                                                                </button>
+                                                            </div>
+                                                            <p className={cn("mt-1 text-sm font-medium", isDark ? "text-amber-400" : "text-amber-600")}>
+                                                                {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.unitPrice)}
+                                                            </p>
+                                                        </div>
+
+                                                        <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
+                                                            {/* Quantity Control */}
+                                                            <div className={cn(
+                                                                "flex items-center rounded-lg border",
+                                                                isDark ? "border-slate-700 bg-slate-800" : "border-stone-200 bg-white"
+                                                            )}>
+                                                                <button
+                                                                    onClick={() => handleQuantityChange(item.id, item.quantity, -1)}
+                                                                    disabled={item.quantity <= 1}
+                                                                    className="p-2 hover:text-amber-600 disabled:opacity-30 disabled:hover:text-inherit transition-colors"
+                                                                >
+                                                                    <HiMinus className="h-3 w-3" />
+                                                                </button>
+                                                                <span className={cn("w-10 text-center text-sm font-semibold", isDark ? "text-white" : "text-stone-900")}>
+                                                                    {item.quantity}
+                                                                </span>
+                                                                <button
+                                                                    onClick={() => handleQuantityChange(item.id, item.quantity, 1)}
+                                                                    className="p-2 hover:text-amber-600 transition-colors"
+                                                                >
+                                                                    <HiPlus className="h-3 w-3" />
+                                                                </button>
+                                                            </div>
+
+                                                            {/* Item Total */}
+                                                            <div className={cn("text-right font-bold", isDark ? "text-white" : "text-stone-900")}>
+                                                                {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.totalPrice)}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
                                 </motion.div>
                             ))}
                         </AnimatePresence>
                     </div>
 
-                    {/* Checkout Summary */}
-                    <div className="lg:col-span-1">
+                    {/* Right Column: Order Summary (Global) */}
+                    <div className="lg:col-span-4">
                         <div className={cn(
-                            'rounded-2xl border p-6 shadow-lg',
-                            isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
-                        )}>
-                            <h3 className={cn('mb-4 text-lg font-bold', isDark ? 'text-white' : 'text-stone-900')}>
-                                Tổng kết đơn hàng
-                            </h3>
+                            "sticky top-24 rounded-2xl border p-6 shadow-sm",
+                            isDark ? "border-slate-800 bg-slate-900" : "border-stone-200 bg-white"
+                        )}
+                        >
+                            <div className="flex items-center gap-2 mb-4">
+                                <HiTicket className="w-5 h-5 text-amber-500" />
+                                <h2 className={cn("font-bold text-lg", isDark ? "text-white" : "text-stone-900")}>Tóm tắt giỏ hàng</h2>
+                            </div>
 
-                            <div className="space-y-3 border-b border-stone-200 pb-4 dark:border-slate-700">
-                                <div className={cn('flex justify-between text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
-                                    <span>Tạm tính</span>
-                                    <span>{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalPrice)}</span>
-                                </div>
-                                <div className={cn('flex justify-between text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
-                                    <span>Phí vận chuyển</span>
-                                    <span>Miễn phí</span>
+                            <div className="space-y-3 pb-4 border-b border-stone-100 dark:border-slate-800">
+                                <div className="flex justify-between text-sm">
+                                    <span className={isDark ? "text-slate-400" : "text-stone-600"}>Tổng số lượng</span>
+                                    <span className={isDark ? "text-white" : "text-stone-900"}>{items.reduce((acc, item) => acc + item.quantity, 0)} sản phẩm</span>
                                 </div>
                             </div>
 
-                            <div className="mt-4 flex justify-between text-xl font-bold text-amber-600 dark:text-amber-400">
-                                <span>Tổng cộng</span>
-                                <span>{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalPrice)}</span>
+                            <div className="flex justify-between items-center py-4">
+                                <span className={cn("font-bold text-lg", isDark ? "text-white" : "text-stone-900")}>Tổng tiền tạm tính</span>
+                                <span className="font-bold text-xl text-amber-500">
+                                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(total)}
+                                </span>
                             </div>
 
-                            <button className="mt-6 w-full rounded-xl bg-amber-500 py-3.5 font-bold text-white shadow-lg transition hover:bg-amber-600 active:scale-[0.98]">
-                                Thanh toán ngay
-                            </button>
-
-                            <Link
-                                to="/"
-                                className={cn(
-                                    'mt-4 flex items-center justify-center gap-2 text-sm font-medium transition',
-                                    isDark ? 'text-slate-400 hover:text-white' : 'text-stone-500 hover:text-stone-900'
-                                )}
-                            >
-                                <HiArrowLeft className="h-4 w-4" />
-                                Tiếp tục mua hàng
-                            </Link>
+                            <div className={cn("mt-4 p-4 rounded-xl text-sm", isDark ? "bg-slate-800 text-slate-300" : "bg-stone-50 text-stone-600")}>
+                                <p>
+                                    * Phí vận chuyển và mã giảm giá sẽ được tính ở bước thanh toán. <br />
+                                    * Vui lòng chọn "Mua từ Shop này" ở từng danh sách sản phẩm để tiến hành đặt hàng theo từng Shop.
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>

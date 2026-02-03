@@ -19,10 +19,15 @@ import AdminOrders from './pages/admin/AdminOrders'
 import AdminOrderDetail from './pages/admin/AdminOrderDetail'
 import BusinessLayout from './pages/business/BusinessLayout'
 import BusinessDashboard from './pages/business/BusinessDashboard'
+import Checkout from './pages/Checkout'
+import PaymentResult from './pages/PaymentResult'
 import ShopOrders from './pages/business/ShopOrders'
 import ShopOrderDetail from './pages/business/ShopOrderDetail'
 import MyOrders from './pages/orders/MyOrders'
 import OrderDetail from './pages/orders/OrderDetail'
+import Deals from './pages/Deals'
+import Marketplace from './pages/Marketplace'
+import OfferDetails from './pages/OfferDetails'
 
 export default function App() {
   return (
@@ -30,6 +35,8 @@ export default function App() {
       <Route element={<Layout />}>
         {/* Public routes */}
         <Route path="/" element={<Home />} />
+        <Route path="/deals" element={<Deals />} />
+        <Route path="/marketplace" element={<Marketplace />} />
         <Route path="/products" element={<Products />} />
         <Route path="/products/:productId" element={<ProductDetail />} />
         <Route path="/login" element={<Login />} />
@@ -42,6 +49,30 @@ export default function App() {
           element={
             <ProtectedRoute requireAuth={true}>
               <Cart />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/checkout"
+          element={
+            <ProtectedRoute requireAuth={true}>
+              <Checkout />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/payment/vnpay_return"
+          element={
+            <ProtectedRoute requireAuth={true}>
+              <PaymentResult />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/my-orders"
+          element={
+            <ProtectedRoute requireAuth={true}>
+              <MyOrders />
             </ProtectedRoute>
           }
         />
@@ -85,6 +116,14 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/marketplace/:tradeId/offers"
+          element={
+            <ProtectedRoute requireAuth={true}>
+              <OfferDetails />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Business routes - require BUSINESS or ADMIN role */}
         <Route
@@ -116,6 +155,6 @@ export default function App() {
           <Route path="orders/:orderId" element={<AdminOrderDetail />} />
         </Route>
       </Route>
-    </Routes>
+    </Routes >
   )
 }

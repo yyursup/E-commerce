@@ -42,10 +42,13 @@ export default function ProductCard({ product, onQuickView, dataAos, dataAosDela
       {/* Image */}
       <Link to={`/products/${id}`} className="relative block aspect-square overflow-hidden">
         <motion.img
-          src={image}
+          src={image || '/product-placeholder.svg'}
           alt={name}
-          className="h-full w-full object-cover transition duration-500"
+          className="h-full w-full object-cover transition duration-500 bg-stone-100 dark:bg-slate-800"
           animate={{ scale: hover ? 1.05 : 1 }}
+          onError={(e) => {
+            e.target.src = '/product-placeholder.svg'
+          }}
         />
         <div
           className={cn(

@@ -25,6 +25,9 @@ public class CartItemResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    private UUID shopId;
+    private String shopName;
+
     public static CartItemResponse fromCartItem(CartItem cartItem) {
         String imageUrl = null;
 
@@ -45,7 +48,8 @@ public class CartItemResponse {
                 .totalPrice(cartItem.getTotalPrice())
                 .createdAt(cartItem.getCreatedAt())
                 .updatedAt(cartItem.getUpdatedAt())
+                .shopId(cartItem.getProduct().getShop().getId())
+                .shopName(cartItem.getProduct().getShop().getName())
                 .build();
     }
 }
-

@@ -11,7 +11,7 @@ const footerLinkGroups = [
     heading: 'Mua sắm',
     links: [
       { to: '/#products', label: 'Tất cả AirPods & Tai nghe' },
-      { to: '/#deals', label: 'Ưu đãi' },
+      { to: '/deals', label: 'Ưu đãi' },
       { to: '/#new', label: 'Hàng mới' },
       { to: '/#bestsellers', label: 'Bán chạy' },
     ],

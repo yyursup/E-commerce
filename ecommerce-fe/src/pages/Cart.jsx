@@ -218,9 +218,12 @@ export default function Cart() {
                                                     {/* Product Image */}
                                                     <div className="shrink-0">
                                                         <img
-                                                            src={item.productImageUrl || 'https://via.placeholder.com/150'}
+                                                            src={item.productImageUrl || '/product-placeholder.svg'}
                                                             alt={item.productName}
-                                                            className="h-24 w-24 rounded-xl object-cover border border-stone-100 shadow-sm dark:border-slate-700"
+                                                            className="h-24 w-24 rounded-xl object-cover border border-stone-100 shadow-sm dark:border-slate-700 bg-stone-100 dark:bg-slate-800"
+                                                            onError={(e) => {
+                                                              e.target.src = '/product-placeholder.svg'
+                                                            }}
                                                         />
                                                     </div>
 

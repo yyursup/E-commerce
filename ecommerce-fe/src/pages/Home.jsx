@@ -43,7 +43,7 @@ export default function Home() {
         const mappedProducts = response.content?.map((product) => {
           // Get thumbnail image or first image
           const thumbnailImage = product.images?.find(img => img.isThumbnail) || product.images?.[0]
-          const imageUrl = thumbnailImage?.imageUrl || 'https://images.unsplash.com/photo-1587523459887-e669248cf666?w=400&h=400&fit=crop'
+          const imageUrl = thumbnailImage?.imageUrl || '/product-placeholder.svg'
           
           // Price is in VND, keep as is
           const price = product.basePrice ? Number(product.basePrice) : 0

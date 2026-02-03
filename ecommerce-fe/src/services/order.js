@@ -1,8 +1,22 @@
 import axiosClient from '../api/axiosClient';
 
 const ORDER_BASE = '/api/v1/order';
+const PAYMENT_BASE = '/api/v1/payment';
 
 const orderService = {
+    // Create Order
+    createOrder: async (shopId, addressId, notes) => {
+        try {
+            const response = await axiosClient.post(ORDER_BASE, {
+                shopId,
+                addressId,
+                notes
+            });
+            return response.data;
+        } catch (error) {
+            throw error.response ? error.response.data : error;
+        }
+    },
   // Customer: Get my order details
   getMyOrderById: async (orderId) => {
     try {
@@ -65,6 +79,15 @@ const orderService = {
       throw error.response ? error.response.data : error;
     }
   },
+    // Create VNPay Payment URL
+    createPayment: async (orderId) => {
+        try {
+            const response = await axiosClient.post(`${PAYMENT_BASE}/orders/${orderId}/vnpay`);
+            return response.data; // Expect { paymentUrl: '...' }
+        } catch (error) {
+            throw error.response ? error.response.data : error;
+        }
+    }
 };
 
 export default orderService;

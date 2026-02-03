@@ -19,6 +19,8 @@ import AdminOrders from './pages/admin/AdminOrders'
 import AdminOrderDetail from './pages/admin/AdminOrderDetail'
 import BusinessLayout from './pages/business/BusinessLayout'
 import BusinessDashboard from './pages/business/BusinessDashboard'
+import Checkout from './pages/Checkout'
+import PaymentResult from './pages/PaymentResult'
 import ShopOrders from './pages/business/ShopOrders'
 import ShopOrderDetail from './pages/business/ShopOrderDetail'
 import MyOrders from './pages/orders/MyOrders'
@@ -42,6 +44,30 @@ export default function App() {
           element={
             <ProtectedRoute requireAuth={true}>
               <Cart />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/checkout"
+          element={
+            <ProtectedRoute requireAuth={true}>
+              <Checkout />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/payment/vnpay_return"
+          element={
+            <ProtectedRoute requireAuth={true}>
+              <PaymentResult />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/my-orders"
+          element={
+            <ProtectedRoute requireAuth={true}>
+              <MyOrders />
             </ProtectedRoute>
           }
         />
@@ -116,6 +142,6 @@ export default function App() {
           <Route path="orders/:orderId" element={<AdminOrderDetail />} />
         </Route>
       </Route>
-    </Routes>
+    </Routes >
   )
 }

@@ -28,6 +28,19 @@ import com.marketplace.ecommerce.shop.valueObjects.ShopStatus;
 import com.marketplace.ecommerce.wallet.entity.Wallet;
 import com.marketplace.ecommerce.wallet.repository.WalletRepository;
 import com.marketplace.ecommerce.wallet.valueObjects.WalletType;
+import com.marketplace.ecommerce.order.entity.Order;
+import com.marketplace.ecommerce.order.entity.OrderItem;
+import com.marketplace.ecommerce.order.repository.OrderRepository;
+import com.marketplace.ecommerce.order.repository.OrderItemsRepository;
+import com.marketplace.ecommerce.order.valueObjects.OrderStatus;
+import com.marketplace.ecommerce.payment.entity.Payment;
+import com.marketplace.ecommerce.payment.repository.PaymentRepository;
+import com.marketplace.ecommerce.payment.valueObjects.PaymentMethod;
+import com.marketplace.ecommerce.payment.valueObjects.PaymentStatus;
+import com.marketplace.ecommerce.request.entity.Request;
+import com.marketplace.ecommerce.request.repository.RequestRepository;
+import com.marketplace.ecommerce.request.valueObjects.RequestStatus;
+import com.marketplace.ecommerce.request.valueObjects.RequestType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -38,7 +51,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
+import java.util.UUID;
 
 @Slf4j
 @Component
@@ -57,6 +72,10 @@ public class DataInitializer implements CommandLineRunner {
     private final PasswordEncoder passwordEncoder;
     private final WalletRepository walletRepository;
     private final PlatformSettingRepository platformSettingRepository;
+    private final OrderRepository orderRepository;
+    private final OrderItemsRepository orderItemsRepository;
+    private final RequestRepository requestRepository;
+    private final PaymentRepository paymentRepository;
 
     @Override
     @Transactional
@@ -88,6 +107,11 @@ public class DataInitializer implements CommandLineRunner {
                 "customer123@", customerRole);
         User customerUser1 = initializeUser(customerAccount1, "Lê Văn Mua Hàng", "customer@gmail.com",
                 "0901234567", LocalDate.of(1995, 3, 10), GenderType.MALE, "223344556677");
+
+        Account customerAccount2 = initializeAccount("customer2", "customer2@gmail.com", "0909876543",
+                "customer123@", customerRole);
+        User customerUser2 = initializeUser(customerAccount2, "Phạm Thị Mua Sắm", "customer2@gmail.com",
+                "0909876543", LocalDate.of(1992, 7, 25), GenderType.FEMALE, "334455667788");
 
         // Initialize Shops
         Shop shop1 = initializeShop(businessUser1, "Apple Store Vietnam",
@@ -226,6 +250,59 @@ public class DataInitializer implements CommandLineRunner {
 
         // Initialize Platform Settings
         initializePlatformSetting(PlatformConstant.KEY_COMMISSION_RATE, "10");
+
+        // Initialize Orders (để demo quản lý đơn hàng)
+        UserAddress customerAddress1 = userAddressRepository.findAllByUserIdAndDeletedFalseOrderByIsDefaultDescIdDesc(customerUser1.getId())
+                .stream().findFirst().orElse(null);
+
+        if (customerAddress1 != null) {
+            // Order 1: PENDING_PAYMENT (chờ thanh toán)
+            Order order1 = initializeOrder(customerUser1, shop1, customerAddress1,
+                    OrderStatus.PENDING_PAYMENT, "Giao hàng vào buổi sáng",
+                    LocalDateTime.now().minusDays(1));
+            initializeOrderItem(order1, product1, 1, product1.getBasePrice()); // AirPods Pro
+            initializeOrderItem(order1, product2, 1, product2.getBasePrice()); // AirPods Max
+
+            // Order 2: CONFIRMED (đã xác nhận)
+            Order order2 = initializeOrder(customerUser1, shop1, customerAddress1,
+                    OrderStatus.CONFIRMED, "Giao hàng nhanh",
+                    LocalDateTime.now().minusDays(2));
+            initializeOrderItem(order2, product3, 1, product3.getBasePrice()); // AirPods 3rd gen
+
+            // Order 3: PROCESSING (đang xử lý)
+            Order order3 = initializeOrder(customerUser1, shop2, customerAddress1,
+                    OrderStatus.PROCESSING, null,
+                    LocalDateTime.now().minusDays(3));
+            initializeOrderItem(order3, product8, 1, product8.getBasePrice()); // MacBook Pro
+
+            // Order 4: SHIPPING (đang giao hàng)
+            Order order4 = initializeOrder(customerUser1, shop2, customerAddress1,
+                    OrderStatus.SHIPPING, "Cẩn thận khi giao hàng",
+                    LocalDateTime.now().minusDays(4));
+            initializeOrderItem(order4, product10, 1, product10.getBasePrice()); // iPhone 15 Pro Max
+
+            // Initialize Payments
+            initializePayment(order1, PaymentMethod.VNPAY, PaymentStatus.PENDING, null);
+            initializePayment(order2, PaymentMethod.VNPAY, PaymentStatus.SUCCESS, LocalDateTime.now().minusDays(2));
+            initializePayment(order3, PaymentMethod.VNPAY, PaymentStatus.SUCCESS, LocalDateTime.now().minusDays(3));
+            initializePayment(order4, PaymentMethod.VNPAY, PaymentStatus.SUCCESS, LocalDateTime.now().minusDays(4));
+        }
+
+        // Initialize Requests (để demo Admin approve/reject)
+        initializeRequest(customerAccount2, RequestType.SELLER_REGISTRATION,
+                RequestStatus.PENDING, "Tôi muốn đăng ký làm người bán để bán các sản phẩm công nghệ", null, null, null);
+
+        initializeRequest(customerAccount1, RequestType.SELLER_REGISTRATION,
+                RequestStatus.APPROVED, "Đã được duyệt thành công",
+                adminAccount, LocalDateTime.now().minusDays(5), "Yêu cầu hợp lệ, đã duyệt");
+
+        initializeRequest(customerAccount2, RequestType.SELLER_REGISTRATION,
+                RequestStatus.REJECTED, "Yêu cầu bị từ chối",
+                adminAccount, LocalDateTime.now().minusDays(10), "Thiếu thông tin giấy phép kinh doanh");
+
+        // Initialize Wallet for customer2
+        initializeUserWallet(customerUser2);
+        initializeCart(customerUser2);
 
         log.info("Data initialization completed successfully!");
     }
@@ -482,5 +559,140 @@ public class DataInitializer implements CommandLineRunner {
                     log.info("Created platform setting: {} = {}", key, value);
                     return saved;
                 });
+    }
+
+    private Order initializeOrder(User user, Shop shop, UserAddress address,
+                                  OrderStatus status, String notes, LocalDateTime createdAt) {
+        // Generate order number
+        String orderNumber = "ORD-" + createdAt.format(DateTimeFormatter.ofPattern("yyyyMMdd"))
+                + "-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+
+        // Check if order with this number already exists
+        if (orderRepository.findByOrderNumber(orderNumber).isPresent()) {
+            orderNumber = "ORD-" + System.currentTimeMillis();
+        }
+
+        Order order = Order.builder()
+                .orderNumber(orderNumber)
+                .user(user)
+                .shop(shop)
+                .status(status)
+                .shippingName(address.getReceiverName())
+                .shippingPhone(address.getReceiverPhone())
+                .shippingAddress(address.getAddressLine())
+                .shippingCity(address.getCity())
+                .shippingDistrict(address.getDistrict())
+                .shippingWard(address.getWard())
+                .shippingDistrictId(address.getDistrictId())
+                .shippingWardCode(address.getWardCode())
+                .notes(notes)
+                .subtotal(BigDecimal.ZERO) // Will be calculated from items
+                .shippingFee(BigDecimal.ZERO)
+                .total(BigDecimal.ZERO)
+                .receivedByBuyer(false)
+                .stockDeducted(false)
+                .items(new HashSet<>())
+                .build();
+
+        order.setCreatedAt(createdAt);
+        order.setUpdatedAt(createdAt);
+
+        Order saved = orderRepository.save(order);
+        log.info("Created order: {} with status: {}", orderNumber, status);
+        return saved;
+    }
+
+    private OrderItem initializeOrderItem(Order order, Product product, Integer quantity, BigDecimal unitPrice) {
+        OrderItem item = OrderItem.builder()
+                .order(order)
+                .product(product)
+                .productName(product.getName())
+                .quantity(quantity)
+                .unitPrice(unitPrice)
+                .totalPrice(BigDecimal.ZERO) // Will be calculated
+                .build();
+
+        item.calculateTotalPrice();
+
+        // Add to order's items set
+        order.getItems().add(item);
+
+        // Recalculate order totals
+        BigDecimal subtotal = order.getItems().stream()
+                .map(OrderItem::getTotalPrice)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        order.setSubtotal(subtotal);
+        order.calculateTotal();
+
+        OrderItem saved = orderItemsRepository.save(item);
+        orderRepository.save(order); // Save updated order with new totals
+
+        log.info("Created order item: {} x{} for order: {}", product.getName(), quantity, order.getOrderNumber());
+        return saved;
+    }
+
+    private Request initializeRequest(Account account, RequestType type, RequestStatus status, String description) {
+        return initializeRequest(account, type, status, description, null, null, null);
+    }
+
+    private Request initializeRequest(Account account, RequestType type, RequestStatus status,
+                                     String description, Account reviewedBy, LocalDateTime reviewedAt, String response) {
+        // If reviewedAt is provided, createdAt should be before it
+        // Otherwise, use a date in the past
+        LocalDateTime createdAt;
+        if (reviewedAt != null) {
+            createdAt = reviewedAt.minusDays(2); // Request created 2 days before review
+        } else {
+            createdAt = LocalDateTime.now().minusDays(1); // Request created yesterday
+        }
+        
+        LocalDateTime updatedAt = reviewedAt != null ? reviewedAt : createdAt;
+        
+        Request request = Request.builder()
+                .account(account)
+                .type(type)
+                .status(status)
+                .description(description)
+                .response(response)
+                .reviewedBy(reviewedBy)
+                .reviewedAt(reviewedAt)
+                .createdAt(createdAt)
+                .updatedAt(updatedAt)
+                .build();
+
+        Request saved = requestRepository.save(request);
+        log.info("Created request: {} with status: {}", type, status);
+        return saved;
+    }
+
+    private Payment initializePayment(Order order, PaymentMethod method, PaymentStatus status, LocalDateTime paidAt) {
+        // Check if payment already exists for this order
+        if (paymentRepository.findByOrderId(order.getId()).isPresent()) {
+            log.debug("Payment already exists for order: {}", order.getOrderNumber());
+            return paymentRepository.findByOrderId(order.getId()).orElse(null);
+        }
+
+        String txnRef = "PAY-" + LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE)
+                + "-" + order.getOrderNumber();
+
+        // Ensure unique txnRef
+        int counter = 1;
+        String originalTxnRef = txnRef;
+        while (paymentRepository.findByTxnRef(txnRef).isPresent()) {
+            txnRef = originalTxnRef + "-" + counter;
+            counter++;
+        }
+
+        Payment payment = Payment.builder()
+                .order(order)
+                .method(method)
+                .status(status)
+                .amount(order.getTotal())
+                .txnRef(txnRef)
+                .build();
+
+        Payment saved = paymentRepository.save(payment);
+        log.info("Created payment: {} for order: {} with status: {}", txnRef, order.getOrderNumber(), status);
+        return saved;
     }
 }

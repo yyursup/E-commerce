@@ -189,9 +189,12 @@ export default function Checkout() {
                                 {cartItems.map((item) => (
                                     <div key={item.id} className="p-4 flex gap-4">
                                         <img
-                                            src={item.productImageUrl || 'https://via.placeholder.com/150'}
+                                            src={item.productImageUrl || '/product-placeholder.svg'}
                                             alt={item.productName}
-                                            className="h-16 w-16 rounded-lg object-cover border border-stone-100 dark:border-slate-700"
+                                            className="h-16 w-16 rounded-lg object-cover border border-stone-100 dark:border-slate-700 bg-stone-100 dark:bg-slate-800"
+                                            onError={(e) => {
+                                              e.target.src = '/product-placeholder.svg'
+                                            }}
                                         />
                                         <div className="flex-1">
                                             <h3 className={cn("text-sm font-medium line-clamp-2", isDark ? "text-white" : "text-stone-900")}>

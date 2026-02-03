@@ -223,9 +223,12 @@ export default function ShopOrderDetail() {
               {order.items?.map((item) => (
                 <div key={item.id} className="flex gap-4">
                   <img
-                    src={item.productImageUrl || '/placeholder.png'}
+                    src={item.productImageUrl || '/product-placeholder.svg'}
                     alt={item.productName}
-                    className="h-20 w-20 rounded-lg object-cover"
+                    className="h-20 w-20 rounded-lg object-cover bg-stone-100 dark:bg-slate-800"
+                    onError={(e) => {
+                      e.target.src = '/product-placeholder.svg'
+                    }}
                   />
                   <div className="flex-1">
                     <Link

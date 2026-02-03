@@ -79,7 +79,7 @@ export default function Hero() {
                 <HiOutlineArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
               </Link>
               <Link
-                to="/#deals"
+                to="/deals"
                 className={cn(
                   'inline-flex items-center rounded-xl border px-6 py-3.5 text-sm font-semibold transition',
                   isDark

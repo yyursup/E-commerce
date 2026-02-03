@@ -93,9 +93,42 @@ export default function ProductDetail() {
     }
   }
 
-  const handleBuyNow = () => {
-    // TODO: Implement buy now functionality
-    toast.success('Chức năng đang phát triển')
+  const handleBuyNow = async () => {
+    if (!isAuthenticated) {
+      toast.error('Vui lòng đăng nhập để mua sản phẩm')
+      navigate('/login')
+      return
+    }
+
+    if (!product || !product.id) {
+      toast.error('Thông tin sản phẩm không hợp lệ')
+      return
+    }
+
+    if (!product.shopId) {
+      toast.error('Không tìm thấy thông tin cửa hàng')
+      return
+    }
+
+    try {
+      setAddingToCart(true)
+      // Add to cart first
+      const cartResponse = await cartService.addToCart(product.id, quantity)
+      
+      // Update cart count in store
+      updateCartCount(cartResponse)
+      
+      toast.success(`Đã thêm ${quantity} ${product.name} vào giỏ hàng`)
+      
+      // Redirect to checkout immediately with shopId
+      navigate('/checkout', { state: { shopId: product.shopId } })
+    } catch (error) {
+      console.error('Error adding to cart:', error)
+      const errorMessage = error?.message || error?.response?.data?.message || 'Không thể thêm sản phẩm vào giỏ hàng'
+      toast.error(errorMessage)
+    } finally {
+      setAddingToCart(false)
+    }
   }
 
   const handleShare = async () => {

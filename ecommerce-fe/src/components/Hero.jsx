@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { HiOutlineMusicNote, HiOutlineArrowRight } from 'react-icons/hi'
 import { useThemeStore } from '../store/useThemeStore'
 import { cn } from '../lib/cn'
+import ProductSequence from './ProductSequence'
 
 export default function Hero() {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
@@ -10,17 +11,14 @@ export default function Hero() {
   return (
     <section
       className={cn(
-        'relative overflow-hidden',
-        isDark ? 'bg-slate-950' : 'bg-gradient-to-br from-stone-50 via-amber-50/30 to-stone-100',
+        'relative overflow-hidden bg-[#020617]', // Deep navy-black base
       )}
     >
       {/* Decorative */}
       <div
         className={cn(
-          'absolute inset-0 opacity-30',
-          isDark
-            ? 'bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-amber-900/20 via-transparent to-transparent'
-            : 'bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-amber-200/40 via-transparent to-transparent',
+          'absolute inset-0 opacity-40',
+          'bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-blue-900/20 via-slate-950 to-slate-950',
         )}
       />
       <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-500/20 to-transparent" />
@@ -48,7 +46,7 @@ export default function Hero() {
               transition={{ delay: 0.2, duration: 0.5 }}
               className={cn(
                 'mt-6 text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl',
-                isDark ? 'text-white' : 'text-stone-900',
+                'text-white',
               )}
             >
               Âm thanh Apple.{' '}
@@ -60,7 +58,7 @@ export default function Hero() {
               transition={{ delay: 0.3, duration: 0.5 }}
               className={cn(
                 'mt-4 max-w-xl text-lg',
-                isDark ? 'text-slate-400' : 'text-stone-600',
+                'text-slate-400',
               )}
             >
               AirPods, AirPods Pro, AirPods Max. Giao nhanh, bảo hành toàn quốc. Sàn chuyên AirPods & tai nghe Apple.
@@ -82,9 +80,7 @@ export default function Hero() {
                 to="/#deals"
                 className={cn(
                   'inline-flex items-center rounded-xl border px-6 py-3.5 text-sm font-semibold transition',
-                  isDark
-                    ? 'border-slate-600 text-slate-300 hover:bg-slate-800 hover:text-white'
-                    : 'border-stone-300 text-stone-700 hover:bg-stone-100 hover:text-stone-900',
+                  'border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white',
                 )}
               >
                 Ưu đãi hôm nay
@@ -100,30 +96,18 @@ export default function Hero() {
           >
             <div
               className={cn(
-                'relative aspect-square max-w-md overflow-hidden rounded-3xl border-2 shadow-2xl',
-                isDark
-                  ? 'border-slate-700/50 bg-slate-800/50'
-                  : 'border-amber-200/60 bg-white/80',
+                'relative aspect-square w-full max-w-2xl overflow-hidden',
               )}
             >
-              <img
-                src="https://images.unsplash.com/photo-1587523459887-e669248cf666?w=600&h=600&fit=crop"
-                alt="AirPods & Tai nghe Apple"
-                className="h-full w-full object-cover"
-              />
-              <div
-                className={cn(
-                  'absolute inset-0 rounded-3xl mix-blend-overlay opacity-20',
-                  isDark ? 'bg-amber-950' : 'bg-amber-200',
-                )}
-              />
+              <ProductSequence />
+
             </div>
             {/* Floating badge */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.8, duration: 0.4 }}
-              className="absolute -bottom-4 -right-4 rounded-2xl border bg-white/95 px-5 py-3 shadow-xl backdrop-blur dark:border-slate-600 dark:bg-slate-800/95"
+              className="absolute -bottom-4 -right-4 rounded-2xl border bg-slate-900/90 px-5 py-3 shadow-xl backdrop-blur border-slate-700"
             >
               <p className="text-xs font-medium text-stone-500 dark:text-slate-400">
                 Giao nhanh

@@ -19,12 +19,16 @@ const authService = {
 
     // Login using username
     login: async (credentials) => {
-        // Backend expects 'username' and 'password'
-        const response = await api.post('/api/v1/auth/login', {
-            username: credentials.username,
-            password: credentials.password
-        });
-        return response.data;
+        try {
+            // Backend expects 'username' and 'password'
+            const response = await api.post('/api/v1/auth/login', {
+                username: credentials.username,
+                password: credentials.password
+            });
+            return response.data;
+        } catch (error) {
+            throw error.response ? error.response.data : error;
+        }
     },
 
     verify: async (data) => {

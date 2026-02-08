@@ -4,19 +4,19 @@ const ORDER_BASE = '/api/v1/order';
 const PAYMENT_BASE = '/api/v1/payment';
 
 const orderService = {
-    // Create Order
-    createOrder: async (shopId, addressId, notes) => {
-        try {
-            const response = await axiosClient.post(ORDER_BASE, {
-                shopId,
-                addressId,
-                notes
-            });
-            return response.data;
-        } catch (error) {
-            throw error.response ? error.response.data : error;
-        }
-    },
+  // Create Order
+  createOrder: async (shopId, addressId, notes) => {
+    try {
+      const response = await axiosClient.post(ORDER_BASE, {
+        shopId,
+        addressId,
+        notes
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response ? error.response.data : error;
+    }
+  },
   // Customer: Get my order details
   getMyOrderById: async (orderId) => {
     try {
@@ -79,15 +79,47 @@ const orderService = {
       throw error.response ? error.response.data : error;
     }
   },
-    // Create VNPay Payment URL
-    createPayment: async (orderId) => {
-        try {
-            const response = await axiosClient.post(`${PAYMENT_BASE}/orders/${orderId}/vnpay`);
-            return response.data; // Expect { paymentUrl: '...' }
-        } catch (error) {
-            throw error.response ? error.response.data : error;
-        }
+  // Create VNPay Payment URL
+  createPayment: async (orderId) => {
+    try {
+      const response = await axiosClient.post(`${PAYMENT_BASE}/orders/${orderId}/vnpay`);
+      return response.data; // Expect { paymentUrl: '...' }
+    } catch (error) {
+      throw error.response ? error.response.data : error;
     }
+  },
+  // Customer: Mark order as received
+  markOrderReceived: async (orderId) => {
+    try {
+      const response = await axiosClient.patch(`${ORDER_BASE}/${orderId}/received`);
+      return response.data;
+    } catch (error) {
+      throw error.response ? error.response.data : error;
+    }
+  },
+
+  // Seller: Update order status
+  updateOrderStatus: async (orderId, status) => {
+    try {
+      const response = await axiosClient.patch(`${ORDER_BASE}/${orderId}/status`, null, {
+        params: { status }
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response ? error.response.data : error;
+    }
+  },
+
+  // Wallet: Get my wallet
+  getMyWallet: async () => {
+    try {
+      // Assuming WalletController is at /wallet
+      const response = await axiosClient.get('/api/v1/wallet/me');
+      return response.data;
+    } catch (error) {
+      throw error.response ? error.response.data : error;
+    }
+  }
 };
 
 export default orderService;

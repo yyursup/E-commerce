@@ -48,7 +48,7 @@ const getStatusLabel = (status) => {
     PROCESSING: 'Đang xử lý',
     SHIPPING: 'Đang giao hàng',
     SHIPPED: 'Đã giao hàng',
-    DELIVERED: 'Đã nhận hàng',
+    DELIVERED: 'Đã giao hàng thành công',
     COMPLETED: 'Hoàn thành',
     CANCELLED: 'Đã hủy',
     REFUNDED: 'Đã hoàn tiền',
@@ -118,128 +118,128 @@ export default function ShopOrders() {
 
   return (
     <div>
-        <div className="mb-8">
-          <h1 className={cn('text-3xl font-bold', isDark ? 'text-white' : 'text-stone-900')}>
-            Đơn hàng của shop
-          </h1>
-          <p className={cn('mt-2 text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
-            Quản lý đơn hàng của shop bạn
+      <div className="mb-8">
+        <h1 className={cn('text-3xl font-bold', isDark ? 'text-white' : 'text-stone-900')}>
+          Đơn hàng của shop
+        </h1>
+        <p className={cn('mt-2 text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
+          Quản lý đơn hàng của shop bạn
+        </p>
+      </div>
+
+      {/* Filter */}
+      <div className="mb-6">
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className={cn(
+            'rounded-lg border px-4 py-2 text-sm',
+            'focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20',
+            isDark
+              ? 'border-slate-600 bg-slate-800 text-white'
+              : 'border-stone-300 bg-white text-stone-900',
+          )}
+        >
+          {ORDER_STATUSES.map((status) => (
+            <option key={status.value} value={status.value}>
+              {status.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {loading && (
+        <div className="flex items-center justify-center py-12">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent"></div>
+        </div>
+      )}
+
+      {error && !loading && (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-center dark:border-red-800 dark:bg-red-900/20">
+          <p className={cn('text-sm', isDark ? 'text-red-400' : 'text-red-600')}>{error}</p>
+        </div>
+      )}
+
+      {!loading && !error && orders.length === 0 && (
+        <div className={cn(
+          'rounded-xl border p-12 text-center',
+          isDark ? 'border-slate-700 bg-slate-900' : 'border-stone-200 bg-white'
+        )}>
+          <HiOutlineShoppingBag className={cn('mx-auto h-12 w-12', isDark ? 'text-slate-600' : 'text-stone-400')} />
+          <p className={cn('mt-4 text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
+            Shop chưa có đơn hàng nào
           </p>
         </div>
+      )}
 
-        {/* Filter */}
-        <div className="mb-6">
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className={cn(
-              'rounded-lg border px-4 py-2 text-sm',
-              'focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20',
-              isDark
-                ? 'border-slate-600 bg-slate-800 text-white'
-                : 'border-stone-300 bg-white text-stone-900',
-            )}
-          >
-            {ORDER_STATUSES.map((status) => (
-              <option key={status.value} value={status.value}>
-                {status.label}
-              </option>
-            ))}
-          </select>
-        </div>
+      {!loading && !error && orders.length > 0 && (
+        <div className="space-y-4">
+          {orders.map((order) => {
+            const statusBadge = getStatusBadge(order.status)
+            const StatusIcon = statusBadge.icon
+            const thumbnailImage = order.items?.[0]?.productImageUrl
 
-        {loading && (
-          <div className="flex items-center justify-center py-12">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent"></div>
-          </div>
-        )}
-
-        {error && !loading && (
-          <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-center dark:border-red-800 dark:bg-red-900/20">
-            <p className={cn('text-sm', isDark ? 'text-red-400' : 'text-red-600')}>{error}</p>
-          </div>
-        )}
-
-        {!loading && !error && orders.length === 0 && (
-          <div className={cn(
-            'rounded-xl border p-12 text-center',
-            isDark ? 'border-slate-700 bg-slate-900' : 'border-stone-200 bg-white'
-          )}>
-            <HiOutlineShoppingBag className={cn('mx-auto h-12 w-12', isDark ? 'text-slate-600' : 'text-stone-400')} />
-            <p className={cn('mt-4 text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
-              Shop chưa có đơn hàng nào
-            </p>
-          </div>
-        )}
-
-        {!loading && !error && orders.length > 0 && (
-          <div className="space-y-4">
-            {orders.map((order) => {
-              const statusBadge = getStatusBadge(order.status)
-              const StatusIcon = statusBadge.icon
-              const thumbnailImage = order.items?.[0]?.productImageUrl
-
-              return (
-                <motion.div
-                  key={order.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className={cn(
-                    'rounded-xl border p-6 transition-shadow hover:shadow-lg',
-                    isDark ? 'border-slate-700 bg-slate-900' : 'border-stone-200 bg-white',
-                  )}
-                >
-                  <Link to={`/business/orders/${order.id}`}>
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="flex gap-4">
-                        {thumbnailImage && (
-                          <img
-                            src={thumbnailImage}
-                            alt={order.items[0]?.productName}
-                            className="h-20 w-20 rounded-lg object-cover"
-                          />
-                        )}
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3">
-                            <h3 className={cn('font-semibold', isDark ? 'text-white' : 'text-stone-900')}>
-                              {order.orderNumber}
-                            </h3>
-                            <span
-                              className={cn(
-                                'inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium',
-                                statusBadge.color,
-                              )}
-                            >
-                              <StatusIcon className="h-3 w-3" />
-                              {getStatusLabel(order.status)}
-                            </span>
-                          </div>
-                          <p className={cn('mt-1 text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
-                            Khách hàng: {order.userName}
-                          </p>
-                          <p className={cn('mt-1 text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
-                            {order.items?.length || 0} sản phẩm
-                          </p>
-                          <p className={cn('mt-1 text-xs', isDark ? 'text-slate-500' : 'text-stone-500')}>
-                            {formatDate(order.createdAt)}
-                          </p>
+            return (
+              <motion.div
+                key={order.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={cn(
+                  'rounded-xl border p-6 transition-shadow hover:shadow-lg',
+                  isDark ? 'border-slate-700 bg-slate-900' : 'border-stone-200 bg-white',
+                )}
+              >
+                <Link to={`/business/orders/${order.id}`}>
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex gap-4">
+                      {thumbnailImage && (
+                        <img
+                          src={thumbnailImage}
+                          alt={order.items[0]?.productName}
+                          className="h-20 w-20 rounded-lg object-cover"
+                        />
+                      )}
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3">
+                          <h3 className={cn('font-semibold', isDark ? 'text-white' : 'text-stone-900')}>
+                            {order.orderNumber}
+                          </h3>
+                          <span
+                            className={cn(
+                              'inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium',
+                              statusBadge.color,
+                            )}
+                          >
+                            <StatusIcon className="h-3 w-3" />
+                            {getStatusLabel(order.status)}
+                          </span>
                         </div>
-                      </div>
-                      <div className="text-right">
-                        <p className={cn('text-lg font-bold', isDark ? 'text-white' : 'text-stone-900')}>
-                          {formatCurrency(order.total)}
+                        <p className={cn('mt-1 text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
+                          Khách hàng: {order.userName}
+                        </p>
+                        <p className={cn('mt-1 text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
+                          {order.items?.length || 0} sản phẩm
                         </p>
                         <p className={cn('mt-1 text-xs', isDark ? 'text-slate-500' : 'text-stone-500')}>
-                          Tổng cộng
+                          {formatDate(order.createdAt)}
                         </p>
                       </div>
                     </div>
-                  </Link>
-                </motion.div>
-              )
-            })}
-          </div>
-        )}
+                    <div className="text-right">
+                      <p className={cn('text-lg font-bold', isDark ? 'text-white' : 'text-stone-900')}>
+                        {formatCurrency(order.total)}
+                      </p>
+                      <p className={cn('mt-1 text-xs', isDark ? 'text-slate-500' : 'text-stone-500')}>
+                        Tổng cộng
+                      </p>
+                    </div>
+                  </div>
+                </Link>
+              </motion.div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }

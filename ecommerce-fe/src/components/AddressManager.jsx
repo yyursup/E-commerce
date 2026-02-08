@@ -33,7 +33,7 @@ export default function AddressManager({ isDark }) {
         try {
             setLoading(true);
             const res = await userAddressService.listMyAddresses();
-            setAddresses(res.data || []);
+            setAddresses(Array.isArray(res) ? res : []);
         } catch (error) {
             console.error("Failed to load addresses", error);
             if (error.response?.status !== 401) {

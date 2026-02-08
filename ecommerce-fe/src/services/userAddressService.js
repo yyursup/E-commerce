@@ -4,23 +4,48 @@ const BASE_URL = '/api/v1/address';
 
 export const userAddressService = {
 
-    listMyAddresses: () => {
-        return axiosClient.get(BASE_URL);
+    listMyAddresses: async () => {
+        try {
+            const response = await axiosClient.get(BASE_URL);
+            return response.data;
+        } catch (error) {
+            throw error.response ? error.response.data : error;
+        }
     },
 
-    createMyAddress: (data) => {
-        return axiosClient.post(BASE_URL, data);
+    createMyAddress: async (data) => {
+        try {
+            const response = await axiosClient.post(BASE_URL, data);
+            return response.data;
+        } catch (error) {
+            throw error.response ? error.response.data : error;
+        }
     },
 
-    updateMyAddress: (addressId, data) => {
-        return axiosClient.put(`${BASE_URL}/${addressId}`, data);
+    updateMyAddress: async (addressId, data) => {
+        try {
+            const response = await axiosClient.put(`${BASE_URL}/${addressId}`, data);
+            return response.data;
+        } catch (error) {
+            throw error.response ? error.response.data : error;
+        }
     },
 
-    deleteMyAddress: (addressId) => {
-        return axiosClient.delete(`${BASE_URL}/${addressId}`);
+    deleteMyAddress: async (addressId) => {
+        try {
+            const response = await axiosClient.delete(`${BASE_URL}/${addressId}`);
+            return response.data;
+        } catch (error) {
+            throw error.response ? error.response.data : error;
+        }
     },
 
-    setDefault: (addressId) => {
-        return axiosClient.patch(`${BASE_URL}/${addressId}/default`);
+    setDefault: async (addressId) => {
+        try {
+            const response = await axiosClient.patch(`${BASE_URL}/${addressId}/default`);
+            return response.data;
+        } catch (error) {
+            throw error.response ? error.response.data : error;
+        }
     }
 };

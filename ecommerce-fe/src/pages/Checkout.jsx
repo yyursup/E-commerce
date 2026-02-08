@@ -4,10 +4,12 @@ import { useAuthStore } from '../store/useAuthStore'
 import cartService from '../services/cart'
 import orderService from '../services/order'
 import { userAddressService } from '../services/userAddressService'
+import { shippingService } from '../services/shippingService'
 import { useThemeStore } from '../store/useThemeStore'
 import { cn } from '../lib/cn'
-import { HiOutlineLocationMarker, HiArrowLeft, HiOutlineShoppingBag } from 'react-icons/hi'
+import { HiOutlineLocationMarker, HiArrowLeft, HiOutlineShoppingBag, HiPlus } from 'react-icons/hi'
 import toast from 'react-hot-toast'
+import AddressFormModal from '../components/AddressFormModal'
 
 export default function Checkout() {
     const { isAuthenticated } = useAuthStore()
@@ -20,11 +22,14 @@ export default function Checkout() {
     const [cartItems, setCartItems] = useState([])
     const [shopName, setShopName] = useState('')
     const [totalPrice, setTotalPrice] = useState(0)
+    const [shippingFee, setShippingFee] = useState(0)
+    const [isCalculatingFee, setIsCalculatingFee] = useState(false)
 
     const [addresses, setAddresses] = useState([])
     const [selectedAddressId, setSelectedAddressId] = useState(null)
     const [notes, setNotes] = useState('')
     const [processing, setProcessing] = useState(false)
+    const [showAddAddress, setShowAddAddress] = useState(false)
 
     useEffect(() => {
         if (!isAuthenticated) {
@@ -58,13 +63,7 @@ export default function Checkout() {
             setTotalPrice(shopItems.reduce((sum, item) => sum + item.totalPrice, 0))
 
             // Fetch Addresses
-            const addressRes = await userAddressService.listMyAddresses()
-            const addressList = addressRes.data || []
-            setAddresses(addressList)
-
-            // Auto select default or first address
-            const defaultAddr = addressList.find(a => a.isDefault) || addressList[0]
-            if (defaultAddr) setSelectedAddressId(defaultAddr.id)
+            await loadAddresses()
 
         } catch (error) {
             console.error("Failed to load checkout data", error)
@@ -74,9 +73,79 @@ export default function Checkout() {
         }
     }
 
+    const loadAddresses = async (newAddressId = null) => {
+        try {
+            const addressRes = await userAddressService.listMyAddresses()
+            const addressList = addressRes.data || []
+            setAddresses(addressList)
+
+            if (newAddressId) {
+                setSelectedAddressId(newAddressId)
+            } else if (!selectedAddressId) {
+                // Auto select default or first address if none selected
+                const defaultAddr = addressList.find(a => a.isDefault) || addressList[0]
+                if (defaultAddr) setSelectedAddressId(defaultAddr.id)
+            }
+        } catch (error) {
+            console.error("Failed to load addresses", error)
+        }
+    }
+
+    // Calculate shipping fee whenever address changes
+    useEffect(() => {
+        if (selectedAddressId && addresses.length > 0) {
+            calculateShippingFee()
+        }
+    }, [selectedAddressId, addresses])
+
+    const calculateShippingFee = async () => {
+        const selectedAddr = addresses.find(a => a.id === selectedAddressId)
+        if (!selectedAddr) return
+
+        if (!selectedAddr.districtId || !selectedAddr.wardCode) {
+            // Need to ensure address has GHN info
+            // console.warn("Address missing GHN info (districtId/wardCode)")
+            return
+        }
+
+        try {
+            setIsCalculatingFee(true)
+
+            // Mock Shop Address (Quan 1, HCM) - Todo: Fetch from API
+            const FROM_DISTRICT_ID = 1442;
+            const FROM_WARD_CODE = "20101";
+
+            // Calculate weight (Mock: 500g per item * quantity)
+            const totalWeight = cartItems.reduce((sum, item) => sum + (item.quantity * 500), 0)
+
+            const feeData = await shippingService.calculateFee({
+                from_district_id: FROM_DISTRICT_ID,
+                from_ward_code: FROM_WARD_CODE,
+                to_district_id: selectedAddr.districtId,
+                to_ward_code: selectedAddr.wardCode,
+                weight: totalWeight,
+                service_type_id: 2, // Standard
+                insurance_value: totalPrice > 5000000 ? 5000000 : totalPrice // Max 5M insurance for demo
+            })
+
+            setShippingFee(feeData.total || 0)
+        } catch (error) {
+            console.error("Failed to calculate shipping fee", error)
+            // toast.error("Không thể tính phí vận chuyển")
+            setShippingFee(0)
+        } finally {
+            setIsCalculatingFee(false)
+        }
+    }
+
     const handleCreateOrder = async () => {
         if (!selectedAddressId) {
             toast.error("Vui lòng chọn địa chỉ giao hàng")
+            return
+        }
+
+        if (isCalculatingFee) {
+            toast.error("Đang tính phí vận chuyển, vui lòng chờ...")
             return
         }
 
@@ -98,12 +167,17 @@ export default function Checkout() {
             console.error(error)
             toast.error(error.message || "Đặt hàng thất bại")
             // If order was created but payment failed, navigate to order detail
-            if (error?.orderId) { // Check if we can get orderId from error context if possible, otherwise just stay or navigate
+            if (error?.orderId) {
                 navigate('/orders')
             }
         } finally {
             setProcessing(false)
         }
+    }
+
+    const handleAddressAdded = (newAddress) => {
+        // Reload addresses and select the new one
+        loadAddresses(newAddress.id)
     }
 
     if (loading) {
@@ -113,6 +187,8 @@ export default function Checkout() {
             </div>
         )
     }
+
+    const finalTotal = totalPrice + shippingFee
 
     return (
         <div className={cn("min-h-screen py-10 px-4 sm:px-6 lg:px-8", isDark ? "bg-slate-950" : "bg-stone-50")}>
@@ -136,15 +212,28 @@ export default function Checkout() {
 
                         {/* Address Section */}
                         <div className={cn("rounded-2xl border p-6 shadow-sm", isDark ? "border-slate-800 bg-slate-900" : "border-stone-200 bg-white")}>
-                            <div className="flex items-center gap-2 mb-4">
-                                <HiOutlineLocationMarker className="w-5 h-5 text-amber-500" />
-                                <h2 className={cn("font-bold text-lg", isDark ? "text-white" : "text-stone-900")}>Địa chỉ nhận hàng</h2>
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-2">
+                                    <HiOutlineLocationMarker className="w-5 h-5 text-amber-500" />
+                                    <h2 className={cn("font-bold text-lg", isDark ? "text-white" : "text-stone-900")}>Địa chỉ nhận hàng</h2>
+                                </div>
+                                <button
+                                    onClick={() => setShowAddAddress(true)}
+                                    className="flex items-center gap-1 text-sm font-medium text-amber-500 hover:text-amber-600 transition-colors"
+                                >
+                                    <HiPlus className="w-4 h-4" /> Thêm địa chỉ
+                                </button>
                             </div>
 
                             {addresses.length === 0 ? (
                                 <div className="text-center py-4">
                                     <p className={isDark ? "text-slate-400" : "text-stone-500"}>Bạn chưa có địa chỉ nào.</p>
-                                    <Link to="/profile" className="text-amber-500 font-medium hover:underline mt-2 inline-block">Thêm địa chỉ</Link>
+                                    <button
+                                        onClick={() => setShowAddAddress(true)}
+                                        className="text-amber-500 font-medium hover:underline mt-2 inline-block"
+                                    >
+                                        Thêm địa chỉ ngay
+                                    </button>
                                 </div>
                             ) : (
                                 <div className="space-y-3">
@@ -167,10 +256,10 @@ export default function Checkout() {
                                             />
                                             <div className="text-sm">
                                                 <div className={cn("font-bold", isDark ? "text-white" : "text-stone-900")}>
-                                                    {addr.recipientName} <span className="font-normal opacity-70">| {addr.phone}</span>
+                                                    {addr.receiverName || "Tên người nhận"} <span className="font-normal opacity-70">| {addr.receiverPhone || "SĐT"}</span>
                                                 </div>
                                                 <div className={isDark ? "text-slate-400" : "text-stone-600"}>
-                                                    {addr.detailAddress}, {addr.ward}, {addr.district}, {addr.city}
+                                                    {addr.addressLine}, {addr.ward}, {addr.district}, {addr.city}
                                                 </div>
                                             </div>
                                         </label>
@@ -193,7 +282,7 @@ export default function Checkout() {
                                             alt={item.productName}
                                             className="h-16 w-16 rounded-lg object-cover border border-stone-100 dark:border-slate-700 bg-stone-100 dark:bg-slate-800"
                                             onError={(e) => {
-                                              e.target.src = '/product-placeholder.svg'
+                                                e.target.src = '/product-placeholder.svg'
                                             }}
                                         />
                                         <div className="flex-1">
@@ -246,25 +335,29 @@ export default function Checkout() {
                                 </div>
                                 <div className="flex justify-between">
                                     <span className={isDark ? "text-slate-400" : "text-stone-600"}>Phí vận chuyển</span>
-                                    <span className={cn("text-sm italic", isDark ? "text-slate-500" : "text-stone-400")}>
-                                        (Tính sau khi tạo đơn)
-                                    </span>
+                                    {isCalculatingFee ? (
+                                        <span className="text-amber-500 animate-pulse">Đang tính...</span>
+                                    ) : (
+                                        <span className={cn("font-medium", isDark ? "text-white" : "text-stone-900")}>
+                                            {shippingFee > 0 ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(shippingFee) : '---'}
+                                        </span>
+                                    )}
                                 </div>
                             </div>
 
                             <div className="py-4 border-y border-stone-100 dark:border-slate-800 flex justify-between items-center">
                                 <span className={cn("font-bold", isDark ? "text-white" : "text-stone-900")}>Tổng thanh toán</span>
                                 <span className="font-bold text-xl text-amber-500">
-                                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalPrice)}
+                                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(finalTotal)}
                                 </span>
                             </div>
 
                             <button
                                 onClick={handleCreateOrder}
-                                disabled={processing || cartItems.length === 0}
+                                disabled={processing || cartItems.length === 0 || isCalculatingFee}
                                 className={cn(
                                     "w-full py-3 rounded-xl font-bold text-white shadow-lg shadow-amber-500/25 transition-all flex justify-center items-center gap-2",
-                                    processing
+                                    (processing || isCalculatingFee)
                                         ? "bg-stone-400 cursor-not-allowed"
                                         : "bg-amber-500 hover:bg-amber-600 active:scale-95"
                                 )}
@@ -282,6 +375,13 @@ export default function Checkout() {
                     </div>
                 </div>
             </div>
+
+            <AddressFormModal
+                isOpen={showAddAddress}
+                onClose={() => setShowAddAddress(false)}
+                onSuccess={handleAddressAdded}
+                isDark={isDark}
+            />
         </div>
     )
 }

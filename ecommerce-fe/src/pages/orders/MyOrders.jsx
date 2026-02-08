@@ -7,6 +7,7 @@ import {
   HiOutlineCheckCircle,
   HiOutlineTruck,
   HiOutlineXCircle,
+  HiOutlineCreditCard
 } from 'react-icons/hi'
 import { useThemeStore } from '../../store/useThemeStore'
 import { useAuthStore } from '../../store/useAuthStore'
@@ -49,8 +50,8 @@ const getStatusLabel = (status) => {
     PROCESSING: 'Đang xử lý',
     SHIPPING: 'Đang giao hàng',
     SHIPPED: 'Đã giao hàng',
-    DELIVERED: 'Đã nhận hàng',
-    COMPLETED: 'Hoàn thành',
+    DELIVERED: 'Đã giao hàng thành công',
+    COMPLETED: 'Đã nhận được hàng',
     CANCELLED: 'Đã hủy',
     REFUNDED: 'Đã hoàn tiền',
     PENDING_PAYMENT: 'Chờ thanh toán',
@@ -65,25 +66,45 @@ export default function MyOrders() {
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState('')
   const [error, setError] = useState(null)
+  const [walletBalance, setWalletBalance] = useState(0)
 
   useEffect(() => {
     if (!isAuthenticated) return
-    fetchOrders()
+    fetchData()
   }, [isAuthenticated, statusFilter])
 
-  const fetchOrders = async () => {
+  const fetchData = async () => {
     try {
       setLoading(true)
       setError(null)
       const status = statusFilter || null
-      const ordersData = await orderService.getMyOrders(status)
+
+      const [ordersData, walletData] = await Promise.all([
+        orderService.getMyOrders(status),
+        statusFilter === '' ? orderService.getMyWallet() : Promise.resolve(null) // Only fetch wallet on first load/all statuses
+      ])
+
       setOrders(ordersData || [])
+      if (walletData) setWalletBalance(walletData.balance || 0)
+
     } catch (err) {
-      console.error('Error fetching orders:', err)
-      setError(err?.response?.data?.message || err?.message || 'Không thể tải danh sách đơn hàng')
-      toast.error('Không thể tải danh sách đơn hàng')
+      console.error('Error fetching data:', err)
+      setError(err?.response?.data?.message || err?.message || 'Không thể tải dữ liệu')
+      toast.error('Không thể tải dữ liệu')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleMarkReceived = async (orderId) => {
+    if (!window.confirm("Bạn xác nhận đã nhận được hàng và hài lòng với sản phẩm?")) return;
+    try {
+      await orderService.markOrderReceived(orderId);
+      toast.success("Đã xác nhận nhận hàng!");
+      fetchData(); // Reload list
+    } catch (error) {
+      console.error(error);
+      toast.error("Có lỗi xảy ra, vui lòng thử lại.");
     }
   }
 
@@ -117,37 +138,60 @@ export default function MyOrders() {
     )
   }
 
+  const canMarkReceived = (status) => ['DELIVERED'].includes(status);
+
   return (
     <div className={cn('min-h-screen px-4 py-8 sm:px-6 lg:px-8', isDark ? 'bg-slate-950' : 'bg-stone-50')}>
       <div className="mx-auto max-w-7xl">
-        <div className="mb-8">
-          <h1 className={cn('text-3xl font-bold', isDark ? 'text-white' : 'text-stone-900')}>
-            Đơn hàng của tôi
-          </h1>
-          <p className={cn('mt-2 text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
-            Quản lý và theo dõi đơn hàng của bạn
-          </p>
+        <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div>
+            <h1 className={cn('text-3xl font-bold', isDark ? 'text-white' : 'text-stone-900')}>
+              Đơn hàng của tôi
+            </h1>
+            <p className={cn('mt-2 text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
+              Quản lý và theo dõi đơn hàng của bạn
+            </p>
+          </div>
+
+          {/* Wallet Card */}
+          <div className={cn(
+            "flex items-center gap-4 px-6 py-4 rounded-xl shadow-sm border",
+            isDark ? "bg-slate-900 border-slate-700" : "bg-white border-stone-200"
+          )}>
+            <div className="p-3 rounded-full bg-amber-500/10 text-amber-500">
+              <HiOutlineCreditCard className="w-6 h-6" />
+            </div>
+            <div>
+              <p className={cn("text-xs font-medium uppercase tracking-wider", isDark ? "text-slate-400" : "text-stone-500")}>
+                Số dư ví
+              </p>
+              <p className={cn("text-xl font-bold", isDark ? "text-white" : "text-stone-900")}>
+                {formatCurrency(walletBalance)}
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Filter */}
-        <div className="mb-6">
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className={cn(
-              'rounded-lg border px-4 py-2 text-sm',
-              'focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20',
-              isDark
-                ? 'border-slate-600 bg-slate-800 text-white'
-                : 'border-stone-300 bg-white text-stone-900',
-            )}
-          >
+        <div className="mb-6 overflow-x-auto pb-2">
+          <div className="flex gap-2 min-w-max">
             {ORDER_STATUSES.map((status) => (
-              <option key={status.value} value={status.value}>
+              <button
+                key={status.value}
+                onClick={() => setStatusFilter(status.value)}
+                className={cn(
+                  'rounded-full px-4 py-2 text-sm font-medium transition-colors border',
+                  statusFilter === status.value
+                    ? 'bg-amber-500 text-white border-amber-500'
+                    : isDark
+                      ? 'border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700'
+                      : 'border-stone-200 bg-white text-stone-600 hover:bg-stone-50'
+                )}
+              >
                 {status.label}
-              </option>
+              </button>
             ))}
-          </select>
+          </div>
         </div>
 
         {loading && (
@@ -198,7 +242,8 @@ export default function MyOrders() {
                           <img
                             src={thumbnailImage}
                             alt={order.items[0]?.productName}
-                            className="h-20 w-20 rounded-lg object-cover"
+                            className="h-20 w-20 rounded-lg object-cover bg-stone-100 dark:bg-slate-800"
+                            onError={(e) => { e.target.src = '/product-placeholder.svg' }}
                           />
                         )}
                         <div className="flex-1">
@@ -231,9 +276,18 @@ export default function MyOrders() {
                         <p className={cn('text-lg font-bold', isDark ? 'text-white' : 'text-stone-900')}>
                           {formatCurrency(order.total)}
                         </p>
-                        <p className={cn('mt-1 text-xs', isDark ? 'text-slate-500' : 'text-stone-500')}>
-                          Tổng cộng
-                        </p>
+
+                        {canMarkReceived(order.status) && (
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault(); // Prevent Link navigation
+                              handleMarkReceived(order.id);
+                            }}
+                            className="mt-2 inline-block rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-600"
+                          >
+                            Đã nhận được hàng
+                          </button>
+                        )}
                       </div>
                     </div>
                   </Link>

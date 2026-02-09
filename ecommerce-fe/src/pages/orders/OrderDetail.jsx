@@ -38,8 +38,8 @@ const getStatusLabel = (status) => {
     PROCESSING: 'Đang xử lý',
     SHIPPING: 'Đang giao hàng',
     SHIPPED: 'Đã giao hàng',
-    DELIVERED: 'Đã nhận hàng',
-    COMPLETED: 'Hoàn thành',
+    DELIVERED: 'Đã giao hàng thành công',
+    COMPLETED: 'Đã nhận được hàng',
     CANCELLED: 'Đã hủy',
     REFUNDED: 'Đã hoàn tiền',
     PENDING_PAYMENT: 'Chờ thanh toán',
@@ -179,6 +179,23 @@ export default function OrderDetail() {
                 <StatusIcon className="h-4 w-4" />
                 {getStatusLabel(order.status)}
               </span>
+              {['DELIVERED'].includes(order.status) && (
+                <button
+                  onClick={async () => {
+                    if (!window.confirm("Bạn xác nhận đã nhận được hàng?")) return;
+                    try {
+                      await orderService.markOrderReceived(order.id);
+                      toast.success("Đã xác nhận nhận hàng!");
+                      fetchOrder();
+                    } catch (e) {
+                      toast.error("Có lỗi xảy ra");
+                    }
+                  }}
+                  className="ml-4 rounded-lg bg-amber-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-amber-600"
+                >
+                  Đã nhận được hàng
+                </button>
+              )}
             </div>
           </div>
 

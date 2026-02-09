@@ -40,6 +40,7 @@ public class EscrowServiceImpl implements EscrowService {
         return escrowRepository.adminList(status, pageable)
                 .map(EscrowAdminResponse::from);
     }
+
     @Override
     @Transactional
     public void releaseByOrder(UUID orderId) {
@@ -65,8 +66,7 @@ public class EscrowServiceImpl implements EscrowService {
                 .existsByReferenceTypeAndReferenceIdAndType(
                         ReferenceType.ESCROW,
                         escrow.getId(),
-                        TransactionType.RELEASE
-                );
+                        TransactionType.RELEASE);
 
         if (releasedTxnExists) {
             escrow.setStatus(EscrowStatus.RELEASED);
@@ -82,8 +82,10 @@ public class EscrowServiceImpl implements EscrowService {
         Wallet escrowWallet = escrow.getEscrowWallet();
         Wallet sellerWallet = escrow.getSellerWallet();
 
-        if (escrowWallet == null) throw new CustomException("Escrow wallet missing");
-        if (sellerWallet == null) throw new CustomException("Seller wallet missing");
+        if (escrowWallet == null)
+            throw new CustomException("Escrow wallet missing");
+        if (sellerWallet == null)
+            throw new CustomException("Seller wallet missing");
 
         BigDecimal amount = escrow.getAmount();
         if (amount == null || amount.signum() <= 0) {
@@ -91,7 +93,8 @@ public class EscrowServiceImpl implements EscrowService {
         }
 
         BigDecimal commission = order.getPlatformCommission();
-        if (commission == null) commission = BigDecimal.ZERO;
+        if (commission == null)
+            commission = BigDecimal.ZERO;
 
         BigDecimal sellerNet = amount.subtract(commission);
         if (sellerNet.signum() < 0) {

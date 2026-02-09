@@ -78,7 +78,8 @@ public class OrderServiceImpl implements OrderService {
         }
         OrderStatus s = order.getStatus();
         if (s != OrderStatus.CONFIRMED && s != OrderStatus.PROCESSING && s != OrderStatus.SHIPPING) {
-            throw new CustomException("GHN shipping order can be created only when status is CONFIRMED/PROCESSING/SHIPPING.");
+            throw new CustomException(
+                    "GHN shipping order can be created only when status is CONFIRMED/PROCESSING/SHIPPING.");
         }
         tryCreateGHNOrder(order);
         order = orderRepository.save(order);
@@ -103,7 +104,8 @@ public class OrderServiceImpl implements OrderService {
         }
         order.setGhnOrderCode(ghnOrderCode.trim());
         order = orderRepository.save(order);
-        log.info("Seller đã nhập mã GHN thủ công: order {} -> ghnOrderCode={}", order.getOrderNumber(), ghnOrderCode.trim());
+        log.info("Seller đã nhập mã GHN thủ công: order {} -> ghnOrderCode={}", order.getOrderNumber(),
+                ghnOrderCode.trim());
         return OrderResponse.from(order);
     }
 
@@ -112,7 +114,8 @@ public class OrderServiceImpl implements OrderService {
         Order order = orderRepository.findByIdForUpdate(orderId)
                 .orElseThrow(() -> new CustomException("Order not found"));
 
-        if (order.isReceivedByBuyer()) return;
+        if (order.isReceivedByBuyer())
+            return;
         if (order.getStatus() != OrderStatus.DELIVERED) {
             return;
         }
@@ -135,8 +138,7 @@ public class OrderServiceImpl implements OrderService {
         List<UUID> orderIds = orderRepository
                 .findIdsByStatusAndReceivedByBuyerFalseAndDeliveredAtBefore(
                         OrderStatus.DELIVERED,
-                        threshold
-                );
+                        threshold);
 
         for (UUID orderId : orderIds) {
             try {
@@ -171,6 +173,7 @@ public class OrderServiceImpl implements OrderService {
         order.setReceivedByBuyer(true);
         order.setReceivedAt(LocalDateTime.now());
         escrowService.releaseByOrder(order.getId());
+        order.setStatus(OrderStatus.COMPLETED);
 
         orderRepository.save(order);
     }
@@ -277,9 +280,7 @@ public class OrderServiceImpl implements OrderService {
         BigDecimal subtotal = getBigDecimal(cartItems);
 
         BigDecimal shippingFee = shippingService.quoteFee(
-                shop, cartItems, addr.getDistrictId(), addr.getWardCode()
-        );
-
+                shop, cartItems, addr.getDistrictId(), addr.getWardCode());
 
         String orderNumber = generateOrderNumber();
 
@@ -302,7 +303,8 @@ public class OrderServiceImpl implements OrderService {
         order.setSubtotal(subtotal);
         order.setShippingFee(shippingFee);
         BigDecimal commissionRate = platformSettingService.getCommissionRate();
-        BigDecimal platformCommission = subtotal.multiply(commissionRate).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+        BigDecimal platformCommission = subtotal.multiply(commissionRate).divide(BigDecimal.valueOf(100), 2,
+                RoundingMode.HALF_UP);
         order.setPlatformCommission(platformCommission);
         order.setCommissionRate(commissionRate.doubleValue());
         order.calculateTotal();
@@ -342,8 +344,7 @@ public class OrderServiceImpl implements OrderService {
             if (product.getQuantity() != null && product.getQuantity() < cartItem.getQuantity()) {
                 throw new CustomException(
                         "Sản phẩm " + product.getName()
-                                + " không đủ số lượng. Còn lại: " + product.getQuantity()
-                );
+                                + " không đủ số lượng. Còn lại: " + product.getQuantity());
             }
 
             BigDecimal unitPrice = product.getBasePrice();

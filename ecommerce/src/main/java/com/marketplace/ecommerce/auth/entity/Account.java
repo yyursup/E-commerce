@@ -13,6 +13,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
@@ -54,6 +55,12 @@ public class Account extends BaseEntity implements UserDetails, Serializable {
 
     @Column(name = "accountVerified")
     private Boolean accountVerified = false;
+
+    @Column(name = "review_violation_count", nullable = false)
+    private int reviewViolationCount = 0;
+
+    @Column(name = "review_banned_until")
+    private LocalDateTime reviewBannedUntil;
 
     @Override
     public String getPassword() {

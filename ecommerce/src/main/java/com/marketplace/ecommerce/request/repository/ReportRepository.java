@@ -24,6 +24,8 @@ public interface ReportRepository extends JpaRepository<Report, UUID> {
                 SELECT 'SHOP' AS type WHERE EXISTS (SELECT 1 FROM shops s WHERE s.id = :id)
                 UNION ALL
                 SELECT 'PRODUCT' AS type WHERE EXISTS (SELECT 1 FROM products p WHERE p.id = :id)
+                UNION ALL
+                SELECT 'REVIEW' AS type WHERE EXISTS (SELECT 1 FROM reviews r WHERE r.id = :id)
               ) t
             """, nativeQuery = true)
     List<String> resolveTargetTypes(@Param("id") UUID id);

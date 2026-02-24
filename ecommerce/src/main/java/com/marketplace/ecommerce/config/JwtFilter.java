@@ -33,7 +33,11 @@ public class JwtFilter extends OncePerRequestFilter {
             "/static/**",
             "/api/v1/auth/login",
             "/api/v1/payment/vnpay/**",
-            "/payments/vnpay/callback"
+            "/payments/vnpay/callback",
+            "/api/v1/product",
+            "/api/v1/product/**",
+            "/api/v1/auth/register",
+            "/api/v1/auth/verify"
     );
 
     public JwtFilter(

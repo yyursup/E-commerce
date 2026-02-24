@@ -46,8 +46,6 @@ export default function ProductQuickView({ product, onAddToCart }) {
         setShowAddAnimation(false)
       }, 1500)
       
-      // Call parent callback if provided
-      onAddToCart?.(product)
     } catch (error) {
       console.error('Error adding to cart:', error)
       const errorMessage = error?.message || error?.response?.data?.message || 'Không thể thêm sản phẩm vào giỏ hàng'

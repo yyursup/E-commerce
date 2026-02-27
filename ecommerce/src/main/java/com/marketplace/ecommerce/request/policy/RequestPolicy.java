@@ -45,6 +45,16 @@ public class RequestPolicy {
         }
     }
 
+
+    public UUID resolveTargetAccountId(TargetType type, UUID targetId) {
+        return switch (type) {
+            case USER -> reportRepository.resolveUserAccountId(targetId);
+            case SHOP -> reportRepository.resolveShopOwnerAccountId(targetId);
+            case PRODUCT -> reportRepository.resolveProductOwnerAccountId(targetId);
+            case REVIEW -> reportRepository.resolveReviewOwnerAccountId(targetId);
+        };
+    }
+
     public ApproveSellerContext validateApproveSellerRequest(Request req, UUID requestId) {
 
         if (req.getStatus() != RequestStatus.PENDING) {

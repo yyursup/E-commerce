@@ -25,7 +25,7 @@ import java.util.UUID;
 public class RequestController {
 
     private final RequestService requestService;
-    private final ReportService reportService;
+
     private final RegisterSellerService registerSellerService;
 
     @PostMapping("regis-seller")
@@ -35,13 +35,6 @@ public class RequestController {
         return registerSellerService.createSellerRegistration(u.getAccountId(), request);
     }
 
-    @PostMapping("report")
-    public CreateRequestResponse report(
-            @CurrentUser CurrentUserInfo u,
-            @Valid @RequestBody CreateReportRequest request
-    ) {
-        return reportService.createReport(u.getAccountId(), request);
-    }
 
     @PutMapping("reject")
     @PreAuthorize("hasRole('ADMIN')")

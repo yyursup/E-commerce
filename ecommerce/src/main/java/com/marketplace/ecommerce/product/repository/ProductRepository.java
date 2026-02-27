@@ -22,6 +22,11 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
 
     Optional<Product> findByIdAndDeletedFalse(UUID id);
 
+
+    @Modifying
+    @Query("update Product p set p.status = :status where p.shop.id = :shopId")
+    int updateStatusByShopId(@Param("shopId") UUID shopId, @Param("status") ProductStatus status);
+
     @Modifying
     @Query("""
                 update Product p

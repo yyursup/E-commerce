@@ -30,4 +30,36 @@ public interface ReportRepository extends JpaRepository<Report, UUID> {
             """, nativeQuery = true)
     List<String> resolveTargetTypes(@Param("id") UUID id);
 
+    @Query(value = "select a.id from accounts a where a.id = :targetId", nativeQuery = true)
+    UUID resolveUserAccountId(@Param("targetId") UUID targetId);
+
+    @Query(value = """
+        select a.id
+        from shops s
+        join users u on u.id = s.user_id
+        join accounts a on a.id = u.account_id
+        where s.id = :targetId
+        """, nativeQuery = true)
+    UUID resolveShopOwnerAccountId(@Param("targetId") UUID targetId);
+
+    @Query(value = """
+        select a.id
+        from products p
+        join shops s on s.id = p.shop_id
+        join users u on u.id = s.user_id
+        join accounts a on a.id = u.account_id
+        where p.id = :targetId
+        """, nativeQuery = true)
+    UUID resolveProductOwnerAccountId(@Param("targetId") UUID targetId);
+
+    @Query(value = """
+        select a.id
+        from reviews r
+        join users u on u.id = r.user_id
+        join accounts a on a.id = u.account_id
+        where r.id = :targetId
+        """, nativeQuery = true)
+    UUID resolveReviewOwnerAccountId(@Param("targetId") UUID targetId);
+
+
 }

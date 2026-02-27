@@ -9,6 +9,7 @@ import com.marketplace.ecommerce.auth.repository.RoleRepository;
 import com.marketplace.ecommerce.auth.repository.UserAddressRepository;
 import com.marketplace.ecommerce.auth.repository.UserRepository;
 import com.marketplace.ecommerce.auth.valueObjects.AccountStatus;
+import com.marketplace.ecommerce.auth.valueObjects.DisciplineLevel;
 import com.marketplace.ecommerce.auth.valueObjects.GenderType;
 import com.marketplace.ecommerce.cart.entity.Cart;
 import com.marketplace.ecommerce.cart.repository.CartRepository;
@@ -383,6 +384,8 @@ public class DataInitializer implements CommandLineRunner {
                             .role(role)
                             .isActive(true)
                             .accountVerified(true)
+                            .violationCount(0)
+                            .disciplineLevel(DisciplineLevel.NONE)
                             .build();
                     Account saved = accountRepository.save(account);
                     log.info("Created account: {} with role: {}", username, role.getRoleName());

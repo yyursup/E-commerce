@@ -105,7 +105,11 @@ public class RequestServiceImpl implements RequestService {
                 Report rep = reportRepository.findByRequestId(requestId);
                 if (rep == null) throw new CustomException("Report detail not found for request: " + requestId);
 
-                yield ReportDetailsResponse.builder().targetId(rep.getTargetId()).targetType(rep.getTargetType() != null ? TargetType.valueOf(rep.getTargetType().name()) : null).evidenceUrl(rep.getEvidenceUrl()).build();
+                yield ReportDetailsResponse.builder().targetId(rep.getTargetId())
+                        .targetType(rep.getTargetType() != null ? TargetType.valueOf(rep.getTargetType().name()) : null)
+                        .evidenceUrl(rep.getEvidenceUrl())
+                        .moderatorNote(rep.getModeratorNote())
+                        .build();
             }
 
             case SELLER_REGISTRATION -> {

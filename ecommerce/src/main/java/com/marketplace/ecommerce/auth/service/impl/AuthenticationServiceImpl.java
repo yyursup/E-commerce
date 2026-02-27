@@ -17,6 +17,7 @@ import com.marketplace.ecommerce.auth.service.EmailService;
 import com.marketplace.ecommerce.auth.service.TokenService;
 import com.marketplace.ecommerce.auth.validate.AuthValidation;
 import com.marketplace.ecommerce.auth.valueObjects.AccountStatus;
+import com.marketplace.ecommerce.auth.valueObjects.DisciplineLevel;
 import com.marketplace.ecommerce.cart.entity.Cart;
 import com.marketplace.ecommerce.cart.repository.CartRepository;
 import com.marketplace.ecommerce.common.exception.CustomException;
@@ -144,6 +145,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .status(AccountStatus.INACTIVE)
                 .role(defaultRole)
                 .phoneNumber(request.getPhoneNumber())
+                .violationCount(0)
+                .disciplineLevel(DisciplineLevel.NONE)
                 .isActive(false).build();
     }
 

@@ -2,6 +2,7 @@ package com.marketplace.ecommerce.auth.entity;
 
 
 import com.marketplace.ecommerce.auth.valueObjects.AccountStatus;
+import com.marketplace.ecommerce.auth.valueObjects.DisciplineLevel;
 import com.marketplace.ecommerce.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -56,11 +57,18 @@ public class Account extends BaseEntity implements UserDetails, Serializable {
     @Column(name = "accountVerified")
     private Boolean accountVerified = false;
 
-    @Column(name = "review_violation_count", nullable = false)
-    private int reviewViolationCount = 0;
+    @Column(name = "violation_count", nullable = false)
+    private int violationCount = 0;
 
-    @Column(name = "review_banned_until")
-    private LocalDateTime reviewBannedUntil;
+    @Column(name = "last_violation_at")
+    private LocalDateTime lastViolationAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "discipline_level", nullable = false)
+    private DisciplineLevel disciplineLevel = DisciplineLevel.NONE;
+
+    @Column(name = "banned_until")
+    private LocalDateTime bannedUntil;
 
     @Override
     public String getPassword() {

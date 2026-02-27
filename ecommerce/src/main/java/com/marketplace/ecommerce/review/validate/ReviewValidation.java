@@ -2,6 +2,7 @@ package com.marketplace.ecommerce.review.validate;
 
 import com.marketplace.ecommerce.auth.entity.User;
 import com.marketplace.ecommerce.auth.repository.UserRepository;
+import com.marketplace.ecommerce.auth.valueObjects.DisciplineLevel;
 import com.marketplace.ecommerce.common.exception.CustomException;
 import com.marketplace.ecommerce.order.entity.Order;
 import com.marketplace.ecommerce.order.valueObjects.OrderStatus;
@@ -18,6 +19,10 @@ public class ReviewValidation {
     public void validateCanReview(UUID accountId, Order order, UUID productId) {
         if (!order.getUser().getAccount().getId().equals(accountId)) {
             throw new CustomException("You don't have permission to review this order.");
+        }
+
+        if (order.getUser().getAccount().getDisciplineLevel() == DisciplineLevel.SUSPENDED || order.getUser().getAccount().getDisciplineLevel() == DisciplineLevel.BANNED) {
+            throw new CustomException("You can not review this order because you got suspended or banned");
         }
 
         if (order.getStatus() != OrderStatus.COMPLETED) {

@@ -2,13 +2,11 @@ package com.marketplace.ecommerce.request.controller;
 
 import com.marketplace.ecommerce.common.CurrentUserInfo;
 import com.marketplace.ecommerce.config.CurrentUser;
-import com.marketplace.ecommerce.request.dto.request.CreateReportRequest;
 import com.marketplace.ecommerce.request.dto.request.RegisterSellerRequest;
 import com.marketplace.ecommerce.request.dto.response.CreateRequestResponse;
 import com.marketplace.ecommerce.request.dto.response.RequestResponse;
 import com.marketplace.ecommerce.request.dto.response.RequestDetailsResponse;
 import com.marketplace.ecommerce.request.service.RegisterSellerService;
-import com.marketplace.ecommerce.request.service.ReportService;
 import com.marketplace.ecommerce.request.service.RequestService;
 import com.marketplace.ecommerce.request.valueObjects.RequestStatus;
 import jakarta.validation.Valid;

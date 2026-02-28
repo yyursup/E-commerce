@@ -24,10 +24,12 @@ const ORDER_STATUSES = [
   { value: 'DELIVERED', label: 'Đã nhận hàng' },
   { value: 'COMPLETED', label: 'Hoàn thành' },
   { value: 'CANCELLED', label: 'Đã hủy' },
+  { value: 'REFUNDED', label: 'Đã hoàn tiền' },
 ]
 
 const getStatusBadge = (status) => {
   const statusMap = {
+    PENDING_PAYMENT: { color: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400', icon: HiOutlineClock },
     PENDING: { color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400', icon: HiOutlineClock },
     CONFIRMED: { color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400', icon: HiOutlineCheckCircle },
     PROCESSING: { color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400', icon: HiOutlineShoppingBag },
@@ -80,18 +82,17 @@ export default function ShopOrders() {
     } catch (err) {
       console.error('Error fetching shop orders:', err)
       setError(err?.response?.data?.message || err?.message || 'Không thể tải danh sách đơn hàng')
-      toast.error('Không thể tải danh sách đơn hàng')
+      toast.error(err?.message || 'Không thể tải danh sách đơn hàng')
     } finally {
       setLoading(false)
     }
   }
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('vi-VN', {
+  const formatCurrency = (amount) =>
+    new Intl.NumberFormat('vi-VN', {
       style: 'currency',
       currency: 'VND',
-    }).format(amount)
-  }
+    }).format(amount || 0)
 
   const formatDate = (dateString) => {
     if (!dateString) return ''
@@ -107,11 +108,9 @@ export default function ShopOrders() {
   if (!isAuthenticated) {
     return (
       <div className={cn('min-h-screen flex items-center justify-center', isDark ? 'bg-slate-950' : 'bg-stone-50')}>
-        <div className="text-center">
-          <p className={cn('text-lg', isDark ? 'text-slate-400' : 'text-stone-600')}>
-            Vui lòng đăng nhập để xem đơn hàng
-          </p>
-        </div>
+        <p className={cn('text-lg', isDark ? 'text-slate-400' : 'text-stone-600')}>
+          Vui lòng đăng nhập để xem đơn hàng
+        </p>
       </div>
     )
   }
@@ -127,7 +126,6 @@ export default function ShopOrders() {
         </p>
       </div>
 
-      {/* Filter */}
       <div className="mb-6">
         <select
           value={statusFilter}

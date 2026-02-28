@@ -80,7 +80,7 @@ export default function AddressFormModal({ isOpen, onClose, onSuccess, isDark })
         try {
             const res = await userAddressService.createMyAddress(payload);
             toast.success('Thêm địa chỉ thành công');
-            onSuccess(res.data); // Trả về address mới tạo
+            onSuccess(res); // Trả về address mới tạo
             onClose();
         } catch (error) {
             console.error('Create address error:', error);

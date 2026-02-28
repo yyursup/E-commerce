@@ -76,7 +76,7 @@ export default function Checkout() {
     const loadAddresses = async (newAddressId = null) => {
         try {
             const addressRes = await userAddressService.listMyAddresses()
-            const addressList = addressRes.data || []
+            const addressList = Array.isArray(addressRes) ? addressRes : (addressRes?.data || [])
             setAddresses(addressList)
 
             if (newAddressId) {

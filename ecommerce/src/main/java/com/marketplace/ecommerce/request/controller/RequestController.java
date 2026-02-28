@@ -10,10 +10,13 @@ import com.marketplace.ecommerce.request.dto.response.RequestDetailsResponse;
 import com.marketplace.ecommerce.request.service.RegisterSellerService;
 import com.marketplace.ecommerce.request.service.ReportService;
 import com.marketplace.ecommerce.request.service.RequestService;
+import com.marketplace.ecommerce.request.valueObjects.RequestStatus;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -66,8 +69,11 @@ public class RequestController {
 
     @GetMapping("/admin")
     @PreAuthorize("hasRole('ADMIN')")
-    public Page<CreateRequestResponse> getAllRequests(Pageable pageable) {
-        return requestService.getAllRequests(pageable);
+    public Page<CreateRequestResponse> getAllRequests(
+            @RequestParam(value = "status", required = false) RequestStatus status,
+            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+    ) {
+        return requestService.getAllRequests(status, pageable);
     }
 
     @GetMapping("/{id}")

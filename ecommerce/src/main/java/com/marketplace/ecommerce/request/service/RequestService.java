@@ -6,6 +6,7 @@ import com.marketplace.ecommerce.request.dto.response.CreateRequestResponse;
 import com.marketplace.ecommerce.request.dto.response.RequestResponse;
 import com.marketplace.ecommerce.request.dto.response.RequestDetailsResponse;
 import com.marketplace.ecommerce.request.entity.Request;
+import com.marketplace.ecommerce.request.valueObjects.RequestStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -16,7 +17,7 @@ public interface RequestService {
 
     Page<CreateRequestResponse> getRequests(UUID accountId, Pageable pageable);
 
-    Page<CreateRequestResponse> getAllRequests(Pageable pageable);
+    Page<CreateRequestResponse> getAllRequests(RequestStatus status, Pageable pageable);
 
     RequestDetailsResponse getDetails(UUID requestId);
 

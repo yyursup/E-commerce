@@ -36,6 +36,10 @@ public class VNPayServiceImpl implements VNPayService {
         params.put("vnp_CurrCode", "VND");
         params.put("vnp_Locale", "vn");
 
+        // Expiration date is required by VNPay (default 15 mins)
+        params.put("vnp_ExpireDate", LocalDateTime.now().plusMinutes(15)
+                .format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")));
+
         String hashData = vnPayConfig.buildQueryString(params);
         String secureHash = vnPayConfig.hmacSHA512(vnPayConfig.hashSecret, hashData);
 

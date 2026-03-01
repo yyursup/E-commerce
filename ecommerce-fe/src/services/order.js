@@ -88,6 +88,15 @@ const orderService = {
       throw error.response ? error.response.data : error;
     }
   },
+  // Verify VNPay Payment Callback
+  verifyVnpayPayment: async (params) => {
+    try {
+      const response = await axiosClient.get(`${PAYMENT_BASE}/vnpay/return`, { params });
+      return response.data;
+    } catch (error) {
+      throw error.response ? error.response.data : error;
+    }
+  },
   // Customer: Mark order as received
   markOrderReceived: async (orderId) => {
     try {
@@ -110,11 +119,22 @@ const orderService = {
     }
   },
 
-  // Wallet: Get my wallet
-  getMyWallet: async () => {
+  // Seller: Retry create GHN order code
+  retryCreateGhnOrder: async (orderId) => {
     try {
-      // Assuming WalletController is at /wallet
-      const response = await axiosClient.get('/api/v1/wallet/me');
+      const response = await axiosClient.post(`${ORDER_BASE}/${orderId}/ghn/retry`);
+      return response.data;
+    } catch (error) {
+      throw error.response ? error.response.data : error;
+    }
+  },
+
+  // Seller: Set GHN order code manually
+  setGhnOrderCode: async (orderId, ghnOrderCode) => {
+    try {
+      const response = await axiosClient.put(`${ORDER_BASE}/${orderId}/ghn/code`, null, {
+        params: { ghnOrderCode }
+      });
       return response.data;
     } catch (error) {
       throw error.response ? error.response.data : error;

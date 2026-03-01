@@ -64,10 +64,10 @@ public class Order {
     private String shippingWard;
 
     @Column(name = "shipping_district_id")
-    private Integer shippingDistrictId;  // Mã quận/huyện GHN
+    private Integer shippingDistrictId; // Mã quận/huyện GHN
 
     @Column(name = "shipping_ward_code", length = 20)
-    private String shippingWardCode;  // Mã phường/xã GHN
+    private String shippingWardCode; // Mã phường/xã GHN
 
     @Column(name = "notes", columnDefinition = "TEXT")
     private String notes;

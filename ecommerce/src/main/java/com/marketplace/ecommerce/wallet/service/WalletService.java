@@ -9,5 +9,7 @@ public interface WalletService {
     void recordPaymentAndHoldEscrow(Payment payment);
     WalletResponse getWallet(UUID accountId);
 
+    WalletResponse getWalletByUserName(String username);
+
 
 }

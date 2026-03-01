@@ -5,12 +5,10 @@ import com.marketplace.ecommerce.config.CurrentUser;
 import com.marketplace.ecommerce.wallet.dto.response.WalletResponse;
 import com.marketplace.ecommerce.wallet.service.WalletService;
 import lombok.RequiredArgsConstructor;
+import org.hibernate.annotations.Parameter;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
@@ -28,11 +26,11 @@ public class WalletController {
         return ResponseEntity.ok(walletService.getWallet(u.getAccountId()));
     }
 
-    @GetMapping("/admin/{accountId}")
+    @GetMapping("/admin")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<WalletResponse> adminGetWallet(
-            @PathVariable UUID accountId
+            @RequestParam("userName") String userName
     ) {
-        return ResponseEntity.ok(walletService.getWallet(accountId));
+        return ResponseEntity.ok(walletService.getWalletByUserName(userName));
     }
 }

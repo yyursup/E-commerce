@@ -10,6 +10,7 @@ import {
   HiOutlineBan,
   HiOutlineCheckCircle,
   HiOutlineClipboardCheck,
+  HiOutlineSearch,
 } from 'react-icons/hi'
 import { useThemeStore } from '../../store/useThemeStore'
 import { useAuthStore } from '../../store/useAuthStore'
@@ -17,6 +18,8 @@ import { cn } from '../../lib/cn'
 import toast from 'react-hot-toast'
 import authService from '../../services/auth'
 import platformService from '../../services/platform'
+import orderService from '../../services/order'
+import requestService from '../../services/request'
 import { HiOutlineCog } from 'react-icons/hi'
 
 export default function AdminDashboard() {
@@ -41,11 +44,17 @@ export default function AdminDashboard() {
       try {
         setLoading(true)
         setError(null)
-        const usersData = await authService.getAllUsers()
+        const [usersData, ordersData, pendingRequestsData] = await Promise.all([
+          authService.getAllUsers(),
+          orderService.getAllOrders(),
+          requestService.getAdminRequests({ status: 'PENDING', page: 0, size: 1 }),
+        ])
+        const userList = Array.isArray(usersData) ? usersData : []
+        const orderList = Array.isArray(ordersData) ? ordersData : []
 
         // Transform API response to match UI format
         // API returns: [{ email, role }]
-        const transformedUsers = usersData.map((user, index) => ({
+        const transformedUsers = userList.map((user, index) => ({
           id: index + 1, // Temporary ID since API doesn't return ID
           email: user.email,
           role: user.role || 'CUSTOMER',
@@ -56,24 +65,18 @@ export default function AdminDashboard() {
         setUsers(transformedUsers)
 
         // Calculate stats from users data
-        const totalUsers = usersData.length
-        const totalBusinesses = usersData.filter(u => u.role === 'BUSINESS').length
-        const totalCustomers = usersData.filter(u => u.role === 'CUSTOMER').length
-        const totalAdmins = usersData.filter(u => u.role === 'ADMIN').length
-
-        // Mock data for stats (for demo purposes)
-        const mockStats = {
-          totalOrders: 42,
-          totalRevenue: 12500000,
-          pendingRequests: 3,
-        }
+        const totalUsers = userList.length
+        const totalBusinesses = userList.filter(u => u.role === 'BUSINESS').length
+        const totalOrders = orderList.length
+        const totalRevenue = orderList.reduce((sum, order) => sum + Number(order?.total || 0), 0)
+        const pendingRequests = Number(pendingRequestsData?.totalElements || 0)
 
         setStats({
           totalUsers,
           totalBusinesses,
-          totalOrders: mockStats.totalOrders,
-          totalRevenue: mockStats.totalRevenue,
-          pendingRequests: mockStats.pendingRequests,
+          totalOrders,
+          totalRevenue,
+          pendingRequests,
         })
       } catch (err) {
         console.error('Error fetching users:', err)
@@ -557,25 +560,63 @@ export default function AdminDashboard() {
               isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white',
             )}
           >
-            <div className="flex items-center justify-between gap-4">
+            <div className="space-y-4">
               <div>
-                <h2 className="text-lg font-semibold">Request approvals</h2>
+                <h2 className="text-lg font-semibold">Admin quick actions</h2>
                 <p className={cn('mt-1 text-sm', isDark ? 'text-slate-400' : 'text-stone-500')}>
-                  Review and approve seller registrations or reports.
+                  Open core moderation and settlement screens.
                 </p>
               </div>
-              <Link
-                to="/admin/requests"
-                className={cn(
-                  'inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition',
-                  isDark
-                    ? 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30'
-                    : 'bg-amber-100 text-amber-700 hover:bg-amber-200',
-                )}
-              >
-                <HiOutlineClipboardCheck className="h-4 w-4" />
-                Open requests
-              </Link>
+              <div className="flex flex-wrap items-center gap-2">
+                <Link
+                  to="/admin/requests"
+                  className={cn(
+                    'inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition',
+                    isDark
+                      ? 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30'
+                      : 'bg-amber-100 text-amber-700 hover:bg-amber-200',
+                  )}
+                >
+                  <HiOutlineClipboardCheck className="h-4 w-4" />
+                  Open requests
+                </Link>
+                <Link
+                  to="/admin/orders"
+                  className={cn(
+                    'inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition',
+                    isDark
+                      ? 'bg-blue-500/20 text-blue-300 hover:bg-blue-500/30'
+                      : 'bg-blue-100 text-blue-700 hover:bg-blue-200',
+                  )}
+                >
+                  <HiOutlineShoppingBag className="h-4 w-4" />
+                  Open orders
+                </Link>
+                <Link
+                  to="/admin/escrows"
+                  className={cn(
+                    'inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition',
+                    isDark
+                      ? 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30'
+                      : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200',
+                  )}
+                >
+                  <HiOutlineCurrencyDollar className="h-4 w-4" />
+                  Open escrows
+                </Link>
+                <Link
+                  to="/admin/wallets"
+                  className={cn(
+                    'inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition',
+                    isDark
+                      ? 'bg-purple-500/20 text-purple-300 hover:bg-purple-500/30'
+                      : 'bg-purple-100 text-purple-700 hover:bg-purple-200',
+                  )}
+                >
+                  <HiOutlineSearch className="h-4 w-4" />
+                  Wallet lookup
+                </Link>
+              </div>
             </div>
           </motion.div>
         </div>

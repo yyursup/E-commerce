@@ -5,6 +5,7 @@ import toast from 'react-hot-toast'
 import { useThemeStore } from '../../store/useThemeStore'
 import { cn } from '../../lib/cn'
 import requestService from '../../services/request'
+import reportService from '../../services/report'
 
 const formatDate = (value) => {
   if (!value) return '-'
@@ -66,13 +67,18 @@ export default function AdminRequestDetail() {
   }, [requestType, requestDetail])
 
   const handleApprove = async () => {
-    if (!responseText.trim()) {
+    const note = responseText.trim()
+    if (requestType !== 'REPORT' && !note) {
       toast.error('Response is required.')
       return
     }
     try {
       setActionLoading(true)
-      await requestService.approveRequest(requestId, responseText.trim())
+      if (requestType === 'REPORT') {
+        await reportService.handleReport(requestId, 'APPROVE', note || null)
+      } else {
+        await requestService.approveRequest(requestId, note)
+      }
       toast.success('Request approved.')
       setResponseText('')
       fetchDetail()
@@ -85,13 +91,18 @@ export default function AdminRequestDetail() {
   }
 
   const handleReject = async () => {
-    if (!responseText.trim()) {
+    const note = responseText.trim()
+    if (requestType !== 'REPORT' && !note) {
       toast.error('Response is required.')
       return
     }
     try {
       setActionLoading(true)
-      await requestService.rejectRequest(requestId, responseText.trim())
+      if (requestType === 'REPORT') {
+        await reportService.handleReport(requestId, 'REJECT', note || null)
+      } else {
+        await requestService.rejectRequest(requestId, note)
+      }
       toast.success('Request rejected.')
       setResponseText('')
       fetchDetail()
@@ -164,8 +175,8 @@ export default function AdminRequestDetail() {
                 <p className="mt-1 text-sm">{formatDate(detail.reviewedAt)}</p>
               </div>
               <div>
-                <p className="text-xs uppercase tracking-wide text-stone-500 dark:text-slate-400">Rejection reason</p>
-                <p className="mt-1 text-sm">{detail.rejectionReason || '-'}</p>
+                <p className="text-xs uppercase tracking-wide text-stone-500 dark:text-slate-400">Review note</p>
+                <p className="mt-1 text-sm">{detail.note || '-'}</p>
               </div>
             </div>
 
@@ -222,7 +233,7 @@ export default function AdminRequestDetail() {
               <textarea
                 value={responseText}
                 onChange={(e) => setResponseText(e.target.value)}
-                placeholder="Enter response / reason"
+                placeholder={requestType === 'REPORT' ? 'Enter moderator note (optional)' : 'Enter response / reason'}
                 rows={3}
                 className={cn(
                   'mt-2 w-full rounded-lg border px-3 py-2 text-sm outline-none transition',

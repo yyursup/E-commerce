@@ -12,6 +12,7 @@ import {
   HiOutlineTruck,
   HiOutlineShieldCheck,
   HiCheck,
+  HiOutlineFlag,
 } from 'react-icons/hi'
 import ProductImageGallery from './components/ProductImageGallery'
 import { useThemeStore } from '../../store/useThemeStore'
@@ -147,6 +148,15 @@ export default function ProductDetail() {
       navigator.clipboard.writeText(window.location.href)
       toast.success('Đã sao chép link sản phẩm')
     }
+  }
+
+  const handleReportProduct = () => {
+    if (!isAuthenticated) {
+      toast.error('Vui lÃ²ng Ä‘Äƒng nháº­p Ä‘á»ƒ gá»­i bÃ¡o cÃ¡o')
+      navigate('/login')
+      return
+    }
+    navigate(`/report?targetId=${product.id}`)
   }
 
   const increaseQuantity = () => {
@@ -435,6 +445,18 @@ export default function ProductDetail() {
 
             {/* Share & Wishlist */}
             <div className="flex items-center gap-4 border-t pt-4">
+              <button
+                onClick={handleReportProduct}
+                className={cn(
+                  'flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition',
+                  isDark
+                    ? 'text-red-300 hover:bg-slate-800 hover:text-red-200'
+                    : 'text-red-600 hover:bg-stone-100 hover:text-red-700',
+                )}
+              >
+                <HiOutlineFlag className="h-5 w-5" />
+                Báo cáo
+              </button>
               <button
                 onClick={handleShare}
                 className={cn(

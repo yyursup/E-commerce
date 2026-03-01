@@ -2,13 +2,11 @@ package com.marketplace.ecommerce.payment.service.impl;
 
 import com.marketplace.ecommerce.auth.entity.User;
 import com.marketplace.ecommerce.auth.repository.UserRepository;
-import com.marketplace.ecommerce.cart.entity.Cart;
-import com.marketplace.ecommerce.cart.entity.CartItem;
-import com.marketplace.ecommerce.cart.repository.CartRepository;
 import com.marketplace.ecommerce.common.exception.CustomException;
 import com.marketplace.ecommerce.order.entity.Order;
 import com.marketplace.ecommerce.order.entity.OrderItem;
 import com.marketplace.ecommerce.order.repository.OrderRepository;
+import com.marketplace.ecommerce.order.service.OrderService;
 import com.marketplace.ecommerce.order.valueObjects.OrderStatus;
 import com.marketplace.ecommerce.payment.entity.Payment;
 import com.marketplace.ecommerce.payment.repository.PaymentRepository;
@@ -37,6 +35,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final VNPayService vnPayService;
     private final ProductRepository productRepository;
     private final WalletService walletService;
+    private final OrderService orderService;
 
     @Transactional
     @Override
@@ -60,6 +59,7 @@ public class PaymentServiceImpl implements PaymentService {
             payment.setStatus(PaymentStatus.SUCCESS);
             order.setStatus(OrderStatus.CONFIRMED);
             handlePaymentSuccess(order.getId());
+            orderService.tryCreateGHNOrder(order);
             walletService.recordPaymentAndHoldEscrow(payment);
 
         } else {

@@ -152,7 +152,7 @@ export default function ProductDetail() {
 
   const handleReportProduct = () => {
     if (!isAuthenticated) {
-      toast.error('Vui lÃ²ng Ä‘Äƒng nháº­p Ä‘á»ƒ gá»­i bÃ¡o cÃ¡o')
+      toast.error('Vui lòng đăng nhập để báo cáo')
       navigate('/login')
       return
     }

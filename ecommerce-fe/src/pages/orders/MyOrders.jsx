@@ -14,6 +14,7 @@ import { useAuthStore } from '../../store/useAuthStore'
 import { cn } from '../../lib/cn'
 import toast from 'react-hot-toast'
 import orderService from '../../services/order'
+import walletService from '../../services/wallet'
 
 const ORDER_STATUSES = [
   { value: '', label: 'Tất cả' },
@@ -81,7 +82,7 @@ export default function MyOrders() {
 
       const [ordersData, walletData] = await Promise.all([
         orderService.getMyOrders(status),
-        statusFilter === '' ? orderService.getMyWallet() : Promise.resolve(null) // Only fetch wallet on first load/all statuses
+        statusFilter === '' ? walletService.getMyWallet() : Promise.resolve(null) // Only fetch wallet on first load/all statuses
       ])
 
       setOrders(ordersData || [])

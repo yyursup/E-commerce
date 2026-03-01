@@ -49,10 +49,10 @@ export default function AdminOrderListCard({ order, isDark }) {
                 </span>
               </div>
               <p className={cn('mt-1 text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
-                Shop: {order.shopName} | Khach hang: {order.userName}
+                Shop: {order.shopName} | Khách hàng: {order.userName}
               </p>
               <p className={cn('mt-1 text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
-                {order.items?.length || 0} san pham
+                {order.items?.length || 0} sản phẩm
               </p>
               <p className={cn('mt-1 text-xs', isDark ? 'text-slate-500' : 'text-stone-500')}>
                 {formatAdminOrderDate(order.createdAt)}
@@ -64,7 +64,7 @@ export default function AdminOrderListCard({ order, isDark }) {
               {formatAdminOrderCurrency(order.total)}
             </p>
             <p className={cn('mt-1 text-xs', isDark ? 'text-slate-500' : 'text-stone-500')}>
-              Tong cong
+              Tổng cộng
             </p>
           </div>
         </div>

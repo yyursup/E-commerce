@@ -23,13 +23,13 @@ export default function AdminOrderDetailCard({ order, isDark }) {
         <div className="flex items-center justify-between">
           <div>
             <h1 className={cn('text-2xl font-bold', isDark ? 'text-white' : 'text-stone-900')}>
-              Don hang {order.orderNumber}
+              Đơn hàng {order.orderNumber}
             </h1>
             <p className={cn('mt-1 text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
-              Dat ngay {formatAdminOrderDate(order.createdAt)}
+              Đặt ngày {formatAdminOrderDate(order.createdAt)}
             </p>
             <p className={cn('mt-1 text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
-              Shop: {order.shopName} | Khach hang: {order.userName}
+              Shop: {order.shopName} | Khách hàng: {order.userName}
             </p>
           </div>
           <span
@@ -46,7 +46,7 @@ export default function AdminOrderDetailCard({ order, isDark }) {
 
       <div className="border-b p-6">
         <h2 className={cn('mb-4 font-semibold', isDark ? 'text-white' : 'text-stone-900')}>
-          Dia chi giao hang
+          Địa chỉ giao hàng
         </h2>
         <div className="space-y-2">
           <div className="flex items-start gap-2">
@@ -74,7 +74,7 @@ export default function AdminOrderDetailCard({ order, isDark }) {
 
       <div className="border-b p-6">
         <h2 className={cn('mb-4 font-semibold', isDark ? 'text-white' : 'text-stone-900')}>
-          San pham
+          Sản phẩm
         </h2>
         <div className="space-y-4">
           {order.items?.map((item) => (
@@ -95,7 +95,7 @@ export default function AdminOrderDetailCard({ order, isDark }) {
                   {item.productName}
                 </Link>
                 <p className={cn('mt-1 text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
-                  So luong: {item.quantity}
+                  Số lượng: {item.quantity}
                 </p>
                 <p className={cn('mt-1 text-sm font-medium', isDark ? 'text-white' : 'text-stone-900')}>
                   {formatAdminOrderCurrency(item.totalPrice)}
@@ -110,7 +110,7 @@ export default function AdminOrderDetailCard({ order, isDark }) {
         <div className="space-y-3">
           <div className="flex justify-between">
             <span className={cn('text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
-              Tam tinh
+              Tạm tính
             </span>
             <span className={cn('text-sm font-medium', isDark ? 'text-white' : 'text-stone-900')}>
               {formatAdminOrderCurrency(order.subtotal)}
@@ -118,7 +118,7 @@ export default function AdminOrderDetailCard({ order, isDark }) {
           </div>
           <div className="flex justify-between">
             <span className={cn('text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
-              Phi van chuyen
+              Phí vận chuyển
             </span>
             <span className={cn('text-sm font-medium', isDark ? 'text-white' : 'text-stone-900')}>
               {formatAdminOrderCurrency(order.shippingFee || 0)}
@@ -127,7 +127,7 @@ export default function AdminOrderDetailCard({ order, isDark }) {
           {order.ghnOrderCode && (
             <div className="flex justify-between">
               <span className={cn('text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
-                Ma van don GHN
+                Mã vận đơn GHN
               </span>
               <span className={cn('text-sm font-medium', isDark ? 'text-white' : 'text-stone-900')}>
                 {order.ghnOrderCode}
@@ -137,7 +137,7 @@ export default function AdminOrderDetailCard({ order, isDark }) {
           <div className="border-t pt-3">
             <div className="flex justify-between">
               <span className={cn('text-lg font-semibold', isDark ? 'text-white' : 'text-stone-900')}>
-                Tong cong
+                Tổng cộng
               </span>
               <span className={cn('text-lg font-bold', isDark ? 'text-white' : 'text-stone-900')}>
                 {formatAdminOrderCurrency(order.total)}

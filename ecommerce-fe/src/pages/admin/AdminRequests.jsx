@@ -40,6 +40,7 @@ export default function AdminRequests() {
   const isDark = useThemeStore((state) => state.theme) === 'dark'
 
   const [requests, setRequests] = useState([])
+  const [statusFilter, setStatusFilter] = useState('')
   const [page, setPage] = useState(0)
   const [size] = useState(10)
   const [totalPages, setTotalPages] = useState(0)
@@ -51,7 +52,9 @@ export default function AdminRequests() {
     try {
       setLoading(true)
       setError(null)
-      const res = await requestService.getAdminRequests({ page, size })
+      const params = { page, size }
+      if (statusFilter) params.status = statusFilter
+      const res = await requestService.getAdminRequests(params)
       const content = Array.isArray(res?.content) ? res.content : Array.isArray(res) ? res : []
       setRequests(content)
       setTotalPages(typeof res?.totalPages === 'number' ? res.totalPages : 0)
@@ -63,7 +66,7 @@ export default function AdminRequests() {
     } finally {
       setLoading(false)
     }
-  }, [page, size])
+  }, [page, size, statusFilter])
 
   useEffect(() => {
     fetchRequests()
@@ -78,15 +81,35 @@ export default function AdminRequests() {
             Total: {totalElements}
           </p>
         </div>
-        <button
-          onClick={fetchRequests}
-          className={cn(
-            'rounded-lg px-4 py-2 text-sm font-semibold transition',
-            isDark ? 'bg-slate-800 text-slate-100 hover:bg-slate-700' : 'bg-white text-stone-700 hover:bg-stone-100',
-          )}
-        >
-          Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          <select
+            value={statusFilter}
+            onChange={(e) => {
+              setStatusFilter(e.target.value)
+              setPage(0)
+            }}
+            className={cn(
+              'rounded-lg border px-3 py-2 text-sm outline-none transition',
+              isDark
+                ? 'border-slate-700 bg-slate-900 text-slate-100 focus:border-amber-500/60'
+                : 'border-stone-300 bg-white text-stone-700 focus:border-amber-500',
+            )}
+          >
+            <option value="">All status</option>
+            <option value="PENDING">Pending</option>
+            <option value="APPROVED">Approved</option>
+            <option value="REJECTED">Rejected</option>
+          </select>
+          <button
+            onClick={fetchRequests}
+            className={cn(
+              'rounded-lg px-4 py-2 text-sm font-semibold transition',
+              isDark ? 'bg-slate-800 text-slate-100 hover:bg-slate-700' : 'bg-white text-stone-700 hover:bg-stone-100',
+            )}
+          >
+            Refresh
+          </button>
+        </div>
       </div>
 
       <motion.div

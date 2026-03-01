@@ -110,6 +110,28 @@ const orderService = {
     }
   },
 
+  // Seller: Retry create GHN order code
+  retryCreateGhnOrder: async (orderId) => {
+    try {
+      const response = await axiosClient.post(`${ORDER_BASE}/${orderId}/ghn/retry`);
+      return response.data;
+    } catch (error) {
+      throw error.response ? error.response.data : error;
+    }
+  },
+
+  // Seller: Set GHN order code manually
+  setGhnOrderCode: async (orderId, ghnOrderCode) => {
+    try {
+      const response = await axiosClient.put(`${ORDER_BASE}/${orderId}/ghn/code`, null, {
+        params: { ghnOrderCode }
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response ? error.response.data : error;
+    }
+  },
+
   // Wallet: Get my wallet
   getMyWallet: async () => {
     try {

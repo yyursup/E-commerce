@@ -17,6 +17,8 @@ import AdminRequests from './pages/admin/AdminRequests'
 import AdminRequestDetail from './pages/admin/AdminRequestDetail'
 import AdminOrders from './pages/admin/AdminOrders'
 import AdminOrderDetail from './pages/admin/AdminOrderDetail'
+import AdminEscrows from './pages/admin/AdminEscrows'
+import AdminWalletLookup from './pages/admin/AdminWalletLookup'
 import BusinessLayout from './pages/business/BusinessLayout'
 import BusinessDashboard from './pages/business/BusinessDashboard'
 import Checkout from './pages/Checkout'
@@ -28,6 +30,7 @@ import OrderDetail from './pages/orders/OrderDetail'
 import Deals from './pages/Deals'
 import Marketplace from './pages/Marketplace'
 import OfferDetails from './pages/OfferDetails'
+import ReportCreate from './pages/ReportCreate'
 
 export default function App() {
   return (
@@ -124,6 +127,14 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/report"
+          element={
+            <ProtectedRoute requireAuth={true}>
+              <ReportCreate />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Business routes - require BUSINESS or ADMIN role */}
         <Route
@@ -153,6 +164,8 @@ export default function App() {
           <Route path="requests/:requestId" element={<AdminRequestDetail />} />
           <Route path="orders" element={<AdminOrders />} />
           <Route path="orders/:orderId" element={<AdminOrderDetail />} />
+          <Route path="escrows" element={<AdminEscrows />} />
+          <Route path="wallets" element={<AdminWalletLookup />} />
         </Route>
       </Route>
     </Routes >

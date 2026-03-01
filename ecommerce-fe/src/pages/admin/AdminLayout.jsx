@@ -2,6 +2,9 @@ import { NavLink, Navigate, Outlet, useNavigate } from 'react-router-dom'
 import {
   HiOutlineViewGrid,
   HiOutlineClipboardCheck,
+  HiOutlineShoppingBag,
+  HiOutlineCurrencyDollar,
+  HiOutlineSearch,
   HiOutlineLogout,
   HiOutlineUserCircle,
 } from 'react-icons/hi'
@@ -12,6 +15,9 @@ import { cn } from '../../lib/cn'
 const navItems = [
   { to: '/admin', label: 'Dashboard', icon: HiOutlineViewGrid, end: true },
   { to: '/admin/requests', label: 'Requests', icon: HiOutlineClipboardCheck },
+  { to: '/admin/orders', label: 'Orders', icon: HiOutlineShoppingBag },
+  { to: '/admin/escrows', label: 'Escrows', icon: HiOutlineCurrencyDollar },
+  { to: '/admin/wallets', label: 'Wallet Lookup', icon: HiOutlineSearch },
 ]
 
 export default function AdminLayout() {

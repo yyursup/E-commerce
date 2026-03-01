@@ -225,23 +225,31 @@ public class OrderServiceImpl implements OrderService {
                 }
             }
         }
-
-        if (currentStatus == OrderStatus.PENDING_PAYMENT && newStatus == OrderStatus.CONFIRMED) {
-            tryCreateGHNOrder(order);
-        }
-
-        if ((newStatus == OrderStatus.PROCESSING || newStatus == OrderStatus.SHIPPING)
-                && currentStatus == OrderStatus.CONFIRMED) {
-            tryCreateGHNOrder(order);
-        }
-
+        validateSellerTransition(currentStatus, newStatus);
         order.setStatus(newStatus);
         order = orderRepository.save(order);
 
         return OrderResponse.from(order);
     }
 
-    private void tryCreateGHNOrder(Order order) {
+    private void validateSellerTransition(OrderStatus currentStatus, OrderStatus newStatus) {
+        boolean valid = switch (currentStatus) {
+            case CONFIRMED -> newStatus == OrderStatus.PROCESSING ||
+                    newStatus == OrderStatus.CANCELLED;
+
+            case PROCESSING -> newStatus == OrderStatus.SHIPPING;
+
+            case SHIPPING -> newStatus == OrderStatus.DELIVERED;
+
+            default -> false;
+        };
+
+        if (!valid) {
+            throw new CustomException("Invalid transition: " + currentStatus + " -> " + newStatus);
+        }
+    }
+
+    public void tryCreateGHNOrder(Order order) {
         if (order.getGhnOrderCode() == null || order.getGhnOrderCode().isEmpty()) {
             try {
                 GHNCreateOrderRequest ghnRequest = shippingService.build(order);

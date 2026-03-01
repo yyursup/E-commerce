@@ -11,7 +11,7 @@ import { cn } from '../../lib/cn'
 
 const navItems = [
   { to: '/business', label: 'Dashboard', icon: HiOutlineViewGrid, end: true },
-  { to: '/business/orders', label: 'Đơn hàng', icon: HiOutlineShoppingBag },
+  { to: '/business/orders', label: 'Đơn hàng', icon: HiOutlineShoppingBag, role: 'BUSINESS' },
 ]
 
 export default function BusinessLayout() {
@@ -19,7 +19,7 @@ export default function BusinessLayout() {
   const { isAuthenticated, user, logout } = useAuthStore()
   const isDark = useThemeStore((state) => state.theme) === 'dark'
   const userRole = user?.role?.toUpperCase()
-  const isBusiness = userRole === 'BUSINESS' || userRole === 'ADMIN'
+  const isBusiness = userRole === 'BUSINESS'
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />
@@ -59,24 +59,26 @@ export default function BusinessLayout() {
               </div>
 
               <nav className="space-y-1">
-                {navItems.map(({ to, label, icon: Icon, end }) => (
-                  <NavLink
-                    key={to}
-                    to={to}
-                    end={end}
-                    className={({ isActive }) => cn(
-                      'flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                      isActive
-                        ? 'bg-blue-500 text-white'
-                        : isDark
-                          ? 'text-slate-300 hover:bg-slate-800'
-                          : 'text-stone-600 hover:bg-stone-100',
-                    )}
-                  >
-                    <Icon className="h-4 w-4" />
-                    {label}
-                  </NavLink>
-                ))}
+                {navItems
+                  .filter(item => !item.role || item.role === userRole)
+                  .map(({ to, label, icon: Icon, end }) => (
+                    <NavLink
+                      key={to}
+                      to={to}
+                      end={end}
+                      className={({ isActive }) => cn(
+                        'flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                        isActive
+                          ? 'bg-blue-500 text-white'
+                          : isDark
+                            ? 'text-slate-300 hover:bg-slate-800'
+                            : 'text-stone-600 hover:bg-stone-100',
+                      )}
+                    >
+                      <Icon className="h-4 w-4" />
+                      {label}
+                    </NavLink>
+                  ))}
               </nav>
 
               <button

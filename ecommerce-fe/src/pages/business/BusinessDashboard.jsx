@@ -16,6 +16,7 @@ import { cn } from '../../lib/cn'
 import toast from 'react-hot-toast'
 import sellerService from '../../services/seller'
 import categoryService from '../../services/category'
+import walletService from '../../services/wallet'
 import SellerProductCard from './components/SellerProductCard'
 import ImageUpload from './components/ImageUpload'
 
@@ -41,12 +42,12 @@ export default function BusinessDashboard() {
       setLoading(true)
       setError(null)
       const productsData = await sellerService.getProductsByShop(status)
-      
+
       // Transform API response to match UI format
       const transformedProducts = productsData.map((product) => {
         const thumbnailImage = product.images?.find(img => img.isThumbnail) || product.images?.[0]
         const imageUrl = thumbnailImage?.imageUrl || thumbnailImage || null
-        
+
         return {
           id: product.id,
           name: product.name,
@@ -60,7 +61,7 @@ export default function BusinessDashboard() {
           image: imageUrl,
         }
       })
-      
+
       setProducts(transformedProducts)
       setStats((prev) => ({
         ...prev,
@@ -76,7 +77,19 @@ export default function BusinessDashboard() {
   }
 
   useEffect(() => {
-    fetchProducts(statusFilter || null)
+    const fetchDashboardData = async () => {
+      await fetchProducts(statusFilter || null)
+      try {
+        const walletData = await walletService.getMyWallet();
+        setStats(prev => ({
+          ...prev,
+          totalRevenue: walletData.availableBalance || 0
+        }));
+      } catch (err) {
+        console.error('Error fetching wallet balance:', err);
+      }
+    }
+    fetchDashboardData();
   }, [statusFilter])
 
   const handleDeleteProduct = async (productId) => {
@@ -159,205 +172,205 @@ export default function BusinessDashboard() {
 
   return (
     <div>
-        {/* Header */}
-        <div className="mb-8">
-          <h1
-            className={cn(
-              'text-3xl font-bold',
-              isDark ? 'text-white' : 'text-stone-900',
-            )}
-          >
-            Dashboard Doanh Nghiệp
-          </h1>
-          <p
-            className={cn('mt-2 text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}
-          >
-            Chào mừng trở lại, {user?.email}
-          </p>
-        </div>
-
-        {/* Stats Grid */}
-        <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {statCards.map((stat, index) => {
-            const Icon = stat.icon
-            return (
-              <motion.div
-                key={stat.title}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                className={cn(
-                  'rounded-xl border p-6',
-                  isDark
-                    ? 'border-slate-700 bg-slate-900'
-                    : 'border-stone-200 bg-white',
-                )}
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p
-                      className={cn(
-                        'text-sm font-medium',
-                        isDark ? 'text-slate-400' : 'text-stone-600',
-                      )}
-                    >
-                      {stat.title}
-                    </p>
-                    <p
-                      className={cn(
-                        'mt-2 text-2xl font-bold',
-                        isDark ? 'text-white' : 'text-stone-900',
-                      )}
-                    >
-                      {stat.value}
-                    </p>
-                  </div>
-                  <div
-                    className={cn(
-                      'flex h-12 w-12 items-center justify-center rounded-xl',
-                      stat.bgColor,
-                    )}
-                  >
-                    <Icon className={cn('h-6 w-6', stat.color)} />
-                  </div>
-                </div>
-              </motion.div>
-            )
-          })}
-        </div>
-
-        {/* Products Section */}
-        <div
+      {/* Header */}
+      <div className="mb-8">
+        <h1
           className={cn(
-            'rounded-xl border',
-            isDark ? 'border-slate-700 bg-slate-900' : 'border-stone-200 bg-white',
+            'text-3xl font-bold',
+            isDark ? 'text-white' : 'text-stone-900',
           )}
         >
-          <div className="flex flex-col gap-4 border-b p-6 sm:flex-row sm:items-center sm:justify-between">
-            <h2
+          Dashboard Doanh Nghiệp
+        </h1>
+        <p
+          className={cn('mt-2 text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}
+        >
+          Chào mừng trở lại, {user?.email}
+        </p>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {statCards.map((stat, index) => {
+          const Icon = stat.icon
+          return (
+            <motion.div
+              key={stat.title}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1 }}
               className={cn(
-                'text-xl font-semibold',
-                isDark ? 'text-white' : 'text-stone-900',
+                'rounded-xl border p-6',
+                isDark
+                  ? 'border-slate-700 bg-slate-900'
+                  : 'border-stone-200 bg-white',
               )}
             >
-              Sản phẩm của tôi
-            </h2>
-            <div className="flex items-center gap-3">
-              {/* Status Filter */}
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className={cn(
-                  'rounded-lg border px-3 py-2 text-sm',
-                  isDark
-                    ? 'border-slate-700 bg-slate-800 text-white'
-                    : 'border-stone-300 bg-white text-stone-900',
-                )}
-              >
-                <option value="">Tất cả trạng thái</option>
-                <option value="PUBLISHED">Đang bán</option>
-                <option value="DRAFT">Bản nháp</option>
-                <option value="ARCHIVED">Đã lưu trữ</option>
-              </select>
-              <button
-                onClick={handleCreateProduct}
-                className={cn(
-                  'flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors',
-                  'bg-amber-500 text-white hover:bg-amber-600',
-                )}
-              >
-                <HiOutlinePlusCircle className="h-5 w-5" />
-                Thêm sản phẩm
-              </button>
-            </div>
-          </div>
-
-          {loading && (
-            <div className="p-12 text-center">
-              <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent"></div>
-              <p
-                className={cn(
-                  'mt-4 text-sm',
-                  isDark ? 'text-slate-400' : 'text-stone-600',
-                )}
-              >
-                Đang tải danh sách sản phẩm...
-              </p>
-            </div>
-          )}
-
-          {error && !loading && (
-            <div className="p-12 text-center">
-              <p
-                className={cn(
-                  'text-sm text-red-500',
-                  isDark ? 'text-red-400' : 'text-red-600',
-                )}
-              >
-                {error}
-              </p>
-              <button
-                onClick={() => fetchProducts(statusFilter || null)}
-                className={cn(
-                  'mt-4 rounded-lg px-4 py-2 text-sm font-medium transition-colors',
-                  'bg-amber-500 text-white hover:bg-amber-600',
-                )}
-              >
-                Thử lại
-              </button>
-            </div>
-          )}
-
-          {!loading && !error && (
-            <div className="p-6">
-              {products.length > 0 ? (
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {products.map((product, index) => (
-                    <motion.div
-                      key={product.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                    >
-                      <SellerProductCard
-                        product={product}
-                        onView={() => handleViewProduct(product.id)}
-                        onEdit={() => handleEditProduct(product)}
-                        onDelete={() => handleDeleteProduct(product.id)}
-                      />
-                    </motion.div>
-                  ))}
-                </div>
-              ) : (
-                <div className="p-12 text-center">
-                  <HiOutlineCube
-                    className={cn(
-                      'mx-auto h-12 w-12',
-                      isDark ? 'text-slate-600' : 'text-stone-400',
-                    )}
-                  />
+              <div className="flex items-center justify-between">
+                <div>
                   <p
                     className={cn(
-                      'mt-4 text-sm',
+                      'text-sm font-medium',
                       isDark ? 'text-slate-400' : 'text-stone-600',
                     )}
                   >
-                    Chưa có sản phẩm nào. Hãy thêm sản phẩm đầu tiên của bạn!
+                    {stat.title}
+                  </p>
+                  <p
+                    className={cn(
+                      'mt-2 text-2xl font-bold',
+                      isDark ? 'text-white' : 'text-stone-900',
+                    )}
+                  >
+                    {stat.value}
                   </p>
                 </div>
+                <div
+                  className={cn(
+                    'flex h-12 w-12 items-center justify-center rounded-xl',
+                    stat.bgColor,
+                  )}
+                >
+                  <Icon className={cn('h-6 w-6', stat.color)} />
+                </div>
+              </div>
+            </motion.div>
+          )
+        })}
+      </div>
+
+      {/* Products Section */}
+      <div
+        className={cn(
+          'rounded-xl border',
+          isDark ? 'border-slate-700 bg-slate-900' : 'border-stone-200 bg-white',
+        )}
+      >
+        <div className="flex flex-col gap-4 border-b p-6 sm:flex-row sm:items-center sm:justify-between">
+          <h2
+            className={cn(
+              'text-xl font-semibold',
+              isDark ? 'text-white' : 'text-stone-900',
+            )}
+          >
+            Sản phẩm của tôi
+          </h2>
+          <div className="flex items-center gap-3">
+            {/* Status Filter */}
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className={cn(
+                'rounded-lg border px-3 py-2 text-sm',
+                isDark
+                  ? 'border-slate-700 bg-slate-800 text-white'
+                  : 'border-stone-300 bg-white text-stone-900',
               )}
-            </div>
-          )}
+            >
+              <option value="">Tất cả trạng thái</option>
+              <option value="PUBLISHED">Đang bán</option>
+              <option value="DRAFT">Bản nháp</option>
+              <option value="ARCHIVED">Đã lưu trữ</option>
+            </select>
+            <button
+              onClick={handleCreateProduct}
+              className={cn(
+                'flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors',
+                'bg-amber-500 text-white hover:bg-amber-600',
+              )}
+            >
+              <HiOutlinePlusCircle className="h-5 w-5" />
+              Thêm sản phẩm
+            </button>
+          </div>
         </div>
 
-        {/* Product Form Modal */}
-        {showProductForm && (
-          <ProductFormModal
-            product={editingProduct}
-            onClose={handleFormClose}
-            onSuccess={handleFormSuccess}
-          />
+        {loading && (
+          <div className="p-12 text-center">
+            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent"></div>
+            <p
+              className={cn(
+                'mt-4 text-sm',
+                isDark ? 'text-slate-400' : 'text-stone-600',
+              )}
+            >
+              Đang tải danh sách sản phẩm...
+            </p>
+          </div>
         )}
+
+        {error && !loading && (
+          <div className="p-12 text-center">
+            <p
+              className={cn(
+                'text-sm text-red-500',
+                isDark ? 'text-red-400' : 'text-red-600',
+              )}
+            >
+              {error}
+            </p>
+            <button
+              onClick={() => fetchProducts(statusFilter || null)}
+              className={cn(
+                'mt-4 rounded-lg px-4 py-2 text-sm font-medium transition-colors',
+                'bg-amber-500 text-white hover:bg-amber-600',
+              )}
+            >
+              Thử lại
+            </button>
+          </div>
+        )}
+
+        {!loading && !error && (
+          <div className="p-6">
+            {products.length > 0 ? (
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {products.map((product, index) => (
+                  <motion.div
+                    key={product.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                  >
+                    <SellerProductCard
+                      product={product}
+                      onView={() => handleViewProduct(product.id)}
+                      onEdit={() => handleEditProduct(product)}
+                      onDelete={() => handleDeleteProduct(product.id)}
+                    />
+                  </motion.div>
+                ))}
+              </div>
+            ) : (
+              <div className="p-12 text-center">
+                <HiOutlineCube
+                  className={cn(
+                    'mx-auto h-12 w-12',
+                    isDark ? 'text-slate-600' : 'text-stone-400',
+                  )}
+                />
+                <p
+                  className={cn(
+                    'mt-4 text-sm',
+                    isDark ? 'text-slate-400' : 'text-stone-600',
+                  )}
+                >
+                  Chưa có sản phẩm nào. Hãy thêm sản phẩm đầu tiên của bạn!
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Product Form Modal */}
+      {showProductForm && (
+        <ProductFormModal
+          product={editingProduct}
+          onClose={handleFormClose}
+          onSuccess={handleFormSuccess}
+        />
+      )}
     </div>
   )
 }
@@ -411,7 +424,7 @@ function ProductFormModal({ product, onClose, onSuccess }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
+
     if (!formData.name || !formData.sku || !formData.basePrice || !formData.categoryId) {
       toast.error('Vui lòng điền đầy đủ thông tin bắt buộc')
       return
@@ -419,7 +432,7 @@ function ProductFormModal({ product, onClose, onSuccess }) {
 
     try {
       setSubmitting(true)
-      
+
       const productData = {
         name: formData.name,
         description: formData.description || '',

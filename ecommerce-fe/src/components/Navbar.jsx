@@ -254,7 +254,7 @@ export default function Navbar() {
                   )}
 
                   {/* Business Dashboard Link */}
-                  {isBusiness && (
+                  {userRole === 'BUSINESS' && (
                     <MenuItem>
                       <Link
                         to="/business"
@@ -446,7 +446,7 @@ export default function Navbar() {
                   )}
 
                   {/* Business Dashboard Link - Mobile */}
-                  {isBusiness && (
+                  {userRole === 'BUSINESS' && (
                     <Link
                       to="/business"
                       onClick={() => setMobileOpen(false)}

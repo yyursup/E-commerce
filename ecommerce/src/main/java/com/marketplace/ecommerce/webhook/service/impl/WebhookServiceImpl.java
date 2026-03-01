@@ -18,9 +18,11 @@ public class WebhookServiceImpl implements WebhookService {
     @Override
     public boolean markDeliveredByGhnRef(String ghnOrderCode, String clientOrderCode) {
         Optional<Order> byGhn = ghnOrderCode != null && !ghnOrderCode.isBlank()
-                ? orderRepository.findByGhnOrderCode(ghnOrderCode.trim()) : Optional.empty();
+                ? orderRepository.findByGhnOrderCode(ghnOrderCode.trim())
+                : Optional.empty();
         Optional<Order> byClient = clientOrderCode != null && !clientOrderCode.isBlank()
-                ? orderRepository.findByOrderNumber(clientOrderCode.trim()) : Optional.empty();
+                ? orderRepository.findByOrderNumber(clientOrderCode.trim())
+                : Optional.empty();
         Order order = byGhn.or(() -> byClient).orElse(null);
         if (order == null || order.getStatus() != OrderStatus.SHIPPING) {
             return false;

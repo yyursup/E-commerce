@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
-import axiosClient from '../api/axiosClient';
+import orderService from '../services/order';
 import { useThemeStore } from '../store/useThemeStore';
 import { cn } from '../lib/cn';
 import { HiCheckCircle, HiXCircle } from 'react-icons/hi';
@@ -24,7 +24,7 @@ export default function PaymentResult() {
 
             try {
                 // Call backend to verify signature
-                await axiosClient.get('/api/v1/payment/vnpay/return', { params });
+                await orderService.verifyVnpayPayment(params);
 
                 // Check response code from VNPAY params
                 const responseCode = params['vnp_ResponseCode'];

@@ -136,11 +136,11 @@ export default function App() {
           }
         />
 
-        {/* Business routes - require BUSINESS or ADMIN role */}
+        {/* Business routes - require BUSINESS role */}
         <Route
           path="/business"
           element={
-            <ProtectedRoute requireAuth={true} allowedRoles={['BUSINESS', 'ADMIN']}>
+            <ProtectedRoute requireAuth={true} allowedRoles={['BUSINESS']}>
               <BusinessLayout />
             </ProtectedRoute>
           }

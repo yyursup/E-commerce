@@ -81,6 +81,7 @@ public class DataInitializer implements CommandLineRunner {
         // Initialize Roles
         Role customerRole = initializeRole("CUSTOMER", "Khách hàng");
         Role businessRole = initializeRole("BUSINESS", "Doanh nghiệp");
+
         Role adminRole = initializeRole("ADMIN", "Quản trị viên");
 
         // Initialize Accounts and Users

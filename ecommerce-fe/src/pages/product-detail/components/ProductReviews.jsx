@@ -112,13 +112,17 @@ export default function ProductReviews({ productId }) {
                             )}
                         >
                             <div className="flex items-start gap-4">
-                                <div className="h-10 w-10 flex-shrink-0 rounded-full bg-amber-500 flex items-center justify-center text-white font-bold">
-                                    {review.accountName?.charAt(0) || 'U'}
-                                </div>
+                                {review.userAvatarUrl ? (
+                                    <img src={review.userAvatarUrl} alt="" className="h-10 w-10 flex-shrink-0 rounded-full object-cover" />
+                                ) : (
+                                    <div className="h-10 w-10 flex-shrink-0 rounded-full bg-amber-500 flex items-center justify-center text-white font-bold">
+                                        {review.userFullName?.charAt(0) || 'U'}
+                                    </div>
+                                )}
                                 <div className="flex-1 space-y-2">
                                     <div className="flex items-center justify-between">
                                         <h4 className={cn('font-semibold', isDark ? 'text-slate-200' : 'text-stone-900')}>
-                                            {review.accountName}
+                                            {review.userFullName}
                                         </h4>
                                         <span className={cn('text-xs', isDark ? 'text-slate-500' : 'text-stone-400')}>
                                             {new Date(review.createdAt).toLocaleDateString('vi-VN')}
@@ -134,9 +138,9 @@ export default function ProductReviews({ productId }) {
                                     </p>
 
                                     {/* Images */}
-                                    {review.images && review.images.length > 0 && (
+                                    {review.imageUrls && review.imageUrls.length > 0 && (
                                         <div className="flex flex-wrap gap-2 pt-2">
-                                            {review.images.map((img, idx) => (
+                                            {review.imageUrls.map((img, idx) => (
                                                 <img
                                                     key={idx}
                                                     src={img}
@@ -158,14 +162,19 @@ export default function ProductReviews({ productId }) {
                                                 <span className={cn('text-xs font-bold uppercase tracking-wider', isDark ? 'text-slate-400' : 'text-stone-500')}>
                                                     Cửa hàng phản hồi
                                                 </span>
+                                                {review.sellerReply.repliedAt && (
+                                                    <span className={cn('text-xs', isDark ? 'text-slate-500' : 'text-stone-400')}>
+                                                        · {new Date(review.sellerReply.repliedAt).toLocaleDateString('vi-VN')}
+                                                    </span>
+                                                )}
                                             </div>
                                             <p className={cn('text-sm', isDark ? 'text-slate-300' : 'text-stone-700')}>
-                                                {review.sellerReply}
+                                                {review.sellerReply.reply}
                                             </p>
                                         </div>
                                     ) : (
                                         /* Show Reply Form for Admin/Business */
-                                        (user?.roles?.includes('ADMIN') || user?.roles?.includes('BUSINESS')) && (
+                                        (user?.role === 'ADMIN' || user?.role === 'BUSINESS') && (
                                             <ReplyForm reviewId={review.id} onSuccess={fetchReviews} />
                                         )
                                     )}

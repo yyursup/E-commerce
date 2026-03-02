@@ -32,10 +32,10 @@ export default function ReportModal({ isOpen, onClose, targetId, targetName }) {
 
         try {
             setLoading(true);
-            await reportService.submitReport({
+            await reportService.createReport({
                 targetId,
                 description: `[${formData.reason}] ${formData.description}`,
-                evidenceUrl: formData.evidenceUrl,
+                evidenceUrl: formData.evidenceUrl || null,
             });
             toast.success('Báo cáo của bạn đã được gửi. Chúng tôi sẽ xem xét sớm nhất.');
             onClose();

@@ -15,6 +15,8 @@ import { useAuthStore } from '../../store/useAuthStore'
 import { cn } from '../../lib/cn'
 import toast from 'react-hot-toast'
 import orderService from '../../services/order'
+import ReviewModal from '../../components/ReviewModal'
+import { HiOutlineStar } from 'react-icons/hi'
 
 const getStatusBadge = (status) => {
   const statusMap = {
@@ -54,6 +56,7 @@ export default function OrderDetail() {
   const [order, setOrder] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [reviewModal, setReviewModal] = useState({ open: false, productId: null, productName: '' })
 
   useEffect(() => {
     if (!isAuthenticated || !orderId) return
@@ -257,6 +260,19 @@ export default function OrderDetail() {
                     <p className={cn('mt-1 text-sm font-medium', isDark ? 'text-white' : 'text-stone-900')}>
                       {formatCurrency(item.totalPrice)}
                     </p>
+                    {order.status === 'COMPLETED' && (
+                      <button
+                        onClick={() => setReviewModal({
+                          open: true,
+                          productId: item.productId,
+                          productName: item.productName,
+                        })}
+                        className="mt-2 flex items-center gap-1.5 rounded-lg bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-500 transition hover:bg-amber-500/20"
+                      >
+                        <HiOutlineStar className="h-4 w-4" />
+                        Viết đánh giá
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -328,6 +344,16 @@ export default function OrderDetail() {
             </div>
           </div>
         </motion.div>
+
+        {/* Review Modal */}
+        <ReviewModal
+          isOpen={reviewModal.open}
+          onClose={() => setReviewModal({ open: false, productId: null, productName: '' })}
+          subOrderId={order?.id}
+          productId={reviewModal.productId}
+          productName={reviewModal.productName}
+          onPageRefresh={fetchOrder}
+        />
       </div>
     </div>
   )

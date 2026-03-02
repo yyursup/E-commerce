@@ -112,18 +112,19 @@ public class PaymentServiceImpl implements PaymentService {
             throw new CustomException("Payment already SUCCESS");
         }
 
-        if (payment.getTxnRef() == null || payment.getTxnRef().isBlank()) {
-            payment.setTxnRef(generateTxnRef(order));
-        }
+        // Always generate a new txnRef per attempt (VNPay rejects duplicate refs)
+        payment.setTxnRef(generateTxnRef(order));
+        payment.setStatus(PaymentStatus.PENDING);
 
         paymentRepository.save(payment);
         return vnPayService.buildPaymentUrl(payment);
     }
 
     private String generateTxnRef(Order order) {
-        // unique, readable
+        // unique per attempt: date + orderNumber + random suffix
+        String suffix = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         return "PAY-" + LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE)
-                + "-" + order.getOrderNumber();
+                + "-" + suffix;
     }
 
     @Transactional

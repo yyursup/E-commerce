@@ -21,6 +21,7 @@ import { useCartStore } from '../../store/useCartStore'
 import { cn } from '../../lib/cn'
 import productService from '../../services/product'
 import cartService from '../../services/cart'
+import ProductReviews from './components/ProductReviews'
 
 export default function ProductDetail() {
   const { productId } = useParams()
@@ -73,14 +74,14 @@ export default function ProductDetail() {
     try {
       setAddingToCart(true)
       const cartResponse = await cartService.addToCart(product.id, quantity)
-      
+
       // Update cart count in store
       updateCartCount(cartResponse)
-      
+
       // Show success animation
       setShowAddAnimation(true)
       toast.success(`Đã thêm ${quantity} ${product.name} vào giỏ hàng`)
-      
+
       // Hide animation after 1.5s
       setTimeout(() => {
         setShowAddAnimation(false)
@@ -115,12 +116,12 @@ export default function ProductDetail() {
       setAddingToCart(true)
       // Add to cart first
       const cartResponse = await cartService.addToCart(product.id, quantity)
-      
+
       // Update cart count in store
       updateCartCount(cartResponse)
-      
+
       toast.success(`Đã thêm ${quantity} ${product.name} vào giỏ hàng`)
-      
+
       // Redirect to checkout immediately with shopId
       navigate('/checkout', { state: { shopId: product.shopId } })
     } catch (error) {
@@ -593,6 +594,15 @@ export default function ProductDetail() {
               </div>
             </div>
           </div>
+        </motion.div>
+
+        {/* Product Reviews */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.4 }}
+        >
+          <ProductReviews productId={productId} />
         </motion.div>
       </div>
     </div>

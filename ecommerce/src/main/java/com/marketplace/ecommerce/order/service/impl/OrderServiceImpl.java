@@ -17,6 +17,7 @@ import com.marketplace.ecommerce.order.repository.OrderItemsRepository;
 import com.marketplace.ecommerce.order.repository.OrderRepository;
 import com.marketplace.ecommerce.order.service.OrderService;
 import com.marketplace.ecommerce.payment.service.EscrowService;
+import com.marketplace.ecommerce.platform.service.CommissionService;
 import com.marketplace.ecommerce.platform.service.PlatformSettingService;
 import com.marketplace.ecommerce.product.entity.Product;
 import com.marketplace.ecommerce.product.repository.ProductRepository;
@@ -59,6 +60,7 @@ public class OrderServiceImpl implements OrderService {
     private final ShippingService shippingService;
     private final PlatformSettingService platformSettingService;
     private final EscrowService escrowService;
+    private final CommissionService commissionService;
 
     @Override
     @Transactional
@@ -228,6 +230,12 @@ public class OrderServiceImpl implements OrderService {
         validateSellerTransition(currentStatus, newStatus);
         order.setStatus(newStatus);
         order = orderRepository.save(order);
+
+        if (newStatus == OrderStatus.DELIVERED) {
+
+            commissionService.createCommission(order.getId());
+        }
+
 
         return OrderResponse.from(order);
     }

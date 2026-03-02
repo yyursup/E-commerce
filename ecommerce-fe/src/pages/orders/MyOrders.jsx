@@ -7,7 +7,8 @@ import {
   HiOutlineCheckCircle,
   HiOutlineTruck,
   HiOutlineXCircle,
-  HiOutlineCreditCard
+  HiOutlineCreditCard,
+  HiOutlineStar,
 } from 'react-icons/hi'
 import { useThemeStore } from '../../store/useThemeStore'
 import { useAuthStore } from '../../store/useAuthStore'
@@ -278,17 +279,29 @@ export default function MyOrders() {
                           {formatCurrency(order.total)}
                         </p>
 
-                        {canMarkReceived(order.status) && (
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault(); // Prevent Link navigation
-                              handleMarkReceived(order.id);
-                            }}
-                            className="mt-2 inline-block rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-600"
-                          >
-                            Đã nhận được hàng
-                          </button>
-                        )}
+                        <div className="flex flex-col items-end gap-2 mt-2">
+                          {canMarkReceived(order.status) && (
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault(); // Prevent Link navigation
+                                handleMarkReceived(order.id);
+                              }}
+                              className="inline-block rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-600"
+                            >
+                              Đã nhận được hàng
+                            </button>
+                          )}
+                          {['DELIVERED', 'COMPLETED'].includes(order.status) && (
+                            <Link
+                              to={`/orders/${order.id}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-500 transition hover:bg-amber-500/20"
+                            >
+                              <HiOutlineStar className="h-3.5 w-3.5" />
+                              Viết đánh giá
+                            </Link>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </Link>

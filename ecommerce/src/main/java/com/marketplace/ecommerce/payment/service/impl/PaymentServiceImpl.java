@@ -102,17 +102,15 @@ public class PaymentServiceImpl implements PaymentService {
                 .orElseGet(() -> Payment.builder()
                         .order(order)
                         .method(PaymentMethod.VNPAY)
-                        .status(PaymentStatus.PENDING)
-                        .amount(order.getTotal())
-                        .txnRef(generateTxnRef(order))
                         .build()
                 );
 
         if (payment.getStatus() == PaymentStatus.SUCCESS) {
             throw new CustomException("Payment already SUCCESS");
         }
-
         // Always generate a new txnRef per attempt (VNPay rejects duplicate refs)
+        payment.setMethod(PaymentMethod.VNPAY);
+        payment.setAmount(order.getTotal());
         payment.setTxnRef(generateTxnRef(order));
         payment.setStatus(PaymentStatus.PENDING);
 
@@ -121,9 +119,9 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     private String generateTxnRef(Order order) {
-        // unique per attempt: date + orderNumber + random suffix
         String suffix = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         return "PAY-" + LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE)
+                + "-" + order.getOrderNumber()
                 + "-" + suffix;
     }
 

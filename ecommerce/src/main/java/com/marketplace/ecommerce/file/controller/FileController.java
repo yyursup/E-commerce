@@ -15,7 +15,7 @@ import java.io.InputStream;
 @Controller
 @RequestMapping("/files")
 @RequiredArgsConstructor
-public class FileMvcController {
+public class FileController {
 
     private final FileService fileService;
 

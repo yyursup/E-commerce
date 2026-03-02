@@ -34,10 +34,6 @@ import com.marketplace.ecommerce.order.entity.OrderItem;
 import com.marketplace.ecommerce.order.repository.OrderRepository;
 import com.marketplace.ecommerce.order.repository.OrderItemsRepository;
 import com.marketplace.ecommerce.order.valueObjects.OrderStatus;
-import com.marketplace.ecommerce.payment.entity.Payment;
-import com.marketplace.ecommerce.payment.repository.PaymentRepository;
-import com.marketplace.ecommerce.payment.valueObjects.PaymentMethod;
-import com.marketplace.ecommerce.payment.valueObjects.PaymentStatus;
 import com.marketplace.ecommerce.request.entity.Request;
 import com.marketplace.ecommerce.request.repository.RequestRepository;
 import com.marketplace.ecommerce.request.valueObjects.RequestStatus;
@@ -76,7 +72,6 @@ public class DataInitializer implements CommandLineRunner {
     private final OrderRepository orderRepository;
     private final OrderItemsRepository orderItemsRepository;
     private final RequestRepository requestRepository;
-    private final PaymentRepository paymentRepository;
 
     @Override
     @Transactional
@@ -281,12 +276,6 @@ public class DataInitializer implements CommandLineRunner {
                     OrderStatus.SHIPPING, "Cẩn thận khi giao hàng",
                     LocalDateTime.now().minusDays(4));
             initializeOrderItem(order4, product10, 1, product10.getBasePrice()); // iPhone 15 Pro Max
-
-            // Initialize Payments
-            initializePayment(order1, PaymentMethod.VNPAY, PaymentStatus.PENDING, null);
-            initializePayment(order2, PaymentMethod.VNPAY, PaymentStatus.SUCCESS, LocalDateTime.now().minusDays(2));
-            initializePayment(order3, PaymentMethod.VNPAY, PaymentStatus.SUCCESS, LocalDateTime.now().minusDays(3));
-            initializePayment(order4, PaymentMethod.VNPAY, PaymentStatus.SUCCESS, LocalDateTime.now().minusDays(4));
         }
 
         // Initialize Requests (để demo Admin approve/reject)
@@ -665,37 +654,6 @@ public class DataInitializer implements CommandLineRunner {
 
         Request saved = requestRepository.save(request);
         log.info("Created request: {} with status: {}", type, status);
-        return saved;
-    }
-
-    private Payment initializePayment(Order order, PaymentMethod method, PaymentStatus status, LocalDateTime paidAt) {
-        // Check if payment already exists for this order
-        if (paymentRepository.findByOrderId(order.getId()).isPresent()) {
-            log.debug("Payment already exists for order: {}", order.getOrderNumber());
-            return paymentRepository.findByOrderId(order.getId()).orElse(null);
-        }
-
-        String txnRef = "PAY-" + LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE)
-                + "-" + order.getOrderNumber();
-
-        // Ensure unique txnRef
-        int counter = 1;
-        String originalTxnRef = txnRef;
-        while (paymentRepository.findByTxnRef(txnRef).isPresent()) {
-            txnRef = originalTxnRef + "-" + counter;
-            counter++;
-        }
-
-        Payment payment = Payment.builder()
-                .order(order)
-                .method(method)
-                .status(status)
-                .amount(order.getTotal())
-                .txnRef(txnRef)
-                .build();
-
-        Payment saved = paymentRepository.save(payment);
-        log.info("Created payment: {} for order: {} with status: {}", txnRef, order.getOrderNumber(), status);
         return saved;
     }
 }

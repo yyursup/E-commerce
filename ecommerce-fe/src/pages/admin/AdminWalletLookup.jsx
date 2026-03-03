@@ -22,15 +22,15 @@ const formatCurrency = (value) => {
 
 export default function AdminWalletLookup() {
   const isDark = useThemeStore((state) => state.theme) === 'dark'
-  const [accountId, setAccountId] = useState('')
+  const [userName, setUserName] = useState('')
   const [wallet, setWallet] = useState(null)
   const [loading, setLoading] = useState(false)
 
   const handleLookup = async (e) => {
     e.preventDefault()
-    const trimmed = accountId.trim()
+    const trimmed = userName.trim()
     if (!trimmed) {
-      toast.error('Account ID is required.')
+      toast.error('Username is required.')
       return
     }
 
@@ -52,7 +52,7 @@ export default function AdminWalletLookup() {
       <div>
         <h1 className="text-2xl font-semibold">Admin wallet lookup</h1>
         <p className={cn('text-sm', isDark ? 'text-slate-400' : 'text-stone-500')}>
-          Lookup wallet by account id.
+          Lookup wallet by username.
         </p>
       </div>
 
@@ -67,17 +67,17 @@ export default function AdminWalletLookup() {
       >
         <form onSubmit={handleLookup} className="space-y-3">
           <label
-            htmlFor="wallet-account-id"
+            htmlFor="wallet-user-name"
             className={cn('text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}
           >
-            Account ID
+            Username
           </label>
           <div className="flex flex-col gap-3 sm:flex-row">
             <input
-              id="wallet-account-id"
-              value={accountId}
-              onChange={(e) => setAccountId(e.target.value)}
-              placeholder="Paste account UUID"
+              id="wallet-user-name"
+              value={userName}
+              onChange={(e) => setUserName(e.target.value)}
+              placeholder="Enter username"
               className={cn(
                 'flex-1 rounded-lg border px-3 py-2 text-sm outline-none transition',
                 isDark

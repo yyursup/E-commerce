@@ -51,7 +51,26 @@ const authService = {
         } catch (error) {
             throw error.response ? error.response.data : error;
         }
-    }
+    },
+
+    // Update profile: fullName, phoneNumber, gender, dateOfBirth, avatarFile (optional)
+    updateProfile: async ({ fullName, phoneNumber, gender, dateOfBirth, avatarFile }) => {
+        const formData = new FormData();
+        if (fullName) formData.append('fullName', fullName);
+        if (phoneNumber) formData.append('phoneNumber', phoneNumber);
+        if (gender) formData.append('gender', gender);
+        if (dateOfBirth) formData.append('dateOfBirth', dateOfBirth);
+        if (avatarFile) formData.append('avatarFile', avatarFile);
+
+        try {
+            const response = await axiosClient.put('/api/v1/user/profile', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+            return response.data; // UserProfileResponse: { id, fullName, avatarUrl, phoneNumber, gender, dateOfBirth }
+        } catch (error) {
+            throw error.response ? error.response.data : error;
+        }
+    },
 };
 
 export default authService;

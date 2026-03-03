@@ -42,8 +42,7 @@ public class FileServiceImpl implements FileService {
                             .object(fileName)
                             .stream(file.getInputStream(), file.getSize(), -1)
                             .contentType(file.getContentType())
-                            .build()
-            );
+                            .build());
 
             log.info("File uploaded successfully: {}", fileName);
             return fileName;
@@ -65,8 +64,7 @@ public class FileServiceImpl implements FileService {
                     GetObjectArgs.builder()
                             .bucket(minIOConfig.getBucketName())
                             .object(fileName)
-                            .build()
-            );
+                            .build());
         } catch (Exception e) {
             log.error("Error downloading file: {}", e.getMessage());
             throw new RuntimeException("Failed to download file: " + e.getMessage(), e);
@@ -80,8 +78,7 @@ public class FileServiceImpl implements FileService {
                     RemoveObjectArgs.builder()
                             .bucket(minIOConfig.getBucketName())
                             .object(fileName)
-                            .build()
-            );
+                            .build());
             log.info("File deleted successfully: {}", fileName);
         } catch (Exception e) {
             log.error("Error deleting file: {}", e.getMessage());
@@ -105,8 +102,7 @@ public class FileServiceImpl implements FileService {
                     StatObjectArgs.builder()
                             .bucket(minIOConfig.getBucketName())
                             .object(fileName)
-                            .build()
-            );
+                            .build());
             return true;
         } catch (Exception e) {
             return false;

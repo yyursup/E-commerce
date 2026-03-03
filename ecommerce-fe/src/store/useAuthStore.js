@@ -21,6 +21,12 @@ export const useAuthStore = create(
                 })
             },
 
+            updateUser: (updatedFields) => {
+                set((state) => ({
+                    user: state.user ? { ...state.user, ...updatedFields } : null,
+                }))
+            },
+
             updateAccountVerified: (value) => {
                 set((state) => ({
                     accountVerified: value,

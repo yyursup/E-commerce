@@ -14,10 +14,7 @@ public class UpdateUserProfileRequest {
     @Size(max = 100, message = "fullName max 100 chars")
     private String fullName;
 
-    @Pattern(
-            regexp = "^(\\+84|0)(3|5|7|8|9)\\d{8}$",
-            message = "phoneNumber invalid"
-    )
+    @Pattern(regexp = "^(\\+84|0)(3|5|7|8|9)\\d{8}$", message = "phoneNumber invalid")
     private String phoneNumber;
 
     private GenderType gender;

@@ -700,7 +700,7 @@ public class DataInitializer implements CommandLineRunner {
                     }
 
                     BigDecimal commissionRate = new BigDecimal("5.00");
-                    BigDecimal orderAmount = order.getTotal() == null ? BigDecimal.ZERO : order.getTotal();
+                    BigDecimal orderAmount = order.getSubtotal() == null ? BigDecimal.ZERO : order.getSubtotal();
 
                     Commission commission = Commission.builder()
                             .orderId(order.getId())

@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   HiOutlineShoppingBag,
   HiOutlineChartBar,
   HiOutlineCurrencyDollar,
-  HiOutlineUsers,
   HiOutlineCube,
   HiOutlinePlusCircle,
   HiOutlineX,
@@ -19,6 +18,7 @@ import categoryService from '../../services/category'
 import statisticsService from '../../services/statistics'
 import SellerProductCard from './components/SellerProductCard'
 import ImageUpload from './components/ImageUpload'
+import OrderStatusSummary from './components/OrderStatusSummary'
 
 export default function BusinessDashboard() {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
@@ -31,6 +31,7 @@ export default function BusinessDashboard() {
     totalCommission: 0,
     totalNetIncome: 0,
     estimatedRevenue: 0,
+    orderCountByStatus: {},
   })
   const [loading, setLoading] = useState(true)
   const [products, setProducts] = useState([])
@@ -91,6 +92,7 @@ export default function BusinessDashboard() {
           totalOrders: statistics.totalOrders || 0,
           totalCommission: statistics.totalCommission || 0,
           totalNetIncome: statistics.totalNetIncome || 0,
+          orderCountByStatus: statistics.orderCountByStatus || {},
         }));
       } catch (err) {
         console.error('Error fetching dashboard stats:', err);
@@ -163,8 +165,8 @@ export default function BusinessDashboard() {
       bgColor: 'bg-green-500/10',
     },
     {
-      title: 'Doanh thu',
-      value: formatCurrency(stats.totalRevenue),
+      title: 'Doanh thu thực nhận',
+      value: formatCurrency(stats.totalNetIncome),
       icon: HiOutlineCurrencyDollar,
       color: 'bg-amber-500',
       bgColor: 'bg-amber-500/10',
@@ -178,7 +180,7 @@ export default function BusinessDashboard() {
     },
     {
       title: 'Thu nhập ròng',
-      value: formatCurrency(stats.totalNetIncome),
+      value: formatCurrency(stats.estimatedRevenue),
       icon: HiOutlineCurrencyDollar,
       color: 'bg-emerald-500',
       bgColor: 'bg-emerald-500/10',
@@ -255,6 +257,12 @@ export default function BusinessDashboard() {
           )
         })}
       </div>
+
+      <OrderStatusSummary
+        isDark={isDark}
+        orderCountByStatus={stats.orderCountByStatus}
+        totalOrders={stats.totalOrders}
+      />
 
       {/* Products Section */}
       <div

@@ -2,6 +2,7 @@ package com.marketplace.ecommerce.order.repository;
 
 import com.marketplace.ecommerce.order.entity.Order;
 import com.marketplace.ecommerce.order.valueObjects.OrderStatus;
+import com.marketplace.ecommerce.shop.entity.Shop;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
@@ -9,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -36,6 +38,7 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
 
     Optional<Order> findByGhnOrderCode(String ghnOrderCode);
 
+    List<Order> getOrdersByShop(Shop shop);
 
     @Query("""
         select o.id
@@ -53,4 +56,27 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select o from Order o where o.id = :id")
     Optional<Order> findByIdForUpdate(@Param("id") UUID id);
+
+    @Query("""
+    SELECT COALESCE(SUM(o.total), 0)
+    FROM Order o
+    WHERE o.shop.id = :shopId
+      AND o.status IN :statuses
+    """)
+    BigDecimal getEstimatedRevenueByShop(
+            @Param("shopId") UUID shopId,
+            @Param("statuses") List<OrderStatus> statuses
+    );
+
+    @Query("""
+    SELECT COALESCE(SUM(o.total), 0)
+    FROM Order o
+    WHERE o.shop.id = :shopId
+      AND o.status = :status
+      AND o.deliveredAt IS NOT NULL
+""")
+    BigDecimal getRevenueByShop(
+            @Param("shopId") UUID shopId,
+            @Param("status") OrderStatus status
+    );
 }

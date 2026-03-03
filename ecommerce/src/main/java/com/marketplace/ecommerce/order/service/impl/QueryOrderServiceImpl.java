@@ -4,6 +4,7 @@ import com.marketplace.ecommerce.auth.entity.User;
 import com.marketplace.ecommerce.auth.repository.UserRepository;
 import com.marketplace.ecommerce.common.exception.CustomException;
 import com.marketplace.ecommerce.order.dto.response.OrderResponse;
+import com.marketplace.ecommerce.order.dto.response.RevenueSummaryResponse;
 import com.marketplace.ecommerce.order.entity.Order;
 import com.marketplace.ecommerce.order.repository.OrderRepository;
 import com.marketplace.ecommerce.order.service.QueryOrderService;
@@ -14,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
@@ -24,6 +26,34 @@ public class QueryOrderServiceImpl implements QueryOrderService {
     private final OrderRepository orderRepository;
     private final ShopRepository shopRepository;
     private final UserRepository userRepository;
+
+    @Override
+    @Transactional(readOnly = true)
+    public RevenueSummaryResponse getRevenueSummaryByShop(UUID accountId) {
+        User user = userRepository.findByAccountId(accountId)
+                .orElseThrow(() -> new CustomException("User not found."));
+
+        Shop shop = shopRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new CustomException("Shop not found."));
+
+        BigDecimal revenue = orderRepository.getRevenueByShop(shop.getId(), OrderStatus.DELIVERED);
+        List<OrderStatus> estimatedStatuses = List.of(
+                OrderStatus.CONFIRMED,
+                OrderStatus.PROCESSING,
+                OrderStatus.SHIPPING,
+                OrderStatus.DELIVERED,
+                OrderStatus.PENDING_PAYMENT,
+                OrderStatus.PENDING
+        );
+
+        BigDecimal estimatedRevenue =
+                orderRepository.getEstimatedRevenueByShop(shop.getId(), estimatedStatuses);
+
+        return RevenueSummaryResponse.builder()
+                .revenue(revenue)
+                .estimatedRevenue(estimatedRevenue)
+                .build();
+    }
 
     @Override
     public OrderResponse adminGetOrder(UUID orderId, UUID accountId) {

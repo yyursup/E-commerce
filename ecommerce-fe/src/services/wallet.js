@@ -11,9 +11,11 @@ const walletService = {
       throw error.response ? error.response.data : error
     }
   },
-  getAdminWallet: async (accountId) => {
+  getAdminWallet: async (userName) => {
     try {
-      const response = await axiosClient.get(`${WALLET_BASE}/admin/${accountId}`)
+      const response = await axiosClient.get(`${WALLET_BASE}/admin`, {
+        params: { userName },
+      })
       return response.data
     } catch (error) {
       throw error.response ? error.response.data : error

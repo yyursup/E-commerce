@@ -13,6 +13,9 @@ import com.marketplace.ecommerce.auth.valueObjects.DisciplineLevel;
 import com.marketplace.ecommerce.auth.valueObjects.GenderType;
 import com.marketplace.ecommerce.cart.entity.Cart;
 import com.marketplace.ecommerce.cart.repository.CartRepository;
+import com.marketplace.ecommerce.platform.entity.Commission;
+import com.marketplace.ecommerce.platform.entity.CommissionItem;
+import com.marketplace.ecommerce.platform.repository.CommissionRepository;
 import com.marketplace.ecommerce.product.entity.Product;
 import com.marketplace.ecommerce.product.entity.ProductCategory;
 import com.marketplace.ecommerce.product.entity.ProductImage;
@@ -46,9 +49,11 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.UUID;
 
@@ -72,6 +77,7 @@ public class DataInitializer implements CommandLineRunner {
     private final OrderRepository orderRepository;
     private final OrderItemsRepository orderItemsRepository;
     private final RequestRepository requestRepository;
+    private final CommissionRepository commissionRepository;
 
     @Override
     @Transactional
@@ -276,6 +282,23 @@ public class DataInitializer implements CommandLineRunner {
                     OrderStatus.SHIPPING, "Cẩn thận khi giao hàng",
                     LocalDateTime.now().minusDays(4));
             initializeOrderItem(order4, product10, 1, product10.getBasePrice()); // iPhone 15 Pro Max
+            // Order 5: DELIVERED (đủ điều kiện tạo commission)
+            Order order5 = initializeOrder(customerUser1, shop1, customerAddress1,
+                    OrderStatus.DELIVERED, "Đã giao thành công",
+                    LocalDateTime.now().minusDays(6));
+            initializeOrderItem(order5, product1, 1, product1.getBasePrice());
+            initializeOrderItem(order5, product6, 2, product6.getBasePrice());
+
+            // Order 6: COMPLETED (đủ điều kiện tạo commission)
+            Order order6 = initializeOrder(customerUser1, shop2, customerAddress1,
+                    OrderStatus.COMPLETED, "Khách đã xác nhận nhận hàng",
+                    LocalDateTime.now().minusDays(8));
+            initializeOrderItem(order6, product10, 1, product10.getBasePrice());
+            initializeOrderItem(order6, product14, 1, product14.getBasePrice());
+
+
+            initializeCommission(order5);
+            initializeCommission(order6);
         }
 
         // Initialize Requests (để demo Admin approve/reject)
@@ -628,7 +651,7 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private Request initializeRequest(Account account, RequestType type, RequestStatus status,
-                                     String description, Account reviewedBy, LocalDateTime reviewedAt, String response) {
+                                      String description, Account reviewedBy, LocalDateTime reviewedAt, String response) {
         // If reviewedAt is provided, createdAt should be before it
         // Otherwise, use a date in the past
         LocalDateTime createdAt;
@@ -637,9 +660,9 @@ public class DataInitializer implements CommandLineRunner {
         } else {
             createdAt = LocalDateTime.now().minusDays(1); // Request created yesterday
         }
-        
+
         LocalDateTime updatedAt = reviewedAt != null ? reviewedAt : createdAt;
-        
+
         Request request = Request.builder()
                 .account(account)
                 .type(type)
@@ -655,5 +678,69 @@ public class DataInitializer implements CommandLineRunner {
         Request saved = requestRepository.save(request);
         log.info("Created request: {} with status: {}", type, status);
         return saved;
+    }
+
+    private Commission initializeCommission(Order order) {
+        if (order == null || order.getId() == null) {
+            throw new IllegalArgumentException("Order is null");
+        }
+
+        return commissionRepository.findByOrderId(order.getId())
+                .orElseGet(() -> {
+                    if (order.getStatus() != OrderStatus.DELIVERED && order.getStatus() != OrderStatus.COMPLETED) {
+                        throw new IllegalStateException("Order is not eligible for commission: " + order.getStatus());
+                    }
+
+                    if (order.getShop() == null || order.getShop().getUser() == null || order.getShop().getUser().getId() == null) {
+                        throw new IllegalStateException("Seller not found for order: " + order.getOrderNumber());
+                    }
+
+                    if (order.getItems() == null || order.getItems().isEmpty()) {
+                        throw new IllegalStateException("Order items not found for order: " + order.getOrderNumber());
+                    }
+
+                    BigDecimal commissionRate = new BigDecimal("5.00");
+                    BigDecimal orderAmount = order.getTotal() == null ? BigDecimal.ZERO : order.getTotal();
+
+                    Commission commission = Commission.builder()
+                            .orderId(order.getId())
+                            .sellerId(order.getShop().getUser().getId())
+                            .orderAmount(orderAmount)
+                            .totalCommission(BigDecimal.ZERO)
+                            .items(new ArrayList<>())
+                            .build();
+
+                    BigDecimal totalCommission = BigDecimal.ZERO;
+
+                    for (OrderItem orderItem : order.getItems()) {
+                        BigDecimal unitPrice = orderItem.getUnitPrice() == null ? BigDecimal.ZERO : orderItem.getUnitPrice();
+                        int quantity = orderItem.getQuantity() == null ? 0 : orderItem.getQuantity();
+
+                        BigDecimal lineAmount = unitPrice.multiply(BigDecimal.valueOf(quantity));
+                        BigDecimal commissionAmount = lineAmount
+                                .multiply(commissionRate)
+                                .divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
+
+                        CommissionItem commissionItem = CommissionItem.builder()
+                                .commission(commission)
+                                .orderItemId(orderItem.getId())
+                                .productName(orderItem.getProductName())
+                                .unitPrice(unitPrice)
+                                .quantity(quantity)
+                                .commissionRate(commissionRate)
+                                .commissionAmount(commissionAmount)
+                                .build();
+
+                        commission.getItems().add(commissionItem);
+                        totalCommission = totalCommission.add(commissionAmount);
+                    }
+
+                    commission.setTotalCommission(totalCommission);
+
+                    Commission saved = commissionRepository.save(commission);
+                    log.info("Created commission for order: {} with totalCommission={}",
+                            order.getOrderNumber(), totalCommission);
+                    return saved;
+                });
     }
 }

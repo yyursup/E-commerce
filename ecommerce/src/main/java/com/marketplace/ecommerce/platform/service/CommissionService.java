@@ -18,7 +18,7 @@ public interface CommissionService {
 
     CommissionDetailResponse getByOrderId(UUID orderId);
 
-    BigDecimal getTotalCommissionBySeller(UUID sellerId);
+    BigDecimal getTotalCommissionBySeller(UUID accountId);
 
-    BigDecimal getTotalNetIncomeBySeller(UUID sellerId);
+    BigDecimal getTotalNetIncomeBySeller(UUID accountId);
 }

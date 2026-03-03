@@ -1,6 +1,7 @@
 package com.marketplace.ecommerce.platform.service.impl;
 
 import com.marketplace.ecommerce.auth.entity.User;
+import com.marketplace.ecommerce.auth.repository.AccountRepository;
 import com.marketplace.ecommerce.auth.repository.UserRepository;
 import com.marketplace.ecommerce.common.exception.CustomException;
 import com.marketplace.ecommerce.order.entity.Order;
@@ -15,6 +16,7 @@ import com.marketplace.ecommerce.platform.entity.CommissionItem;
 import com.marketplace.ecommerce.platform.repository.CommissionRepository;
 import com.marketplace.ecommerce.platform.service.CommissionService;
 import com.marketplace.ecommerce.platform.service.CommissionSpecification;
+import com.marketplace.ecommerce.request.entity.Seller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -139,15 +141,20 @@ public class CommissionServiceImpl implements CommissionService {
 
     @Override
     @Transactional(readOnly = true)
-    public BigDecimal getTotalCommissionBySeller(UUID sellerId) {
-        BigDecimal result = commissionRepository.getTotalCommissionBySeller(sellerId);
+    public BigDecimal getTotalCommissionBySeller(UUID accountId) {
+        User seller = userRepository.findByAccountId(accountId)
+                .orElseThrow(() -> new RuntimeException("can not find seller"));
+
+        BigDecimal result = commissionRepository.getTotalCommissionBySeller(seller.getId());
         return result == null ? BigDecimal.ZERO : result;
     }
 
     @Override
     @Transactional(readOnly = true)
-    public BigDecimal getTotalNetIncomeBySeller(UUID sellerId) {
-        BigDecimal result = commissionRepository.getTotalNetIncomeBySeller(sellerId);
+    public BigDecimal getTotalNetIncomeBySeller(UUID accountId) {
+        User seller = userRepository.findByAccountId(accountId)
+                .orElseThrow(() -> new RuntimeException("can not find seller"));
+        BigDecimal result = commissionRepository.getTotalNetIncomeBySeller(seller.getId());
         return result == null ? BigDecimal.ZERO : result;
     }
 

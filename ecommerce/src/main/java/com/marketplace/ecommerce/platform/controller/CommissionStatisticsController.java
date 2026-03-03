@@ -67,19 +67,5 @@ public class CommissionStatisticsController {
         return ResponseEntity.ok(commissionService.getByOrderId(orderId));
     }
 
-    @GetMapping("/sellers/{sellerId}/total")
-    public ResponseEntity<Map<String, BigDecimal>> getTotalCommissionBySeller(
-            @PathVariable UUID sellerId
-    ) {
-        BigDecimal totalCommission = commissionService.getTotalCommissionBySeller(sellerId);
-        return ResponseEntity.ok(Map.of("totalCommission", totalCommission));
-    }
 
-    @GetMapping("/sellers/{sellerId}/net-income")
-    public ResponseEntity<Map<String, BigDecimal>> getTotalNetIncomeBySeller(
-            @PathVariable UUID sellerId
-    ) {
-        BigDecimal totalNetIncome = commissionService.getTotalNetIncomeBySeller(sellerId);
-        return ResponseEntity.ok(Map.of("totalNetIncome", totalNetIncome));
-    }
 }

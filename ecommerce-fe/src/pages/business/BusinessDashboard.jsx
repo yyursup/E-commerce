@@ -16,7 +16,7 @@ import { cn } from '../../lib/cn'
 import toast from 'react-hot-toast'
 import sellerService from '../../services/seller'
 import categoryService from '../../services/category'
-import walletService from '../../services/wallet'
+import statisticsService from '../../services/statistics'
 import SellerProductCard from './components/SellerProductCard'
 import ImageUpload from './components/ImageUpload'
 
@@ -28,7 +28,9 @@ export default function BusinessDashboard() {
     totalProducts: 0,
     totalOrders: 0,
     totalRevenue: 0,
-    totalCustomers: 0,
+    totalCommission: 0,
+    totalNetIncome: 0,
+    estimatedRevenue: 0,
   })
   const [loading, setLoading] = useState(true)
   const [products, setProducts] = useState([])
@@ -80,17 +82,23 @@ export default function BusinessDashboard() {
     const fetchDashboardData = async () => {
       await fetchProducts(statusFilter || null)
       try {
-        const walletData = await walletService.getMyWallet();
+        const statistics = await statisticsService.getSellerStatistics()
+
         setStats(prev => ({
           ...prev,
-          totalRevenue: walletData.availableBalance || 0
+          totalRevenue: statistics.totalRevenue || 0,
+          estimatedRevenue: statistics.estimatedRevenue || 0,
+          totalOrders: statistics.totalOrders || 0,
+          totalCommission: statistics.totalCommission || 0,
+          totalNetIncome: statistics.totalNetIncome || 0,
         }));
       } catch (err) {
-        console.error('Error fetching wallet balance:', err);
+        console.error('Error fetching dashboard stats:', err);
       }
     }
     fetchDashboardData();
   }, [statusFilter])
+
 
   const handleDeleteProduct = async (productId) => {
     if (!window.confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')) {
@@ -162,11 +170,18 @@ export default function BusinessDashboard() {
       bgColor: 'bg-amber-500/10',
     },
     {
-      title: 'Khách hàng',
-      value: stats.totalCustomers,
-      icon: HiOutlineUsers,
-      color: 'bg-purple-500',
-      bgColor: 'bg-purple-500/10',
+      title: 'Phí hoa hồng',
+      value: formatCurrency(stats.totalCommission),
+      icon: HiOutlineChartBar,
+      color: 'bg-rose-500',
+      bgColor: 'bg-rose-500/10',
+    },
+    {
+      title: 'Thu nhập ròng',
+      value: formatCurrency(stats.totalNetIncome),
+      icon: HiOutlineCurrencyDollar,
+      color: 'bg-emerald-500',
+      bgColor: 'bg-emerald-500/10',
     },
   ]
 
@@ -190,7 +205,7 @@ export default function BusinessDashboard() {
       </div>
 
       {/* Stats Grid */}
-      <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {statCards.map((stat, index) => {
           const Icon = stat.icon
           return (
@@ -207,27 +222,29 @@ export default function BusinessDashboard() {
               )}
             >
               <div className="flex items-center justify-between">
-                <div>
+                <div className="min-w-0 flex-1">
                   <p
                     className={cn(
-                      'text-sm font-medium',
+                      'text-sm font-medium truncate',
                       isDark ? 'text-slate-400' : 'text-stone-600',
                     )}
+                    title={stat.title}
                   >
                     {stat.title}
                   </p>
                   <p
                     className={cn(
-                      'mt-2 text-2xl font-bold',
+                      'mt-2 text-xl font-bold sm:text-2xl',
                       isDark ? 'text-white' : 'text-stone-900',
                     )}
+                    title={stat.value}
                   >
                     {stat.value}
                   </p>
                 </div>
                 <div
                   className={cn(
-                    'flex h-12 w-12 items-center justify-center rounded-xl',
+                    'ml-4 flex h-12 w-12 shrink-0 items-center justify-center rounded-xl',
                     stat.bgColor,
                   )}
                 >

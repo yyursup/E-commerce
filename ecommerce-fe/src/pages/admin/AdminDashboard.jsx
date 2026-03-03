@@ -212,246 +212,248 @@ export default function AdminDashboard() {
         </div>
 
         <div className="space-y-6">
-            {/* Stats Grid */}
-          <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          {statCards.map((stat, index) => {
-            const Icon = stat.icon
-            return (
-              <motion.div
-                key={stat.title}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                className={cn(
-                  'rounded-xl border p-6',
-                  isDark
-                    ? 'border-slate-700 bg-slate-900'
-                    : 'border-stone-200 bg-white',
-                )}
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p
+          {/* Stats Grid */}
+          <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {statCards.map((stat, index) => {
+              const Icon = stat.icon
+              return (
+                <motion.div
+                  key={stat.title}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  className={cn(
+                    'rounded-xl border p-6',
+                    isDark
+                      ? 'border-slate-700 bg-slate-900'
+                      : 'border-stone-200 bg-white',
+                  )}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="min-w-0 flex-1">
+                      <p
+                        className={cn(
+                          'text-sm font-medium truncate',
+                          isDark ? 'text-slate-400' : 'text-stone-600',
+                        )}
+                        title={stat.title}
+                      >
+                        {stat.title}
+                      </p>
+                      <p
+                        className={cn(
+                          'mt-2 text-xl font-bold sm:text-2xl',
+                          isDark ? 'text-white' : 'text-stone-900',
+                        )}
+                        title={stat.value}
+                      >
+                        {stat.value}
+                      </p>
+                    </div>
+                    <div
                       className={cn(
-                        'text-sm font-medium',
-                        isDark ? 'text-slate-400' : 'text-stone-600',
+                        'ml-4 flex h-12 w-12 shrink-0 items-center justify-center rounded-xl',
+                        stat.bgColor,
                       )}
                     >
-                      {stat.title}
-                    </p>
-                    <p
-                      className={cn(
-                        'mt-2 text-2xl font-bold',
-                        isDark ? 'text-white' : 'text-stone-900',
-                      )}
-                    >
-                      {stat.value}
-                    </p>
+                      <Icon className={cn('h-6 w-6', stat.color)} />
+                    </div>
                   </div>
-                  <div
-                    className={cn(
-                      'flex h-12 w-12 items-center justify-center rounded-xl',
-                      stat.bgColor,
-                    )}
-                  >
-                    <Icon className={cn('h-6 w-6', stat.color)} />
-                  </div>
-                </div>
-              </motion.div>
-            )
-          })}
+                </motion.div>
+              )
+            })}
           </div>
 
           {/* Users Management Section */}
           <div
-          className={cn(
-            'rounded-xl border',
-            isDark ? 'border-slate-700 bg-slate-900' : 'border-stone-200 bg-white',
-          )}
-        >
-          <div className="border-b p-6">
-            <h2
-              className={cn(
-                'text-xl font-semibold',
-                isDark ? 'text-white' : 'text-stone-900',
-              )}
-            >
-              Quản lý người dùng
-            </h2>
-          </div>
-
-          {loading && (
-            <div className="p-12 text-center">
-              <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent"></div>
-              <p
+            className={cn(
+              'rounded-xl border',
+              isDark ? 'border-slate-700 bg-slate-900' : 'border-stone-200 bg-white',
+            )}
+          >
+            <div className="border-b p-6">
+              <h2
                 className={cn(
-                  'mt-4 text-sm',
-                  isDark ? 'text-slate-400' : 'text-stone-600',
+                  'text-xl font-semibold',
+                  isDark ? 'text-white' : 'text-stone-900',
                 )}
               >
-                Đang tải danh sách người dùng...
-              </p>
+                Quản lý người dùng
+              </h2>
             </div>
-          )}
 
-          {error && !loading && (
-            <div className="p-12 text-center">
-              <p
-                className={cn(
-                  'text-sm text-red-500',
-                  isDark ? 'text-red-400' : 'text-red-600',
-                )}
-              >
-                {error}
-              </p>
-              <button
-                onClick={() => window.location.reload()}
-                className={cn(
-                  'mt-4 rounded-lg px-4 py-2 text-sm font-medium transition-colors',
-                  'bg-amber-500 text-white hover:bg-amber-600',
-                )}
-              >
-                Thử lại
-              </button>
-            </div>
-          )}
+            {loading && (
+              <div className="p-12 text-center">
+                <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent"></div>
+                <p
+                  className={cn(
+                    'mt-4 text-sm',
+                    isDark ? 'text-slate-400' : 'text-stone-600',
+                  )}
+                >
+                  Đang tải danh sách người dùng...
+                </p>
+              </div>
+            )}
 
-          {!loading && !error && (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr
-                    className={cn(
-                      'border-b',
-                      isDark ? 'border-slate-700' : 'border-stone-200',
-                    )}
-                  >
-                    <th
+            {error && !loading && (
+              <div className="p-12 text-center">
+                <p
+                  className={cn(
+                    'text-sm text-red-500',
+                    isDark ? 'text-red-400' : 'text-red-600',
+                  )}
+                >
+                  {error}
+                </p>
+                <button
+                  onClick={() => window.location.reload()}
+                  className={cn(
+                    'mt-4 rounded-lg px-4 py-2 text-sm font-medium transition-colors',
+                    'bg-amber-500 text-white hover:bg-amber-600',
+                  )}
+                >
+                  Thử lại
+                </button>
+              </div>
+            )}
+
+            {!loading && !error && (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr
                       className={cn(
-                        'px-6 py-3 text-left text-xs font-medium uppercase tracking-wider',
-                        isDark ? 'text-slate-400' : 'text-stone-600',
+                        'border-b',
+                        isDark ? 'border-slate-700' : 'border-stone-200',
                       )}
                     >
-                      Email
-                    </th>
-                    <th
-                      className={cn(
-                        'px-6 py-3 text-left text-xs font-medium uppercase tracking-wider',
-                        isDark ? 'text-slate-400' : 'text-stone-600',
-                      )}
-                    >
-                      Vai trò
-                    </th>
-                    <th
-                      className={cn(
-                        'px-6 py-3 text-left text-xs font-medium uppercase tracking-wider',
-                        isDark ? 'text-slate-400' : 'text-stone-600',
-                      )}
-                    >
-                      Trạng thái
-                    </th>
-                    <th
-                      className={cn(
-                        'px-6 py-3 text-right text-xs font-medium uppercase tracking-wider',
-                        isDark ? 'text-slate-400' : 'text-stone-600',
-                      )}
-                    >
-                      Thao tác
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {users.map((user) => (
-                  <tr
-                    key={user.id}
-                    className={cn(
-                      isDark
-                        ? 'border-slate-700 hover:bg-slate-800'
-                        : 'border-stone-200 hover:bg-stone-50',
-                    )}
-                  >
-                    <td className="whitespace-nowrap px-6 py-4">
-                      <p
+                      <th
                         className={cn(
-                          'font-medium',
-                          isDark ? 'text-white' : 'text-stone-900',
+                          'px-6 py-3 text-left text-xs font-medium uppercase tracking-wider',
+                          isDark ? 'text-slate-400' : 'text-stone-600',
                         )}
                       >
-                        {user.email}
-                      </p>
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4">
-                      <span
+                        Email
+                      </th>
+                      <th
                         className={cn(
-                          'inline-flex rounded-full px-2 py-1 text-xs font-medium',
-                          getRoleBadgeColor(user.role),
+                          'px-6 py-3 text-left text-xs font-medium uppercase tracking-wider',
+                          isDark ? 'text-slate-400' : 'text-stone-600',
                         )}
                       >
-                        {user.role}
-                      </span>
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4">
-                      <span
+                        Vai trò
+                      </th>
+                      <th
                         className={cn(
-                          'inline-flex rounded-full px-2 py-1 text-xs font-medium',
-                          getStatusBadgeColor(user.status),
+                          'px-6 py-3 text-left text-xs font-medium uppercase tracking-wider',
+                          isDark ? 'text-slate-400' : 'text-stone-600',
                         )}
                       >
-                        {user.status === 'active' ? 'Hoạt động' : 'Không hoạt động'}
-                      </span>
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
-                      <div className="flex items-center justify-end gap-2">
-                        {user.status === 'active' ? (
-                          <button
+                        Trạng thái
+                      </th>
+                      <th
+                        className={cn(
+                          'px-6 py-3 text-right text-xs font-medium uppercase tracking-wider',
+                          isDark ? 'text-slate-400' : 'text-stone-600',
+                        )}
+                      >
+                        Thao tác
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {users.map((user) => (
+                      <tr
+                        key={user.id}
+                        className={cn(
+                          isDark
+                            ? 'border-slate-700 hover:bg-slate-800'
+                            : 'border-stone-200 hover:bg-stone-50',
+                        )}
+                      >
+                        <td className="whitespace-nowrap px-6 py-4">
+                          <p
                             className={cn(
-                              'flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors',
-                              'bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50',
+                              'font-medium',
+                              isDark ? 'text-white' : 'text-stone-900',
                             )}
-                            onClick={() => toast.success('Đã vô hiệu hóa người dùng')}
                           >
-                            <HiOutlineBan className="h-4 w-4" />
-                            Vô hiệu hóa
-                          </button>
-                        ) : (
-                          <button
+                            {user.email}
+                          </p>
+                        </td>
+                        <td className="whitespace-nowrap px-6 py-4">
+                          <span
                             className={cn(
-                              'flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors',
-                              'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50',
+                              'inline-flex rounded-full px-2 py-1 text-xs font-medium',
+                              getRoleBadgeColor(user.role),
                             )}
-                            onClick={() => toast.success('Đã kích hoạt người dùng')}
                           >
-                            <HiOutlineCheckCircle className="h-4 w-4" />
-                            Kích hoạt
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                            {user.role}
+                          </span>
+                        </td>
+                        <td className="whitespace-nowrap px-6 py-4">
+                          <span
+                            className={cn(
+                              'inline-flex rounded-full px-2 py-1 text-xs font-medium',
+                              getStatusBadgeColor(user.status),
+                            )}
+                          >
+                            {user.status === 'active' ? 'Hoạt động' : 'Không hoạt động'}
+                          </span>
+                        </td>
+                        <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
+                          <div className="flex items-center justify-end gap-2">
+                            {user.status === 'active' ? (
+                              <button
+                                className={cn(
+                                  'flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors',
+                                  'bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50',
+                                )}
+                                onClick={() => toast.success('Đã vô hiệu hóa người dùng')}
+                              >
+                                <HiOutlineBan className="h-4 w-4" />
+                                Vô hiệu hóa
+                              </button>
+                            ) : (
+                              <button
+                                className={cn(
+                                  'flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors',
+                                  'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50',
+                                )}
+                                onClick={() => toast.success('Đã kích hoạt người dùng')}
+                              >
+                                <HiOutlineCheckCircle className="h-4 w-4" />
+                                Kích hoạt
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
 
-          {!loading && !error && users.length === 0 && (
-            <div className="p-12 text-center">
-              <HiOutlineUsers
-                className={cn(
-                  'mx-auto h-12 w-12',
-                  isDark ? 'text-slate-600' : 'text-stone-400',
-                )}
-              />
-              <p
-                className={cn(
-                  'mt-4 text-sm',
-                  isDark ? 'text-slate-400' : 'text-stone-600',
-                )}
-              >
-                Chưa có người dùng nào.
-              </p>
-            </div>
-          )}
+            {!loading && !error && users.length === 0 && (
+              <div className="p-12 text-center">
+                <HiOutlineUsers
+                  className={cn(
+                    'mx-auto h-12 w-12',
+                    isDark ? 'text-slate-600' : 'text-stone-400',
+                  )}
+                />
+                <p
+                  className={cn(
+                    'mt-4 text-sm',
+                    isDark ? 'text-slate-400' : 'text-stone-600',
+                  )}
+                >
+                  Chưa có người dùng nào.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Platform Settings Section */}

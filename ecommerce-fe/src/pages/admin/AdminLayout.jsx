@@ -7,6 +7,7 @@ import {
   HiOutlineSearch,
   HiOutlineLogout,
   HiOutlineUserCircle,
+  HiOutlineChartBar,
 } from 'react-icons/hi'
 import { useAuthStore } from '../../store/useAuthStore'
 import { useThemeStore } from '../../store/useThemeStore'
@@ -18,6 +19,7 @@ const navItems = [
   { to: '/admin/orders', label: 'Orders', icon: HiOutlineShoppingBag },
   { to: '/admin/escrows', label: 'Escrows', icon: HiOutlineCurrencyDollar },
   { to: '/admin/wallets', label: 'Wallet Lookup', icon: HiOutlineSearch },
+  { to: '/admin/commissions', label: 'Hoa hồng', icon: HiOutlineChartBar },
 ]
 
 export default function AdminLayout() {

@@ -19,6 +19,7 @@ import AdminOrders from './pages/admin/AdminOrders'
 import AdminOrderDetail from './pages/admin/AdminOrderDetail'
 import AdminEscrows from './pages/admin/AdminEscrows'
 import AdminWalletLookup from './pages/admin/AdminWalletLookup'
+import AdminCommissions from './pages/admin/AdminCommissions'
 import BusinessLayout from './pages/business/BusinessLayout'
 import BusinessDashboard from './pages/business/BusinessDashboard'
 import Checkout from './pages/Checkout'
@@ -166,6 +167,7 @@ export default function App() {
           <Route path="orders/:orderId" element={<AdminOrderDetail />} />
           <Route path="escrows" element={<AdminEscrows />} />
           <Route path="wallets" element={<AdminWalletLookup />} />
+          <Route path="commissions" element={<AdminCommissions />} />
         </Route>
       </Route>
     </Routes >

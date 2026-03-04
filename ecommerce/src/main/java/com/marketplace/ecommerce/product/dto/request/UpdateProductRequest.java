@@ -1,9 +1,7 @@
 package com.marketplace.ecommerce.product.dto.request;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.Digits;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -29,6 +27,10 @@ public class UpdateProductRequest {
     @DecimalMin(value = "0.0", inclusive = false, message = "Base price must be greater than 0")
     @Digits(integer = 10, fraction = 2, message = "Base price format is invalid")
     private BigDecimal basePrice;
+
+    @NotNull(message = "Stock quantity must not be null")
+    @Min(value = 0, message = "Stock quantity must be greater than or equal to 0")
+    private Integer stockQuantity;
 
     private String status;
 

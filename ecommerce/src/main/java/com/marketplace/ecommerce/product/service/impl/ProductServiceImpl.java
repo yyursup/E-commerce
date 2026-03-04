@@ -122,6 +122,9 @@ public class ProductServiceImpl implements ProductService {
         if (req.getBasePrice() != null) {
             product.setBasePrice(req.getBasePrice());
         }
+        if( req.getStockQuantity() != null){
+            product.setQuantity(req.getStockQuantity());
+        }
         product.setUpdatedAt(LocalDateTime.now());
     }
 

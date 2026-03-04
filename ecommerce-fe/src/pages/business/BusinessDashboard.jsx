@@ -179,7 +179,7 @@ export default function BusinessDashboard() {
       bgColor: 'bg-rose-500/10',
     },
     {
-      title: 'Thu nhập ròng',
+      title: 'Doanh thu ước tính',
       value: formatCurrency(stats.estimatedRevenue),
       icon: HiOutlineCurrencyDollar,
       color: 'bg-emerald-500',

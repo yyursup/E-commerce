@@ -40,10 +40,7 @@ public class CommissionServiceImpl implements CommissionService {
     @Override
     @Transactional(readOnly = true)
     public List<CommissionResponse> getCommissions(CommissionFilterRequest filter) {
-        // Sắp mới nhất trước theo ngày + giờ (createdAt là LocalDateTime)
-        Sort newestFirst = Sort.by(Sort.Direction.DESC, "createdAt");
-        List<Commission> commissions = commissionRepository.findAll(
-                CommissionSpecification.filter(filter), newestFirst);
+        List<Commission> commissions = commissionRepository.findAll(CommissionSpecification.filter(filter));
 
         Set<UUID> sellerIds = commissions.stream()
                 .map(Commission::getSellerId)

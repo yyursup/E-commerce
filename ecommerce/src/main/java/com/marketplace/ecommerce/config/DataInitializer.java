@@ -297,8 +297,23 @@ public class DataInitializer implements CommandLineRunner {
             initializeOrderItem(order6, product14, 1, product14.getBasePrice());
 
 
-            initializeCommission(order5);
-            initializeCommission(order6);
+            Commission commission5 = initializeCommission(order5);
+            Commission commission6 = initializeCommission(order6);
+            // Đồng bộ commission lên đơn hàng để dữ liệu hợp lý
+            if (commission5 != null) {
+                order5.setPlatformCommission(commission5.getTotalCommission());
+                if (!commission5.getItems().isEmpty()) {
+                    order5.setCommissionRate(commission5.getItems().get(0).getCommissionRate().doubleValue());
+                }
+                orderRepository.save(order5);
+            }
+            if (commission6 != null) {
+                order6.setPlatformCommission(commission6.getTotalCommission());
+                if (!commission6.getItems().isEmpty()) {
+                    order6.setCommissionRate(commission6.getItems().get(0).getCommissionRate().doubleValue());
+                }
+                orderRepository.save(order6);
+            }
         }
 
         // Initialize Requests (để demo Admin approve/reject)
@@ -612,6 +627,17 @@ public class DataInitializer implements CommandLineRunner {
         order.setCreatedAt(createdAt);
         order.setUpdatedAt(createdAt);
 
+        // Cập nhật trạng thái hợp lý theo status
+        boolean pastPayment = status != OrderStatus.PENDING_PAYMENT && status != OrderStatus.CANCELLED && status != OrderStatus.REFUNDED;
+        order.setStockDeducted(pastPayment);
+        if (status == OrderStatus.DELIVERED || status == OrderStatus.COMPLETED) {
+            order.setDeliveredAt(createdAt);
+        }
+        if (status == OrderStatus.COMPLETED) {
+            order.setReceivedByBuyer(true);
+            order.setReceivedAt(createdAt);
+        }
+
         Order saved = orderRepository.save(order);
         log.info("Created order: {} with status: {}", orderNumber, status);
         return saved;
@@ -699,7 +725,9 @@ public class DataInitializer implements CommandLineRunner {
                         throw new IllegalStateException("Order items not found for order: " + order.getOrderNumber());
                     }
 
-                    BigDecimal commissionRate = new BigDecimal("5.00");
+                    BigDecimal commissionRate = platformSettingRepository.findByKey(PlatformConstant.KEY_COMMISSION_RATE)
+                            .map(s -> new BigDecimal(s.getValue() != null ? s.getValue().trim() : "10"))
+                            .orElse(new BigDecimal("10"));
                     BigDecimal orderAmount = order.getSubtotal() == null ? BigDecimal.ZERO : order.getSubtotal();
 
                     Commission commission = Commission.builder()

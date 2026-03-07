@@ -253,11 +253,13 @@ public class DataInitializer implements CommandLineRunner {
         // Initialize Platform Settings
         initializePlatformSetting(PlatformConstant.KEY_COMMISSION_RATE, "10");
 
-        // Initialize Orders (để demo quản lý đơn hàng)
+        // Initialize Orders (để demo quản lý đơn hàng) — chỉ chạy nếu chưa có seed orders (tránh tạo lại mỗi lần restart)
         UserAddress customerAddress1 = userAddressRepository.findAllByUserIdAndDeletedFalseOrderByIsDefaultDescIdDesc(customerUser1.getId())
                 .stream().findFirst().orElse(null);
 
-        if (customerAddress1 != null) {
+        int existingOrderCount = orderRepository.findByUserIdOrderByCreatedAtDesc(customerUser1.getId()).size();
+        final int seedOrderCount = 6;
+        if (customerAddress1 != null && existingOrderCount < seedOrderCount) {
             // Order 1: PENDING_PAYMENT (chờ thanh toán)
             Order order1 = initializeOrder(customerUser1, shop1, customerAddress1,
                     OrderStatus.PENDING_PAYMENT, "Giao hàng vào buổi sáng",
@@ -314,19 +316,27 @@ public class DataInitializer implements CommandLineRunner {
                 }
                 orderRepository.save(order6);
             }
+        } else if (customerAddress1 != null && existingOrderCount >= seedOrderCount) {
+            log.debug("Skip seed orders: user already has {} orders (threshold {})", existingOrderCount, seedOrderCount);
         }
 
-        // Initialize Requests (để demo Admin approve/reject)
-        initializeRequest(customerAccount2, RequestType.SELLER_REGISTRATION,
-                RequestStatus.PENDING, "Tôi muốn đăng ký làm người bán để bán các sản phẩm công nghệ", null, null, null);
+        // Initialize Requests (để demo Admin approve/reject) — chỉ chạy nếu chưa có request nào (tránh tạo lại mỗi lần restart)
+        long existingRequestCount = requestRepository.count();
+        final int seedRequestCount = 3;
+        if (existingRequestCount < seedRequestCount) {
+            initializeRequest(customerAccount2, RequestType.SELLER_REGISTRATION,
+                    RequestStatus.PENDING, "Tôi muốn đăng ký làm người bán để bán các sản phẩm công nghệ", null, null, null);
 
-        initializeRequest(customerAccount1, RequestType.SELLER_REGISTRATION,
-                RequestStatus.APPROVED, "Đã được duyệt thành công",
-                adminAccount, LocalDateTime.now().minusDays(5), "Yêu cầu hợp lệ, đã duyệt");
+            initializeRequest(customerAccount1, RequestType.SELLER_REGISTRATION,
+                    RequestStatus.APPROVED, "Đã được duyệt thành công",
+                    adminAccount, LocalDateTime.now().minusDays(5), "Yêu cầu hợp lệ, đã duyệt");
 
-        initializeRequest(customerAccount2, RequestType.SELLER_REGISTRATION,
-                RequestStatus.REJECTED, "Yêu cầu bị từ chối",
-                adminAccount, LocalDateTime.now().minusDays(10), "Thiếu thông tin giấy phép kinh doanh");
+            initializeRequest(customerAccount2, RequestType.SELLER_REGISTRATION,
+                    RequestStatus.REJECTED, "Yêu cầu bị từ chối",
+                    adminAccount, LocalDateTime.now().minusDays(10), "Thiếu thông tin giấy phép kinh doanh");
+        } else {
+            log.debug("Skip seed requests: already {} requests (threshold {})", existingRequestCount, seedRequestCount);
+        }
 
         // Initialize Wallet for customer2
         initializeUserWallet(customerUser2);

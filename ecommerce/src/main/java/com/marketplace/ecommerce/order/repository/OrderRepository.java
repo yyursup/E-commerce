@@ -38,7 +38,8 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
 
     Optional<Order> findByGhnOrderCode(String ghnOrderCode);
 
-    List<Order> getOrdersByShop(Shop shop);
+    @Query("SELECT o FROM Order o WHERE o.shop = :shop ORDER BY o.createdAt DESC")
+    List<Order> getOrdersByShop(@Param("shop") Shop shop);
 
     @Query("""
         select o.id

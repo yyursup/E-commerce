@@ -19,6 +19,7 @@ import com.marketplace.ecommerce.platform.service.CommissionSpecification;
 import com.marketplace.ecommerce.platform.service.PlatformSettingService;
 import com.marketplace.ecommerce.request.entity.Seller;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,7 +40,10 @@ public class CommissionServiceImpl implements CommissionService {
     @Override
     @Transactional(readOnly = true)
     public List<CommissionResponse> getCommissions(CommissionFilterRequest filter) {
-        List<Commission> commissions = commissionRepository.findAll(CommissionSpecification.filter(filter));
+        // Sắp mới nhất trước theo ngày + giờ (createdAt là LocalDateTime)
+        Sort newestFirst = Sort.by(Sort.Direction.DESC, "createdAt");
+        List<Commission> commissions = commissionRepository.findAll(
+                CommissionSpecification.filter(filter), newestFirst);
 
         Set<UUID> sellerIds = commissions.stream()
                 .map(Commission::getSellerId)

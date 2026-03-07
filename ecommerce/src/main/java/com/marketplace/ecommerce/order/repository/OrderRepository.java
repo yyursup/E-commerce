@@ -38,7 +38,8 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
 
     Optional<Order> findByGhnOrderCode(String ghnOrderCode);
 
-    List<Order> getOrdersByShop(Shop shop);
+    @Query("SELECT o FROM Order o WHERE o.shop = :shop ORDER BY o.createdAt DESC")
+    List<Order> getOrdersByShop(@Param("shop") Shop shop);
 
     @Query("""
         select o.id
@@ -57,8 +58,9 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
     @Query("select o from Order o where o.id = :id")
     Optional<Order> findByIdForUpdate(@Param("id") UUID id);
 
+    /** Doanh thu ước tính: tổng tiền hàng (subtotal), không bao gồm phí ship (bên thứ 3). */
     @Query("""
-    SELECT COALESCE(SUM(o.total), 0)
+    SELECT COALESCE(SUM(o.subtotal), 0)
     FROM Order o
     WHERE o.shop.id = :shopId
       AND o.status IN :statuses
@@ -68,15 +70,16 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
             @Param("statuses") List<OrderStatus> statuses
     );
 
+    /** Doanh thu từ đơn đã giao/hoàn thành: tổng tiền hàng (subtotal), không bao gồm phí ship. */
     @Query("""
-    SELECT COALESCE(SUM(o.total), 0)
+    SELECT COALESCE(SUM(o.subtotal), 0)
     FROM Order o
     WHERE o.shop.id = :shopId
-      AND o.status = :status
+      AND o.status IN :revenueStatuses
       AND o.deliveredAt IS NOT NULL
-""")
+    """)
     BigDecimal getRevenueByShop(
             @Param("shopId") UUID shopId,
-            @Param("status") OrderStatus status
+            @Param("revenueStatuses") List<OrderStatus> revenueStatuses
     );
 }

@@ -60,7 +60,7 @@ public class RequestController {
     @GetMapping
     public Page<CreateRequestResponse> getRequests(
             @CurrentUser CurrentUserInfo u,
-            Pageable pageable
+            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         return requestService.getRequests(u.getAccountId(), pageable);
     }

@@ -70,6 +70,18 @@ function formatDate(dateStr) {
     return new Intl.DateTimeFormat('vi-VN').format(new Date(dateStr))
 }
 
+/** Ngày + giờ (danh sách hoa hồng sắp theo mới nhất trước, có cả giờ) */
+function formatDateTime(dateStr) {
+    if (!dateStr) return '—'
+    return new Intl.DateTimeFormat('vi-VN', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+    }).format(new Date(dateStr))
+}
+
 // --- Status Badge ---
 function StatusBadge({ status }) {
     const map = {
@@ -494,7 +506,7 @@ export default function AdminCommissions() {
                         <table className="w-full">
                             <thead>
                                 <tr className={cn('border-b text-left', isDark ? 'border-slate-700' : 'border-stone-200')}>
-                                    {['Order ID', 'Người bán', 'Giá trị đơn', 'Hoa hồng', 'Tỷ lệ', 'Ngày tạo'].map((col) => (
+                                    {['Order ID', 'Người bán', 'Giá trị đơn', 'Hoa hồng', 'Tỷ lệ', 'Ngày giờ tạo'].map((col) => (
                                         <th
                                             key={col}
                                             className={cn(
@@ -529,7 +541,7 @@ export default function AdminCommissions() {
                                         </td>
                                         <td className="px-5 py-3">
                                             <span className="text-sm font-semibold text-amber-500">
-                                                {formatCurrency(c.totalCommission)}
+                                                {formatCurrency(c.commissionAmount ?? c.totalCommission)}
                                             </span>
                                         </td>
                                         <td className="px-5 py-3">
@@ -539,12 +551,12 @@ export default function AdminCommissions() {
                                                     isDark ? 'bg-blue-500/20 text-blue-300' : 'bg-blue-100 text-blue-700',
                                                 )}
                                             >
-                                                {c.commissionRate ?? '—'}%
+                                                {c.commissionRate != null ? `${Number(c.commissionRate)}%` : '—'}
                                             </span>
                                         </td>
                                         <td className="px-5 py-3">
-                                            <span className={cn('text-sm', isDark ? 'text-slate-400' : 'text-stone-500')}>
-                                                {formatDate(c.createdAt)}
+                                            <span className={cn('text-sm', isDark ? 'text-slate-400' : 'text-stone-500')} title={c.createdAt}>
+                                                {formatDateTime(c.createdAt)}
                                             </span>
                                         </td>
                                     </tr>

@@ -36,7 +36,8 @@ public class QueryOrderServiceImpl implements QueryOrderService {
         Shop shop = shopRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new CustomException("Shop not found."));
 
-        BigDecimal revenue = orderRepository.getRevenueByShop(shop.getId(), OrderStatus.DELIVERED);
+        List<OrderStatus> revenueStatuses = List.of(OrderStatus.DELIVERED, OrderStatus.COMPLETED);
+        BigDecimal revenue = orderRepository.getRevenueByShop(shop.getId(), revenueStatuses);
         List<OrderStatus> estimatedStatuses = List.of(
                 OrderStatus.CONFIRMED,
                 OrderStatus.PROCESSING,

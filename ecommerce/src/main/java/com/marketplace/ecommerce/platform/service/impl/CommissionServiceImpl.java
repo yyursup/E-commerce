@@ -16,8 +16,10 @@ import com.marketplace.ecommerce.platform.entity.CommissionItem;
 import com.marketplace.ecommerce.platform.repository.CommissionRepository;
 import com.marketplace.ecommerce.platform.service.CommissionService;
 import com.marketplace.ecommerce.platform.service.CommissionSpecification;
+import com.marketplace.ecommerce.platform.service.PlatformSettingService;
 import com.marketplace.ecommerce.request.entity.Seller;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,11 +32,10 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class CommissionServiceImpl implements CommissionService {
 
-    private static final BigDecimal DEFAULT_COMMISSION_RATE = new BigDecimal("5.00");
-
     private final CommissionRepository commissionRepository;
     private final UserRepository userRepository;
     private final OrderRepository orderRepository;
+    private final PlatformSettingService platformSettingService;
 
     @Override
     @Transactional(readOnly = true)
@@ -88,6 +89,8 @@ public class CommissionServiceImpl implements CommissionService {
         }
 
         BigDecimal orderAmount = order.getSubtotal() == null ? BigDecimal.ZERO : order.getSubtotal();
+        // Tỷ lệ hoa hồng theo thời điểm tạo đơn (đã lưu trên Order), không theo tỷ lệ hiện tại
+        BigDecimal commissionRate = getCommissionRateAtOrderTime(order);
 
         Commission commission = Commission.builder()
                 .orderId(order.getId())
@@ -105,7 +108,7 @@ public class CommissionServiceImpl implements CommissionService {
 
             BigDecimal lineAmount = unitPrice.multiply(BigDecimal.valueOf(quantity));
             BigDecimal commissionAmount = lineAmount
-                    .multiply(DEFAULT_COMMISSION_RATE)
+                    .multiply(commissionRate)
                     .divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
 
             CommissionItem item = CommissionItem.builder()
@@ -114,7 +117,7 @@ public class CommissionServiceImpl implements CommissionService {
                     .productName(orderItem.getProductName())
                     .unitPrice(unitPrice)
                     .quantity(quantity)
-                    .commissionRate(DEFAULT_COMMISSION_RATE)
+                    .commissionRate(commissionRate)
                     .commissionAmount(commissionAmount)
                     .build();
 
@@ -156,6 +159,21 @@ public class CommissionServiceImpl implements CommissionService {
                 .orElseThrow(() -> new RuntimeException("can not find seller"));
         BigDecimal result = commissionRepository.getTotalNetIncomeBySeller(seller.getId());
         return result == null ? BigDecimal.ZERO : result;
+    }
+
+    /**
+     * Tỷ lệ hoa hồng theo thời điểm tạo đơn (đã lưu trên Order khi đặt hàng).
+     * Nếu đơn cũ chưa có rate thì lấy từ platform setting hiện tại. Không hardcode.
+     */
+    private BigDecimal getCommissionRateAtOrderTime(Order order) {
+        if (order.getCommissionRate() != null && order.getCommissionRate() >= 0) {
+            return BigDecimal.valueOf(order.getCommissionRate());
+        }
+        BigDecimal fromSetting = platformSettingService.getCommissionRate();
+        if (fromSetting != null && fromSetting.compareTo(BigDecimal.ZERO) >= 0) {
+            return fromSetting;
+        }
+        return BigDecimal.ZERO;
     }
 
     private BigDecimal extractUnitPrice(OrderItem orderItem) {

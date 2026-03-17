@@ -213,7 +213,7 @@ export default function AdminDashboard() {
 
         <div className="space-y-6">
           {/* Stats Grid */}
-          <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
             {statCards.map((stat, index) => {
               const Icon = stat.icon
               return (
@@ -229,30 +229,30 @@ export default function AdminDashboard() {
                       : 'border-stone-200 bg-white',
                   )}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between">
+                    <div className="min-w-0">
                       <p
                         className={cn(
-                          'text-sm font-medium truncate',
-                          isDark ? 'text-slate-400' : 'text-stone-600',
+                          'text-sm font-medium uppercase tracking-wider',
+                          isDark ? 'text-slate-400' : 'text-stone-500',
                         )}
-                        title={stat.title}
                       >
                         {stat.title}
                       </p>
-                      <p
-                        className={cn(
-                          'mt-2 text-xl font-bold sm:text-2xl',
-                          isDark ? 'text-white' : 'text-stone-900',
-                        )}
-                        title={stat.value}
-                      >
-                        {stat.value}
-                      </p>
+                      <div className="mt-4 flex items-baseline">
+                        <p
+                          className={cn(
+                            'text-2xl font-bold tracking-tight sm:text-3xl',
+                            isDark ? 'text-white' : 'text-stone-900',
+                          )}
+                        >
+                          {stat.value}
+                        </p>
+                      </div>
                     </div>
                     <div
                       className={cn(
-                        'ml-4 flex h-12 w-12 shrink-0 items-center justify-center rounded-xl',
+                        'flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-sm',
                         stat.bgColor,
                       )}
                     >

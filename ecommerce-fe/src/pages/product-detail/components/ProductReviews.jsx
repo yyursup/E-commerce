@@ -43,8 +43,9 @@ export default function ProductReviews({ productId }) {
         return <div className="py-10 text-center">Đang tải đánh giá...</div>;
     }
 
-    const averageRating = stats?.averageRating?.toFixed(1) || '0.0';
-    const totalReviews = stats?.totalReviews || 0;
+    const avgRatingNum = Number(stats?.avgRating ?? 0);
+    const averageRating = avgRatingNum.toFixed(1);
+    const totalReviews = stats?.totalReviews ?? 0;
 
     return (
         <div className="mt-12 space-y-8">
@@ -61,7 +62,7 @@ export default function ProductReviews({ productId }) {
                     <span className="text-5xl font-bold text-amber-500">{averageRating}</span>
                     <div className="mt-2 flex">
                         {[1, 2, 3, 4, 5].map((s) => (
-                            <HiStar key={s} className={cn('h-5 w-5', s <= Math.round(averageRating) ? 'text-amber-400' : 'text-stone-300 dark:text-slate-600')} />
+                            <HiStar key={s} className={cn('h-5 w-5', s <= Math.round(avgRatingNum) ? 'text-amber-400' : 'text-stone-300 dark:text-slate-600')} />
                         ))}
                     </div>
                     <span className={cn('mt-2 text-sm', isDark ? 'text-slate-400' : 'text-stone-500')}>

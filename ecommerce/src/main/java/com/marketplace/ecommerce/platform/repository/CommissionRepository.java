@@ -68,4 +68,16 @@ public interface CommissionRepository extends
         WHERE c.sellerId = :sellerId
     """)
     BigDecimal getTotalNetIncomeBySeller(UUID sellerId);
+
+    @Query("""
+    SELECT
+        p.productCategory.id,
+        p.productCategory.name,
+        SUM(ci.commissionAmount)
+    FROM CommissionItem ci
+    JOIN OrderItem oi ON oi.id = ci.orderItemId
+    JOIN oi.product p
+    GROUP BY p.productCategory.id, p.productCategory.name
+""")
+    List<Object[]> getCommissionByCategory();
 }

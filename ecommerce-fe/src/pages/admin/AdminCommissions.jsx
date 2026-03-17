@@ -9,11 +9,13 @@ import {
     HiOutlineSearch,
     HiOutlineRefresh,
     HiOutlineStar,
+    HiOutlineViewGrid,
 } from 'react-icons/hi'
 import { useThemeStore } from '../../store/useThemeStore'
 import { cn } from '../../lib/cn'
 import toast from 'react-hot-toast'
 import commissionService from '../../services/commission'
+import HorizontalRankingChart from './components/analytics/HorizontalRankingChart'
 
 // --- Simple Bar Chart Component (no external lib needed) ---
 function BarChart({ data, isDark }) {
@@ -22,26 +24,33 @@ function BarChart({ data, isDark }) {
     const maxVal = Math.max(...data.map((d) => Number(d.totalCommission || 0)), 1)
 
     return (
-        <div className="flex h-48 items-end gap-1.5 overflow-x-auto pb-2">
+        <div className="flex h-48 items-stretch gap-1.5 overflow-x-auto pb-2">
             {data.map((item, idx) => {
                 const height = (Number(item.totalCommission || 0) / maxVal) * 100
                 const label = `T${item.month}/${String(item.year).slice(-2)}`
                 return (
-                    <div key={idx} className="group relative flex flex-1 min-w-[32px] flex-col items-center justify-end gap-1">
+                    <div key={idx} className="group relative flex h-full min-w-[40px] flex-1 flex-col items-center justify-end gap-2">
                         {/* Tooltip */}
                         <div
                             className={cn(
-                                'pointer-events-none absolute bottom-full mb-1 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg px-2 py-1 text-xs opacity-0 shadow-lg transition-opacity group-hover:opacity-100 z-10',
+                                'pointer-events-none absolute bottom-full mb-2 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs opacity-0 shadow-lg transition-all duration-200 group-hover:-translate-y-1 group-hover:opacity-100',
                                 isDark ? 'bg-slate-700 text-white' : 'bg-stone-800 text-white',
                             )}
                         >
-                            {formatCurrencyShort(Number(item.totalCommission || 0))}
+                            <div className="font-semibold">{formatCurrency(Number(item.totalCommission || 0))}</div>
+                            <div className={cn('mt-0.5 text-[11px]', isDark ? 'text-slate-300' : 'text-stone-200')}>
+                                {label}
+                            </div>
                         </div>
-                        {/* Bar */}
-                        <div
-                            className="w-full rounded-t-md bg-gradient-to-t from-amber-600 to-amber-400 transition-all duration-500"
-                            style={{ height: `${Math.max(height, 2)}%` }}
-                        />
+
+                        <div className="flex w-full flex-1 items-end">
+                            <div
+                                title={`${label}: ${formatCurrency(Number(item.totalCommission || 0))}`}
+                                className="w-full rounded-t-md bg-gradient-to-t from-amber-600 to-amber-400 shadow-[0_0_16px_rgba(251,191,36,0.18)] transition-all duration-500 group-hover:from-amber-500 group-hover:to-yellow-300"
+                                style={{ height: `${Math.max(height, 2)}%` }}
+                            />
+                        </div>
+
                         <span
                             className={cn('text-[10px] font-medium', isDark ? 'text-slate-400' : 'text-stone-500')}
                         >
@@ -50,6 +59,38 @@ function BarChart({ data, isDark }) {
                     </div>
                 )
             })}
+        </div>
+    )
+}
+
+function MonthlyCommissionSummary({ item, isDark }) {
+    const label = `T${item.month}/${String(item.year).slice(-2)}`
+
+    return (
+        <div
+            className={cn(
+                'flex h-48 flex-col justify-between rounded-2xl border p-5',
+                isDark ? 'border-slate-800 bg-slate-950/60' : 'border-stone-200 bg-stone-50/80',
+            )}
+        >
+            <div className="flex items-start justify-between gap-4">
+                <div>
+                    <p className={cn('text-xs font-medium uppercase tracking-wide', isDark ? 'text-slate-400' : 'text-stone-500')}>
+                        Tháng ghi nhận
+                    </p>
+                    <p className="mt-2 text-2xl font-bold">{label}</p>
+                </div>
+                <div className={cn('rounded-full px-3 py-1 text-xs font-medium', isDark ? 'bg-amber-500/15 text-amber-300' : 'bg-amber-100 text-amber-700')}>
+                    1 tháng dữ liệu
+                </div>
+            </div>
+
+            <div>
+                <p className={cn('text-xs font-medium uppercase tracking-wide', isDark ? 'text-slate-400' : 'text-stone-500')}>
+                    Tổng hoa hồng
+                </p>
+                <p className="mt-2 text-3xl font-bold text-amber-500">{formatCurrency(Number(item.totalCommission || 0))}</p>
+            </div>
         </div>
     )
 }
@@ -104,6 +145,7 @@ export default function AdminCommissions() {
     // --- State ---
     const [overview, setOverview] = useState(null)
     const [byMonth, setByMonth] = useState([])
+    const [byCategory, setByCategory] = useState([])
     const [topSellers, setTopSellers] = useState([])
     const [commissions, setCommissions] = useState([])
     const [loading, setLoading] = useState(true)
@@ -128,13 +170,15 @@ export default function AdminCommissions() {
     const fetchStats = async () => {
         setLoading(true)
         try {
-            const [overviewData, byMonthData, topData] = await Promise.all([
+            const [overviewData, byMonthData, byCategoryData, topData] = await Promise.all([
                 commissionService.getOverview(),
                 commissionService.getByMonth(),
+                commissionService.getByCategory(),
                 commissionService.getTopSellers(topLimit),
             ])
             setOverview(overviewData)
             setByMonth(byMonthData || [])
+            setByCategory(Array.isArray(byCategoryData) ? byCategoryData : [])
             setTopSellers(topData || [])
         } catch (err) {
             console.error(err)
@@ -181,6 +225,10 @@ export default function AdminCommissions() {
             toast.error('Không thể tải top người bán')
         }
     }
+
+    const categoryBreakdown = [...byCategory].sort(
+        (a, b) => Number(b?.totalCommission || 0) - Number(a?.totalCommission || 0),
+    )
 
     // --- Overview cards config ---
     const cards = useMemo(
@@ -299,6 +347,8 @@ export default function AdminCommissions() {
                             <HiOutlineChartBar className={cn('h-10 w-10', isDark ? 'text-slate-600' : 'text-stone-300')} />
                             <p className={cn('text-sm', isDark ? 'text-slate-500' : 'text-stone-400')}>Chưa có dữ liệu</p>
                         </div>
+                    ) : byMonth.length === 1 ? (
+                        <MonthlyCommissionSummary item={byMonth[0]} isDark={isDark} />
                     ) : (
                         <BarChart data={byMonth} isDark={isDark} />
                     )}
@@ -400,6 +450,48 @@ export default function AdminCommissions() {
                     )}
                 </motion.div>
             </div>
+
+            <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.32 }}
+                className={cn(
+                    'rounded-xl border p-6 shadow-sm',
+                    isDark ? 'border-slate-700 bg-slate-900' : 'border-stone-200 bg-white',
+                )}
+            >
+                <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="flex items-center gap-2">
+                        <div className={cn('flex h-8 w-8 items-center justify-center rounded-lg', isDark ? 'bg-emerald-500/20' : 'bg-emerald-100')}>
+                            <HiOutlineViewGrid className={cn('h-4 w-4', isDark ? 'text-emerald-400' : 'text-emerald-600')} />
+                        </div>
+                        <div>
+                            <h2 className="text-base font-semibold">Hoa hồng theo ngành hàng</h2>
+                            <p className={cn('text-xs', isDark ? 'text-slate-400' : 'text-stone-500')}>
+                                Giúp admin thấy category nào đang đóng góp commission lớn nhất để ưu tiên theo dõi.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className={cn('inline-flex rounded-full px-3 py-1 text-xs font-medium', isDark ? 'bg-slate-800 text-slate-300' : 'bg-stone-100 text-stone-600')}>
+                        {categoryBreakdown.length} category
+                    </div>
+                </div>
+
+                <div className="max-h-80 overflow-y-auto pr-1">
+                    <HorizontalRankingChart
+                        items={categoryBreakdown}
+                        isDark={isDark}
+                        accent="emerald"
+                        emptyIcon={HiOutlineViewGrid}
+                        emptyText="Chưa có dữ liệu theo ngành hàng"
+                        getLabel={(category) => category.categoryName || 'Chưa có tên category'}
+                        getValue={(category) => category.totalCommission}
+                        getMeta={(category, index, share) => `${share.toFixed(1)}% tổng hoa hồng`}
+                        valueFormatter={(value) => formatCurrencyShort(value)}
+                    />
+                </div>
+            </motion.div>
 
             {/* Commission List with Filters */}
             <motion.div

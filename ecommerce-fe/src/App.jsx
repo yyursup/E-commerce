@@ -21,6 +21,7 @@ import AdminEscrows from './pages/admin/AdminEscrows'
 import AdminWalletLookup from './pages/admin/AdminWalletLookup'
 import AdminCommissions from './pages/admin/AdminCommissions'
 import AdminLiveChat from './pages/admin/AdminLiveChat'
+import AdminShopRanking from './pages/admin/AdminShopRanking'
 import BusinessLayout from './pages/business/BusinessLayout'
 import BusinessDashboard from './pages/business/BusinessDashboard'
 import Checkout from './pages/Checkout'
@@ -170,6 +171,7 @@ export default function App() {
           <Route path="wallets" element={<AdminWalletLookup />} />
           <Route path="commissions" element={<AdminCommissions />} />
           <Route path="live-chat" element={<AdminLiveChat />} />
+          <Route path="shop-ranking" element={<AdminShopRanking />} />
         </Route>
       </Route>
     </Routes >

@@ -62,14 +62,14 @@ public class ChatbotServiceImpl implements ChatbotService {
     private final OrderRepository orderRepository;
     private final SimpMessagingTemplate messagingTemplate;
 
-    @Value("${app.base-url:http://localhost:8080}")
-    private String baseUrl;
+    // Base URL for frontend links returned by chatbot (product detail, etc.)
+    @Value("${app.frontend.base-url:http://localhost:5173}")
+    private String frontendBaseUrl;
 
     @Override
     @Transactional(readOnly = true)
     public ChatbotResponse init(HttpSession session, CurrentUserInfo principal) {
         String current = (String) session.getAttribute(SESSION_CURRENT_NODE);
-        String root = (String) session.getAttribute(SESSION_ROOT_NODE);
         String roleContext = getRoleContext(principal);
         String rootNodeId = getRootNodeId(roleContext);
 
@@ -452,9 +452,10 @@ public class ChatbotServiceImpl implements ChatbotService {
         String thumb = null;
         if (p.getImages() != null && !p.getImages().isEmpty() && p.getImages().get(0).getImageUrl() != null) {
             String url = p.getImages().get(0).getImageUrl();
-            thumb = url.startsWith("http") ? url : baseUrl + (url.startsWith("/") ? url : "/" + url);
+            // Keep absolute URLs (MinIO/CDN). For relative paths (if any), prefix with backend base.
+            thumb = url.startsWith("http") ? url : frontendBaseUrl + (url.startsWith("/") ? url : "/" + url);
         }
-        String productUrl = baseUrl + "/products/" + p.getId();
+        String productUrl = frontendBaseUrl + "/products/" + p.getId();
         return ChatbotProductCardResponse.builder()
                 .id(p.getId())
                 .name(p.getName())

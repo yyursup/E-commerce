@@ -61,6 +61,12 @@ public class Product {
     @Column(name = "weight")
     private Integer weight = 500;
 
+    @Column(nullable = false)
+    private int reportCount = 0;
+
+    @Column(nullable = false)
+    private boolean flagged = false;
+
     @Builder.Default
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Set<ProductImage> images = new HashSet<>();

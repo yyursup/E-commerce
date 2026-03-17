@@ -2,9 +2,12 @@ package com.marketplace.ecommerce.product.repository;
 
 import com.marketplace.ecommerce.product.entity.Product;
 import com.marketplace.ecommerce.product.valueObjects.ProductStatus;
+import com.marketplace.ecommerce.review.entity.Review;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -21,6 +24,10 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
     boolean existsBySkuAndDeletedFalse(String sku);
 
     Optional<Product> findByIdAndDeletedFalse(UUID id);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select p from Product p where p.id = :id")
+    Optional<Product> findByIdForUpdate(@Param("id") UUID id);
 
 
     @Modifying

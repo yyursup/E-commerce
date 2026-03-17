@@ -3,7 +3,6 @@ package com.marketplace.ecommerce.request.repository;
 import com.marketplace.ecommerce.request.entity.Report;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -19,7 +18,12 @@ public interface ReportRepository extends JpaRepository<Report, UUID> {
     @Query(value = """
               SELECT t.type
               FROM (
-                SELECT 'USER' AS type WHERE EXISTS (SELECT 1 FROM accounts a WHERE a.id = :id)
+                SELECT 'USER' AS type
+                WHERE EXISTS (
+                    SELECT 1
+                    FROM users u
+                    WHERE u.id = :id OR u.account_id = :id
+                )
                 UNION ALL
                 SELECT 'SHOP' AS type WHERE EXISTS (SELECT 1 FROM shops s WHERE s.id = :id)
                 UNION ALL
@@ -30,7 +34,21 @@ public interface ReportRepository extends JpaRepository<Report, UUID> {
             """, nativeQuery = true)
     List<String> resolveTargetTypes(@Param("id") UUID id);
 
-    @Query(value = "select a.id from accounts a where a.id = :targetId", nativeQuery = true)
+    @Query(value = """
+        select resolved.account_id
+        from (
+            select u.account_id
+            from users u
+            where u.id = :targetId
+
+            union
+
+            select a.id as account_id
+            from accounts a
+            where a.id = :targetId
+        ) resolved
+        limit 1
+        """, nativeQuery = true)
     UUID resolveUserAccountId(@Param("targetId") UUID targetId);
 
     @Query(value = """

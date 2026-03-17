@@ -32,6 +32,19 @@ const commissionService = {
     },
 
     /**
+     * Get commission statistics grouped by category
+     * Returns: Array of { categoryId, categoryName, totalCommission }
+     */
+    getByCategory: async () => {
+        try {
+            const response = await axiosClient.get(`${COMMISSION_BASE}/by-category`);
+            return response.data;
+        } catch (error) {
+            throw error.response ? error.response.data : error;
+        }
+    },
+
+    /**
      * Get top sellers based on commission amount
      * @param {number} limit - Number of top sellers to fetch
      * Returns: Array of { sellerId, shopName, totalCommission }

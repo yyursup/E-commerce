@@ -79,6 +79,17 @@ const orderService = {
       throw error.response ? error.response.data : error;
     }
   },
+
+  // Admin: Get shop ranking by delivered revenue
+  getShopRanking: async () => {
+    try {
+      const response = await axiosClient.get(`${ORDER_BASE}/shop-ranking`);
+      return response.data;
+    } catch (error) {
+      throw error.response ? error.response.data : error;
+    }
+  },
+
   // Create VNPay Payment URL
   createPayment: async (orderId) => {
     try {

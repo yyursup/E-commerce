@@ -16,6 +16,7 @@ import {
 } from 'react-icons/hi'
 import ProductImageGallery from './components/ProductImageGallery'
 import ProductCard from '../../components/ProductCard'
+import ReportActionButton from '../../components/ReportActionButton'
 import { useThemeStore } from '../../store/useThemeStore'
 import { useAuthStore } from '../../store/useAuthStore'
 import { useCartStore } from '../../store/useCartStore'
@@ -38,7 +39,7 @@ export default function ProductDetail() {
   const [similarProducts, setSimilarProducts] = useState([])
   const [similarLoading, setSimilarLoading] = useState(true)
   const { isAuthenticated } = useAuthStore()
-  const { updateCartCount, incrementCount } = useCartStore()
+  const { updateCartCount } = useCartStore()
   const addButtonRef = useRef(null)
 
   useEffect(() => {
@@ -196,7 +197,9 @@ export default function ProductDetail() {
       navigate('/login')
       return
     }
-    navigate(`/report?targetId=${product.id}`)
+    navigate(
+      `/report?targetId=${product.id}&targetType=PRODUCT&targetName=${encodeURIComponent(product.name)}`,
+    )
   }
 
   const increaseQuantity = () => {
@@ -303,7 +306,7 @@ export default function ProductDetail() {
                 </Link>
               )}
               {product.shopName && (
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-3">
                   <span className={cn('text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
                     Cửa hàng:
                   </span>
@@ -316,6 +319,13 @@ export default function ProductDetail() {
                   >
                     {product.shopName}
                   </Link>
+                  <ReportActionButton
+                    targetId={product.shopId}
+                    targetType="SHOP"
+                    targetName={product.shopName}
+                    label="Báo cáo shop"
+                    variant="chip"
+                  />
                 </div>
               )}
             </div>
@@ -495,7 +505,7 @@ export default function ProductDetail() {
                 )}
               >
                 <HiOutlineFlag className="h-5 w-5" />
-                Báo cáo
+                Báo cáo sản phẩm
               </button>
               <button
                 onClick={handleShare}

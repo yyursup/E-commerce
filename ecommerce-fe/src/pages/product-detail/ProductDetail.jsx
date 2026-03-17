@@ -15,6 +15,7 @@ import {
   HiOutlineFlag,
 } from 'react-icons/hi'
 import ProductImageGallery from './components/ProductImageGallery'
+import ProductCard from '../../components/ProductCard'
 import { useThemeStore } from '../../store/useThemeStore'
 import { useAuthStore } from '../../store/useAuthStore'
 import { useCartStore } from '../../store/useCartStore'
@@ -34,6 +35,8 @@ export default function ProductDetail() {
   const [quantity, setQuantity] = useState(1)
   const [addingToCart, setAddingToCart] = useState(false)
   const [showAddAnimation, setShowAddAnimation] = useState(false)
+  const [similarProducts, setSimilarProducts] = useState([])
+  const [similarLoading, setSimilarLoading] = useState(true)
   const { isAuthenticated } = useAuthStore()
   const { updateCartCount, incrementCount } = useCartStore()
   const addButtonRef = useRef(null)
@@ -57,6 +60,42 @@ export default function ProductDetail() {
     if (productId) {
       fetchProduct()
     }
+  }, [productId])
+
+  useEffect(() => {
+    const fetchSimilar = async () => {
+      if (!productId) return
+      try {
+        setSimilarLoading(true)
+        const list = await productService.getSimilarProducts(productId, 8)
+        const currentId = productId.toLowerCase()
+        const mapped = (list || [])
+          .filter((p) => p.id && String(p.id).toLowerCase() !== currentId)
+          .map((p) => {
+            const thumb = p.images?.find((img) => img.isThumbnail) || p.images?.[0]
+            return {
+              id: p.id,
+              name: p.name,
+              price: p.basePrice ? Number(p.basePrice) : 0,
+              image: thumb?.imageUrl || '/product-placeholder.svg',
+              badge: p.status === 'PUBLISHED' ? 'Tương tự' : null,
+              rating: 4.5,
+              description: p.description,
+              basePrice: p.basePrice,
+              shopName: p.shopName,
+              categoryName: p.categoryName,
+              originalProduct: p,
+            }
+          })
+        setSimilarProducts(mapped)
+      } catch (err) {
+        console.error('Error fetching similar products:', err)
+        setSimilarProducts([])
+      } finally {
+        setSimilarLoading(false)
+      }
+    }
+    fetchSimilar()
   }, [productId])
 
   const handleAddToCart = async () => {
@@ -604,6 +643,41 @@ export default function ProductDetail() {
         >
           <ProductReviews productId={productId} />
         </motion.div>
+
+        {/* Sản phẩm tương tự */}
+        {(similarLoading || similarProducts.length > 0) && (
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.5 }}
+            className="mt-12"
+          >
+            <h2
+              className={cn(
+                'mb-6 text-xl font-semibold',
+                isDark ? 'text-white' : 'text-stone-900',
+              )}
+            >
+              Sản phẩm tương tự
+            </h2>
+            {similarLoading ? (
+              <div className="flex justify-center py-8">
+                <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-amber-500 border-r-transparent" />
+              </div>
+            ) : (
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                {similarProducts.map((item, i) => (
+                  <ProductCard
+                    key={item.id}
+                    product={item}
+                    dataAos="fade-up"
+                    dataAosDelay={i % 4 === 0 ? 0 : (i % 4) * 100}
+                  />
+                ))}
+              </div>
+            )}
+          </motion.section>
+        )}
       </div>
     </div>
   )

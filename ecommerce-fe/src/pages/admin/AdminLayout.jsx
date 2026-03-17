@@ -8,6 +8,7 @@ import {
   HiOutlineLogout,
   HiOutlineUserCircle,
   HiOutlineChartBar,
+  HiOutlineChat,
 } from 'react-icons/hi'
 import { useAuthStore } from '../../store/useAuthStore'
 import { useThemeStore } from '../../store/useThemeStore'
@@ -20,6 +21,7 @@ const navItems = [
   { to: '/admin/escrows', label: 'Escrows', icon: HiOutlineCurrencyDollar },
   { to: '/admin/wallets', label: 'Wallet Lookup', icon: HiOutlineSearch },
   { to: '/admin/commissions', label: 'Hoa hồng', icon: HiOutlineChartBar },
+  { to: '/admin/live-chat', label: 'Live Chat', icon: HiOutlineChat },
 ]
 
 export default function AdminLayout() {

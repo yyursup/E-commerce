@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@headlessui/react": "^2.2.9",
+    "@stomp/stompjs": "^7.3.0",
     "@tailwindcss/vite": "^4.1.18",
     "aos": "^2.3.4",
     "axios": "^1.13.4",
@@ -25,6 +26,7 @@
     "react-scroll": "^1.9.3",
     "react-slick": "^0.31.0",
     "slick-carousel": "^1.8.1",
+    "sockjs-client": "^1.6.1",
     "tailwind-merge": "^3.4.0",
     "zustand": "^5.0.10"
   },

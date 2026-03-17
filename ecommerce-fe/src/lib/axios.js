@@ -1,4 +1,5 @@
-import axios from 'axios';
+import axios from 'axios'
+import { getAccessToken } from './auth'
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080',
@@ -10,7 +11,7 @@ const api = axios.create({
 // Add a request interceptor to include token if available (preparation for login)
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const token = getAccessToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }

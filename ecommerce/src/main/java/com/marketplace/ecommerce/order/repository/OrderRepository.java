@@ -82,4 +82,6 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
             @Param("shopId") UUID shopId,
             @Param("revenueStatuses") List<OrderStatus> revenueStatuses
     );
+
+    long countByShop_IdAndCreatedAtAfter(UUID shopId, LocalDateTime createdAt);
 }

@@ -8,6 +8,7 @@ import {
   HiOutlineCube,
   HiOutlinePlusCircle,
   HiOutlineX,
+  HiOutlineLockClosed,
 } from 'react-icons/hi'
 import { useThemeStore } from '../../store/useThemeStore'
 import { useAuthStore } from '../../store/useAuthStore'
@@ -16,6 +17,7 @@ import toast from 'react-hot-toast'
 import sellerService from '../../services/seller'
 import categoryService from '../../services/category'
 import statisticsService from '../../services/statistics'
+import walletService from '../../services/wallet'
 import SellerProductCard from './components/SellerProductCard'
 import ImageUpload from './components/ImageUpload'
 import OrderStatusSummary from './components/OrderStatusSummary'
@@ -39,6 +41,7 @@ export default function BusinessDashboard() {
   const [showProductForm, setShowProductForm] = useState(false)
   const [editingProduct, setEditingProduct] = useState(null)
   const [error, setError] = useState(null)
+  const [wallet, setWallet] = useState(null)
 
   const fetchProducts = async (status = null) => {
     try {
@@ -83,7 +86,10 @@ export default function BusinessDashboard() {
     const fetchDashboardData = async () => {
       await fetchProducts(statusFilter || null)
       try {
-        const statistics = await statisticsService.getSellerStatistics()
+        const [statistics, walletData] = await Promise.all([
+          statisticsService.getSellerStatistics(),
+          walletService.getMyWallet(),
+        ])
 
         setStats(prev => ({
           ...prev,
@@ -94,6 +100,7 @@ export default function BusinessDashboard() {
           totalNetIncome: statistics.totalNetIncome || 0,
           orderCountByStatus: statistics.orderCountByStatus || {},
         }));
+        setWallet(walletData)
       } catch (err) {
         console.error('Error fetching dashboard stats:', err);
       }
@@ -257,6 +264,62 @@ export default function BusinessDashboard() {
           )
         })}
       </div>
+
+      {/* Wallet Balance Card */}
+      {wallet && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className={cn(
+            'mb-6 rounded-xl border p-6',
+            isDark ? 'border-slate-700 bg-slate-900' : 'border-stone-200 bg-white',
+          )}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h2 className={cn('text-lg font-semibold', isDark ? 'text-white' : 'text-stone-900')}>
+              Ví của tôi
+            </h2>
+            <span className={cn('text-xs px-2 py-1 rounded-full', isDark ? 'bg-emerald-900/30 text-emerald-400' : 'bg-emerald-50 text-emerald-700')}>
+              {wallet.currency || 'VND'}
+            </span>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className={cn('rounded-xl p-4', isDark ? 'bg-emerald-900/20 border border-emerald-800/30' : 'bg-emerald-50 border border-emerald-100')}>
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-full bg-emerald-500/10">
+                  <HiOutlineCurrencyDollar className="h-5 w-5 text-emerald-500" />
+                </div>
+                <div>
+                  <p className={cn('text-xs font-medium', isDark ? 'text-slate-400' : 'text-stone-500')}>Số dư khả dụng</p>
+                  <p className={cn('text-xl font-bold', isDark ? 'text-emerald-400' : 'text-emerald-700')}>
+                    {formatCurrency(wallet.availableBalance || 0)}
+                  </p>
+                </div>
+              </div>
+              <p className={cn('mt-2 text-xs', isDark ? 'text-slate-500' : 'text-stone-400')}>
+                Tiền đã nhận từ các đơn hàng hoàn thành
+              </p>
+            </div>
+            <div className={cn('rounded-xl p-4', isDark ? 'bg-amber-900/20 border border-amber-800/30' : 'bg-amber-50 border border-amber-100')}>
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-full bg-amber-500/10">
+                  <HiOutlineLockClosed className="h-5 w-5 text-amber-500" />
+                </div>
+                <div>
+                  <p className={cn('text-xs font-medium', isDark ? 'text-slate-400' : 'text-stone-500')}>Đang tạm giữ</p>
+                  <p className={cn('text-xl font-bold', isDark ? 'text-amber-400' : 'text-amber-700')}>
+                    {formatCurrency(wallet.lockedBalance || 0)}
+                  </p>
+                </div>
+              </div>
+              <p className={cn('mt-2 text-xs', isDark ? 'text-slate-500' : 'text-stone-400')}>
+                Tiền từ đơn đang chờ buyer xác nhận nhận hàng
+              </p>
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       <OrderStatusSummary
         isDark={isDark}

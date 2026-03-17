@@ -22,6 +22,7 @@ import AdminWalletLookup from './pages/admin/AdminWalletLookup'
 import AdminCommissions from './pages/admin/AdminCommissions'
 import AdminLiveChat from './pages/admin/AdminLiveChat'
 import AdminShopRanking from './pages/admin/AdminShopRanking'
+import AdminPlatformWallet from './pages/admin/AdminPlatformWallet'
 import BusinessLayout from './pages/business/BusinessLayout'
 import BusinessDashboard from './pages/business/BusinessDashboard'
 import Checkout from './pages/Checkout'
@@ -34,6 +35,7 @@ import Deals from './pages/Deals'
 import Marketplace from './pages/Marketplace'
 import OfferDetails from './pages/OfferDetails'
 import ReportCreate from './pages/ReportCreate'
+import ProfileWallet from './pages/profile/ProfileWallet'
 
 export default function App() {
   return (
@@ -87,6 +89,14 @@ export default function App() {
           element={
             <ProtectedRoute requireAuth={true}>
               <Profile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile/wallet"
+          element={
+            <ProtectedRoute requireAuth={true}>
+              <ProfileWallet />
             </ProtectedRoute>
           }
         />
@@ -172,6 +182,7 @@ export default function App() {
           <Route path="commissions" element={<AdminCommissions />} />
           <Route path="live-chat" element={<AdminLiveChat />} />
           <Route path="shop-ranking" element={<AdminShopRanking />} />
+          <Route path="platform-wallet" element={<AdminPlatformWallet />} />
         </Route>
       </Route>
     </Routes >

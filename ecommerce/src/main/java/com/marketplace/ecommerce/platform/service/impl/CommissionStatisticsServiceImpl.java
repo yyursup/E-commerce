@@ -2,23 +2,17 @@ package com.marketplace.ecommerce.platform.service.impl;
 
 import com.marketplace.ecommerce.auth.entity.User;
 import com.marketplace.ecommerce.auth.repository.UserRepository;
-import com.marketplace.ecommerce.order.dto.response.OrderResponse;
 import com.marketplace.ecommerce.order.dto.response.RevenueSummaryResponse;
 import com.marketplace.ecommerce.order.entity.Order;
 import com.marketplace.ecommerce.order.repository.OrderRepository;
-import com.marketplace.ecommerce.order.service.OrderService;
 import com.marketplace.ecommerce.order.service.QueryOrderService;
 import com.marketplace.ecommerce.order.valueObjects.OrderStatus;
-import com.marketplace.ecommerce.platform.dto.response.CommissionByMonthResponse;
-import com.marketplace.ecommerce.platform.dto.response.CommissionOverviewResponse;
-import com.marketplace.ecommerce.platform.dto.response.SellerStatisticsResponse;
-import com.marketplace.ecommerce.platform.dto.response.TopSellerCommissionResponse;
+import com.marketplace.ecommerce.platform.dto.response.*;
 import com.marketplace.ecommerce.platform.repository.CommissionRepository;
 import com.marketplace.ecommerce.platform.service.CommissionService;
 import com.marketplace.ecommerce.platform.service.CommissionStatisticsService;
 import com.marketplace.ecommerce.shop.entity.Shop;
 import com.marketplace.ecommerce.shop.repository.ShopRepository;
-import com.marketplace.ecommerce.shop.service.ShopService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -140,6 +134,19 @@ public class CommissionStatisticsServiceImpl implements CommissionStatisticsServ
                             .totalCommission(totalCommission)
                             .build();
                 })
+                .toList();
+    }
+
+    @Override
+    public List<CommissionByCategoryResponse> getByCategory() {
+
+        return commissionRepository.getCommissionByCategory()
+                .stream()
+                .map(r -> CommissionByCategoryResponse.builder()
+                        .categoryId((UUID) r[0])
+                        .categoryName((String) r[1])
+                        .totalCommission((BigDecimal) r[2])
+                        .build())
                 .toList();
     }
 

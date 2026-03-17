@@ -11,6 +11,7 @@ import com.marketplace.ecommerce.cart.repository.CartRepository;
 import com.marketplace.ecommerce.common.exception.CustomException;
 import com.marketplace.ecommerce.order.dto.request.CreateOrderRequest;
 import com.marketplace.ecommerce.order.dto.response.OrderResponse;
+import com.marketplace.ecommerce.order.dto.response.ShopRankingItem;
 import com.marketplace.ecommerce.order.entity.Order;
 import com.marketplace.ecommerce.order.entity.OrderItem;
 import com.marketplace.ecommerce.order.repository.OrderItemsRepository;
@@ -41,6 +42,7 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -388,4 +390,25 @@ public class OrderServiceImpl implements OrderService {
         return orderNumber;
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<ShopRankingItem> getShopRanking() {
+        List<Object[]> rows = orderRepository.getShopRankingByRevenue();
+        List<ShopRankingItem> result = new ArrayList<>();
+        int rank = 1;
+        for (Object[] row : rows) {
+            UUID shopId = (UUID) row[0];
+            String shopName = (String) row[1];
+            BigDecimal totalRevenue = row[2] != null ? (BigDecimal) row[2] : BigDecimal.ZERO;
+            long orderCount = row[3] != null ? ((Number) row[3]).longValue() : 0L;
+            result.add(ShopRankingItem.builder()
+                    .rank(rank++)
+                    .shopId(shopId)
+                    .shopName(shopName)
+                    .totalRevenue(totalRevenue)
+                    .orderCount(orderCount)
+                    .build());
+        }
+        return result;
+    }
 }

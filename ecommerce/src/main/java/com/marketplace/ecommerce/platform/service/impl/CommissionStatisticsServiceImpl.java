@@ -9,10 +9,7 @@ import com.marketplace.ecommerce.order.repository.OrderRepository;
 import com.marketplace.ecommerce.order.service.OrderService;
 import com.marketplace.ecommerce.order.service.QueryOrderService;
 import com.marketplace.ecommerce.order.valueObjects.OrderStatus;
-import com.marketplace.ecommerce.platform.dto.response.CommissionByMonthResponse;
-import com.marketplace.ecommerce.platform.dto.response.CommissionOverviewResponse;
-import com.marketplace.ecommerce.platform.dto.response.SellerStatisticsResponse;
-import com.marketplace.ecommerce.platform.dto.response.TopSellerCommissionResponse;
+import com.marketplace.ecommerce.platform.dto.response.*;
 import com.marketplace.ecommerce.platform.repository.CommissionRepository;
 import com.marketplace.ecommerce.platform.service.CommissionService;
 import com.marketplace.ecommerce.platform.service.CommissionStatisticsService;
@@ -140,6 +137,19 @@ public class CommissionStatisticsServiceImpl implements CommissionStatisticsServ
                             .totalCommission(totalCommission)
                             .build();
                 })
+                .toList();
+    }
+
+    @Override
+    public List<CommissionByCategoryResponse> getByCategory() {
+
+        return commissionRepository.getCommissionByCategory()
+                .stream()
+                .map(r -> CommissionByCategoryResponse.builder()
+                        .categoryId((UUID) r[0])
+                        .categoryName((String) r[1])
+                        .totalCommission((BigDecimal) r[2])
+                        .build())
                 .toList();
     }
 

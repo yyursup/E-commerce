@@ -1,6 +1,5 @@
 package com.marketplace.ecommerce.platform.controller;
 
-import com.marketplace.ecommerce.order.entity.Order;
 import com.marketplace.ecommerce.platform.dto.CommissionFilterRequest;
 import com.marketplace.ecommerce.platform.dto.response.*;
 import com.marketplace.ecommerce.platform.service.CommissionService;
@@ -10,7 +9,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -31,6 +29,11 @@ public class CommissionStatisticsController {
     @GetMapping("/by-month")
     public ResponseEntity<List<CommissionByMonthResponse>> getByMonth() {
         return ResponseEntity.ok(commissionStatisticsService.getByMonth());
+    }
+
+    @GetMapping("/by-category")
+    public ResponseEntity<List<CommissionByCategoryResponse>> getByCategory() {
+        return ResponseEntity.ok(commissionStatisticsService.getByCategory());
     }
 
     @GetMapping("/top-sellers")

@@ -5,8 +5,10 @@ import com.marketplace.ecommerce.order.dto.request.QuoteRequest;
 import com.marketplace.ecommerce.order.dto.response.CheckoutConfirmResponse;
 import com.marketplace.ecommerce.order.dto.response.OrderResponse;
 import com.marketplace.ecommerce.order.dto.response.QuoteResponse;
+import com.marketplace.ecommerce.order.dto.response.ShopRankingItem;
 import com.marketplace.ecommerce.order.entity.Order;
 
+import java.util.List;
 import java.util.UUID;
 
 public interface OrderService {
@@ -27,4 +29,5 @@ public interface OrderService {
 
     void tryCreateGHNOrder(Order order);
 
+    List<ShopRankingItem> getShopRanking();
 }

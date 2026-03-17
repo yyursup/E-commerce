@@ -5,6 +5,7 @@ import com.marketplace.ecommerce.auth.repository.AccountRepository;
 import com.marketplace.ecommerce.auth.valueObjects.AccountStatus;
 import com.marketplace.ecommerce.auth.valueObjects.DisciplineLevel;
 import com.marketplace.ecommerce.common.exception.CustomException;
+import com.marketplace.ecommerce.product.entity.Product;
 import com.marketplace.ecommerce.product.repository.ProductRepository;
 import com.marketplace.ecommerce.product.valueObjects.ProductStatus;
 import com.marketplace.ecommerce.request.dto.request.CreateReportRequest;
@@ -138,6 +139,26 @@ public class ReportServiceImpl implements ReportService {
     }
 
     private void handleReportProduct(UUID targetId, LocalDateTime now) {
+        Product product = productRepository.findByIdForUpdate(targetId)
+                .orElseThrow(() -> new CustomException("Product not found: " + targetId));
+
+        if (product.getStatus() == ProductStatus.DELETED) {
+            throw new CustomException("Product is already deleted");
+        }
+
+        int nextCount = product.getReportCount() + 1;
+        product.setReportCount(nextCount);
+
+
+        if (nextCount >= 3) {
+            product.setFlagged(true);
+        }
+
+        if (nextCount >= 5) {
+            product.setStatus(ProductStatus.DELETED);
+        }
+
+
         UUID accountId = requestPolicy.resolveTargetAccountId(TargetType.PRODUCT, targetId);
         if (accountId == null) throw new CustomException("Cannot resolve PRODUCT owner accountId");
         punishAccount(accountId, now);

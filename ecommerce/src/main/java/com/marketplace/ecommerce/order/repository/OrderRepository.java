@@ -84,13 +84,14 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
     );
 
     /**
-     * Bảng xếp hạng shop theo doanh thu (đơn DELIVERED).
+     * Bảng xếp hạng shop theo doanh thu (đơn DELIVERED hoặc COMPLETED).
      * Returns: shopId (UUID), shopName (String), totalRevenue (BigDecimal), orderCount (Long).
      */
     @Query("""
         SELECT o.shop.id, o.shop.name, COALESCE(SUM(o.total), 0), COUNT(o)
         FROM Order o
-        WHERE o.status = com.marketplace.ecommerce.order.valueObjects.OrderStatus.DELIVERED
+        WHERE o.status = com.marketplace.ecommerce.order.valueObjects.OrderStatus.DELIVERED 
+        OR o.status = com.marketplace.ecommerce.order.valueObjects.OrderStatus.COMPLETED
         GROUP BY o.shop.id, o.shop.name
         ORDER BY SUM(o.total) DESC
         """)

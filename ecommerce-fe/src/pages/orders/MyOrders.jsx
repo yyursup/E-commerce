@@ -15,7 +15,6 @@ import { useAuthStore } from '../../store/useAuthStore'
 import { cn } from '../../lib/cn'
 import toast from 'react-hot-toast'
 import orderService from '../../services/order'
-import walletService from '../../services/wallet'
 
 const ORDER_STATUSES = [
   { value: '', label: 'Tất cả' },
@@ -69,6 +68,10 @@ export default function MyOrders() {
   const [statusFilter, setStatusFilter] = useState('')
   const [error, setError] = useState(null)
   const [walletBalance, setWalletBalance] = useState(0)
+  const [escrowHeld, setEscrowHeld] = useState(0)
+
+  // Statuses where buyer money is held in system escrow
+  const ESCROW_HELD_STATUSES = ['CONFIRMED', 'PROCESSING', 'SHIPPING', 'SHIPPED', 'DELIVERED']
 
   useEffect(() => {
     if (!isAuthenticated) return
@@ -81,13 +84,17 @@ export default function MyOrders() {
       setError(null)
       const status = statusFilter || null
 
-      const [ordersData, walletData] = await Promise.all([
-        orderService.getMyOrders(status),
-        statusFilter === '' ? walletService.getMyWallet() : Promise.resolve(null) // Only fetch wallet on first load/all statuses
-      ])
-
+      const ordersData = await orderService.getMyOrders(status)
       setOrders(ordersData || [])
-      if (walletData) setWalletBalance(walletData.balance || 0)
+
+      // Compute escrow-held from orders (only when showing all orders)
+      // buyer wallet.lockedBalance is always 0 — escrow funds go to system ESCROW wallet
+      if (!statusFilter) {
+        const held = (ordersData || []).filter(o =>
+          ESCROW_HELD_STATUSES.includes(o.status)
+        ).reduce((sum, o) => sum + (o.total || 0), 0)
+        setEscrowHeld(held)
+      }
 
     } catch (err) {
       console.error('Error fetching data:', err)
@@ -155,7 +162,7 @@ export default function MyOrders() {
             </p>
           </div>
 
-          {/* Wallet Card */}
+          {/* Escrow Held Card */}
           <div className={cn(
             "flex items-center gap-4 px-6 py-4 rounded-xl shadow-sm border",
             isDark ? "bg-slate-900 border-slate-700" : "bg-white border-stone-200"
@@ -165,10 +172,10 @@ export default function MyOrders() {
             </div>
             <div>
               <p className={cn("text-xs font-medium uppercase tracking-wider", isDark ? "text-slate-400" : "text-stone-500")}>
-                Số dư ví
+                Đang trong Escrow
               </p>
               <p className={cn("text-xl font-bold", isDark ? "text-white" : "text-stone-900")}>
-                {formatCurrency(walletBalance)}
+                {formatCurrency(statusFilter === '' ? escrowHeld : walletBalance)}
               </p>
             </div>
           </div>

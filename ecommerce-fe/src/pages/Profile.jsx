@@ -7,9 +7,11 @@ import { Navigate, Link } from 'react-router-dom';
 import Footer from '../components/Footer';
 import AddressManager from '../components/AddressManager';
 import { FiEdit2, FiBell, FiUser, FiClipboard } from 'react-icons/fi';
+import { HiOutlineCreditCard } from 'react-icons/hi';
 import ProfileInfo from './profile/ProfileInfo';
 import BankInfo from './profile/BankInfo';
 import ChangePassword from './profile/ChangePassword';
+import ProfileWallet from './profile/ProfileWallet';
 import MyOrders from './orders/MyOrders';
 
 export default function Profile() {
@@ -33,6 +35,8 @@ export default function Profile() {
                 return <AddressManager isDark={isDark} />;
             case 'password':
                 return <ChangePassword isDark={isDark} />;
+            case 'wallet':
+                return <ProfileWallet isDark={isDark} />;
             case 'notifications':
                 return (
                     <div className="py-12 text-center">
@@ -42,9 +46,7 @@ export default function Profile() {
                     </div>
                 );
             case 'orders':
-                // Instead of rendering a Link routing to '/orders', we render the MyOrders component inline.
                 return (
-                    // Removing min-h px-8 py-8 wrapper inside MyOrders so it fits best inside Profile layout.
                     <div className="-mx-4 md:-mx-8 md:-mt-8">
                         <MyOrders isEmbedded={true} />
                     </div>
@@ -149,6 +151,26 @@ export default function Profile() {
                                     </div>
                                 )}
                             </div>
+
+                            {/* Ví của tôi – ẩn với admin (admin quản lý ví sàn qua Admin Dashboard) */}
+                            {user?.role !== 'ADMIN' && (
+                            <div>
+                                <button
+                                    onClick={() => setActiveTab('wallet')}
+                                    className={cn(
+                                        "flex items-center gap-3 w-full text-left font-medium transition-colors mt-4",
+                                        activeTab === 'wallet'
+                                            ? "text-amber-500"
+                                            : isDark ? "text-slate-200 hover:text-amber-500" : "text-stone-800 hover:text-amber-600"
+                                    )}
+                                >
+                                    <div className="w-6 flex justify-center text-amber-500">
+                                        <HiOutlineCreditCard size={20} />
+                                    </div>
+                                    <span>Ví của tôi</span>
+                                </button>
+                            </div>
+                            )}
 
                             {/* Đơn Mua */}
                             <div>

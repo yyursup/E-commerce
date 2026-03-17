@@ -83,6 +83,7 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
             @Param("revenueStatuses") List<OrderStatus> revenueStatuses
     );
 
+    long countByShop_IdAndCreatedAtAfter(UUID shopId, LocalDateTime createdAt);
     /**
      * Bảng xếp hạng shop theo doanh thu (đơn DELIVERED hoặc COMPLETED).
      * Returns: shopId (UUID), shopName (String), totalRevenue (BigDecimal), orderCount (Long).

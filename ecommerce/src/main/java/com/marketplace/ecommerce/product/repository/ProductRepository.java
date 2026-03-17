@@ -58,6 +58,24 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
     @Query("""
                 select p
                 from Product p
+                join fetch p.shop s
+                join fetch p.productCategory c
+                left join fetch p.images i
+                where p.id <> :excludeId
+                  and p.status = 'PUBLISHED'
+                  and p.shop.status = 'ACTIVE'
+                  and p.shop.user.account.isActive = true
+                  and p.deleted = false
+                  and (:categoryId is null or p.productCategory.id = :categoryId)
+            """)
+    Page<Product> findPublishedByCategoryExcludingId(
+            @Param("excludeId") UUID excludeId,
+            @Param("categoryId") UUID categoryId,
+            Pageable pageable);
+
+    @Query("""
+                select p
+                from Product p
                 where p.status = 'PUBLISHED'
                   and p.shop.status = 'ACTIVE'
                   and p.shop.user.account.isActive = true

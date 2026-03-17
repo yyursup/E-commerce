@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { getAccountVerified } from '../lib/jwt'
+import { setAccessToken, clearAccessToken } from '../lib/auth'
 
 export const useAuthStore = create(
     persist(
@@ -11,7 +12,7 @@ export const useAuthStore = create(
             accountVerified: false,
 
             login: (token, user) => {
-                localStorage.setItem('token', token)
+                setAccessToken(token)
                 const accountVerified = getAccountVerified(token)
                 set({
                     token,
@@ -35,7 +36,7 @@ export const useAuthStore = create(
             },
 
             logout: () => {
-                localStorage.removeItem('token')
+                clearAccessToken()
                 set({
                     token: null,
                     user: null,

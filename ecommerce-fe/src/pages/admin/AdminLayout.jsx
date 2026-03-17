@@ -8,6 +8,7 @@ import {
   HiOutlineLogout,
   HiOutlineUserCircle,
   HiOutlineChartBar,
+  HiOutlineChat,
   HiOutlineTrendingUp,
 } from 'react-icons/hi'
 import { useAuthStore } from '../../store/useAuthStore'
@@ -22,6 +23,7 @@ const navItems = [
   { to: '/admin/wallets', label: 'Wallet Lookup', icon: HiOutlineSearch },
   { to: '/admin/shop-ranking', label: 'Xếp hạng shop', icon: HiOutlineTrendingUp },
   { to: '/admin/commissions', label: 'Hoa hồng', icon: HiOutlineChartBar },
+  { to: '/admin/live-chat', label: 'Live Chat', icon: HiOutlineChat },
 ]
 
 export default function AdminLayout() {

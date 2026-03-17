@@ -25,6 +25,8 @@ export default function Home() {
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [recommendations, setRecommendations] = useState([])
+  const [recLoading, setRecLoading] = useState(true)
 
   // Fetch products from API
   useEffect(() => {
@@ -82,6 +84,42 @@ export default function Home() {
     }
 
     fetchProducts()
+  }, [])
+
+  // Gợi ý cho bạn (recommendations)
+  useEffect(() => {
+    const fetchRecommendations = async () => {
+      try {
+        setRecLoading(true)
+        const list = await productService.getRecommendations(8)
+        const mapped = (list || []).map((product) => {
+          const thumbnailImage = product.images?.find((img) => img.isThumbnail) || product.images?.[0]
+          const imageUrl = thumbnailImage?.imageUrl || '/product-placeholder.svg'
+          const price = product.basePrice ? Number(product.basePrice) : 0
+          let badge = product.status === 'PUBLISHED' ? 'Gợi ý' : null
+          return {
+            id: product.id,
+            name: product.name,
+            price,
+            image: imageUrl,
+            badge,
+            rating: 4.5,
+            description: product.description,
+            basePrice: product.basePrice,
+            shopName: product.shopName,
+            categoryName: product.categoryName,
+            originalProduct: product,
+          }
+        })
+        setRecommendations(mapped)
+      } catch (err) {
+        console.error('Error fetching recommendations:', err)
+        setRecommendations([])
+      } finally {
+        setRecLoading(false)
+      }
+    }
+    fetchRecommendations()
   }, [])
 
   // Show welcome/promo popup once per session
@@ -307,6 +345,50 @@ export default function Home() {
           </div>
         )}
       </section>
+
+      {/* Gợi ý cho bạn */}
+      {(recLoading || recommendations.length > 0) && (
+        <section
+          id="recommendations"
+          className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8"
+        >
+          <div data-aos="fade-up" className="mb-10">
+            <h2
+              className={cn(
+                'text-2xl font-bold sm:text-3xl',
+                isDark ? 'text-white' : 'text-stone-900',
+              )}
+            >
+              Gợi ý cho bạn
+            </h2>
+            <p
+              className={cn(
+                'mt-2',
+                isDark ? 'text-slate-400' : 'text-stone-600',
+              )}
+            >
+              Dựa trên lịch sử xem và tìm kiếm của bạn
+            </p>
+          </div>
+          {recLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-amber-500 border-r-transparent" />
+            </div>
+          ) : recommendations.length > 0 ? (
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {recommendations.map((product, i) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  onQuickView={handleQuickView}
+                  dataAos="fade-up"
+                  dataAosDelay={i % 4 === 0 ? 0 : (i % 4) * 100}
+                />
+              ))}
+            </div>
+          ) : null}
+        </section>
+      )}
 
       <Footer />
 

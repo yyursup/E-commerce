@@ -2,6 +2,7 @@ package com.marketplace.ecommerce.review.service.impl;
 
 import com.marketplace.ecommerce.auth.entity.User;
 import com.marketplace.ecommerce.auth.repository.UserRepository;
+import com.marketplace.ecommerce.auth.valueObjects.DisciplineLevel;
 import com.marketplace.ecommerce.common.exception.CustomException;
 import com.marketplace.ecommerce.review.dto.request.ReplyRequest;
 import com.marketplace.ecommerce.review.dto.response.SellerReplyResponse;
@@ -32,6 +33,9 @@ public class ReplyServiceImpl implements ReplyService {
         User seller = userRepository.findByAccountId(accountId)
                 .orElseThrow(() -> new CustomException("Account not found"));
 
+        if (seller.getAccount().getDisciplineLevel() == DisciplineLevel.SUSPENDED || seller.getAccount().getDisciplineLevel() == DisciplineLevel.BANNED) {
+            throw new CustomException("You can not update this reply because you got suspended or banned");
+        }
         Reply reply = replyRepository.findByReviewId(request.getReviewId())
                 .orElseThrow(() -> new CustomException("Review not found"));
 
@@ -59,6 +63,9 @@ public class ReplyServiceImpl implements ReplyService {
         User seller = userRepository.findByAccountId(accountId)
                 .orElseThrow(() -> new CustomException("Account not found"));
 
+        if (seller.getAccount().getDisciplineLevel() == DisciplineLevel.SUSPENDED || seller.getAccount().getDisciplineLevel() == DisciplineLevel.BANNED) {
+            throw new CustomException("You can not reply to this review because you got suspended or banned");
+        }
         Review review = reviewRepository.findById(request.getReviewId())
                 .orElseThrow(() -> new CustomException("Review not found"));
 

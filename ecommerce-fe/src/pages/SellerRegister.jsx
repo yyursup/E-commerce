@@ -132,7 +132,7 @@ export default function SellerRegister() {
       docType = 'BACK'
     } else if (type === 'selfie') {
       if (!selfieFile) {
-        toast.error('Vui lòng chọn hoặc chụp ảnh khuôn mặt.')
+        toast.error('Vui lòng chụp ảnh khuôn mặt.')
         return
       }
       file = selfieFile
@@ -542,7 +542,7 @@ export default function SellerRegister() {
                       <p
                         className={cn('text-sm', isDark ? 'text-slate-400' : 'text-stone-500')}
                       >
-                        Chụp ảnh selfie hoặc upload ảnh từ thư viện
+                        Chụp ảnh selfie trực tiếp để xác minh khuôn mặt
                       </p>
                     </div>
 
@@ -573,43 +573,20 @@ export default function SellerRegister() {
                         )}
                       </div>
                     ) : (
-                      <div className="grid grid-cols-2 gap-4">
-                        <button
-                          onClick={() => setShowCamera(true)}
-                          className={cn(
-                            'flex flex-col items-center justify-center h-48 border-2 border-dashed rounded-xl transition',
-                            isDark
-                              ? 'border-slate-600 bg-slate-800/50 hover:border-amber-500/60'
-                              : 'border-stone-300 bg-stone-50 hover:border-amber-500',
-                          )}
-                        >
-                          <HiOutlineCamera className={cn('h-12 w-12 mb-4', isDark ? 'text-slate-400' : 'text-stone-400')} />
-                          <p className={cn('text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>
-                            Chụp ảnh
-                          </p>
-                        </button>
-                        <label
-                          htmlFor="selfieFile"
-                          className={cn(
-                            'flex flex-col items-center justify-center h-48 border-2 border-dashed rounded-xl cursor-pointer transition',
-                            isDark
-                              ? 'border-slate-600 bg-slate-800/50 hover:border-amber-500/60'
-                              : 'border-stone-300 bg-stone-50 hover:border-amber-500',
-                          )}
-                        >
-                          <HiOutlineCloudUpload className={cn('h-12 w-12 mb-4', isDark ? 'text-slate-400' : 'text-stone-400')} />
-                          <p className={cn('text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>
-                            Từ thư viện
-                          </p>
-                          <input
-                            id="selfieFile"
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => handleFileSelect(e.target.files?.[0], 'selfie')}
-                            className="hidden"
-                          />
-                        </label>
-                      </div>
+                      <button
+                        onClick={() => setShowCamera(true)}
+                        className={cn(
+                          'flex w-full flex-col items-center justify-center h-64 border-2 border-dashed rounded-xl transition',
+                          isDark
+                            ? 'border-slate-600 bg-slate-800/50 hover:border-amber-500/60'
+                            : 'border-stone-300 bg-stone-50 hover:border-amber-500',
+                        )}
+                      >
+                        <HiOutlineCamera className={cn('h-12 w-12 mb-4', isDark ? 'text-slate-400' : 'text-stone-400')} />
+                        <p className={cn('text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>
+                          Chụp ảnh
+                        </p>
+                      </button>
                     )}
 
                     {selfieFile && !selfieUploaded && (

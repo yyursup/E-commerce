@@ -11,12 +11,14 @@ import com.marketplace.ecommerce.cart.repository.CartRepository;
 import com.marketplace.ecommerce.common.exception.CustomException;
 import com.marketplace.ecommerce.order.dto.request.CreateOrderRequest;
 import com.marketplace.ecommerce.order.dto.response.OrderResponse;
+import com.marketplace.ecommerce.order.dto.response.ShopRankingItem;
 import com.marketplace.ecommerce.order.entity.Order;
 import com.marketplace.ecommerce.order.entity.OrderItem;
 import com.marketplace.ecommerce.order.repository.OrderItemsRepository;
 import com.marketplace.ecommerce.order.repository.OrderRepository;
 import com.marketplace.ecommerce.order.service.OrderService;
 import com.marketplace.ecommerce.payment.service.EscrowService;
+import com.marketplace.ecommerce.platform.service.CommissionService;
 import com.marketplace.ecommerce.platform.service.PlatformSettingService;
 import com.marketplace.ecommerce.product.entity.Product;
 import com.marketplace.ecommerce.product.repository.ProductRepository;
@@ -40,6 +42,7 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -59,6 +62,7 @@ public class OrderServiceImpl implements OrderService {
     private final ShippingService shippingService;
     private final PlatformSettingService platformSettingService;
     private final EscrowService escrowService;
+    private final CommissionService commissionService;
 
     @Override
     @Transactional
@@ -225,23 +229,37 @@ public class OrderServiceImpl implements OrderService {
                 }
             }
         }
-
-        if (currentStatus == OrderStatus.PENDING_PAYMENT && newStatus == OrderStatus.CONFIRMED) {
-            tryCreateGHNOrder(order);
-        }
-
-        if ((newStatus == OrderStatus.PROCESSING || newStatus == OrderStatus.SHIPPING)
-                && currentStatus == OrderStatus.CONFIRMED) {
-            tryCreateGHNOrder(order);
-        }
-
+        validateSellerTransition(currentStatus, newStatus);
         order.setStatus(newStatus);
         order = orderRepository.save(order);
+
+        if (newStatus == OrderStatus.DELIVERED) {
+
+            commissionService.createCommission(order.getId());
+        }
+
 
         return OrderResponse.from(order);
     }
 
-    private void tryCreateGHNOrder(Order order) {
+    private void validateSellerTransition(OrderStatus currentStatus, OrderStatus newStatus) {
+        boolean valid = switch (currentStatus) {
+            case CONFIRMED -> newStatus == OrderStatus.PROCESSING ||
+                    newStatus == OrderStatus.CANCELLED;
+
+            case PROCESSING -> newStatus == OrderStatus.SHIPPING;
+
+            case SHIPPING -> newStatus == OrderStatus.DELIVERED;
+
+            default -> false;
+        };
+
+        if (!valid) {
+            throw new CustomException("Invalid transition: " + currentStatus + " -> " + newStatus);
+        }
+    }
+
+    public void tryCreateGHNOrder(Order order) {
         if (order.getGhnOrderCode() == null || order.getGhnOrderCode().isEmpty()) {
             try {
                 GHNCreateOrderRequest ghnRequest = shippingService.build(order);
@@ -372,4 +390,25 @@ public class OrderServiceImpl implements OrderService {
         return orderNumber;
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<ShopRankingItem> getShopRanking() {
+        List<Object[]> rows = orderRepository.getShopRankingByRevenue();
+        List<ShopRankingItem> result = new ArrayList<>();
+        int rank = 1;
+        for (Object[] row : rows) {
+            UUID shopId = (UUID) row[0];
+            String shopName = (String) row[1];
+            BigDecimal totalRevenue = row[2] != null ? (BigDecimal) row[2] : BigDecimal.ZERO;
+            long orderCount = row[3] != null ? ((Number) row[3]).longValue() : 0L;
+            result.add(ShopRankingItem.builder()
+                    .rank(rank++)
+                    .shopId(shopId)
+                    .shopName(shopName)
+                    .totalRevenue(totalRevenue)
+                    .orderCount(orderCount)
+                    .build());
+        }
+        return result;
+    }
 }

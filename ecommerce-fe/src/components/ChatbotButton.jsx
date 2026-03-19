@@ -1,27 +1,38 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { HiOutlineChat, HiX, HiOutlinePaperAirplane, HiOutlineSparkles } from 'react-icons/hi'
+import { HiOutlineChat, HiX, HiOutlinePaperAirplane, HiOutlineSparkles, HiOutlineReply } from 'react-icons/hi'
+import SockJS from 'sockjs-client'
+import { Client } from '@stomp/stompjs'
 import { useThemeStore } from '../store/useThemeStore'
 import { cn } from '../lib/cn'
+import chatbotService from '../services/chatbot'
 
-// Mock messages for demo
-const initialMessages = [
-  {
-    id: 1,
-    type: 'bot',
-    text: 'Xin chào! 👋 Tôi là Chatbot AI. Tôi có thể giúp bạn tìm sản phẩm, tư vấn và hỗ trợ đặt hàng. Tính năng đang được phát triển, nhưng bạn có thể thử gửi tin nhắn!',
-    timestamp: new Date(),
-  },
-]
+const WS_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080'
+
+function formatPrice(value) {
+  if (value == null) return ''
+  const n = Number(value)
+  if (Number.isNaN(n)) return ''
+  return new Intl.NumberFormat('vi-VN').format(n) + ' đ'
+}
 
 export default function ChatbotButton() {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
   const [isOpen, setIsOpen] = useState(false)
-  const [messages, setMessages] = useState(initialMessages)
+  const [messages, setMessages] = useState([])
+  const [options, setOptions] = useState([])
+  const [inputExpected, setInputExpected] = useState(false)
+  const [inputHint, setInputHint] = useState('')
   const [inputValue, setInputValue] = useState('')
-  const [isTyping, setIsTyping] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const [liveChatMode, setLiveChatMode] = useState(false)
+  const [liveChatConnected, setLiveChatConnected] = useState(false)
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
+  const stompClientRef = useRef(null)
+  const handoffSentRef = useRef(false)
+  const liveChatSessionIdRef = useRef(null)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -32,37 +43,157 @@ export default function ChatbotButton() {
       scrollToBottom()
       inputRef.current?.focus()
     }
-  }, [isOpen, messages])
+  }, [isOpen, messages, options])
 
   const handleToggle = () => {
+    if (!isOpen && messages.length === 0) {
+      setLoading(true)
+      setError(null)
+      chatbotService
+        .init()
+        .then((data) => {
+          setMessages([
+            {
+              id: 'init',
+              type: 'bot',
+              text: data.messageText,
+              productCards: data.productCards || [],
+            },
+          ])
+          setOptions(data.options || [])
+          setInputExpected(!!data.inputExpected)
+          setInputHint(data.inputHint || '')
+        })
+        .catch((err) => {
+          setError(err.response?.data?.message || err.message || 'Không kết nối được chatbot.')
+          setMessages([
+            {
+              id: 'err',
+              type: 'bot',
+              text: 'Không thể tải chatbot. Bạn hãy thử lại sau hoặc liên hệ hỗ trợ.',
+              productCards: [],
+            },
+          ])
+        })
+        .finally(() => setLoading(false))
+    }
     setIsOpen(!isOpen)
   }
 
-  const handleSend = async () => {
-    if (!inputValue.trim()) return
+  const connectLiveChat = useCallback(() => {
+    if (stompClientRef.current?.connected) return
+    const sock = new SockJS(`${WS_BASE}/api/v1/ws-chat`, null, { withCredentials: true })
+    const client = new Client({
+      webSocketFactory: () => sock,
+      reconnectDelay: 3000,
+      onConnect: () => {
+        setLiveChatConnected(true)
+        const sessionId = liveChatSessionIdRef.current
+        const replyTopic = sessionId ? `/topic/live-chat-reply/${sessionId}` : '/user/queue/chat'
+        client.subscribe(replyTopic, (msg) => {
+          const body = JSON.parse(msg.body || '{}')
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `admin-${Date.now()}`,
+              type: 'bot',
+              text: body.text || '',
+              fromAdmin: true,
+            },
+          ])
+        })
+        if (!handoffSentRef.current) {
+          client.publish({
+            destination: '/app/chat',
+            body: JSON.stringify({ text: 'Khách đã yêu cầu gặp nhân viên.' }),
+          })
+          handoffSentRef.current = true
+        }
+      },
+      onDisconnect: () => setLiveChatConnected(false),
+      onStompError: () => setLiveChatConnected(false),
+    })
+    client.activate()
+    stompClientRef.current = client
+  }, [])
 
-    const userMessage = {
-      id: Date.now(),
-      type: 'user',
-      text: inputValue,
-      timestamp: new Date(),
-    }
-
-    setMessages((prev) => [...prev, userMessage])
-    setInputValue('')
-    setIsTyping(true)
-
-    // Simulate bot response
-    setTimeout(() => {
-      const botResponse = {
-        id: Date.now() + 1,
-        type: 'bot',
-        text: 'Cảm ơn bạn đã liên hệ! Tính năng Chatbot AI đang được phát triển. Chúng tôi sẽ sớm tích hợp AI để trả lời tự động các câu hỏi của bạn. Hiện tại bạn có thể liên hệ qua email hoặc hotline để được hỗ trợ.',
-        timestamp: new Date(),
+  useEffect(() => {
+    if (!isOpen || !liveChatMode) return
+    connectLiveChat()
+    return () => {
+      if (stompClientRef.current) {
+        stompClientRef.current.deactivate?.()
+        stompClientRef.current = null
       }
-      setMessages((prev) => [...prev, botResponse])
-      setIsTyping(false)
-    }, 1500)
+      setLiveChatConnected(false)
+    }
+  }, [isOpen, liveChatMode, connectLiveChat])
+
+  const sendInteraction = (payload) => {
+    setLoading(true)
+    setError(null)
+    chatbotService
+      .interact(payload)
+      .then((data) => {
+        if (data.messageText != null && data.messageText !== '') {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `bot-${Date.now()}`,
+              type: 'bot',
+              text: data.messageText,
+              productCards: data.productCards || [],
+            },
+          ])
+        }
+        setOptions(data.options || [])
+        setInputExpected(!!data.inputExpected)
+        setInputHint(data.inputHint || '')
+        if (data.humanHandoffRequired) {
+          if (data.liveChatSessionId) liveChatSessionIdRef.current = data.liveChatSessionId
+          setLiveChatMode(true)
+          setInputExpected(true)
+          setInputHint('Nhập tin nhắn gửi cho nhân viên hỗ trợ...')
+          handoffSentRef.current = false
+        } else {
+          setLiveChatMode(false)
+        }
+      })
+      .catch((err) => {
+        setError(err.response?.data?.message || err.message || 'Có lỗi xảy ra.')
+      })
+      .finally(() => setLoading(false))
+  }
+
+  const handleOptionClick = (opt) => {
+    const userLabel = opt.buttonLabel
+    setMessages((prev) => [
+      ...prev,
+      { id: `user-${Date.now()}`, type: 'user', text: userLabel },
+    ])
+    const payload = { action: opt.actionPayload }
+    if (opt.categoryId) payload.categoryId = opt.categoryId
+    sendInteraction(payload)
+  }
+
+  const handleSend = () => {
+    const text = inputValue.trim()
+    if (!text) return
+
+    setMessages((prev) => [
+      ...prev,
+      { id: `user-${Date.now()}`, type: 'user', text },
+    ])
+    setInputValue('')
+
+    if (liveChatMode && stompClientRef.current?.connected) {
+      stompClientRef.current.publish({
+        destination: '/app/chat',
+        body: JSON.stringify({ text }),
+      })
+    } else {
+      sendInteraction({ text })
+    }
   }
 
   const handleKeyPress = (e) => {
@@ -72,9 +203,34 @@ export default function ChatbotButton() {
     }
   }
 
+  const handleBackToMenu = () => {
+    setLoading(true)
+    setError(null)
+    chatbotService
+      .interact({ action: 'END_LIVE_CHAT' })
+      .then((data) => {
+        setLiveChatMode(false)
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `bot-${Date.now()}`,
+            type: 'bot',
+            text: data.messageText || 'Bạn đã quay lại menu. Chọn một mục bên dưới.',
+            productCards: data.productCards || [],
+          },
+        ])
+        setOptions(data.options || [])
+        setInputExpected(!!data.inputExpected)
+        setInputHint(data.inputHint || '')
+      })
+      .catch((err) => {
+        setError(err.response?.data?.message || err.message || 'Không thể quay lại menu.')
+      })
+      .finally(() => setLoading(false))
+  }
+
   return (
     <>
-      {/* Chatbot Button - Fixed bottom right */}
       <motion.button
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
@@ -86,33 +242,19 @@ export default function ChatbotButton() {
             ? 'bg-red-500 text-white hover:bg-red-600'
             : 'bg-gradient-to-br from-amber-500 to-amber-600 text-white hover:from-amber-600 hover:to-amber-700',
         )}
-        aria-label="Mở chatbot AI"
+        aria-label="Mở chatbot"
       >
         <AnimatePresence mode="wait">
           {isOpen ? (
-            <motion.div
-              key="close"
-              initial={{ rotate: -90, opacity: 0 }}
-              animate={{ rotate: 0, opacity: 1 }}
-              exit={{ rotate: 90, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-            >
+            <motion.div key="close" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.2 }}>
               <HiX className="h-6 w-6" />
             </motion.div>
           ) : (
-            <motion.div
-              key="chat"
-              initial={{ rotate: 90, opacity: 0 }}
-              animate={{ rotate: 0, opacity: 1 }}
-              exit={{ rotate: -90, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-            >
+            <motion.div key="chat" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }} transition={{ duration: 0.2 }}>
               <HiOutlineChat className="h-6 w-6" />
             </motion.div>
           )}
         </AnimatePresence>
-
-        {/* Notification Badge */}
         {!isOpen && (
           <motion.div
             initial={{ scale: 0 }}
@@ -124,7 +266,6 @@ export default function ChatbotButton() {
         )}
       </motion.button>
 
-      {/* Chat Window */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -133,13 +274,10 @@ export default function ChatbotButton() {
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.3 }}
             className={cn(
-              'fixed bottom-24 right-6 z-50 flex h-[500px] w-96 flex-col overflow-hidden rounded-2xl border shadow-2xl',
-              isDark
-                ? 'border-slate-700 bg-slate-900'
-                : 'border-stone-200 bg-white',
+              'fixed bottom-24 right-6 z-50 flex h-[520px] w-96 flex-col overflow-hidden rounded-2xl border shadow-2xl',
+              isDark ? 'border-slate-700 bg-slate-900' : 'border-stone-200 bg-white',
             )}
           >
-            {/* Header */}
             <div
               className={cn(
                 'flex items-center justify-between border-b p-4',
@@ -155,96 +293,151 @@ export default function ChatbotButton() {
                 </div>
                 <div>
                   <h3 className={cn('text-sm font-semibold', isDark ? 'text-white' : 'text-stone-900')}>
-                    Chatbot AI
+                    {liveChatMode ? 'Chat với nhân viên' : 'Chatbot'}
                   </h3>
                   <p className={cn('text-xs', isDark ? 'text-slate-400' : 'text-stone-600')}>
-                    Đang hoạt động
+                    {liveChatMode
+                      ? (liveChatConnected ? 'Đã kết nối • Nhân viên sẽ phản hồi' : 'Đang kết nối...')
+                      : 'Tìm sản phẩm & hỗ trợ'}
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Messages Container */}
             <div className="flex-1 overflow-y-auto p-4">
+              {loading && messages.length === 0 && (
+                <div className="flex justify-center py-8">
+                  <div className="flex gap-1">
+                    {[0, 1, 2].map((i) => (
+                      <motion.div
+                        key={i}
+                        className={cn('h-2 w-2 rounded-full', isDark ? 'bg-slate-400' : 'bg-stone-400')}
+                        animate={{ y: [0, -4, 0] }}
+                        transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.2 }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-4">
-                {messages.map((message) => (
+                {messages.map((msg) => (
                   <motion.div
-                    key={message.id}
+                    key={msg.id}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className={cn('flex', message.type === 'user' ? 'justify-end' : 'justify-start')}
+                    className={cn('flex', msg.type === 'user' ? 'justify-end' : 'justify-start')}
                   >
                     <div
                       className={cn(
-                        'max-w-[80%] rounded-2xl px-4 py-2.5',
-                        message.type === 'user'
+                        'max-w-[85%] rounded-2xl px-4 py-2.5',
+                        msg.type === 'user'
                           ? 'bg-gradient-to-br from-amber-500 to-amber-600 text-white'
-                          : isDark
-                            ? 'bg-slate-800 text-slate-100'
-                            : 'bg-stone-100 text-stone-900',
+                          : isDark ? 'bg-slate-800 text-slate-100' : 'bg-stone-100 text-stone-900',
                       )}
                     >
-                      <p className="text-sm leading-relaxed">{message.text}</p>
-                      <p
-                        className={cn(
-                          'mt-1 text-[10px] opacity-70',
-                          message.type === 'user' ? 'text-white' : isDark ? 'text-slate-400' : 'text-stone-500',
-                        )}
-                      >
-                        {message.timestamp.toLocaleTimeString('vi-VN', {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </p>
+                      <p className="text-sm leading-relaxed whitespace-pre-line">{msg.text}</p>
+                      {msg.productCards && msg.productCards.length > 0 && (
+                        <div className="mt-3 space-y-2">
+                          {msg.productCards.slice(0, 4).map((card) => (
+                            <a
+                              key={card.id}
+                              href={card.productUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={cn(
+                                'flex gap-2 rounded-xl border p-2 text-left transition hover:opacity-90',
+                                isDark ? 'border-slate-600 bg-slate-700' : 'border-stone-200 bg-white',
+                              )}
+                            >
+                              {card.thumbnailUrl && (
+                                <img
+                                  src={card.thumbnailUrl}
+                                  alt=""
+                                  className="h-12 w-12 rounded-lg object-cover"
+                                />
+                              )}
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-xs font-medium">{card.name}</p>
+                                <p className="text-xs text-amber-600 dark:text-amber-400">{formatPrice(card.basePrice)}</p>
+                              </div>
+                            </a>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </motion.div>
                 ))}
 
-                {/* Typing Indicator */}
-                {isTyping && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="flex justify-start"
-                  >
-                    <div
-                      className={cn(
-                        'rounded-2xl px-4 py-2.5',
-                        isDark ? 'bg-slate-800' : 'bg-stone-100',
-                      )}
-                    >
+                {options.length > 0 && !loading && (
+                  <div className="flex flex-wrap gap-2">
+                    {options.map((opt) => (
+                      <button
+                        key={opt.actionPayload + (opt.categoryId || '')}
+                        type="button"
+                        onClick={() => handleOptionClick(opt)}
+                        disabled={loading}
+                        className={cn(
+                          'rounded-xl border px-3 py-2 text-xs font-medium transition disabled:opacity-50',
+                          isDark
+                            ? 'border-slate-600 bg-slate-800 text-slate-200 hover:bg-slate-700'
+                            : 'border-stone-300 bg-white text-stone-700 hover:bg-stone-100',
+                        )}
+                      >
+                        {opt.buttonLabel}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {loading && messages.length > 0 && (
+                  <div className="flex justify-start">
+                    <div className={cn('rounded-2xl px-4 py-2.5', isDark ? 'bg-slate-800' : 'bg-stone-100')}>
                       <div className="flex gap-1">
-                        <motion.div
-                          className={cn('h-2 w-2 rounded-full', isDark ? 'bg-slate-400' : 'bg-stone-400')}
-                          animate={{ y: [0, -4, 0] }}
-                          transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
-                        />
-                        <motion.div
-                          className={cn('h-2 w-2 rounded-full', isDark ? 'bg-slate-400' : 'bg-stone-400')}
-                          animate={{ y: [0, -4, 0] }}
-                          transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
-                        />
-                        <motion.div
-                          className={cn('h-2 w-2 rounded-full', isDark ? 'bg-slate-400' : 'bg-stone-400')}
-                          animate={{ y: [0, -4, 0] }}
-                          transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
-                        />
+                        {[0, 1, 2].map((i) => (
+                          <motion.div
+                            key={i}
+                            className={cn('h-2 w-2 rounded-full', isDark ? 'bg-slate-400' : 'bg-stone-400')}
+                            animate={{ y: [0, -4, 0] }}
+                            transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.2 }}
+                          />
+                        ))}
                       </div>
                     </div>
-                  </motion.div>
+                  </div>
+                )}
+
+                {error && (
+                  <p className="text-xs text-red-500">{error}</p>
                 )}
               </div>
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input Area */}
             <div
               className={cn(
                 'border-t p-4',
                 isDark ? 'border-slate-700 bg-slate-800' : 'border-stone-200 bg-stone-50',
               )}
             >
+              {liveChatMode && (
+                <div className="mb-3">
+                  <button
+                    type="button"
+                    onClick={handleBackToMenu}
+                    disabled={loading}
+                    className={cn(
+                      'flex w-full items-center justify-center gap-2 rounded-xl border py-2 text-xs font-medium transition disabled:opacity-50',
+                      isDark
+                        ? 'border-slate-600 bg-slate-700 text-slate-200 hover:bg-slate-600'
+                        : 'border-stone-300 bg-stone-100 text-stone-700 hover:bg-stone-200',
+                    )}
+                  >
+                    <HiOutlineReply className="h-4 w-4" />
+                    Quay lại menu
+                  </button>
+                </div>
+              )}
               <div className="flex gap-2">
                 <input
                   ref={inputRef}
@@ -252,9 +445,10 @@ export default function ChatbotButton() {
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  placeholder="Nhập tin nhắn..."
+                  placeholder={inputHint || 'Nhập tin nhắn...'}
+                  disabled={loading}
                   className={cn(
-                    'flex-1 rounded-xl border px-4 py-2.5 text-sm outline-none transition-all placeholder:opacity-60 focus:ring-2 focus:ring-amber-500/20',
+                    'flex-1 rounded-xl border px-4 py-2.5 text-sm outline-none transition-all placeholder:opacity-60 focus:ring-2 focus:ring-amber-500/20 disabled:opacity-60',
                     isDark
                       ? 'border-slate-600 bg-slate-700 text-white placeholder:text-slate-400'
                       : 'border-stone-300 bg-white text-stone-900 placeholder:text-stone-400',
@@ -262,18 +456,18 @@ export default function ChatbotButton() {
                 />
                 <button
                   onClick={handleSend}
-                  disabled={!inputValue.trim()}
+                  disabled={!inputValue.trim() || loading}
                   className={cn(
-                    'flex h-10 w-10 items-center justify-center rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed',
+                    'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed',
                     'bg-gradient-to-br from-amber-500 to-amber-600 text-white hover:from-amber-600 hover:to-amber-700 hover:shadow-lg',
                   )}
                 >
                   <HiOutlinePaperAirplane className="h-5 w-5" />
                 </button>
               </div>
-              <p className={cn('mt-2 text-xs text-center', isDark ? 'text-slate-400' : 'text-stone-500')}>
-                Tính năng đang phát triển • Powered by AI
-              </p>
+              {inputHint && (
+                <p className={cn('mt-2 text-xs', isDark ? 'text-slate-400' : 'text-stone-500')}>{inputHint}</p>
+              )}
             </div>
           </motion.div>
         )}

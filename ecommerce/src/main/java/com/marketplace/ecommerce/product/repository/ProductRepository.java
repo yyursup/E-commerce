@@ -2,9 +2,12 @@ package com.marketplace.ecommerce.product.repository;
 
 import com.marketplace.ecommerce.product.entity.Product;
 import com.marketplace.ecommerce.product.valueObjects.ProductStatus;
+import com.marketplace.ecommerce.review.entity.Review;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -21,6 +24,15 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
     boolean existsBySkuAndDeletedFalse(String sku);
 
     Optional<Product> findByIdAndDeletedFalse(UUID id);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select p from Product p where p.id = :id")
+    Optional<Product> findByIdForUpdate(@Param("id") UUID id);
+
+
+    @Modifying
+    @Query("update Product p set p.status = :status where p.shop.id = :shopId")
+    int updateStatusByShopId(@Param("shopId") UUID shopId, @Param("status") ProductStatus status);
 
     @Modifying
     @Query("""
@@ -49,6 +61,24 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
                   and p.deleted = false
             """)
     Optional<Product> findPublishedByIdWithDetails(@Param("id") UUID id);
+
+    @Query("""
+                select p
+                from Product p
+                join fetch p.shop s
+                join fetch p.productCategory c
+                left join fetch p.images i
+                where p.id <> :excludeId
+                  and p.status = 'PUBLISHED'
+                  and p.shop.status = 'ACTIVE'
+                  and p.shop.user.account.isActive = true
+                  and p.deleted = false
+                  and (:categoryId is null or p.productCategory.id = :categoryId)
+            """)
+    Page<Product> findPublishedByCategoryExcludingId(
+            @Param("excludeId") UUID excludeId,
+            @Param("categoryId") UUID categoryId,
+            Pageable pageable);
 
     @Query("""
                 select p

@@ -3,6 +3,8 @@ package com.marketplace.ecommerce.order.controller;
 import com.marketplace.ecommerce.common.CurrentUserInfo;
 import com.marketplace.ecommerce.config.CurrentUser;
 import com.marketplace.ecommerce.order.dto.response.OrderResponse;
+import com.marketplace.ecommerce.order.dto.response.ShopRankingItem;
+import com.marketplace.ecommerce.order.service.OrderService;
 import com.marketplace.ecommerce.order.service.QueryOrderService;
 import com.marketplace.ecommerce.order.valueObjects.OrderStatus;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +20,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class QueryOrderController {
     private final QueryOrderService queryOrderService;
+    private final OrderService orderService;
 
     @GetMapping("/{orderId}/me")
     public ResponseEntity<OrderResponse> viewMyOrderDetails(
@@ -49,6 +52,12 @@ public class QueryOrderController {
             @RequestParam(value = "status", required = false) OrderStatus status
     ) {
         return ResponseEntity.ok(queryOrderService.listOrdersForShop(c.getAccountId(), status));
+    }
+
+    @GetMapping("/shop-ranking")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<ShopRankingItem>> getShopRanking() {
+        return ResponseEntity.ok(orderService.getShopRanking());
     }
 
     @GetMapping("/{orderId}")

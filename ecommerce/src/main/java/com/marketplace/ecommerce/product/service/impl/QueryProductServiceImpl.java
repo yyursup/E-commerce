@@ -19,8 +19,14 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -87,6 +93,21 @@ public class QueryProductServiceImpl implements QueryProductService {
         return productRepository.findAllByShopIdAndStatusWithDetails(shop.getId(), productStatus).stream()
                 .map(ProductResponse::from)
                 .toList();
+    }
+
+    @Override
+    public List<ProductResponse> getPublishedProductsByIds(List<UUID> ids) {
+        if (ids == null || ids.isEmpty()) return new ArrayList<>();
+
+        // Preserve input order, skip missing/unpublished products
+        List<UUID> uniqueIds = ids.stream().filter(Objects::nonNull).distinct().collect(Collectors.toList());
+        List<ProductResponse> out = new ArrayList<>(uniqueIds.size());
+        for (UUID id : uniqueIds) {
+            productRepository.findPublishedByIdWithDetails(id)
+                    .map(ProductResponse::from)
+                    .ifPresent(out::add);
+        }
+        return out;
     }
 
 

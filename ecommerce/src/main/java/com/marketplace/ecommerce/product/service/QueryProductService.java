@@ -18,4 +18,6 @@ public interface QueryProductService {
     List<ProductResponse> getProductsByShopAndStatus(UUID accountId, String status);
 
     Page<ProductResponse> getPublishedProducts(PageQueryRequest req);
+
+    List<ProductResponse> getPublishedProductsByIds(List<UUID> ids);
 }

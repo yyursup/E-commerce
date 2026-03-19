@@ -4,5 +4,6 @@ public enum ProductStatus {
     DRAFT,      // Nháp - chưa publish
     PUBLISHED,  // Đã publish - hiển thị công khai
     ARCHIVED,
-    DELETED// Đã lưu trữ - không hiển thị
+    DELETED,
+    INACTIVE// Đã lưu trữ - không hiển thị
 }

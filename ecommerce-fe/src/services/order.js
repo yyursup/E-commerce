@@ -79,11 +79,31 @@ const orderService = {
       throw error.response ? error.response.data : error;
     }
   },
+
+  // Admin: Get shop ranking by delivered revenue
+  getShopRanking: async () => {
+    try {
+      const response = await axiosClient.get(`${ORDER_BASE}/shop-ranking`);
+      return response.data;
+    } catch (error) {
+      throw error.response ? error.response.data : error;
+    }
+  },
+
   // Create VNPay Payment URL
   createPayment: async (orderId) => {
     try {
       const response = await axiosClient.post(`${PAYMENT_BASE}/orders/${orderId}/vnpay`);
       return response.data; // Expect { paymentUrl: '...' }
+    } catch (error) {
+      throw error.response ? error.response.data : error;
+    }
+  },
+  // Verify VNPay Payment Callback
+  verifyVnpayPayment: async (params) => {
+    try {
+      const response = await axiosClient.get(`${PAYMENT_BASE}/vnpay/return`, { params });
+      return response.data;
     } catch (error) {
       throw error.response ? error.response.data : error;
     }
@@ -110,11 +130,22 @@ const orderService = {
     }
   },
 
-  // Wallet: Get my wallet
-  getMyWallet: async () => {
+  // Seller: Retry create GHN order code
+  retryCreateGhnOrder: async (orderId) => {
     try {
-      // Assuming WalletController is at /wallet
-      const response = await axiosClient.get('/api/v1/wallet/me');
+      const response = await axiosClient.post(`${ORDER_BASE}/${orderId}/ghn/retry`);
+      return response.data;
+    } catch (error) {
+      throw error.response ? error.response.data : error;
+    }
+  },
+
+  // Seller: Set GHN order code manually
+  setGhnOrderCode: async (orderId, ghnOrderCode) => {
+    try {
+      const response = await axiosClient.put(`${ORDER_BASE}/${orderId}/ghn/code`, null, {
+        params: { ghnOrderCode }
+      });
       return response.data;
     } catch (error) {
       throw error.response ? error.response.data : error;

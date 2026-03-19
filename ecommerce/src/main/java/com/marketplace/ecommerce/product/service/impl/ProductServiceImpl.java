@@ -2,6 +2,7 @@ package com.marketplace.ecommerce.product.service.impl;
 
 import com.marketplace.ecommerce.auth.entity.User;
 import com.marketplace.ecommerce.auth.repository.UserRepository;
+import com.marketplace.ecommerce.auth.valueObjects.DisciplineLevel;
 import com.marketplace.ecommerce.common.exception.CustomException;
 import com.marketplace.ecommerce.product.dto.request.CreateProductRequest;
 import com.marketplace.ecommerce.product.dto.request.UpdateProductRequest;
@@ -35,7 +36,8 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional
     public void deleteProduct(UUID accountId, UUID productId) {
-        int updated = productRepository.softDeleteByAccountId(productId, accountId);
+        Shop shop = getShopByAccountId(accountId);
+        int updated = productRepository.softDeleteByAccountId(productId, shop.getUser().getAccount().getId());
         if (updated == 0) {
             throw new CustomException("Product can not found or you don't have permission to delete this product");
         }
@@ -96,6 +98,10 @@ public class ProductServiceImpl implements ProductService {
         User user = userRepository.findByAccountId(accountId)
                 .orElseThrow(() -> new CustomException("User not found"));
 
+        if (user.getAccount().getDisciplineLevel() == DisciplineLevel.SUSPENDED || user.getAccount().getDisciplineLevel() == DisciplineLevel.BANNED) {
+            throw new CustomException("You do not have permission to manage products because your account is suspended or banned.");
+        }
+
         return shopRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new CustomException("Shop not found"));
     }
@@ -115,6 +121,9 @@ public class ProductServiceImpl implements ProductService {
         }
         if (req.getBasePrice() != null) {
             product.setBasePrice(req.getBasePrice());
+        }
+        if( req.getStockQuantity() != null){
+            product.setQuantity(req.getStockQuantity());
         }
         product.setUpdatedAt(LocalDateTime.now());
     }

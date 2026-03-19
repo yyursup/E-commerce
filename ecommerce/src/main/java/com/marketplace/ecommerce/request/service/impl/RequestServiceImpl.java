@@ -5,6 +5,7 @@ import com.marketplace.ecommerce.auth.entity.Role;
 import com.marketplace.ecommerce.auth.repository.AccountRepository;
 import com.marketplace.ecommerce.auth.repository.RoleRepository;
 import com.marketplace.ecommerce.common.exception.CustomException;
+import com.marketplace.ecommerce.request.constant.RequestConstant;
 import com.marketplace.ecommerce.request.dto.request.CreateSendRequest;
 import com.marketplace.ecommerce.request.dto.response.*;
 import com.marketplace.ecommerce.request.entity.Report;
@@ -21,8 +22,10 @@ import com.marketplace.ecommerce.request.valueObjects.TargetType;
 import com.marketplace.ecommerce.shop.entity.Shop;
 import com.marketplace.ecommerce.shop.service.ShopService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -105,7 +108,11 @@ public class RequestServiceImpl implements RequestService {
                 Report rep = reportRepository.findByRequestId(requestId);
                 if (rep == null) throw new CustomException("Report detail not found for request: " + requestId);
 
-                yield ReportDetailsResponse.builder().targetId(rep.getTargetId()).targetType(rep.getTargetType() != null ? TargetType.valueOf(rep.getTargetType().name()) : null).evidenceUrl(rep.getEvidenceUrl()).build();
+                yield ReportDetailsResponse.builder().targetId(rep.getTargetId())
+                        .targetType(rep.getTargetType() != null ? TargetType.valueOf(rep.getTargetType().name()) : null)
+                        .evidenceUrl(rep.getEvidenceUrl())
+                        .moderatorNote(rep.getModeratorNote())
+                        .build();
             }
 
             case SELLER_REGISTRATION -> {
@@ -134,8 +141,18 @@ public class RequestServiceImpl implements RequestService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<CreateRequestResponse> getAllRequests(Pageable pageable) {
-        return requestRepository.findAll(pageable).map(r -> CreateRequestResponse.builder()
+    public Page<CreateRequestResponse> getAllRequests(RequestStatus status, Pageable pageable) {
+        Pageable newestFirstPageable = PageRequest.of(
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                Sort.by(Sort.Direction.DESC, RequestConstant.CREATED_AT)
+        );
+
+        Page<Request> requests = status == null
+                ? requestRepository.findAll(newestFirstPageable)
+                : requestRepository.findAllByStatus(status, newestFirstPageable);
+
+        return requests.map(r -> CreateRequestResponse.builder()
                 .requestId(r.getId())
                 .accountId(r.getAccount() != null ? r.getAccount().getId() : null)
                 .type(r.getType())

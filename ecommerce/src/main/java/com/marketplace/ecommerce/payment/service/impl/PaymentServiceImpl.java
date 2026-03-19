@@ -2,13 +2,11 @@ package com.marketplace.ecommerce.payment.service.impl;
 
 import com.marketplace.ecommerce.auth.entity.User;
 import com.marketplace.ecommerce.auth.repository.UserRepository;
-import com.marketplace.ecommerce.cart.entity.Cart;
-import com.marketplace.ecommerce.cart.entity.CartItem;
-import com.marketplace.ecommerce.cart.repository.CartRepository;
 import com.marketplace.ecommerce.common.exception.CustomException;
 import com.marketplace.ecommerce.order.entity.Order;
 import com.marketplace.ecommerce.order.entity.OrderItem;
 import com.marketplace.ecommerce.order.repository.OrderRepository;
+import com.marketplace.ecommerce.order.service.OrderService;
 import com.marketplace.ecommerce.order.valueObjects.OrderStatus;
 import com.marketplace.ecommerce.payment.entity.Payment;
 import com.marketplace.ecommerce.payment.repository.PaymentRepository;
@@ -37,6 +35,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final VNPayService vnPayService;
     private final ProductRepository productRepository;
     private final WalletService walletService;
+    private final OrderService orderService;
 
     @Transactional
     @Override
@@ -60,6 +59,7 @@ public class PaymentServiceImpl implements PaymentService {
             payment.setStatus(PaymentStatus.SUCCESS);
             order.setStatus(OrderStatus.CONFIRMED);
             handlePaymentSuccess(order.getId());
+            orderService.tryCreateGHNOrder(order);
             walletService.recordPaymentAndHoldEscrow(payment);
 
         } else {
@@ -102,28 +102,27 @@ public class PaymentServiceImpl implements PaymentService {
                 .orElseGet(() -> Payment.builder()
                         .order(order)
                         .method(PaymentMethod.VNPAY)
-                        .status(PaymentStatus.PENDING)
-                        .amount(order.getTotal())
-                        .txnRef(generateTxnRef(order))
                         .build()
                 );
 
         if (payment.getStatus() == PaymentStatus.SUCCESS) {
             throw new CustomException("Payment already SUCCESS");
         }
-
-        if (payment.getTxnRef() == null || payment.getTxnRef().isBlank()) {
-            payment.setTxnRef(generateTxnRef(order));
-        }
+        // Always generate a new txnRef per attempt (VNPay rejects duplicate refs)
+        payment.setMethod(PaymentMethod.VNPAY);
+        payment.setAmount(order.getTotal());
+        payment.setTxnRef(generateTxnRef(order));
+        payment.setStatus(PaymentStatus.PENDING);
 
         paymentRepository.save(payment);
         return vnPayService.buildPaymentUrl(payment);
     }
 
     private String generateTxnRef(Order order) {
-        // unique, readable
+        String suffix = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         return "PAY-" + LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE)
-                + "-" + order.getOrderNumber();
+                + "-" + order.getOrderNumber()
+                + "-" + suffix;
     }
 
     @Transactional

@@ -35,6 +35,18 @@ public class WalletServiceImpl implements WalletService {
     private final UserRepository userRepository;
 
     @Override
+    public WalletResponse getWalletByUserName(String username) {
+        User user = userRepository.findByAccountUsername(username)
+                .orElseThrow(() -> new CustomException("User not found"));
+
+        Wallet w = walletRepo.findByUserId(user.getId())
+                .orElseThrow(() -> new CustomException("Wallet not found for userName=" + user.getAccount().getUsername()));
+
+        return WalletResponse.from(w);
+    }
+
+
+    @Override
     @Transactional(readOnly = true)
     public WalletResponse getWallet(UUID accountId) {
         User user = userRepository.findByAccountId(accountId)

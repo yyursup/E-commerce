@@ -7,7 +7,8 @@ import {
   HiOutlineCheckCircle,
   HiOutlineTruck,
   HiOutlineXCircle,
-  HiOutlineCreditCard
+  HiOutlineCreditCard,
+  HiOutlineStar,
 } from 'react-icons/hi'
 import { useThemeStore } from '../../store/useThemeStore'
 import { useAuthStore } from '../../store/useAuthStore'
@@ -67,6 +68,10 @@ export default function MyOrders() {
   const [statusFilter, setStatusFilter] = useState('')
   const [error, setError] = useState(null)
   const [walletBalance, setWalletBalance] = useState(0)
+  const [escrowHeld, setEscrowHeld] = useState(0)
+
+  // Statuses where buyer money is held in system escrow
+  const ESCROW_HELD_STATUSES = ['CONFIRMED', 'PROCESSING', 'SHIPPING', 'SHIPPED', 'DELIVERED']
 
   useEffect(() => {
     if (!isAuthenticated) return
@@ -79,13 +84,17 @@ export default function MyOrders() {
       setError(null)
       const status = statusFilter || null
 
-      const [ordersData, walletData] = await Promise.all([
-        orderService.getMyOrders(status),
-        statusFilter === '' ? orderService.getMyWallet() : Promise.resolve(null) // Only fetch wallet on first load/all statuses
-      ])
-
+      const ordersData = await orderService.getMyOrders(status)
       setOrders(ordersData || [])
-      if (walletData) setWalletBalance(walletData.balance || 0)
+
+      // Compute escrow-held from orders (only when showing all orders)
+      // buyer wallet.lockedBalance is always 0 — escrow funds go to system ESCROW wallet
+      if (!statusFilter) {
+        const held = (ordersData || []).filter(o =>
+          ESCROW_HELD_STATUSES.includes(o.status)
+        ).reduce((sum, o) => sum + (o.total || 0), 0)
+        setEscrowHeld(held)
+      }
 
     } catch (err) {
       console.error('Error fetching data:', err)
@@ -153,7 +162,7 @@ export default function MyOrders() {
             </p>
           </div>
 
-          {/* Wallet Card */}
+          {/* Escrow Held Card */}
           <div className={cn(
             "flex items-center gap-4 px-6 py-4 rounded-xl shadow-sm border",
             isDark ? "bg-slate-900 border-slate-700" : "bg-white border-stone-200"
@@ -163,10 +172,10 @@ export default function MyOrders() {
             </div>
             <div>
               <p className={cn("text-xs font-medium uppercase tracking-wider", isDark ? "text-slate-400" : "text-stone-500")}>
-                Số dư ví
+                Đang trong Escrow
               </p>
               <p className={cn("text-xl font-bold", isDark ? "text-white" : "text-stone-900")}>
-                {formatCurrency(walletBalance)}
+                {formatCurrency(statusFilter === '' ? escrowHeld : walletBalance)}
               </p>
             </div>
           </div>
@@ -277,17 +286,29 @@ export default function MyOrders() {
                           {formatCurrency(order.total)}
                         </p>
 
-                        {canMarkReceived(order.status) && (
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault(); // Prevent Link navigation
-                              handleMarkReceived(order.id);
-                            }}
-                            className="mt-2 inline-block rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-600"
-                          >
-                            Đã nhận được hàng
-                          </button>
-                        )}
+                        <div className="flex flex-col items-end gap-2 mt-2">
+                          {canMarkReceived(order.status) && (
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault(); // Prevent Link navigation
+                                handleMarkReceived(order.id);
+                              }}
+                              className="inline-block rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-600"
+                            >
+                              Đã nhận được hàng
+                            </button>
+                          )}
+                          {['DELIVERED', 'COMPLETED'].includes(order.status) && (
+                            <Link
+                              to={`/orders/${order.id}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-500 transition hover:bg-amber-500/20"
+                            >
+                              <HiOutlineStar className="h-3.5 w-3.5" />
+                              Viết đánh giá
+                            </Link>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </Link>

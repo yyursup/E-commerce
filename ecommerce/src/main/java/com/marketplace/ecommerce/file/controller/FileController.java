@@ -15,7 +15,7 @@ import java.io.InputStream;
 @Controller
 @RequestMapping("/files")
 @RequiredArgsConstructor
-public class FileMvcController {
+public class FileController {
 
     private final FileService fileService;
 
@@ -24,7 +24,7 @@ public class FileMvcController {
     public ResponseEntity<FileUploadResponse> uploadFile(
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "folder", defaultValue = "general") String folder) {
-        
+
         try {
             if (file.isEmpty()) {
                 return ResponseEntity.badRequest().build();
@@ -43,10 +43,10 @@ public class FileMvcController {
 
             // Upload file and get fileName
             String fileName = fileService.uploadFile(file, folder);
-            
+
             // Get file URL
             String fileUrl = fileService.getFileUrl(fileName);
-            
+
             // Create response
             FileUploadResponse response = FileUploadResponse.builder()
                     .fileName(fileName)
@@ -54,7 +54,7 @@ public class FileMvcController {
                     .size(file.getSize())
                     .contentType(contentType)
                     .build();
-            
+
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();

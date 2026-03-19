@@ -12,14 +12,18 @@ import {
   HiOutlineTruck,
   HiOutlineShieldCheck,
   HiCheck,
+  HiOutlineFlag,
 } from 'react-icons/hi'
 import ProductImageGallery from './components/ProductImageGallery'
+import ProductCard from '../../components/ProductCard'
+import ReportActionButton from '../../components/ReportActionButton'
 import { useThemeStore } from '../../store/useThemeStore'
 import { useAuthStore } from '../../store/useAuthStore'
 import { useCartStore } from '../../store/useCartStore'
 import { cn } from '../../lib/cn'
 import productService from '../../services/product'
 import cartService from '../../services/cart'
+import ProductReviews from './components/ProductReviews'
 
 export default function ProductDetail() {
   const { productId } = useParams()
@@ -32,8 +36,10 @@ export default function ProductDetail() {
   const [quantity, setQuantity] = useState(1)
   const [addingToCart, setAddingToCart] = useState(false)
   const [showAddAnimation, setShowAddAnimation] = useState(false)
+  const [similarProducts, setSimilarProducts] = useState([])
+  const [similarLoading, setSimilarLoading] = useState(true)
   const { isAuthenticated } = useAuthStore()
-  const { updateCartCount, incrementCount } = useCartStore()
+  const { updateCartCount } = useCartStore()
   const addButtonRef = useRef(null)
 
   useEffect(() => {
@@ -57,6 +63,42 @@ export default function ProductDetail() {
     }
   }, [productId])
 
+  useEffect(() => {
+    const fetchSimilar = async () => {
+      if (!productId) return
+      try {
+        setSimilarLoading(true)
+        const list = await productService.getSimilarProducts(productId, 8)
+        const currentId = productId.toLowerCase()
+        const mapped = (list || [])
+          .filter((p) => p.id && String(p.id).toLowerCase() !== currentId)
+          .map((p) => {
+            const thumb = p.images?.find((img) => img.isThumbnail) || p.images?.[0]
+            return {
+              id: p.id,
+              name: p.name,
+              price: p.basePrice ? Number(p.basePrice) : 0,
+              image: thumb?.imageUrl || '/product-placeholder.svg',
+              badge: p.status === 'PUBLISHED' ? 'Tương tự' : null,
+              rating: 4.5,
+              description: p.description,
+              basePrice: p.basePrice,
+              shopName: p.shopName,
+              categoryName: p.categoryName,
+              originalProduct: p,
+            }
+          })
+        setSimilarProducts(mapped)
+      } catch (err) {
+        console.error('Error fetching similar products:', err)
+        setSimilarProducts([])
+      } finally {
+        setSimilarLoading(false)
+      }
+    }
+    fetchSimilar()
+  }, [productId])
+
   const handleAddToCart = async () => {
     if (!isAuthenticated) {
       toast.error('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng')
@@ -72,14 +114,14 @@ export default function ProductDetail() {
     try {
       setAddingToCart(true)
       const cartResponse = await cartService.addToCart(product.id, quantity)
-      
+
       // Update cart count in store
       updateCartCount(cartResponse)
-      
+
       // Show success animation
       setShowAddAnimation(true)
       toast.success(`Đã thêm ${quantity} ${product.name} vào giỏ hàng`)
-      
+
       // Hide animation after 1.5s
       setTimeout(() => {
         setShowAddAnimation(false)
@@ -114,12 +156,12 @@ export default function ProductDetail() {
       setAddingToCart(true)
       // Add to cart first
       const cartResponse = await cartService.addToCart(product.id, quantity)
-      
+
       // Update cart count in store
       updateCartCount(cartResponse)
-      
+
       toast.success(`Đã thêm ${quantity} ${product.name} vào giỏ hàng`)
-      
+
       // Redirect to checkout immediately with shopId
       navigate('/checkout', { state: { shopId: product.shopId } })
     } catch (error) {
@@ -147,6 +189,17 @@ export default function ProductDetail() {
       navigator.clipboard.writeText(window.location.href)
       toast.success('Đã sao chép link sản phẩm')
     }
+  }
+
+  const handleReportProduct = () => {
+    if (!isAuthenticated) {
+      toast.error('Vui lòng đăng nhập để báo cáo')
+      navigate('/login')
+      return
+    }
+    navigate(
+      `/report?targetId=${product.id}&targetType=PRODUCT&targetName=${encodeURIComponent(product.name)}`,
+    )
   }
 
   const increaseQuantity = () => {
@@ -253,7 +306,7 @@ export default function ProductDetail() {
                 </Link>
               )}
               {product.shopName && (
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-3">
                   <span className={cn('text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
                     Cửa hàng:
                   </span>
@@ -266,6 +319,13 @@ export default function ProductDetail() {
                   >
                     {product.shopName}
                   </Link>
+                  <ReportActionButton
+                    targetId={product.shopId}
+                    targetType="SHOP"
+                    targetName={product.shopName}
+                    label="Báo cáo shop"
+                    variant="chip"
+                  />
                 </div>
               )}
             </div>
@@ -436,6 +496,18 @@ export default function ProductDetail() {
             {/* Share & Wishlist */}
             <div className="flex items-center gap-4 border-t pt-4">
               <button
+                onClick={handleReportProduct}
+                className={cn(
+                  'flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition',
+                  isDark
+                    ? 'text-red-300 hover:bg-slate-800 hover:text-red-200'
+                    : 'text-red-600 hover:bg-stone-100 hover:text-red-700',
+                )}
+              >
+                <HiOutlineFlag className="h-5 w-5" />
+                Báo cáo sản phẩm
+              </button>
+              <button
                 onClick={handleShare}
                 className={cn(
                   'flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition',
@@ -572,6 +644,50 @@ export default function ProductDetail() {
             </div>
           </div>
         </motion.div>
+
+        {/* Product Reviews */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.4 }}
+        >
+          <ProductReviews productId={productId} />
+        </motion.div>
+
+        {/* Sản phẩm tương tự */}
+        {(similarLoading || similarProducts.length > 0) && (
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.5 }}
+            className="mt-12"
+          >
+            <h2
+              className={cn(
+                'mb-6 text-xl font-semibold',
+                isDark ? 'text-white' : 'text-stone-900',
+              )}
+            >
+              Sản phẩm tương tự
+            </h2>
+            {similarLoading ? (
+              <div className="flex justify-center py-8">
+                <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-amber-500 border-r-transparent" />
+              </div>
+            ) : (
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                {similarProducts.map((item, i) => (
+                  <ProductCard
+                    key={item.id}
+                    product={item}
+                    dataAos="fade-up"
+                    dataAosDelay={i % 4 === 0 ? 0 : (i % 4) * 100}
+                  />
+                ))}
+              </div>
+            )}
+          </motion.section>
+        )}
       </div>
     </div>
   )

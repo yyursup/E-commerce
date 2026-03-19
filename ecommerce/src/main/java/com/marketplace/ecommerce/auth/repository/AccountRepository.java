@@ -1,7 +1,9 @@
 package com.marketplace.ecommerce.auth.repository;
 
 import com.marketplace.ecommerce.auth.entity.Account;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -15,6 +17,11 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
     Optional<Account> findByUsername(String username);
 
     Optional<Account> findByEmail(String email);
+
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select a from Account a where a.id = :id")
+    Optional<Account> findByIdForUpdate(@Param("id") UUID id);
 
     @Query("SELECT CASE " +
             "WHEN COUNT(CASE WHEN a.username = :username THEN 1 END) > 0 THEN 'USERNAME_EXISTS' " +

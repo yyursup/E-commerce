@@ -25,7 +25,7 @@ public class RequestDetailsResponse {
 
     private UUID reviewedBy;
     private LocalDateTime reviewedAt;
-    private String rejectionReason;
+    private String note;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -43,7 +43,7 @@ public class RequestDetailsResponse {
                 .accountId(r.getAccount() != null ? r.getAccount().getId() : null)
                 .reviewedBy(r.getReviewedBy() != null ? r.getReviewedBy().getId() : null)
                 .reviewedAt(r.getReviewedAt())
-                .rejectionReason(r.getResponse())
+                .note(r.getResponse())
                 .createdAt(r.getCreatedAt())
                 .updatedAt(r.getUpdatedAt())
                 .detail(detail)

@@ -9,12 +9,17 @@ import {
   HiOutlineXCircle,
   HiOutlineLocationMarker,
   HiOutlinePhone,
+  HiOutlineLockClosed,
+  HiOutlineCreditCard,
+  HiOutlineShieldCheck,
 } from 'react-icons/hi'
 import { useThemeStore } from '../../store/useThemeStore'
 import { useAuthStore } from '../../store/useAuthStore'
 import { cn } from '../../lib/cn'
 import toast from 'react-hot-toast'
 import orderService from '../../services/order'
+import ReviewModal from '../../components/ReviewModal'
+import { HiOutlineStar } from 'react-icons/hi'
 
 const getStatusBadge = (status) => {
   const statusMap = {
@@ -54,6 +59,7 @@ export default function OrderDetail() {
   const [order, setOrder] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [reviewModal, setReviewModal] = useState({ open: false, productId: null, productName: '' })
 
   useEffect(() => {
     if (!isAuthenticated || !orderId) return
@@ -257,6 +263,19 @@ export default function OrderDetail() {
                     <p className={cn('mt-1 text-sm font-medium', isDark ? 'text-white' : 'text-stone-900')}>
                       {formatCurrency(item.totalPrice)}
                     </p>
+                    {order.status === 'COMPLETED' && (
+                      <button
+                        onClick={() => setReviewModal({
+                          open: true,
+                          productId: item.productId,
+                          productName: item.productName,
+                        })}
+                        className="mt-2 flex items-center gap-1.5 rounded-lg bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-500 transition hover:bg-amber-500/20"
+                      >
+                        <HiOutlineStar className="h-4 w-4" />
+                        Viết đánh giá
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -303,6 +322,51 @@ export default function OrderDetail() {
                 </div>
               </div>
 
+              {/* Escrow / Payment Status */}
+              {!['PENDING_PAYMENT', 'CANCELLED', 'REFUNDED'].includes(order.status) && (
+                <div className="border-t pt-4 mt-4">
+                  <h3 className={cn('text-sm font-semibold mb-3', isDark ? 'text-slate-300' : 'text-stone-700')}>
+                    Trạng thái thanh toán (Escrow)
+                  </h3>
+                  {['CONFIRMED', 'PROCESSING', 'SHIPPING', 'SHIPPED', 'DELIVERED'].includes(order.status) && (
+                    <div className={cn('flex items-start gap-3 rounded-xl p-4', isDark ? 'bg-amber-900/20 border border-amber-800/30' : 'bg-amber-50 border border-amber-100')}>
+                      <div className="mt-0.5 p-2 rounded-full bg-amber-500/10 shrink-0">
+                        <HiOutlineLockClosed className="h-4 w-4 text-amber-500" />
+                      </div>
+                      <div>
+                        <p className={cn('text-sm font-semibold', isDark ? 'text-amber-400' : 'text-amber-700')}>
+                          Tiền đang được giữ an toàn (Escrow)
+                        </p>
+                        <p className={cn('mt-1 text-xs', isDark ? 'text-slate-400' : 'text-stone-500')}>
+                          Số tiền <span className="font-semibold">{formatCurrency(order.subtotal || order.total)}</span> đang được giữ bởi hệ thống escrow.
+                          Tiền sẽ được chuyển cho người bán sau khi bạn xác nhận đã nhận hàng.
+                        </p>
+                        {order.status === 'DELIVERED' && (
+                          <p className={cn('mt-2 text-xs font-medium', isDark ? 'text-amber-300' : 'text-amber-600')}>
+                            ⏱ Nếu bạn không xác nhận trong 3 ngày, hệ thống sẽ tự động giải phóng escrow.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  {order.status === 'COMPLETED' && (
+                    <div className={cn('flex items-start gap-3 rounded-xl p-4', isDark ? 'bg-emerald-900/20 border border-emerald-800/30' : 'bg-emerald-50 border border-emerald-100')}>
+                      <div className="mt-0.5 p-2 rounded-full bg-emerald-500/10 shrink-0">
+                        <HiOutlineShieldCheck className="h-4 w-4 text-emerald-500" />
+                      </div>
+                      <div>
+                        <p className={cn('text-sm font-semibold', isDark ? 'text-emerald-400' : 'text-emerald-700')}>
+                          Giao dịch hoàn tất – Escrow đã giải phóng
+                        </p>
+                        <p className={cn('mt-1 text-xs', isDark ? 'text-slate-400' : 'text-stone-500')}>
+                          Tiền đã được chuyển cho người bán. Cảm ơn bạn đã mua hàng!
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Payment Button for PENDING_PAYMENT */}
               {order.status === 'PENDING_PAYMENT' && (
                 <div className="border-t pt-4 mt-4">
@@ -328,6 +392,16 @@ export default function OrderDetail() {
             </div>
           </div>
         </motion.div>
+
+        {/* Review Modal */}
+        <ReviewModal
+          isOpen={reviewModal.open}
+          onClose={() => setReviewModal({ open: false, productId: null, productName: '' })}
+          subOrderId={order?.id}
+          productId={reviewModal.productId}
+          productName={reviewModal.productName}
+          onPageRefresh={fetchOrder}
+        />
       </div>
     </div>
   )

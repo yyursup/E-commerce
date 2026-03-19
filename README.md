@@ -300,6 +300,49 @@ Mặc định Vite thường chạy ở `http://localhost:5173`.
 - `GET /files/view/{fileName}` (view ảnh)
 - `GET /files/download/{fileName}` (download file)
 
+## Flows End-to-End (gộp nhiều chức năng)
+
+### Flow 1: Mua hàng từ A-Z (Customer)
+1. Đăng nhập: `POST /api/v1/auth/login`
+2. (Tuỳ chọn) Quản lý địa chỉ: `GET/POST/PUT/DELETE/PATCH /api/v1/address`
+3. Đặt địa chỉ mặc định: `PATCH /api/v1/address/{addressId}/default`
+4. Thêm sản phẩm vào cart: `POST /api/v1/cart/items`
+5. (Tuỳ chọn) Điều chỉnh qty / xóa item: `POST /api/v1/cart/items/{cartItemId}/plus|minus` hoặc `DELETE /api/v1/cart/items/{cartItemId}`
+6. Tính quote checkout: `POST /api/v1/checkout/quote`
+7. Confirm theo shop: `GET /api/v1/checkout/confirm?shopId=...`
+8. Tạo order: `POST /api/v1/order`
+9. (Nếu dùng VNPay) Tạo payment link: `POST /api/v1/payment/orders/{orderId}/vnpay`
+10. (Nếu dùng VNPay) Callback: `GET /api/v1/payment/vnpay/return`
+11. (Nếu cần) Retry/tự set GHN code: `POST /api/v1/order/{orderId}/ghn/retry` hoặc `PUT /api/v1/order/{orderId}/ghn/code?ghnOrderCode=...`
+12. GHN webhook cập nhật trạng thái: `POST /api/v1/webhooks/ghn`
+13. Xác nhận đã nhận hàng: `PATCH /api/v1/order/{orderId}/received`
+14. Xem history & để lại review: `GET /api/v1/order/me` và `POST /api/v1/review/products/{productId}/reviews`
+
+### Flow 2: KYC VNPT eKYC rồi mới Onboarding người bán (Customer -> Seller)
+1. Đăng nhập: `POST /api/v1/auth/login`
+2. Tạo session KYC: `POST /api/v1/kyc/sessions:start`
+3. Upload tài liệu: `POST /api/v1/kyc/session/{id}/upload`
+4. Attach theo `fileHash`: `POST /api/v1/kyc/session/{id}/attach`
+5. Classify: `POST /api/v1/kyc/sessions/{sessionId}/classify?fileHash=...`
+6. OCR mặt trước: `POST /api/v1/kyc/sessions/{sessionId}/ocr/front`
+7. OCR mặt sau: `POST /api/v1/kyc/sessions/{sessionId}/ocr/back`
+8. Liveness: `POST /api/v1/kyc/sessions/{sessionId}/ocr/liveness`
+9. Compare: `POST /api/v1/kyc/sessions/{sessionId}/compare`
+10. Lấy trạng thái session: `GET /api/v1/kyc/sessions/{sessionId}`
+11. (Tuỳ chọn) Full flow upload: `POST /api/v1/kyc/sessions/{sessionId}/fullFlow-upload`
+12. Gửi yêu cầu đăng ký seller: `POST /api/v1/request/regis-seller`
+13. Admin duyệt / từ chối: `PUT /api/v1/request/approve` hoặc `PUT /api/v1/request/reject`
+14. Sau khi được duyệt: Seller tạo sản phẩm: `POST /api/v1/seller`
+15. Seller cập nhật / xóa sản phẩm: `PUT /api/v1/seller/{productId}` hoặc `DELETE /api/v1/seller/{productId}`
+16. Seller upload ảnh sản phẩm (MinIO-backed): `POST /api/v1/product/image/upload` hoặc `POST /api/v1/product/image/upload-multiple`
+
+### Flow 4: Chatbot -> Live chat (Realtime)
+1. Khởi tạo chatbot widget: `GET /api/v1/chat/init`
+2. Tương tác chatbot HTTP: `POST /api/v1/chat/interact`
+3. (Nếu handoff) kết nối WS endpoint: `/api/v1/ws-chat`
+4. User gửi message tới `@MessageMapping("/chat")`
+5. Admin trả lời qua `@MessageMapping("/chat/reply")` và broadcast theo `sessionId`
+
 ## Lưu ý về Git (rất quan trọng)
 
 - **Không commit**: file `.env`, thư mục build/artifact như `target/` (backend) và `node_modules/` (frontend).

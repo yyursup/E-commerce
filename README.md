@@ -51,6 +51,34 @@ Các biến **tích hợp** (có thể để trống nếu bạn chưa dùng tí
 - **VNPT eKYC**: `VNPT_EKYC_BASE_URL`, `VNPT_EKYC_ACCESS_TOKEN`, `VNPT_EKYC_TOKEN_ID`, `VNPT_EKYC_TOKEN_KEY`
 - **Ollama (optional)**: `OLLAMA_PORT` (default `11434`)
 
+### `.env` cho Docker Compose
+
+`ecommerce/docker-compose.yml` dùng cú pháp `${VAR}` nên Docker Compose sẽ đọc biến từ file `.env` **cùng thư mục** với `docker-compose.yml` (tức là `ecommerce/.env`).
+
+Bạn có thể tạo `ecommerce/.env` theo dạng template (đừng để trống các biến bắt buộc):
+
+```env
+# PostgreSQL
+POSTGRES_DB=<CHANGE_ME>
+POSTGRES_USER=<CHANGE_ME>
+POSTGRES_PASSWORD=<CHANGE_ME>
+POSTGRES_PORT=5432
+
+# MinIO
+MINIO_ROOT_USER=<CHANGE_ME>
+MINIO_ROOT_PASSWORD=<CHANGE_ME>
+MINIO_API_PORT=9000
+MINIO_CONSOLE_PORT=9001
+MINIO_BUCKET_NAME=ecommerce
+
+# JWT (backend cần để login/auth)
+JWT_SECRET=<CHANGE_ME>
+JWT_EXPIRATION=<CHANGE_ME>
+JWT_REFRESH_EXPIRATION=<CHANGE_ME>
+
+# Các biến khác (MAIL/GHN/VNPAY/VNPT...) chỉ cần khi bạn gọi các tính năng tương ứng
+```
+
 ### Biến môi trường cho frontend
 
 Frontend dùng:
@@ -95,10 +123,47 @@ cd ecommerce
 ./mvnw spring-boot:run
 ```
 
+Trên Windows PowerShell, dùng:
+
+```powershell
+cd ecommerce
+.\mvnw.cmd spring-boot:run
+```
+
 Mặc định backend chạy ở:
 
 - **API**: `http://localhost:8080`
 - **WebSocket endpoint** (SockJS): `/api/v1/ws-chat`
+
+### Tài khoản demo (được seed tự động khi DB mới)
+
+Backend có `DataInitializer` nên khi chạy lần đầu (hoặc DB chưa có dữ liệu), hệ thống sẽ tự tạo sẵn:
+
+- `admin` / `admin123@` (role `ADMIN`)
+- `seller1`..`seller5` / `seller123@` (role `BUSINESS`)
+- `customer1`..`customer5` / `customer123@` (role `CUSTOMER`)
+
+Nếu bạn đã chạy backend trước đó và DB đã có dữ liệu, seed có thể bị bỏ qua để tránh trùng dữ liệu.
+
+## Build/Test (tối thiểu)
+
+### Backend
+
+Build (tạo jar):
+
+```bash
+cd ecommerce
+./mvnw package
+```
+
+Test:
+
+```bash
+cd ecommerce
+./mvnw test
+```
+
+Trên Windows, thay `./mvnw` bằng `.\mvnw.cmd`.
 
 ## Chạy frontend (Vite)
 
@@ -110,14 +175,130 @@ npm run dev
 
 Mặc định Vite thường chạy ở `http://localhost:5173`.
 
-## Một vài endpoint/thành phần chính (tham khảo)
+## Chức năng chính
 
-- **Auth**: `/api/v1/auth/*`
-- **Chatbot API**: `/api/v1/chat/*`
-- **Live chat WS**: `/api/v1/ws-chat`
-- **Products**: `/api/v1/product/*`
-- **Cart**: `/api/v1/cart/*`
-- **Orders / Payment**: `/api/v1/order/*`, `/api/v1/payment/*`
+### 1) Authentication & Accounts (Auth)
+- `POST /api/v1/auth/register` (đăng ký tài khoản)
+- `POST /api/v1/auth/verify` (xác minh tài khoản, theo flow backend)
+- `POST /api/v1/auth/login` (đăng nhập, trả JWT trong response)
+- `GET /api/v1/auth/users` (ADMIN: xem danh sách user)
+
+### 2) Profile & Address
+- `PUT /api/v1/user/profile` (cập nhật profile)
+- `GET /api/v1/address` (lấy danh sách địa chỉ của mình)
+- `POST /api/v1/address` (tạo địa chỉ)
+- `PUT /api/v1/address/{addressId}` (cập nhật địa chỉ)
+- `DELETE /api/v1/address/{addressId}` (xóa địa chỉ)
+- `PATCH /api/v1/address/{addressId}/default` (đặt địa chỉ mặc định)
+
+### 3) Product marketplace (Public + Similar)
+- `GET /api/v1/product` (danh sách sản phẩm, có thể query theo điều kiện/pagination)
+- `GET /api/v1/product/{productId}` (chi tiết sản phẩm; backend ghi nhận lịch sử để recommendation)
+- `GET /api/v1/product/{productId}/similar` (gợi ý “sản phẩm tương tự” theo embedding)
+
+### 4) Seller product management
+- `POST /api/v1/seller` (seller tạo sản phẩm)
+- `GET /api/v1/seller/{productId}` (lấy sản phẩm theo id)
+- `GET /api/v1/seller/by-shop` (lấy sản phẩm theo shop của seller, có thể filter `status`)
+- `PUT /api/v1/seller/{productId}` (cập nhật sản phẩm)
+- `DELETE /api/v1/seller/{productId}` (xóa sản phẩm)
+
+### 5) Product images (MinIO-backed)
+- `POST /api/v1/product/image/upload` (upload 1 ảnh)
+- `POST /api/v1/product/image/upload-multiple` (upload nhiều ảnh)
+- `DELETE /api/v1/product/image?imageUrl=...` (xóa ảnh theo URL)
+
+### 6) Cart & Checkout
+- `GET /api/v1/cart` (lấy giỏ hàng của mình)
+- `POST /api/v1/cart/items` (add item vào cart)
+- `POST /api/v1/cart/items/{cartItemId}/plus` (tăng qty)
+- `POST /api/v1/cart/items/{cartItemId}/minus` (giảm qty)
+- `DELETE /api/v1/cart/items/{cartItemId}` (xóa item)
+
+- `POST /api/v1/checkout/quote` (tính quote dựa trên cart/giỏ và shop)
+- `GET /api/v1/checkout/confirm?shopId=...` (xác nhận checkout theo shop)
+
+### 7) Orders (Create/Update + Query)
+- `POST /api/v1/order` (tạo order từ cart theo shop)
+- `PATCH /api/v1/order/{orderId}/status?status=...` (cập nhật trạng thái order)
+- `PATCH /api/v1/order/{orderId}/received` (người mua xác nhận đã nhận)
+- `POST /api/v1/order/{orderId}/ghn/retry` (retry tạo lệnh GHN)
+- `PUT /api/v1/order/{orderId}/ghn/code?ghnOrderCode=...` (set GHN order code thủ công)
+
+- `GET /api/v1/order/me?status=...` (liệt kê order của mình)
+- `GET /api/v1/order/{orderId}/me` (chi tiết order của mình)
+- `GET /api/v1/order/shops?status=...` (liệt kê order theo shop)
+- `GET /api/v1/order/shops/orders/{orderId}` (chi tiết order theo shop)
+- `GET /api/v1/order/shop-ranking` (ADMIN: bảng xếp hạng shop)
+- `GET /api/v1/order/{orderId}` (ADMIN: get order theo id)
+- `GET /api/v1/order` (ADMIN: list orders, có filter status)
+
+### 8) Payment (VNPay + Escrow)
+- VNPay: `POST /api/v1/payment/orders/{orderId}/vnpay` (trả `paymentUrl`), `GET /api/v1/payment/vnpay/return` (callback)
+- Escrow (ADMIN): `GET /api/v1/escrow` (list theo status, pageable), `POST /api/v1/escrow/orders/{orderId}/release` (release escrow)
+
+### 9) Shipping (GHN)
+- `GET /api/v1/shipping/provinces` (lấy danh sách tỉnh)
+- `GET /api/v1/shipping/districts?provinceId=...` (lấy quận/huyện)
+- `GET /api/v1/shipping/wards?districtId=...` (lấy phường/xã)
+- `POST /api/v1/shipping/fee` (tính phí giao hàng)
+- `POST /api/v1/webhooks/ghn` (GHN webhook cập nhật trạng thái đơn, luôn trả HTTP 200)
+
+### 10) Wallet
+- `GET /api/v1/wallet/me` (lấy ví của mình)
+- `GET /api/v1/wallet/admin?userName=...` (ADMIN: xem ví theo username)
+
+### 11) Review & Seller reply
+- Reviews: `GET /api/v1/review/products/{productId}/reviews`
+- Reviews: `POST /api/v1/review/products/{productId}/reviews`
+- Reviews: `PUT /api/v1/review/reviews/{reviewId}`
+- Reviews: `DELETE /api/v1/review/reviews/{reviewId}`
+- Reviews: `GET /api/v1/review/reviews/me?productId=...&subOrderId=...`
+- Reviews: `GET /api/v1/review/products/{productId}/reviews/stats`
+- Seller reply (SELLER/ADMIN, role check): `POST /api/v1/reply/reviews/reply`
+- Seller reply (SELLER/ADMIN, role check): `PUT /api/v1/reply/reviews/update`
+
+### 12) Seller registration request (Seller onboarding)
+- `POST /api/v1/request/regis-seller` (user gửi yêu cầu đăng ký seller)
+- `PUT /api/v1/request/approve` (ADMIN duyệt, params: `requestId`, `response`)
+- `PUT /api/v1/request/reject` (ADMIN từ chối, params: `requestId`, `response`)
+- `GET /api/v1/request` (user xem requests của mình)
+- `GET /api/v1/request/admin?status=...` (ADMIN xem tất cả, filter status)
+- `GET /api/v1/request/{id}` (xem chi tiết một request)
+
+### 13) KYC (VNPT eKYC)
+- `POST /api/v1/kyc/sessions:start` (tạo session KYC)
+- `POST /api/v1/kyc/session/{id}/upload` (upload tài liệu + đính kèm vào VNPT)
+- `POST /api/v1/kyc/session/{id}/attach` (attach theo `fileHash`)
+- `POST /api/v1/kyc/sessions/{sessionId}/classify?fileHash=...` (classify tài liệu)
+- `POST /api/v1/kyc/sessions/{sessionId}/ocr/front` (OCR mặt trước)
+- `POST /api/v1/kyc/sessions/{sessionId}/ocr/back` (OCR mặt sau)
+- `POST /api/v1/kyc/sessions/{sessionId}/ocr/liveness` (liveness)
+- `POST /api/v1/kyc/sessions/{sessionId}/compare` (so khớp dữ liệu)
+- `GET /api/v1/kyc/sessions/{sessionId}` (lấy trạng thái session)
+- `POST /api/v1/kyc/sessions/{sessionId}/fullFlow-upload` (upload + chạy flow đầy đủ)
+
+### 14) Chatbot & Live chat
+- Chatbot HTTP: `GET /api/v1/chat/init` (init), `POST /api/v1/chat/interact` (tương tác; body có thể chứa `action` hoặc `text`)
+- Live chat realtime (STOMP/SockJS): WS endpoint `/api/v1/ws-chat`, user gửi tới `@MessageMapping("/chat")`, admin reply qua `@MessageMapping("/chat/reply")` và broadcast theo `sessionId`
+
+### 15) Recommendations
+- `GET /api/v1/recommendations?limit=...` (recommend theo session/user; frontend gửi credentials để có session)
+
+### 16) Platform & Commission (ADMIN)
+- Platform setting: `GET /api/v1/platform` (lấy `commissionRate`), `PATCH /api/v1/platform` (cập nhật commission rate)
+- Commission: `GET /api/v1/commissions/overview`
+- Commission: `GET /api/v1/commissions/by-month`
+- Commission: `GET /api/v1/commissions/by-category`
+- Commission: `GET /api/v1/commissions/top-sellers?limit=...`
+- Commission: `GET /api/v1/commissions` (filter theo query params trong `CommissionFilterRequest`)
+- Commission: `POST /api/v1/commissions/orders/{orderId}` (tạo commission theo order)
+- Commission: `GET /api/v1/commissions/orders/{orderId}` (chi tiết commission theo order)
+
+### 17) File upload/serve (MinIO)
+- `POST /files/upload?folder=general` (upload file ảnh; backend giới hạn size theo `spring.servlet.multipart.*`, đang là 25MB)
+- `GET /files/view/{fileName}` (view ảnh)
+- `GET /files/download/{fileName}` (download file)
 
 ## Lưu ý về Git (rất quan trọng)
 
@@ -134,4 +315,5 @@ git rm -r --cached ecommerce-fe/node_modules
 - **Frontend gọi nhầm API**: đặt `VITE_API_URL`/`VITE_API_BASE_URL` trỏ đúng backend (mặc định là `http://localhost:8080`).
 - **WebSocket bị chặn CORS**: backend whitelist ở `app.websocket.allowed-origins` trong `application.properties`.
 - **MinIO không có bucket**: Compose có service `minio-init` để tạo bucket và set public download.
+- **Lần chạy đầu lâu / thấy log seed dữ liệu**: do backend tự tạo data demo (products/shops/orders/chatbot nodes...) nên có thể mất vài chục giây tùy máy.
 

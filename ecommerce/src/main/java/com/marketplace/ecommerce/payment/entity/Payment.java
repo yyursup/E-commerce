@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.marketplace.ecommerce.order.entity.Order;
 import com.marketplace.ecommerce.payment.valueObjects.PaymentMethod;
 import com.marketplace.ecommerce.payment.valueObjects.PaymentStatus;
+import com.marketplace.ecommerce.payment.valueObjects.ReferenceType;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
@@ -30,7 +31,7 @@ public class Payment {
     private UUID id;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_id", nullable = false)
+    @JoinColumn(name = "order_id")
     private Order order;
 
     @Enumerated(EnumType.STRING)
@@ -52,6 +53,13 @@ public class Payment {
 
     @Column(name = "provider_response_code", length = 16)
     private String providerResponseCode;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "reference_type", nullable = false, length = 30)
+    private ReferenceType referenceType;
+
+    @Column(name = "reference_id")
+    private UUID referenceId;
 
     @CreatedDate
     @Column(name = "created_at", updatable = false)

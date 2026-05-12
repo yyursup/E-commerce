@@ -124,6 +124,10 @@ public class OrderServiceImpl implements OrderService {
             return;
         }
 
+        if (order.getStatus() == OrderStatus.COMPLETED) {
+            throw new CustomException("Order is already completed");
+        }
+
         order.setReceivedByBuyer(true);
         order.setReceivedAt(LocalDateTime.now());
         order.setStatus(OrderStatus.COMPLETED);

@@ -9,10 +9,7 @@ import com.marketplace.ecommerce.payment.entity.Payment;
 import com.marketplace.ecommerce.payment.entity.Transaction;
 import com.marketplace.ecommerce.payment.repository.EscrowRepository;
 import com.marketplace.ecommerce.payment.repository.TransactionRepository;
-import com.marketplace.ecommerce.payment.valueObjects.EscrowStatus;
-import com.marketplace.ecommerce.payment.valueObjects.ReferenceType;
-import com.marketplace.ecommerce.payment.valueObjects.TransactionStatus;
-import com.marketplace.ecommerce.payment.valueObjects.TransactionType;
+import com.marketplace.ecommerce.payment.valueObjects.*;
 import com.marketplace.ecommerce.wallet.dto.response.WalletResponse;
 import com.marketplace.ecommerce.wallet.entity.Wallet;
 import com.marketplace.ecommerce.wallet.repository.WalletRepository;
@@ -137,5 +134,45 @@ public class WalletServiceImpl implements WalletService {
 
         walletRepo.save(buyerWallet);
         walletRepo.save(escrowWallet);
+    }
+
+    @Transactional
+    @Override
+    public void depositFromPayment(UUID userId, Payment payment) {
+        if (payment.getStatus() != PaymentStatus.SUCCESS) {
+            throw new CustomException("Only SUCCESS payment can be deposited to wallet");
+        }
+
+        Wallet wallet = walletRepo.findByUserIdForUpdate(userId)
+                .orElseThrow(() -> new CustomException("Wallet not found"));
+
+        BigDecimal amount = payment.getAmount() == null ? BigDecimal.ZERO : payment.getAmount();
+        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new CustomException("Invalid deposit amount");
+        }
+
+        String depositDedupe = "DEPOSIT:" + payment.getId();
+        if (txRepo.existsByDedupeKey(depositDedupe)) {
+            return;
+        }
+
+        Transaction tx = Transaction.builder()
+                .fromWallet(null) // external provider
+                .toWallet(wallet)
+                .amount(amount)
+                .type(TransactionType.DEPOSIT)
+                .status(TransactionStatus.SUCCESS)
+                .referenceType(ReferenceType.DEPOSIT)
+                .referenceId(payment.getId())
+                .dedupeKey(depositDedupe)
+                .providerTxnNo(payment.getProviderTxnNo())
+                .createdAt(LocalDateTime.now())
+                .note("VNPay success, deposit to wallet")
+                .build();
+
+        wallet.addAvailable(amount);
+
+        txRepo.save(tx);
+        walletRepo.save(wallet);
     }
 }

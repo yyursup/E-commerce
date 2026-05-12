@@ -11,5 +11,7 @@ public interface WalletService {
 
     WalletResponse getWalletByUserName(String username);
 
+    void depositFromPayment(UUID userId, Payment payment);
+
 
 }

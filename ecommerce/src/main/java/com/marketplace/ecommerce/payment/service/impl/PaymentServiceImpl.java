@@ -39,17 +39,40 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Transactional
     @Override
-    public void processCallback(Map<String, String> params) {
-        if (!vnPayService.verifyChecksum(params)) {
+    public void processCallback(Map<String, String> params, String rawQueryString) {
+        boolean isChecksumValid;
+        if (rawQueryString != null && !rawQueryString.trim().isEmpty()) {
+            isChecksumValid = vnPayService.verifyChecksumFromQueryString(rawQueryString);
+        } else {
+            isChecksumValid = vnPayService.verifyChecksumFromMap(params);
+        }
+
+        if (!isChecksumValid) {
             throw new CustomException("Invalid VNPay checksum");
         }
 
         String txnRef = params.get("vnp_TxnRef");
+        if (txnRef == null && rawQueryString != null) {
+            Map<String, String> parsed = org.springframework.web.util.UriComponentsBuilder
+                    .fromUriString("?" + rawQueryString).build().getQueryParams().toSingleValueMap();
+            txnRef = parsed.get("vnp_TxnRef");
+        }
+
         String providerResponseCode = params.get("vnp_ResponseCode");
         String providerTxnNo = params.get("vnp_TransactionNo");
+        if (rawQueryString != null && (providerResponseCode == null || providerTxnNo == null)) {
+            Map<String, String> parsed = org.springframework.web.util.UriComponentsBuilder
+                    .fromUriString("?" + rawQueryString).build().getQueryParams().toSingleValueMap();
+            if (providerResponseCode == null) providerResponseCode = parsed.get("vnp_ResponseCode");
+            if (providerTxnNo == null) providerTxnNo = parsed.get("vnp_TransactionNo");
+        }
 
         Payment payment = paymentRepository.findByTxnRef(txnRef)
                 .orElseThrow(() -> new CustomException("Payment not found by txnRef"));
+
+        if (payment.getStatus() == PaymentStatus.SUCCESS) {
+            return;
+        }
 
         payment.setProviderTxnNo(providerTxnNo);
         payment.setProviderResponseCode(providerResponseCode);

@@ -6,7 +6,8 @@ import java.util.Map;
 
 public interface VNPayService {
 
-    boolean verifyChecksum(Map<String, String> params);
+    boolean verifyChecksumFromMap(Map<String, String> params);
+    boolean verifyChecksumFromQueryString(String rawQueryString);
     String buildPaymentUrl(Payment payment);
 
 }

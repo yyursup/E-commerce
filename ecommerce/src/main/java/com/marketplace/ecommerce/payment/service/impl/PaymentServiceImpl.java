@@ -39,12 +39,6 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Transactional
     @Override
-    public void processCallback(Map<String, String> params) {
-        processCallback(params, null);
-    }
-
-    @Transactional
-    @Override
     public void processCallback(Map<String, String> params, String rawQueryString) {
         boolean isChecksumValid;
         if (rawQueryString != null && !rawQueryString.trim().isEmpty()) {

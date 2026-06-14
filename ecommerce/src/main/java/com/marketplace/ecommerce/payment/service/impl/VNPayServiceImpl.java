@@ -92,7 +92,7 @@ public class VNPayServiceImpl implements VNPayService {
         // Reconnect according to sorted key alphabet
         StringBuilder hashData = new StringBuilder();
         for (Map.Entry<String, String> entry : queryParams.entrySet()) {
-            if (hashData.length() > 0) {
+            if (!hashData.isEmpty()) {
                 hashData.append("&");
             }
             hashData.append(entry.getKey()).append("=").append(entry.getValue());

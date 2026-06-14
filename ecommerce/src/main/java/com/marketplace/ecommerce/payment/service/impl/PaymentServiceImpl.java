@@ -42,9 +42,9 @@ public class PaymentServiceImpl implements PaymentService {
     public void processCallback(Map<String, String> params, String rawQueryString) {
         boolean isChecksumValid;
         if (rawQueryString != null && !rawQueryString.trim().isEmpty()) {
-            isChecksumValid = vnPayService.verifyChecksum(rawQueryString);
+            isChecksumValid = vnPayService.verifyChecksumFromQueryString(rawQueryString);
         } else {
-            isChecksumValid = vnPayService.verifyChecksum(params);
+            isChecksumValid = vnPayService.verifyChecksumFromMap(params);
         }
 
         if (!isChecksumValid) {

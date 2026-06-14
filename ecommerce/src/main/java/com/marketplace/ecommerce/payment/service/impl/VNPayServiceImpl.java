@@ -47,7 +47,7 @@ public class VNPayServiceImpl implements VNPayService {
     }
 
     @Override
-    public boolean verifyChecksum(Map<String, String> params) {
+    public boolean verifyChecksumFromMap(Map<String, String> params) {
 
         Map<String, String> copy = new HashMap<>(params);
 
@@ -61,7 +61,7 @@ public class VNPayServiceImpl implements VNPayService {
     }
 
     @Override
-    public boolean verifyChecksum(String rawQueryString) {
+    public boolean verifyChecksumFromQueryString(String rawQueryString) {
         if (rawQueryString == null || rawQueryString.isEmpty()) {
             return false;
         }

@@ -3,6 +3,7 @@ package com.marketplace.ecommerce.payment.controller;
 import com.marketplace.ecommerce.common.CurrentUserInfo;
 import com.marketplace.ecommerce.config.CurrentUser;
 import com.marketplace.ecommerce.payment.service.PaymentService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -28,8 +29,9 @@ public class PaymentController {
 
         @GetMapping("/vnpay/return")
         public ResponseEntity<Map<String, Object>> handleVnpayReturn(
-                        @RequestParam Map<String, String> params) {
-                paymentService.processCallback(params);
+                        @RequestParam Map<String, String> params,
+                        HttpServletRequest request) {
+                paymentService.processCallback(params, request.getQueryString());
                 // return UI-friendly response
                 return ResponseEntity.ok(Map.of(
                                 "ok", true,

@@ -29,7 +29,7 @@ public class VNPayServiceImpl implements VNPayService {
         params.put("vnp_OrderInfo", "Thanh toan don hang " + payment.getOrder().getOrderNumber());
         params.put("vnp_OrderType", "other");
         params.put("vnp_Amount", payment.getAmount().multiply(BigDecimal.valueOf(100)).toBigInteger().toString());
-        params.put("vnp_ReturnUrl", "http://localhost:5173/payment/vnpay_return");
+        params.put("vnp_ReturnUrl", vnPayConfig.returnUrl);
         params.put("vnp_IpAddr", "127.0.0.1");
         params.put("vnp_CreateDate", LocalDateTime.now()
                 .format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")));
@@ -57,6 +57,48 @@ public class VNPayServiceImpl implements VNPayService {
         String hashData = vnPayConfig.buildQueryString(new TreeMap<>(copy));
         String calculatedHash = vnPayConfig.hmacSHA512(vnPayConfig.hashSecret, hashData);
 
-        return calculatedHash.equals(receivedHash);
+        return calculatedHash.equalsIgnoreCase(receivedHash);
+    }
+
+    @Override
+    public boolean verifyChecksum(String rawQueryString) {
+        if (rawQueryString == null || rawQueryString.isEmpty()) {
+            return false;
+        }
+
+        // Split key-value pairs from the raw original query string
+        String[] pairs = rawQueryString.split("&");
+        Map<String, String> queryParams = new TreeMap<>();
+        String receivedHash = null;
+
+        for (String pair : pairs) {
+            int idx = pair.indexOf("=");
+            if (idx == -1) continue;
+            String key = pair.substring(0, idx);
+            String value = pair.substring(idx + 1);
+
+            if ("vnp_SecureHash".equals(key)) {
+                receivedHash = value;
+            } else if (!"vnp_SecureHashType".equals(key)) {
+                // Keep the original URL-encoded value
+                queryParams.put(key, value);
+            }
+        }
+
+        if (receivedHash == null) {
+            return false;
+        }
+
+        // Reconnect according to sorted key alphabet
+        StringBuilder hashData = new StringBuilder();
+        for (Map.Entry<String, String> entry : queryParams.entrySet()) {
+            if (hashData.length() > 0) {
+                hashData.append("&");
+            }
+            hashData.append(entry.getKey()).append("=").append(entry.getValue());
+        }
+
+        String calculatedHash = vnPayConfig.hmacSHA512(vnPayConfig.hashSecret, hashData.toString());
+        return calculatedHash.equalsIgnoreCase(receivedHash);
     }
 }

@@ -1,6 +1,7 @@
 package com.marketplace.ecommerce.chatbot.config;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
@@ -23,6 +24,7 @@ import java.util.Map;
 @EnableWebSocketMessageBroker
 @Order(Ordered.HIGHEST_PRECEDENCE + 99)
 @RequiredArgsConstructor
+@Slf4j
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Value("${app.websocket.allowed-origins:http://localhost:5173,http://127.0.0.1:5173}")
@@ -32,12 +34,13 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     private final WebSocketSecurityContextChannelInterceptor securityContextChannelInterceptor;
 
     @Override
+
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         String[] patterns = allowedOrigins == null || allowedOrigins.isBlank()
-                ? new String[] { "http://localhost:5173", "http://127.0.0.1:5173" }
+                ? new String[] { "http://localhost:5173", "http://127.0.0.1:5173","http://localhost:51004"}
                 : Arrays.stream(allowedOrigins.split("\\s*,\\s*")).filter(s -> !s.isBlank()).toArray(String[]::new);
         registry.addEndpoint("/api/v1/ws-chat")
-                .setAllowedOriginPatterns(patterns.length > 0 ? patterns : new String[] { "http://localhost:5173" })
+                .setAllowedOriginPatterns("*")
                 .addInterceptors(new HttpSessionHandshakeInterceptor(), new ChatSessionHandshakeInterceptor(securityContextStore))
                 .setHandshakeHandler(new DefaultHandshakeHandler() {
                     @Override
@@ -45,6 +48,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                         Object sessionId = attributes.get("CHAT_SESSION_ID");
                         if (sessionId != null) return new WebSocketPrincipal(sessionId.toString());
                         Object session = attributes.get("HTTP.SESSION");
+                        log.info("CHAT_SESSION_ID: {}", sessionId);
                         if (session instanceof jakarta.servlet.http.HttpSession) {
                             return new WebSocketPrincipal(((jakarta.servlet.http.HttpSession) session).getId());
                         }

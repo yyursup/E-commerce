@@ -44,11 +44,34 @@ public class LiveChatController {
     @PreAuthorize("hasRole('ADMIN')")
     @MessageMapping("/chat/reply")
     public void reply(@Payload Map<String, Object> payload) {
-        String sessionId = payload != null && payload.get("sessionId") != null ? payload.get("sessionId").toString() : null;
-        String text = payload != null && payload.get("text") != null ? payload.get("text").toString() : "";
-        if (sessionId == null || sessionId.isBlank()) return;
-        String replyTopic = LiveChatConstants.TOPIC_LIVE_CHAT_REPLY_PREFIX + sessionId;
-        messagingTemplate.convertAndSend(replyTopic, (Object) Map.of("text", text, "fromAdmin", true));
-        log.debug("Admin reply to session {}: {}", sessionId, text);
+
+        String sessionId = payload != null && payload.get("sessionId") != null
+                ? payload.get("sessionId").toString()
+                : null;
+
+        String text = payload != null && payload.get("text") != null
+                ? payload.get("text").toString()
+                : "";
+
+        if (sessionId == null || sessionId.isBlank()) {
+            log.warn("SESSION_ID NULL");
+            return;
+        }
+
+        String replyTopic =
+                LiveChatConstants.TOPIC_LIVE_CHAT_REPLY_PREFIX + sessionId;
+
+        log.info("SEND TO TOPIC = {}", replyTopic);
+
+        messagingTemplate.convertAndSend(
+                replyTopic,
+                (Object) Map.of(
+                        "sessionId", sessionId,
+                        "text", text,
+                        "fromAdmin", true
+                )
+        );
+
+        log.info("MESSAGE SENT SUCCESS");
     }
 }

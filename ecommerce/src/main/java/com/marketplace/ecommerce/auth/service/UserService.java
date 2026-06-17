@@ -8,6 +8,8 @@ import java.util.UUID;
 
 public interface UserService {
 
+    UserProfileResponse getUserProfile(UUID accountId);
+
     UserProfileResponse updateProfile(
             UUID accountId,
             UpdateUserProfileRequest request);

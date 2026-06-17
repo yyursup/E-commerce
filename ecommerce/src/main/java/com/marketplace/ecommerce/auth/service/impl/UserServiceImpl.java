@@ -21,6 +21,13 @@ public class UserServiceImpl implements UserService {
     private final FileService fileService;
 
     @Override
+    public UserProfileResponse getUserProfile(UUID accountId) {
+        User user = userRepository.findByAccountId(accountId)
+                .orElseThrow(() -> new CustomException("User not found"));
+        return UserProfileResponse.from(user);
+    }
+
+    @Override
     @Transactional
     public UserProfileResponse updateProfile(
             UUID accountId,

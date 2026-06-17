@@ -17,6 +17,10 @@ public class UserProfileResponse {
     private String phoneNumber;
     private GenderType gender;
     private LocalDate dateOfBirth;
+    private boolean accountVerified;
+    private String role;
+    private String email;
+
 
     public static UserProfileResponse from(User user) {
         return UserProfileResponse.builder()
@@ -26,6 +30,9 @@ public class UserProfileResponse {
                 .phoneNumber(user.getPhoneNumber())
                 .gender(user.getGender())
                 .dateOfBirth(user.getDateOfBirth())
+                .accountVerified(user.getAccount().getAccountVerified())
+                .role(user.getAccount().getRole().getRoleName())
+                .email(user.getEmail())
                 .build();
     }
 }

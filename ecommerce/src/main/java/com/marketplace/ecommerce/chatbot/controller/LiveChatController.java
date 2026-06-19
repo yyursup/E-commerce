@@ -29,9 +29,13 @@ public class LiveChatController {
     public void chat(@Payload Map<String, Object> payload, SimpMessageHeaderAccessor accessor) {
         String sessionId = accessor.getUser() != null ? accessor.getUser().getName() : "unknown";
         String text = payload != null && payload.get("text") != null ? payload.get("text").toString() : "";
+        String imageUrl = payload.get("imageUrl") != null
+                ? payload.get("imageUrl").toString()
+                : "";
         messagingTemplate.convertAndSend(LiveChatConstants.TOPIC_ADMIN_LIVE_CHAT, (Object) Map.<String, Object>of(
                 "sessionId", sessionId,
                 "text", text,
+                "imageUrl", imageUrl,
                 "from", "Khách",
                 "fromUser", false
         ));

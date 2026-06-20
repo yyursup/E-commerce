@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
-import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.WebSocketHandler;
@@ -19,6 +18,7 @@ import org.springframework.web.socket.server.support.HttpSessionHandshakeInterce
 import java.security.Principal;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.UUID;
 
 @Configuration
 @EnableWebSocketMessageBroker
@@ -34,25 +34,57 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     private final WebSocketSecurityContextChannelInterceptor securityContextChannelInterceptor;
 
     @Override
-
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        String[] patterns = allowedOrigins == null || allowedOrigins.isBlank()
-                ? new String[] { "http://localhost:5173", "http://127.0.0.1:5173","http://localhost:51004"}
-                : Arrays.stream(allowedOrigins.split("\\s*,\\s*")).filter(s -> !s.isBlank()).toArray(String[]::new);
+
+        String[] patterns =
+                allowedOrigins == null || allowedOrigins.isBlank()
+                        ? new String[]{
+                        "http://localhost:5173",
+                        "http://127.0.0.1:5173",
+                        "http://localhost:51004"
+                }
+                        : Arrays.stream(allowedOrigins.split("\\s*,\\s*"))
+                          .filter(s -> !s.isBlank())
+                          .toArray(String[]::new);
+
         registry.addEndpoint("/api/v1/ws-chat")
                 .setAllowedOriginPatterns("*")
-                .addInterceptors(new HttpSessionHandshakeInterceptor(), new ChatSessionHandshakeInterceptor(securityContextStore))
+                .addInterceptors(
+                        new HttpSessionHandshakeInterceptor(),
+                        new ChatSessionHandshakeInterceptor(securityContextStore)
+                )
                 .setHandshakeHandler(new DefaultHandshakeHandler() {
+
                     @Override
-                    protected Principal determineUser(ServerHttpRequest request, WebSocketHandler handler, Map<String, Object> attributes) {
-                        Object sessionId = attributes.get("CHAT_SESSION_ID");
-                        if (sessionId != null) return new WebSocketPrincipal(sessionId.toString());
-                        Object session = attributes.get("HTTP.SESSION");
-                        log.info("CHAT_SESSION_ID: {}", sessionId);
-                        if (session instanceof jakarta.servlet.http.HttpSession) {
-                            return new WebSocketPrincipal(((jakarta.servlet.http.HttpSession) session).getId());
+                    protected Principal determineUser(
+                            org.springframework.http.server.ServerHttpRequest request,
+                            WebSocketHandler handler,
+                            Map<String, Object> attributes) {
+
+                        String accountId =
+                                (String) attributes.get(
+                                        ChatSessionHandshakeInterceptor.ACCOUNT_ID);
+
+                        String username =
+                                (String) attributes.get(
+                                        ChatSessionHandshakeInterceptor.USERNAME);
+
+                        log.info("ACCOUNT_ID = {}", accountId);
+                        log.info("USERNAME = {}", username);
+
+                        // User đã login
+                        if (accountId != null && !accountId.isBlank()) {
+                            return new WebSocketPrincipal(
+                                    accountId,
+                                    username
+                            );
                         }
-                        return new WebSocketPrincipal("anonymous-" + System.currentTimeMillis());
+
+                        // Guest fallback
+                        return new WebSocketPrincipal(
+                                "guest-" + UUID.randomUUID(),
+                                "Khách"
+                        );
                     }
                 })
                 .withSockJS();

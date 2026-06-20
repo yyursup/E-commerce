@@ -6,28 +6,27 @@ import org.springframework.stereotype.Component;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Stores SecurityContext by HTTP session ID at WebSocket handshake so it can be
- * restored when handling STOMP messages (where SecurityContextHolder is not set).
- */
 @Component
 public class WebSocketSecurityContextStore {
 
-    private final Map<String, SecurityContext> bySessionId = new ConcurrentHashMap<>();
+    private final Map<String, SecurityContext> contexts =
+            new ConcurrentHashMap<>();
 
-    public void put(String httpSessionId, SecurityContext context) {
-        if (httpSessionId != null && context != null) {
-            bySessionId.put(httpSessionId, context);
+    public void put(String accountId, SecurityContext context) {
+        if (accountId != null && context != null) {
+            contexts.put(accountId, context);
         }
     }
 
-    public SecurityContext get(String httpSessionId) {
-        return httpSessionId != null ? bySessionId.get(httpSessionId) : null;
+    public SecurityContext get(String accountId) {
+        return accountId == null
+                ? null
+                : contexts.get(accountId);
     }
 
-    public void remove(String httpSessionId) {
-        if (httpSessionId != null) {
-            bySessionId.remove(httpSessionId);
+    public void remove(String accountId) {
+        if (accountId != null) {
+            contexts.remove(accountId);
         }
     }
 }

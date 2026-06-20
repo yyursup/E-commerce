@@ -1,5 +1,6 @@
 package com.marketplace.ecommerce.chatbot.controller;
 
+import com.marketplace.ecommerce.chatbot.config.WebSocketPrincipal;
 import com.marketplace.ecommerce.chatbot.constant.LiveChatConstants;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,56 +23,73 @@ public class LiveChatController {
 
     private final SimpMessagingTemplate messagingTemplate;
 
-    /**
-     * User (after handoff) sends a message. Broadcast to admin topic with sessionId and content.
-     */
     @MessageMapping("/chat")
-    public void chat(@Payload Map<String, Object> payload, SimpMessageHeaderAccessor accessor) {
-        String sessionId = accessor.getUser() != null ? accessor.getUser().getName() : "unknown";
-        String text = payload != null && payload.get("text") != null ? payload.get("text").toString() : "";
-        String imageUrl = payload.get("imageUrl") != null
-                ? payload.get("imageUrl").toString()
-                : "";
-        messagingTemplate.convertAndSend(LiveChatConstants.TOPIC_ADMIN_LIVE_CHAT, (Object) Map.<String, Object>of(
-                "sessionId", sessionId,
-                "text", text,
-                "imageUrl", imageUrl,
-                "from", "Khách",
-                "fromUser", false
-        ));
-        log.debug("Live chat message from session {}: {}", sessionId, text);
+    public void chat(
+            @Payload Map<String, Object> payload,
+            SimpMessageHeaderAccessor accessor) {
+
+        WebSocketPrincipal principal =
+                (WebSocketPrincipal) accessor.getUser();
+
+        String accountId = principal.accountId();
+
+        String userName = principal.username();
+
+        String text =
+                payload.getOrDefault("text", "").toString();
+
+        String imageUrl =
+                payload.getOrDefault("imageUrl", "").toString();
+
+        messagingTemplate.convertAndSend(
+                LiveChatConstants.TOPIC_ADMIN_LIVE_CHAT,
+                (Object) Map.of(
+                        "accountId", accountId,
+                        "userName", userName,
+                        "text", text,
+                        "imageUrl", imageUrl,
+                        "fromUser", true
+                )
+        );
     }
 
-    /**
-     * Admin sends reply to a specific session. Payload: { "sessionId": "...", "text": "..." }.
-     */
     @PreAuthorize("hasRole('ADMIN')")
     @MessageMapping("/chat/reply")
-    public void reply(@Payload Map<String, Object> payload) {
+    public void reply(
+            @Payload Map<String, Object> payload,
+            SimpMessageHeaderAccessor accessor) {
 
-        String sessionId = payload != null && payload.get("sessionId") != null
-                ? payload.get("sessionId").toString()
-                : null;
+        String accountId =
+                payload.get("sessionId") != null
+                        ? payload.get("sessionId").toString()
+                        : null;
 
-        String text = payload != null && payload.get("text") != null
-                ? payload.get("text").toString()
-                : "";
-
-        if (sessionId == null || sessionId.isBlank()) {
-            log.warn("SESSION_ID NULL");
+        if (accountId == null || accountId.isBlank()) {
+            log.warn("ACCOUNT_ID NULL");
             return;
         }
 
-        String replyTopic =
-                LiveChatConstants.TOPIC_LIVE_CHAT_REPLY_PREFIX + sessionId;
+        String text =
+                payload.get("text") != null
+                        ? payload.get("text").toString()
+                        : "";
 
-        log.info("SEND TO TOPIC = {}", replyTopic);
+        String imageUrl =
+                payload.get("imageUrl") != null
+                        ? payload.get("imageUrl").toString()
+                        : "";
+
+        String replyTopic =
+                LiveChatConstants.TOPIC_LIVE_CHAT_REPLY_PREFIX + accountId;
+
+        log.info("ADMIN REPLY TO ACCOUNT_ID = {}", accountId);
 
         messagingTemplate.convertAndSend(
                 replyTopic,
                 (Object) Map.of(
-                        "sessionId", sessionId,
+                        "accountId", accountId,
                         "text", text,
+                        "imageUrl", imageUrl,
                         "fromAdmin", true
                 )
         );

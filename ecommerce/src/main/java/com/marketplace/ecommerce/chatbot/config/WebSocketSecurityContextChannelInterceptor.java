@@ -11,35 +11,50 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
-/**
- * Restores SecurityContext in the same thread as the message handler (beforeHandle),
- * so @PreAuthorize and SecurityContextHolder work in @MessageMapping handlers.
- */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
-public class WebSocketSecurityContextChannelInterceptor implements ExecutorChannelInterceptor {
+public class WebSocketSecurityContextChannelInterceptor
+        implements ExecutorChannelInterceptor {
 
     private final WebSocketSecurityContextStore securityContextStore;
 
-    public WebSocketSecurityContextChannelInterceptor(WebSocketSecurityContextStore securityContextStore) {
+    public WebSocketSecurityContextChannelInterceptor(
+            WebSocketSecurityContextStore securityContextStore) {
         this.securityContextStore = securityContextStore;
     }
 
     @Override
-    public Message<?> beforeHandle(Message<?> message, MessageChannel channel, MessageHandler handler) {
-        SimpMessageHeaderAccessor accessor = SimpMessageHeaderAccessor.wrap(message);
+    public Message<?> beforeHandle(
+            Message<?> message,
+            MessageChannel channel,
+            MessageHandler handler) {
+
+        SimpMessageHeaderAccessor accessor =
+                SimpMessageHeaderAccessor.wrap(message);
+
         if (accessor.getUser() != null) {
-            String sessionId = accessor.getUser().getName();
-            SecurityContext context = securityContextStore.get(sessionId);
+
+            String accountId =
+                    accessor.getUser().getName();
+
+            SecurityContext context =
+                    securityContextStore.get(accountId);
+
             if (context != null) {
                 SecurityContextHolder.setContext(context);
             }
         }
+
         return message;
     }
 
     @Override
-    public void afterMessageHandled(Message<?> message, MessageChannel channel, MessageHandler handler, Exception ex) {
+    public void afterMessageHandled(
+            Message<?> message,
+            MessageChannel channel,
+            MessageHandler handler,
+            Exception ex) {
+
         SecurityContextHolder.clearContext();
     }
 }

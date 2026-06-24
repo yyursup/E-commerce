@@ -103,7 +103,14 @@ public class ChatbotServiceImpl implements ChatbotService {
     public ChatbotResponse interact(HttpSession session, ChatbotInteractRequest request, CurrentUserInfo principal) {
         String currentNodeId = (String) session.getAttribute(SESSION_CURRENT_NODE);
         String rootNodeId = (String) session.getAttribute(SESSION_ROOT_NODE);
-        if (rootNodeId == null) rootNodeId = getRootNodeId(getRoleContext(principal));
+        if (rootNodeId == null) {
+            rootNodeId = getRootNodeId(getRoleContext(principal));
+            session.setAttribute(SESSION_ROOT_NODE, rootNodeId);
+        }
+        if (currentNodeId == null || currentNodeId.isBlank()) {
+            currentNodeId = rootNodeId;
+            session.setAttribute(SESSION_CURRENT_NODE, currentNodeId);
+        }
 
         if (request.getText() != null && !request.getText().isBlank()) {
             String text = request.getText().trim();
@@ -282,6 +289,10 @@ public class ChatbotServiceImpl implements ChatbotService {
     }
 
     private ChatbotResponse handleTextInput(HttpSession session, String currentNodeId, String rootNodeId, String text, CurrentUserInfo principal) {
+        if (currentNodeId == null || currentNodeId.isBlank()) {
+            currentNodeId = rootNodeId;
+            session.setAttribute(SESSION_CURRENT_NODE, currentNodeId);
+        }
         ChatbotNode node = nodeRepository.findById(currentNodeId).orElse(null);
         if (node == null || node.getNodeType() != ChatbotNodeType.INPUT_EXPECTED) {
             session.setAttribute(SESSION_CURRENT_NODE, rootNodeId);

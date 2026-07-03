@@ -20,4 +20,5 @@ public class ChatbotResponse {
     private String liveChatSessionId;
     private boolean inputExpected;
     private String inputHint;
+    private String currentNodeId;
 }

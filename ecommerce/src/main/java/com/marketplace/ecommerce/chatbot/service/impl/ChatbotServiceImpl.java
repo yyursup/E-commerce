@@ -1,5 +1,6 @@
 package com.marketplace.ecommerce.chatbot.service.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.marketplace.ecommerce.auth.repository.UserRepository;
 import com.marketplace.ecommerce.chatbot.dto.response.ChatbotOptionResponse;
 import com.marketplace.ecommerce.chatbot.dto.response.ChatbotProductCardResponse;
@@ -13,6 +14,7 @@ import com.marketplace.ecommerce.chatbot.repository.ChatbotNodeRepository;
 import com.marketplace.ecommerce.chatbot.constant.LiveChatConstants;
 import com.marketplace.ecommerce.chatbot.repository.ChatbotOptionRepository;
 import com.marketplace.ecommerce.chatbot.service.ChatbotService;
+import com.marketplace.ecommerce.chatbot.service.GeminiService;
 import com.marketplace.ecommerce.chatbot.valueobject.ChatbotNodeType;
 import com.marketplace.ecommerce.common.CurrentUserInfo;
 import com.marketplace.ecommerce.order.repository.OrderRepository;
@@ -37,6 +39,7 @@ import jakarta.servlet.http.HttpSession;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+import java.text.Normalizer;
 import java.time.LocalDateTime;
 import java.time.LocalDate;
 import java.util.*;
@@ -61,6 +64,7 @@ public class ChatbotServiceImpl implements ChatbotService {
     private final ShopRepository shopRepository;
     private final OrderRepository orderRepository;
     private final SimpMessagingTemplate messagingTemplate;
+    private final GeminiService geminiService;
 
     // Base URL for frontend links returned by chatbot (product detail, etc.)
     @Value("${app.frontend.base-url:http://localhost:5173}")
@@ -87,6 +91,8 @@ public class ChatbotServiceImpl implements ChatbotService {
 
         ChatbotResponse resp = buildResponse(session, node, principal);
         if (rootNodeId.equals(current)) {
+            session.removeAttribute("chatbotHistory");
+            session.removeAttribute("chatbotLastAiProducts");
             UUID userId = principal != null && principal.getAccountId() != null
                     ? userRepository.findByAccountId(principal.getAccountId()).map(u -> u.getId()).orElse(null)
                     : null;
@@ -101,9 +107,14 @@ public class ChatbotServiceImpl implements ChatbotService {
     @Override
     @Transactional(readOnly = true)
     public ChatbotResponse interact(HttpSession session, ChatbotInteractRequest request, CurrentUserInfo principal) {
-        String currentNodeId = (String) session.getAttribute(SESSION_CURRENT_NODE);
         String rootNodeId = (String) session.getAttribute(SESSION_ROOT_NODE);
         if (rootNodeId == null) rootNodeId = getRootNodeId(getRoleContext(principal));
+
+        String currentNodeId = (String) session.getAttribute(SESSION_CURRENT_NODE);
+        if (currentNodeId == null || currentNodeId.isBlank()) {
+            currentNodeId = rootNodeId;
+            session.setAttribute(SESSION_CURRENT_NODE, rootNodeId);
+        }
 
         if (request.getText() != null && !request.getText().isBlank()) {
             String text = request.getText().trim();
@@ -124,6 +135,7 @@ public class ChatbotServiceImpl implements ChatbotService {
                         .humanHandoffRequired(true)
                         .liveChatSessionId(sessionId)
                         .inputExpected(false)
+                        .currentNodeId(currentNodeId)
                         .build();
             }
             return handleTextInput(session, currentNodeId, rootNodeId, text, principal);
@@ -166,10 +178,13 @@ public class ChatbotServiceImpl implements ChatbotService {
                     .humanHandoffRequired(true)
                     .liveChatSessionId(session.getId())
                     .inputExpected(false)
+                    .currentNodeId(currentNodeId)
                     .build();
         }
 
         if ("BACK_TO_MENU".equals(action)) {
+            session.removeAttribute("chatbotHistory");
+            session.removeAttribute("chatbotLastAiProducts");
             String nextId = chosen.getNextNodeId();
             if (nextId == null || nextId.isBlank()) nextId = rootNodeId;
             session.setAttribute(SESSION_CURRENT_NODE, nextId);
@@ -183,6 +198,13 @@ public class ChatbotServiceImpl implements ChatbotService {
             return buildResponse(session, nodeRepository.findById(chosen.getNextNodeId()).orElse(null), principal);
         }
 
+        if ("AI_CHAT".equals(action)) {
+            session.setAttribute(SESSION_CURRENT_NODE, "NODE_AI_CHAT");
+            ChatbotNode aiNode = nodeRepository.findById("NODE_AI_CHAT").orElse(null);
+            if (aiNode != null) return buildResponse(session, aiNode, principal);
+            return init(session, principal);
+        }
+
         if ("KYC_STATUS".equals(action)) {
             String kycMessage = resolveKycStatus(principal);
             ChatbotNode kycResult = nodeRepository.findById("NODE_KYC_RESULT").orElse(null);
@@ -194,6 +216,7 @@ public class ChatbotServiceImpl implements ChatbotService {
                         .productCards(Collections.emptyList())
                         .humanHandoffRequired(false)
                         .inputExpected(false)
+                        .currentNodeId("NODE_KYC_RESULT")
                         .build();
             }
         }
@@ -213,6 +236,7 @@ public class ChatbotServiceImpl implements ChatbotService {
                     .productCards(Collections.emptyList())
                     .humanHandoffRequired(false)
                     .inputExpected(false)
+                    .currentNodeId("NODE_SELLER_STATS_RESULT")
                     .build();
         }
 
@@ -269,6 +293,7 @@ public class ChatbotServiceImpl implements ChatbotService {
                     .productCards(cards)
                     .humanHandoffRequired(false)
                     .inputExpected(false)
+                    .currentNodeId(rootNodeId)
                     .build();
         }
 
@@ -282,10 +307,9 @@ public class ChatbotServiceImpl implements ChatbotService {
     }
 
     private ChatbotResponse handleTextInput(HttpSession session, String currentNodeId, String rootNodeId, String text, CurrentUserInfo principal) {
-        ChatbotNode node = nodeRepository.findById(currentNodeId).orElse(null);
-        if (node == null || node.getNodeType() != ChatbotNodeType.INPUT_EXPECTED) {
+        if (currentNodeId == null || currentNodeId.isBlank()) {
+            currentNodeId = rootNodeId;
             session.setAttribute(SESSION_CURRENT_NODE, rootNodeId);
-            return init(session, principal);
         }
 
         if ("NODE_SEARCH_KEYWORD".equals(currentNodeId)) {
@@ -297,6 +321,7 @@ public class ChatbotServiceImpl implements ChatbotService {
                         .humanHandoffRequired(false)
                         .inputExpected(true)
                         .inputHint("VD: áo thun, laptop dưới 30 triệu, laptop hãng asus")
+                        .currentNodeId(currentNodeId)
                         .build();
             }
             SearchIntent intent = SearchQueryParser.parse(text);
@@ -310,6 +335,7 @@ public class ChatbotServiceImpl implements ChatbotService {
                         .humanHandoffRequired(false)
                         .inputExpected(true)
                         .inputHint("VD: laptop dưới 30 triệu, laptop hãng asus")
+                        .currentNodeId(currentNodeId)
                         .build();
             }
             PageQueryRequest req = PageQueryRequest.builder()
@@ -343,11 +369,64 @@ public class ChatbotServiceImpl implements ChatbotService {
                     .humanHandoffRequired(false)
                     .inputExpected(true)
                     .inputHint("VD: laptop dưới 30 triệu, laptop hãng asus")
+                    .currentNodeId(currentNodeId)
                     .build();
         }
 
-        session.setAttribute(SESSION_CURRENT_NODE, rootNodeId);
-        return init(session, principal);
+        // Với tất cả các node khác, gán session sang NODE_AI_CHAT
+        session.setAttribute(SESSION_CURRENT_NODE, "NODE_AI_CHAT");
+        
+        // Lấy lịch sử chat từ session
+        List<Map<String, Object>> history = (List<Map<String, Object>>) session.getAttribute("chatbotHistory");
+        if (history == null) {
+            history = new ArrayList<>();
+        }
+
+        // Gọi prepareAiChatContext để lấy ngữ cảnh sản phẩm từ DB và lưu cache
+        String context = prepareAiChatContext(session, text, principal);
+        String fullPrompt = text;
+        if (context != null && !context.isBlank()) {
+            fullPrompt = context + "\n\nCâu hỏi của khách hàng: " + text;
+        }
+
+        // Tạo contents gửi cho Gemini API bao gồm lịch sử cũ và câu hỏi hiện tại
+        List<Map<String, Object>> contents = new ArrayList<>(history);
+        contents.add(Map.of(
+            "role", "user",
+            "parts", List.of(Map.of("text", fullPrompt))
+        ));
+
+        String aiResponse = geminiService.generateResponse(contents);
+        List<ChatbotOptionResponse> aiOptions = buildOptionsForNode("NODE_AI_CHAT", rootNodeId);
+
+        // Lưu câu hỏi gốc của user và phản hồi của AI vào lịch sử session
+        history.add(Map.of(
+            "role", "user",
+            "parts", List.of(Map.of("text", text))
+        ));
+        history.add(Map.of(
+            "role", "model",
+            "parts", List.of(Map.of("text", aiResponse))
+        ));
+        session.setAttribute("chatbotHistory", history);
+        
+        // Lấy cards từ session cache đã lưu trong prepareAiChatContext (không fallback lấy tai nghe bluetooth bừa bãi)
+        List<ChatbotProductCardResponse> cards = (List<ChatbotProductCardResponse>) session.getAttribute("chatbotLastAiProducts");
+        if (cards == null) {
+            cards = Collections.emptyList();
+        } else {
+            session.removeAttribute("chatbotLastAiProducts"); // Xoá cache ngay sau khi dùng
+        }
+
+        return ChatbotResponse.builder()
+                .messageText(aiResponse)
+                .options(aiOptions)
+                .productCards(cards)
+                .humanHandoffRequired(false)
+                .inputExpected(true)
+                .inputHint("Hỏi AI tiếp...")
+                .currentNodeId("NODE_AI_CHAT")
+                .build();
     }
 
     private String buildNoResultMessage(SearchIntent intent) {
@@ -404,6 +483,7 @@ public class ChatbotServiceImpl implements ChatbotService {
                 .productCards(Collections.emptyList())
                 .humanHandoffRequired(false)
                 .inputExpected(false)
+                .currentNodeId("NODE_SEARCH_CATEGORY")
                 .build();
     }
 
@@ -423,13 +503,25 @@ public class ChatbotServiceImpl implements ChatbotService {
         if (inputExpected && "NODE_SEARCH_KEYWORD".equals(node.getId())) {
             inputHint = "VD: áo thun, laptop";
         }
+        List<ChatbotProductCardResponse> cards = (List<ChatbotProductCardResponse>) session.getAttribute("chatbotLastAiProducts");
+        if ("NODE_AI_CHAT".equals(node.getId())) {
+            if (cards == null) {
+                cards = Collections.emptyList();
+            } else {
+                session.removeAttribute("chatbotLastAiProducts"); // Xoá sau khi đồng bộ
+            }
+        } else {
+            cards = Collections.emptyList();
+        }
+
         return ChatbotResponse.builder()
                 .messageText(node.getMessageText())
                 .options(options)
-                .productCards(Collections.emptyList())
+                .productCards(cards)
                 .humanHandoffRequired(false)
                 .inputExpected(inputExpected)
                 .inputHint(inputHint)
+                .currentNodeId(node.getId())
                 .build();
     }
 
@@ -500,5 +592,101 @@ public class ChatbotServiceImpl implements ChatbotService {
             case "ADMIN" -> "NODE_GREETING_BUYER";
             default -> "NODE_GREETING_GUEST";
         };
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    @SuppressWarnings("unchecked")
+    public String prepareAiChatContext(HttpSession session, String text, CurrentUserInfo principal) {
+        if (text == null || text.isBlank()) return "";
+
+        // Lấy danh sách danh mục thực tế từ DB để AI ánh xạ
+        List<CategoryResponse> categories = categoryService.getAllCategories();
+        
+        UUID matchedCategoryId = null;
+        String searchKeyword = null;
+        try {
+            StringBuilder catList = new StringBuilder();
+            for (CategoryResponse cat : categories) {
+                catList.append("- ID: ").append(cat.getId()).append(" | Tên: ").append(cat.getName()).append("\n");
+            }
+            
+            String intentPrompt = "Bạn là bộ phân tích ý định tìm kiếm sản phẩm. Hãy phân tích tin nhắn của khách hàng và trích xuất ý định dưới dạng JSON.\n\n"
+                    + "Danh sách danh mục sản phẩm hiện có trong cửa hàng:\n"
+                    + catList.toString() + "\n"
+                    + "Tin nhắn của khách hàng: \"" + text + "\"\n\n"
+                    + "Hãy trả về một đối tượng JSON duy nhất có cấu trúc sau (nêu rõ categoryId khớp từ danh sách trên nếu có, nếu không khớp danh mục nào hãy để categoryId là null. Nếu khách hàng tìm hãng hoặc sản phẩm cụ thể, trích xuất tên hãng hoặc tên máy đó vào keyword, ngược lại nếu chỉ hỏi chung chung hãy để keyword là null):\n"
+                    + "{\n"
+                    + "  \"categoryId\": \"UUID hoặc null\",\n"
+                    + "  \"keyword\": \"tên hãng/tên sản phẩm cụ thể hoặc null\"\n"
+                    + "}\n"
+                    + "Tuyệt đối không trả về bất kỳ văn bản giải thích nào khác ngoài JSON sạch.";
+
+            List<Map<String, Object>> parseContents = List.of(Map.of(
+                "role", "user",
+                "parts", List.of(Map.of("text", intentPrompt))
+            ));
+            
+            // Gọi Gemini để phân tích ý định (luồng này rất nhanh vì prompt và output ngắn)
+            String intentResponse = geminiService.generateResponse(parseContents);
+            
+            // Làm sạch JSON markdown block nếu có
+            String cleanJson = intentResponse.replaceAll("(?s)```json\\s*|\\s*```", "").trim();
+            ObjectMapper mapper = new ObjectMapper();
+            Map<String, Object> map = mapper.readValue(cleanJson, Map.class);
+            
+            String catIdStr = (String) map.get("categoryId");
+            if (catIdStr != null && !catIdStr.equalsIgnoreCase("null") && !catIdStr.isBlank()) {
+                matchedCategoryId = UUID.fromString(catIdStr);
+            }
+            String kw = (String) map.get("keyword");
+            if (kw != null && !kw.equalsIgnoreCase("null") && !kw.isBlank()) {
+                searchKeyword = kw.trim();
+            }
+        } catch (Exception e) {
+            log.error("Error parsing intent with AI", e);
+        }
+
+        // Thực hiện tìm kiếm sản phẩm thực tế trong DB dựa trên kết quả phân tích của AI
+        if (matchedCategoryId != null || searchKeyword != null) {
+            SearchIntent searchIntent = SearchQueryParser.parse(text); // Lấy khoảng giá nếu có
+            PageQueryRequest req = PageQueryRequest.builder()
+                    .page(0)
+                    .size(8)
+                    .search(searchKeyword)
+                    .categoryId(matchedCategoryId)
+                    .minPrice(searchIntent.getMinPrice())
+                    .maxPrice(searchIntent.getMaxPrice())
+                    .build();
+            try {
+                Page<ProductResponse> page = queryProductService.getPublishedProducts(req);
+                List<ChatbotProductCardResponse> cards = page.getContent().stream()
+                        .map(this::toProductCard)
+                        .collect(Collectors.toList());
+
+                // Ghi nhận lượt tìm kiếm vào lịch sử của người dùng
+                UUID userId = principal != null && principal.getAccountId() != null
+                        ? userRepository.findByAccountId(principal.getAccountId()).map(u -> u.getId()).orElse(null)
+                        : null;
+                recommendationService.recordSearch(session.getId(), userId, searchKeyword != null ? searchKeyword : "category", matchedCategoryId, searchIntent.getMinPrice(), searchIntent.getMaxPrice());
+
+                if (!cards.isEmpty()) {
+                    session.setAttribute("chatbotLastAiProducts", cards);
+                    
+                    // Build context mô tả sản phẩm cho AI
+                    StringBuilder sb = new StringBuilder();
+                    sb.append("Dưới đây là danh sách sản phẩm thực tế đang bán trên trang web của chúng tôi liên quan đến yêu cầu của khách hàng. Hãy sử dụng thông tin này để giới thiệu trực tiếp cho khách hàng (nêu rõ tên và giá sản phẩm), tuyệt đối không bắt họ tự đi tìm kiếm nếu sản phẩm đã có dưới đây:\n");
+                    for (ProductResponse p : page.getContent()) {
+                        sb.append("- ").append(p.getName())
+                          .append(" | Giá: ").append(formatPrice(p.getBasePrice())).append("\n");
+                    }
+                    return sb.toString();
+                }
+            } catch (Exception e) {
+                log.error("Error preparing AI chat context", e);
+            }
+        }
+        session.removeAttribute("chatbotLastAiProducts");
+        return "";
     }
 }

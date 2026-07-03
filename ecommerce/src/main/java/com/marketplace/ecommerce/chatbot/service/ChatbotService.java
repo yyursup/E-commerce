@@ -17,4 +17,9 @@ public interface ChatbotService {
      * Handle button action or text input. Updates session state and returns next message/options.
      */
     ChatbotResponse interact(HttpSession session, ChatbotInteractRequest request, CurrentUserInfo principal);
+
+    /**
+     * Prepare product context for AI chatbot based on search keyword extraction, and store results in session cache.
+     */
+    String prepareAiChatContext(HttpSession session, String text, CurrentUserInfo principal);
 }

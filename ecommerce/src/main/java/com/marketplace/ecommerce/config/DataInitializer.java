@@ -66,9 +66,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class DataInitializer implements CommandLineRunner {
 
-    private static final int TARGET_SHOP_COUNT = 5;
-    private static final int MIN_PRODUCTS_PER_SHOP = 10;
-    private static final int MAX_PRODUCTS_PER_SHOP = 15;
+    private static final int TARGET_SHOP_COUNT = 1;
+    private static final int MIN_PRODUCTS_PER_SHOP = 50;
+    private static final int MAX_PRODUCTS_PER_SHOP = 75;
     private static final int TARGET_ORDER_COUNT = 150;
     private static final int TARGET_REQUEST_COUNT = 3;
 
@@ -110,8 +110,7 @@ public class DataInitializer implements CommandLineRunner {
                 "0123456789",
                 LocalDate.of(1990, 1, 1),
                 GenderType.MALE,
-                "123456789012"
-        );
+                "123456789012");
 
         // Sellers
         User seller1 = initializeUser(
@@ -121,48 +120,7 @@ public class DataInitializer implements CommandLineRunner {
                 "0987654321",
                 LocalDate.of(1985, 5, 15),
                 GenderType.MALE,
-                "987654321012"
-        );
-
-        User seller2 = initializeUser(
-                initializeAccount("seller2", "seller2@gmail.com", "0912345678", "seller123@", businessRole),
-                "Trần Thị Seller 2",
-                "seller2@gmail.com",
-                "0912345678",
-                LocalDate.of(1988, 8, 20),
-                GenderType.FEMALE,
-                "112233445566"
-        );
-
-        User seller3 = initializeUser(
-                initializeAccount("seller3", "seller3@gmail.com", "0911111111", "seller123@", businessRole),
-                "Lê Văn Seller 3",
-                "seller3@gmail.com",
-                "0911111111",
-                LocalDate.of(1987, 2, 11),
-                GenderType.MALE,
-                "123123123123"
-        );
-
-        User seller4 = initializeUser(
-                initializeAccount("seller4", "seller4@gmail.com", "0922222222", "seller123@", businessRole),
-                "Phạm Thị Seller 4",
-                "seller4@gmail.com",
-                "0922222222",
-                LocalDate.of(1990, 6, 21),
-                GenderType.FEMALE,
-                "456456456456"
-        );
-
-        User seller5 = initializeUser(
-                initializeAccount("seller5", "seller5@gmail.com", "0933333333", "seller123@", businessRole),
-                "Hoàng Văn Seller 5",
-                "seller5@gmail.com",
-                "0933333333",
-                LocalDate.of(1991, 9, 9),
-                GenderType.MALE,
-                "789789789789"
-        );
+                "987654321012");
 
         // Customers
         User customer1 = initializeUser(
@@ -172,8 +130,7 @@ public class DataInitializer implements CommandLineRunner {
                 "0901234567",
                 LocalDate.of(1995, 3, 10),
                 GenderType.MALE,
-                "223344556677"
-        );
+                "223344556677");
 
         User customer2 = initializeUser(
                 initializeAccount("customer2", "customer2@gmail.com", "0909876543", "customer123@", customerRole),
@@ -182,8 +139,7 @@ public class DataInitializer implements CommandLineRunner {
                 "0909876543",
                 LocalDate.of(1992, 7, 25),
                 GenderType.FEMALE,
-                "334455667788"
-        );
+                "334455667788");
 
         User customer3 = initializeUser(
                 initializeAccount("customer3", "customer3@gmail.com", "0905555555", "customer123@", customerRole),
@@ -192,8 +148,7 @@ public class DataInitializer implements CommandLineRunner {
                 "0905555555",
                 LocalDate.of(1994, 4, 14),
                 GenderType.MALE,
-                "555666777888"
-        );
+                "555666777888");
 
         User customer4 = initializeUser(
                 initializeAccount("customer4", "customer4@gmail.com", "0906666666", "customer123@", customerRole),
@@ -202,8 +157,7 @@ public class DataInitializer implements CommandLineRunner {
                 "0906666666",
                 LocalDate.of(1996, 12, 1),
                 GenderType.FEMALE,
-                "888777666555"
-        );
+                "888777666555");
 
         User customer5 = initializeUser(
                 initializeAccount("customer5", "customer5@gmail.com", "0907777777", "customer123@", customerRole),
@@ -212,15 +166,10 @@ public class DataInitializer implements CommandLineRunner {
                 "0907777777",
                 LocalDate.of(1993, 10, 30),
                 GenderType.MALE,
-                "111222333444"
-        );
+                "111222333444");
 
         // Wallets
         initializeUserWallet(seller1);
-        initializeUserWallet(seller2);
-        initializeUserWallet(seller3);
-        initializeUserWallet(seller4);
-        initializeUserWallet(seller5);
 
         initializeUserWallet(customer1);
         initializeUserWallet(customer2);
@@ -238,10 +187,6 @@ public class DataInitializer implements CommandLineRunner {
         initializeCart(customer5);
 
         initializeCart(seller1);
-        initializeCart(seller2);
-        initializeCart(seller3);
-        initializeCart(seller4);
-        initializeCart(seller5);
 
         // Platform settings
         initializePlatformSetting(PlatformConstant.KEY_COMMISSION_RATE, "10");
@@ -267,65 +212,11 @@ public class DataInitializer implements CommandLineRunner {
                 "123 Đường Nguyễn Huệ, Quận 1",
                 1442,
                 "21012",
-                ShopStatus.ACTIVE
-        );
+                ShopStatus.ACTIVE);
 
-        Shop shop2 = initializeShop(
-                seller2,
-                "TechZone - Laptop & Smartphone",
-                "Cửa hàng chuyên bán laptop, điện thoại thông minh và phụ kiện công nghệ chính hãng",
-                "https://example.com/techzone-logo.jpg",
-                "https://example.com/techzone-cover.jpg",
-                "0912345678",
-                "456 Đường Lê Lợi, Quận 1",
-                1442,
-                "21012",
-                ShopStatus.ACTIVE
-        );
-
-        Shop shop3 = initializeShop(
-                seller3,
-                "SoundHub Audio",
-                "Chuyên tai nghe, loa bluetooth, thiết bị âm thanh cao cấp",
-                "https://example.com/soundhub-logo.jpg",
-                "https://example.com/soundhub-cover.jpg",
-                "0911111111",
-                "789 Đường Hai Bà Trưng, Quận 3",
-                1442,
-                "21012",
-                ShopStatus.ACTIVE
-        );
-
-        Shop shop4 = initializeShop(
-                seller4,
-                "Laptop World",
-                "Shop laptop văn phòng, gaming, ultrabook cao cấp",
-                "https://example.com/laptopworld-logo.jpg",
-                "https://example.com/laptopworld-cover.jpg",
-                "0922222222",
-                "12 Đường Võ Văn Tần, Quận 3",
-                1442,
-                "21012",
-                ShopStatus.ACTIVE
-        );
-
-        Shop shop5 = initializeShop(
-                seller5,
-                "Mobile Center",
-                "Điện thoại, máy tính bảng, smartwatch và phụ kiện mobile",
-                "https://example.com/mobilecenter-logo.jpg",
-                "https://example.com/mobilecenter-cover.jpg",
-                "0933333333",
-                "88 Đường Điện Biên Phủ, Bình Thạnh",
-                1450,
-                "21013",
-                ShopStatus.ACTIVE
-        );
-
-        List<Shop> shops = List.of(shop1, shop2, shop3, shop4, shop5);
+        List<Shop> shops = List.of(shop1);
         List<ProductCategory> categories = List.of(
-                headphones, accessories, laptop, smartphone, tablet, smartwatch, audio
-        );
+                headphones, accessories, laptop, smartphone, tablet, smartwatch, audio);
 
         seedProductsForShops(shops, categories);
 
@@ -389,22 +280,19 @@ public class DataInitializer implements CommandLineRunner {
                         ThreadLocalRandom.current().nextInt(20, 201),
                         randomPriceByCategory(category),
                         ThreadLocalRandom.current().nextInt(100, 3001),
-                        ProductStatus.PUBLISHED
-                );
+                        ProductStatus.PUBLISHED);
 
                 initializeProductImage(
                         product,
                         buildImageUrlForCategory(category, sku, 1),
                         true,
-                        1
-                );
+                        1);
 
                 initializeProductImage(
                         product,
                         buildImageUrlForCategory(category, sku, 2),
                         false,
-                        2
-                );
+                        2);
             }
         }
     }
@@ -425,8 +313,7 @@ public class DataInitializer implements CommandLineRunner {
                 OrderStatus.SHIPPING,
                 OrderStatus.DELIVERED,
                 OrderStatus.COMPLETED,
-                OrderStatus.CANCELLED
-        );
+                OrderStatus.CANCELLED);
 
         for (int i = 0; i < needToCreate; i++) {
             User customer = customers.get(random.nextInt(customers.size()));
@@ -464,8 +351,7 @@ public class DataInitializer implements CommandLineRunner {
                     address,
                     status,
                     "Seed order demo #" + (i + 1),
-                    createdAt
-            );
+                    createdAt);
 
             int itemCount = ThreadLocalRandom.current().nextInt(1, 4);
             HashSet<UUID> usedProductIds = new HashSet<>();
@@ -518,8 +404,7 @@ public class DataInitializer implements CommandLineRunner {
                     "Tôi muốn đăng ký làm người bán để kinh doanh phụ kiện điện tử",
                     adminAccount,
                     LocalDateTime.now().minusDays(5),
-                    "Yêu cầu hợp lệ, đã duyệt"
-            );
+                    "Yêu cầu hợp lệ, đã duyệt");
         }
 
         if (customerAccount2 != null) {
@@ -530,8 +415,7 @@ public class DataInitializer implements CommandLineRunner {
                     "Tôi muốn đăng ký làm người bán để mở gian hàng công nghệ",
                     null,
                     null,
-                    null
-            );
+                    null);
         }
 
         if (customerAccount3 != null) {
@@ -542,8 +426,7 @@ public class DataInitializer implements CommandLineRunner {
                     "Tôi muốn đăng ký làm người bán",
                     adminAccount,
                     LocalDateTime.now().minusDays(10),
-                    "Thiếu thông tin giấy phép kinh doanh"
-            );
+                    "Thiếu thông tin giấy phép kinh doanh");
         }
     }
 
@@ -610,31 +493,36 @@ public class DataInitializer implements CommandLineRunner {
         if (categoryName.contains("laptop")) {
             return index == 1
                     ? "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=800&h=800&fit=crop&sig=" + sku
-                    : "https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=800&h=800&fit=crop&sig=" + sku + "-2";
+                    : "https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=800&h=800&fit=crop&sig=" + sku
+                            + "-2";
         }
 
         if (categoryName.contains("điện thoại")) {
             return index == 1
                     ? "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&h=800&fit=crop&sig=" + sku
-                    : "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=800&h=800&fit=crop&sig=" + sku + "-2";
+                    : "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=800&h=800&fit=crop&sig=" + sku
+                            + "-2";
         }
 
         if (categoryName.contains("tai nghe")) {
             return index == 1
                     ? "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&h=800&fit=crop&sig=" + sku
-                    : "https://images.unsplash.com/photo-1611864583067-b002fdc4fa29?w=800&h=800&fit=crop&sig=" + sku + "-2";
+                    : "https://images.unsplash.com/photo-1611864583067-b002fdc4fa29?w=800&h=800&fit=crop&sig=" + sku
+                            + "-2";
         }
 
         if (categoryName.contains("đồng hồ")) {
             return index == 1
                     ? "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&h=800&fit=crop&sig=" + sku
-                    : "https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=800&h=800&fit=crop&sig=" + sku + "-2";
+                    : "https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=800&h=800&fit=crop&sig=" + sku
+                            + "-2";
         }
 
         if (categoryName.contains("máy tính bảng")) {
             return index == 1
                     ? "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=800&h=800&fit=crop&sig=" + sku
-                    : "https://images.unsplash.com/photo-1561154464-82e9adf32764?w=800&h=800&fit=crop&sig=" + sku + "-2";
+                    : "https://images.unsplash.com/photo-1561154464-82e9adf32764?w=800&h=800&fit=crop&sig=" + sku
+                            + "-2";
         }
 
         return index == 1
@@ -706,7 +594,7 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private Account initializeAccount(String username, String email, String phoneNumber,
-                                      String password, Role role) {
+            String password, Role role) {
         return accountRepository.findByUsername(username)
                 .orElseGet(() -> {
                     Account account = Account.builder()
@@ -728,7 +616,7 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private User initializeUser(Account account, String fullName, String email, String phoneNumber,
-                                LocalDate dateOfBirth, GenderType gender, String identityCardNumber) {
+            LocalDate dateOfBirth, GenderType gender, String identityCardNumber) {
         return userRepository.findByAccountId(account.getId())
                 .orElseGet(() -> {
                     User user = User.builder()
@@ -747,8 +635,8 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private Shop initializeShop(User user, String name, String description, String logoUrl,
-                                String coverImageUrl, String phoneNumber, String address,
-                                Integer districtId, String wardCode, ShopStatus status) {
+            String coverImageUrl, String phoneNumber, String address,
+            Integer districtId, String wardCode, ShopStatus status) {
         return shopRepository.findByUserId(user.getId())
                 .orElseGet(() -> {
                     LocalDateTime now = LocalDateTime.now();
@@ -777,8 +665,8 @@ public class DataInitializer implements CommandLineRunner {
         return productCategoryRepository.findAll().stream()
                 .filter(cat -> cat.getName().equals(name)
                         && (parent == null
-                        ? cat.getParent() == null
-                        : cat.getParent() != null && cat.getParent().getId().equals(parent.getId())))
+                                ? cat.getParent() == null
+                                : cat.getParent() != null && cat.getParent().getId().equals(parent.getId())))
                 .findFirst()
                 .orElseGet(() -> {
                     ProductCategory category = new ProductCategory();
@@ -791,8 +679,8 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private Product initializeProduct(Shop shop, ProductCategory category, String name,
-                                      String description, String sku, Integer quantity,
-                                      BigDecimal basePrice, Integer weight, ProductStatus status) {
+            String description, String sku, Integer quantity,
+            BigDecimal basePrice, Integer weight, ProductStatus status) {
         return productRepository.findAll().stream()
                 .filter(p -> p.getSku().equals(sku) && !Boolean.TRUE.equals(p.getDeleted()))
                 .findFirst()
@@ -817,7 +705,7 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private ProductImage initializeProductImage(Product product, String imageUrl,
-                                                Boolean isThumbnail, Integer displayOrder) {
+            Boolean isThumbnail, Integer displayOrder) {
         return productImageRepository.findByProductAndImageUrl(product, imageUrl)
                 .orElseGet(() -> {
                     ProductImage image = ProductImage.builder()
@@ -833,9 +721,10 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private UserAddress initializeUserAddress(User user, String receiverName, String receiverPhone,
-                                              String addressLine, String city, String district, String ward,
-                                              Integer districtId, String wardCode, Boolean isDefault) {
-        var existingAddresses = userAddressRepository.findAllByUserIdAndDeletedFalseOrderByIsDefaultDescIdDesc(user.getId());
+            String addressLine, String city, String district, String ward,
+            Integer districtId, String wardCode, Boolean isDefault) {
+        var existingAddresses = userAddressRepository
+                .findAllByUserIdAndDeletedFalseOrderByIsDefaultDescIdDesc(user.getId());
         var existing = existingAddresses.stream()
                 .filter(addr -> addr.getAddressLine().equals(addressLine) && !Boolean.TRUE.equals(addr.getDeleted()))
                 .findFirst();
@@ -899,12 +788,13 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private Order initializeOrder(User user, Shop shop, UserAddress address,
-                                  OrderStatus status, String notes, LocalDateTime createdAt) {
+            OrderStatus status, String notes, LocalDateTime createdAt) {
         String orderNumber = "ORD-" + createdAt.format(DateTimeFormatter.ofPattern("yyyyMMdd"))
                 + "-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
 
         if (orderRepository.findByOrderNumber(orderNumber).isPresent()) {
-            orderNumber = "ORD-" + System.currentTimeMillis() + "-" + UUID.randomUUID().toString().substring(0, 4).toUpperCase();
+            orderNumber = "ORD-" + System.currentTimeMillis() + "-"
+                    + UUID.randomUUID().toString().substring(0, 4).toUpperCase();
         }
 
         Order order = Order.builder()
@@ -934,7 +824,6 @@ public class DataInitializer implements CommandLineRunner {
 
         boolean pastPayment = status != OrderStatus.PENDING_PAYMENT
                 && status != OrderStatus.CANCELLED;
-
 
         order.setStockDeducted(pastPayment);
 
@@ -989,7 +878,7 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private Request initializeRequest(Account account, RequestType type, RequestStatus status,
-                                      String description, Account reviewedBy, LocalDateTime reviewedAt, String response) {
+            String description, Account reviewedBy, LocalDateTime reviewedAt, String response) {
         boolean alreadyExists = requestRepository.count() > 0 && requestRepository.findAll().stream()
                 .anyMatch(r -> r.getAccount() != null
                         && r.getAccount().getId().equals(account.getId())
@@ -1043,7 +932,8 @@ public class DataInitializer implements CommandLineRunner {
                         throw new IllegalStateException("Order is not eligible for commission: " + order.getStatus());
                     }
 
-                    if (order.getShop() == null || order.getShop().getUser() == null || order.getShop().getUser().getId() == null) {
+                    if (order.getShop() == null || order.getShop().getUser() == null
+                            || order.getShop().getUser().getId() == null) {
                         throw new IllegalStateException("Seller not found for order: " + order.getOrderNumber());
                     }
 
@@ -1051,7 +941,8 @@ public class DataInitializer implements CommandLineRunner {
                         throw new IllegalStateException("Order items not found for order: " + order.getOrderNumber());
                     }
 
-                    BigDecimal commissionRate = platformSettingRepository.findByKey(PlatformConstant.KEY_COMMISSION_RATE)
+                    BigDecimal commissionRate = platformSettingRepository
+                            .findByKey(PlatformConstant.KEY_COMMISSION_RATE)
                             .map(s -> new BigDecimal(s.getValue() != null ? s.getValue().trim() : "10"))
                             .orElse(new BigDecimal("10"));
 
@@ -1068,7 +959,8 @@ public class DataInitializer implements CommandLineRunner {
                     BigDecimal totalCommission = BigDecimal.ZERO;
 
                     for (OrderItem orderItem : order.getItems()) {
-                        BigDecimal unitPrice = orderItem.getUnitPrice() == null ? BigDecimal.ZERO : orderItem.getUnitPrice();
+                        BigDecimal unitPrice = orderItem.getUnitPrice() == null ? BigDecimal.ZERO
+                                : orderItem.getUnitPrice();
                         int quantity = orderItem.getQuantity() == null ? 0 : orderItem.getQuantity();
 
                         BigDecimal lineAmount = unitPrice.multiply(BigDecimal.valueOf(quantity));

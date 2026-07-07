@@ -66,7 +66,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class DataInitializer implements CommandLineRunner {
 
-    private static final int TARGET_SHOP_COUNT = 1;
     private static final int MIN_PRODUCTS_PER_SHOP = 50;
     private static final int MAX_PRODUCTS_PER_SHOP = 75;
     private static final int TARGET_ORDER_COUNT = 150;

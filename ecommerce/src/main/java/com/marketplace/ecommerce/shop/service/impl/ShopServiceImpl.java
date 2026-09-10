@@ -41,7 +41,6 @@ public class ShopServiceImpl implements ShopService {
                 .businessAddress(sellerDetail.getBusinessAddress())
                 .businessLicenseUrl(sellerDetail.getBusinessLicenseUrl())
                 .status(ShopStatus.ACTIVE)
-                .shopType(sellerDetail.getSellerType() != null ? sellerDetail.getSellerType() : com.marketplace.ecommerce.shop.valueObjects.SellerType.INDIVIDUAL)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();

@@ -1,7 +1,8 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { getAccountVerified } from '../lib/jwt'
+import { decodeJWT, getAccountVerified } from '../lib/jwt'
 import { setAccessToken, clearAccessToken } from '../lib/auth'
+import { closeWebSocketConnection } from '../services/websocketService'
 
 export const useAuthStore = create(
     persist(
@@ -13,10 +14,19 @@ export const useAuthStore = create(
 
             login: (token, user) => {
                 setAccessToken(token)
+                const decoded = decodeJWT(token)
                 const accountVerified = getAccountVerified(token)
+                const enrichedUser = {
+                    ...user,
+                    id: decoded?.accountId || user?.id,
+                    accountId: decoded?.accountId || user?.accountId,
+                    username: decoded?.sub || user?.username,
+                    role: decoded?.role || user?.role,
+                    accountVerified,
+                }
                 set({
                     token,
-                    user: { ...user, accountVerified },
+                    user: enrichedUser,
                     isAuthenticated: true,
                     accountVerified,
                 })
@@ -36,6 +46,7 @@ export const useAuthStore = create(
             },
 
             logout: () => {
+                closeWebSocketConnection()
                 clearAccessToken()
                 set({
                     token: null,

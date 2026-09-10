@@ -119,7 +119,7 @@ public class RequestServiceImpl implements RequestService {
                 Seller s = sellerRepository.findByRequestId(requestId);
                 if (s == null) throw new CustomException("Seller detail not found for request: " + requestId);
 
-                yield RegisterSellerResponse.builder().shopName(s.getShopName()).taxCode(s.getTaxCode()).address(s.getAddress()).shopPhone(s.getShopPhone()).shopEmail(s.getShopEmail()).sellerType(s.getSellerType()).build();
+                yield RegisterSellerResponse.from(s);
             }
 
             default -> throw new CustomException("Unsupported request type: " + r.getType());
@@ -135,7 +135,7 @@ public class RequestServiceImpl implements RequestService {
                 .accountId(accountId)
                 .type(r.getType())
                 .status(r.getStatus())
-                .createdAt(LocalDateTime.from(r.getCreatedAt()))
+                .createdAt(r.getCreatedAt())
                 .build());
     }
 
@@ -157,7 +157,7 @@ public class RequestServiceImpl implements RequestService {
                 .accountId(r.getAccount() != null ? r.getAccount().getId() : null)
                 .type(r.getType())
                 .status(r.getStatus())
-                .createdAt(LocalDateTime.from(r.getCreatedAt()))
+                .createdAt(r.getCreatedAt())
                 .build());
     }
 

@@ -40,8 +40,12 @@ public class JwtFilter extends OncePerRequestFilter {
             "/api/v1/auth/register",
             "/api/v1/auth/verify",
             "/api/v1/chat/**",
+            "/api/v1/ws/chat",
+            "/api/v1/ws/chat/**",
             "/api/v1/ws-chat",
-            "/api/v1/ws-chat/**"
+            "/api/v1/ws-chat/**",
+            "/ws/chat",
+            "/ws/chat/**"
     );
 
     public JwtFilter(

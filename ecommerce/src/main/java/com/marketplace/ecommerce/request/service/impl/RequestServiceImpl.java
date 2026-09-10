@@ -135,7 +135,7 @@ public class RequestServiceImpl implements RequestService {
                 .accountId(accountId)
                 .type(r.getType())
                 .status(r.getStatus())
-                .createdAt(LocalDateTime.from(r.getCreatedAt()))
+                .createdAt(r.getCreatedAt())
                 .build());
     }
 
@@ -157,7 +157,7 @@ public class RequestServiceImpl implements RequestService {
                 .accountId(r.getAccount() != null ? r.getAccount().getId() : null)
                 .type(r.getType())
                 .status(r.getStatus())
-                .createdAt(LocalDateTime.from(r.getCreatedAt()))
+                .createdAt(r.getCreatedAt())
                 .build());
     }
 

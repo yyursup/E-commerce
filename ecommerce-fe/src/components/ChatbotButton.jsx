@@ -149,6 +149,11 @@ export default function ChatbotButton() {
 
       // Fetch or create customer support thread
       const thread = await chatService.getOrCreateSupportThread()
+
+      // *** Fix race condition: update ref IMMEDIATELY (sync) before setState ***
+      // This ensures WebSocket messages that arrive during getMessages() fetch
+      // are NOT dropped by the CHAT_MESSAGE listener (which reads supportThreadRef)
+      supportThreadRef.current = thread
       setSupportThread(thread)
 
       // Fetch messages for thread
@@ -173,6 +178,14 @@ export default function ChatbotButton() {
       setLiveLoading(false)
     }
   }, [token])
+
+  // Connect WebSocket early when widget opens (not just when live tab is clicked)
+  // So that the customer's WS session is registered on the backend ASAP
+  useEffect(() => {
+    if (isOpen && token) {
+      createWebSocketConnection(token)
+    }
+  }, [isOpen, token])
 
   useEffect(() => {
     if (isOpen && activeTab === 'live' && token) {

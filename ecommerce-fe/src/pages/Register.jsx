@@ -78,7 +78,7 @@ export default function Register() {
                 isDark ? 'text-slate-400' : 'text-stone-500',
               )}
             >
-              Tham gia AirPod Store và bắt đầu mua sắm
+              Tham gia E-commerce và bắt đầu mua sắm
             </p>
           </div>
 

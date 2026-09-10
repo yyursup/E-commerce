@@ -267,6 +267,8 @@ export default function Products() {
           <ProductFilterSidebar
             selectedPriceRange={selectedPriceRange}
             onPriceRangeChange={handlePriceRangeChange}
+            selectedCategoryId={categoryId}
+            onCategoryChange={handleCategoryChange}
             hasActiveFilters={hasActiveFilters}
             onClearFilters={clearFilters}
           />

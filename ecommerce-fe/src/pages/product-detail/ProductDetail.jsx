@@ -384,13 +384,13 @@ export default function ProductDetail() {
               <div className="flex items-center gap-2">
                 <HiOutlineTruck className={cn('h-5 w-5', isDark ? 'text-blue-400' : 'text-blue-600')} />
                 <span className={cn('text-sm', isDark ? 'text-slate-300' : 'text-stone-700')}>
-                  Miễn phí vận chuyển
+                  Vận chuyển toàn quốc (GHN Express)
                 </span>
               </div>
               <div className="flex items-center gap-2">
                 <HiOutlineShieldCheck className={cn('h-5 w-5', isDark ? 'text-amber-400' : 'text-amber-600')} />
                 <span className={cn('text-sm', isDark ? 'text-slate-300' : 'text-stone-700')}>
-                  Bảo hành chính hãng
+                  Ký quỹ Escrow bảo vệ người mua 100%
                 </span>
               </div>
               <div className="flex items-center gap-2">

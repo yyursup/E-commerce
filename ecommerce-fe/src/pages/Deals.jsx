@@ -1,377 +1,388 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { HiOutlineFire, HiOutlineClock, HiOutlineTag, HiOutlineArrowRight } from 'react-icons/hi'
+import {
+  HiOutlineFire,
+  HiOutlineClock,
+  HiOutlineTag,
+  HiOutlineTruck,
+  HiOutlineTicket,
+  HiOutlineCheck,
+  HiOutlineSparkles,
+  HiOutlineShieldCheck,
+  HiOutlineArrowRight,
+} from 'react-icons/hi'
+import toast from 'react-hot-toast'
 import { useThemeStore } from '../store/useThemeStore'
 import { cn } from '../lib/cn'
-import ProductCard from '../components/ProductCard'
 import Footer from '../components/Footer'
 
-// Mock data for deals
-const mockDeals = [
+// Kho Voucher Sàn E-commerce
+const platformVouchers = [
   {
-    id: 'deal-1',
-    title: 'Flash Sale AirPods Pro',
-    description: 'Giảm giá sốc AirPods Pro (2nd gen). Số lượng có hạn!',
-    discount: 40,
-    originalPrice: 5990000,
-    salePrice: 3594000,
-    image: 'https://images.unsplash.com/photo-1587523459887-e669248cf666?w=800&h=400&fit=crop',
-    badge: 'Hot',
-    endDate: '2024-12-31T23:59:59',
-    products: [
-      {
-        id: 'product-1',
-        name: 'AirPods Pro (2nd gen)',
-        price: 3594000,
-        oldPrice: 5990000,
-        image: 'https://images.unsplash.com/photo-1587523459887-e669248cf666?w=400&h=400&fit=crop',
-        badge: 'Sale',
-        rating: 4.8,
-      },
-      {
-        id: 'product-2',
-        name: 'AirPods Pro (1st gen)',
-        price: 2990000,
-        oldPrice: 4990000,
-        image: 'https://images.unsplash.com/photo-1587523459887-e669248cf666?w=400&h=400&fit=crop',
-        badge: 'Sale',
-        rating: 4.6,
-      },
-    ],
+    id: 'v-1',
+    code: 'FREESHIP50',
+    type: 'SHIPPING',
+    title: 'Miễn Phí Vận Chuyển GHN',
+    description: 'Giảm tối đa 50.000đ cước giao hàng GHN cho đơn hàng từ 250.000đ',
+    badge: 'Freeship Xtra',
+    color: 'border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-400',
+    expiry: 'Còn 3 ngày',
   },
   {
-    id: 'deal-2',
-    title: 'Miễn phí giao hàng',
-    description: 'Miễn phí giao hàng cho đơn hàng từ 500.000đ. Không cần mã!',
-    discount: 0,
-    originalPrice: 0,
-    salePrice: 0,
-    image: 'https://images.unsplash.com/photo-1624258919367-5dc28f5dc293?w=800&h=400&fit=crop',
-    badge: 'Free',
-    endDate: '2024-12-31T23:59:59',
-    products: [
-      {
-        id: 'product-3',
-        name: 'AirPods Max',
-        price: 12990000,
-        image: 'https://images.unsplash.com/photo-1587523459887-e669248cf666?w=400&h=400&fit=crop',
-        badge: 'Bestseller',
-        rating: 4.9,
-      },
-      {
-        id: 'product-4',
-        name: 'AirPods (3rd gen)',
-        price: 4490000,
-        image: 'https://images.unsplash.com/photo-1587523459887-e669248cf666?w=400&h=400&fit=crop',
-        badge: 'New',
-        rating: 4.7,
-      },
-    ],
+    id: 'v-2',
+    code: 'ECOMNEW15',
+    type: 'DISCOUNT',
+    title: 'Giảm 15% Đơn Đầu Tiên',
+    description: 'Ưu đãi dành riêng cho khách hàng mới, giảm tối đa 100.000đ toàn sàn',
+    badge: 'Khách Hàng Mới',
+    color: 'border-rose-500 bg-rose-500/10 text-rose-600 dark:text-rose-400',
+    expiry: 'HSD: 30 ngày',
   },
   {
-    id: 'deal-3',
-    title: 'Combo AirPods + Case',
-    description: 'Mua AirPods kèm case bảo vệ. Tiết kiệm đến 200.000đ!',
-    discount: 15,
-    originalPrice: 0,
-    salePrice: 0,
-    image: 'https://images.unsplash.com/photo-1607082349566-187342175e2f?w=800&h=400&fit=crop',
-    badge: 'Combo',
-    endDate: '2024-12-25T23:59:59',
-    products: [
-      {
-        id: 'product-5',
-        name: 'AirPods Pro + Case',
-        price: 3794000,
-        oldPrice: 4494000,
-        image: 'https://images.unsplash.com/photo-1587523459887-e669248cf666?w=400&h=400&fit=crop',
-        badge: 'Combo',
-        rating: 4.8,
-      },
-    ],
+    id: 'v-3',
+    code: 'TECH500',
+    type: 'CATEGORY',
+    title: 'Giảm 500.000đ Đồ Công Nghệ',
+    description: 'Áp dụng cho Laptop, Điện thoại, Máy tính bảng và Âm thanh từ 8 triệu',
+    badge: 'Đồ Điện Tử',
+    color: 'border-amber-500 bg-amber-500/10 text-amber-600 dark:text-amber-400',
+    expiry: 'Số lượng có hạn',
   },
   {
-    id: 'deal-4',
-    title: 'Black Friday Sale',
-    description: 'Giảm giá lên đến 50% cho tất cả sản phẩm AirPods!',
-    discount: 50,
-    originalPrice: 0,
-    salePrice: 0,
-    image: 'https://images.unsplash.com/photo-1607082349566-187342175e2f?w=800&h=400&fit=crop',
-    badge: 'Limited',
-    endDate: '2024-11-30T23:59:59',
-    products: [
-      {
-        id: 'product-6',
-        name: 'AirPods Max Premium',
-        price: 6495000,
-        oldPrice: 12990000,
-        image: 'https://images.unsplash.com/photo-1587523459887-e669248cf666?w=400&h=400&fit=crop',
-        badge: 'Sale',
-        rating: 5.0,
-      },
-    ],
+    id: 'v-4',
+    code: 'FASHION30',
+    type: 'CATEGORY',
+    title: 'Giảm 30.000đ Thời Trang',
+    description: 'Áp dụng cho Quần áo, Giày dép, Túi ví cho đơn hàng từ 200.000đ',
+    badge: 'Thời Trang',
+    color: 'border-purple-500 bg-purple-500/10 text-purple-600 dark:text-purple-400',
+    expiry: 'Hôm nay',
   },
 ]
 
-const dealCategories = [
-  { id: 'all', label: 'Tất cả', count: mockDeals.length },
-  { id: 'flash', label: 'Flash Sale', count: 1 },
-  { id: 'free', label: 'Miễn phí', count: 1 },
-  { id: 'combo', label: 'Combo', count: 1 },
-  { id: 'limited', label: 'Giới hạn', count: 1 },
+// Các chương trình Flash Sale & Mega Deals đa ngành
+const multiCategoryDeals = [
+  {
+    id: 'deal-tech',
+    title: 'Siêu Sale Công Nghệ Apple Official',
+    description: 'iPhone 15 Pro Max, MacBook Air M3, AirPods Pro 2 giảm đến 25%',
+    discount: 25,
+    category: 'Điện Tử & Công Nghệ',
+    image: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=800&h=400&fit=crop',
+    badge: 'Mall Giảm Sốc',
+    products: [
+      {
+        name: 'iPhone 15 Pro Max 256GB VN/A',
+        price: 29490000,
+        oldPrice: 34990000,
+        image: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=400&h=400&fit=crop',
+        shopName: 'Apple Authorised Reseller',
+      },
+      {
+        name: 'Tai nghe Apple AirPods Pro 2 Type-C',
+        price: 5690000,
+        oldPrice: 6790000,
+        image: 'https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?w=400&h=400&fit=crop',
+        shopName: 'Apple Authorised Reseller',
+      },
+    ],
+  },
+  {
+    id: 'deal-fashion',
+    title: 'Lễ Hội Thời Trang Trẻ Streetwear',
+    description: 'Áo thun cotton, Quần jean slimfit, Áo khoác bomber giảm đến 40%',
+    discount: 40,
+    category: 'Thời Trang & Phụ Kiện',
+    image: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&h=400&fit=crop',
+    badge: 'Đồng Giá 199K',
+    products: [
+      {
+        name: 'Áo Thun Nam Cotton 100% Co Giãn',
+        price: 189000,
+        oldPrice: 280000,
+        image: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=400&h=400&fit=crop',
+        shopName: 'Trendy Fashion Studio',
+      },
+      {
+        name: 'Quần Jean Nam Slimfit Cao Cấp',
+        price: 399000,
+        oldPrice: 550000,
+        image: 'https://images.unsplash.com/photo-1542272604-787c3835535d?w=400&h=400&fit=crop',
+        shopName: 'Trendy Fashion Studio',
+      },
+    ],
+  },
+  {
+    id: 'deal-home',
+    title: 'Gian Bếp Tiện Nghi Cùng Sunhouse',
+    description: 'Nồi chiên không dầu điện tử, Máy xay sinh tố, Nồi cơm niêu cao cấp',
+    discount: 35,
+    category: 'Nhà Cửa & Đời Sống',
+    image: 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=800&h=400&fit=crop',
+    badge: 'Gia Dụng Bán Chạy',
+    products: [
+      {
+        name: 'Nồi Chiên Không Dầu Sunhouse 6.0L',
+        price: 1490000,
+        oldPrice: 2190000,
+        image: 'https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=400&h=400&fit=crop',
+        shopName: 'Sunhouse Home Official',
+      },
+      {
+        name: 'Bộ 3 Chảo Chống Dính Vân Đá Đáy Từ',
+        price: 480000,
+        oldPrice: 690000,
+        image: 'https://images.unsplash.com/photo-1584990347449-389369d72728?w=400&h=400&fit=crop',
+        shopName: 'Sunhouse Home Official',
+      },
+    ],
+  },
+  {
+    id: 'deal-books',
+    title: 'Hội Sách Tri Thức Nhã Nam',
+    description: 'Sách Đắc Nhân Tâm, Nhà Giả Kim, Tâm Lý Học Tội Phạm giảm đồng loạt',
+    discount: 30,
+    category: 'Sách & Văn Phòng Phẩm',
+    image: 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=800&h=400&fit=crop',
+    badge: 'Sách Hay Khuyên Đọc',
+    products: [
+      {
+        name: 'Sách Đắc Nhân Tâm (Khổ Lớn Mới)',
+        price: 98000,
+        oldPrice: 138000,
+        image: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400&h=400&fit=crop',
+        shopName: 'Nhã Nam Books & Stationery',
+      },
+      {
+        name: 'Sách Nhà Giả Kim - Paulo Coelho',
+        price: 79000,
+        oldPrice: 109000,
+        image: 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=400&h=400&fit=crop',
+        shopName: 'Nhã Nam Books & Stationery',
+      },
+    ],
+  },
 ]
 
 export default function Deals() {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
-  const [selectedCategory, setSelectedCategory] = useState('all')
-  const [selectedDeal, setSelectedDeal] = useState(null)
+  const [collectedVouchers, setCollectedVouchers] = useState(new Set())
+  const [selectedCategory, setSelectedCategory] = useState('Tất cả')
 
-  const filteredDeals = selectedCategory === 'all' 
-    ? mockDeals 
-    : mockDeals.filter(deal => {
-        if (selectedCategory === 'flash') return deal.badge === 'Hot'
-        if (selectedCategory === 'free') return deal.badge === 'Free'
-        if (selectedCategory === 'combo') return deal.badge === 'Combo'
-        if (selectedCategory === 'limited') return deal.badge === 'Limited'
-        return true
-      })
-
-  const formatTimeRemaining = (endDate) => {
-    const now = new Date()
-    const end = new Date(endDate)
-    const diff = end - now
-
-    if (diff <= 0) return 'Đã kết thúc'
-
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24))
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
-
-    if (days > 0) return `Còn ${days} ngày`
-    if (hours > 0) return `Còn ${hours} giờ ${minutes} phút`
-    return `Còn ${minutes} phút`
+  const handleCollectVoucher = (code) => {
+    setCollectedVouchers((prev) => new Set([...prev, code]))
+    toast.success(`Đã lưu mã ${code} vào ví voucher của bạn!`)
   }
 
-  const getBadgeColor = (badge) => {
-    switch (badge) {
-      case 'Hot':
-        return 'bg-red-500 text-white'
-      case 'Free':
-        return 'bg-emerald-500 text-white'
-      case 'Combo':
-        return 'bg-purple-500 text-white'
-      case 'Limited':
-        return 'bg-orange-500 text-white'
-      default:
-        return 'bg-amber-500 text-white'
-    }
-  }
+  const filteredDeals =
+    selectedCategory === 'Tất cả'
+      ? multiCategoryDeals
+      : multiCategoryDeals.filter((d) => d.category === selectedCategory)
 
   return (
-    <div className={cn('min-h-screen', isDark ? 'bg-slate-950' : 'bg-stone-50')}>
-      {/* Header */}
-      <section className={cn('border-b', isDark ? 'border-slate-800 bg-slate-900/50' : 'border-stone-200 bg-white')}>
-        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-amber-100 px-4 py-2 text-sm font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-                <HiOutlineFire className="h-5 w-5" />
-                Ưu đãi đặc biệt
-              </div>
-              <h1
-                className={cn(
-                  'text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl',
-                  isDark ? 'text-white' : 'text-stone-900',
-                )}
-              >
-                Khuyến mãi & Ưu đãi
-              </h1>
-              <p className={cn('mt-4 text-lg', isDark ? 'text-slate-400' : 'text-stone-600')}>
-                Khám phá các ưu đãi hấp dẫn nhất dành cho bạn
-              </p>
-            </motion.div>
+    <div className={cn(isDark ? 'bg-slate-950' : 'bg-stone-50/50')}>
+      {/* Hero Header */}
+      <section className="relative overflow-hidden bg-gradient-to-r from-rose-600 via-amber-600 to-orange-600 text-white py-12 sm:py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="max-w-2xl">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 backdrop-blur px-3 py-1 text-xs font-semibold uppercase tracking-wider mb-3">
+              <HiOutlineFire className="h-4 w-4 text-amber-300 animate-bounce" />
+              Săn Deal Hot & Kho Mã Giảm Giá
+            </span>
+            <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight">
+              Trung Tâm Khuyến Mãi E-commerce
+            </h1>
+            <p className="mt-3 text-sm sm:text-base text-white/90">
+              Thu thập voucher giảm giá toàn sàn, mã miễn phí vận chuyển GHN và săn sale độc quyền từ các thương hiệu chính hãng.
+            </p>
           </div>
         </div>
       </section>
 
-      {/* Categories Filter */}
-      <section className="sticky top-0 z-10 border-b bg-white/80 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/80">
-        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
-          <div className="flex gap-2 overflow-x-auto pb-2">
-            {dealCategories.map((category) => (
-              <button
-                key={category.id}
-                onClick={() => setSelectedCategory(category.id)}
+      {/* Voucher Hub Section */}
+      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
+        <div className="mb-6 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-amber-500 to-rose-500 text-white shadow-md">
+              <HiOutlineTicket className="h-5 w-5" />
+            </span>
+            <div>
+              <h2 className={cn('text-xl sm:text-2xl font-bold tracking-tight', isDark ? 'text-white' : 'text-stone-900')}>
+                Kho Voucher Nổi Bật
+              </h2>
+              <p className="text-xs sm:text-sm text-stone-500 dark:text-slate-400">
+                Lưu mã để tự động áp dụng tại bước thanh toán
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Voucher Cards Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {platformVouchers.map((voucher) => {
+            const isCollected = collectedVouchers.has(voucher.code)
+            return (
+              <div
+                key={voucher.id}
                 className={cn(
-                  'whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-all',
-                  selectedCategory === category.id
-                    ? 'bg-amber-500 text-white shadow-lg'
-                    : isDark
-                      ? 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-                      : 'bg-stone-100 text-stone-700 hover:bg-stone-200',
+                  'relative rounded-2xl border p-5 flex flex-col justify-between shadow-sm transition-all duration-300 hover:shadow-md',
+                  isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
                 )}
               >
-                {category.label} ({category.count})
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className={cn('rounded-lg px-2.5 py-1 text-xs font-bold border', voucher.color)}>
+                      {voucher.badge}
+                    </span>
+                    <span className="text-[11px] text-stone-400 dark:text-slate-500 font-medium">
+                      {voucher.expiry}
+                    </span>
+                  </div>
+
+                  <h3 className={cn('text-base font-bold', isDark ? 'text-white' : 'text-stone-900')}>
+                    {voucher.title}
+                  </h3>
+
+                  <p className="mt-1.5 text-xs text-stone-500 dark:text-slate-400 leading-relaxed">
+                    {voucher.description}
+                  </p>
+                </div>
+
+                <div className="mt-5 pt-3 border-t border-dashed border-stone-200 dark:border-slate-800 flex items-center justify-between">
+                  <span className="font-mono text-xs font-bold text-amber-500">
+                    {voucher.code}
+                  </span>
+                  <button
+                    onClick={() => handleCollectVoucher(voucher.code)}
+                    disabled={isCollected}
+                    className={cn(
+                      'rounded-xl px-4 py-1.5 text-xs font-bold transition-all shadow-sm',
+                      isCollected
+                        ? 'bg-emerald-500 text-white cursor-default'
+                        : 'bg-amber-500 text-white hover:bg-amber-600 active:scale-95'
+                    )}
+                  >
+                    {isCollected ? (
+                      <span className="flex items-center gap-1">
+                        <HiOutlineCheck className="h-4 w-4" />
+                        Đã lưu
+                      </span>
+                    ) : (
+                      'Lưu mã'
+                    )}
+                  </button>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </section>
+
+      {/* Category Deals Section */}
+      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
+        <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-stone-200 dark:border-slate-800">
+          <div>
+            <h2 className={cn('text-xl sm:text-2xl font-bold tracking-tight', isDark ? 'text-white' : 'text-stone-900')}>
+              Ưu Đãi Độc Quyền Theo Ngành Hàng
+            </h2>
+            <p className="text-xs sm:text-sm text-stone-500 dark:text-slate-400 mt-0.5">
+              Các chương trình giảm giá trực tiếp từ các gian hàng chính hãng
+            </p>
+          </div>
+
+          {/* Category Filter Buttons */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1">
+            {['Tất cả', 'Điện Tử & Công Nghệ', 'Thời Trang & Phụ Kiện', 'Nhà Cửa & Đời Sống', 'Sách & Văn Phòng Phẩm'].map((c) => (
+              <button
+                key={c}
+                onClick={() => setSelectedCategory(c)}
+                className={cn(
+                  'rounded-xl px-3 py-1.5 text-xs font-bold transition-colors shrink-0',
+                  selectedCategory === c
+                    ? 'bg-amber-500 text-white shadow-sm'
+                    : isDark
+                      ? 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                      : 'bg-white border border-stone-200 text-stone-700 hover:bg-stone-100'
+                )}
+              >
+                {c}
               </button>
             ))}
           </div>
         </div>
-      </section>
 
-      {/* Deals Grid */}
-      <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="grid gap-8 lg:grid-cols-2">
-          {filteredDeals.map((deal, index) => (
-            <motion.div
+        {/* Deals Listing */}
+        <div className="space-y-8">
+          {filteredDeals.map((deal) => (
+            <div
               key={deal.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
               className={cn(
-                'group relative overflow-hidden rounded-2xl border transition-all duration-300',
-                isDark
-                  ? 'border-slate-700/50 bg-slate-800/50 hover:border-slate-600 hover:shadow-xl hover:shadow-black/20'
-                  : 'border-stone-200 bg-white hover:border-amber-200 hover:shadow-xl hover:shadow-amber-500/10',
+                'rounded-3xl border overflow-hidden p-6 shadow-sm transition-colors',
+                isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
               )}
             >
-              {/* Badge */}
-              <div className="absolute left-4 top-4 z-10">
-                <span
-                  className={cn(
-                    'inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold',
-                    getBadgeColor(deal.badge),
-                  )}
-                >
-                  {deal.badge === 'Hot' && <HiOutlineFire className="h-3 w-3" />}
-                  {deal.badge === 'Free' && <HiOutlineTag className="h-3 w-3" />}
-                  {deal.discount > 0 && `-${deal.discount}%`}
-                </span>
-              </div>
-
-              {/* Timer */}
-              <div className="absolute right-4 top-4 z-10">
-                <div
-                  className={cn(
-                    'flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium',
-                    isDark ? 'bg-slate-900/80 text-slate-200' : 'bg-white/90 text-stone-700',
-                  )}
-                >
-                  <HiOutlineClock className="h-3 w-3" />
-                  {formatTimeRemaining(deal.endDate)}
+              <div className="flex flex-col lg:flex-row gap-6 items-start lg:items-center justify-between mb-6">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-md bg-rose-600 px-2.5 py-0.5 text-xs font-black text-white uppercase">
+                      {deal.badge}
+                    </span>
+                    <span className="text-xs text-stone-400 font-semibold">{deal.category}</span>
+                  </div>
+                  <h3 className={cn('mt-2 text-xl font-bold', isDark ? 'text-white' : 'text-stone-900')}>
+                    {deal.title}
+                  </h3>
+                  <p className="mt-1 text-xs sm:text-sm text-stone-500 dark:text-slate-400">
+                    {deal.description}
+                  </p>
                 </div>
-              </div>
-
-              {/* Banner Image */}
-              <div className="relative h-48 overflow-hidden sm:h-56">
-                <img
-                  src={deal.image}
-                  alt={deal.title}
-                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-                  onError={(e) => {
-                    e.target.src = '/product-placeholder.svg'
-                  }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-                <div className="absolute inset-0 flex flex-col justify-end p-6">
-                  <h3 className="text-2xl font-bold text-white">{deal.title}</h3>
-                  <p className="mt-1 text-sm text-white/90">{deal.description}</p>
-                </div>
-              </div>
-
-              {/* Products */}
-              <div className="p-6">
-                <div className="mb-4 flex items-center justify-between">
-                  <h4 className={cn('text-sm font-semibold', isDark ? 'text-slate-300' : 'text-stone-700')}>
-                    Sản phẩm trong ưu đãi
-                  </h4>
-                  <button
-                    onClick={() => setSelectedDeal(selectedDeal === deal.id ? null : deal.id)}
-                    className={cn(
-                      'flex items-center gap-1 text-xs font-medium transition-colors',
-                      isDark ? 'text-amber-400 hover:text-amber-300' : 'text-amber-600 hover:text-amber-700',
-                    )}
-                  >
-                    {selectedDeal === deal.id ? 'Thu gọn' : 'Xem tất cả'}
-                    <HiOutlineArrowRight
-                      className={cn('h-3 w-3 transition-transform', selectedDeal === deal.id && 'rotate-90')}
-                    />
-                  </button>
-                </div>
-
-                <AnimatePresence>
-                  {selectedDeal === deal.id ? (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.3 }}
-                      className="overflow-hidden"
-                    >
-                      <div className="grid gap-4 sm:grid-cols-2">
-                        {deal.products.map((product) => (
-                          <ProductCard
-                            key={product.id}
-                            product={product}
-                            dataAos="fade-up"
-                          />
-                        ))}
-                      </div>
-                    </motion.div>
-                  ) : (
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      {deal.products.slice(0, 2).map((product) => (
-                        <ProductCard
-                          key={product.id}
-                          product={product}
-                          dataAos="fade-up"
-                        />
-                      ))}
-                    </div>
-                  )}
-                </AnimatePresence>
-
-                {/* CTA Button */}
                 <Link
-                  to="/products"
-                  className={cn(
-                    'mt-6 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold transition-all',
-                    'bg-amber-500 text-white hover:bg-amber-600 hover:shadow-lg hover:shadow-amber-500/20',
-                  )}
+                  to={`/products?search=${encodeURIComponent(deal.category.split(' ')[0])}`}
+                  className="inline-flex items-center gap-1 text-xs sm:text-sm font-bold text-amber-500 hover:text-amber-600 transition-colors shrink-0"
                 >
-                  Xem tất cả sản phẩm
+                  Xem toàn bộ ưu đãi ngành
                   <HiOutlineArrowRight className="h-4 w-4" />
                 </Link>
               </div>
-            </motion.div>
+
+              {/* Sample Product Cards in Deal */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {deal.products.map((item, idx) => (
+                  <div
+                    key={idx}
+                    className={cn(
+                      'flex gap-4 p-4 rounded-2xl border transition-all hover:shadow-md',
+                      isDark ? 'border-slate-800 bg-slate-800/50' : 'border-stone-200/80 bg-stone-50/50'
+                    )}
+                  >
+                    <div className="relative h-24 w-24 rounded-xl overflow-hidden shrink-0 bg-stone-200 dark:bg-slate-700">
+                      <img src={item.image} alt={item.name} className="h-full w-full object-cover" />
+                    </div>
+                    <div className="flex-1 flex flex-col justify-between">
+                      <div>
+                        <span className="text-[10px] text-amber-500 font-bold uppercase tracking-wider">
+                          {item.shopName}
+                        </span>
+                        <h4 className={cn('text-sm font-bold line-clamp-2 mt-0.5', isDark ? 'text-white' : 'text-stone-900')}>
+                          {item.name}
+                        </h4>
+                      </div>
+                      <div className="flex items-baseline gap-2 mt-2">
+                        <span className="text-base font-extrabold text-rose-600 dark:text-rose-400">
+                          {Number(item.price).toLocaleString('vi-VN')}₫
+                        </span>
+                        <span className="text-xs text-stone-400 line-through">
+                          {Number(item.oldPrice).toLocaleString('vi-VN')}₫
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           ))}
         </div>
-
-        {/* Empty State */}
-        {filteredDeals.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-20">
-            <HiOutlineTag className={cn('mb-4 h-16 w-16', isDark ? 'text-slate-600' : 'text-stone-300')} />
-            <p className={cn('text-lg font-medium', isDark ? 'text-slate-400' : 'text-stone-600')}>
-              Không có ưu đãi nào trong danh mục này
-            </p>
-            <button
-              onClick={() => setSelectedCategory('all')}
-              className={cn(
-                'mt-4 rounded-xl px-4 py-2 text-sm font-medium transition-colors',
-                isDark
-                  ? 'bg-slate-700 text-white hover:bg-slate-600'
-                  : 'bg-stone-200 text-stone-700 hover:bg-stone-300',
-              )}
-            >
-              Xem tất cả ưu đãi
-            </button>
-          </div>
-        )}
       </section>
 
       <Footer />

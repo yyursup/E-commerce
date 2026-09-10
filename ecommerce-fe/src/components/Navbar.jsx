@@ -15,6 +15,7 @@ import {
   HiOutlineLogout,
   HiOutlineChartBar,
   HiOutlineShieldCheck,
+  HiOutlineSearch,
 } from 'react-icons/hi'
 import { cn } from '../lib/cn'
 import { useThemeStore } from '../store/useThemeStore'
@@ -24,19 +25,27 @@ import cartService from '../services/cart'
 
 const navLinks = [
   { to: '/', label: 'Trang chủ' },
-  { to: '/products', label: 'AirPods & Tai nghe' },
-  { to: '/deals', label: 'Ưu đãi' },
-  { to: '/marketplace', label: 'Marketplace' },
+  { to: '/products', label: 'Tất cả sản phẩm' },
+  { to: '/deals', label: 'Khuyến mãi & Voucher' },
+  { to: '/marketplace', label: 'Khám phá Gian hàng' },
 ]
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
   const { theme, toggleTheme } = useThemeStore()
   const isDark = theme === 'dark'
 
   const { user, isAuthenticated, logout } = useAuthStore()
   const { totalItems, updateCartCount, resetCart } = useCartStore()
   const navigate = useNavigate()
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault()
+    if (searchQuery.trim()) {
+      navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`)
+    }
+  }
 
   // Get user role
   const userRole = user?.role?.toUpperCase()
@@ -83,25 +92,42 @@ export default function Navbar() {
         {/* Logo */}
         <Link
           to="/"
-          className="flex items-center gap-2 font-semibold tracking-tight"
+          className="flex items-center gap-2.5 font-bold tracking-tight shrink-0"
         >
           <span
-            className={cn(
-              'flex h-9 w-9 items-center justify-center rounded-xl',
-              isDark ? 'bg-amber-500/20 text-amber-400' : 'bg-amber-500/15 text-amber-600',
-            )}
+            className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/25"
           >
-            <HiOutlineShoppingBag className="h-5 w-5" />
+            <HiOutlineShoppingBag className="h-6 w-6" />
           </span>
           <span
             className={cn(
-              'text-lg',
-              isDark ? 'text-slate-100' : 'text-stone-800',
+              'text-xl font-bold tracking-tight',
+              isDark ? 'text-white' : 'text-stone-900',
             )}
           >
-            AirPod Store
+            E-<span className="text-amber-500">commerce</span>
           </span>
         </Link>
+
+        {/* Desktop Search bar */}
+        <form
+          onSubmit={handleSearchSubmit}
+          className="hidden flex-1 max-w-md mx-6 lg:flex items-center relative"
+        >
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Tìm kiếm sản phẩm, danh mục, shop..."
+            className={cn(
+              'w-full rounded-full pl-10 pr-4 py-2 text-sm border transition-all focus:outline-none focus:ring-2 focus:ring-amber-500',
+              isDark
+                ? 'bg-slate-800/80 border-slate-700 text-white placeholder-slate-400 focus:bg-slate-800'
+                : 'bg-stone-100/90 border-stone-200 text-stone-900 placeholder-stone-400 focus:bg-white',
+            )}
+          />
+          <HiOutlineSearch className="absolute left-3.5 h-4 w-4 text-stone-400 dark:text-slate-400" />
+        </form>
 
         {/* Desktop nav */}
         <div className="hidden items-center gap-1 md:flex">
@@ -110,7 +136,7 @@ export default function Navbar() {
               key={to}
               to={to}
               className={cn(
-                'rounded-lg px-4 py-2 text-sm font-medium transition-colors',
+                'rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                 isDark
                   ? 'text-slate-300 hover:bg-slate-800 hover:text-white'
                   : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900',
@@ -391,6 +417,27 @@ export default function Navbar() {
             )}
           >
             <div className="flex flex-col gap-1 px-4 py-3">
+              <form
+                onSubmit={(e) => {
+                  handleSearchSubmit(e)
+                  setMobileOpen(false)
+                }}
+                className="mb-2 flex items-center relative"
+              >
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Tìm kiếm sản phẩm, shop..."
+                  className={cn(
+                    'w-full rounded-xl pl-10 pr-4 py-2.5 text-sm border focus:outline-none focus:ring-2 focus:ring-amber-500',
+                    isDark
+                      ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-400'
+                      : 'bg-stone-100 border-stone-200 text-stone-900 placeholder-stone-400',
+                  )}
+                />
+                <HiOutlineSearch className="absolute left-3.5 h-4 w-4 text-stone-400 dark:text-slate-400" />
+              </form>
               {navLinks.map(({ to, label }) => (
                 <Link
                   key={to}

@@ -105,7 +105,7 @@ export default function ProductQuickView({ product, onAddToCart }) {
             isDark ? 'text-slate-400' : 'text-stone-600',
           )}
         >
-          Thêm vào giỏ để thanh toán. Miễn phí giao hàng đơn từ 1.000.000đ. AirPods & tai nghe Apple chính hãng.
+          Thêm vào giỏ để thanh toán. Giao hàng toàn quốc cùng GHN Express. Bảo vệ thanh toán ký quỹ Escrow 100%.
         </p>
         <button
           type="button"

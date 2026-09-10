@@ -37,7 +37,7 @@ public class ChatbotDataInitializer implements CommandLineRunner {
         // ---- GUEST / BUYER root ----
         ChatbotNode greetingGuest = new ChatbotNode();
         greetingGuest.setId("NODE_GREETING_GUEST");
-        greetingGuest.setMessageText("Xin chào! Tôi có thể giúp bạn: tìm sản phẩm, xem chính sách. Bạn cần gì?");
+        greetingGuest.setMessageText("Xin chào! Tôi là trợ lý ảo E-commerce. Tôi có thể hỗ trợ bạn tìm kiếm sản phẩm đa ngành, xem chính sách thanh toán ký quỹ Escrow & vận chuyển GHN. Bạn cần giúp gì?");
         greetingGuest.setNodeType(ChatbotNodeType.MENU);
         greetingGuest.setRoleContext("GUEST");
         greetingGuest.setSortOrder(0);
@@ -45,7 +45,7 @@ public class ChatbotDataInitializer implements CommandLineRunner {
 
         ChatbotNode greetingBuyer = new ChatbotNode();
         greetingBuyer.setId("NODE_GREETING_BUYER");
-        greetingBuyer.setMessageText("Xin chào! Tôi có thể giúp bạn: tìm sản phẩm, xem chính sách. Bạn cần gì?");
+        greetingBuyer.setMessageText("Xin chào! Tôi là trợ lý ảo E-commerce. Tôi có thể hỗ trợ bạn tìm kiếm sản phẩm đa ngành, xem chính sách thanh toán ký quỹ Escrow & vận chuyển GHN. Bạn cần giúp gì?");
         greetingBuyer.setNodeType(ChatbotNodeType.MENU);
         greetingBuyer.setRoleContext("BUYER");
         greetingBuyer.setSortOrder(0);
@@ -54,7 +54,7 @@ public class ChatbotDataInitializer implements CommandLineRunner {
         // Policy
         ChatbotNode policy = new ChatbotNode();
         policy.setId("NODE_POLICY_SHIPPING");
-        policy.setMessageText("Chính sách vận chuyển: Phí ship theo GHN. Hoàn trả trong 7 ngày nếu sản phẩm lỗi. Chi tiết xem tại trang Chính sách.");
+        policy.setMessageText("Chính sách E-commerce: 1) Vận chuyển toàn quốc liên kết GHN tính phí tự động theo địa chỉ kho từng Shop. 2) Bảo vệ người mua bằng ký quỹ Escrow: tiền được giữ an toàn cho đến khi bạn xác nhận nhận hàng. 3) Đổi trả trong 7 ngày.");
         policy.setNodeType(ChatbotNodeType.MENU);
         policy.setRoleContext(null);
         policy.setSortOrder(0);

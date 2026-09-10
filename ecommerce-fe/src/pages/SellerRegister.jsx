@@ -784,7 +784,7 @@ export default function SellerRegister() {
                     <input
                       id="shopName"
                       type="text"
-                      placeholder="AirPod Store"
+                      placeholder="VD: TechZone Official, Cửa Hàng Thời Trang GenZ..."
                       className={cn(
                         'w-full rounded-xl border py-3 pl-10 pr-4 text-sm outline-none transition placeholder:opacity-60',
                         isDark

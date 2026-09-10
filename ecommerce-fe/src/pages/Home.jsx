@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
 import { AnimatePresence, motion } from 'framer-motion'
+import { HiOutlineSparkles, HiOutlineRefresh, HiOutlineChevronRight } from 'react-icons/hi'
 import Hero from '../components/Hero'
+import CategoryGrid from '../components/CategoryGrid'
+import FlashSaleSection from '../components/FlashSaleSection'
+import OfficialMallSection from '../components/OfficialMallSection'
 import ProductCard from '../components/ProductCard'
 import Modal, { PromoModalContent } from '../components/Modal'
 import ProductQuickView from '../components/ProductQuickView'
@@ -12,14 +16,9 @@ import { useCartStore } from '../store/useCartStore'
 import { cn } from '../lib/cn'
 import productService from '../services/product'
 import cartService from '../services/cart'
-
-const promoBannerImages = [
-  'https://images.unsplash.com/photo-1587523459887-e669248cf666?w=600&h=300&fit=crop',
-  'https://images.unsplash.com/photo-1624258919367-5dc28f5dc293?w=600&h=300&fit=crop',
-]
+import { Link } from 'react-router-dom'
 
 export default function Home() {
-  const [promoModalOpen, setPromoModalOpen] = useState(false)
   const [quickViewProduct, setQuickViewProduct] = useState(null)
   const [welcomeModalOpen, setWelcomeModalOpen] = useState(false)
   const [products, setProducts] = useState([])
@@ -28,7 +27,11 @@ export default function Home() {
   const [recommendations, setRecommendations] = useState([])
   const [recLoading, setRecLoading] = useState(true)
 
-  // Fetch products from API
+  const { isAuthenticated } = useAuthStore()
+  const { updateCartCount } = useCartStore()
+  const isDark = useThemeStore((s) => s.theme) === 'dark'
+
+  // Fetch all products from API
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -36,48 +39,36 @@ export default function Home() {
         setError(null)
         const response = await productService.getProducts({
           page: 0,
-          size: 20,
+          size: 24,
           sortBy: 'createdAt',
           sortDir: 'desc',
         })
-        
-        // Map API response to component format
-        const mappedProducts = response.content?.map((product) => {
-          // Get thumbnail image or first image
-          const thumbnailImage = product.images?.find(img => img.isThumbnail) || product.images?.[0]
-          const imageUrl = thumbnailImage?.imageUrl || '/product-placeholder.svg'
-          
-          // Price is in VND, keep as is
-          const price = product.basePrice ? Number(product.basePrice) : 0
-          
-          // Determine badge based on status or other logic
-          let badge = null
-          if (product.status === 'PUBLISHED') {
-            // You can add logic here to determine badge
-            badge = 'Bestseller' // Default badge
-          }
-          
-          return {
-            id: product.id,
-            name: product.name,
-            price: price,
-            image: imageUrl,
-            badge: badge,
-            rating: 4.5, // Default rating, can be enhanced later
-            description: product.description,
-            basePrice: product.basePrice,
-            shopName: product.shopName,
-            categoryName: product.categoryName,
-            // Keep original product data for quick view
-            originalProduct: product,
-          }
-        }) || []
-        
+
+        const mappedProducts =
+          response.content?.map((product) => {
+            const thumbnailImage = product.images?.find((img) => img.isThumbnail) || product.images?.[0]
+            const imageUrl = thumbnailImage?.imageUrl || '/product-placeholder.svg'
+            const price = product.basePrice ? Number(product.basePrice) : 0
+
+            return {
+              id: product.id,
+              name: product.name,
+              price: price,
+              image: imageUrl,
+              badge: product.status === 'PUBLISHED' ? 'Bestseller' : null,
+              rating: 4.8,
+              description: product.description,
+              basePrice: product.basePrice,
+              shopName: product.shopName,
+              categoryName: product.categoryName,
+              originalProduct: product,
+            }
+          }) || []
+
         setProducts(mappedProducts)
       } catch (err) {
         console.error('Error fetching products:', err)
         setError(err.message || 'Không thể tải danh sách sản phẩm')
-        toast.error('Không thể tải danh sách sản phẩm. Vui lòng thử lại sau.')
       } finally {
         setLoading(false)
       }
@@ -86,7 +77,7 @@ export default function Home() {
     fetchProducts()
   }, [])
 
-  // Gợi ý cho bạn (recommendations)
+  // Gợi ý cho bạn (AI vector embedding recommendations)
   useEffect(() => {
     const fetchRecommendations = async () => {
       try {
@@ -96,14 +87,13 @@ export default function Home() {
           const thumbnailImage = product.images?.find((img) => img.isThumbnail) || product.images?.[0]
           const imageUrl = thumbnailImage?.imageUrl || '/product-placeholder.svg'
           const price = product.basePrice ? Number(product.basePrice) : 0
-          let badge = product.status === 'PUBLISHED' ? 'Gợi ý' : null
           return {
             id: product.id,
             name: product.name,
             price,
             image: imageUrl,
-            badge,
-            rating: 4.5,
+            badge: 'AI Gợi Ý',
+            rating: 4.9,
             description: product.description,
             basePrice: product.basePrice,
             shopName: product.shopName,
@@ -122,26 +112,20 @@ export default function Home() {
     fetchRecommendations()
   }, [])
 
-  // Show welcome/promo popup once per session
+  // Show welcome popup once per session
   useEffect(() => {
     const shown = sessionStorage.getItem('welcomeModalShown')
     if (!shown) {
       const t = setTimeout(() => {
         setWelcomeModalOpen(true)
         sessionStorage.setItem('welcomeModalShown', '1')
-      }, 1200)
+      }, 1500)
       return () => clearTimeout(t)
     }
   }, [])
 
-  const [dealsIndex, setDealsIndex] = useState(0)
-
-  const { isAuthenticated } = useAuthStore()
-  const { updateCartCount } = useCartStore()
-  const isDark = useThemeStore((s) => s.theme) === 'dark'
-
   const handleQuickView = (product) => setQuickViewProduct(product)
-  
+
   const handleAddToCart = async (product) => {
     if (!isAuthenticated) {
       toast.error('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng')
@@ -155,291 +139,174 @@ export default function Home() {
 
     try {
       const cartResponse = await cartService.addToCart(product.id, 1)
-      // Update cart count in store
       updateCartCount(cartResponse)
       toast.success(`Đã thêm ${product.name} vào giỏ hàng`)
       setQuickViewProduct(null)
     } catch (error) {
       console.error('Error adding to cart:', error)
-      const errorMessage = error?.message || error?.response?.data?.message || 'Không thể thêm sản phẩm vào giỏ hàng'
+      const errorMessage =
+        error?.message || error?.response?.data?.message || 'Không thể thêm sản phẩm vào giỏ hàng'
       toast.error(errorMessage)
     }
   }
 
-  // Deals carousel autoplay
-  useEffect(() => {
-    const t = setInterval(() => {
-      setDealsIndex((i) => (i + 1) % promoBannerImages.length)
-    }, 4000)
-    return () => clearInterval(t)
-  }, [])
-
   return (
-    <div className={cn(isDark ? 'bg-slate-950' : 'bg-stone-50')}>
+    <div className={cn(isDark ? 'bg-slate-950' : 'bg-stone-50/50')}>
+      {/* 1. Mega Banner Slider & Quick Services */}
       <Hero />
 
-      {/* Deals carousel - AOS */}
-      <section
-        id="deals"
-        className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8"
-      >
-        <div data-aos="fade-up" className="mb-8">
-          <h2
-            className={cn(
-              'text-2xl font-bold sm:text-3xl',
-              isDark ? 'text-white' : 'text-stone-900',
-            )}
-          >
-            Ưu đãi AirPods & Tai nghe
-          </h2>
-          <p
-            className={cn(
-              'mt-2',
-              isDark ? 'text-slate-400' : 'text-stone-600',
-            )}
-          >
-            Giảm giá AirPods Pro, AirPods Max. Số lượng có hạn.
-          </p>
-        </div>
-        <div data-aos="fade-up" className="relative overflow-hidden rounded-2xl">
-          <AnimatePresence mode="wait">
-            {promoBannerImages.map((img, i) =>
-              i === dealsIndex ? (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.4 }}
-                  className={cn(
-                    'relative overflow-hidden rounded-2xl border',
-                    isDark
-                      ? 'border-slate-700/50 bg-slate-800/50'
-                      : 'border-stone-200 bg-white',
-                  )}
-                >
-                  <img
-                    src={img}
-                    alt=""
-                    className="h-48 w-full object-cover sm:h-56"
-                  />
-                  <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/70 to-transparent p-6">
-                    <h3 className="text-xl font-bold text-white">
-                      {i === 0 ? 'AirPods Pro: Giảm đến 40%' : 'Miễn phí giao hàng đơn từ $50'}
-                    </h3>
-                    <p className="mt-1 text-sm text-white/90">
-                      {i === 0 ? 'Flash sale AirPods Pro (2nd gen). Số lượng có hạn. Chỉ trong tháng này.' : 'Áp dụng cho AirPods & tai nghe Apple. Không cần mã. Giao nhanh toàn quốc.'}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => setPromoModalOpen(true)}
-                      className="mt-4 w-fit rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-600"
-                    >
-                      {i === 0 ? 'Mua ngay' : 'Xem sản phẩm'}
-                    </button>
-                  </div>
-                </motion.div>
-              ) : null,
-            )}
-          </AnimatePresence>
-          {/* Dots */}
-          <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-2">
-            {promoBannerImages.map((_, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => setDealsIndex(i)}
-                aria-label={`Chuyển tới slide ${i + 1}`}
-                className={cn(
-                  'h-2 rounded-full transition-all',
-                  i === dealsIndex
-                    ? 'w-6 bg-amber-500'
-                    : 'w-2 bg-white/50 hover:bg-white/70',
-                )}
-              />
-            ))}
-          </div>
-        </div>
-        <div data-aos="fade-up" className="mt-4 text-center">
-          <button
-            type="button"
-            onClick={() => setPromoModalOpen(true)}
-            className={cn(
-              'text-sm font-medium underline underline-offset-2',
-              isDark ? 'text-amber-400 hover:text-amber-300' : 'text-amber-600 hover:text-amber-700',
-            )}
-          >
-            Xem tất cả ưu đãi
-          </button>
-        </div>
-      </section>
+      {/* 2. Categories Grid (8 Main Categories) */}
+      <CategoryGrid />
 
-      {/* Products */}
-      <section
-        id="products"
-        className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8"
-      >
-        <div data-aos="fade-up" className="mb-10">
-          <h2
-            className={cn(
-              'text-2xl font-bold sm:text-3xl',
-              isDark ? 'text-white' : 'text-stone-900',
-            )}
-          >
-            AirPods & Tai nghe Apple
-          </h2>
-          <p
-            className={cn(
-              'mt-2',
-              isDark ? 'text-slate-400' : 'text-stone-600',
-            )}
-          >
-            AirPods, AirPods Pro, AirPods Max chính hãng. Bán chạy nhất.
-          </p>
-        </div>
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-center">
-              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-amber-500 border-r-transparent"></div>
-              <p className={cn('mt-4 text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
-                Đang tải sản phẩm...
-              </p>
-            </div>
-          </div>
-        ) : error ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-center">
-              <p className={cn('text-sm', isDark ? 'text-red-400' : 'text-red-600')}>
-                {error}
-              </p>
-              <button
-                onClick={() => window.location.reload()}
-                className={cn(
-                  'mt-4 rounded-xl px-4 py-2 text-sm font-medium',
-                  isDark
-                    ? 'bg-slate-700 text-white hover:bg-slate-600'
-                    : 'bg-stone-200 text-stone-700 hover:bg-stone-300',
-                )}
-              >
-                Thử lại
-              </button>
-            </div>
-          </div>
-        ) : products.length === 0 ? (
-          <div className="flex items-center justify-center py-12">
-            <p className={cn('text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
-              Chưa có sản phẩm nào
-            </p>
-          </div>
-        ) : (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {products.map((product, i) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                onQuickView={handleQuickView}
-                dataAos="fade-up"
-                dataAosDelay={i % 3 === 0 ? 0 : (i % 3) * 100}
-              />
-            ))}
-          </div>
-        )}
-      </section>
+      {/* 3. Flash Sale Countdown Section */}
+      <FlashSaleSection products={products} />
 
-      {/* Gợi ý cho bạn */}
-      {(recLoading || recommendations.length > 0) && (
-        <section
-          id="recommendations"
-          className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8"
-        >
-          <div data-aos="fade-up" className="mb-10">
-            <h2
-              className={cn(
-                'text-2xl font-bold sm:text-3xl',
-                isDark ? 'text-white' : 'text-stone-900',
-              )}
-            >
-              Gợi ý cho bạn
-            </h2>
-            <p
-              className={cn(
-                'mt-2',
-                isDark ? 'text-slate-400' : 'text-stone-600',
-              )}
-            >
-              Dựa trên lịch sử xem và tìm kiếm của bạn
-            </p>
-          </div>
-          {recLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-amber-500 border-r-transparent" />
+      {/* 4. Official Mall (eKYC Verified Shops) */}
+      <OfficialMallSection />
+
+      {/* 5. AI Recommendations Strip ("Gợi ý riêng cho bạn") */}
+      {recommendations.length > 0 && (
+        <section id="recommendations" className="py-8">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/25">
+                  <HiOutlineSparkles className="h-5 w-5" />
+                </span>
+                <div>
+                  <h2
+                    className={cn(
+                      'text-xl sm:text-2xl font-bold tracking-tight',
+                      isDark ? 'text-white' : 'text-stone-900'
+                    )}
+                  >
+                    Gợi Ý Riêng Cho Bạn (AI Powered)
+                  </h2>
+                  <p className="text-xs sm:text-sm text-stone-500 dark:text-slate-400">
+                    Phân tích thói quen tìm kiếm và gợi ý bằng Vector Embedding
+                  </p>
+                </div>
+              </div>
             </div>
-          ) : recommendations.length > 0 ? (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {recommendations.map((product, i) => (
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+              {recommendations.map((product) => (
                 <ProductCard
                   key={product.id}
                   product={product}
                   onQuickView={handleQuickView}
-                  dataAos="fade-up"
-                  dataAosDelay={i % 4 === 0 ? 0 : (i % 4) * 100}
                 />
               ))}
             </div>
-          ) : null}
+          </div>
         </section>
       )}
 
+      {/* 6. Daily Discover Feed ("Gợi Ý Hôm Nay" - All Marketplace Products) */}
+      <section id="daily-discover" className="py-10">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-stone-200 dark:border-slate-800">
+            <div>
+              <h2
+                className={cn(
+                  'text-xl sm:text-2xl font-black uppercase tracking-tight text-amber-500'
+                )}
+              >
+                GỢI Ý HÔM NAY
+              </h2>
+              <p className="text-xs sm:text-sm text-stone-500 dark:text-slate-400 mt-1">
+                Tất cả sản phẩm thịnh hành từ các gian hàng trên toàn sàn E-commerce
+              </p>
+            </div>
+
+            <Link
+              to="/products"
+              className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-amber-500 hover:text-amber-600 transition-colors"
+            >
+              Xem tất cả sản phẩm
+              <HiOutlineChevronRight className="h-4 w-4" />
+            </Link>
+          </div>
+
+          {/* Product Grid */}
+          {loading ? (
+            <div className="flex items-center justify-center py-20">
+              <div className="text-center">
+                <div className="inline-block h-10 w-10 animate-spin rounded-full border-4 border-solid border-amber-500 border-r-transparent" />
+                <p className={cn('mt-4 text-sm font-medium', isDark ? 'text-slate-400' : 'text-stone-600')}>
+                  Đang tải danh sách sản phẩm...
+                </p>
+              </div>
+            </div>
+          ) : error ? (
+            <div className="flex items-center justify-center py-16 text-center">
+              <div>
+                <p className="text-sm text-rose-500">{error}</p>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="mt-4 rounded-xl bg-amber-500 px-5 py-2 text-sm font-bold text-white hover:bg-amber-600 transition-colors"
+                >
+                  Thử lại
+                </button>
+              </div>
+            </div>
+          ) : products.length === 0 ? (
+            <div className="py-16 text-center text-sm text-stone-400">
+              Chưa có sản phẩm nào được hiển thị
+            </div>
+          ) : (
+            <div className="mt-8 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
+              {products.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  onQuickView={handleQuickView}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Explore More CTA */}
+          <div className="mt-12 text-center">
+            <Link
+              to="/products"
+              className="inline-flex items-center gap-2 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-8 py-3.5 text-sm font-bold text-amber-500 hover:bg-amber-500 hover:text-white transition-all shadow-sm active:scale-95"
+            >
+              Xem Thêm Hàng Ngàn Sản Phẩm Khác
+              <HiOutlineChevronRight className="h-4 w-4" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
       <Footer />
 
-      {/* Custom Popup: Welcome / Promo (shown once per session) */}
+      {/* Welcome Modal */}
       <Modal
         open={welcomeModalOpen}
         onClose={() => setWelcomeModalOpen(false)}
-        title="Chào mừng đến AirPod Store 🎉"
+        title="Chào mừng bạn đến E-commerce 🎉"
         size="md"
       >
         <PromoModalContent
-          image="https://images.unsplash.com/photo-1607082349566-187342175e2f?w=600&h=300&fit=crop"
-          title="Giảm 15% đơn hàng đầu tiên"
-          description="Đăng ký hoặc đăng nhập và dùng mã WELCOME15 khi thanh toán. Áp dụng khách hàng mới."
-          ctaText="Nhận ưu đãi"
+          image="https://images.unsplash.com/photo-1607083206869-4c7672e72a8a?w=600&h=300&fit=crop"
+          title="Tặng Voucher Giảm 15% Đơn Đầu Tiên"
+          description="Đăng ký hoặc đăng nhập tài khoản E-commerce và nhập mã ECOM15 khi thanh toán để được giảm 15% (tối đa 100.000đ) cùng Freeship GHN."
+          ctaText="Lưu mã ngay"
           onCta={() => {
             setWelcomeModalOpen(false)
-            toast.success('Dùng mã WELCOME15 khi thanh toán!')
+            toast.success('Đã lưu mã ECOM15 vào ví voucher của bạn!')
           }}
         />
       </Modal>
 
-      {/* Promo / Offers modal */}
-      <Modal
-        open={promoModalOpen}
-        onClose={() => setPromoModalOpen(false)}
-        title="Ưu đãi AirPods & Tai nghe"
-        size="lg"
-      >
-        <div className="space-y-6">
-          {promoBannerImages.map((img, i) => (
-            <PromoModalContent
-              key={i}
-              image={img}
-              title={i === 0 ? 'AirPods Pro: Giảm đến 40%' : 'Miễn phí giao hàng đơn từ $50'}
-              description={i === 0 ? 'Flash sale AirPods Pro (2nd gen). Số lượng có hạn. Chỉ trong tháng này.' : 'Áp dụng cho AirPods & tai nghe Apple. Không cần mã. Giao nhanh toàn quốc.'}
-              ctaText={i === 0 ? 'Mua ngay' : 'Xem sản phẩm'}
-              onCta={() => {
-                setPromoModalOpen(false)
-                toast.success('Đang chuyển đến ưu đãi...')
-              }}
-            />
-          ))}
-        </div>
-      </Modal>
-
-      {/* Product Quick View modal */}
+      {/* Product Quick View Modal */}
       <Modal
         open={!!quickViewProduct}
         onClose={() => setQuickViewProduct(null)}
-        title={quickViewProduct?.name ?? 'Sản phẩm'}
+        title={quickViewProduct?.name ?? 'Chi tiết sản phẩm'}
         size="md"
       >
         {quickViewProduct && (

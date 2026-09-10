@@ -27,7 +27,6 @@ import com.marketplace.ecommerce.review.repository.ReviewRepository;
 import com.marketplace.ecommerce.review.valueObjects.ReviewStatus;
 import com.marketplace.ecommerce.shop.entity.Shop;
 import com.marketplace.ecommerce.shop.repository.ShopRepository;
-import com.marketplace.ecommerce.shop.service.ShopService;
 import com.marketplace.ecommerce.shop.valueObjects.ShopStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -56,10 +55,12 @@ public class ReportServiceImpl implements ReportService {
                 .orElseThrow(() -> new CustomException("Admin account not found"));
 
         Report report = reportRepository.findByRequestId(requestId);
-        if (report == null) throw new CustomException("Report not found for requestId: " + requestId);
+        if (report == null)
+            throw new CustomException("Report not found for requestId: " + requestId);
 
         Request r = report.getRequest();
-        if (r == null) throw new CustomException("Request not found");
+        if (r == null)
+            throw new CustomException("Request not found");
 
         if (r.getStatus() == RequestStatus.APPROVED || r.getStatus() == RequestStatus.REJECTED) {
             throw new CustomException("Request already handled");
@@ -101,7 +102,6 @@ public class ReportServiceImpl implements ReportService {
         report.setModeratorNote(note);
     }
 
-
     @Override
     public CreateRequestResponse createReport(UUID accountId, CreateReportRequest request) {
 
@@ -134,7 +134,8 @@ public class ReportServiceImpl implements ReportService {
 
     private void handleReportUser(UUID targetId, LocalDateTime now) {
         UUID accountId = requestPolicy.resolveTargetAccountId(TargetType.USER, targetId);
-        if (accountId == null) throw new CustomException("Cannot resolve USER accountId");
+        if (accountId == null)
+            throw new CustomException("Cannot resolve USER accountId");
         punishAccount(accountId, now);
     }
 
@@ -149,7 +150,6 @@ public class ReportServiceImpl implements ReportService {
         int nextCount = product.getReportCount() + 1;
         product.setReportCount(nextCount);
 
-
         if (nextCount >= 3) {
             product.setFlagged(true);
         }
@@ -158,9 +158,9 @@ public class ReportServiceImpl implements ReportService {
             product.setStatus(ProductStatus.DELETED);
         }
 
-
         UUID accountId = requestPolicy.resolveTargetAccountId(TargetType.PRODUCT, targetId);
-        if (accountId == null) throw new CustomException("Cannot resolve PRODUCT owner accountId");
+        if (accountId == null)
+            throw new CustomException("Cannot resolve PRODUCT owner accountId");
         punishAccount(accountId, now);
     }
 
@@ -176,7 +176,6 @@ public class ReportServiceImpl implements ReportService {
         int nextCount = review.getReportCount() + 1;
         review.setReportCount(nextCount);
 
-
         if (nextCount >= 3) {
             review.setFlagged(true);
         }
@@ -186,7 +185,8 @@ public class ReportServiceImpl implements ReportService {
         }
 
         UUID accountId = requestPolicy.resolveTargetAccountId(TargetType.REVIEW, reviewId);
-        if (accountId == null) throw new CustomException("Cannot resolve REVIEW owner accountId");
+        if (accountId == null)
+            throw new CustomException("Cannot resolve REVIEW owner accountId");
 
         punishAccount(accountId, now);
     }
@@ -203,7 +203,6 @@ public class ReportServiceImpl implements ReportService {
         int next = target.getViolationCount() + 1;
         target.setViolationCount(next);
         target.setLastViolationAt(now);
-
 
         if (next >= 7) {
             target.setDisciplineLevel(DisciplineLevel.BANNED);

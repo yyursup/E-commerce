@@ -45,6 +45,7 @@ export default function SellerRegister() {
   const [isUploading, setIsUploading] = useState(false)
   const [isComparing, setIsComparing] = useState(false)
   const [showSellerForm, setShowSellerForm] = useState(false)
+  const [sellerType, setSellerType] = useState('INDIVIDUAL') // 'INDIVIDUAL' or 'BUSINESS'
 
   const {
     register,
@@ -209,7 +210,7 @@ export default function SellerRegister() {
     }
 
     try {
-      await requestService.registerSeller(data)
+      await requestService.registerSeller({ ...data, sellerType })
       toast.success('Gửi yêu cầu đăng ký bán hàng thành công!')
       reset()
       navigate('/')
@@ -763,6 +764,33 @@ export default function SellerRegister() {
                 </p>
               </div>
 
+              <div className="mb-6 flex p-1 space-x-1 bg-stone-100 dark:bg-slate-800 rounded-xl">
+                <button
+                  type="button"
+                  onClick={() => setSellerType('INDIVIDUAL')}
+                  className={cn(
+                    'w-full rounded-lg py-2.5 text-sm font-medium leading-5 transition-all',
+                    sellerType === 'INDIVIDUAL'
+                      ? 'bg-white shadow text-amber-600 dark:bg-slate-700 dark:text-amber-500'
+                      : 'text-stone-700 hover:bg-white/[0.12] hover:text-stone-900 dark:text-slate-400 dark:hover:text-white'
+                  )}
+                >
+                  Cá nhân
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSellerType('BUSINESS')}
+                  className={cn(
+                    'w-full rounded-lg py-2.5 text-sm font-medium leading-5 transition-all',
+                    sellerType === 'BUSINESS'
+                      ? 'bg-white shadow text-amber-600 dark:bg-slate-700 dark:text-amber-500'
+                      : 'text-stone-700 hover:bg-white/[0.12] hover:text-stone-900 dark:text-slate-400 dark:hover:text-white'
+                  )}
+                >
+                  Hộ kinh doanh / Doanh nghiệp
+                </button>
+              </div>
+
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
                 <div>
                   <label
@@ -937,46 +965,49 @@ export default function SellerRegister() {
                 </div>
 
                 <div className="grid gap-5 md:grid-cols-2">
-                  <div>
-                    <label
-                      htmlFor="taxCode"
-                      className={cn(
-                        'mb-1.5 block text-sm font-medium',
-                        isDark ? 'text-slate-300' : 'text-stone-700',
+                  {sellerType === 'BUSINESS' && (
+                    <div>
+                      <label
+                        htmlFor="taxCode"
+                        className={cn(
+                          'mb-1.5 block text-sm font-medium',
+                          isDark ? 'text-slate-300' : 'text-stone-700',
+                        )}
+                      >
+                        Mã số thuế
+                      </label>
+                      <div className="relative">
+                        <HiOutlineDocumentText
+                          className={cn(
+                            'absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2',
+                            isDark ? 'text-slate-500' : 'text-stone-400',
+                          )}
+                        />
+                        <input
+                          id="taxCode"
+                          type="text"
+                          placeholder="0101234567"
+                          className={cn(
+                            'w-full rounded-xl border py-3 pl-10 pr-4 text-sm outline-none transition placeholder:opacity-60',
+                            isDark
+                              ? 'border-slate-600 bg-slate-800/50 text-white placeholder:text-slate-500 focus:border-amber-500/60 focus:ring-2 focus:ring-amber-500/20'
+                              : 'border-stone-300 bg-stone-50/80 text-stone-900 placeholder:text-stone-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20',
+                            errors.taxCode &&
+                              'border-red-500/70 focus:border-red-500 focus:ring-red-500/20',
+                          )}
+                          {...register('taxCode', {
+                            required: 'Vui lòng nhập mã số thuế',
+                            maxLength: { value: 50, message: 'Tối đa 50 ký tự' },
+                          })}
+                        />
+                      </div>
+                      {errors.taxCode && (
+                        <p className="mt-1.5 text-sm text-red-500">
+                          {errors.taxCode.message}
+                        </p>
                       )}
-                    >
-                      Mã số thuế
-                    </label>
-                    <div className="relative">
-                      <HiOutlineDocumentText
-                        className={cn(
-                          'absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2',
-                          isDark ? 'text-slate-500' : 'text-stone-400',
-                        )}
-                      />
-                      <input
-                        id="taxCode"
-                        type="text"
-                        placeholder="0101234567"
-                        className={cn(
-                          'w-full rounded-xl border py-3 pl-10 pr-4 text-sm outline-none transition placeholder:opacity-60',
-                          isDark
-                            ? 'border-slate-600 bg-slate-800/50 text-white placeholder:text-slate-500 focus:border-amber-500/60 focus:ring-2 focus:ring-amber-500/20'
-                            : 'border-stone-300 bg-stone-50/80 text-stone-900 placeholder:text-stone-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20',
-                          errors.taxCode &&
-                            'border-red-500/70 focus:border-red-500 focus:ring-red-500/20',
-                        )}
-                        {...register('taxCode', {
-                          maxLength: { value: 50, message: 'Tối đa 50 ký tự' },
-                        })}
-                      />
                     </div>
-                    {errors.taxCode && (
-                      <p className="mt-1.5 text-sm text-red-500">
-                        {errors.taxCode.message}
-                      </p>
-                    )}
-                  </div>
+                  )}
 
                   <div>
                     <label

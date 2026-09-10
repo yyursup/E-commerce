@@ -1,5 +1,6 @@
 package com.marketplace.ecommerce.request.dto.response;
 
+import com.marketplace.ecommerce.shop.valueObjects.SellerType;
 import lombok.*;
 
 import java.util.UUID;
@@ -15,4 +16,5 @@ public class RegisterSellerResponse {
     private String address;
     private String shopPhone;
     private String shopEmail;
+    private SellerType sellerType;
 }

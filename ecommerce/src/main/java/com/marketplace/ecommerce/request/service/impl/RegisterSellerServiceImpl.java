@@ -53,6 +53,7 @@ public class RegisterSellerServiceImpl implements RegisterSellerService {
                 .taxCode(request.getTaxCode())
                 .shopPhone(request.getShopPhone())
                 .shopEmail(request.getShopEmail())
+                .sellerType(request.getSellerType() != null ? request.getSellerType() : com.marketplace.ecommerce.shop.valueObjects.SellerType.INDIVIDUAL)
                 .request(r)
                 .build();
 

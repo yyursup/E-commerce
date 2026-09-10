@@ -1,6 +1,7 @@
 package com.marketplace.ecommerce.shop.entity;
 
 import com.marketplace.ecommerce.auth.entity.User;
+import com.marketplace.ecommerce.shop.valueObjects.SellerType;
 import com.marketplace.ecommerce.shop.valueObjects.ShopStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -60,6 +61,10 @@ public class Shop {
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 50)
     private ShopStatus status = ShopStatus.ACTIVE;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "shop_type", length = 50)
+    private SellerType shopType;
 
     @Column(name = "average_rating")
     private Float averageRating = 0.0f;

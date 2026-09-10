@@ -119,7 +119,7 @@ public class RequestServiceImpl implements RequestService {
                 Seller s = sellerRepository.findByRequestId(requestId);
                 if (s == null) throw new CustomException("Seller detail not found for request: " + requestId);
 
-                yield RegisterSellerResponse.builder().shopName(s.getShopName()).taxCode(s.getTaxCode()).address(s.getAddress()).shopPhone(s.getShopPhone()).shopEmail(s.getShopEmail()).build();
+                yield RegisterSellerResponse.builder().shopName(s.getShopName()).taxCode(s.getTaxCode()).address(s.getAddress()).shopPhone(s.getShopPhone()).shopEmail(s.getShopEmail()).sellerType(s.getSellerType()).build();
             }
 
             default -> throw new CustomException("Unsupported request type: " + r.getType());

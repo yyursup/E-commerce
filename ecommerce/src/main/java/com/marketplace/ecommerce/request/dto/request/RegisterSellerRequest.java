@@ -1,5 +1,6 @@
 package com.marketplace.ecommerce.request.dto.request;
 
+import com.marketplace.ecommerce.shop.valueObjects.SellerType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -35,4 +36,6 @@ public class RegisterSellerRequest {
 
     @Size(max = 120)
     private String shopEmail;
+
+    private SellerType sellerType;
 }

@@ -101,6 +101,10 @@ public class Shop {
     @Column(name = "status", nullable = false, length = 50)
     private ShopStatus status = ShopStatus.ACTIVE;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "shop_type", length = 50)
+    private SellerType shopType;
+
     @Column(name = "average_rating")
     private Float averageRating = 0.0f;
 

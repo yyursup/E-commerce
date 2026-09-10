@@ -352,6 +352,139 @@ public class ChatServiceImpl implements ChatService {
         webSocketSessionService.broadcastToAdmins("CHAT_THREAD_CLOSED", event);
     }
 
+
+    @Override
+    @Transactional
+    public ChatMessageResponse sendVideoMessage(CurrentUserInfo principal, UUID threadId, MultipartFile file) {
+        if (principal == null || principal.getAccountId() == null) {
+            throw new CustomException("Chưa xác thực");
+        }
+
+        ChatThread thread = chatThreadRepository.findById(threadId)
+                .orElseThrow(() -> new CustomException("Không tìm thấy cuộc hội thoại"));
+
+        String fileName = fileService.uploadFile(file, "chat");
+        String fileUrl = fileService.getFileUrl(fileName);
+
+        UUID senderId = principal.getAccountId();
+        String senderRole = principal.getRole() != null ? principal.getRole() : "CUSTOMER";
+        boolean isAdmin = checkIsAdmin(senderRole);
+
+        Optional<User> userOpt = userRepository.findByAccountId(senderId);
+        String senderName = userOpt.map(User::getFullName).filter(s -> !s.isBlank()).orElse(principal.getUsername());
+        if (isAdmin) {
+            senderName = "Hỗ trợ viên (" + principal.getUsername() + ")";
+        }
+
+        ChatMessage message = ChatMessage.builder()
+                .thread(thread)
+                .senderId(senderId)
+                .senderName(senderName)
+                .senderRole(senderRole)
+                .content("[Video]")
+                .messageType(ChatMessageType.VIDEO)
+                .videoUrl(fileUrl)
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        ChatMessage saved = chatMessageRepository.save(message);
+
+        LocalDateTime now = LocalDateTime.now();
+        thread.setLastMessage("[Video]");
+        thread.setLastMessageAt(now);
+        if (isAdmin) {
+            thread.setUnreadCustomer(thread.getUnreadCustomer() + 1);
+        } else {
+            thread.setUnreadAdmin(thread.getUnreadAdmin() + 1);
+        }
+        chatThreadRepository.save(thread);
+
+        ChatMessageResponse response = ChatMessageResponse.from(saved);
+        ChatThreadResponse threadResponse = ChatThreadResponse.from(thread, senderId, isAdmin);
+
+        dispatchRealtimeMessage(thread, response, threadResponse, isAdmin);
+
+        return response;
+    }
+
+    @Override
+    @Transactional
+    public ChatMessageResponse editMessage(CurrentUserInfo principal, UUID messageId, String newContent) {
+        if (principal == null || principal.getAccountId() == null) {
+            throw new CustomException("Chưa xác thực");
+        }
+        if (newContent == null || newContent.isBlank()) {
+            throw new CustomException("Nội dung tin nhắn không được để trống");
+        }
+
+        ChatMessage message = chatMessageRepository.findById(messageId)
+                .orElseThrow(() -> new CustomException("Không tìm thấy tin nhắn"));
+
+        if (!message.getSenderId().equals(principal.getAccountId())) {
+            throw new CustomException("Bạn không có quyền sửa tin nhắn này");
+        }
+        if (Boolean.TRUE.equals(message.getIsDeleted())) {
+            throw new CustomException("Không thể sửa tin nhắn đã bị xóa");
+        }
+        if (message.getMessageType() != ChatMessageType.TEXT) {
+            throw new CustomException("Chỉ có thể sửa tin nhắn văn bản");
+        }
+
+        message.setContent(newContent.trim());
+        message.setEditedAt(LocalDateTime.now());
+        ChatMessage saved = chatMessageRepository.save(message);
+
+        ChatMessageResponse response = ChatMessageResponse.from(saved);
+
+        // Broadcast edit event to both sides
+        ChatThread thread = message.getThread();
+        boolean isAdmin = checkIsAdmin(principal.getRole());
+        if (isAdmin) {
+            webSocketSessionService.sendToUser(thread.getCustomer().getId(), "CHAT_MESSAGE_EDITED", response);
+            webSocketSessionService.broadcastToAdmins("CHAT_MESSAGE_EDITED", response);
+        } else {
+            webSocketSessionService.sendToUser(message.getSenderId(), "CHAT_MESSAGE_EDITED", response);
+            webSocketSessionService.broadcastToAdmins("CHAT_MESSAGE_EDITED", response);
+        }
+
+        return response;
+    }
+
+    @Override
+    @Transactional
+    public void deleteMessage(CurrentUserInfo principal, UUID messageId) {
+        if (principal == null || principal.getAccountId() == null) {
+            throw new CustomException("Chưa xác thực");
+        }
+
+        ChatMessage message = chatMessageRepository.findById(messageId)
+                .orElseThrow(() -> new CustomException("Không tìm thấy tin nhắn"));
+
+        boolean isAdmin = checkIsAdmin(principal.getRole());
+        // Allow: sender OR admin
+        if (!message.getSenderId().equals(principal.getAccountId()) && !isAdmin) {
+            throw new CustomException("Bạn không có quyền xóa tin nhắn này");
+        }
+        if (Boolean.TRUE.equals(message.getIsDeleted())) {
+            return; // already deleted, idempotent
+        }
+
+        message.setIsDeleted(true);
+        message.setDeletedAt(LocalDateTime.now());
+        message.setContent("[Tin nhắn đã bị xóa]");
+        chatMessageRepository.save(message);
+
+        ChatThread thread = message.getThread();
+        Map<String, Object> payload = Map.of(
+                "messageId", messageId,
+                "threadId", thread.getId()
+        );
+
+        // Broadcast delete event to both sides
+        webSocketSessionService.sendToUser(thread.getCustomer().getId(), "CHAT_MESSAGE_DELETED", payload);
+        webSocketSessionService.broadcastToAdmins("CHAT_MESSAGE_DELETED", payload);
+    }
+
     private void dispatchRealtimeMessage(ChatThread thread, ChatMessageResponse response,
                                          ChatThreadResponse threadResponse, boolean senderIsAdmin) {
         if (senderIsAdmin) {

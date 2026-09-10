@@ -25,6 +25,8 @@ public class ChatMessageResponse {
     private String content;
     private ChatMessageType messageType;
     private String imageUrl;
+    private String videoUrl;
+    private Boolean isDeleted;
 
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime readAt;
@@ -32,7 +34,11 @@ public class ChatMessageResponse {
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime createdAt;
 
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    private LocalDateTime editedAt;
+
     public static ChatMessageResponse from(ChatMessage message) {
+        boolean deleted = Boolean.TRUE.equals(message.getIsDeleted());
         return ChatMessageResponse.builder()
                 .id(message.getId())
                 .threadId(message.getThread() != null ? message.getThread().getId() : null)
@@ -40,11 +46,14 @@ public class ChatMessageResponse {
                 .senderName(message.getSenderName())
                 .senderRole(message.getSenderRole())
                 .recipientId(message.getRecipientId())
-                .content(message.getContent())
+                .content(deleted ? "[Tin nhắn đã bị xóa]" : message.getContent())
                 .messageType(message.getMessageType())
-                .imageUrl(message.getImageUrl())
+                .imageUrl(deleted ? null : message.getImageUrl())
+                .videoUrl(deleted ? null : message.getVideoUrl())
                 .readAt(message.getReadAt())
                 .createdAt(message.getCreatedAt())
+                .editedAt(message.getEditedAt())
+                .isDeleted(deleted)
                 .build();
     }
 }

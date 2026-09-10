@@ -51,10 +51,24 @@ public class ChatMessage {
     @Column(name = "image_url", length = 1000)
     private String imageUrl;
 
+    @Column(name = "video_url", length = 1000)
+    private String videoUrl;
+
     @Column(name = "read_at")
     private LocalDateTime readAt;
 
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @Column(name = "edited_at")
+    private LocalDateTime editedAt;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    @Builder.Default
+    @Column(name = "is_deleted", nullable = false)
+    private Boolean isDeleted = false;
 }
+

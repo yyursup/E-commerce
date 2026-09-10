@@ -40,11 +40,27 @@ export const chatService = {
     const formData = new FormData()
     formData.append('file', file)
     const res = await axiosClient.post(`/api/v1/chat/threads/${threadId}/images`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+      headers: { 'Content-Type': 'multipart/form-data' },
     })
     return res.data
+  },
+
+  sendVideo: async (threadId, file) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    const res = await axiosClient.post(`/api/v1/chat/threads/${threadId}/videos`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    return res.data
+  },
+
+  editMessage: async (messageId, content) => {
+    const res = await axiosClient.patch(`/api/v1/chat/messages/${messageId}`, { content })
+    return res.data
+  },
+
+  deleteMessage: async (messageId) => {
+    await axiosClient.delete(`/api/v1/chat/messages/${messageId}`)
   },
 
   markRead: async (threadId) => {

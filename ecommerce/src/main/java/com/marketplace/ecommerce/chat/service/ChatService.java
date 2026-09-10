@@ -26,6 +26,12 @@ public interface ChatService {
 
     ChatMessageResponse sendImageMessage(CurrentUserInfo principal, UUID threadId, MultipartFile file);
 
+    ChatMessageResponse sendVideoMessage(CurrentUserInfo principal, UUID threadId, MultipartFile file);
+
+    ChatMessageResponse editMessage(CurrentUserInfo principal, UUID messageId, String newContent);
+
+    void deleteMessage(CurrentUserInfo principal, UUID messageId);
+
     void markRead(CurrentUserInfo principal, UUID threadId);
 
     void closeThread(CurrentUserInfo principal, UUID threadId);

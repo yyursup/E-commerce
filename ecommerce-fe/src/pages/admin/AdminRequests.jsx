@@ -5,35 +5,39 @@ import toast from 'react-hot-toast'
 import { useThemeStore } from '../../store/useThemeStore'
 import { cn } from '../../lib/cn'
 import requestService from '../../services/request'
+import { getRequestTypeBadge, formatAdminRequestDate } from './components/request/requestHelpers'
 
-const statusBadgeClass = (status, isDark) => {
+const getStatusBadge = (status, isDark) => {
   switch (status) {
     case 'APPROVED':
-      return isDark
-        ? 'bg-emerald-500/15 text-emerald-300'
-        : 'bg-emerald-100 text-emerald-700'
+      return {
+        label: 'Đã duyệt',
+        className: isDark
+          ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
+          : 'bg-emerald-50 text-emerald-700 border border-emerald-200',
+      }
     case 'REJECTED':
-      return isDark
-        ? 'bg-red-500/15 text-red-300'
-        : 'bg-red-100 text-red-700'
+      return {
+        label: 'Từ chối',
+        className: isDark
+          ? 'bg-rose-500/15 text-rose-300 border border-rose-500/30'
+          : 'bg-rose-50 text-rose-700 border border-rose-200',
+      }
     case 'PENDING':
     default:
-      return isDark
-        ? 'bg-amber-500/15 text-amber-300'
-        : 'bg-amber-100 text-amber-700'
+      return {
+        label: 'Chờ duyệt',
+        className: isDark
+          ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
+          : 'bg-amber-50 text-amber-700 border border-amber-200',
+      }
   }
-}
-
-const formatDate = (value) => {
-  if (!value) return '-'
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return String(value)
-  return date.toLocaleString()
 }
 
 const shortId = (value) => {
   if (!value) return '-'
-  return `${String(value).slice(0, 8)}...`
+  const str = String(value)
+  return str.length > 8 ? `${str.slice(0, 8)}...` : str
 }
 
 export default function AdminRequests() {
@@ -95,10 +99,10 @@ export default function AdminRequests() {
                 : 'border-stone-300 bg-white text-stone-700 focus:border-amber-500',
             )}
           >
-            <option value="">All status</option>
-            <option value="PENDING">Pending</option>
-            <option value="APPROVED">Approved</option>
-            <option value="REJECTED">Rejected</option>
+            <option value="">Tất cả trạng thái</option>
+            <option value="PENDING">Chờ duyệt</option>
+            <option value="APPROVED">Đã duyệt</option>
+            <option value="REJECTED">Từ chối</option>
           </select>
           <button
             onClick={fetchRequests}
@@ -107,7 +111,7 @@ export default function AdminRequests() {
               isDark ? 'bg-slate-800 text-slate-100 hover:bg-slate-700' : 'bg-white text-stone-700 hover:bg-stone-100',
             )}
           >
-            Refresh
+            Làm mới
           </button>
         </div>
       </div>
@@ -122,17 +126,17 @@ export default function AdminRequests() {
         )}
       >
         <div className="grid grid-cols-12 gap-3 border-b px-6 py-4 text-xs font-semibold uppercase tracking-wide text-stone-500 dark:border-slate-800 dark:text-slate-400">
-          <div className="col-span-3">Request</div>
-          <div className="col-span-2">Type</div>
-          <div className="col-span-2">Status</div>
-          <div className="col-span-3">Created</div>
-          <div className="col-span-2 text-right">Action</div>
+          <div className="col-span-3">Mã yêu cầu</div>
+          <div className="col-span-3">Loại yêu cầu</div>
+          <div className="col-span-2">Trạng thái</div>
+          <div className="col-span-2">Thời gian gửi</div>
+          <div className="col-span-2 text-right">Thao tác</div>
         </div>
 
         {loading && (
           <div className="flex items-center justify-center gap-3 px-6 py-10 text-sm">
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-amber-500 border-r-transparent" />
-            Loading requests...
+            Đang tải danh sách yêu cầu...
           </div>
         )}
 
@@ -142,44 +146,58 @@ export default function AdminRequests() {
 
         {!loading && !error && requests.length === 0 && (
           <div className="px-6 py-10 text-center text-sm text-stone-500 dark:text-slate-400">
-            No requests found.
+            Không có yêu cầu nào.
           </div>
         )}
 
-        {!loading && !error && requests.map((req) => (
-          <div
-            key={req.requestId || req.id}
-            className={cn(
-              'grid grid-cols-12 items-center gap-3 px-6 py-4 text-sm',
-              isDark ? 'border-slate-800 text-slate-200' : 'border-stone-100 text-stone-700',
-              'border-b last:border-b-0',
-            )}
-          >
-            <div className="col-span-3 font-medium">{shortId(req.requestId)}</div>
-            <div className="col-span-2 text-xs font-semibold uppercase">{req.type || '-'}</div>
-            <div className="col-span-2">
-              <span className={cn('rounded-full px-2 py-1 text-xs font-semibold', statusBadgeClass(req.status, isDark))}>
-                {req.status || 'PENDING'}
-              </span>
-            </div>
-            <div className="col-span-3 text-xs">{formatDate(req.createdAt)}</div>
-            <div className="col-span-2 text-right">
-              {req.requestId ? (
-                <Link
-                  to={`/admin/requests/${req.requestId}`}
-                  className={cn(
-                    'inline-flex rounded-lg px-3 py-1.5 text-xs font-semibold',
-                    isDark ? 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30' : 'bg-amber-100 text-amber-700 hover:bg-amber-200',
-                  )}
-                >
-                  View
-                </Link>
-              ) : (
-                <span className="text-xs text-stone-400">-</span>
+        {!loading && !error && requests.map((req) => {
+          const typeBadge = getRequestTypeBadge(req.type, isDark)
+          const statusBadge = getStatusBadge(req.status, isDark)
+          return (
+            <div
+              key={req.requestId || req.id}
+              className={cn(
+                'grid grid-cols-12 items-center gap-3 px-6 py-4 text-sm transition-colors',
+                isDark ? 'border-slate-800 text-slate-200 hover:bg-slate-800/40' : 'border-stone-100 text-stone-700 hover:bg-stone-50',
+                'border-b last:border-b-0',
               )}
+            >
+              <div className="col-span-3 font-mono text-xs font-semibold">
+                <span title={req.requestId}>{shortId(req.requestId)}</span>
+              </div>
+              <div className="col-span-3">
+                <span className={cn('inline-block rounded-full px-2.5 py-1 text-xs font-medium border', typeBadge.className)}>
+                  {typeBadge.label}
+                </span>
+              </div>
+              <div className="col-span-2">
+                <span className={cn('inline-block rounded-full px-2.5 py-1 text-xs font-medium', statusBadge.className)}>
+                  {statusBadge.label}
+                </span>
+              </div>
+              <div className="col-span-2 text-xs text-stone-500 dark:text-slate-400">
+                {formatAdminRequestDate(req.createdAt)}
+              </div>
+              <div className="col-span-2 text-right">
+                {req.requestId ? (
+                  <Link
+                    to={`/admin/requests/${req.requestId}`}
+                    className={cn(
+                      'inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold transition',
+                      isDark
+                        ? 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30'
+                        : 'bg-amber-100 text-amber-700 hover:bg-amber-200',
+                    )}
+                  >
+                    Xem xét →
+                  </Link>
+                ) : (
+                  <span className="text-xs text-stone-400">-</span>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
       </motion.div>
 
       {totalPages > 1 && (

@@ -80,8 +80,4 @@ public class Seller {
 
     @Column(name = "created_shop_id", columnDefinition = "uuid")
     private UUID createdShopId;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "seller_type", length = 50)
-    private SellerType sellerType;
 }

@@ -82,21 +82,36 @@ public class Account extends BaseEntity implements UserDetails, Serializable {
 
     @Override
     public boolean isAccountNonExpired() {
-        return isActive;
+        return isActive != null && isActive;
     }
 
     @Override
     public boolean isAccountNonLocked() {
-        return isActive;
+        if (status == AccountStatus.BANNED || disciplineLevel == DisciplineLevel.BANNED) {
+            if (bannedUntil != null && LocalDateTime.now().isAfter(bannedUntil)) {
+                return true;
+            }
+            return false;
+        }
+        if (status == AccountStatus.DELETED) {
+            return false;
+        }
+        return isActive != null && isActive;
     }
 
     @Override
     public boolean isCredentialsNonExpired() {
-        return isActive;
+        return true;
     }
 
     @Override
     public boolean isEnabled() {
-        return isActive;
+        if (status == AccountStatus.INACTIVE || status == AccountStatus.DELETED) {
+            return false;
+        }
+        if (status == AccountStatus.BANNED && (bannedUntil == null || LocalDateTime.now().isBefore(bannedUntil))) {
+            return false;
+        }
+        return isActive != null && isActive;
     }
 }

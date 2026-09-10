@@ -21,6 +21,7 @@ import com.marketplace.ecommerce.auth.valueObjects.DisciplineLevel;
 import com.marketplace.ecommerce.cart.entity.Cart;
 import com.marketplace.ecommerce.cart.repository.CartRepository;
 import com.marketplace.ecommerce.common.exception.CustomException;
+import com.marketplace.ecommerce.common.exception.InvalidCredentialsException;
 import com.marketplace.ecommerce.common.exception.RoleNotFoundException;
 import com.marketplace.ecommerce.wallet.entity.Wallet;
 import com.marketplace.ecommerce.wallet.repository.WalletRepository;
@@ -28,8 +29,11 @@ import com.marketplace.ecommerce.wallet.valueObjects.WalletType;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.AccountStatusException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -38,6 +42,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 
@@ -161,6 +166,19 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     public LoginResponse login(LoginRequest request) {
+        // 1. Kiểm tra tài khoản để xử lý tự động gỡ ban nếu đã hết hạn thời gian phạt
+        Optional<Account> accountOpt = accountRepository.findByUsername(request.getUsername());
+        if (accountOpt.isPresent()) {
+            Account acc = accountOpt.get();
+            if (acc.getBannedUntil() != null && LocalDateTime.now().isAfter(acc.getBannedUntil())) {
+                acc.setStatus(AccountStatus.ACTIVE);
+                acc.setDisciplineLevel(DisciplineLevel.NONE);
+                acc.setIsActive(true);
+                acc.setBannedUntil(null);
+                accountRepository.save(acc);
+            }
+        }
+
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
@@ -174,9 +192,26 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                     .role(users.getRole().getRoleName())
                     .build();
 
-        } catch (
-                BadCredentialsException e) {
-            throw new BadCredentialsException("Invalid username or password.");
+        } catch (BadCredentialsException e) {
+            throw new InvalidCredentialsException("Tên đăng nhập hoặc mật khẩu không chính xác.");
+        } catch (LockedException e) {
+            Account acc = accountOpt.orElse(null);
+            if (acc != null && (acc.getStatus() == AccountStatus.BANNED || acc.getDisciplineLevel() == DisciplineLevel.BANNED)) {
+                if (acc.getBannedUntil() != null) {
+                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm 'ngày' dd/MM/yyyy");
+                    throw new CustomException("Tài khoản của bạn đã bị khóa đến " + acc.getBannedUntil().format(formatter) + " do vi phạm quy định cộng đồng.");
+                }
+                throw new CustomException("Tài khoản của bạn đã bị khóa vĩnh viễn do vi phạm quy định cộng đồng.");
+            }
+            throw new CustomException("Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên để được hỗ trợ.");
+        } catch (DisabledException e) {
+            Account acc = accountOpt.orElse(null);
+            if (acc != null && (acc.getStatus() == AccountStatus.INACTIVE || Boolean.FALSE.equals(acc.getIsActive()) || Boolean.FALSE.equals(acc.getAccountVerified()))) {
+                throw new CustomException("Tài khoản chưa được kích hoạt. Vui lòng kiểm tra email và xác thực OTP.");
+            }
+            throw new CustomException("Tài khoản của bạn hiện đang bị vô hiệu hóa.");
+        } catch (AccountStatusException e) {
+            throw new CustomException("Trạng thái tài khoản không hợp lệ: " + e.getMessage());
         }
     }
 

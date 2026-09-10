@@ -6,16 +6,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.AccountStatusException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.Instant;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
@@ -55,9 +56,48 @@ public class GlobalExceptionHandler {
             Exception ex,
             HttpServletRequest request
     ) {
+        String message = (ex.getMessage() != null && !ex.getMessage().isBlank() && !ex.getMessage().equalsIgnoreCase("Bad credentials"))
+                ? ex.getMessage()
+                : "Tên đăng nhập hoặc mật khẩu không đúng";
+
         return buildResponse(
                 HttpStatus.UNAUTHORIZED,
-                "Email hoặc mật khẩu không đúng",
+                message,
+                request
+        );
+    }
+
+    // =========================
+    // 403 - Account Status / Forbidden
+    // =========================
+    @ExceptionHandler({
+            LockedException.class,
+            DisabledException.class,
+            AccountStatusException.class
+    })
+    public ResponseEntity<ErrorResponse> handleAccountStatusException(
+            Exception ex,
+            HttpServletRequest request
+    ) {
+        String message = (ex.getMessage() != null && !ex.getMessage().isBlank())
+                ? ex.getMessage()
+                : "Tài khoản của bạn đã bị khóa hoặc vô hiệu hóa";
+
+        return buildResponse(
+                HttpStatus.FORBIDDEN,
+                message,
+                request
+        );
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDenied(
+            AccessDeniedException ex,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.FORBIDDEN,
+                "Bạn không có quyền thực hiện hành động này",
                 request
         );
     }

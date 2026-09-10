@@ -1,8 +1,9 @@
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
-import { HiOutlineUser, HiOutlineLockClosed } from 'react-icons/hi'
+import { HiOutlineUser, HiOutlineLockClosed, HiOutlineExclamationCircle } from 'react-icons/hi'
 import { useThemeStore } from '../store/useThemeStore'
 import { useAuthStore } from '../store/useAuthStore'
 import { useCartStore } from '../store/useCartStore'
@@ -41,8 +42,8 @@ export default function Login() {
       navigate('/')
     } catch (error) {
       console.error('Login error:', error)
-      const message = error.message || 'Đăng nhập thất bại. Kiểm tra lại thông tin.'
-      toast.error(message)
+      const message = error?.message
+      toast.error(message, { duration: 6000 })
     }
   }
 

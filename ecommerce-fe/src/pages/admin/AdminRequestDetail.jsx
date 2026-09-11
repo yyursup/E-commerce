@@ -45,24 +45,21 @@ export default function AdminRequestDetail() {
   }, [requestType, requestDetail])
 
   const handleApprove = async () => {
-    const note = responseText.trim()
-    if (requestType !== 'REPORT' && !note) {
-      toast.error('Response is required.')
-      return
-    }
+    // If admin didn't input response, provide default approval note to satisfy API
+    const note = responseText.trim() || 'Hồ sơ hợp lệ. Đã phê duyệt yêu cầu đăng ký người bán.'
     try {
       setActionLoading(true)
       if (requestType === 'REPORT') {
-        await reportService.handleReport(requestId, 'APPROVE', note || null)
+        await reportService.handleReport(requestId, 'APPROVE', responseText.trim() || null)
       } else {
         await requestService.approveRequest(requestId, note)
       }
-      toast.success('Request approved.')
+      toast.success('Đã phê duyệt yêu cầu thành công!')
       setResponseText('')
       fetchDetail()
     } catch (err) {
       console.error('Approve error:', err)
-      toast.error(err?.message || 'Approve failed.')
+      toast.error(err?.message || 'Phê duyệt thất bại.')
     } finally {
       setActionLoading(false)
     }
@@ -70,8 +67,8 @@ export default function AdminRequestDetail() {
 
   const handleReject = async () => {
     const note = responseText.trim()
-    if (requestType !== 'REPORT' && !note) {
-      toast.error('Response is required.')
+    if (!note) {
+      toast.error('Vui lòng nhập lý do từ chối yêu cầu.')
       return
     }
     try {
@@ -81,12 +78,12 @@ export default function AdminRequestDetail() {
       } else {
         await requestService.rejectRequest(requestId, note)
       }
-      toast.success('Request rejected.')
+      toast.success('Đã từ chối yêu cầu.')
       setResponseText('')
       fetchDetail()
     } catch (err) {
       console.error('Reject error:', err)
-      toast.error(err?.message || 'Reject failed.')
+      toast.error(err?.message || 'Từ chối thất bại.')
     } finally {
       setActionLoading(false)
     }
@@ -96,35 +93,43 @@ export default function AdminRequestDetail() {
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <Link to="/admin/requests" className={cn('text-sm font-semibold', isDark ? 'text-amber-300' : 'text-amber-700')}>
-            ← Back to list
+          <Link to="/admin/requests" className={cn('text-sm font-semibold inline-flex items-center gap-1', isDark ? 'text-amber-300' : 'text-amber-700')}>
+            ← Quay lại danh sách
           </Link>
-          <h1 className="mt-2 text-2xl font-semibold">Request detail</h1>
-          <p className={cn('text-xs', isDark ? 'text-slate-400' : 'text-stone-500')}>{requestId}</p>
+          <h1 className="mt-2 text-2xl font-semibold">Chi tiết yêu cầu</h1>
+          <p className={cn('text-xs font-mono', isDark ? 'text-slate-400' : 'text-stone-500')}>{requestId}</p>
         </div>
       </div>
 
       {loading && (
         <div className="flex items-center gap-3 rounded-2xl border border-dashed px-6 py-10 text-sm">
           <div className="h-4 w-4 animate-spin rounded-full border-2 border-amber-500 border-r-transparent" />
-          Loading detail...
+          Đang tải chi tiết yêu cầu...
         </div>
       )}
 
       {!loading && detail && (
-        <div className="grid gap-6 lg:grid-cols-3">
-          <AdminRequestOverviewCard detail={detail} isDark={isDark} />
-          <AdminRequestActionCard
-            detailEntries={detailEntries}
-            isDark={isDark}
-            responseText={responseText}
-            setResponseText={setResponseText}
-            requestType={requestType}
-            isPending={isPending}
-            actionLoading={actionLoading}
-            onApprove={handleApprove}
-            onReject={handleReject}
-          />
+        <div className="grid gap-6 lg:grid-cols-12 items-start">
+          {/* Cột chính: Thông tin chi tiết hồ sơ & GPKD (chiếm 8/12 cột, rộng rãi) */}
+          <div className="lg:col-span-8 space-y-6">
+            <AdminRequestActionCard
+              detail={detail}
+              detailEntries={detailEntries}
+              isDark={isDark}
+              responseText={responseText}
+              setResponseText={setResponseText}
+              requestType={requestType}
+              isPending={isPending}
+              actionLoading={actionLoading}
+              onApprove={handleApprove}
+              onReject={handleReject}
+            />
+          </div>
+
+          {/* Cột phụ: Tổng quan đơn (chiếm 4/12 cột, sticky khi cuộn trang) */}
+          <div className="lg:col-span-4 lg:sticky lg:top-24 space-y-6">
+            <AdminRequestOverviewCard detail={detail} isDark={isDark} />
+          </div>
         </div>
       )}
     </div>

@@ -32,9 +32,13 @@ import com.marketplace.ecommerce.product.repository.ProductImageRepository;
 import com.marketplace.ecommerce.product.repository.ProductRepository;
 import com.marketplace.ecommerce.product.valueObjects.ProductStatus;
 import com.marketplace.ecommerce.request.entity.Request;
+import com.marketplace.ecommerce.request.entity.Seller;
 import com.marketplace.ecommerce.request.repository.RequestRepository;
+import com.marketplace.ecommerce.request.repository.SellerRepository;
+import com.marketplace.ecommerce.request.valueObjects.BusinessType;
 import com.marketplace.ecommerce.request.valueObjects.RequestStatus;
 import com.marketplace.ecommerce.request.valueObjects.RequestType;
+import com.marketplace.ecommerce.request.valueObjects.SellerType;
 import com.marketplace.ecommerce.shop.entity.Shop;
 import com.marketplace.ecommerce.shop.repository.ShopRepository;
 import com.marketplace.ecommerce.shop.valueObjects.ShopStatus;
@@ -82,6 +86,7 @@ public class DataInitializer implements CommandLineRunner {
     private final OrderRepository orderRepository;
     private final OrderItemsRepository orderItemsRepository;
     private final RequestRepository requestRepository;
+    private final SellerRepository sellerRepository;
     private final CommissionRepository commissionRepository;
 
     private final Random random = new Random();
@@ -296,7 +301,19 @@ public class DataInitializer implements CommandLineRunner {
                 1442, // Quận 1, TP.HCM
                 "21012",
                 ShopStatus.ACTIVE,
-                4.9f);
+                4.9f,
+                SellerType.BUSINESS,
+                BusinessType.ENTERPRISE,
+                "Công Ty TNHH Apple Việt Nam",
+                "Tầng 1, TTTM Vincom Center Đồng Khởi, 72 Lê Thánh Tôn, Bến Nghé, Quận 1, TP.HCM",
+                "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c",
+                "0316888999",
+                "invoice@apple-reseller.vn",
+                "Vietcombank",
+                "0071001234567",
+                "CONG TY TNHH APPLE VIET NAM",
+                "Tầng 1, TTTM Vincom Center Đồng Khởi, 72 Lê Thánh Tôn, Bến Nghé, Quận 1, TP.HCM",
+                "Kho Apple Logistics, 10 Mai Chí Thọ, TP Thủ Đức, TP.HCM");
 
         Shop shop2 = initializeShop(
                 seller2,
@@ -309,7 +326,19 @@ public class DataInitializer implements CommandLineRunner {
                 1542, // Cầu Giấy, Hà Nội
                 "1B1507",
                 ShopStatus.ACTIVE,
-                4.8f);
+                4.8f,
+                SellerType.INDIVIDUAL,
+                null,
+                null,
+                null,
+                null,
+                "8012345678",
+                "trendy.fashion@gmail.com",
+                "Techcombank",
+                "19034567890011",
+                "TRAN THI MAI",
+                "245 Cầu Giấy, Phường Dịch Vọng, Quận Cầu Giấy, Hà Nội",
+                "245 Cầu Giấy, Phường Dịch Vọng, Quận Cầu Giấy, Hà Nội");
 
         Shop shop3 = initializeShop(
                 seller3,
@@ -322,7 +351,19 @@ public class DataInitializer implements CommandLineRunner {
                 1542, // Cầu Giấy, Hà Nội
                 "1B1507",
                 ShopStatus.ACTIVE,
-                4.9f);
+                4.9f,
+                SellerType.BUSINESS,
+                BusinessType.HOUSEHOLD,
+                "Hộ Kinh Doanh Nhà Sách Nhã Nam",
+                "59 Đỗ Quang, Phường Trung Hòa, Quận Cầu Giấy, Hà Nội",
+                "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c",
+                "0108998877",
+                "nhanam.books@gmail.com",
+                "MB Bank",
+                "0888999888",
+                "LE TRI THUC",
+                "59 Đỗ Quang, Phường Trung Hòa, Quận Cầu Giấy, Hà Nội",
+                "59 Đỗ Quang, Phường Trung Hòa, Quận Cầu Giấy, Hà Nội");
 
         Shop shop4 = initializeShop(
                 seller4,
@@ -335,7 +376,19 @@ public class DataInitializer implements CommandLineRunner {
                 1530, // Hải Châu, Đà Nẵng
                 "40101",
                 ShopStatus.ACTIVE,
-                4.7f);
+                4.7f,
+                SellerType.BUSINESS,
+                BusinessType.ENTERPRISE,
+                "Công Ty Cổ Phần Tập Đoàn Sunhouse",
+                "182 Bạch Đằng, Phường Hải Châu 1, Quận Hải Châu, Đà Nẵng",
+                "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c",
+                "0401889977",
+                "sunhouse.appliances@gmail.com",
+                "BIDV",
+                "6868686868",
+                "CONG TY CP TAP DOAN SUNHOUSE",
+                "182 Bạch Đằng, Phường Hải Châu 1, Quận Hải Châu, Đà Nẵng",
+                "Tổng kho Sunhouse Miền Trung, KCN Hòa Cầm, Đà Nẵng");
 
         Shop shop5 = initializeShop(
                 seller5,
@@ -348,7 +401,19 @@ public class DataInitializer implements CommandLineRunner {
                 1448, // Phú Nhuận, TP.HCM
                 "21015",
                 ShopStatus.ACTIVE,
-                4.8f);
+                4.8f,
+                SellerType.INDIVIDUAL,
+                null,
+                null,
+                null,
+                null,
+                "8234567890",
+                "innisfree.beauty@gmail.com",
+                "ACB",
+                "2345678901",
+                "HOANG THAO MY",
+                "68 Phan Đăng Lưu, Phường 5, Quận Phú Nhuận, TP.HCM",
+                "68 Phan Đăng Lưu, Phường 5, Quận Phú Nhuận, TP.HCM");
 
         Shop shop6 = initializeShop(
                 seller6,
@@ -361,7 +426,19 @@ public class DataInitializer implements CommandLineRunner {
                 1490, // Thanh Xuân, Hà Nội
                 "100201",
                 ShopStatus.ACTIVE,
-                4.8f);
+                4.8f,
+                SellerType.BUSINESS,
+                BusinessType.ENTERPRISE,
+                "Công Ty TNHH Decathlon Việt Nam",
+                "72A Nguyễn Trãi, Phường Thượng Đình, Quận Thanh Xuân, Hà Nội",
+                "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c",
+                "0107654321",
+                "decathlon.sports@gmail.com",
+                "Vietcombank",
+                "0011009876543",
+                "CONG TY TNHH DECATHLON VIET NAM",
+                "72A Nguyễn Trãi, Phường Thượng Đình, Quận Thanh Xuân, Hà Nội",
+                "Kho Decathlon Hà Nội, KCN Đài Tư, Long Biên, Hà Nội");
 
         // 10. Seed Realistic Products for Each Shop and Category
         seedShopProducts(shop1, List.of(smartphone, laptop, audio, accessories), "TECH");
@@ -797,7 +874,7 @@ public class DataInitializer implements CommandLineRunner {
         Account customerAccount3 = accountRepository.findByUsername("customer3").orElse(null);
 
         if (customerAccount1 != null) {
-            initializeRequest(
+            Request req1 = initializeRequest(
                     customerAccount1,
                     RequestType.SELLER_REGISTRATION,
                     RequestStatus.APPROVED,
@@ -805,10 +882,16 @@ public class DataInitializer implements CommandLineRunner {
                     adminAccount,
                     LocalDateTime.now().minusDays(5),
                     "Hồ sơ pháp lý hợp lệ, CCCD và chân dung eKYC trùng khớp 100%. Đã phê duyệt.");
+            initializeSellerDetail(req1, customerAccount1, SellerType.INDIVIDUAL, null, null, null, null,
+                    "Trendy Fashion Studio", "0901234567", "customer1@gmail.com",
+                    "123 Đường Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP.HCM",
+                    "123 Đường Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP.HCM",
+                    "8011223344", "customer1@gmail.com",
+                    "Vietcombank", "0071008899001", "LE VAN MUA HANG");
         }
 
         if (customerAccount2 != null) {
-            initializeRequest(
+            Request req2 = initializeRequest(
                     customerAccount2,
                     RequestType.SELLER_REGISTRATION,
                     RequestStatus.PENDING,
@@ -816,10 +899,18 @@ public class DataInitializer implements CommandLineRunner {
                     null,
                     null,
                     null);
+            initializeSellerDetail(req2, customerAccount2, SellerType.BUSINESS, BusinessType.HOUSEHOLD,
+                    "Hộ Kinh Doanh Bếp Xanh Smart", "456 Đường Lê Lợi, Phường Bến Thành, Quận 1, TP.HCM",
+                    "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c",
+                    "Bếp Xanh Smart Official", "0909876543", "customer2@gmail.com",
+                    "456 Đường Lê Lợi, Phường Bến Thành, Quận 1, TP.HCM",
+                    "456 Đường Lê Lợi, Phường Bến Thành, Quận 1, TP.HCM",
+                    "0319887766", "bepxanh@gmail.com",
+                    "Techcombank", "190333222111", "PHAM THI MUA SAM");
         }
 
         if (customerAccount3 != null) {
-            initializeRequest(
+            Request req3 = initializeRequest(
                     customerAccount3,
                     RequestType.SELLER_REGISTRATION,
                     RequestStatus.REJECTED,
@@ -827,7 +918,50 @@ public class DataInitializer implements CommandLineRunner {
                     adminAccount,
                     LocalDateTime.now().minusDays(10),
                     "Từ chối: Mặt hàng yêu cầu giấy phép công bố sản phẩm và an toàn vệ sinh thực phẩm.");
+            initializeSellerDetail(req3, customerAccount3, SellerType.INDIVIDUAL, null, null, null, null,
+                    "An Japan Healthy Store", "0905555555", "customer3@gmail.com",
+                    "789 Đường Điện Biên Phủ, Phường 15, Bình Thạnh, TP.HCM",
+                    "789 Đường Điện Biên Phủ, Phường 15, Bình Thạnh, TP.HCM",
+                    "8999888777", "customer3@gmail.com",
+                    "VPBank", "999888777666", "NGUYEN VAN AN");
         }
+    }
+
+    private Seller initializeSellerDetail(Request request, Account account,
+                                          SellerType sellerType, BusinessType businessType,
+                                          String businessName, String businessAddress, String businessLicenseUrl,
+                                          String shopName, String shopPhone, String shopEmail,
+                                          String pickupAddress, String returnAddress,
+                                          String taxCode, String invoiceEmail,
+                                          String bankName, String bankAccountNumber, String bankAccountName) {
+        if (request == null) return null;
+        Seller existing = sellerRepository.findByRequestId(request.getId());
+        if (existing != null) {
+            return existing;
+        }
+
+        Seller seller = Seller.builder()
+                .request(request)
+                .sellerType(sellerType)
+                .businessType(businessType)
+                .businessName(businessName)
+                .businessAddress(businessAddress)
+                .businessLicenseUrl(businessLicenseUrl)
+                .shopName(shopName)
+                .shopPhone(shopPhone)
+                .shopEmail(shopEmail)
+                .address(pickupAddress)
+                .pickupAddress(pickupAddress)
+                .returnAddress(returnAddress)
+                .taxCode(taxCode)
+                .invoiceEmail(invoiceEmail)
+                .bankName(bankName)
+                .bankAccountNumber(bankAccountNumber)
+                .bankAccountName(bankAccountName)
+                .build();
+        Seller saved = sellerRepository.save(seller);
+        log.info("Created seller detail for request ID: {}", request.getId());
+        return saved;
     }
 
     private Wallet initializeUserWallet(User user) {
@@ -936,7 +1070,12 @@ public class DataInitializer implements CommandLineRunner {
 
     private Shop initializeShop(User user, String name, String description, String logoUrl,
                                 String coverImageUrl, String phoneNumber, String address,
-                                Integer districtId, String wardCode, ShopStatus status, Float rating) {
+                                Integer districtId, String wardCode, ShopStatus status, Float rating,
+                                SellerType sellerType, BusinessType businessType, String businessName,
+                                String businessAddress, String businessLicenseUrl,
+                                String taxCode, String invoiceEmail,
+                                String bankName, String bankAccountNumber, String bankAccountName,
+                                String pickupAddress, String returnAddress) {
         return shopRepository.findByUserId(user.getId())
                 .orElseGet(() -> {
                     LocalDateTime now = LocalDateTime.now();
@@ -952,6 +1091,18 @@ public class DataInitializer implements CommandLineRunner {
                             .wardCode(wardCode)
                             .status(status)
                             .averageRating(rating != null ? rating : 4.8f)
+                            .sellerType(sellerType)
+                            .businessType(businessType)
+                            .businessName(businessName)
+                            .businessAddress(businessAddress)
+                            .businessLicenseUrl(businessLicenseUrl)
+                            .taxCode(taxCode)
+                            .invoiceEmail(invoiceEmail)
+                            .bankName(bankName)
+                            .bankAccountNumber(bankAccountNumber)
+                            .bankAccountName(bankAccountName)
+                            .pickupAddress(pickupAddress)
+                            .returnAddress(returnAddress)
                             .build();
                     shop.setCreatedAt(now);
                     shop.setUpdatedAt(now);

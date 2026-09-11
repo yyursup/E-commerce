@@ -1,7 +1,6 @@
 package com.marketplace.ecommerce.config;
 
 import com.marketplace.ecommerce.auth.repository.AccountRepository;
-import com.marketplace.ecommerce.chatbot.config.WsChatTokenFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -36,7 +35,6 @@ public class SecurityConfig {
 
     private final AccountRepository userRepository;
     private final JwtFilter jwtFilter;
-    private final WsChatTokenFilter wsChatTokenFilter;
 
     @Bean
     public UserDetailsService userDetailsService() {
@@ -62,16 +60,15 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 
-    /** WebSocket/SockJS handshake: no JWT, no auth – must be first (Order 0) so /info etc. never get 403. */
+    /** WebSocket handshake: no auth at HTTP filter level – authentication is performed via token in query parameter. */
     @Bean
     @Order(0)
     public SecurityFilterChain webSocketSecurityFilterChain(HttpSecurity http) throws Exception {
         http
-                .securityMatcher("/api/v1/ws-chat", "/api/v1/ws-chat/**")
+                .securityMatcher("/api/v1/ws/chat", "/api/v1/ws/chat/**", "/api/v1/ws-chat", "/api/v1/ws-chat/**", "/ws/chat", "/ws/chat/**")
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
-                .addFilterBefore(wsChatTokenFilter, AuthorizationFilter.class);
+                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
         return http.build();
     }
 
@@ -83,7 +80,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();

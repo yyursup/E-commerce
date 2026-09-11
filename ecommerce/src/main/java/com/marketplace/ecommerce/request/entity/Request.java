@@ -1,14 +1,12 @@
 package com.marketplace.ecommerce.request.entity;
 
 import com.marketplace.ecommerce.auth.entity.Account;
-import com.marketplace.ecommerce.auth.entity.User;
 import com.marketplace.ecommerce.request.valueObjects.RequestStatus;
 import com.marketplace.ecommerce.request.valueObjects.RequestType;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 import java.util.UUID;

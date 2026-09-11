@@ -67,7 +67,6 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
                 from Product p
                 join fetch p.shop s
                 join fetch p.productCategory c
-                left join fetch p.images i
                 where p.id <> :excludeId
                   and p.status = 'PUBLISHED'
                   and p.shop.status = 'ACTIVE'

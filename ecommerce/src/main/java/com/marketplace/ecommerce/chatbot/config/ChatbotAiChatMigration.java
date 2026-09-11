@@ -1,10 +1,10 @@
 package com.marketplace.ecommerce.chatbot.config;
 
-import com.marketplace.ecommerce.chatbot.entity.ChatbotNode;
-import com.marketplace.ecommerce.chatbot.entity.ChatbotOption;
-import com.marketplace.ecommerce.chatbot.repository.ChatbotNodeRepository;
-import com.marketplace.ecommerce.chatbot.repository.ChatbotOptionRepository;
-import com.marketplace.ecommerce.chatbot.valueobject.ChatbotNodeType;
+import com.marketplace.ecommerce.chat.entity.ChatbotNode;
+import com.marketplace.ecommerce.chat.entity.ChatbotOption;
+import com.marketplace.ecommerce.chat.enums.ChatbotNodeType;
+import com.marketplace.ecommerce.chat.repository.ChatbotNodeRepository;
+import com.marketplace.ecommerce.chat.repository.ChatbotOptionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;

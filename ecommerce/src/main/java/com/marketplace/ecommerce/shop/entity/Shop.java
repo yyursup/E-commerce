@@ -1,6 +1,8 @@
 package com.marketplace.ecommerce.shop.entity;
 
 import com.marketplace.ecommerce.auth.entity.User;
+import com.marketplace.ecommerce.request.valueObjects.BusinessType;
+import com.marketplace.ecommerce.request.valueObjects.SellerType;
 import com.marketplace.ecommerce.shop.valueObjects.ShopStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -51,6 +53,44 @@ public class Shop {
     @Column(name = "address", length = 255)
     private String address;
 
+    @Column(name = "pickup_address", columnDefinition = "TEXT")
+    private String pickupAddress;
+
+    @Column(name = "return_address", columnDefinition = "TEXT")
+    private String returnAddress;
+
+    @Column(name = "tax_code", length = 50)
+    private String taxCode;
+
+    @Column(name = "invoice_email", length = 120)
+    private String invoiceEmail;
+
+    @Column(name = "bank_name", length = 150)
+    private String bankName;
+
+    @Column(name = "bank_account_number", length = 50)
+    private String bankAccountNumber;
+
+    @Column(name = "bank_account_name", length = 150)
+    private String bankAccountName;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "seller_type", length = 50)
+    private SellerType sellerType;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "business_type", length = 50)
+    private BusinessType businessType;
+
+    @Column(name = "business_name", length = 255)
+    private String businessName;
+
+    @Column(name = "business_address", columnDefinition = "TEXT")
+    private String businessAddress;
+
+    @Column(name = "business_license_url", length = 500)
+    private String businessLicenseUrl;
+
     @Column(name = "district_id")
     private Integer districtId;  // Mã quận/huyện GHN
 
@@ -60,6 +100,10 @@ public class Shop {
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 50)
     private ShopStatus status = ShopStatus.ACTIVE;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "shop_type", length = 50)
+    private SellerType shopType;
 
     @Column(name = "average_rating")
     private Float averageRating = 0.0f;

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import fileService from '../fileService'
+import fileService from '../../services/fileService'
 import api from '../../lib/axios'
 
 vi.mock('../../lib/axios', () => ({

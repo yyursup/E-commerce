@@ -105,7 +105,7 @@ public class CheckoutServiceImpl implements CheckoutService {
             shippingFee = shippingService.quoteFee(shop, items, addr.getDistrictId(), addr.getWardCode());
         }
 
-        return CheckoutConfirmResponse.of(addr, items, subtotal, shippingFee);
+        return CheckoutConfirmResponse.of(shop, addr, items, subtotal, shippingFee);
     }
 
 }

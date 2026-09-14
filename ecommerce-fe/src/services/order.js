@@ -4,6 +4,18 @@ const ORDER_BASE = '/api/v1/order';
 const PAYMENT_BASE = '/api/v1/payment';
 
 const orderService = {
+  // Checkout confirm
+  getCheckoutConfirm: async (shopId) => {
+    try {
+      const response = await axiosClient.get('/api/v1/checkout/confirm', {
+        params: { shopId }
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response ? error.response.data : error;
+    }
+  },
+
   // Create Order
   createOrder: async (shopId, addressId, notes) => {
     try {

@@ -8,7 +8,7 @@ import { cn } from '../lib/cn'
 export default function ProductCard({ product, onQuickView, dataAos, dataAosDelay }) {
   const [hover, setHover] = useState(false)
   const isDark = useThemeStore((s) => s.theme) === 'dark'
-  const { name, price, oldPrice, image, badge, rating, id, shopName, categoryName } = product
+  const { name, price, oldPrice, image, badge, rating, id, shopName, categoryName, shopId } = product
 
   // Deterministic mock sold count based on product id length or char codes
   const mockSold = ((String(id).charCodeAt(0) * 17) % 850) + 50
@@ -99,10 +99,20 @@ export default function ProductCard({ product, onQuickView, dataAos, dataAosDela
         <div>
           {/* Shop / Category Tag */}
           <div className="mb-1.5 flex items-center justify-between text-[11px] text-stone-400 dark:text-slate-400">
-            <span className="truncate max-w-[140px] font-medium text-amber-600 dark:text-amber-400">
-              {shopName || categoryName || 'E-commerce'}
-            </span>
-            <span className="text-[10px] text-stone-400 dark:text-slate-500">
+            {shopId ? (
+              <Link
+                to={`/shop/${shopId}`}
+                onClick={(e) => e.stopPropagation()}
+                className="truncate max-w-[130px] font-semibold text-amber-600 dark:text-amber-400 hover:underline"
+              >
+                {shopName || categoryName || 'E-commerce'}
+              </Link>
+            ) : (
+              <span className="truncate max-w-[130px] font-medium text-amber-600 dark:text-amber-400">
+                {shopName || categoryName || 'E-commerce'}
+              </span>
+            )}
+            <span className="text-[10px] text-stone-400 dark:text-slate-500 shrink-0">
               Đã bán {mockSold}
             </span>
           </div>

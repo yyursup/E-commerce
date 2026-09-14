@@ -93,7 +93,7 @@ export default function AdminRequestDetail() {
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <Link to="/admin/requests" className={cn('text-sm font-semibold inline-flex items-center gap-1', isDark ? 'text-amber-300' : 'text-amber-700')}>
+          <Link to="/requests" className={cn('text-sm font-semibold inline-flex items-center gap-1', isDark ? 'text-amber-300' : 'text-amber-700')}>
             ← Quay lại danh sách
           </Link>
           <h1 className="mt-2 text-2xl font-semibold">Chi tiết yêu cầu</h1>

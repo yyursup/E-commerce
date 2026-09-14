@@ -571,7 +571,7 @@ export default function AdminDashboard() {
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <Link
-                  to="/admin/requests"
+                  to="/requests"
                   className={cn(
                     'inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition',
                     isDark
@@ -583,7 +583,7 @@ export default function AdminDashboard() {
                   Open requests
                 </Link>
                 <Link
-                  to="/admin/orders"
+                  to="/orders"
                   className={cn(
                     'inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition',
                     isDark
@@ -595,7 +595,7 @@ export default function AdminDashboard() {
                   Open orders
                 </Link>
                 <Link
-                  to="/admin/escrows"
+                  to="/escrows"
                   className={cn(
                     'inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition',
                     isDark
@@ -607,7 +607,7 @@ export default function AdminDashboard() {
                   Open escrows
                 </Link>
                 <Link
-                  to="/admin/wallets"
+                  to="/wallets"
                   className={cn(
                     'inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition',
                     isDark

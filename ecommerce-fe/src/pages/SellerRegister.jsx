@@ -212,8 +212,29 @@ export default function SellerRegister() {
       return
     }
 
+    const payload = {
+      sellerType,
+      shopName: data.shopName?.trim(),
+      shopPhone: data.shopPhone?.trim(),
+      shopEmail: data.shopEmail?.trim() || null,
+      description: data.description?.trim() || null,
+      coverImageUrl: data.coverImageUrl?.trim() || null,
+      pickupAddress: data.pickupAddress?.trim(),
+      returnAddress: data.returnAddress?.trim(),
+      address: data.address?.trim() || null,
+      taxCode: data.taxCode?.trim() || null,
+      invoiceEmail: data.invoiceEmail?.trim() || null,
+      businessType: sellerType === 'BUSINESS' && data.businessType ? data.businessType : null,
+      businessName: sellerType === 'BUSINESS' ? (data.businessName?.trim() || null) : null,
+      businessAddress: sellerType === 'BUSINESS' ? (data.businessAddress?.trim() || null) : null,
+      businessLicenseUrl: sellerType === 'BUSINESS' ? (data.businessLicenseUrl?.trim() || null) : null,
+      bankName: data.bankName?.trim(),
+      bankAccountName: data.bankAccountName?.trim(),
+      bankAccountNumber: data.bankAccountNumber?.trim(),
+    }
+
     try {
-      await requestService.registerSeller({ ...data, sellerType })
+      await requestService.registerSeller(payload)
       toast.success('Gửi yêu cầu đăng ký bán hàng thành công!')
       reset()
       navigate('/')

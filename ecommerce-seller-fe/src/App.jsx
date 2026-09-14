@@ -1,10 +1,10 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import ProtectedRoute from './components/ProtectedRoute'
 import SellerLayout from './components/SellerLayout'
+import SellerLanding from './pages/SellerLanding'
 import Login from './pages/Login'
 import SellerRegister from './pages/SellerRegister'
 import PendingApproval from './pages/PendingApproval'
-import RejectedNotice from './pages/RejectedNotice'
 import BusinessDashboard from './pages/business/BusinessDashboard'
 import ShopOrders from './pages/business/ShopOrders'
 import ShopOrderDetail from './pages/business/ShopOrderDetail'
@@ -14,11 +14,12 @@ import ShopSettings from './pages/ShopSettings'
 export default function App() {
   return (
     <Routes>
-      {/* Public / Onboarding routes */}
+      {/* Public Landing & Onboarding routes */}
+      <Route path="/" element={<SellerLanding />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<SellerRegister />} />
       <Route path="/pending" element={<PendingApproval />} />
-      <Route path="/rejected" element={<RejectedNotice />} />
+      <Route path="/rejected" element={<PendingApproval />} />
 
       {/* Protected routes for Shop Owner (ROLE_BUSINESS) */}
       <Route
@@ -28,7 +29,6 @@ export default function App() {
           </ProtectedRoute>
         }
       >
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<BusinessDashboard />} />
         <Route path="/orders" element={<ShopOrders />} />
         <Route path="/orders/:orderId" element={<ShopOrderDetail />} />
@@ -37,7 +37,7 @@ export default function App() {
       </Route>
 
       {/* Fallback */}
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
 }

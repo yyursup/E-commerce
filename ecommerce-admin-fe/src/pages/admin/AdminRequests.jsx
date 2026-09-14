@@ -181,7 +181,7 @@ export default function AdminRequests() {
               <div className="col-span-2 text-right">
                 {req.requestId ? (
                   <Link
-                    to={`/admin/requests/${req.requestId}`}
+                    to={`/requests/${req.requestId}`}
                     className={cn(
                       'inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold transition',
                       isDark

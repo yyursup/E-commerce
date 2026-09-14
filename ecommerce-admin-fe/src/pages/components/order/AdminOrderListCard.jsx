@@ -1,4 +1,4 @@
-﻿import { Link } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { cn } from '../../../../lib/cn'
 import {
@@ -23,7 +23,7 @@ export default function AdminOrderListCard({ order, isDark }) {
         isDark ? 'border-slate-700 bg-slate-900' : 'border-stone-200 bg-white',
       )}
     >
-      <Link to={`/admin/orders/${order.id}`}>
+      <Link to={`/orders/${order.id}`}>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex gap-4">
             {thumbnailImage && (

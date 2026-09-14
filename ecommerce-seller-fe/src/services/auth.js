@@ -53,6 +53,16 @@ const authService = {
         }
     },
 
+    // Get current user profile & shop status
+    getMe: async () => {
+        try {
+            const response = await axiosClient.get('/api/v1/auth/me');
+            return response.data;
+        } catch (error) {
+            throw error.response ? error.response.data : error;
+        }
+    },
+
     // Update profile: fullName, phoneNumber, gender, dateOfBirth, avatarFile (optional)
     updateProfile: async ({ fullName, phoneNumber, gender, dateOfBirth, avatarFile }) => {
         const formData = new FormData();

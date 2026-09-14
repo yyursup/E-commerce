@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
-import { HiOutlineShoppingBag, HiOutlineLockClosed, HiOutlineUser } from 'react-icons/hi'
+import { HiOutlineShoppingBag, HiOutlineLockClosed, HiOutlineUser, HiOutlineArrowLeft } from 'react-icons/hi'
 import { useThemeStore } from '../store/useThemeStore'
 import { useAuthStore } from '../store/useAuthStore'
 import { cn } from '../lib/cn'
@@ -44,12 +44,10 @@ export default function Login() {
       toast.success(`Đăng nhập thành công, ${res.shopName || res.email}!`)
 
       // Smart routing based on role and seller status
-      if (res.role === 'BUSINESS' || res.sellerStatus === 'APPROVED') {
+      if (res.role === 'BUSINESS') {
         navigate('/dashboard')
-      } else if (res.sellerStatus === 'PENDING') {
+      } else if (res.sellerStatus === 'PENDING' || res.sellerStatus === 'REJECTED') {
         navigate('/pending')
-      } else if (res.sellerStatus === 'REJECTED') {
-        navigate('/rejected')
       } else {
         // Customer who hasn't registered shop yet
         toast('Tài khoản của bạn chưa có gian hàng. Vui lòng hoàn tất hồ sơ đăng ký.', { icon: '📝' })
@@ -70,9 +68,11 @@ export default function Login() {
       >
         <div className={cn('rounded-3xl border p-8 shadow-xl', isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white')}>
           <div className="mb-8 text-center">
-            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/25">
-              <HiOutlineShoppingBag className="h-8 w-8" />
-            </div>
+            <Link to="/" className="inline-block">
+              <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/25">
+                <HiOutlineShoppingBag className="h-8 w-8" />
+              </div>
+            </Link>
             <h1 className={cn('text-2xl font-black tracking-tight', isDark ? 'text-white' : 'text-stone-900')}>
               Kênh Người Bán
             </h1>
@@ -129,18 +129,22 @@ export default function Login() {
             </button>
           </form>
 
-          <div className="mt-6 border-t border-stone-100 dark:border-slate-800 pt-4 text-center space-y-2">
+          <div className="mt-6 border-t border-stone-100 dark:border-slate-800 pt-4 text-center space-y-2.5">
             <p className="text-xs text-stone-500 dark:text-slate-400">
               Chưa có gian hàng?{' '}
               <Link to="/register" className="font-bold text-amber-500 hover:underline">
                 Đăng ký mở Shop ngay
               </Link>
             </p>
-            <p className="text-[11px] text-stone-400">
-              <a href="http://localhost:3000" target="_blank" rel="noreferrer" className="hover:underline">
-                &larr; Quay lại Sàn mua sắm E-commerce
+            <div className="flex items-center justify-center gap-4 text-[11px] text-stone-400">
+              <Link to="/" className="hover:text-amber-500 flex items-center gap-1">
+                <HiOutlineArrowLeft className="h-3 w-3" /> Trang chủ Kênh Người Bán
+              </Link>
+              <span>•</span>
+              <a href="http://localhost:3000" target="_blank" rel="noreferrer" className="hover:text-amber-500">
+                Sàn mua sắm
               </a>
-            </p>
+            </div>
           </div>
         </div>
       </motion.div>

@@ -29,6 +29,7 @@ export default function App() {
         <Route path="/deals" element={<Deals />} />
         <Route path="/marketplace" element={<Marketplace />} />
         <Route path="/shop/:shopId" element={<ShopProfile />} />
+        <Route path="/shops/:shopId" element={<ShopProfile />} />
         <Route path="/products" element={<Products />} />
         <Route path="/products/:productId" element={<ProductDetail />} />
         <Route path="/login" element={<Login />} />

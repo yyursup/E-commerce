@@ -10,8 +10,8 @@ import {
   HiOutlineLocationMarker,
   HiOutlinePhone,
   HiOutlineLockClosed,
-  HiOutlineCreditCard,
   HiOutlineShieldCheck,
+  HiOutlineTag,
 } from 'react-icons/hi'
 import { useThemeStore } from '../../store/useThemeStore'
 import { useAuthStore } from '../../store/useAuthStore'
@@ -301,6 +301,17 @@ export default function OrderDetail() {
                   {formatCurrency(order.shippingFee || 0)}
                 </span>
               </div>
+              {Number(order.discountAmount) > 0 && (
+                <div className="flex justify-between text-emerald-600 dark:text-emerald-400">
+                  <span className="text-sm flex items-center gap-1 font-medium">
+                    <HiOutlineTag className="h-4 w-4" />
+                    Giảm giá voucher {order.voucherCode ? `(${order.voucherCode})` : ''}
+                  </span>
+                  <span className="text-sm font-bold">
+                    -{formatCurrency(order.discountAmount)}
+                  </span>
+                </div>
+              )}
               {order.ghnOrderCode && (
                 <div className="flex justify-between">
                   <span className={cn('text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>

@@ -63,6 +63,7 @@ public class OrderServiceImpl implements OrderService {
     private final PlatformSettingService platformSettingService;
     private final EscrowService escrowService;
     private final CommissionService commissionService;
+    private final com.marketplace.ecommerce.voucher.service.VoucherService voucherService;
 
     @Override
     @Transactional
@@ -210,6 +211,8 @@ public class OrderServiceImpl implements OrderService {
 
         if (newStatus == OrderStatus.CANCELLED) {
 
+            voucherService.rollbackVoucherUsage(order);
+
             for (OrderItem item : order.getItems()) {
                 if (item.getProduct() != null) {
                     Product p = item.getProduct();
@@ -325,6 +328,11 @@ public class OrderServiceImpl implements OrderService {
                 RoundingMode.HALF_UP);
         order.setPlatformCommission(platformCommission);
         order.setCommissionRate(commissionRate.doubleValue());
+
+        if (request.getVoucherCode() != null && !request.getVoucherCode().isBlank()) {
+            voucherService.applyVoucherToOrder(order, request.getVoucherCode());
+        }
+
         order.calculateTotal();
 
         order = orderRepository.save(order);

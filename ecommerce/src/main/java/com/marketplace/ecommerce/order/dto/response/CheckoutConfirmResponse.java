@@ -5,6 +5,7 @@ import com.marketplace.ecommerce.auth.entity.UserAddress;
 import com.marketplace.ecommerce.cart.dto.response.CartItemResponse;
 import com.marketplace.ecommerce.cart.entity.CartItem;
 import com.marketplace.ecommerce.shop.entity.Shop;
+import com.marketplace.ecommerce.voucher.dto.VoucherResponse;
 import lombok.Builder;
 import lombok.Data;
 
@@ -25,13 +26,15 @@ public class CheckoutConfirmResponse {
     private BigDecimal subtotal;
     private BigDecimal shippingFee;
     private BigDecimal total;
+    private List<VoucherResponse> availableVouchers;
 
     public static CheckoutConfirmResponse of(
             Shop shop,
             UserAddress address,
             List<CartItem> items,
             BigDecimal subtotal,
-            BigDecimal shippingFee
+            BigDecimal shippingFee,
+            List<VoucherResponse> availableVouchers
     ) {
         BigDecimal safeSubtotal = subtotal != null ? subtotal : BigDecimal.ZERO;
         BigDecimal safeShipping = shippingFee != null ? shippingFee : BigDecimal.ZERO;
@@ -47,6 +50,7 @@ public class CheckoutConfirmResponse {
                 .subtotal(safeSubtotal)
                 .shippingFee(safeShipping)
                 .total(safeSubtotal.add(safeShipping))
+                .availableVouchers(availableVouchers == null ? List.of() : availableVouchers)
                 .build();
     }
 }

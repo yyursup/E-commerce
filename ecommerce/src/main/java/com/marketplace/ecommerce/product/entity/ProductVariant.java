@@ -1,6 +1,5 @@
-package com.marketplace.ecommerce.cart.entity;
+package com.marketplace.ecommerce.product.entity;
 
-import com.marketplace.ecommerce.product.entity.Product;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
@@ -12,14 +11,14 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "cart_items")
+@Table(name = "product_variants")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
 @Builder
-public class CartItem {
+public class ProductVariant {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -27,21 +26,24 @@ public class CartItem {
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "cart_id", nullable = false)
-    private Cart cart;
-
-    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
-    @Column(name = "quantity", nullable = false)
-    private Integer quantity;
+    @Column(name = "color", length = 100)
+    private String color;
 
-    @Column(name = "unit_price", nullable = false, precision = 12, scale = 2)
-    private BigDecimal unitPrice;
+    @Column(name = "size", length = 100)
+    private String size;
 
-    @Column(name = "variant_id", columnDefinition = "uuid")
-    private UUID variantId;
+    @Column(name = "price", precision = 12, scale = 2)
+    private BigDecimal price;
+
+    @Column(name = "stock", nullable = false)
+    private Integer stock = 0;
+
+    @Column(name = "deleted", nullable = false)
+    @Builder.Default
+    private Boolean deleted = false;
 
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -50,15 +52,4 @@ public class CartItem {
     @LastModifiedDate
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-
-    @Column(name = "deleted", nullable = false)
-    private Boolean deleted = false;
-
-    // Helper method to calculate total price for this item
-    public BigDecimal getTotalPrice() {
-        return unitPrice.multiply(BigDecimal.valueOf(quantity));
-    }
-
-
-
 }

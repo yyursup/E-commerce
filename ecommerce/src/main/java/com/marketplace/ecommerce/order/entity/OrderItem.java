@@ -45,6 +45,15 @@ public class OrderItem {
     @Column(name = "total_price", nullable = false, precision = 12, scale = 2)
     private BigDecimal totalPrice;
 
+    @Column(name = "variant_id", columnDefinition = "uuid")
+    private UUID variantId;
+
+    @Column(name = "variant_color", length = 100)
+    private String variantColor;
+
+    @Column(name = "variant_size", length = 100)
+    private String variantSize;
+
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

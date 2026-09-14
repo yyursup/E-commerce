@@ -103,7 +103,7 @@ public class CartServiceImpl implements CartService {
 
         Cart cart = getCartWithItemsByUserId(user.getId());
 
-        CartItem existing = findActiveItemByProduct(cart, product.getId());
+        CartItem existing = findActiveItemByProductAndVariant(cart, product.getId(), request.getVariantId());
 
         if (existing != null) {
             int newQty = existing.getQuantity() + reqQty;
@@ -116,6 +116,7 @@ public class CartServiceImpl implements CartService {
             newItem.setCart(cart);
             newItem.setProduct(product);
             newItem.setQuantity(reqQty);
+            newItem.setVariantId(request.getVariantId());
             newItem.setUnitPrice(product.getBasePrice());
             newItem.setCreatedAt(LocalDateTime.now());
             cart.getItems().add(newItem);
@@ -152,9 +153,10 @@ public class CartServiceImpl implements CartService {
                 .orElseThrow(() -> new CustomException("CartItem not found"));
     }
 
-    private CartItem findActiveItemByProduct(Cart cart, UUID productId) {
+    private CartItem findActiveItemByProductAndVariant(Cart cart, UUID productId, UUID variantId) {
         return cart.getActiveCartDetails().stream()
-                .filter(i -> i.getProduct().getId().equals(productId))
+                .filter(i -> i.getProduct().getId().equals(productId) &&
+                        (variantId == null ? i.getVariantId() == null : variantId.equals(i.getVariantId())))
                 .findFirst()
                 .orElse(null);
     }

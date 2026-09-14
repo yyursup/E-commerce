@@ -41,4 +41,7 @@ public class CreateProductRequest {
 
     @NotNull(message = "Category ID must not be null") // FIX: UUID uses NotNull
     private UUID categoryId;
+
+    @Valid
+    private List<ProductVariantRequest> variants;
 }

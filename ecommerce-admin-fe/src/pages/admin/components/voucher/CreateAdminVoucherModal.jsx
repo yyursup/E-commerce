@@ -100,7 +100,7 @@ export default function CreateAdminVoucherModal({ isOpen, onClose, onSuccess, is
             isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-stone-200'
           )}
         >
-          <div className="flex items-center justify-between pb-4 border-b border-stone-100 dark:border-slate-800">
+          <div className={cn("flex items-center justify-between pb-4 border-b", isDark ? "border-slate-800" : "border-stone-100")}>
             <div className="flex items-center gap-2.5">
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-500 text-white font-bold">
                 <HiOutlineTicket className="h-5 w-5" />
@@ -109,12 +109,12 @@ export default function CreateAdminVoucherModal({ isOpen, onClose, onSuccess, is
                 <h3 className={cn('text-lg font-bold', isDark ? 'text-white' : 'text-stone-900')}>
                   Tạo Voucher Toàn Sàn (Sàn Tài Trợ)
                 </h3>
-                <p className="text-xs text-stone-500 dark:text-slate-400">Chi phí chiết khấu/vận chuyển do Sàn chi trả</p>
+                <p className={cn("text-xs", isDark ? "text-slate-400" : "text-stone-500")}>Chi phí chiết khấu/vận chuyển do Sàn chi trả</p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="p-1 rounded-full hover:bg-stone-100 dark:hover:bg-slate-800 text-stone-400"
+              className={cn("p-1 rounded-full transition-colors", isDark ? "hover:bg-slate-800 text-slate-400 hover:text-slate-200" : "hover:bg-stone-100 text-stone-400 hover:text-stone-600")}
             >
               <HiOutlineX className="h-5 w-5" />
             </button>
@@ -124,7 +124,7 @@ export default function CreateAdminVoucherModal({ isOpen, onClose, onSuccess, is
             {/* Voucher Code & Title */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block font-bold text-stone-700 dark:text-slate-300 mb-1">
+                <label className={cn("block font-bold mb-1", isDark ? "text-slate-200" : "text-stone-700")}>
                   Mã Voucher Sàn <span className="text-rose-500">*</span>
                 </label>
                 <input
@@ -142,7 +142,7 @@ export default function CreateAdminVoucherModal({ isOpen, onClose, onSuccess, is
               </div>
 
               <div>
-                <label className="block font-bold text-stone-700 dark:text-slate-300 mb-1">
+                <label className={cn("block font-bold mb-1", isDark ? "text-slate-200" : "text-stone-700")}>
                   Tên Chiến Dịch <span className="text-rose-500">*</span>
                 </label>
                 <input
@@ -163,7 +163,7 @@ export default function CreateAdminVoucherModal({ isOpen, onClose, onSuccess, is
             {/* Voucher Type & Discount Value */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block font-bold text-stone-700 dark:text-slate-300 mb-1">
+                <label className={cn("block font-bold mb-1", isDark ? "text-slate-200" : "text-stone-700")}>
                   Loại Khuyến Mãi
                 </label>
                 <select
@@ -182,8 +182,13 @@ export default function CreateAdminVoucherModal({ isOpen, onClose, onSuccess, is
               </div>
 
               <div>
-                <label className="block font-bold text-stone-700 dark:text-slate-300 mb-1">
-                  Mức Giảm Tối Đa <span className="text-rose-500">*</span>
+                <label className={cn("block font-bold mb-1", isDark ? "text-slate-200" : "text-stone-700")}>
+                  {formData.voucherType === 'PERCENTAGE'
+                    ? 'Tỷ Lệ Giảm (%)'
+                    : formData.voucherType === 'FREE_SHIPPING'
+                    ? 'Mức Trợ Phí Ship Tối Đa (VNĐ)'
+                    : 'Số Tiền Giảm (VNĐ)'}{' '}
+                  <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="number"
@@ -202,9 +207,9 @@ export default function CreateAdminVoucherModal({ isOpen, onClose, onSuccess, is
             </div>
 
             {/* Min Order & Max Discount */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className={cn("grid gap-4", formData.voucherType === 'PERCENTAGE' ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1")}>
               <div>
-                <label className="block font-bold text-stone-700 dark:text-slate-300 mb-1">
+                <label className={cn("block font-bold mb-1", isDark ? "text-slate-200" : "text-stone-700")}>
                   Giá Trị Đơn Tối Thiểu (VNĐ)
                 </label>
                 <input
@@ -222,7 +227,7 @@ export default function CreateAdminVoucherModal({ isOpen, onClose, onSuccess, is
 
               {formData.voucherType === 'PERCENTAGE' && (
                 <div>
-                  <label className="block font-bold text-stone-700 dark:text-slate-300 mb-1">
+                  <label className={cn("block font-bold mb-1", isDark ? "text-slate-200" : "text-stone-700")}>
                     Mức Giảm Tối Đa (VNĐ)
                   </label>
                   <input
@@ -243,7 +248,7 @@ export default function CreateAdminVoucherModal({ isOpen, onClose, onSuccess, is
             {/* Usage Limit */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block font-bold text-stone-700 dark:text-slate-300 mb-1">
+                <label className={cn("block font-bold mb-1", isDark ? "text-slate-200" : "text-stone-700")}>
                   Tổng Lượt Sử Dụng Toàn Sàn
                 </label>
                 <input
@@ -260,7 +265,7 @@ export default function CreateAdminVoucherModal({ isOpen, onClose, onSuccess, is
               </div>
 
               <div>
-                <label className="block font-bold text-stone-700 dark:text-slate-300 mb-1">
+                <label className={cn("block font-bold mb-1", isDark ? "text-slate-200" : "text-stone-700")}>
                   Lượt Dùng Mỗi Tài Khoản
                 </label>
                 <input
@@ -280,7 +285,7 @@ export default function CreateAdminVoucherModal({ isOpen, onClose, onSuccess, is
             {/* Start & End Date */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block font-bold text-stone-700 dark:text-slate-300 mb-1">
+                <label className={cn("block font-bold mb-1", isDark ? "text-slate-200" : "text-stone-700")}>
                   Ngày Bắt Đầu
                 </label>
                 <input
@@ -296,7 +301,7 @@ export default function CreateAdminVoucherModal({ isOpen, onClose, onSuccess, is
               </div>
 
               <div>
-                <label className="block font-bold text-stone-700 dark:text-slate-300 mb-1">
+                <label className={cn("block font-bold mb-1", isDark ? "text-slate-200" : "text-stone-700")}>
                   Ngày Kết Thúc (HSD)
                 </label>
                 <input
@@ -312,11 +317,11 @@ export default function CreateAdminVoucherModal({ isOpen, onClose, onSuccess, is
               </div>
             </div>
 
-            <div className="pt-4 border-t border-stone-100 dark:border-slate-800 flex justify-end gap-3">
+            <div className={cn("pt-4 border-t flex justify-end gap-3", isDark ? "border-slate-800" : "border-stone-100")}>
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2.5 rounded-xl font-bold text-stone-600 dark:text-slate-300 hover:bg-stone-100 dark:hover:bg-slate-800"
+                className={cn("px-4 py-2.5 rounded-xl font-bold transition-colors", isDark ? "text-slate-300 hover:bg-slate-800" : "text-stone-600 hover:bg-stone-100")}
               >
                 Hủy
               </button>

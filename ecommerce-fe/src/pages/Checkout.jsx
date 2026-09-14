@@ -21,6 +21,7 @@ import {
 } from 'react-icons/hi'
 import toast from 'react-hot-toast'
 import AddressFormModal from '../components/AddressFormModal'
+import Footer from '../components/Footer'
 
 export default function Checkout() {
     const { isAuthenticated } = useAuthStore()
@@ -352,8 +353,11 @@ export default function Checkout() {
 
     if (loading) {
         return (
-            <div className={cn("flex min-h-screen items-center justify-center", isDark ? "bg-slate-950" : "bg-stone-50")}>
-                <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent"></div>
+            <div className={cn("min-h-screen flex flex-col justify-between transition-colors", isDark ? "bg-slate-950 text-slate-100" : "bg-stone-50 text-stone-900")}>
+                <div className="flex-1 flex items-center justify-center">
+                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent"></div>
+                </div>
+                <Footer />
             </div>
         )
     }
@@ -361,8 +365,9 @@ export default function Checkout() {
     const finalTotal = Math.max(0, totalPrice + shippingFee - discountAmount)
 
     return (
-        <div className={cn("min-h-screen py-10 px-4 sm:px-6 lg:px-8", isDark ? "bg-slate-950" : "bg-stone-50")}>
-            <div className="mx-auto max-w-4xl">
+        <div className={cn("min-h-screen flex flex-col justify-between transition-colors", isDark ? "bg-slate-950 text-slate-100" : "bg-stone-50 text-stone-900")}>
+            <div className="flex-1 py-10 px-4 sm:px-6 lg:px-8">
+                <div className="mx-auto max-w-4xl">
                 {/* Header */}
                 <div className="mb-8 flex items-center gap-4">
                     <button
@@ -781,6 +786,8 @@ export default function Checkout() {
                     </div>
                 </div>
             )}
+            </div>
+            <Footer />
         </div>
     )
 }

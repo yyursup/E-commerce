@@ -1,6 +1,5 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
-import orderService from '../services/order';
 import { useThemeStore } from '../store/useThemeStore';
 import { cn } from '../lib/cn';
 import { HiCheckCircle, HiXCircle } from 'react-icons/hi';
@@ -9,44 +8,24 @@ export default function PaymentResult() {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     const isDark = useThemeStore((s) => s.theme) === 'dark';
-    const hasCalledApi = useRef(false);
 
     const [status, setStatus] = useState('loading'); // loading, success, failed
     const [message, setMessage] = useState('Đang xử lý kết quả thanh toán...');
     const [transactionId, setTransactionId] = useState(null);
 
     useEffect(() => {
-        const verifyPayment = async () => {
-            if (hasCalledApi.current) return;
-            hasCalledApi.current = true;
+        const params = Object.fromEntries(searchParams.entries());
+        const responseCode = params['vnp_ResponseCode'];
+        const txnId = params['vnp_TransactionNo'];
+        const transactionStatus = params['vnp_TransactionStatus'];
 
-            const params = Object.fromEntries(searchParams.entries());
-
-            try {
-                // Call backend to verify signature
-                await orderService.verifyVnpayPayment(params);
-
-                // Check response code from VNPAY params
-                const responseCode = params['vnp_ResponseCode'];
-                const txnId = params['vnp_TransactionNo'];
-
-                if (responseCode === '00') {
-                    setStatus('success');
-                    setMessage('Thanh toán thành công!');
-                    setTransactionId(txnId);
-                } else {
-                    setStatus('failed');
-                    setMessage('Thanh toán thất bại hoặc bị hủy.');
-                }
-            } catch (error) {
-                console.error(error);
-                setStatus('failed');
-                setMessage('Có lỗi xảy ra khi xác thực thanh toán.');
-            }
-        };
-
-        if (searchParams.toString()) {
-            verifyPayment();
+        if (responseCode === '00' || transactionStatus === '00') {
+            setStatus('success');
+            setMessage('Thanh toán thành công!');
+            setTransactionId(txnId || null);
+        } else if (responseCode) {
+            setStatus('failed');
+            setMessage('Thanh toán thất bại hoặc bị hủy.');
         } else {
             setStatus('failed');
             setMessage('Không tìm thấy thông tin thanh toán.');

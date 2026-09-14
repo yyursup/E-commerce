@@ -25,5 +25,4 @@ public interface CartRepository extends JpaRepository<Cart, UUID> {
             """)
     Optional<Cart> findByUserIdWithItems(@Param("userId") UUID userId);
 
-
 }

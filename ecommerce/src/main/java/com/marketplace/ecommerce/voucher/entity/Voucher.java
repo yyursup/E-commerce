@@ -62,6 +62,10 @@ public class Voucher {
     @Column(name = "user_usage_limit", nullable = false)
     private Integer userUsageLimit = 1;
 
+    @Builder.Default
+    @Column(name = "is_first_order_only")
+    private Boolean isFirstOrderOnly = false;
+
     @Column(name = "start_date")
     private LocalDateTime startDate;
 
@@ -81,6 +85,10 @@ public class Voucher {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "shop_id")
     private Shop shop;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id")
+    private com.marketplace.ecommerce.product.entity.ProductCategory category;
 
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)

@@ -662,8 +662,20 @@ export default function Checkout() {
                             ) : (
                                 availableVouchers.map((v) => {
                                     const isCurrentApplied = appliedVoucher?.code === v.code
-                                    const minRequired = Number(v.minOrderAmount || 0)
-                                    const isEligible = totalPrice >= minRequired
+                                    const minRequired = Number(v.minOrderAmount || v.minOrderValue || 0)
+                                    const isMinOrderSatisfied = totalPrice >= minRequired
+                                    
+                                    // Check category match if voucher is category-restricted
+                                    const hasCategoryRestriction = Boolean(v.categoryName || v.categoryId)
+                                    let isCategorySatisfied = true
+                                    if (hasCategoryRestriction) {
+                                        isCategorySatisfied = cartItems.some(item => 
+                                            (v.categoryId && item.categoryId === v.categoryId) ||
+                                            (v.categoryName && item.categoryName?.toLowerCase().includes(v.categoryName.toLowerCase()))
+                                        )
+                                    }
+
+                                    const isEligible = isMinOrderSatisfied && isCategorySatisfied
 
                                     return (
                                         <div
@@ -676,7 +688,7 @@ export default function Checkout() {
                                             )}
                                         >
                                             <div className="flex-1">
-                                                <div className="flex items-center gap-2">
+                                                <div className="flex flex-wrap items-center gap-1.5">
                                                     <span className="font-mono text-xs font-bold text-amber-500 uppercase px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20">
                                                         {v.code}
                                                     </span>
@@ -688,6 +700,11 @@ export default function Checkout() {
                                                     )}>
                                                         {v.scope === 'PLATFORM' ? 'Voucher Sàn' : 'Voucher Shop'}
                                                     </span>
+                                                    {v.categoryName && (
+                                                        <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
+                                                            Ngành: {v.categoryName}
+                                                        </span>
+                                                    )}
                                                 </div>
                                                 <h4 className={cn("text-sm font-bold mt-1.5", isDark ? "text-white" : "text-stone-900")}>
                                                     {v.title || v.description}
@@ -695,9 +712,14 @@ export default function Checkout() {
                                                 <p className="text-xs text-stone-500 dark:text-slate-400 mt-0.5">
                                                     {v.description || `Đơn tối thiểu ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(minRequired)}`}
                                                 </p>
-                                                {!isEligible && (
+                                                {!isMinOrderSatisfied && (
                                                     <p className="text-[11px] text-rose-500 font-medium mt-1">
                                                         * Cần mua thêm {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(minRequired - totalPrice)} để áp dụng
+                                                    </p>
+                                                )}
+                                                {isMinOrderSatisfied && !isCategorySatisfied && (
+                                                    <p className="text-[11px] text-rose-500 font-medium mt-1">
+                                                        * Đơn hàng không có sản phẩm thuộc ngành {v.categoryName}
                                                     </p>
                                                 )}
                                             </div>

@@ -50,4 +50,8 @@ public class CreateVoucherRequest {
     private VoucherScope scope;
 
     private UUID shopId;
+
+    private UUID categoryId;
+
+    private Boolean isFirstOrderOnly;
 }

@@ -2,8 +2,15 @@ package com.marketplace.ecommerce.voucher.service.impl;
 
 import com.marketplace.ecommerce.auth.entity.User;
 import com.marketplace.ecommerce.auth.repository.UserRepository;
+import com.marketplace.ecommerce.cart.entity.Cart;
+import com.marketplace.ecommerce.cart.entity.CartItem;
+import com.marketplace.ecommerce.cart.repository.CartRepository;
 import com.marketplace.ecommerce.common.exception.CustomException;
 import com.marketplace.ecommerce.order.entity.Order;
+import com.marketplace.ecommerce.order.repository.OrderRepository;
+import com.marketplace.ecommerce.order.valueObjects.OrderStatus;
+import com.marketplace.ecommerce.product.entity.ProductCategory;
+import com.marketplace.ecommerce.product.repository.ProductCategoryRepository;
 import com.marketplace.ecommerce.shop.entity.Shop;
 import com.marketplace.ecommerce.shop.repository.ShopRepository;
 import com.marketplace.ecommerce.voucher.dto.*;
@@ -32,6 +39,9 @@ public class VoucherServiceImpl implements VoucherService {
     private final UserVoucherRepository userVoucherRepository;
     private final UserRepository userRepository;
     private final ShopRepository shopRepository;
+    private final OrderRepository orderRepository;
+    private final ProductCategoryRepository productCategoryRepository;
+    private final CartRepository cartRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -85,7 +95,8 @@ public class VoucherServiceImpl implements VoucherService {
     @Transactional(readOnly = true)
     public List<UserVoucherResponse> getMyVouchers(UUID accountId) {
         User user = getUser(accountId);
-        List<UserVoucher> userVouchers = userVoucherRepository.findMyVouchersWithDetails(user.getId(), UserVoucherStatus.UNUSED);
+        List<UserVoucher> userVouchers = userVoucherRepository.findMyVouchersWithDetails(user.getId(),
+                UserVoucherStatus.UNUSED);
 
         return userVouchers.stream()
                 .filter(uv -> uv.getVoucher().isCurrentlyActive())
@@ -104,7 +115,8 @@ public class VoucherServiceImpl implements VoucherService {
             throw new CustomException("Voucher hiện không khả dụng hoặc đã hết lượt sử dụng");
         }
 
-        long userClaimCount = userVoucherRepository.countByUserIdAndVoucherIdAndStatus(user.getId(), voucher.getId(), UserVoucherStatus.UNUSED);
+        long userClaimCount = userVoucherRepository.countByUserIdAndVoucherIdAndStatus(user.getId(), voucher.getId(),
+                UserVoucherStatus.UNUSED);
         int maxLimit = voucher.getUserUsageLimit() != null ? voucher.getUserUsageLimit() : 1;
         if (userClaimCount >= maxLimit) {
             throw new CustomException("Bạn đã thu thập voucher này vào kho rồi!");
@@ -128,8 +140,7 @@ public class VoucherServiceImpl implements VoucherService {
             String voucherCode,
             UUID shopId,
             BigDecimal subtotal,
-            BigDecimal shippingFee
-    ) {
+            BigDecimal shippingFee) {
         if (voucherCode == null || voucherCode.isBlank()) {
             throw new CustomException("Mã voucher không được để trống");
         }
@@ -150,22 +161,68 @@ public class VoucherServiceImpl implements VoucherService {
 
         BigDecimal safeSubtotal = subtotal != null ? subtotal : BigDecimal.ZERO;
         BigDecimal safeShipping = shippingFee != null ? shippingFee : BigDecimal.ZERO;
+        BigDecimal eligibleSubtotal = safeSubtotal;
 
-        if (voucher.getMinOrderValue() != null && safeSubtotal.compareTo(voucher.getMinOrderValue()) < 0) {
+        // Category-aware validation
+        if (voucher.getCategory() != null && accountId != null) {
+            User user = getUser(accountId);
+            Optional<Cart> cartOpt = cartRepository.findByUserIdWithItems(user.getId());
+            if (cartOpt.isPresent()) {
+                List<CartItem> matchingItems = cartOpt.get().getItems().stream()
+                        .filter(i -> !Boolean.TRUE.equals(i.getDeleted()))
+                        .filter(i -> shopId == null || (i.getProduct().getShop() != null
+                                && i.getProduct().getShop().getId().equals(shopId)))
+                        .filter(i -> isCategoryHierarchyMatch(i.getProduct().getProductCategory(),
+                                voucher.getCategory()))
+                        .toList();
+
+                if (matchingItems.isEmpty()) {
+                    throw new CustomException("Mã voucher '" + voucher.getCode()
+                            + "' chỉ áp dụng cho sản phẩm thuộc ngành hàng: " + voucher.getCategory().getName());
+                }
+
+                eligibleSubtotal = matchingItems.stream()
+                        .map(i -> i.getProduct().getBasePrice().multiply(BigDecimal.valueOf(i.getQuantity())))
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                if (voucher.getMinOrderValue() != null && eligibleSubtotal.compareTo(voucher.getMinOrderValue()) < 0) {
+                    throw new CustomException("Tổng giá trị các sản phẩm thuộc ngành hàng '"
+                            + voucher.getCategory().getName() + "' phải đạt tối thiểu "
+                            + new IntlFormatHelper(voucher.getMinOrderValue()) + "đ để áp dụng voucher này");
+                }
+            }
+        } else if (voucher.getMinOrderValue() != null && safeSubtotal.compareTo(voucher.getMinOrderValue()) < 0) {
             throw new CustomException("Đơn hàng chưa đạt giá trị tối thiểu "
                     + voucher.getMinOrderValue() + "đ để áp dụng voucher này");
         }
 
-        if (accountId != null) {
+        boolean isFirstOrderVoucher = Boolean.TRUE.equals(voucher.getIsFirstOrderOnly())
+                || "ECOMNEW15".equalsIgnoreCase(voucher.getCode());
+
+        if (isFirstOrderVoucher) {
+            if (accountId == null) {
+                throw new CustomException("Vui lòng đăng nhập để sử dụng mã ưu đãi dành cho khách hàng mới.");
+            }
             User user = getUser(accountId);
-            long usedCount = userVoucherRepository.countByUserIdAndVoucherIdAndStatus(user.getId(), voucher.getId(), UserVoucherStatus.USED);
-            int maxLimit = voucher.getUserUsageLimit() != null ? voucher.getUserUsageLimit() : 1;
-            if (usedCount >= maxLimit) {
-                throw new CustomException("Bạn đã sử dụng hết số lần cho phép đối với voucher này (" + maxLimit + " lần)");
+            long completedOrders = orderRepository.countCompletedOrdersByUserId(user.getId());
+            if (completedOrders > 0) {
+                throw new CustomException("Mã giảm giá '" + voucher.getCode()
+                        + "' chỉ dành riêng cho khách hàng mới chưa có đơn hàng hoàn thành nào.");
             }
         }
 
-        BigDecimal discountAmount = calculateDiscount(voucher, safeSubtotal, safeShipping);
+        if (accountId != null) {
+            User user = getUser(accountId);
+            long usedCount = userVoucherRepository.countByUserIdAndVoucherIdAndStatus(user.getId(), voucher.getId(),
+                    UserVoucherStatus.USED);
+            int maxLimit = voucher.getUserUsageLimit() != null ? voucher.getUserUsageLimit() : 1;
+            if (usedCount >= maxLimit) {
+                throw new CustomException(
+                        "Bạn đã sử dụng hết số lần cho phép đối với voucher này (" + maxLimit + " lần)");
+            }
+        }
+
+        BigDecimal discountAmount = calculateDiscount(voucher, eligibleSubtotal, safeShipping);
         BigDecimal finalTotal = safeSubtotal.add(safeShipping).subtract(discountAmount);
         if (finalTotal.compareTo(BigDecimal.ZERO) < 0) {
             finalTotal = BigDecimal.ZERO;
@@ -207,19 +264,61 @@ public class VoucherServiceImpl implements VoucherService {
 
         BigDecimal subtotal = order.getSubtotal() != null ? order.getSubtotal() : BigDecimal.ZERO;
         BigDecimal shippingFee = order.getShippingFee() != null ? order.getShippingFee() : BigDecimal.ZERO;
-
-        if (voucher.getMinOrderValue() != null && subtotal.compareTo(voucher.getMinOrderValue()) < 0) {
-            throw new CustomException("Đơn hàng chưa đạt giá trị tối thiểu " + voucher.getMinOrderValue() + "đ để dùng voucher");
-        }
+        BigDecimal eligibleSubtotal = subtotal;
 
         User user = order.getUser();
-        long usedCount = userVoucherRepository.countByUserIdAndVoucherIdAndStatus(user.getId(), voucher.getId(), UserVoucherStatus.USED);
+
+        // Category-aware validation
+        if (voucher.getCategory() != null) {
+            Optional<Cart> cartOpt = cartRepository.findByUserIdWithItems(user.getId());
+            if (cartOpt.isPresent()) {
+                List<CartItem> matchingItems = cartOpt.get().getItems().stream()
+                        .filter(i -> !Boolean.TRUE.equals(i.getDeleted()))
+                        .filter(i -> order.getShop() == null || (i.getProduct().getShop() != null
+                                && i.getProduct().getShop().getId().equals(order.getShop().getId())))
+                        .filter(i -> isCategoryHierarchyMatch(i.getProduct().getProductCategory(),
+                                voucher.getCategory()))
+                        .toList();
+
+                if (matchingItems.isEmpty()) {
+                    throw new CustomException("Mã voucher '" + voucher.getCode()
+                            + "' chỉ áp dụng cho sản phẩm thuộc ngành hàng: " + voucher.getCategory().getName());
+                }
+
+                eligibleSubtotal = matchingItems.stream()
+                        .map(i -> i.getProduct().getBasePrice().multiply(BigDecimal.valueOf(i.getQuantity())))
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                if (voucher.getMinOrderValue() != null && eligibleSubtotal.compareTo(voucher.getMinOrderValue()) < 0) {
+                    throw new CustomException(
+                            "Tổng giá trị các sản phẩm thuộc ngành hàng '" + voucher.getCategory().getName()
+                                    + "' trong đơn phải đạt tối thiểu " + voucher.getMinOrderValue() + "đ");
+                }
+            }
+        } else if (voucher.getMinOrderValue() != null && subtotal.compareTo(voucher.getMinOrderValue()) < 0) {
+            throw new CustomException(
+                    "Đơn hàng chưa đạt giá trị tối thiểu " + voucher.getMinOrderValue() + "đ để dùng voucher");
+        }
+
+        boolean isFirstOrderVoucher = Boolean.TRUE.equals(voucher.getIsFirstOrderOnly())
+                || "ECOMNEW15".equalsIgnoreCase(voucher.getCode());
+
+        if (isFirstOrderVoucher) {
+            long completedOrders = orderRepository.countCompletedOrdersByUserId(user.getId());
+            if (completedOrders > 0) {
+                throw new CustomException("Mã giảm giá '" + voucher.getCode()
+                        + "' chỉ dành riêng cho khách hàng mới chưa có đơn hàng hoàn thành nào.");
+            }
+        }
+
+        long usedCount = userVoucherRepository.countByUserIdAndVoucherIdAndStatus(user.getId(), voucher.getId(),
+                UserVoucherStatus.USED);
         int maxLimit = voucher.getUserUsageLimit() != null ? voucher.getUserUsageLimit() : 1;
         if (usedCount >= maxLimit) {
             throw new CustomException("Bạn đã dùng hết số lần cho phép của voucher này");
         }
 
-        BigDecimal discountAmount = calculateDiscount(voucher, subtotal, shippingFee);
+        BigDecimal discountAmount = calculateDiscount(voucher, eligibleSubtotal, shippingFee);
 
         // Update voucher usage count
         voucher.setUsedCount(voucher.getUsedCount() + 1);
@@ -227,8 +326,7 @@ public class VoucherServiceImpl implements VoucherService {
 
         // Update or create UserVoucher record as USED
         Optional<UserVoucher> existingUv = userVoucherRepository.findByUserIdAndVoucherIdAndStatus(
-                user.getId(), voucher.getId(), UserVoucherStatus.UNUSED
-        );
+                user.getId(), voucher.getId(), UserVoucherStatus.UNUSED);
 
         UserVoucher uv;
         if (existingUv.isPresent()) {
@@ -250,7 +348,8 @@ public class VoucherServiceImpl implements VoucherService {
 
         order.setVoucher(voucher);
         order.setDiscountAmount(discountAmount);
-        log.info("Voucher {} applied to order {}: discount={}", voucher.getCode(), order.getOrderNumber(), discountAmount);
+        log.info("Voucher {} applied to order {}: discount={}", voucher.getCode(), order.getOrderNumber(),
+                discountAmount);
 
         return discountAmount;
     }
@@ -303,6 +402,12 @@ public class VoucherServiceImpl implements VoucherService {
             }
         }
 
+        ProductCategory category = null;
+        if (req.getCategoryId() != null) {
+            category = productCategoryRepository.findById(req.getCategoryId())
+                    .orElseThrow(() -> new CustomException("Không tìm thấy ngành hàng"));
+        }
+
         Voucher voucher = Voucher.builder()
                 .code(code)
                 .title(req.getTitle().trim())
@@ -319,6 +424,8 @@ public class VoucherServiceImpl implements VoucherService {
                 .status(VoucherStatus.ACTIVE)
                 .scope(scope)
                 .shop(shop)
+                .category(category)
+                .isFirstOrderOnly(req.getIsFirstOrderOnly() != null ? req.getIsFirstOrderOnly() : false)
                 .build();
 
         voucher = voucherRepository.save(voucher);
@@ -336,24 +443,38 @@ public class VoucherServiceImpl implements VoucherService {
         return vouchers.stream().map(VoucherResponse::from).toList();
     }
 
-    private BigDecimal calculateDiscount(Voucher voucher, BigDecimal subtotal, BigDecimal shippingFee) {
+    private boolean isCategoryHierarchyMatch(ProductCategory productCategory, ProductCategory targetCategory) {
+        if (productCategory == null || targetCategory == null) {
+            return false;
+        }
+        ProductCategory cur = productCategory;
+        while (cur != null) {
+            if (cur.getId().equals(targetCategory.getId())) {
+                return true;
+            }
+            cur = cur.getParent();
+        }
+        return false;
+    }
+
+    private BigDecimal calculateDiscount(Voucher voucher, BigDecimal eligibleSubtotal, BigDecimal shippingFee) {
         BigDecimal discount = BigDecimal.ZERO;
 
         switch (voucher.getVoucherType()) {
             case PERCENTAGE -> {
                 BigDecimal rate = voucher.getDiscountValue().divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP);
-                discount = subtotal.multiply(rate).setScale(0, RoundingMode.HALF_UP);
+                discount = eligibleSubtotal.multiply(rate).setScale(0, RoundingMode.HALF_UP);
                 if (voucher.getMaxDiscountAmount() != null && discount.compareTo(voucher.getMaxDiscountAmount()) > 0) {
                     discount = voucher.getMaxDiscountAmount();
                 }
-                if (discount.compareTo(subtotal) > 0) {
-                    discount = subtotal;
+                if (discount.compareTo(eligibleSubtotal) > 0) {
+                    discount = eligibleSubtotal;
                 }
             }
             case FIXED_AMOUNT -> {
                 discount = voucher.getDiscountValue();
-                if (discount.compareTo(subtotal) > 0) {
-                    discount = subtotal;
+                if (discount.compareTo(eligibleSubtotal) > 0) {
+                    discount = eligibleSubtotal;
                 }
             }
             case FREE_SHIPPING -> {
@@ -382,8 +503,7 @@ public class VoucherServiceImpl implements VoucherService {
         try {
             User user = getUser(accountId);
             List<UserVoucher> uvList = userVoucherRepository.findByUserIdAndStatusOrderByCreatedAtDesc(
-                    user.getId(), UserVoucherStatus.UNUSED
-            );
+                    user.getId(), UserVoucherStatus.UNUSED);
             Set<UUID> set = new HashSet<>();
             for (UserVoucher uv : uvList) {
                 set.add(uv.getVoucher().getId());
@@ -391,6 +511,19 @@ public class VoucherServiceImpl implements VoucherService {
             return set;
         } catch (Exception e) {
             return Collections.emptySet();
+        }
+    }
+
+    private static class IntlFormatHelper {
+        private final BigDecimal val;
+
+        IntlFormatHelper(BigDecimal val) {
+            this.val = val;
+        }
+
+        @Override
+        public String toString() {
+            return val != null ? val.stripTrailingZeros().toPlainString() : "0";
         }
     }
 }

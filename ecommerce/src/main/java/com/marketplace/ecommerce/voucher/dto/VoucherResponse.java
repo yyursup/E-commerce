@@ -1,5 +1,6 @@
 package com.marketplace.ecommerce.voucher.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.marketplace.ecommerce.voucher.entity.Voucher;
 import com.marketplace.ecommerce.voucher.valueObjects.VoucherScope;
 import com.marketplace.ecommerce.voucher.valueObjects.VoucherStatus;
@@ -34,10 +35,22 @@ public class VoucherResponse {
     private LocalDateTime endDate;
     private VoucherStatus status;
     private VoucherScope scope;
+
     private UUID shopId;
     private String shopName;
+
+    private UUID categoryId;
+    private String categoryName;
+
+    @JsonProperty("isAvailable")
     private boolean isAvailable;
+
+    @JsonProperty("isClaimed")
     private boolean isClaimed;
+
+    @JsonProperty("isFirstOrderOnly")
+    private Boolean isFirstOrderOnly;
+
     private LocalDateTime createdAt;
 
     public static VoucherResponse from(Voucher v) {
@@ -60,8 +73,11 @@ public class VoucherResponse {
                 .scope(v.getScope())
                 .shopId(v.getShop() != null ? v.getShop().getId() : null)
                 .shopName(v.getShop() != null ? v.getShop().getName() : null)
+                .categoryId(v.getCategory() != null ? v.getCategory().getId() : null)
+                .categoryName(v.getCategory() != null ? v.getCategory().getName() : null)
                 .isAvailable(v.isCurrentlyActive())
                 .isClaimed(false)
+                .isFirstOrderOnly(v.getIsFirstOrderOnly() != null ? v.getIsFirstOrderOnly() : false)
                 .createdAt(v.getCreatedAt())
                 .build();
     }

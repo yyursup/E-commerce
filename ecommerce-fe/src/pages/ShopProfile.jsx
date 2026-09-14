@@ -66,21 +66,44 @@ export default function ShopProfile() {
       if (!shopId) return
       try {
         setLoadingVouchers(true)
+        const mySavedCodes = new Set()
+
+        if (isAuthenticated) {
+          try {
+            const myVouchers = await voucherService.getMyVouchers()
+            if (Array.isArray(myVouchers)) {
+              myVouchers.forEach((uv) => {
+                if (uv.voucher?.code) mySavedCodes.add(uv.voucher.code)
+              })
+            }
+          } catch (e) {
+            console.warn('Could not load user vouchers in shop profile', e)
+          }
+        }
+
         const vList = await voucherService.getShopVouchers(shopId)
         if (Array.isArray(vList) && vList.length > 0) {
           setShopVouchers(vList)
           const saved = {}
           vList.forEach((v) => {
-            if (v.isClaimed) saved[v.code] = true
+            if (v.isClaimed || v.claimed || mySavedCodes.has(v.code)) {
+              saved[v.code] = true
+            }
           })
           setSavedVouchers(saved)
         } else {
           // Fallback demo vouchers for shop
-          setShopVouchers([
+          const fallbackList = [
             { code: 'SHOP15K', title: 'Giảm 15k đơn từ 150k', minOrderAmount: 150000, discountValue: 15000, validTo: null },
             { code: 'SHOP30K', title: 'Giảm 30k đơn từ 300k', minOrderAmount: 300000, discountValue: 30000, validTo: null },
             { code: 'VIP10', title: 'Giảm 10% tối đa 100k', minOrderAmount: 200000, discountValue: 10, validTo: null },
-          ])
+          ]
+          setShopVouchers(fallbackList)
+          const saved = {}
+          fallbackList.forEach((v) => {
+            if (mySavedCodes.has(v.code)) saved[v.code] = true
+          })
+          setSavedVouchers(saved)
         }
       } catch (err) {
         console.warn('Could not load shop vouchers, using fallback', err)
@@ -96,7 +119,7 @@ export default function ShopProfile() {
 
     loadShopData()
     loadVouchers()
-  }, [shopId])
+  }, [shopId, isAuthenticated])
 
   // Fetch shop products
   useEffect(() => {
@@ -186,17 +209,23 @@ export default function ShopProfile() {
 
   const handleSaveVoucher = async (voucher) => {
     const code = voucher.code
+    if (savedVouchers[code]) return
+
     setSavedVouchers((prev) => ({ ...prev, [code]: true }))
 
     if (isAuthenticated && voucher.id && String(voucher.id).length > 20) {
       try {
         await voucherService.claimVoucher(voucher.id)
+        toast.success(`Đã lưu mã giảm giá ${code} vào ví của bạn!`)
       } catch (err) {
         console.warn('Claim voucher API error:', err)
+        toast.error(err?.message || 'Không thể lưu mã voucher')
       }
+    } else if (!isAuthenticated) {
+      toast.success(`Đã ghi nhớ mã ${code}! Đăng nhập để lưu vào ví của bạn.`)
+    } else {
+      toast.success(`Đã lưu mã giảm giá ${code} vào ví của bạn!`)
     }
-
-    toast.success(`Đã lưu mã giảm giá ${code} vào ví của bạn!`)
   }
 
   const handleShareShop = () => {

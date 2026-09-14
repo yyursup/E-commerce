@@ -1,4 +1,4 @@
-﻿import { useState, useRef } from 'react'
+import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   HiOutlineDocumentText,
@@ -14,13 +14,13 @@ import fileService from '../services/fileService'
 import toast from 'react-hot-toast'
 
 /**
- * Component Upload Gi?y phép kinh doanh (GPKD)
+ * Component Upload Giấy phép kinh doanh (GPKD)
  * @param {Object} props
- * @param {string|null} props.value - URL ?nh GPKD hi?n t?i
- * @param {Function} props.onChange - Callback khi upload thành công ho?c xóa (truy?n url ho?c null)
- * @param {string} props.error - Thông báo l?i n?u có
- * @param {boolean} props.disabled - Tr?ng thái vô hi?u hóa
- * @param {string} props.className - Class tùy bi?n
+ * @param {string|null} props.value - URL ảnh GPKD hiện tại
+ * @param {Function} props.onChange - Callback khi upload thành công hoặc xóa (truyền url hoặc null)
+ * @param {string} props.error - Thông báo lỗi nếu có
+ * @param {boolean} props.disabled - Trạng thái vô hiệu hóa
+ * @param {string} props.className - Class tùy biến
  */
 export default function BusinessLicenseUpload({
   value,
@@ -44,12 +44,12 @@ export default function BusinessLicenseUpload({
     if (!file) return
 
     if (!ALLOWED_TYPES.includes(file.type)) {
-      toast.error('Ch? ch?p nh?n file ?nh d?nh d?ng JPG, PNG ho?c WEBP.')
+      toast.error('Chỉ chấp nhận file ảnh định dạng JPG, PNG hoặc WEBP.')
       return
     }
 
     if (file.size > MAX_SIZE) {
-      toast.error('Dung lu?ng ?nh t?i da là 10MB. Vui lòng ch?n ?nh nh? hon.')
+      toast.error('Dung lượng ảnh tối đa là 10MB. Vui lòng chọn ảnh nhỏ hơn.')
       return
     }
 
@@ -60,13 +60,13 @@ export default function BusinessLicenseUpload({
       const uploadedUrl = res?.url || res?.data?.url
       if (uploadedUrl) {
         onChange?.(uploadedUrl)
-        toast.success('T?i lên ?nh Gi?y phép kinh doanh thành công!')
+        toast.success('Tải lên ảnh Giấy phép kinh doanh thành công!')
       } else {
-        throw new Error('Không nh?n du?c URL ?nh t? server.')
+        throw new Error('Không nhận được URL ảnh từ server.')
       }
     } catch (err) {
       console.error('Upload license error:', err)
-      const msg = err?.message || err?.response?.data?.message || 'L?i khi t?i lên file.'
+      const msg = err?.message || err?.response?.data?.message || 'Lỗi khi tải lên file.'
       toast.error(msg)
     } finally {
       setUploading(false)
@@ -78,7 +78,7 @@ export default function BusinessLicenseUpload({
     if (file) {
       handleFile(file)
     }
-    // reset input d? ch?n l?i file cùng tên n?u c?n
+    // reset input để chọn lại file cùng tên nếu cần
     e.target.value = ''
   }
 
@@ -108,7 +108,7 @@ export default function BusinessLicenseUpload({
   const handleRemove = () => {
     onChange?.(null)
     setPreviewName('')
-    toast.success('Ðã g? ?nh Gi?y phép kinh doanh.')
+    toast.success('Đã gỡ ảnh Giấy phép kinh doanh.')
   }
 
   return (
@@ -122,7 +122,7 @@ export default function BusinessLicenseUpload({
         disabled={disabled || uploading}
       />
 
-      {/* Khi chua có ?nh */}
+      {/* Khi chưa có ảnh */}
       {!value && (
         <div
           onDragEnter={handleDrag}
@@ -145,10 +145,10 @@ export default function BusinessLicenseUpload({
             <div className="flex flex-col items-center py-4">
               <div className="h-10 w-10 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
               <p className={cn('mt-3 text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>
-                Ðang t?i ?nh lên MinIO...
+                Đang tải ảnh lên MinIO...
               </p>
               <p className={cn('text-xs mt-1', isDark ? 'text-slate-500' : 'text-stone-500')}>
-                Vui lòng không dóng trình duy?t
+                Vui lòng không đóng trình duyệt
               </p>
             </div>
           ) : (
@@ -162,11 +162,11 @@ export default function BusinessLicenseUpload({
                 <HiOutlineCloudUpload className="h-7 w-7" />
               </div>
               <p className={cn('text-sm font-semibold', isDark ? 'text-slate-200' : 'text-stone-800')}>
-                Kéo th? ?nh GPKD vào dây ho?c{' '}
-                <span className="text-amber-500 underline underline-offset-2">ch?n t? thi?t b?</span>
+                Kéo thả ảnh GPKD vào đây hoặc{' '}
+                <span className="text-amber-500 underline underline-offset-2">chọn từ thiết bị</span>
               </p>
               <p className={cn('mt-1.5 text-xs', isDark ? 'text-slate-400' : 'text-stone-500')}>
-                Ð?nh d?ng: JPG, PNG, WEBP (Dung lu?ng t?i da 10MB)
+                Định dạng: JPG, PNG, WEBP (Dung lượng tối đa 10MB)
               </p>
               <div
                 className={cn(
@@ -175,14 +175,14 @@ export default function BusinessLicenseUpload({
                 )}
               >
                 <HiOutlineDocumentText className="h-3.5 w-3.5 text-amber-500" />
-                B?t bu?c d?i v?i H? kinh doanh & Doanh nghi?p
+                Bắt buộc đối với Hộ kinh doanh & Doanh nghiệp
               </div>
             </>
           )}
         </div>
       )}
 
-      {/* Khi dã có ?nh */}
+      {/* Khi đã có ảnh */}
       {value && (
         <div
           className={cn(
@@ -197,7 +197,7 @@ export default function BusinessLicenseUpload({
             >
               <img
                 src={value}
-                alt="Gi?y phép kinh doanh"
+                alt="Giấy phép kinh doanh"
                 className="h-full w-full object-cover transition-transform group-hover:scale-105"
               />
               <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
@@ -210,14 +210,14 @@ export default function BusinessLicenseUpload({
             <div className="flex-1 space-y-1.5 min-w-0">
               <div className="flex items-center gap-2">
                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                  <HiOutlineCheckCircle className="h-3.5 w-3.5" /> Ðã t?i lên
+                  <HiOutlineCheckCircle className="h-3.5 w-3.5" /> Đã tải lên
                 </span>
                 <span className={cn('text-xs truncate max-w-[200px]', isDark ? 'text-slate-400' : 'text-stone-500')}>
-                  {previewName || 'Gi?y phép kinh doanh'}
+                  {previewName || 'Giấy phép kinh doanh'}
                 </span>
               </div>
               <p className={cn('text-xs leading-relaxed', isDark ? 'text-slate-300' : 'text-stone-600')}>
-                ?nh dã du?c luu trên h? th?ng luu tr? MinIO và s?n sàng g?i xét duy?t.
+                Ảnh đã được lưu an toàn trên hệ thống lưu trữ MinIO và sẵn sàng gửi xét duyệt.
               </p>
               <div className="flex flex-wrap items-center gap-2 pt-1">
                 <button
@@ -243,7 +243,7 @@ export default function BusinessLicenseUpload({
                       : 'bg-amber-100 text-amber-700 hover:bg-amber-200',
                   )}
                 >
-                  <HiOutlineRefresh className="h-3.5 w-3.5" /> Ð?i ?nh khác
+                  <HiOutlineRefresh className="h-3.5 w-3.5" /> Đổi ảnh khác
                 </button>
                 <button
                   type="button"
@@ -256,7 +256,7 @@ export default function BusinessLicenseUpload({
                       : 'bg-red-100 text-red-700 hover:bg-red-200',
                   )}
                 >
-                  <HiOutlineX className="h-3.5 w-3.5" /> G? b?
+                  <HiOutlineX className="h-3.5 w-3.5" /> Gỡ bỏ
                 </button>
               </div>
             </div>
@@ -281,7 +281,7 @@ export default function BusinessLicenseUpload({
             >
               <div className="flex items-center justify-between pb-3 border-b border-stone-200 dark:border-slate-800">
                 <h3 className={cn('text-sm font-semibold', isDark ? 'text-white' : 'text-stone-900')}>
-                  Xem tru?c: Gi?y phép kinh doanh
+                  Xem trước: Giấy phép kinh doanh
                 </h3>
                 <button
                   type="button"
@@ -298,7 +298,7 @@ export default function BusinessLicenseUpload({
               <div className="mt-3 flex items-center justify-center max-h-[75vh] overflow-auto rounded-xl bg-black/5 dark:bg-black/30 p-2">
                 <img
                   src={value}
-                  alt="Gi?y phép kinh doanh full"
+                  alt="Giấy phép kinh doanh full"
                   className="max-h-[70vh] w-auto rounded-lg object-contain"
                 />
               </div>

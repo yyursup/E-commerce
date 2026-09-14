@@ -61,7 +61,7 @@ export default function AdminOrderDetail() {
       <div className={cn('min-h-screen px-4 py-8', isDark ? 'bg-slate-950' : 'bg-stone-50')}>
         <div className="mx-auto max-w-4xl">
           <Link
-            to="/admin/orders"
+            to="/orders"
             className={cn(
               'mb-4 inline-flex items-center gap-2 text-sm font-medium',
               isDark ? 'text-slate-400 hover:text-white' : 'text-stone-600 hover:text-stone-900',
@@ -84,7 +84,7 @@ export default function AdminOrderDetail() {
     <div className={cn('min-h-screen px-4 py-8 sm:px-6 lg:px-8', isDark ? 'bg-slate-950' : 'bg-stone-50')}>
       <div className="mx-auto max-w-4xl">
         <Link
-          to="/admin/orders"
+          to="/orders"
           className={cn(
             'mb-6 inline-flex items-center gap-2 text-sm font-medium',
             isDark ? 'text-slate-400 hover:text-white' : 'text-stone-600 hover:text-stone-900',

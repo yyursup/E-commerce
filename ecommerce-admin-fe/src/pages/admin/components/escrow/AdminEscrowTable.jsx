@@ -67,7 +67,7 @@ export default function AdminEscrowTable({
           <div className="col-span-2">
             {escrow.orderId ? (
               <Link
-                to={`/admin/orders/${escrow.orderId}`}
+                to={`/orders/${escrow.orderId}`}
                 className={cn(
                   'text-sm font-semibold underline',
                   isDark ? 'text-amber-300' : 'text-amber-700',

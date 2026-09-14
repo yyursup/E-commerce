@@ -26,7 +26,7 @@ import BusinessLicenseUpload from '../components/BusinessLicenseUpload'
 
 export default function SellerRegister() {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
-  const { isAuthenticated, accountVerified, updateAccountVerified } = useAuthStore()
+  const { isAuthenticated, accountVerified, updateAccountVerified, user, updateUser } = useAuthStore()
   const navigate = useNavigate()
 
   const [sessionId, setSessionId] = useState('')
@@ -184,7 +184,7 @@ export default function SellerRegister() {
     setIsComparing(true)
     try {
       const compareResult = await kycService.compare(sessionId)
-      
+
       if (compareResult?.status === 'VERIFIED') {
         toast.success('Xác minh danh tính thành công! Bạn có thể tiếp tục đăng ký bán hàng.')
         updateAccountVerified(true)
@@ -212,9 +212,33 @@ export default function SellerRegister() {
       return
     }
 
+    const payload = {
+      sellerType,
+      shopName: data.shopName?.trim(),
+      shopPhone: data.shopPhone?.trim(),
+      shopEmail: data.shopEmail?.trim() || null,
+      description: data.description?.trim() || null,
+      coverImageUrl: data.coverImageUrl?.trim() || null,
+      pickupAddress: data.pickupAddress?.trim(),
+      returnAddress: data.returnAddress?.trim(),
+      address: data.address?.trim() || null,
+      taxCode: data.taxCode?.trim() || null,
+      invoiceEmail: data.invoiceEmail?.trim() || null,
+      businessType: sellerType === 'BUSINESS' && data.businessType ? data.businessType : null,
+      businessName: sellerType === 'BUSINESS' ? (data.businessName?.trim() || null) : null,
+      businessAddress: sellerType === 'BUSINESS' ? (data.businessAddress?.trim() || null) : null,
+      businessLicenseUrl: sellerType === 'BUSINESS' ? (data.businessLicenseUrl?.trim() || null) : null,
+      bankName: data.bankName?.trim(),
+      bankAccountName: data.bankAccountName?.trim(),
+      bankAccountNumber: data.bankAccountNumber?.trim(),
+    }
+
     try {
-      await requestService.registerSeller({ ...data, sellerType })
+      await requestService.registerSeller(payload)
       toast.success('Gửi yêu cầu đăng ký bán hàng thành công!')
+      if (updateUser) {
+        updateUser({ sellerStatus: 'PENDING' })
+      }
       reset()
       navigate('/pending')
     } catch (error) {
@@ -748,7 +772,7 @@ export default function SellerRegister() {
                   : 'border-stone-200/80 bg-white',
               )}
             >
-              <div className="mb-8 text-center">
+              <div className="mb-6 text-center">
                 <h1
                   className={cn(
                     'text-2xl font-bold tracking-tight',
@@ -767,15 +791,38 @@ export default function SellerRegister() {
                 </p>
               </div>
 
-              <div className="mb-6 flex p-1 space-x-1 bg-stone-100 dark:bg-slate-800 rounded-xl">
+              {/* Account Registration Notice Banner */}
+              <div className={cn(
+                'mb-6 rounded-2xl p-4 border text-left flex items-start gap-3 transition-colors',
+                isDark ? 'bg-amber-500/10 border-amber-500/20 text-amber-300' : 'bg-amber-50 border-amber-200 text-amber-900'
+              )}>
+                <span className="text-xl shrink-0">📝</span>
+                <div className="text-xs space-y-1">
+                  <p className="font-bold">
+                    Tài khoản đăng ký: <span className="underline">{user?.username || user?.email || 'Khách hàng'}</span>
+                  </p>
+                  <p className={isDark ? 'text-slate-300' : 'text-stone-600'}>
+                    Vui lòng điền chính xác thông tin gian hàng, tài khoản ngân hàng và kho lấy hàng bên dưới. Đối với Hộ kinh doanh/Doanh nghiệp, cần đính kèm Giấy phép kinh doanh để Ban quản trị xét duyệt.
+                  </p>
+                </div>
+              </div>
+
+              <div className={cn(
+                'mb-6 flex p-1.5 space-x-1.5 rounded-2xl border transition-colors',
+                isDark ? 'bg-slate-800/90 border-slate-700/80' : 'bg-stone-100 border-stone-200'
+              )}>
                 <button
                   type="button"
                   onClick={() => setSellerType('INDIVIDUAL')}
                   className={cn(
-                    'w-full rounded-lg py-2.5 text-sm font-medium leading-5 transition-all',
+                    'w-full rounded-xl py-2.5 text-xs font-bold transition-all flex items-center justify-center gap-2',
                     sellerType === 'INDIVIDUAL'
-                      ? 'bg-white shadow text-amber-600 dark:bg-slate-700 dark:text-amber-500'
-                      : 'text-stone-700 hover:bg-white/[0.12] hover:text-stone-900 dark:text-slate-400 dark:hover:text-white'
+                      ? isDark
+                        ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/20'
+                        : 'bg-white text-amber-600 shadow-sm'
+                      : isDark
+                        ? 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+                        : 'text-stone-600 hover:text-stone-900 hover:bg-white/50'
                   )}
                 >
                   Cá nhân
@@ -784,22 +831,26 @@ export default function SellerRegister() {
                   type="button"
                   onClick={() => setSellerType('BUSINESS')}
                   className={cn(
-                    'w-full rounded-lg py-2.5 text-sm font-medium leading-5 transition-all',
+                    'w-full rounded-xl py-2.5 text-xs font-bold transition-all flex items-center justify-center gap-2',
                     sellerType === 'BUSINESS'
-                      ? 'bg-white shadow text-amber-600 dark:bg-slate-700 dark:text-amber-500'
-                      : 'text-stone-700 hover:bg-white/[0.12] hover:text-stone-900 dark:text-slate-400 dark:hover:text-white'
+                      ? isDark
+                        ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/20'
+                        : 'bg-white text-amber-600 shadow-sm'
+                      : isDark
+                        ? 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+                        : 'text-stone-600 hover:text-stone-900 hover:bg-white/50'
                   )}
                 >
                   Hộ kinh doanh / Doanh nghiệp
                 </button>
               </div>
 
-                            <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-                
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+
                 {/* 1. HỒ SƠ SHOP */}
                 <div className="space-y-5">
                   <h3 className={cn("text-lg font-semibold border-b pb-2", isDark ? "text-white border-slate-700" : "text-stone-900 border-stone-200")}>1. Hồ sơ shop</h3>
-                  
+
                   <div className="grid gap-5 md:grid-cols-2">
                     <div>
                       <label className={cn('mb-1.5 block text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>Tên shop</label>
@@ -879,7 +930,7 @@ export default function SellerRegister() {
                 {sellerType === 'BUSINESS' && (
                   <div className="space-y-5">
                     <h3 className={cn("text-lg font-semibold border-b pb-2", isDark ? "text-white border-slate-700" : "text-stone-900 border-stone-200")}>2. Thông tin doanh nghiệp</h3>
-                    
+
                     <div className="grid gap-5 md:grid-cols-2">
                       <div>
                         <label className={cn('mb-1.5 block text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>Loại hình kinh doanh</label>
@@ -964,7 +1015,7 @@ export default function SellerRegister() {
                   <h3 className={cn("text-lg font-semibold border-b pb-2", isDark ? "text-white border-slate-700" : "text-stone-900 border-stone-200")}>
                     {sellerType === 'BUSINESS' ? '3. Lấy/trả hàng & Hóa đơn' : '2. Lấy/trả hàng & Pháp lý'}
                   </h3>
-                  
+
                   <div className="grid gap-5 md:grid-cols-2">
                     <div>
                       <label className={cn('mb-1.5 block text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>Địa chỉ lấy hàng</label>
@@ -1032,7 +1083,7 @@ export default function SellerRegister() {
                   <h3 className={cn("text-lg font-semibold border-b pb-2", isDark ? "text-white border-slate-700" : "text-stone-900 border-stone-200")}>
                     {sellerType === 'BUSINESS' ? '4. Thông tin ngân hàng' : '3. Thông tin ngân hàng'}
                   </h3>
-                  
+
                   <div className="grid gap-5 md:grid-cols-2">
                     <div>
                       <label className={cn('mb-1.5 block text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>Tên ngân hàng</label>

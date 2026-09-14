@@ -21,7 +21,7 @@ export const useAuthStore = create(
                     id: decoded?.accountId || user?.id,
                     accountId: decoded?.accountId || user?.accountId,
                     username: decoded?.sub || user?.username,
-                    role: decoded?.role || user?.role,
+                    role: user?.role || decoded?.role,
                     accountVerified,
                 }
                 set({

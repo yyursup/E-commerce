@@ -11,25 +11,37 @@ import { useAuthStore } from '../store/useAuthStore'
 export default function ProtectedRoute({ children, allowedRoles = [], requireAuth = true }) {
   const { isAuthenticated, user } = useAuthStore()
 
-  // If authentication is required but user is not authenticated
+  // 1. If authentication is required but user is not authenticated
   if (requireAuth && !isAuthenticated) {
     return <Navigate to="/login" replace />
   }
 
-  // If roles are specified, check if user has required role
+  // 2. If roles are specified, check if user has required role
   if (allowedRoles.length > 0) {
     const userRole = user?.role?.toUpperCase()
-    
-    if (!userRole || !allowedRoles.includes(userRole)) {
-      // Redirect based on role
-      if (userRole === 'CUSTOMER') {
-        // Customer cannot access BUSINESS/ADMIN pages
-        return <Navigate to="/" replace />
-      } else {
-        // Other roles go to home
-        return <Navigate to="/" replace />
-      }
+    const sellerStatus = user?.sellerStatus?.toUpperCase()
+
+    // BẮT BUỘC: Tài khoản có Role BUSINESS (hoặc ADMIN) hoặc đã được duyệt APPROVED / có Shop được phép vào các trang quản trị
+    if (
+      userRole === 'BUSINESS' ||
+      (allowedRoles.includes('ADMIN') && userRole === 'ADMIN') ||
+      sellerStatus === 'APPROVED' ||
+      user?.hasShop
+    ) {
+      return children
     }
+
+    // Nếu tài khoản là CUSTOMER (chưa được duyệt):
+    if (userRole === 'CUSTOMER') {
+      if (sellerStatus === 'PENDING' || sellerStatus === 'REJECTED') {
+        return <Navigate to="/pending" replace />
+      }
+      // Chỉ khi chưa nộp đơn mới chuyển sang form đăng ký
+      return <Navigate to="/register" replace />
+    }
+
+    // Default fallback
+    return <Navigate to="/" replace />
   }
 
   return children

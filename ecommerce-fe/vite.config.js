@@ -8,4 +8,7 @@ export default defineConfig({
     // sockjs-client dùng `global` (Node) – browser cần polyfill
     global: 'globalThis',
   },
+  test: {
+    environment: 'jsdom',
+  },
 })

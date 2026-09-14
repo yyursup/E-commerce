@@ -7,7 +7,7 @@ import {
   buildSellerInfoSections,
   buildRequestDetailEntries,
   formatAdminRequestDate,
-} from '../requestHelpers'
+} from '../../../../../pages/admin/components/request/requestHelpers'
 
 describe('requestHelpers', () => {
   describe('isSellerBusiness', () => {

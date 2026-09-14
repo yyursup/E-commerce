@@ -38,4 +38,7 @@ public class UpdateProductRequest {
     private List<ProductImageRequest> images;
 
     private UUID categoryId;
+
+    @Valid
+    private List<ProductVariantRequest> variants;
 }

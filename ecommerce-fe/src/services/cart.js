@@ -12,11 +12,12 @@ const cartService = {
     }
   },
 
-  addToCart: async (productId, quantity = 1) => {
+  addToCart: async (productId, quantity = 1, variantId = null) => {
     try {
       const response = await axiosClient.post(`${CART_BASE}/items`, {
         productId,
         quantity,
+        variantId,
       });
       return response.data;
     } catch (error) {

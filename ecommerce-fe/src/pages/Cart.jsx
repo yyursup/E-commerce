@@ -236,9 +236,14 @@ export default function Cart() {
                                                                         {item.productName}
                                                                     </Link>
                                                                 </h3>
+                                                                {(item.variantColor || item.variantSize) && (
+                                                                    <div className="mt-1 text-xs text-stone-500 dark:text-slate-400 font-medium bg-stone-100 dark:bg-slate-800 inline-block px-2 py-0.5 rounded">
+                                                                        Phân loại: {[item.variantColor, item.variantSize].filter(Boolean).join(' - ')}
+                                                                    </div>
+                                                                )}
                                                                 <button
                                                                     onClick={() => handleRemoveItem(item.id)}
-                                                                    className="p-2 text-stone-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-all dark:hover:bg-red-900/20"
+                                                                    className="p-2 text-stone-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-all dark:hover:bg-red-900/20 absolute top-0 right-0 sm:relative"
                                                                     title="Xóa sản phẩm"
                                                                 >
                                                                     <HiOutlineTrash className="h-5 w-5" />

@@ -45,7 +45,7 @@ export default function ProductDetail() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [quantity, setQuantity] = useState(1)
-  const [selectedVariant, setSelectedVariant] = useState('Bản Tiêu Chuẩn')
+  const [selectedVariant, setSelectedVariant] = useState(null)
   const [isLiked, setIsLiked] = useState(false)
   const [likeCount, setLikeCount] = useState(384)
   const [addingToCart, setAddingToCart] = useState(false)
@@ -178,7 +178,7 @@ export default function ProductDetail() {
 
     try {
       setAddingToCart(true)
-      const cartResponse = await cartService.addToCart(product.id, quantity)
+      const cartResponse = await cartService.addToCart(product.id, quantity, selectedVariant?.id || null)
       updateCartCount(cartResponse)
 
       setShowAddAnimation(true)
@@ -210,7 +210,7 @@ export default function ProductDetail() {
 
     try {
       setAddingToCart(true)
-      const cartResponse = await cartService.addToCart(product.id, quantity)
+      const cartResponse = await cartService.addToCart(product.id, quantity, selectedVariant?.id || null)
       updateCartCount(cartResponse)
       navigate('/checkout', { state: { shopId: product.shopId } })
     } catch (error) {
@@ -286,8 +286,12 @@ export default function ProductDetail() {
     )
   }
 
-  const price = product.basePrice ? Number(product.basePrice) : 0
+  const variants = product.variants || []
+  const hasVariants = variants.length > 0
+
+  const price = selectedVariant?.price ? Number(selectedVariant.price) : (product.basePrice ? Number(product.basePrice) : 0)
   const originalPrice = Math.round(price * 1.22) // Giá gốc trước giảm (giống Shopee gạch ngang)
+  const displayStock = selectedVariant ? (selectedVariant.stock || 0) : (product.quantity || 0)
   const images = product.images || []
   const currentShopId = product.shopId || 'shop-1'
   const shopData = shop || FALLBACK_SHOPS[0]
@@ -484,30 +488,38 @@ export default function ProductDetail() {
                 </div>
               </div>
 
-              {/* Variants Selector (Shopee Style) */}
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs border-t pt-3 border-stone-100 dark:border-slate-800">
-                <span className="w-28 shrink-0 text-stone-500 dark:text-slate-400 font-semibold">
-                  Phân Loại
-                </span>
-                <div className="flex flex-wrap gap-2">
-                  {['Bản Tiêu Chuẩn', 'Bản Nâng Cấp Pro', 'Bản Full Phụ Kiện'].map((variant) => (
-                    <button
-                      key={variant}
-                      onClick={() => setSelectedVariant(variant)}
-                      className={cn(
-                        'rounded-xl border px-3.5 py-2 text-xs font-bold transition-all cursor-pointer',
-                        selectedVariant === variant
-                          ? 'border-amber-500 bg-amber-500/10 text-amber-600 dark:text-amber-400 ring-1 ring-amber-500'
-                          : isDark
-                          ? 'border-slate-700 hover:border-slate-600 text-slate-300'
-                          : 'border-stone-200 hover:border-stone-300 text-stone-700'
-                      )}
-                    >
-                      {variant}
-                    </button>
-                  ))}
+              {/* Variants Selector */}
+              {hasVariants && (
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs border-t pt-3 border-stone-100 dark:border-slate-800">
+                  <span className="w-28 shrink-0 text-stone-500 dark:text-slate-400 font-semibold">
+                    Phân Loại
+                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    {variants.map((variant) => {
+                      const label = [variant.color, variant.size].filter(Boolean).join(' - ') || 'Loại khác'
+                      return (
+                        <button
+                          key={variant.id}
+                          onClick={() => {
+                            setSelectedVariant(variant)
+                            setQuantity(1)
+                          }}
+                          className={cn(
+                            'rounded-xl border px-3.5 py-2 text-xs font-bold transition-all cursor-pointer',
+                            selectedVariant?.id === variant.id
+                              ? 'border-amber-500 bg-amber-500/10 text-amber-600 dark:text-amber-400 ring-1 ring-amber-500'
+                              : isDark
+                              ? 'border-slate-700 hover:border-slate-600 text-slate-300'
+                              : 'border-stone-200 hover:border-stone-300 text-stone-700'
+                          )}
+                        >
+                          {label}
+                        </button>
+                      )
+                    })}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Quantity Stepper & Stock */}
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs border-t pt-3 border-stone-100 dark:border-slate-800">
@@ -533,7 +545,7 @@ export default function ProductDetail() {
                     </button>
                   </div>
                   <span className="text-stone-400 dark:text-slate-500 text-xs">
-                    Còn {product.quantity || 48} sản phẩm có sẵn
+                    Còn {displayStock} sản phẩm có sẵn
                   </span>
                 </div>
               </div>

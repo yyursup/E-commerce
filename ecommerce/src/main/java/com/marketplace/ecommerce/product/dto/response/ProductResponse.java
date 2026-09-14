@@ -29,6 +29,7 @@ public class ProductResponse {
     private List<ProductImageResponse> images;
     private UUID categoryId;
     private String categoryName;
+    private List<ProductVariantResponse> variants;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -45,11 +46,20 @@ public class ProductResponse {
                 .basePrice(product.getBasePrice())
                 .quantity(product.getQuantity())
                 .images(mapImages(product.getImages()))
+                .variants(mapVariants(product.getVariants()))
                 .categoryId(product.getProductCategory().getId())
                 .categoryName(product.getProductCategory().getName())
                 .createdAt(product.getCreatedAt())
                 .updatedAt(product.getUpdatedAt())
                 .build();
+    }
+
+    private static List<ProductVariantResponse> mapVariants(Set<com.marketplace.ecommerce.product.entity.ProductVariant> variants) {
+        if (variants == null || variants.isEmpty()) return Collections.emptyList();
+        return variants.stream()
+                .filter(v -> v.getDeleted() == null || !v.getDeleted())
+                .map(ProductVariantResponse::from)
+                .collect(Collectors.toList());
     }
 
     private static List<ProductImageResponse> mapImages(Set<ProductImage> images) {

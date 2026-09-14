@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.UUID;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -13,5 +15,9 @@ public class LoginResponse {
     private String email;
     private String token;
     private String role;
-
+    private UUID accountId;
+    private Boolean hasShop;
+    private UUID shopId;
+    private String shopName;
+    private String sellerStatus; // NONE, PENDING, APPROVED, REJECTED
 }

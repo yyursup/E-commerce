@@ -4,6 +4,9 @@ import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  server: {
+    port: 3000,
+  },
   define: {
     // sockjs-client dùng `global` (Node) – browser cần polyfill
     global: 'globalThis',

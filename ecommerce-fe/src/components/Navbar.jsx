@@ -88,6 +88,33 @@ export default function Navbar() {
           : 'border-stone-200/80 bg-white/95 backdrop-blur',
       )}
     >
+      {/* Top micro bar */}
+      <div className={cn('border-b py-1 px-4 sm:px-8 text-[11px] flex justify-between items-center transition-colors',
+        isDark ? 'bg-slate-950/80 border-slate-800 text-slate-400' : 'bg-stone-50 border-stone-200 text-stone-500'
+      )}>
+        <div className="flex items-center gap-4">
+          <a
+            href="http://localhost:3001"
+            target="_blank"
+            rel="noreferrer"
+            className="font-semibold text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1"
+          >
+            🏪 Kênh Người Bán
+          </a>
+          <span className="hidden sm:inline text-stone-300 dark:text-slate-700">|</span>
+          <a
+            href="http://localhost:3001/register"
+            target="_blank"
+            rel="noreferrer"
+            className="hidden sm:inline hover:text-amber-500 transition-colors"
+          >
+            Trở thành Người bán
+          </a>
+        </div>
+        <div className="flex items-center gap-3 text-stone-400 text-[10px]">
+          <span>Hotline CSKH: 1900 1234</span>
+        </div>
+      </div>
       <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
         <Link
@@ -264,68 +291,21 @@ export default function Navbar() {
                       </p>
                     )}
                   </div>
-                  {isAdmin && (
-                    <MenuItem>
-                      <Link
-                        to="/admin"
-                        className={cn(
-                          'flex w-full items-center gap-2 px-4 py-2.5 text-sm transition-colors',
-                          isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-stone-600 hover:bg-stone-50'
-                        )}
-                      >
-                        <HiOutlineCog className="h-4 w-4" />
-                        Admin
-                      </Link>
-                    </MenuItem>
-                  )}
-
-                  {/* Business Dashboard Link */}
-                  {userRole === 'BUSINESS' && (
-                    <MenuItem>
-                      <Link
-                        to="/business"
-                        className={cn(
-                          'flex w-full items-center gap-2 px-4 py-2.5 text-sm transition-colors',
-                          isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-stone-600 hover:bg-stone-50'
-                        )}
-                      >
-                        <HiOutlineChartBar className="h-4 w-4" />
-                        Dashboard Doanh Nghiệp
-                      </Link>
-                    </MenuItem>
-                  )}
-
-                  {/* Admin Dashboard Link */}
-                  {isAdmin && (
-                    <MenuItem>
-                      <Link
-                        to="/admin"
-                        className={cn(
-                          'flex w-full items-center gap-2 px-4 py-2.5 text-sm transition-colors',
-                          isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-stone-600 hover:bg-stone-50'
-                        )}
-                      >
-                        <HiOutlineShieldCheck className="h-4 w-4" />
-                        Admin Dashboard
-                      </Link>
-                    </MenuItem>
-                  )}
-
-                  {/* Seller Register - only for CUSTOMER */}
-                  {userRole === 'CUSTOMER' && (
-                    <MenuItem>
-                      <Link
-                        to="/seller/register"
-                        className={cn(
-                          'flex w-full items-center gap-2 px-4 py-2.5 text-sm transition-colors',
-                          isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-stone-600 hover:bg-stone-50'
-                        )}
-                      >
-                        <HiOutlineShoppingBag className="h-4 w-4" />
-                        Đăng ký bán hàng
-                      </Link>
-                    </MenuItem>
-                  )}
+                  {/* Seller Portal Link */}
+                  <MenuItem>
+                    <a
+                      href="http://localhost:3001"
+                      target="_blank"
+                      rel="noreferrer"
+                      className={cn(
+                        'flex w-full items-center gap-2 px-4 py-2.5 text-sm font-semibold text-amber-600 dark:text-amber-400 transition-colors',
+                        isDark ? 'hover:bg-slate-700' : 'hover:bg-amber-50'
+                      )}
+                    >
+                      <HiOutlineShoppingBag className="h-4 w-4" />
+                      Kênh Người Bán (Seller Centre)
+                    </a>
+                  </MenuItem>
                   <MenuItem>
                     <Link
                       to="/my-orders"
@@ -482,48 +462,16 @@ export default function Navbar() {
                       </span>
                     )}
                   </div>
-                  {isAdmin && (
-                    <Link
-                      to="/admin"
-                      onClick={() => setMobileOpen(false)}
-                      className="rounded-lg px-4 py-3 text-left text-sm font-medium text-stone-700 hover:bg-stone-50 dark:text-slate-300 dark:hover:bg-slate-800"
-                    >
-                      Admin
-                    </Link>
-                  )}
-
-                  {/* Business Dashboard Link - Mobile */}
-                  {userRole === 'BUSINESS' && (
-                    <Link
-                      to="/business"
-                      onClick={() => setMobileOpen(false)}
-                      className="rounded-lg px-4 py-3 text-left text-sm font-medium text-stone-700 hover:bg-stone-50 dark:text-slate-300 dark:hover:bg-slate-800"
-                    >
-                      Dashboard Doanh Nghiệp
-                    </Link>
-                  )}
-
-                  {/* Admin Dashboard Link - Mobile */}
-                  {isAdmin && (
-                    <Link
-                      to="/admin"
-                      onClick={() => setMobileOpen(false)}
-                      className="rounded-lg px-4 py-3 text-left text-sm font-medium text-stone-700 hover:bg-stone-50 dark:text-slate-300 dark:hover:bg-slate-800"
-                    >
-                      Admin Dashboard
-                    </Link>
-                  )}
-
-                  {/* Seller Register - only for CUSTOMER - Mobile */}
-                  {userRole === 'CUSTOMER' && (
-                    <Link
-                      to="/seller/register"
-                      onClick={() => setMobileOpen(false)}
-                      className="rounded-lg px-4 py-3 text-left text-sm font-medium text-stone-700 hover:bg-stone-50 dark:text-slate-300 dark:hover:bg-slate-800"
-                    >
-                      Đăng ký bán hàng
-                    </Link>
-                  )}
+                  {/* Seller Portal Link - Mobile */}
+                  <a
+                    href="http://localhost:3001"
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={() => setMobileOpen(false)}
+                    className="rounded-lg px-4 py-3 text-left text-sm font-semibold text-amber-600 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-slate-800"
+                  >
+                    🏪 Kênh Người Bán (Seller Centre)
+                  </a>
                   <Link
                     to="/my-orders"
                     onClick={() => setMobileOpen(false)}

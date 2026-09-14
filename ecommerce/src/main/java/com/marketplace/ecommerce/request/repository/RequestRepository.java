@@ -14,4 +14,6 @@ public interface RequestRepository extends JpaRepository<Request, UUID> {
     Page<Request> findAllRequestByAccountId(UUID accountId, Pageable pageable);
 
     Page<Request> findAllByStatus(RequestStatus status, Pageable pageable);
+
+    java.util.List<Request> findByAccountIdAndTypeOrderByCreatedAtDesc(UUID accountId, com.marketplace.ecommerce.request.valueObjects.RequestType type);
 }

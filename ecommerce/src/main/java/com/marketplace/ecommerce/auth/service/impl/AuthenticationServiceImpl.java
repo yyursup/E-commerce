@@ -26,6 +26,12 @@ import com.marketplace.ecommerce.common.exception.RoleNotFoundException;
 import com.marketplace.ecommerce.wallet.entity.Wallet;
 import com.marketplace.ecommerce.wallet.repository.WalletRepository;
 import com.marketplace.ecommerce.wallet.valueObjects.WalletType;
+import com.marketplace.ecommerce.shop.entity.Shop;
+import com.marketplace.ecommerce.shop.repository.ShopRepository;
+import com.marketplace.ecommerce.request.entity.Request;
+import com.marketplace.ecommerce.request.repository.RequestRepository;
+import com.marketplace.ecommerce.request.valueObjects.RequestType;
+import com.marketplace.ecommerce.request.valueObjects.RequestStatus;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -45,6 +51,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -60,6 +67,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final RoleRepository roleRepository;
     private final CartRepository cartRepository;
     private final WalletRepository walletRepository;
+    private final ShopRepository shopRepository;
+    private final RequestRepository requestRepository;
 
     @Override
     public AccountCreateResponse verifyAccount(VerifyRequest request) {
@@ -186,11 +195,14 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             SecurityContextHolder.getContext().setAuthentication(authentication);
             Account users = (Account) authentication.getPrincipal();
 
-            return LoginResponse.builder()
+            LoginResponse.LoginResponseBuilder builder = LoginResponse.builder()
                     .email(users.getEmail())
                     .token(tokenService.createToken(users))
-                    .role(users.getRole().getRoleName())
-                    .build();
+                    .role(users.getRole().getRoleName());
+
+            populateShopAndSellerStatus(builder, users.getId());
+
+            return builder.build();
 
         } catch (BadCredentialsException e) {
             throw new InvalidCredentialsException("Tên đăng nhập hoặc mật khẩu không chính xác.");
@@ -225,5 +237,58 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .toList();
     }
 
+    @Override
+    public LoginResponse getMyProfile(UUID accountId) {
+        Account account = accountRepository.findById(accountId)
+                .orElseThrow(() -> new CustomException("Account not found"));
 
+        LoginResponse.LoginResponseBuilder builder = LoginResponse.builder()
+                .email(account.getEmail())
+                .role(account.getRole() != null ? account.getRole().getRoleName() : "CUSTOMER")
+                .accountId(account.getId());
+
+        populateShopAndSellerStatus(builder, account.getId());
+
+        return builder.build();
+    }
+
+    private void populateShopAndSellerStatus(LoginResponse.LoginResponseBuilder builder, UUID accountId) {
+        boolean hasShop = false;
+        UUID shopId = null;
+        String shopName = null;
+        String sellerStatus = "NONE";
+
+        Optional<User> userOpt = userRepository.findByAccountId(accountId);
+        if (userOpt.isPresent()) {
+            Optional<Shop> shopOpt = shopRepository.findByUserId(userOpt.get().getId());
+            if (shopOpt.isPresent()) {
+                hasShop = true;
+                shopId = shopOpt.get().getId();
+                shopName = shopOpt.get().getName();
+                sellerStatus = "APPROVED";
+            }
+        }
+
+        if (!hasShop) {
+            List<Request> requests = requestRepository.findByAccountIdAndTypeOrderByCreatedAtDesc(
+                    accountId, RequestType.SELLER_REGISTRATION
+            );
+            if (requests != null && !requests.isEmpty()) {
+                Request latestReq = requests.get(0);
+                if (latestReq.getStatus() == RequestStatus.PENDING) {
+                    sellerStatus = "PENDING";
+                } else if (latestReq.getStatus() == RequestStatus.REJECTED) {
+                    sellerStatus = "REJECTED";
+                } else if (latestReq.getStatus() == RequestStatus.APPROVED) {
+                    sellerStatus = "APPROVED";
+                }
+            }
+        }
+
+        builder.accountId(accountId)
+                .hasShop(hasShop)
+                .shopId(shopId)
+                .shopName(shopName)
+                .sellerStatus(sellerStatus);
+    }
 }

@@ -6,6 +6,8 @@ import com.marketplace.ecommerce.auth.dto.request.VerifyRequest;
 import com.marketplace.ecommerce.auth.dto.response.AccountCreateResponse;
 import com.marketplace.ecommerce.auth.dto.response.LoginResponse;
 import com.marketplace.ecommerce.auth.service.AuthenticationService;
+import com.marketplace.ecommerce.config.CurrentUser;
+import com.marketplace.ecommerce.common.CurrentUserInfo;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +23,15 @@ public class AuthenticationController {
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
         LoginResponse response = authenticationService.login(request);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<LoginResponse> getMyProfile(@CurrentUser CurrentUserInfo currentUser) {
+        if (currentUser == null || currentUser.getAccountId() == null) {
+            return ResponseEntity.status(401).build();
+        }
+        LoginResponse response = authenticationService.getMyProfile(currentUser.getAccountId());
         return ResponseEntity.ok(response);
     }
 

@@ -16,4 +16,6 @@ public interface AuthenticationService {
     AccountCreateResponse register(AccountCreateRequest request);
 
     AccountCreateResponse verifyAccount(VerifyRequest request);
+
+    LoginResponse getMyProfile(java.util.UUID accountId);
 }

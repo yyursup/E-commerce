@@ -4,7 +4,6 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { HiOutlineSparkles, HiOutlineRefresh, HiOutlineChevronRight } from 'react-icons/hi'
 import Hero from '../components/Hero'
 import CategoryGrid from '../components/CategoryGrid'
-import FlashSaleSection from '../components/FlashSaleSection'
 import OfficialMallSection from '../components/OfficialMallSection'
 import ProductCard from '../components/ProductCard'
 import Modal, { PromoModalContent } from '../components/Modal'
@@ -158,10 +157,7 @@ export default function Home() {
       {/* 2. Categories Grid (8 Main Categories) */}
       <CategoryGrid />
 
-      {/* 3. Flash Sale Countdown Section */}
-      <FlashSaleSection products={products} />
-
-      {/* 4. Official Mall (eKYC Verified Shops) */}
+      {/* 3. Official Mall (eKYC Verified Shops) */}
       <OfficialMallSection />
 
       {/* 5. AI Recommendations Strip ("Gợi ý riêng cho bạn") */}

@@ -22,6 +22,7 @@ import { cn } from '../lib/cn'
 import requestService from '../services/request'
 import kycService from '../services/kyc'
 import CameraCapture from '../components/CameraCapture'
+import BusinessLicenseUpload from '../components/BusinessLicenseUpload'
 
 export default function SellerRegister() {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
@@ -51,6 +52,8 @@ export default function SellerRegister() {
     register,
     handleSubmit,
     reset,
+    setValue,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm()
 
@@ -923,34 +926,35 @@ export default function SellerRegister() {
                       {errors.businessAddress && <p className="mt-1.5 text-sm text-red-500">{errors.businessAddress.message}</p>}
                     </div>
 
-                    <div className="grid gap-5 md:grid-cols-2">
-                      <div>
-                        <label className={cn('mb-1.5 block text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>Mã số thuế doanh nghiệp</label>
-                        <div className="relative">
-                          <HiOutlineDocumentText className={cn('absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2', isDark ? 'text-slate-500' : 'text-stone-400')} />
-                          <input
-                            type="text"
-                            placeholder="Mã số thuế doanh nghiệp"
-                            className={cn('w-full rounded-xl border py-3 pl-10 pr-4 text-sm outline-none transition', isDark ? 'border-slate-600 bg-slate-800/50 text-white' : 'border-stone-300 bg-stone-50/80 text-stone-900', errors.taxCode && 'border-red-500/70')}
-                            {...register('taxCode', { required: 'Vui lòng nhập mã số thuế' })}
-                          />
-                        </div>
-                        {errors.taxCode && <p className="mt-1.5 text-sm text-red-500">{errors.taxCode.message}</p>}
+                    <div>
+                      <label className={cn('mb-1.5 block text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>Mã số thuế doanh nghiệp</label>
+                      <div className="relative">
+                        <HiOutlineDocumentText className={cn('absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2', isDark ? 'text-slate-500' : 'text-stone-400')} />
+                        <input
+                          type="text"
+                          placeholder="Mã số thuế doanh nghiệp"
+                          className={cn('w-full rounded-xl border py-3 pl-10 pr-4 text-sm outline-none transition', isDark ? 'border-slate-600 bg-slate-800/50 text-white' : 'border-stone-300 bg-stone-50/80 text-stone-900', errors.taxCode && 'border-red-500/70')}
+                          {...register('taxCode', { required: 'Vui lòng nhập mã số thuế' })}
+                        />
                       </div>
+                      {errors.taxCode && <p className="mt-1.5 text-sm text-red-500">{errors.taxCode.message}</p>}
+                    </div>
 
-                      <div>
-                        <label className={cn('mb-1.5 block text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>Ảnh Giấy phép kinh doanh (URL)</label>
-                        <div className="relative">
-                          <HiOutlinePhotograph className={cn('absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2', isDark ? 'text-slate-500' : 'text-stone-400')} />
-                          <input
-                            type="url"
-                            placeholder="https://..."
-                            className={cn('w-full rounded-xl border py-3 pl-10 pr-4 text-sm outline-none transition', isDark ? 'border-slate-600 bg-slate-800/50 text-white' : 'border-stone-300 bg-stone-50/80 text-stone-900', errors.businessLicenseUrl && 'border-red-500/70')}
-                            {...register('businessLicenseUrl', { required: 'Vui lòng cung cấp link ảnh GPKD' })}
-                          />
-                        </div>
-                        {errors.businessLicenseUrl && <p className="mt-1.5 text-sm text-red-500">{errors.businessLicenseUrl.message}</p>}
-                      </div>
+                    <div>
+                      <label className={cn('mb-1.5 block text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>
+                        Ảnh Giấy phép kinh doanh (GPKD) <span className="text-red-500">*</span>
+                      </label>
+                      <BusinessLicenseUpload
+                        value={watch('businessLicenseUrl')}
+                        onChange={(url) => setValue('businessLicenseUrl', url || '', { shouldValidate: true })}
+                        error={errors.businessLicenseUrl?.message}
+                      />
+                      <input
+                        type="hidden"
+                        {...register('businessLicenseUrl', {
+                          required: sellerType === 'BUSINESS' ? 'Vui lòng tải lên ảnh Giấy phép kinh doanh' : false,
+                        })}
+                      />
                     </div>
                   </div>
                 )}

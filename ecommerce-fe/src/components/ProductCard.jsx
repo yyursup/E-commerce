@@ -8,10 +8,37 @@ import { cn } from '../lib/cn'
 export default function ProductCard({ product, onQuickView, dataAos, dataAosDelay }) {
   const [hover, setHover] = useState(false)
   const isDark = useThemeStore((s) => s.theme) === 'dark'
+
+  if (!product) return null
+
   const { name, price, oldPrice, image, badge, rating, id, shopName, categoryName, shopId } = product
 
+  // Robustly resolve thumbnail image from direct prop or images array
+  const thumbnailImg =
+    image ||
+    product.images?.find((img) => img.isThumbnail)?.imageUrl ||
+    product.images?.[0]?.imageUrl ||
+    (typeof product.images?.[0] === 'string' ? product.images[0] : null) ||
+    product.thumbnail ||
+    '/product-placeholder.svg'
+
+  // Robustly resolve price
+  const displayPrice =
+    price !== undefined && price !== null
+      ? Number(price)
+      : product.basePrice !== undefined && product.basePrice !== null
+      ? Number(product.basePrice)
+      : 0
+
+  const displayOldPrice =
+    oldPrice !== undefined && oldPrice !== null
+      ? Number(oldPrice)
+      : product.originalPrice
+      ? Number(product.originalPrice)
+      : null
+
   // Deterministic mock sold count based on product id length or char codes
-  const mockSold = ((String(id).charCodeAt(0) * 17) % 850) + 50
+  const mockSold = ((String(id || '').charCodeAt(0) * 17) % 850) + 50
 
   return (
     <motion.article
@@ -42,7 +69,7 @@ export default function ProductCard({ product, onQuickView, dataAos, dataAosDela
       {/* Image */}
       <Link to={`/products/${id}`} className="relative block aspect-square overflow-hidden bg-stone-100 dark:bg-slate-900">
         <motion.img
-          src={image || '/product-placeholder.svg'}
+          src={thumbnailImg}
           alt={name}
           className="h-full w-full object-cover transition duration-500"
           animate={{ scale: hover ? 1.06 : 1 }}
@@ -73,7 +100,12 @@ export default function ProductCard({ product, onQuickView, dataAos, dataAosDela
             onClick={(e) => {
               e.preventDefault()
               e.stopPropagation()
-              onQuickView?.(product)
+              onQuickView?.({
+                ...product,
+                image: thumbnailImg,
+                price: displayPrice,
+                oldPrice: displayOldPrice,
+              })
             }}
             className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-white/95 py-2 text-xs font-bold text-stone-800 shadow-lg backdrop-blur hover:bg-amber-400 hover:text-stone-900 transition-colors"
           >
@@ -145,11 +177,11 @@ export default function ProductCard({ product, onQuickView, dataAos, dataAosDela
           {/* Pricing */}
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-base font-bold text-amber-600 dark:text-amber-400">
-              {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price)}
+              {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(displayPrice)}
             </span>
-            {oldPrice && (
+            {displayOldPrice && (
               <span className="text-xs text-stone-400 line-through dark:text-slate-500">
-                {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(oldPrice)}
+                {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(displayOldPrice)}
               </span>
             )}
           </div>

@@ -71,13 +71,38 @@ export default function ShopProfile() {
           size: 40,
         })
         const items = res?.content || []
-        if (items.length > 0) {
-          setProducts(items)
-        } else {
+        let rawList = items
+        if (rawList.length === 0) {
           // If no products returned by this shopId, load all published products as fallback demo
           const allRes = await productService.getProducts({ page: 0, size: 40 })
-          setProducts(allRes?.content || [])
+          rawList = allRes?.content || []
         }
+
+        const mapped = rawList.map((p) => {
+          const thumb = p.images?.find((img) => img.isThumbnail) || p.images?.[0]
+          const imageUrl = thumb?.imageUrl || (typeof thumb === 'string' ? thumb : '/product-placeholder.svg')
+          const parsedPrice =
+            p.basePrice !== undefined && p.basePrice !== null
+              ? Number(p.basePrice)
+              : p.price !== undefined && p.price !== null
+              ? Number(p.price)
+              : 0
+
+          return {
+            ...p,
+            id: p.id,
+            name: p.name,
+            image: imageUrl,
+            price: parsedPrice,
+            basePrice: p.basePrice,
+            badge: p.status === 'PUBLISHED' ? 'Chính hãng' : null,
+            rating: p.rating || 4.8,
+            shopName: p.shopName || shop?.name || 'Shop',
+            shopId: p.shopId || shopId,
+            originalProduct: p,
+          }
+        })
+        setProducts(mapped)
       } catch (err) {
         console.warn('Error loading products for shop:', err)
         setProducts([])
@@ -86,7 +111,7 @@ export default function ShopProfile() {
       }
     }
     loadShopProducts()
-  }, [shopId])
+  }, [shopId, shop?.name])
 
   // Filter & Sort Products
   const filteredProducts = useMemo(() => {
@@ -98,9 +123,9 @@ export default function ShopProfile() {
     }
 
     if (sortBy === 'price_asc') {
-      list.sort((a, b) => (Number(a.basePrice) || 0) - (Number(b.basePrice) || 0))
+      list.sort((a, b) => (Number(a.price ?? a.basePrice) || 0) - (Number(b.price ?? b.basePrice) || 0))
     } else if (sortBy === 'price_desc') {
-      list.sort((a, b) => (Number(b.basePrice) || 0) - (Number(a.basePrice) || 0))
+      list.sort((a, b) => (Number(b.price ?? b.basePrice) || 0) - (Number(a.price ?? a.basePrice) || 0))
     } else if (sortBy === 'newest') {
       list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
     }

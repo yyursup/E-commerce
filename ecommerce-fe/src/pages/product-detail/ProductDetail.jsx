@@ -81,7 +81,32 @@ export default function ProductDetail() {
               size: 6,
             })
             const currentId = String(productId).toLowerCase()
-            const filtered = (spRes?.content || []).filter((p) => String(p.id).toLowerCase() !== currentId)
+            const filtered = (spRes?.content || [])
+              .filter((p) => String(p.id).toLowerCase() !== currentId)
+              .map((p) => {
+                const thumb = p.images?.find((img) => img.isThumbnail) || p.images?.[0]
+                const imageUrl = thumb?.imageUrl || (typeof thumb === 'string' ? thumb : '/product-placeholder.svg')
+                const parsedPrice =
+                  p.basePrice !== undefined && p.basePrice !== null
+                    ? Number(p.basePrice)
+                    : p.price !== undefined && p.price !== null
+                    ? Number(p.price)
+                    : 0
+
+                return {
+                  ...p,
+                  id: p.id,
+                  name: p.name,
+                  image: imageUrl,
+                  price: parsedPrice,
+                  basePrice: p.basePrice,
+                  badge: p.status === 'PUBLISHED' ? 'Cùng shop' : null,
+                  rating: p.rating || 4.8,
+                  shopName: p.shopName || shopData?.name || data?.shopName || 'Shop',
+                  shopId: p.shopId || data?.shopId,
+                  originalProduct: p,
+                }
+              })
             setShopProducts(filtered)
           } catch (e) {
             console.warn('Error fetching shop other products', e)

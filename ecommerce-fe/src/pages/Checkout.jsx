@@ -184,11 +184,25 @@ export default function Checkout() {
         try {
             setIsCalculatingFee(true)
 
-            // Real Shop Dispatch Warehouse from backend
+            // Prefer Backend Quote API (SSOT)
+            const currentVoucherCode = appliedVoucher?.code || null
+            try {
+                const quoteRes = await orderService.getQuote(shopId, selectedAddressId, currentVoucherCode)
+                if (quoteRes) {
+                    const fee = Number(quoteRes.shippingFee || 0)
+                    setShippingFee(fee)
+                    if (quoteRes.discountAmount !== undefined && currentVoucherCode) {
+                        setDiscountAmount(Number(quoteRes.discountAmount || 0))
+                    }
+                    return
+                }
+            } catch (quoteErr) {
+                console.warn("Quote API error, fallback to direct calculation", quoteErr)
+            }
+
+            // Fallback calculation matching backend quoteFee parameters (service_type_id: 2)
             const FROM_DISTRICT_ID = shopOrigin?.districtId || 1442;
             const FROM_WARD_CODE = shopOrigin?.wardCode || "20101";
-
-            // Calculate weight (500g per item * quantity)
             const totalWeight = cartItems.reduce((sum, item) => sum + (item.quantity * 500), 0)
 
             const feeData = await shippingService.calculateFee({
@@ -198,15 +212,15 @@ export default function Checkout() {
                 to_ward_code: selectedAddr.wardCode,
                 weight: totalWeight,
                 service_type_id: 2, // Standard
-                insurance_value: totalPrice > 5000000 ? 5000000 : totalPrice
             })
 
             const calculatedFee = feeData.total || 0
             setShippingFee(calculatedFee)
 
             // If a voucher is already applied, recalculate discount with new shipping fee
-            if (appliedVoucher?.code) {
-                recalculateAppliedVoucher(appliedVoucher.code, calculatedFee)
+            const currentCode = appliedVoucher?.code
+            if (currentCode) {
+                recalculateAppliedVoucher(currentCode, calculatedFee)
             }
         } catch (error) {
             console.error("Failed to calculate shipping fee", error)
@@ -218,14 +232,21 @@ export default function Checkout() {
 
     const recalculateAppliedVoucher = async (code, curShippingFee = shippingFee) => {
         try {
+            const codeToUse = (code || appliedVoucher?.code || '').trim()
+            if (!codeToUse) return
+
             const res = await voucherService.calculateDiscount({
-                code: code.trim(),
+                code: codeToUse,
                 shopId: shopId,
                 subtotal: totalPrice,
                 shippingFee: curShippingFee
             })
             if (res?.valid) {
-                setAppliedVoucher(res)
+                const voucherData = {
+                    ...res,
+                    code: res.code || codeToUse
+                }
+                setAppliedVoucher(voucherData)
                 setDiscountAmount(Number(res.discountAmount || 0))
             } else {
                 setAppliedVoucher(null)
@@ -254,7 +275,11 @@ export default function Checkout() {
             })
 
             if (res?.valid) {
-                setAppliedVoucher(res)
+                const voucherData = {
+                    ...res,
+                    code: res.code || targetCode
+                }
+                setAppliedVoucher(voucherData)
                 setDiscountAmount(Number(res.discountAmount || 0))
                 setVoucherCodeInput(targetCode)
                 setShowVoucherModal(false)
@@ -291,11 +316,12 @@ export default function Checkout() {
         try {
             setProcessing(true)
             // 1. Create Order with Voucher Code (if applied)
+            const voucherCodeToSend = appliedVoucher?.code || (voucherCodeInput ? voucherCodeInput.trim() : null)
             const order = await orderService.createOrder(
                 shopId,
                 selectedAddressId,
                 notes,
-                appliedVoucher?.code || null
+                voucherCodeToSend || null
             )
             toast.success("Đặt hàng thành công!")
 
@@ -577,7 +603,7 @@ export default function Checkout() {
                                     <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400">
                                         <span className="flex items-center gap-1 font-medium">
                                             <HiOutlineTicket className="w-4 h-4" />
-                                            Giảm giá voucher ({appliedVoucher?.code})
+                                            Giảm giá voucher ({appliedVoucher?.code || appliedVoucher?.voucherCode || voucherCodeInput})
                                         </span>
                                         <span className="font-bold">
                                             -{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(discountAmount)}
@@ -661,15 +687,15 @@ export default function Checkout() {
                                 </div>
                             ) : (
                                 availableVouchers.map((v) => {
-                                    const isCurrentApplied = appliedVoucher?.code === v.code
+                                    const isCurrentApplied = (appliedVoucher?.code === v.code || appliedVoucher?.voucherCode === v.code)
                                     const minRequired = Number(v.minOrderAmount || v.minOrderValue || 0)
                                     const isMinOrderSatisfied = totalPrice >= minRequired
-                                    
+
                                     // Check category match if voucher is category-restricted
                                     const hasCategoryRestriction = Boolean(v.categoryName || v.categoryId)
                                     let isCategorySatisfied = true
                                     if (hasCategoryRestriction) {
-                                        isCategorySatisfied = cartItems.some(item => 
+                                        isCategorySatisfied = cartItems.some(item =>
                                             (v.categoryId && item.categoryId === v.categoryId) ||
                                             (v.categoryName && item.categoryName?.toLowerCase().includes(v.categoryName.toLowerCase()))
                                         )
@@ -732,8 +758,8 @@ export default function Checkout() {
                                                     isCurrentApplied
                                                         ? "bg-emerald-500 text-white cursor-default"
                                                         : isEligible
-                                                        ? "bg-amber-500 text-white hover:bg-amber-600 active:scale-95"
-                                                        : "bg-stone-200 dark:bg-slate-700 text-stone-400 cursor-not-allowed"
+                                                            ? "bg-amber-500 text-white hover:bg-amber-600 active:scale-95"
+                                                            : "bg-stone-200 dark:bg-slate-700 text-stone-400 cursor-not-allowed"
                                                 )}
                                             >
                                                 {isCurrentApplied ? 'Đang dùng' : 'Dùng ngay'}

@@ -16,6 +16,20 @@ const orderService = {
     }
   },
 
+  // Checkout Quote (Single Source of Truth for fee and totals)
+  getQuote: async (shopId, addressId, voucherCode = null) => {
+    try {
+      const response = await axiosClient.post('/api/v1/checkout/quote', {
+        shopId,
+        addressId,
+        voucherCode
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response ? error.response.data : error;
+    }
+  },
+
   // Create Order
   createOrder: async (shopId, addressId, notes, voucherCode = null) => {
     try {

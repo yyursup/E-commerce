@@ -18,6 +18,7 @@ public class VoucherCalculationResponse {
     private String message;
     private UUID voucherId;
     private String voucherCode;
+    private String code;
     private String title;
     private BigDecimal discountAmount;
     private BigDecimal subtotal;

@@ -1,6 +1,6 @@
-﻿import { Link } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { HiOutlineLocationMarker, HiOutlinePhone } from 'react-icons/hi'
+import { HiOutlineLocationMarker, HiOutlinePhone, HiOutlineTag } from 'react-icons/hi'
 import { cn } from '../../../../lib/cn'
 import {
   formatAdminOrderCurrency,
@@ -124,6 +124,17 @@ export default function AdminOrderDetailCard({ order, isDark }) {
               {formatAdminOrderCurrency(order.shippingFee || 0)}
             </span>
           </div>
+          {Number(order.discountAmount) > 0 && (
+            <div className="flex justify-between text-emerald-600 dark:text-emerald-400">
+              <span className="text-sm flex items-center gap-1 font-medium">
+                <HiOutlineTag className="h-4 w-4" />
+                Giảm giá voucher {order.voucherCode ? `(${order.voucherCode})` : ''}
+              </span>
+              <span className="text-sm font-bold">
+                -{formatAdminOrderCurrency(order.discountAmount)}
+              </span>
+            </div>
+          )}
           {order.ghnOrderCode && (
             <div className="flex justify-between">
               <span className={cn('text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>

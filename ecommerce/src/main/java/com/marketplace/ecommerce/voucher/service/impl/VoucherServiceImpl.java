@@ -233,6 +233,7 @@ public class VoucherServiceImpl implements VoucherService {
                 .message("Áp dụng mã giảm giá thành công!")
                 .voucherId(voucher.getId())
                 .voucherCode(voucher.getCode())
+                .code(voucher.getCode())
                 .title(voucher.getTitle())
                 .discountAmount(discountAmount)
                 .subtotal(safeSubtotal)
@@ -347,6 +348,7 @@ public class VoucherServiceImpl implements VoucherService {
         userVoucherRepository.save(uv);
 
         order.setVoucher(voucher);
+        order.setVoucherCode(voucher.getCode());
         order.setDiscountAmount(discountAmount);
         log.info("Voucher {} applied to order {}: discount={}", voucher.getCode(), order.getOrderNumber(),
                 discountAmount);

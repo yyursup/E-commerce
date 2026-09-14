@@ -45,6 +45,11 @@ import com.marketplace.ecommerce.shop.valueObjects.ShopStatus;
 import com.marketplace.ecommerce.wallet.entity.Wallet;
 import com.marketplace.ecommerce.wallet.repository.WalletRepository;
 import com.marketplace.ecommerce.wallet.valueObjects.WalletType;
+import com.marketplace.ecommerce.voucher.entity.Voucher;
+import com.marketplace.ecommerce.voucher.repository.VoucherRepository;
+import com.marketplace.ecommerce.voucher.valueObjects.VoucherScope;
+import com.marketplace.ecommerce.voucher.valueObjects.VoucherStatus;
+import com.marketplace.ecommerce.voucher.valueObjects.VoucherType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -88,6 +93,7 @@ public class DataInitializer implements CommandLineRunner {
     private final RequestRepository requestRepository;
     private final SellerRepository sellerRepository;
     private final CommissionRepository commissionRepository;
+    private final VoucherRepository voucherRepository;
 
     private final Random random = new Random();
 
@@ -447,6 +453,9 @@ public class DataInitializer implements CommandLineRunner {
         seedShopProducts(shop4, List.of(appliances, kitchenware, homeDecor), "HOME");
         seedShopProducts(shop5, List.of(skincare, makeup, personalCare), "BEAUTY");
         seedShopProducts(shop6, List.of(sportswear, gymYoga, outdoorCamping), "SPORT");
+
+        // 11. Seed Realistic Vouchers (Platform Vouchers + Shop Vouchers)
+        initializeVouchers(shop1, shop2, shop3, shop4);
 
         // 11. Realistic Addresses for Customers
         initializeUserAddress(customer1, "Lê Văn Mua Hàng", "0901234567",
@@ -1434,5 +1443,169 @@ public class DataInitializer implements CommandLineRunner {
                             order.getOrderNumber(), totalCommission);
                     return saved;
                 });
+    }
+
+    private void initializeVouchers(Shop shop1, Shop shop2, Shop shop3, Shop shop4) {
+        log.info("Initializing system & shop vouchers...");
+
+        // 1. FREESHIP50 (Platform)
+        if (!voucherRepository.existsByCodeIgnoreCase("FREESHIP50")) {
+            voucherRepository.save(Voucher.builder()
+                    .code("FREESHIP50")
+                    .title("Miễn Phí Vận Chuyển GHN")
+                    .description("Giảm tối đa 50.000đ cước giao hàng GHN cho đơn hàng từ 250.000đ")
+                    .voucherType(VoucherType.FREE_SHIPPING)
+                    .discountValue(BigDecimal.valueOf(50000))
+                    .minOrderValue(BigDecimal.valueOf(250000))
+                    .usageLimit(1000)
+                    .usedCount(0)
+                    .userUsageLimit(2)
+                    .startDate(LocalDateTime.now().minusDays(1))
+                    .endDate(LocalDateTime.now().plusMonths(3))
+                    .status(VoucherStatus.ACTIVE)
+                    .scope(VoucherScope.PLATFORM)
+                    .build());
+        }
+
+        // 2. ECOMNEW15 (Platform)
+        if (!voucherRepository.existsByCodeIgnoreCase("ECOMNEW15")) {
+            voucherRepository.save(Voucher.builder()
+                    .code("ECOMNEW15")
+                    .title("Giảm 15% Đơn Đầu Tiên")
+                    .description("Ưu đãi dành riêng cho khách hàng mới, giảm tối đa 100.000đ toàn sàn")
+                    .voucherType(VoucherType.PERCENTAGE)
+                    .discountValue(BigDecimal.valueOf(15))
+                    .maxDiscountAmount(BigDecimal.valueOf(100000))
+                    .minOrderValue(BigDecimal.valueOf(100000))
+                    .usageLimit(500)
+                    .usedCount(0)
+                    .userUsageLimit(1)
+                    .startDate(LocalDateTime.now().minusDays(1))
+                    .endDate(LocalDateTime.now().plusMonths(1))
+                    .status(VoucherStatus.ACTIVE)
+                    .scope(VoucherScope.PLATFORM)
+                    .build());
+        }
+
+        // 3. TECH500 (Platform)
+        if (!voucherRepository.existsByCodeIgnoreCase("TECH500")) {
+            voucherRepository.save(Voucher.builder()
+                    .code("TECH500")
+                    .title("Giảm 500.000đ Đồ Công Nghệ")
+                    .description("Áp dụng cho Laptop, Điện thoại, Máy tính bảng và Âm thanh từ 2.000.000đ")
+                    .voucherType(VoucherType.FIXED_AMOUNT)
+                    .discountValue(BigDecimal.valueOf(500000))
+                    .minOrderValue(BigDecimal.valueOf(2000000))
+                    .usageLimit(200)
+                    .usedCount(0)
+                    .userUsageLimit(1)
+                    .startDate(LocalDateTime.now().minusDays(1))
+                    .endDate(LocalDateTime.now().plusMonths(2))
+                    .status(VoucherStatus.ACTIVE)
+                    .scope(VoucherScope.PLATFORM)
+                    .build());
+        }
+
+        // 4. FASHION30 (Platform)
+        if (!voucherRepository.existsByCodeIgnoreCase("FASHION30")) {
+            voucherRepository.save(Voucher.builder()
+                    .code("FASHION30")
+                    .title("Giảm 30.000đ Thời Trang")
+                    .description("Áp dụng cho Quần áo, Giày dép, Túi ví cho đơn hàng từ 150.000đ")
+                    .voucherType(VoucherType.FIXED_AMOUNT)
+                    .discountValue(BigDecimal.valueOf(30000))
+                    .minOrderValue(BigDecimal.valueOf(150000))
+                    .usageLimit(300)
+                    .usedCount(0)
+                    .userUsageLimit(1)
+                    .startDate(LocalDateTime.now().minusDays(1))
+                    .endDate(LocalDateTime.now().plusMonths(2))
+                    .status(VoucherStatus.ACTIVE)
+                    .scope(VoucherScope.PLATFORM)
+                    .build());
+        }
+
+        // 5. APPLE100K (Shop 1)
+        if (shop1 != null && !voucherRepository.existsByCodeIgnoreCase("APPLE100K")) {
+            voucherRepository.save(Voucher.builder()
+                    .code("APPLE100K")
+                    .title("Giảm 100K Tại Apple Official")
+                    .description("Giảm ngay 100.000đ cho đơn hàng mua sắm tại Apple Authorised Reseller từ 1.000.000đ")
+                    .voucherType(VoucherType.FIXED_AMOUNT)
+                    .discountValue(BigDecimal.valueOf(100000))
+                    .minOrderValue(BigDecimal.valueOf(1000000))
+                    .usageLimit(100)
+                    .usedCount(0)
+                    .userUsageLimit(1)
+                    .startDate(LocalDateTime.now().minusDays(1))
+                    .endDate(LocalDateTime.now().plusMonths(2))
+                    .status(VoucherStatus.ACTIVE)
+                    .scope(VoucherScope.SHOP)
+                    .shop(shop1)
+                    .build());
+        }
+
+        // 6. TRENDY10 (Shop 2)
+        if (shop2 != null && !voucherRepository.existsByCodeIgnoreCase("TRENDY10")) {
+            voucherRepository.save(Voucher.builder()
+                    .code("TRENDY10")
+                    .title("Giảm 10% Trendy Fashion")
+                    .description("Giảm 10% tối đa 50.000đ cho đơn hàng thời trang từ 200.000đ")
+                    .voucherType(VoucherType.PERCENTAGE)
+                    .discountValue(BigDecimal.valueOf(10))
+                    .maxDiscountAmount(BigDecimal.valueOf(50000))
+                    .minOrderValue(BigDecimal.valueOf(200000))
+                    .usageLimit(100)
+                    .usedCount(0)
+                    .userUsageLimit(1)
+                    .startDate(LocalDateTime.now().minusDays(1))
+                    .endDate(LocalDateTime.now().plusMonths(2))
+                    .status(VoucherStatus.ACTIVE)
+                    .scope(VoucherScope.SHOP)
+                    .shop(shop2)
+                    .build());
+        }
+
+        // 7. NHANAM20K (Shop 3)
+        if (shop3 != null && !voucherRepository.existsByCodeIgnoreCase("NHANAM20K")) {
+            voucherRepository.save(Voucher.builder()
+                    .code("NHANAM20K")
+                    .title("Giảm 20K Sách Nhã Nam")
+                    .description("Giảm 20.000đ cho đơn sách Nhã Nam từ 100.000đ")
+                    .voucherType(VoucherType.FIXED_AMOUNT)
+                    .discountValue(BigDecimal.valueOf(20000))
+                    .minOrderValue(BigDecimal.valueOf(100000))
+                    .usageLimit(150)
+                    .usedCount(0)
+                    .userUsageLimit(1)
+                    .startDate(LocalDateTime.now().minusDays(1))
+                    .endDate(LocalDateTime.now().plusMonths(2))
+                    .status(VoucherStatus.ACTIVE)
+                    .scope(VoucherScope.SHOP)
+                    .shop(shop3)
+                    .build());
+        }
+
+        // 8. SUNHOUSE50K (Shop 4)
+        if (shop4 != null && !voucherRepository.existsByCodeIgnoreCase("SUNHOUSE50K")) {
+            voucherRepository.save(Voucher.builder()
+                    .code("SUNHOUSE50K")
+                    .title("Giảm 50K Gia Dụng Sunhouse")
+                    .description("Giảm 50.000đ cho đơn đồ gia dụng Sunhouse từ 300.000đ")
+                    .voucherType(VoucherType.FIXED_AMOUNT)
+                    .discountValue(BigDecimal.valueOf(50000))
+                    .minOrderValue(BigDecimal.valueOf(300000))
+                    .usageLimit(80)
+                    .usedCount(0)
+                    .userUsageLimit(1)
+                    .startDate(LocalDateTime.now().minusDays(1))
+                    .endDate(LocalDateTime.now().plusMonths(2))
+                    .status(VoucherStatus.ACTIVE)
+                    .scope(VoucherScope.SHOP)
+                    .shop(shop4)
+                    .build());
+        }
+
+        log.info("Initialized default vouchers successfully.");
     }
 }

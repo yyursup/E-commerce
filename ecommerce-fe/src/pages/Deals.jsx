@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -14,11 +14,13 @@ import {
 } from 'react-icons/hi'
 import toast from 'react-hot-toast'
 import { useThemeStore } from '../store/useThemeStore'
+import { useAuthStore } from '../store/useAuthStore'
+import voucherService from '../services/voucher'
 import { cn } from '../lib/cn'
 import Footer from '../components/Footer'
 
-// Kho Voucher Sàn E-commerce
-const platformVouchers = [
+// Default Fallback Vouchers if backend is warming up
+const initialPlatformVouchers = [
   {
     id: 'v-1',
     code: 'FREESHIP50',
@@ -167,11 +169,63 @@ const multiCategoryDeals = [
 
 export default function Deals() {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
+  const { isAuthenticated } = useAuthStore()
+  const [vouchers, setVouchers] = useState(initialPlatformVouchers)
   const [collectedVouchers, setCollectedVouchers] = useState(new Set())
   const [selectedCategory, setSelectedCategory] = useState('Tất cả')
+  const [loadingVouchers, setLoadingVouchers] = useState(false)
 
-  const handleCollectVoucher = (code) => {
+  // Load platform vouchers from Backend
+  useEffect(() => {
+    const fetchPlatformVouchers = async () => {
+      try {
+        setLoadingVouchers(true)
+        const data = await voucherService.listVouchers({ scope: 'PLATFORM' })
+        if (Array.isArray(data) && data.length > 0) {
+          const mapped = data.map((v) => ({
+            id: v.id,
+            code: v.code,
+            type: v.type,
+            title: v.title || (v.type === 'SHIPPING_FREE' ? 'Miễn Phí Vận Chuyển' : `Giảm ${v.discountValue}% Toàn Sàn`),
+            description: v.description || `Đơn từ ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(v.minOrderAmount || 0)}`,
+            badge: v.scope === 'PLATFORM' ? 'Toàn Sàn' : 'Voucher Shop',
+            color: v.type === 'SHIPPING_FREE'
+              ? 'border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-400'
+              : 'border-amber-500 bg-amber-500/10 text-amber-600 dark:text-amber-400',
+            expiry: v.validTo ? `HSD: ${new Date(v.validTo).toLocaleDateString('vi-VN')}` : 'Còn hạn',
+            isClaimed: v.isClaimed || false,
+          }))
+          setVouchers(mapped)
+
+          // Mark already claimed vouchers
+          const claimedSet = new Set()
+          mapped.forEach((v) => {
+            if (v.isClaimed) claimedSet.add(v.code)
+          })
+          setCollectedVouchers(claimedSet)
+        }
+      } catch (err) {
+        console.warn('Using default platform vouchers fallback', err)
+      } finally {
+        setLoadingVouchers(false)
+      }
+    }
+
+    fetchPlatformVouchers()
+  }, [])
+
+  const handleCollectVoucher = async (voucher) => {
+    const code = voucher.code
     setCollectedVouchers((prev) => new Set([...prev, code]))
+
+    if (isAuthenticated && voucher.id && String(voucher.id).length > 20) {
+      try {
+        await voucherService.claimVoucher(voucher.id)
+      } catch (err) {
+        console.warn('Claim voucher API error:', err)
+      }
+    }
+
     toast.success(`Đã lưu mã ${code} vào ví voucher của bạn!`)
   }
 
@@ -220,11 +274,11 @@ export default function Deals() {
 
         {/* Voucher Cards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {platformVouchers.map((voucher) => {
+          {vouchers.map((voucher) => {
             const isCollected = collectedVouchers.has(voucher.code)
             return (
               <div
-                key={voucher.id}
+                key={voucher.id || voucher.code}
                 className={cn(
                   'relative rounded-2xl border p-5 flex flex-col justify-between shadow-sm transition-all duration-300 hover:shadow-md',
                   isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
@@ -254,7 +308,7 @@ export default function Deals() {
                     {voucher.code}
                   </span>
                   <button
-                    onClick={() => handleCollectVoucher(voucher.code)}
+                    onClick={() => handleCollectVoucher(voucher)}
                     disabled={isCollected}
                     className={cn(
                       'rounded-xl px-4 py-1.5 text-xs font-bold transition-all shadow-sm',

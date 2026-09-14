@@ -10,6 +10,7 @@ import ShopOrders from './pages/business/ShopOrders'
 import ShopOrderDetail from './pages/business/ShopOrderDetail'
 import ShopProducts from './pages/ShopProducts'
 import ShopSettings from './pages/ShopSettings'
+import ShopVouchers from './pages/business/ShopVouchers'
 
 export default function App() {
   return (
@@ -33,6 +34,7 @@ export default function App() {
         <Route path="/orders" element={<ShopOrders />} />
         <Route path="/orders/:orderId" element={<ShopOrderDetail />} />
         <Route path="/products" element={<ShopProducts />} />
+        <Route path="/vouchers" element={<ShopVouchers />} />
         <Route path="/settings" element={<ShopSettings />} />
       </Route>
 

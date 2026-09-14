@@ -17,12 +17,13 @@ const orderService = {
   },
 
   // Create Order
-  createOrder: async (shopId, addressId, notes) => {
+  createOrder: async (shopId, addressId, notes, voucherCode = null) => {
     try {
       const response = await axiosClient.post(ORDER_BASE, {
         shopId,
         addressId,
-        notes
+        notes,
+        voucherCode
       });
       return response.data;
     } catch (error) {

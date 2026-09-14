@@ -8,4 +8,5 @@ import java.util.UUID;
 public class QuoteRequest {
     private UUID shopId;
     private UUID addressId;
+    private String voucherCode;
 }

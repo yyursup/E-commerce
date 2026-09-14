@@ -3,12 +3,22 @@ import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useAuthStore } from '../store/useAuthStore'
 import cartService from '../services/cart'
 import orderService from '../services/order'
+import voucherService from '../services/voucher'
 import { userAddressService } from '../services/userAddressService'
 import { shippingService } from '../services/shippingService'
 import shopService from '../services/shop'
 import { useThemeStore } from '../store/useThemeStore'
 import { cn } from '../lib/cn'
-import { HiOutlineLocationMarker, HiArrowLeft, HiOutlineShoppingBag, HiPlus } from 'react-icons/hi'
+import {
+    HiOutlineLocationMarker,
+    HiArrowLeft,
+    HiOutlineShoppingBag,
+    HiPlus,
+    HiOutlineTicket,
+    HiOutlineCheck,
+    HiOutlineX,
+    HiOutlineTag
+} from 'react-icons/hi'
 import toast from 'react-hot-toast'
 import AddressFormModal from '../components/AddressFormModal'
 
@@ -26,6 +36,15 @@ export default function Checkout() {
     const [totalPrice, setTotalPrice] = useState(0)
     const [shippingFee, setShippingFee] = useState(0)
     const [isCalculatingFee, setIsCalculatingFee] = useState(false)
+
+    // Voucher States
+    const [voucherCodeInput, setVoucherCodeInput] = useState('')
+    const [appliedVoucher, setAppliedVoucher] = useState(null)
+    const [discountAmount, setDiscountAmount] = useState(0)
+    const [isApplyingVoucher, setIsApplyingVoucher] = useState(false)
+    const [availableVouchers, setAvailableVouchers] = useState([])
+    const [showVoucherModal, setShowVoucherModal] = useState(false)
+    const [loadingVouchers, setLoadingVouchers] = useState(false)
 
     const [addresses, setAddresses] = useState([])
     const [selectedAddressId, setSelectedAddressId] = useState(null)
@@ -62,7 +81,8 @@ export default function Checkout() {
 
             setCartItems(shopItems)
             setShopName(shopItems[0].shopName || 'Shop')
-            setTotalPrice(shopItems.reduce((sum, item) => sum + item.totalPrice, 0))
+            const calculatedTotal = shopItems.reduce((sum, item) => sum + item.totalPrice, 0)
+            setTotalPrice(calculatedTotal)
 
             // Load Shop warehouse origin for GHN shipping calculation
             try {
@@ -94,11 +114,37 @@ export default function Checkout() {
             // Fetch Addresses
             await loadAddresses()
 
+            // Fetch Available Vouchers (Shop vouchers + Platform vouchers)
+            await loadAvailableVouchers(shopId)
+
         } catch (error) {
             console.error("Failed to load checkout data", error)
             toast.error("Có lỗi xảy ra khi tải dữ liệu")
         } finally {
             setLoading(false)
+        }
+    }
+
+    const loadAvailableVouchers = async (targetShopId) => {
+        try {
+            setLoadingVouchers(true)
+            const [shopVouchersRes, platformVouchersRes] = await Promise.allSettled([
+                voucherService.getShopVouchers(targetShopId),
+                voucherService.listVouchers({ scope: 'PLATFORM' })
+            ])
+
+            const list = []
+            if (shopVouchersRes.status === 'fulfilled' && Array.isArray(shopVouchersRes.value)) {
+                list.push(...shopVouchersRes.value)
+            }
+            if (platformVouchersRes.status === 'fulfilled' && Array.isArray(platformVouchersRes.value)) {
+                list.push(...platformVouchersRes.value)
+            }
+            setAvailableVouchers(list)
+        } catch (e) {
+            console.warn("Could not load vouchers", e)
+        } finally {
+            setLoadingVouchers(false)
         }
     }
 
@@ -155,13 +201,80 @@ export default function Checkout() {
                 insurance_value: totalPrice > 5000000 ? 5000000 : totalPrice
             })
 
-            setShippingFee(feeData.total || 0)
+            const calculatedFee = feeData.total || 0
+            setShippingFee(calculatedFee)
+
+            // If a voucher is already applied, recalculate discount with new shipping fee
+            if (appliedVoucher?.code) {
+                recalculateAppliedVoucher(appliedVoucher.code, calculatedFee)
+            }
         } catch (error) {
             console.error("Failed to calculate shipping fee", error)
             setShippingFee(0)
         } finally {
             setIsCalculatingFee(false)
         }
+    }
+
+    const recalculateAppliedVoucher = async (code, curShippingFee = shippingFee) => {
+        try {
+            const res = await voucherService.calculateDiscount({
+                code: code.trim(),
+                shopId: shopId,
+                subtotal: totalPrice,
+                shippingFee: curShippingFee
+            })
+            if (res?.valid) {
+                setAppliedVoucher(res)
+                setDiscountAmount(Number(res.discountAmount || 0))
+            } else {
+                setAppliedVoucher(null)
+                setDiscountAmount(0)
+                toast.error(res?.message || "Voucher không còn thỏa mãn điều kiện đơn hàng")
+            }
+        } catch (err) {
+            console.warn("Recalculate voucher failed", err)
+        }
+    }
+
+    const handleApplyVoucher = async (codeToApply) => {
+        const targetCode = (codeToApply || voucherCodeInput || '').trim().toUpperCase()
+        if (!targetCode) {
+            toast.error("Vui lòng nhập mã giảm giá")
+            return
+        }
+
+        try {
+            setIsApplyingVoucher(true)
+            const res = await voucherService.calculateDiscount({
+                code: targetCode,
+                shopId: shopId,
+                subtotal: totalPrice,
+                shippingFee: shippingFee
+            })
+
+            if (res?.valid) {
+                setAppliedVoucher(res)
+                setDiscountAmount(Number(res.discountAmount || 0))
+                setVoucherCodeInput(targetCode)
+                setShowVoucherModal(false)
+                toast.success(`Áp dụng mã ${targetCode} thành công! -${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(res.discountAmount)}`)
+            } else {
+                toast.error(res?.message || "Mã giảm giá không hợp lệ hoặc không áp dụng được cho đơn này")
+            }
+        } catch (err) {
+            console.error("Apply voucher error:", err)
+            toast.error(err?.message || err?.response?.data?.message || "Không thể áp dụng mã giảm giá này")
+        } finally {
+            setIsApplyingVoucher(false)
+        }
+    }
+
+    const handleRemoveVoucher = () => {
+        setAppliedVoucher(null)
+        setDiscountAmount(0)
+        setVoucherCodeInput('')
+        toast("Đã bỏ áp dụng mã giảm giá", { icon: 'ℹ️' })
     }
 
     const handleCreateOrder = async () => {
@@ -177,8 +290,13 @@ export default function Checkout() {
 
         try {
             setProcessing(true)
-            // 1. Create Order
-            const order = await orderService.createOrder(shopId, selectedAddressId, notes)
+            // 1. Create Order with Voucher Code (if applied)
+            const order = await orderService.createOrder(
+                shopId,
+                selectedAddressId,
+                notes,
+                appliedVoucher?.code || null
+            )
             toast.success("Đặt hàng thành công!")
 
             // 2. Create Payment URL
@@ -214,7 +332,7 @@ export default function Checkout() {
         )
     }
 
-    const finalTotal = totalPrice + shippingFee
+    const finalTotal = Math.max(0, totalPrice + shippingFee - discountAmount)
 
     return (
         <div className={cn("min-h-screen py-10 px-4 sm:px-6 lg:px-8", isDark ? "bg-slate-950" : "bg-stone-50")}>
@@ -233,7 +351,7 @@ export default function Checkout() {
                 </div>
 
                 <div className="grid gap-8 lg:grid-cols-12">
-                    {/* Left Column: Order Info & Address */}
+                    {/* Left Column: Order Info, Address & Voucher */}
                     <div className="lg:col-span-8 space-y-6">
 
                         {/* Address Section */}
@@ -335,6 +453,82 @@ export default function Checkout() {
                             </div>
                         </div>
 
+                        {/* VOUCHER SECTION (Shopee Style) */}
+                        <div className={cn("rounded-2xl border p-6 shadow-sm space-y-4", isDark ? "border-slate-800 bg-slate-900" : "border-stone-200 bg-white")}>
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <HiOutlineTicket className="w-5 h-5 text-rose-500" />
+                                    <h2 className={cn("font-bold text-lg", isDark ? "text-white" : "text-stone-900")}>Mã Giảm Giá / Voucher</h2>
+                                </div>
+                                <button
+                                    onClick={() => setShowVoucherModal(true)}
+                                    className="text-xs font-bold text-amber-500 hover:text-amber-600 flex items-center gap-1 transition-colors"
+                                >
+                                    <HiOutlineTag className="w-4 h-4" />
+                                    Chọn Voucher Có Sẵn ({availableVouchers.length})
+                                </button>
+                            </div>
+
+                            {/* Voucher Input Bar */}
+                            <div className="flex gap-2">
+                                <input
+                                    type="text"
+                                    value={voucherCodeInput}
+                                    onChange={(e) => setVoucherCodeInput(e.target.value.toUpperCase())}
+                                    placeholder="Nhập mã voucher (VD: FREESHIP50, ECOMNEW15...)"
+                                    className={cn(
+                                        "flex-1 rounded-xl border px-4 py-2.5 text-sm uppercase font-mono tracking-wider outline-none transition-all focus:ring-2 focus:ring-amber-500",
+                                        isDark ? "bg-slate-800 border-slate-700 text-white placeholder-slate-500" : "bg-stone-50 border-stone-200 text-stone-900"
+                                    )}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault()
+                                            handleApplyVoucher()
+                                        }
+                                    }}
+                                />
+                                <button
+                                    onClick={() => handleApplyVoucher()}
+                                    disabled={isApplyingVoucher || !voucherCodeInput.trim()}
+                                    className={cn(
+                                        "px-5 py-2.5 rounded-xl font-bold text-sm text-white shadow-sm transition-all",
+                                        isApplyingVoucher || !voucherCodeInput.trim()
+                                            ? "bg-stone-300 dark:bg-slate-700 cursor-not-allowed text-stone-500"
+                                            : "bg-amber-500 hover:bg-amber-600 active:scale-95"
+                                    )}
+                                >
+                                    {isApplyingVoucher ? 'Đang kiểm tra...' : 'Áp dụng'}
+                                </button>
+                            </div>
+
+                            {/* Applied Voucher Card */}
+                            {appliedVoucher && (
+                                <div className="flex items-center justify-between p-3.5 rounded-xl border border-emerald-500/30 bg-emerald-50/70 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-300">
+                                    <div className="flex items-center gap-2.5">
+                                        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500 text-white font-bold text-xs">
+                                            <HiOutlineCheck className="w-5 h-5" />
+                                        </span>
+                                        <div>
+                                            <div className="font-bold text-sm flex items-center gap-2">
+                                                <span>{appliedVoucher.code}</span>
+                                                <span className="text-xs font-normal opacity-80">({appliedVoucher.voucherTitle || 'Đã áp dụng'})</span>
+                                            </div>
+                                            <div className="text-xs text-emerald-600 dark:text-emerald-400">
+                                                Tiết kiệm: <strong>-{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(discountAmount)}</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={handleRemoveVoucher}
+                                        className="p-1.5 rounded-lg hover:bg-rose-500/10 text-stone-400 hover:text-rose-500 transition-colors"
+                                        title="Bỏ áp dụng"
+                                    >
+                                        <HiOutlineX className="w-5 h-5" />
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+
                         {/* Notes */}
                         <div className={cn("rounded-2xl border p-6 shadow-sm", isDark ? "border-slate-800 bg-slate-900" : "border-stone-200 bg-white")}>
                             <h2 className={cn("font-bold text-lg mb-4", isDark ? "text-white" : "text-stone-900")}>Ghi chú đơn hàng</h2>
@@ -360,7 +554,7 @@ export default function Checkout() {
                         )}>
                             <h2 className={cn("font-bold text-lg", isDark ? "text-white" : "text-stone-900")}>Chi tiết thanh toán</h2>
 
-                            <div className="space-y-2 text-sm pt-4 border-t border-stone-100 dark:border-slate-800">
+                            <div className="space-y-2.5 text-sm pt-4 border-t border-stone-100 dark:border-slate-800">
                                 <div className="flex justify-between">
                                     <span className={isDark ? "text-slate-400" : "text-stone-600"}>Tổng tiền hàng</span>
                                     <span className={isDark ? "text-white" : "text-stone-900"}>
@@ -377,6 +571,19 @@ export default function Checkout() {
                                         </span>
                                     )}
                                 </div>
+
+                                {/* Voucher Discount Row */}
+                                {discountAmount > 0 && (
+                                    <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400">
+                                        <span className="flex items-center gap-1 font-medium">
+                                            <HiOutlineTicket className="w-4 h-4" />
+                                            Giảm giá voucher ({appliedVoucher?.code})
+                                        </span>
+                                        <span className="font-bold">
+                                            -{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(discountAmount)}
+                                        </span>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="py-4 border-y border-stone-100 dark:border-slate-800 flex justify-between items-center">
@@ -390,7 +597,7 @@ export default function Checkout() {
                                 onClick={handleCreateOrder}
                                 disabled={processing || cartItems.length === 0 || isCalculatingFee}
                                 className={cn(
-                                    "w-full py-3 rounded-xl font-bold text-white shadow-lg shadow-amber-500/25 transition-all flex justify-center items-center gap-2",
+                                    "w-full py-3.5 rounded-xl font-bold text-white shadow-lg shadow-amber-500/25 transition-all flex justify-center items-center gap-2",
                                     (processing || isCalculatingFee)
                                         ? "bg-stone-400 cursor-not-allowed"
                                         : "bg-amber-500 hover:bg-amber-600 active:scale-95"
@@ -410,12 +617,123 @@ export default function Checkout() {
                 </div>
             </div>
 
+            {/* Address Modal */}
             <AddressFormModal
                 isOpen={showAddAddress}
                 onClose={() => setShowAddAddress(false)}
                 onSuccess={handleAddressAdded}
                 isDark={isDark}
             />
+
+            {/* Voucher Selection Modal */}
+            {showVoucherModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                    <div className={cn(
+                        "w-full max-w-lg rounded-3xl border p-6 shadow-2xl max-h-[85vh] flex flex-col",
+                        isDark ? "bg-slate-900 border-slate-800" : "bg-white border-stone-200"
+                    )}>
+                        <div className="flex items-center justify-between pb-4 border-b border-stone-100 dark:border-slate-800">
+                            <div className="flex items-center gap-2">
+                                <HiOutlineTicket className="w-6 h-6 text-amber-500" />
+                                <h3 className={cn("text-lg font-bold", isDark ? "text-white" : "text-stone-900")}>
+                                    Kho Voucher Khả Dụng
+                                </h3>
+                            </div>
+                            <button
+                                onClick={() => setShowVoucherModal(false)}
+                                className="p-1 rounded-full hover:bg-stone-100 dark:hover:bg-slate-800 text-stone-400"
+                            >
+                                <HiOutlineX className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        {/* Modal List */}
+                        <div className="py-4 overflow-y-auto space-y-3 flex-1">
+                            {loadingVouchers ? (
+                                <div className="py-8 text-center">
+                                    <div className="h-6 w-6 animate-spin rounded-full border-2 border-amber-500 border-t-transparent mx-auto"></div>
+                                    <p className="text-xs text-stone-400 mt-2">Đang tải kho voucher...</p>
+                                </div>
+                            ) : availableVouchers.length === 0 ? (
+                                <div className="py-8 text-center">
+                                    <HiOutlineTicket className="h-10 w-10 text-stone-300 dark:text-slate-600 mx-auto mb-2" />
+                                    <p className="text-sm text-stone-500">Chưa có mã voucher khả dụng cho đơn này.</p>
+                                </div>
+                            ) : (
+                                availableVouchers.map((v) => {
+                                    const isCurrentApplied = appliedVoucher?.code === v.code
+                                    const minRequired = Number(v.minOrderAmount || 0)
+                                    const isEligible = totalPrice >= minRequired
+
+                                    return (
+                                        <div
+                                            key={v.id || v.code}
+                                            className={cn(
+                                                "p-4 rounded-2xl border flex items-center justify-between gap-3 transition-all",
+                                                isCurrentApplied
+                                                    ? "border-amber-500 bg-amber-50 dark:bg-amber-950/20"
+                                                    : isDark ? "border-slate-800 bg-slate-800/40" : "border-stone-200 bg-stone-50/50"
+                                            )}
+                                        >
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-mono text-xs font-bold text-amber-500 uppercase px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20">
+                                                        {v.code}
+                                                    </span>
+                                                    <span className={cn(
+                                                        "text-[11px] font-bold px-2 py-0.5 rounded",
+                                                        v.scope === 'PLATFORM'
+                                                            ? "bg-blue-500/10 text-blue-500"
+                                                            : "bg-rose-500/10 text-rose-500"
+                                                    )}>
+                                                        {v.scope === 'PLATFORM' ? 'Voucher Sàn' : 'Voucher Shop'}
+                                                    </span>
+                                                </div>
+                                                <h4 className={cn("text-sm font-bold mt-1.5", isDark ? "text-white" : "text-stone-900")}>
+                                                    {v.title || v.description}
+                                                </h4>
+                                                <p className="text-xs text-stone-500 dark:text-slate-400 mt-0.5">
+                                                    {v.description || `Đơn tối thiểu ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(minRequired)}`}
+                                                </p>
+                                                {!isEligible && (
+                                                    <p className="text-[11px] text-rose-500 font-medium mt-1">
+                                                        * Cần mua thêm {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(minRequired - totalPrice)} để áp dụng
+                                                    </p>
+                                                )}
+                                            </div>
+
+                                            <button
+                                                onClick={() => handleApplyVoucher(v.code)}
+                                                disabled={!isEligible || isCurrentApplied}
+                                                className={cn(
+                                                    "px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all shrink-0",
+                                                    isCurrentApplied
+                                                        ? "bg-emerald-500 text-white cursor-default"
+                                                        : isEligible
+                                                        ? "bg-amber-500 text-white hover:bg-amber-600 active:scale-95"
+                                                        : "bg-stone-200 dark:bg-slate-700 text-stone-400 cursor-not-allowed"
+                                                )}
+                                            >
+                                                {isCurrentApplied ? 'Đang dùng' : 'Dùng ngay'}
+                                            </button>
+                                        </div>
+                                    )
+                                })
+                            )}
+                        </div>
+
+                        <div className="pt-3 border-t border-stone-100 dark:border-slate-800 text-right">
+                            <button
+                                onClick={() => setShowVoucherModal(false)}
+                                className="px-4 py-2 rounded-xl text-xs font-bold text-stone-600 dark:text-slate-300 hover:bg-stone-100 dark:hover:bg-slate-800"
+                            >
+                                Đóng
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
+

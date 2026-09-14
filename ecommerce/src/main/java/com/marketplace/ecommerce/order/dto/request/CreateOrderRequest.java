@@ -10,5 +10,5 @@ public class CreateOrderRequest {
     private UUID shopId;
     private UUID addressId;
     private String notes;
-
+    private String voucherCode;
 }

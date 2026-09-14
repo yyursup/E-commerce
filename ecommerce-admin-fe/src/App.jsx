@@ -14,6 +14,7 @@ import AdminShopRanking from './pages/admin/AdminShopRanking'
 import AdminCommissions from './pages/admin/AdminCommissions'
 import AdminReports from './pages/admin/AdminReports'
 import AdminLiveChat from './pages/admin/AdminLiveChat'
+import AdminVouchers from './pages/admin/AdminVouchers'
 
 export default function App() {
   return (
@@ -35,6 +36,7 @@ export default function App() {
         <Route path="/requests/:requestId" element={<AdminRequestDetail />} />
         <Route path="/orders" element={<AdminOrders />} />
         <Route path="/orders/:orderId" element={<AdminOrderDetail />} />
+        <Route path="/vouchers" element={<AdminVouchers />} />
         <Route path="/escrows" element={<AdminEscrows />} />
         <Route path="/wallets" element={<AdminWalletLookup />} />
         <Route path="/platform-wallet" element={<AdminPlatformWallet />} />

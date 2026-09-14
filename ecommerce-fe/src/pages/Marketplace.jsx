@@ -278,14 +278,16 @@ export default function Marketplace() {
                     )}
                   </div>
 
-                  <h3
-                    className={cn(
-                      'text-base font-bold tracking-tight group-hover:text-amber-500 transition-colors',
-                      isDark ? 'text-white' : 'text-stone-900'
-                    )}
-                  >
-                    {shop.name}
-                  </h3>
+                  <Link to={`/shop/${shop.id}`}>
+                    <h3
+                      className={cn(
+                        'text-base font-bold tracking-tight group-hover:text-amber-500 transition-colors',
+                        isDark ? 'text-white' : 'text-stone-900'
+                      )}
+                    >
+                      {shop.name}
+                    </h3>
+                  </Link>
 
                   <p className="mt-1 text-xs text-stone-500 dark:text-slate-400 line-clamp-2">
                     {shop.description}
@@ -328,10 +330,10 @@ export default function Marketplace() {
                 {/* Actions */}
                 <div className="mt-5 pt-4 border-t border-stone-100 dark:border-slate-800 flex items-center gap-2">
                   <Link
-                    to={`/products?search=${encodeURIComponent(shop.name.split(' ')[0])}`}
+                    to={`/shop/${shop.id}`}
                     className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-white hover:bg-amber-600 transition-colors shadow-sm"
                   >
-                    Xem sản phẩm
+                    Vào Gian Hàng
                     <HiOutlineArrowRight className="h-3.5 w-3.5" />
                   </Link>
                   <button

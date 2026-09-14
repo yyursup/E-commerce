@@ -1,4 +1,5 @@
 let ws = null
+let currentToken = null
 let reconnectAttempts = 0
 let isIntentionallyClosed = false
 let reconnectTimeoutId = null
@@ -39,9 +40,17 @@ const dispatchEvent = (event, data) => {
 export const createWebSocketConnection = (token) => {
   if (!token) return
 
+  // If token changed (account switched or re-logged), force close old connection
+  if (ws && currentToken && currentToken !== token) {
+    console.log('🔄 Token changed (account switch detected), reconnecting WebSocket...')
+    closeWebSocketConnection()
+  }
+
   if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
     return
   }
+
+  currentToken = token
 
   if (reconnectTimeoutId) {
     clearTimeout(reconnectTimeoutId)
@@ -78,11 +87,11 @@ export const createWebSocketConnection = (token) => {
       console.log(`Chat WebSocket disconnected (Code: ${event.code})`, event.reason)
       dispatchEvent('DISCONNECT', { code: event.code })
 
-      if (!isIntentionallyClosed && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+      if (!isIntentionallyClosed && reconnectAttempts < MAX_RECONNECT_ATTEMPTS && currentToken) {
         const delay = BASE_RECONNECT_DELAY * Math.pow(2, reconnectAttempts)
         reconnectTimeoutId = setTimeout(() => {
           reconnectAttempts++
-          createWebSocketConnection(token)
+          createWebSocketConnection(currentToken)
         }, delay)
       }
     }
@@ -108,12 +117,17 @@ export const sendWebSocketMessage = (event, data) => {
 
 export const closeWebSocketConnection = () => {
   isIntentionallyClosed = true
+  currentToken = null
   if (reconnectTimeoutId) {
     clearTimeout(reconnectTimeoutId)
     reconnectTimeoutId = null
   }
   if (ws) {
-    ws.close()
+    try {
+      ws.close(1000, 'User logged out or switching accounts')
+    } catch (e) {
+      console.error('Error closing WebSocket:', e)
+    }
     ws = null
   }
 }

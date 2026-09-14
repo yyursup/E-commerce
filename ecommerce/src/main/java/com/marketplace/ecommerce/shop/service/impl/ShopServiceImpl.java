@@ -12,10 +12,20 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 
+import com.marketplace.ecommerce.common.exception.CustomException;
+import com.marketplace.ecommerce.product.repository.ProductRepository;
+import com.marketplace.ecommerce.product.valueObjects.ProductStatus;
+import com.marketplace.ecommerce.shop.dto.response.ShopProfileResponse;
+
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 public class ShopServiceImpl implements ShopService {
     private final ShopRepository shopRepository;
+    private final ProductRepository productRepository;
 
     @Override
     public Shop createShop(User ownerUser, String shopName, Request req, Seller sellerDetail) {
@@ -46,5 +56,24 @@ public class ShopServiceImpl implements ShopService {
                 .build();
 
         return shopRepository.save(shop);
+    }
+
+    @Override
+    public ShopProfileResponse getShopProfileById(UUID shopId) {
+        Shop shop = shopRepository.findById(shopId)
+                .orElseThrow(() -> new CustomException("Không tìm thấy thông tin cửa hàng"));
+        long count = productRepository.countByShopIdAndStatusAndDeletedFalse(shopId, ProductStatus.PUBLISHED);
+        return ShopProfileResponse.from(shop, count);
+    }
+
+    @Override
+    public List<ShopProfileResponse> getAllActiveShops() {
+        return shopRepository.findAll().stream()
+                .filter(s -> s.getStatus() == ShopStatus.ACTIVE)
+                .map(s -> {
+                    long count = productRepository.countByShopIdAndStatusAndDeletedFalse(s.getId(), ProductStatus.PUBLISHED);
+                    return ShopProfileResponse.from(s, count);
+                })
+                .collect(Collectors.toList());
     }
 }

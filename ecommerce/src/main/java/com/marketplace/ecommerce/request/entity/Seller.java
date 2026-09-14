@@ -16,7 +16,6 @@ import java.util.UUID;
 @Builder
 public class Seller {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "request_id", columnDefinition = "uuid")
     private UUID id;
 

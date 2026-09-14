@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -72,6 +73,31 @@ public class ChatController {
             @PathVariable UUID threadId,
             @RequestParam("file") MultipartFile file) {
         return ResponseEntity.ok(chatService.sendImageMessage(principal, threadId, file));
+    }
+
+    @PostMapping(value = "/threads/{threadId}/videos", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ChatMessageResponse> sendVideo(
+            @CurrentUser CurrentUserInfo principal,
+            @PathVariable UUID threadId,
+            @RequestParam("file") MultipartFile file) {
+        return ResponseEntity.ok(chatService.sendVideoMessage(principal, threadId, file));
+    }
+
+    @PatchMapping("/messages/{messageId}")
+    public ResponseEntity<ChatMessageResponse> editMessage(
+            @CurrentUser CurrentUserInfo principal,
+            @PathVariable UUID messageId,
+            @RequestBody Map<String, String> body) {
+        String content = body.get("content");
+        return ResponseEntity.ok(chatService.editMessage(principal, messageId, content));
+    }
+
+    @DeleteMapping("/messages/{messageId}")
+    public ResponseEntity<Void> deleteMessage(
+            @CurrentUser CurrentUserInfo principal,
+            @PathVariable UUID messageId) {
+        chatService.deleteMessage(principal, messageId);
+        return ResponseEntity.ok().build();
     }
 
     @PutMapping("/threads/{threadId}/read")

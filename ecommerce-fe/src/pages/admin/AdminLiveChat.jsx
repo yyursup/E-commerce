@@ -1,13 +1,11 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import {
-  HiOutlineChat,
-  HiOutlinePaperAirplane,
-  HiOutlinePhotograph,
-  HiOutlineSearch,
-  HiOutlineCheckCircle,
-  HiOutlineDotsVertical,
-  HiX,
+  HiOutlineChat, HiOutlinePaperAirplane, HiOutlinePhotograph,
+  HiOutlineSearch, HiOutlineCheckCircle, HiOutlineDotsVertical, HiX,
+  HiOutlineVideoCamera, HiOutlinePencil, HiOutlineTrash,
+  HiOutlineBell, HiCheck,
 } from 'react-icons/hi'
+import { HiOutlineBellSlash } from 'react-icons/hi2'
 import toast from 'react-hot-toast'
 import { useThemeStore } from '../../store/useThemeStore'
 import { useAuthStore } from '../../store/useAuthStore'
@@ -19,6 +17,8 @@ import {
   addWebSocketListener,
   sendWebSocketMessage,
 } from '../../services/websocketService'
+import { useChatNotification } from '../../hooks/useChatNotification'
+import ChatNotificationToast from '../../components/ChatNotificationToast'
 
 function formatTime(isoString) {
   if (!isoString) return ''
@@ -33,7 +33,7 @@ function formatTime(isoString) {
 
 export default function AdminLiveChat() {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
-  const currentAccount = useAuthStore((s) => s.account)
+  const currentUser = useAuthStore((s) => s.user)
   const [threads, setThreads] = useState([])
   const [selectedThreadId, setSelectedThreadId] = useState(() => {
     return sessionStorage.getItem('admin_selected_thread_id') || null
@@ -46,11 +46,29 @@ export default function AdminLiveChat() {
   const [loadingMessages, setLoadingMessages] = useState(false)
   const [sending, setSending] = useState(false)
   const [partnerTyping, setPartnerTyping] = useState(false)
-  const [previewImage, setPreviewImage] = useState(null)
+  const [previewMedia, setPreviewMedia] = useState(null) // { url, type: 'image'|'video' }
+  const [editingMsgId, setEditingMsgId] = useState(null)
+  const [editingContent, setEditingContent] = useState('')
+  const [hoveredMsgId, setHoveredMsgId] = useState(null)
+  const [activeMenuMsgId, setActiveMenuMsgId] = useState(null)
 
   const messagesContainerRef = useRef(null)
   const fileInputRef = useRef(null)
+  const videoInputRef = useRef(null)
+  const editInputRef = useRef(null)
   const typingTimeoutRef = useRef(null)
+
+  const { notifications, notifEnabled, addNotification, dismissNotification, toggleNotif } =
+    useChatNotification()
+
+  // Click outside to close message options menu
+  useEffect(() => {
+    const handleDocClick = () => setActiveMenuMsgId(null)
+    if (activeMenuMsgId) {
+      document.addEventListener('click', handleDocClick)
+      return () => document.removeEventListener('click', handleDocClick)
+    }
+  }, [activeMenuMsgId])
 
   const selectedThread = useMemo(() => {
     if (!selectedThreadId || !threads.length) return null
@@ -210,6 +228,30 @@ export default function AdminLiveChat() {
           return prev
         }
       })
+
+      // Notification for customer messages
+      const isSelf = currentUser?.id && String(msg.senderId).toLowerCase() === String(currentUser.id).toLowerCase()
+      if (msg.senderRole === 'CUSTOMER' && !isSelf) {
+        addNotification(msg)
+      }
+    })
+
+    const unregEdited = addWebSocketListener('CHAT_MESSAGE_EDITED', (updated) => {
+      if (!updated) return
+      setMessages((prev) =>
+        prev.map((m) => String(m.id).toLowerCase() === String(updated.id).toLowerCase() ? updated : m)
+      )
+    })
+
+    const unregDeleted = addWebSocketListener('CHAT_MESSAGE_DELETED', (payload) => {
+      if (!payload) return
+      setMessages((prev) =>
+        prev.map((m) =>
+          String(m.id).toLowerCase() === String(payload.messageId).toLowerCase()
+            ? { ...m, isDeleted: true, content: '[Tin nhắn đã bị xóa]' }
+            : m
+        )
+      )
     })
 
     const unregThreadUpdated = addWebSocketListener('CHAT_THREAD_UPDATED', (updatedThread) => {
@@ -245,11 +287,13 @@ export default function AdminLiveChat() {
       unregConnect()
       unregDisconnect()
       unregMessage()
+      unregEdited()
+      unregDeleted()
       unregThreadUpdated()
       unregThreadNew()
       unregTyping()
     }
-  }, [loadThreads])
+  }, [loadThreads, addNotification])
 
   // Reload messages when selected thread changes
   useEffect(() => {
@@ -287,8 +331,8 @@ export default function AdminLiveChat() {
     const optimisticMsg = {
       id: tempId,
       threadId: selectedThreadId,
-      senderId: currentAccount?.id,
-      senderName: 'Hỗ trợ viên (' + (currentAccount?.username || 'admin') + ')',
+      senderId: currentUser?.id,
+      senderName: 'Hỗ trợ viên (' + (currentUser?.username || 'admin') + ')',
       senderRole: 'ADMIN',
       content,
       messageType: 'TEXT',
@@ -354,12 +398,7 @@ export default function AdminLiveChat() {
     const file = e.target.files?.[0]
     if (fileInputRef.current) fileInputRef.current.value = ''
     if (!file || !selectedThreadId || sending) return
-
-    if (!file.type.startsWith('image/')) {
-      toast.error('Vui lòng chọn file hình ảnh')
-      return
-    }
-
+    if (!file.type.startsWith('image/')) { toast.error('Vui lòng chọn file hình ảnh'); return }
     try {
       setSending(true)
       toast.loading('Đang tải ảnh...', { id: 'uploading' })
@@ -371,13 +410,62 @@ export default function AdminLiveChat() {
         return [...prev, newMsg]
       })
       toast.success('Đã gửi ảnh', { id: 'uploading' })
-    } catch (err) {
-      console.error('Lỗi tải ảnh:', err)
-      toast.error('Không thể gửi hình ảnh', { id: 'uploading' })
-    } finally {
-      setSending(false)
-    }
+    } catch (err) { toast.error('Không thể gửi hình ảnh', { id: 'uploading' }) }
+    finally { setSending(false) }
   }
+
+  // Send video
+  const handleVideoUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (videoInputRef.current) videoInputRef.current.value = ''
+    if (!file || !selectedThreadId || sending) return
+    if (file.size > 50 * 1024 * 1024) { toast.error('Video tối đa 50MB'); return }
+    try {
+      setSending(true)
+      toast.loading('Đang tải video...', { id: 'uploading-video' })
+      const newMsg = await chatService.sendVideo(selectedThreadId, file)
+      setMessages((prev) => {
+        if (!newMsg) return prev
+        if (prev.some((m) => String(m.id).toLowerCase() === String(newMsg.id).toLowerCase())) return prev
+        if (newMsg.videoUrl && prev.some((m) => m.videoUrl === newMsg.videoUrl)) return prev
+        return [...prev, newMsg]
+      })
+      toast.success('Đã gửi video', { id: 'uploading-video' })
+    } catch (err) { toast.error('Không thể gửi video', { id: 'uploading-video' }) }
+    finally { setSending(false) }
+  }
+
+  // Edit message
+  const handleStartEdit = (m) => {
+    setEditingMsgId(String(m.id))
+    setEditingContent(m.content)
+    setTimeout(() => editInputRef.current?.focus(), 50)
+  }
+  const handleSaveEdit = async () => {
+    if (!editingMsgId || !editingContent.trim()) return
+    try {
+      const updated = await chatService.editMessage(editingMsgId, editingContent.trim())
+      setMessages((prev) => prev.map((m) => String(m.id) === editingMsgId ? updated : m))
+    } catch (err) { toast.error('Không thể sửa tin nhắn') }
+    finally { setEditingMsgId(null); setEditingContent('') }
+  }
+  const handleCancelEdit = () => { setEditingMsgId(null); setEditingContent('') }
+
+  // Delete message
+  const handleDeleteMsg = async (msgId) => {
+    if (!window.confirm('Bạn có chắc muốn xóa tin nhắn này?')) return
+    try {
+      await chatService.deleteMessage(msgId)
+      setMessages((prev) =>
+        prev.map((m) => String(m.id) === String(msgId) ? { ...m, isDeleted: true, content: '[Tin nhắn đã bị xóa]' } : m)
+      )
+    } catch (err) { toast.error('Không thể xóa tin nhắn') }
+  }
+
+  // Open thread from notification
+  const handleNotifOpen = useCallback((threadId) => {
+    if (threadId) handleSelectThread(threadId)
+  }, [handleSelectThread])
 
   const handleCloseThread = async () => {
     if (!selectedThreadId) return
@@ -429,8 +517,27 @@ export default function AdminLiveChat() {
             />
             {connected ? 'WebSocket Trực tuyến' : 'Mất kết nối WebSocket'}
           </span>
+
+          {/* Notification bell toggle */}
+          <button
+            type="button"
+            onClick={toggleNotif}
+            title={notifEnabled ? 'Tắt thông báo' : 'Bật thông báo'}
+            className={cn('flex h-9 w-9 items-center justify-center rounded-xl border transition',
+              isDark ? 'border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700' : 'border-stone-200 bg-white text-stone-600 hover:bg-stone-100'
+            )}
+          >
+            {notifEnabled ? <HiOutlineBell className="h-5 w-5" /> : <HiOutlineBellSlash className="h-5 w-5 opacity-60" />}
+          </button>
         </div>
       </div>
+
+      {/* Notification toasts */}
+      <ChatNotificationToast
+        notifications={notifications}
+        onDismiss={dismissNotification}
+        onOpen={handleNotifOpen}
+      />
 
       {/* Main Container */}
       <div
@@ -638,46 +745,145 @@ export default function AdminLiveChat() {
                 ) : (
                   messages.map((m) => {
                     const isMe = m.senderRole === 'ADMIN'
+                    const isEditing = editingMsgId === String(m.id)
+                    const isHovered = hoveredMsgId === String(m.id)
                     return (
                       <div
                         key={m.id || m.createdAt}
-                        className={cn('flex flex-col', isMe ? 'items-end' : 'items-start')}
+                        className={cn('flex flex-col relative', isMe ? 'items-end' : 'items-start')}
+                        onMouseEnter={() => setHoveredMsgId(String(m.id))}
+                        onMouseLeave={() => setHoveredMsgId(null)}
                       >
                         <span className="text-[11px] mb-1 px-1 opacity-60">
-                          {m.senderName} • {formatTime(m.createdAt)}
+                          {m.senderName} • {formatTime(m.createdAt)}{m.editedAt && ' (đã sửa)'}
                         </span>
-                        <div
-                          className={cn(
-                            'max-w-[75%] rounded-2xl px-4 py-2.5 text-sm shadow-sm',
-                            isMe
-                              ? 'rounded-tr-xs bg-amber-500 text-white'
-                              : isDark
-                                ? 'rounded-tl-xs bg-slate-800 text-slate-100 border border-slate-700'
-                                : 'rounded-tl-xs bg-white text-stone-800 border border-stone-200',
-                            m.messageType === 'IMAGE' && 'p-1.5 overflow-hidden',
-                          )}
-                        >
-                          {m.messageType === 'IMAGE' ? (
-                            <div className="space-y-1">
-                              <img
-                                src={m.imageUrl}
-                                alt="Ảnh gửi"
-                                onLoad={() => scrollToBottom(false)}
-                                onClick={() => setPreviewImage(m.imageUrl)}
-                                className="max-h-56 max-w-full rounded-xl object-contain cursor-pointer transition hover:opacity-90 shadow-sm"
-                              />
-                              {m.content && m.content !== '[Hình ảnh]' && (
-                                <p className="px-2 py-1 text-xs whitespace-pre-wrap">{m.content}</p>
+
+                        {isEditing ? (
+                          <div className="flex w-full max-w-[75%] gap-1">
+                            <input
+                              ref={editInputRef}
+                              value={editingContent}
+                              onChange={(e) => setEditingContent(e.target.value)}
+                              onKeyDown={(e) => { if (e.key === 'Enter') handleSaveEdit(); if (e.key === 'Escape') handleCancelEdit() }}
+                              className={cn('flex-1 rounded-xl border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-500/30',
+                                isDark ? 'border-slate-600 bg-slate-800 text-white' : 'border-stone-300 bg-white text-stone-900'
+                              )}
+                            />
+                            <button onClick={handleSaveEdit} className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500 text-white hover:bg-amber-600"><HiCheck className="h-4 w-4" /></button>
+                            <button onClick={handleCancelEdit} className={cn('flex h-9 w-9 items-center justify-center rounded-xl border', isDark ? 'border-slate-600 hover:bg-slate-700' : 'border-stone-300 hover:bg-stone-100')}><HiX className="h-4 w-4" /></button>
+                          </div>
+                        ) : (
+                          <div className={cn('flex items-center gap-1.5 max-w-[75%]', isMe ? 'flex-row' : 'flex-row-reverse')}>
+                            {/* Messenger 3-dots action button */}
+                            {!m.isDeleted && (
+                              <div className="relative shrink-0">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    setActiveMenuMsgId(activeMenuMsgId === String(m.id) ? null : String(m.id))
+                                  }}
+                                  className={cn(
+                                    'flex h-7 w-7 items-center justify-center rounded-full transition',
+                                    activeMenuMsgId === String(m.id)
+                                      ? (isDark ? 'bg-slate-700 text-white' : 'bg-stone-200 text-stone-800')
+                                      : (isHovered ? 'opacity-100' : 'opacity-0'),
+                                    isDark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-stone-200 text-stone-500'
+                                  )}
+                                  title="Tùy chọn tin nhắn"
+                                >
+                                  <HiOutlineDotsVertical className="h-4 w-4" />
+                                </button>
+
+                                {/* Popover menu */}
+                                {activeMenuMsgId === String(m.id) && (
+                                  <div
+                                    onClick={(e) => e.stopPropagation()}
+                                    className={cn(
+                                      'absolute bottom-full mb-1.5 z-40 min-w-[130px] rounded-xl border p-1 shadow-xl backdrop-blur-md animate-in fade-in zoom-in-95',
+                                      isMe ? 'right-0' : 'left-0',
+                                      isDark
+                                        ? 'border-slate-700 bg-slate-800/95 text-slate-200 shadow-black/40'
+                                        : 'border-stone-200 bg-white/95 text-stone-800 shadow-stone-400/25'
+                                    )}
+                                  >
+                                    {isMe && m.messageType === 'TEXT' && (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setActiveMenuMsgId(null)
+                                          handleStartEdit(m)
+                                        }}
+                                        className={cn(
+                                          'flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium transition text-left',
+                                          isDark ? 'hover:bg-slate-700' : 'hover:bg-stone-100'
+                                        )}
+                                      >
+                                        <HiOutlinePencil className="h-3.5 w-3.5" />
+                                        <span>Chỉnh sửa</span>
+                                      </button>
+                                    )}
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setActiveMenuMsgId(null)
+                                        handleDeleteMsg(m.id)
+                                      }}
+                                      className={cn(
+                                        'flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium transition text-left text-rose-600 dark:text-rose-400',
+                                        isDark ? 'hover:bg-rose-950/40' : 'hover:bg-rose-50'
+                                      )}
+                                    >
+                                      <HiOutlineTrash className="h-3.5 w-3.5" />
+                                      <span>Xóa tin nhắn</span>
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Message Bubble */}
+                            <div
+                              className={cn(
+                                'rounded-2xl px-4 py-2.5 text-sm shadow-sm',
+                                isMe
+                                  ? 'rounded-tr-xs bg-amber-500 text-white'
+                                  : isDark
+                                    ? 'rounded-tl-xs bg-slate-800 text-slate-100 border border-slate-700'
+                                    : 'rounded-tl-xs bg-white text-stone-800 border border-stone-200',
+                                (m.messageType === 'IMAGE' || m.messageType === 'VIDEO') && 'p-1.5 overflow-hidden',
+                                m.isDeleted && 'opacity-50 italic',
+                              )}
+                            >
+                              {m.messageType === 'IMAGE' ? (
+                                <div className="space-y-1">
+                                  <img
+                                    src={m.imageUrl}
+                                    alt="Ảnh gửi"
+                                    onLoad={() => scrollToBottom(false)}
+                                    onClick={() => setPreviewMedia({ url: m.imageUrl, type: 'image' })}
+                                    className="max-h-56 max-w-full rounded-xl object-contain cursor-pointer transition hover:opacity-90 shadow-sm"
+                                  />
+                                  {m.content && m.content !== '[Hình ảnh]' && (
+                                    <p className="px-2 py-1 text-xs whitespace-pre-wrap">{m.content}</p>
+                                  )}
+                                </div>
+                              ) : m.messageType === 'VIDEO' ? (
+                                <video
+                                  src={m.videoUrl}
+                                  controls
+                                  onLoadedData={() => scrollToBottom(false)}
+                                  className="max-h-56 max-w-full rounded-xl object-contain shadow-sm"
+                                />
+                              ) : (
+                                <p className="whitespace-pre-wrap leading-relaxed">{m.content}</p>
                               )}
                             </div>
-                          ) : (
-                            <p className="whitespace-pre-wrap leading-relaxed">{m.content}</p>
-                          )}
-                        </div>
-                        {isMe && m.readAt && (
-                          <span className="text-[10px] mt-0.5 px-1 text-emerald-500 font-medium">
-                            Đã xem
-                          </span>
+                          </div>
+                        )}
+
+                        {isMe && m.readAt && !isEditing && (
+                          <span className="text-[10px] mt-0.5 px-1 text-emerald-500 font-medium">Đã xem</span>
                         )}
                       </div>
                     )
@@ -710,6 +916,13 @@ export default function AdminLiveChat() {
                   accept="image/*"
                   className="hidden"
                 />
+                <input
+                  type="file"
+                  ref={videoInputRef}
+                  onChange={handleVideoUpload}
+                  accept="video/*"
+                  className="hidden"
+                />
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
@@ -723,6 +936,20 @@ export default function AdminLiveChat() {
                   )}
                 >
                   <HiOutlinePhotograph className="h-5 w-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => videoInputRef.current?.click()}
+                  disabled={sending}
+                  title="Gửi video (tối đa 50MB)"
+                  className={cn(
+                    'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition',
+                    isDark
+                      ? 'border-slate-700 hover:bg-slate-800 text-slate-300'
+                      : 'border-stone-200 hover:bg-stone-100 text-stone-600',
+                  )}
+                >
+                  <HiOutlineVideoCamera className="h-5 w-5" />
                 </button>
 
                 <input
@@ -752,17 +979,27 @@ export default function AdminLiveChat() {
         </div>
       </div>
 
-      {/* Image Preview Lightbox */}
-      {previewImage && (
+      {/* Media Preview Lightbox */}
+      {previewMedia && (
         <div
-          onClick={() => setPreviewImage(null)}
+          onClick={() => setPreviewMedia(null)}
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
         >
           <div className="relative max-h-[90vh] max-w-[90vw]">
-            <img src={previewImage} alt="Phóng to" className="max-h-[85vh] rounded-xl object-contain shadow-2xl" />
+            {previewMedia.type === 'video' ? (
+              <video
+                src={previewMedia.url}
+                controls
+                autoPlay
+                onClick={(e) => e.stopPropagation()}
+                className="max-h-[85vh] rounded-xl shadow-2xl"
+              />
+            ) : (
+              <img src={previewMedia.url} alt="Phóng to" className="max-h-[85vh] rounded-xl object-contain shadow-2xl" />
+            )}
             <button
               type="button"
-              onClick={() => setPreviewImage(null)}
+              onClick={() => setPreviewMedia(null)}
               className="absolute -top-3 -right-3 flex h-8 w-8 items-center justify-center rounded-full bg-white text-stone-900 shadow hover:bg-stone-200"
             >
               <HiX className="h-5 w-5" />

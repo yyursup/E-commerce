@@ -1,14 +1,12 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  HiOutlineChat,
-  HiX,
-  HiOutlinePaperAirplane,
-  HiOutlineSparkles,
-  HiOutlinePhotograph,
-  HiOutlineUserGroup,
+  HiOutlineChat, HiX, HiOutlinePaperAirplane, HiOutlineSparkles,
+  HiOutlinePhotograph, HiOutlineUserGroup, HiOutlineVideoCamera,
+  HiOutlinePencil, HiOutlineTrash, HiOutlineBell, HiCheck, HiDotsVertical,
 } from 'react-icons/hi'
-import { Link } from 'react-router-dom'
+import { HiOutlineBellSlash } from 'react-icons/hi2'
+import { Link, useLocation } from 'react-router-dom'
 import { useThemeStore } from '../store/useThemeStore'
 import { useAuthStore } from '../store/useAuthStore'
 import { cn } from '../lib/cn'
@@ -20,6 +18,8 @@ import {
   addWebSocketListener,
   sendWebSocketMessage,
 } from '../services/websocketService'
+import { useChatNotification } from '../hooks/useChatNotification'
+import ChatNotificationToast from './ChatNotificationToast'
 
 function formatPrice(value) {
   if (value == null) return ''
@@ -39,8 +39,9 @@ function formatTime(isoString) {
 
 export default function ChatbotButton() {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
-  const account = useAuthStore((s) => s.account)
+  const user = useAuthStore((s) => s.user)
   const token = getAccessToken()
+  const location = useLocation()
 
   const [isOpen, setIsOpen] = useState(false)
   const [activeTab, setActiveTab] = useState('bot') // 'bot' | 'live'
@@ -62,19 +63,44 @@ export default function ChatbotButton() {
   const [liveLoading, setLiveLoading] = useState(false)
   const [liveSending, setLiveSending] = useState(false)
   const [adminTyping, setAdminTyping] = useState(false)
-  const [previewImage, setPreviewImage] = useState(null)
+  const [previewMedia, setPreviewMedia] = useState(null) // { url, type: 'image'|'video' }
+  const [editingMsgId, setEditingMsgId] = useState(null)
+  const [editingContent, setEditingContent] = useState('')
+  const [hoveredMsgId, setHoveredMsgId] = useState(null)
+  const [activeMenuMsgId, setActiveMenuMsgId] = useState(null)
 
   const botContainerRef = useRef(null)
   const liveContainerRef = useRef(null)
   const botInputRef = useRef(null)
   const liveInputRef = useRef(null)
+  const editInputRef = useRef(null)
   const fileInputRef = useRef(null)
+  const videoInputRef = useRef(null)
   const adminTypingTimeoutRef = useRef(null)
   const supportThreadRef = useRef(supportThread)
+
+  const { notifications, notifEnabled, addNotification, dismissNotification, toggleNotif } =
+    useChatNotification()
 
   useEffect(() => {
     supportThreadRef.current = supportThread
   }, [supportThread])
+
+  // Reset thread and messages when user/token changes (switching accounts)
+  useEffect(() => {
+    setSupportThread(null)
+    supportThreadRef.current = null
+    setLiveMessages([])
+  }, [token, user?.id])
+
+  // Click outside to close message options menu
+  useEffect(() => {
+    const handleDocClick = () => setActiveMenuMsgId(null)
+    if (activeMenuMsgId) {
+      document.addEventListener('click', handleDocClick)
+      return () => document.removeEventListener('click', handleDocClick)
+    }
+  }, [activeMenuMsgId])
 
   const scrollToBottom = useCallback((smooth = true) => {
     if (activeTab === 'bot' && botContainerRef.current) {
@@ -179,13 +205,12 @@ export default function ChatbotButton() {
     }
   }, [token])
 
-  // Connect WebSocket early when widget opens (not just when live tab is clicked)
-  // So that the customer's WS session is registered on the backend ASAP
+  // Connect WebSocket when token is available so customer receives notifications even when widget is closed
   useEffect(() => {
-    if (isOpen && token) {
+    if (token) {
       createWebSocketConnection(token)
     }
-  }, [isOpen, token])
+  }, [token])
 
   useEffect(() => {
     if (isOpen && activeTab === 'live' && token) {
@@ -207,19 +232,44 @@ export default function ChatbotButton() {
         setLiveMessages((prev) => {
           if (prev.some((m) => String(m.id).toLowerCase() === String(msg.id).toLowerCase())) return prev
           if (msg.messageType === 'IMAGE' && msg.imageUrl && prev.some((m) => m.imageUrl === msg.imageUrl)) return prev
-          // Reconcile optimistic temp message
+          if (msg.messageType === 'VIDEO' && msg.videoUrl && prev.some((m) => m.videoUrl === msg.videoUrl)) return prev
           const tempIdx = prev.findIndex(
             (m) => String(m.id).startsWith('temp-') && m.content === msg.content,
           )
           if (tempIdx !== -1) {
-            const next = [...prev]
-            next[tempIdx] = msg
-            return next
+            const next = [...prev]; next[tempIdx] = msg; return next
           }
           return [...prev, msg]
         })
         chatService.markRead(currentThread.id).catch(() => {})
       }
+
+      // Show notification only for admin messages sent to this customer's thread when widget is closed or on bot tab
+      const isSelf = user?.id && String(msg.senderId).toLowerCase() === String(user.id).toLowerCase()
+      const isForMe =
+        (currentThread?.id && String(msg.threadId).toLowerCase() === String(currentThread.id).toLowerCase()) ||
+        (user?.id && msg.recipientId && String(msg.recipientId).toLowerCase() === String(user.id).toLowerCase())
+      if (!isSelf && msg.senderRole !== 'CUSTOMER' && isForMe && (!isOpen || activeTab !== 'live')) {
+        addNotification(msg)
+      }
+    })
+
+    const unregEdited = addWebSocketListener('CHAT_MESSAGE_EDITED', (updated) => {
+      if (!updated) return
+      setLiveMessages((prev) =>
+        prev.map((m) => String(m.id).toLowerCase() === String(updated.id).toLowerCase() ? updated : m)
+      )
+    })
+
+    const unregDeleted = addWebSocketListener('CHAT_MESSAGE_DELETED', (payload) => {
+      if (!payload) return
+      setLiveMessages((prev) =>
+        prev.map((m) =>
+          String(m.id).toLowerCase() === String(payload.messageId).toLowerCase()
+            ? { ...m, isDeleted: true, content: '[Tin nhắn đã bị xóa]' }
+            : m
+        )
+      )
     })
 
     const unregTyping = addWebSocketListener('CHAT_TYPING', (data) => {
@@ -239,9 +289,11 @@ export default function ChatbotButton() {
 
     return () => {
       unregMsg()
+      unregEdited()
+      unregDeleted()
       unregTyping()
     }
-  }, [token, supportThread])
+  }, [token, addNotification, isOpen, activeTab])
 
   // Handle Send Live Chat message
   const handleLiveSend = async (e) => {
@@ -254,8 +306,8 @@ export default function ChatbotButton() {
     const optimisticMsg = {
       id: tempId,
       threadId: threadId,
-      senderId: account?.id,
-      senderName: account?.username || 'Khách hàng',
+      senderId: user?.id,
+      senderName: user?.username || user?.email || 'Khách hàng',
       senderRole: 'CUSTOMER',
       content,
       messageType: 'TEXT',
@@ -310,7 +362,6 @@ export default function ChatbotButton() {
     if (fileInputRef.current) fileInputRef.current.value = ''
     const threadId = supportThread?.id || supportThreadRef.current?.id
     if (!file || !threadId || liveSending) return
-
     try {
       setLiveSending(true)
       const newMsg = await chatService.sendImage(threadId, file)
@@ -320,12 +371,62 @@ export default function ChatbotButton() {
         if (newMsg.imageUrl && prev.some((m) => m.imageUrl === newMsg.imageUrl)) return prev
         return [...prev, newMsg]
       })
-    } catch (err) {
-      console.error('Lỗi tải ảnh:', err)
-    } finally {
-      setLiveSending(false)
-    }
+    } catch (err) { console.error('Lỗi tải ảnh:', err) }
+    finally { setLiveSending(false) }
   }
+
+  // Handle Live Chat Video Upload
+  const handleVideoUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (videoInputRef.current) videoInputRef.current.value = ''
+    const threadId = supportThread?.id || supportThreadRef.current?.id
+    if (!file || !threadId || liveSending) return
+    if (file.size > 50 * 1024 * 1024) { alert('Video tối đa 50MB'); return }
+    try {
+      setLiveSending(true)
+      const newMsg = await chatService.sendVideo(threadId, file)
+      setLiveMessages((prev) => {
+        if (!newMsg) return prev
+        if (prev.some((m) => String(m.id).toLowerCase() === String(newMsg.id).toLowerCase())) return prev
+        if (newMsg.videoUrl && prev.some((m) => m.videoUrl === newMsg.videoUrl)) return prev
+        return [...prev, newMsg]
+      })
+    } catch (err) { console.error('Lỗi tải video:', err) }
+    finally { setLiveSending(false) }
+  }
+
+  // Handle Edit Message
+  const handleStartEdit = (m) => {
+    setEditingMsgId(String(m.id))
+    setEditingContent(m.content)
+    setTimeout(() => editInputRef.current?.focus(), 50)
+  }
+  const handleSaveEdit = async () => {
+    if (!editingMsgId || !editingContent.trim()) return
+    try {
+      const updated = await chatService.editMessage(editingMsgId, editingContent.trim())
+      setLiveMessages((prev) => prev.map((m) => String(m.id) === editingMsgId ? updated : m))
+    } catch (err) { console.error('Lỗi sửa tin nhắn:', err) }
+    finally { setEditingMsgId(null); setEditingContent('') }
+  }
+  const handleCancelEdit = () => { setEditingMsgId(null); setEditingContent('') }
+
+  // Handle Delete Message
+  const handleDeleteMsg = async (msgId) => {
+    if (!window.confirm('Bạn có chắc muốn xóa tin nhắn này?')) return
+    try {
+      await chatService.deleteMessage(msgId)
+      setLiveMessages((prev) =>
+        prev.map((m) => String(m.id) === String(msgId) ? { ...m, isDeleted: true, content: '[Tin nhắn đã bị xóa]' } : m)
+      )
+    } catch (err) { console.error('Lỗi xóa tin nhắn:', err) }
+  }
+
+  // Open live chat from notification
+  const handleNotifOpen = useCallback(() => {
+    setIsOpen(true)
+    setActiveTab('live')
+  }, [])
 
   // --- BOT LOGIC ---
   const sendBotInteraction = (payload) => {
@@ -392,8 +493,20 @@ export default function ChatbotButton() {
     sendBotInteraction({ text, currentNodeId: botCurrentNodeId })
   }
 
+  // Do not render customer chatbot widget or toast inside admin panels
+  if (location.pathname.startsWith('/admin')) {
+    return null
+  }
+
   return (
     <>
+      {/* Notification toasts */}
+      <ChatNotificationToast
+        notifications={notifications}
+        onDismiss={dismissNotification}
+        onOpen={handleNotifOpen}
+      />
+
       {/* Floating Toggle Button */}
       <motion.button
         initial={{ scale: 0 }}
@@ -472,13 +585,26 @@ export default function ChatbotButton() {
                     <p className="text-[11px] opacity-80">Trực tuyến 24/7</p>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setIsOpen(false)}
-                  className="rounded-lg p-1 hover:bg-white/10"
-                >
-                  <HiX className="h-5 w-5" />
-                </button>
+                <div className="flex items-center gap-1">
+                  {/* Notification toggle bell */}
+                  <button
+                    type="button"
+                    onClick={toggleNotif}
+                    className="rounded-lg p-1.5 hover:bg-white/10 transition"
+                    title={notifEnabled ? 'Tắt thông báo' : 'Bật thông báo'}
+                  >
+                    {notifEnabled
+                      ? <HiOutlineBell className="h-4 w-4" />
+                      : <HiOutlineBellSlash className="h-4 w-4 opacity-60" />}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsOpen(false)}
+                    className="rounded-lg p-1 hover:bg-white/10"
+                  >
+                    <HiX className="h-5 w-5" />
+                  </button>
+                </div>
               </div>
 
               {/* Tabs */}
@@ -664,47 +790,147 @@ export default function ChatbotButton() {
                         <div className="p-8 text-center text-xs opacity-60">Đang tải lịch sử hỗ trợ...</div>
                       ) : liveMessages.length === 0 ? (
                         <div className="p-6 text-center text-xs opacity-60 leading-relaxed">
-                          Chào {account?.username || 'bạn'}! Bạn đang kết nối với kênh hỗ trợ trực tuyến. Hãy gửi tin nhắn hoặc hình ảnh, nhân viên sẽ phản hồi bạn ngay.
+                          Chào {user?.username || user?.email || 'bạn'}! Bạn đang kết nối với kênh hỗ trợ trực tuyến. Hãy gửi tin nhắn hoặc hình ảnh, nhân viên sẽ phản hồi bạn ngay.
                         </div>
                       ) : (
                         liveMessages.map((m) => {
                           const isMe = m.senderRole === 'CUSTOMER'
+                          const isEditing = editingMsgId === String(m.id)
+                          const isHovered = hoveredMsgId === String(m.id)
                           return (
                             <div
                               key={m.id || m.createdAt}
-                              className={cn('flex flex-col', isMe ? 'items-end' : 'items-start')}
+                              className={cn('flex flex-col relative', isMe ? 'items-end' : 'items-start')}
+                              onMouseEnter={() => setHoveredMsgId(String(m.id))}
+                              onMouseLeave={() => setHoveredMsgId(null)}
                             >
                               <span className="text-[10px] mb-0.5 px-1 opacity-60">
-                                {m.senderName} • {formatTime(m.createdAt)}
+                                {m.senderName} • {formatTime(m.createdAt)}{m.editedAt && ' (đã sửa)'}
                               </span>
-                              <div
-                                className={cn(
-                                  'max-w-[85%] rounded-2xl px-4 py-2.5 text-sm shadow-sm',
-                                  isMe
-                                    ? 'rounded-tr-xs bg-amber-500 text-white'
-                                    : isDark
-                                      ? 'rounded-tl-xs bg-slate-800 text-slate-100 border border-slate-700'
-                                      : 'rounded-tl-xs bg-stone-100 text-stone-900 border border-stone-200',
-                                  m.messageType === 'IMAGE' && 'p-1.5 overflow-hidden',
-                                )}
-                              >
-                                {m.messageType === 'IMAGE' ? (
-                                  <div className="space-y-1">
-                                    <img
-                                      src={m.imageUrl}
-                                      alt="Ảnh"
-                                      onLoad={() => scrollToBottom(false)}
-                                      onClick={() => setPreviewImage(m.imageUrl)}
-                                      className="max-h-44 max-w-full rounded-xl object-contain cursor-pointer transition hover:opacity-90 shadow-sm"
-                                    />
-                                    {m.content && m.content !== '[Hình ảnh]' && (
-                                      <p className="px-2 py-1 text-xs whitespace-pre-wrap">{m.content}</p>
+
+                              {isEditing ? (
+                                <div className="flex w-full max-w-[85%] gap-1">
+                                  <input
+                                    ref={editInputRef}
+                                    value={editingContent}
+                                    onChange={(e) => setEditingContent(e.target.value)}
+                                    onKeyDown={(e) => { if (e.key === 'Enter') handleSaveEdit(); if (e.key === 'Escape') handleCancelEdit() }}
+                                    className={cn('flex-1 rounded-xl border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-500/30',
+                                      isDark ? 'border-slate-600 bg-slate-800 text-white' : 'border-stone-300 bg-white text-stone-900'
+                                    )}
+                                  />
+                                  <button onClick={handleSaveEdit} className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500 text-white hover:bg-amber-600"><HiCheck className="h-4 w-4" /></button>
+                                  <button onClick={handleCancelEdit} className={cn('flex h-9 w-9 items-center justify-center rounded-xl border', isDark ? 'border-slate-600 hover:bg-slate-700' : 'border-stone-300 hover:bg-stone-100')}><HiX className="h-4 w-4" /></button>
+                                </div>
+                              ) : (
+                                <div className={cn('flex items-center gap-1.5 max-w-[85%]', isMe ? 'flex-row' : 'flex-row-reverse')}>
+                                  {/* Messenger 3-dots action button */}
+                                  {isMe && !m.isDeleted && (
+                                    <div className="relative shrink-0">
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          setActiveMenuMsgId(activeMenuMsgId === String(m.id) ? null : String(m.id))
+                                        }}
+                                        className={cn(
+                                          'flex h-7 w-7 items-center justify-center rounded-full transition',
+                                          activeMenuMsgId === String(m.id)
+                                            ? (isDark ? 'bg-slate-700 text-white' : 'bg-stone-200 text-stone-800')
+                                            : (isHovered ? 'opacity-100' : 'opacity-0'),
+                                          isDark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-stone-200 text-stone-500'
+                                        )}
+                                        title="Tùy chọn tin nhắn"
+                                      >
+                                        <HiDotsVertical className="h-4 w-4" />
+                                      </button>
+
+                                      {/* Popover menu */}
+                                      {activeMenuMsgId === String(m.id) && (
+                                        <div
+                                          onClick={(e) => e.stopPropagation()}
+                                          className={cn(
+                                            'absolute bottom-full mb-1.5 z-40 min-w-[130px] rounded-xl border p-1 shadow-xl backdrop-blur-md animate-in fade-in zoom-in-95',
+                                            isMe ? 'right-0' : 'left-0',
+                                            isDark
+                                              ? 'border-slate-700 bg-slate-800/95 text-slate-200 shadow-black/40'
+                                              : 'border-stone-200 bg-white/95 text-stone-800 shadow-stone-400/25'
+                                          )}
+                                        >
+                                          {m.messageType === 'TEXT' && (
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                setActiveMenuMsgId(null)
+                                                handleStartEdit(m)
+                                              }}
+                                              className={cn(
+                                                'flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium transition text-left',
+                                                isDark ? 'hover:bg-slate-700' : 'hover:bg-stone-100'
+                                              )}
+                                            >
+                                              <HiOutlinePencil className="h-3.5 w-3.5" />
+                                              <span>Chỉnh sửa</span>
+                                            </button>
+                                          )}
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              setActiveMenuMsgId(null)
+                                              handleDeleteMsg(m.id)
+                                            }}
+                                            className={cn(
+                                              'flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium transition text-left text-rose-600 dark:text-rose-400',
+                                              isDark ? 'hover:bg-rose-950/40' : 'hover:bg-rose-50'
+                                            )}
+                                          >
+                                            <HiOutlineTrash className="h-3.5 w-3.5" />
+                                            <span>Xóa tin nhắn</span>
+                                          </button>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+
+                                  {/* Message Bubble */}
+                                  <div
+                                    className={cn(
+                                      'rounded-2xl px-4 py-2.5 text-sm shadow-sm',
+                                      isMe
+                                        ? 'rounded-tr-xs bg-amber-500 text-white'
+                                        : isDark
+                                          ? 'rounded-tl-xs bg-slate-800 text-slate-100 border border-slate-700'
+                                          : 'rounded-tl-xs bg-stone-100 text-stone-900 border border-stone-200',
+                                      (m.messageType === 'IMAGE' || m.messageType === 'VIDEO') && 'p-1.5 overflow-hidden',
+                                      m.isDeleted && 'opacity-50 italic',
+                                    )}
+                                  >
+                                    {m.messageType === 'IMAGE' ? (
+                                      <div className="space-y-1">
+                                        <img
+                                          src={m.imageUrl}
+                                          alt="Ảnh"
+                                          onLoad={() => scrollToBottom(false)}
+                                          onClick={() => setPreviewMedia({ url: m.imageUrl, type: 'image' })}
+                                          className="max-h-44 max-w-full rounded-xl object-contain cursor-pointer transition hover:opacity-90 shadow-sm"
+                                        />
+                                        {m.content && m.content !== '[Hình ảnh]' && (
+                                          <p className="px-2 py-1 text-xs whitespace-pre-wrap">{m.content}</p>
+                                        )}
+                                      </div>
+                                    ) : m.messageType === 'VIDEO' ? (
+                                      <video
+                                        src={m.videoUrl}
+                                        controls
+                                        onLoadedData={() => scrollToBottom(false)}
+                                        className="max-h-44 max-w-full rounded-xl object-contain shadow-sm"
+                                      />
+                                    ) : (
+                                      <p className="whitespace-pre-wrap leading-relaxed">{m.content}</p>
                                     )}
                                   </div>
-                                ) : (
-                                  <p className="whitespace-pre-wrap leading-relaxed">{m.content}</p>
-                                )}
-                              </div>
+                                </div>
+                              )}
                             </div>
                           )
                         })
@@ -729,26 +955,37 @@ export default function ChatbotButton() {
                         isDark ? 'border-slate-800 bg-slate-850' : 'border-stone-200 bg-stone-50',
                       )}
                     >
-                      <input
-                        type="file"
-                        ref={fileInputRef}
-                        onChange={handleImageUpload}
-                        accept="image/*"
-                        className="hidden"
-                      />
+                      <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
+                      <input type="file" ref={videoInputRef} onChange={handleVideoUpload} accept="video/*" className="hidden" />
+
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
                         disabled={liveSending}
                         className={cn(
-                          'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition',
+                          'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border transition',
                           isDark
                             ? 'border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-750'
                             : 'border-stone-300 bg-white text-stone-600 hover:bg-stone-100',
                         )}
                         title="Đính kèm ảnh"
                       >
-                        <HiOutlinePhotograph className="h-5 w-5" />
+                        <HiOutlinePhotograph className="h-4 w-4" />
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => videoInputRef.current?.click()}
+                        disabled={liveSending}
+                        className={cn(
+                          'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border transition',
+                          isDark
+                            ? 'border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-750'
+                            : 'border-stone-300 bg-white text-stone-600 hover:bg-stone-100',
+                        )}
+                        title="Đính kèm video (max 50MB)"
+                      >
+                        <HiOutlineVideoCamera className="h-4 w-4" />
                       </button>
 
                       <input
@@ -769,9 +1006,9 @@ export default function ChatbotButton() {
                       <button
                         type="submit"
                         disabled={!liveInputValue.trim() || liveSending}
-                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white transition hover:bg-amber-600 disabled:opacity-40"
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white transition hover:bg-amber-600 disabled:opacity-40"
                       >
-                        <HiOutlinePaperAirplane className="h-5 w-5" />
+                        <HiOutlinePaperAirplane className="h-4 w-4" />
                       </button>
                     </form>
                   </>
@@ -782,17 +1019,27 @@ export default function ChatbotButton() {
         )}
       </AnimatePresence>
 
-      {/* Lightbox for Image Preview */}
-      {previewImage && (
+      {/* Lightbox for Image/Video Preview */}
+      {previewMedia && (
         <div
-          onClick={() => setPreviewImage(null)}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          onClick={() => setPreviewMedia(null)}
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/85 p-4"
         >
           <div className="relative max-h-[90vh] max-w-[90vw]">
-            <img src={previewImage} alt="Xem ảnh" className="max-h-[85vh] rounded-xl object-contain shadow-2xl" />
+            {previewMedia.type === 'video' ? (
+              <video
+                src={previewMedia.url}
+                controls
+                autoPlay
+                onClick={(e) => e.stopPropagation()}
+                className="max-h-[85vh] rounded-xl shadow-2xl"
+              />
+            ) : (
+              <img src={previewMedia.url} alt="Xem ảnh" className="max-h-[85vh] rounded-xl object-contain shadow-2xl" />
+            )}
             <button
               type="button"
-              onClick={() => setPreviewImage(null)}
+              onClick={() => setPreviewMedia(null)}
               className="absolute -top-3 -right-3 flex h-8 w-8 items-center justify-center rounded-full bg-white text-stone-900 shadow hover:bg-stone-200"
             >
               <HiX className="h-5 w-5" />

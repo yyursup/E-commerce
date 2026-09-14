@@ -5,6 +5,7 @@ import cartService from '../services/cart'
 import orderService from '../services/order'
 import { userAddressService } from '../services/userAddressService'
 import { shippingService } from '../services/shippingService'
+import shopService from '../services/shop'
 import { useThemeStore } from '../store/useThemeStore'
 import { cn } from '../lib/cn'
 import { HiOutlineLocationMarker, HiArrowLeft, HiOutlineShoppingBag, HiPlus } from 'react-icons/hi'
@@ -21,6 +22,7 @@ export default function Checkout() {
     const [loading, setLoading] = useState(true)
     const [cartItems, setCartItems] = useState([])
     const [shopName, setShopName] = useState('')
+    const [shopOrigin, setShopOrigin] = useState(null)
     const [totalPrice, setTotalPrice] = useState(0)
     const [shippingFee, setShippingFee] = useState(0)
     const [isCalculatingFee, setIsCalculatingFee] = useState(false)
@@ -62,6 +64,33 @@ export default function Checkout() {
             setShopName(shopItems[0].shopName || 'Shop')
             setTotalPrice(shopItems.reduce((sum, item) => sum + item.totalPrice, 0))
 
+            // Load Shop warehouse origin for GHN shipping calculation
+            try {
+                const confirmData = await orderService.getCheckoutConfirm(shopId)
+                if (confirmData?.shopDistrictId) {
+                    setShopOrigin({
+                        districtId: confirmData.shopDistrictId,
+                        wardCode: confirmData.shopWardCode || "20101",
+                        address: confirmData.shopAddress || confirmData.shopName || "Kho hàng Shop",
+                    })
+                } else {
+                    const sData = await shopService.getShopById(shopId)
+                    setShopOrigin({
+                        districtId: sData?.districtId || (sData?.city === 'Hà Nội' ? 1542 : sData?.city === 'Đà Nẵng' ? 1530 : 1442),
+                        wardCode: sData?.wardCode || (sData?.city === 'Hà Nội' ? "1B1507" : sData?.city === 'Đà Nẵng' ? "40101" : "20101"),
+                        address: sData?.location || sData?.address || "Kho hàng Shop",
+                    })
+                }
+            } catch (err) {
+                console.warn("Could not get confirm shop origin, fallback to shopService", err)
+                const sData = await shopService.getShopById(shopId)
+                setShopOrigin({
+                    districtId: sData?.districtId || (sData?.city === 'Hà Nội' ? 1542 : sData?.city === 'Đà Nẵng' ? 1530 : 1442),
+                    wardCode: sData?.wardCode || (sData?.city === 'Hà Nội' ? "1B1507" : sData?.city === 'Đà Nẵng' ? "40101" : "20101"),
+                    address: sData?.location || sData?.address || "Kho hàng Shop",
+                })
+            }
+
             // Fetch Addresses
             await loadAddresses()
 
@@ -91,31 +120,29 @@ export default function Checkout() {
         }
     }
 
-    // Calculate shipping fee whenever address changes
+    // Calculate shipping fee whenever address or shop warehouse changes
     useEffect(() => {
-        if (selectedAddressId && addresses.length > 0) {
+        if (selectedAddressId && addresses.length > 0 && shopOrigin) {
             calculateShippingFee()
         }
-    }, [selectedAddressId, addresses])
+    }, [selectedAddressId, addresses, shopOrigin])
 
     const calculateShippingFee = async () => {
         const selectedAddr = addresses.find(a => a.id === selectedAddressId)
         if (!selectedAddr) return
 
         if (!selectedAddr.districtId || !selectedAddr.wardCode) {
-            // Need to ensure address has GHN info
-            // console.warn("Address missing GHN info (districtId/wardCode)")
             return
         }
 
         try {
             setIsCalculatingFee(true)
 
-            // Mock Shop Address (Quan 1, HCM) - Todo: Fetch from API
-            const FROM_DISTRICT_ID = 1442;
-            const FROM_WARD_CODE = "20101";
+            // Real Shop Dispatch Warehouse from backend
+            const FROM_DISTRICT_ID = shopOrigin?.districtId || 1442;
+            const FROM_WARD_CODE = shopOrigin?.wardCode || "20101";
 
-            // Calculate weight (Mock: 500g per item * quantity)
+            // Calculate weight (500g per item * quantity)
             const totalWeight = cartItems.reduce((sum, item) => sum + (item.quantity * 500), 0)
 
             const feeData = await shippingService.calculateFee({
@@ -125,13 +152,12 @@ export default function Checkout() {
                 to_ward_code: selectedAddr.wardCode,
                 weight: totalWeight,
                 service_type_id: 2, // Standard
-                insurance_value: totalPrice > 5000000 ? 5000000 : totalPrice // Max 5M insurance for demo
+                insurance_value: totalPrice > 5000000 ? 5000000 : totalPrice
             })
 
             setShippingFee(feeData.total || 0)
         } catch (error) {
             console.error("Failed to calculate shipping fee", error)
-            // toast.error("Không thể tính phí vận chuyển")
             setShippingFee(0)
         } finally {
             setIsCalculatingFee(false)
@@ -270,9 +296,17 @@ export default function Checkout() {
 
                         {/* Order Items */}
                         <div className={cn("rounded-2xl border overflow-hidden shadow-sm", isDark ? "border-slate-800 bg-slate-900" : "border-stone-200 bg-white")}>
-                            <div className={cn("px-6 py-4 border-b flex items-center gap-2", isDark ? "border-slate-800 bg-slate-800/50" : "border-stone-100 bg-stone-50")}>
-                                <HiOutlineShoppingBag className="w-5 h-5 text-amber-600 dark:text-amber-500" />
-                                <h2 className={cn("font-bold text-lg", isDark ? "text-white" : "text-stone-900")}>Sản phẩm</h2>
+                            <div className={cn("px-6 py-4 border-b flex flex-wrap items-center justify-between gap-2", isDark ? "border-slate-800 bg-slate-800/50" : "border-stone-100 bg-stone-50")}>
+                                <div className="flex items-center gap-2">
+                                    <HiOutlineShoppingBag className="w-5 h-5 text-amber-600 dark:text-amber-500" />
+                                    <h2 className={cn("font-bold text-lg", isDark ? "text-white" : "text-stone-900")}>Sản phẩm ({shopName})</h2>
+                                </div>
+                                {shopOrigin?.address && (
+                                    <div className="text-xs text-stone-500 dark:text-slate-400 flex items-center gap-1.5">
+                                        <HiOutlineLocationMarker className="w-4 h-4 text-amber-500 shrink-0" />
+                                        <span>Kho gửi GHN: <strong className="text-stone-800 dark:text-slate-200">{shopOrigin.address}</strong></span>
+                                    </div>
+                                )}
                             </div>
                             <div className="divide-y divide-stone-100 dark:divide-slate-800">
                                 {cartItems.map((item) => (

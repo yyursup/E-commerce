@@ -25,6 +25,9 @@ public class OrderItemResponse {
     private BigDecimal unitPrice;
     private BigDecimal totalPrice;
     private String productImageUrl;
+    private UUID variantId;
+    private String variantColor;
+    private String variantSize;
     private boolean isReviewed;
 
     public static OrderItemResponse fromOrderItem(OrderItem orderItem) {
@@ -51,6 +54,9 @@ public class OrderItemResponse {
                 .quantity(orderItem.getQuantity())
                 .unitPrice(orderItem.getUnitPrice())
                 .totalPrice(orderItem.getTotalPrice())
+                .variantId(orderItem.getVariantId())
+                .variantColor(orderItem.getVariantColor())
+                .variantSize(orderItem.getVariantSize())
                 .build();
     }
 }

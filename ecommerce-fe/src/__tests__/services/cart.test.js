@@ -48,7 +48,8 @@ describe('cartService', () => {
 
       expect(axiosClient.post).toHaveBeenCalledWith('/api/v1/cart/items', {
         productId: 123,
-        quantity: 1
+        quantity: 1,
+        variantId: null
       })
     })
 
@@ -59,7 +60,8 @@ describe('cartService', () => {
 
       expect(axiosClient.post).toHaveBeenCalledWith('/api/v1/cart/items', {
         productId: 123,
-        quantity: 5
+        quantity: 5,
+        variantId: null
       })
     })
   })

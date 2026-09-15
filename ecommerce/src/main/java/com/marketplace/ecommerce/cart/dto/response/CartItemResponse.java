@@ -35,6 +35,9 @@ public class CartItemResponse {
     private UUID shopId;
     private String shopName;
 
+    private UUID categoryId;
+    private String categoryName;
+
     public static CartItemResponse fromCartItem(CartItem cartItem) {
         String imageUrl = null;
 
@@ -73,6 +76,8 @@ public class CartItemResponse {
                 .variantSize(variant != null ? variant.getSize() : null)
                 .shopId(cartItem.getProduct() != null && cartItem.getProduct().getShop() != null ? cartItem.getProduct().getShop().getId() : null)
                 .shopName(cartItem.getProduct() != null && cartItem.getProduct().getShop() != null ? cartItem.getProduct().getShop().getName() : null)
+                .categoryId(cartItem.getProduct() != null && cartItem.getProduct().getProductCategory() != null ? cartItem.getProduct().getProductCategory().getId() : null)
+                .categoryName(cartItem.getProduct() != null && cartItem.getProduct().getProductCategory() != null ? cartItem.getProduct().getProductCategory().getName() : null)
                 .build();
     }
 }

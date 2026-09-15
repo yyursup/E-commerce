@@ -23,13 +23,16 @@ import ProductCard from '../components/ProductCard'
 import ReportActionButton from '../components/ReportActionButton'
 import Footer from '../components/Footer'
 import { useThemeStore } from '../store/useThemeStore'
+import { useAuthStore } from '../store/useAuthStore'
 import { cn } from '../lib/cn'
 import shopService from '../services/shop'
 import productService from '../services/product'
+import voucherService from '../services/voucher'
 
 export default function ShopProfile() {
   const { shopId } = useParams()
   const isDark = useThemeStore((s) => s.theme) === 'dark'
+  const { isAuthenticated } = useAuthStore()
 
   const [shop, setShop] = useState(null)
   const [loadingShop, setLoadingShop] = useState(true)
@@ -42,8 +45,10 @@ export default function ShopProfile() {
   const [sortBy, setSortBy] = useState('popular') // 'popular' | 'newest' | 'bestseller' | 'price_asc' | 'price_desc'
   const [searchInShop, setSearchInShop] = useState('')
   const [savedVouchers, setSavedVouchers] = useState({})
+  const [shopVouchers, setShopVouchers] = useState([])
+  const [loadingVouchers, setLoadingVouchers] = useState(false)
 
-  // Fetch shop details
+  // Fetch shop details & vouchers
   useEffect(() => {
     const loadShopData = async () => {
       try {
@@ -56,8 +61,65 @@ export default function ShopProfile() {
         setLoadingShop(false)
       }
     }
+
+    const loadVouchers = async () => {
+      if (!shopId) return
+      try {
+        setLoadingVouchers(true)
+        const mySavedCodes = new Set()
+
+        if (isAuthenticated) {
+          try {
+            const myVouchers = await voucherService.getMyVouchers()
+            if (Array.isArray(myVouchers)) {
+              myVouchers.forEach((uv) => {
+                if (uv.voucher?.code) mySavedCodes.add(uv.voucher.code)
+              })
+            }
+          } catch (e) {
+            console.warn('Could not load user vouchers in shop profile', e)
+          }
+        }
+
+        const vList = await voucherService.getShopVouchers(shopId)
+        if (Array.isArray(vList) && vList.length > 0) {
+          setShopVouchers(vList)
+          const saved = {}
+          vList.forEach((v) => {
+            if (v.isClaimed || v.claimed || mySavedCodes.has(v.code)) {
+              saved[v.code] = true
+            }
+          })
+          setSavedVouchers(saved)
+        } else {
+          // Fallback demo vouchers for shop
+          const fallbackList = [
+            { code: 'SHOP15K', title: 'Giảm 15k đơn từ 150k', minOrderAmount: 150000, discountValue: 15000, validTo: null },
+            { code: 'SHOP30K', title: 'Giảm 30k đơn từ 300k', minOrderAmount: 300000, discountValue: 30000, validTo: null },
+            { code: 'VIP10', title: 'Giảm 10% tối đa 100k', minOrderAmount: 200000, discountValue: 10, validTo: null },
+          ]
+          setShopVouchers(fallbackList)
+          const saved = {}
+          fallbackList.forEach((v) => {
+            if (mySavedCodes.has(v.code)) saved[v.code] = true
+          })
+          setSavedVouchers(saved)
+        }
+      } catch (err) {
+        console.warn('Could not load shop vouchers, using fallback', err)
+        setShopVouchers([
+          { code: 'SHOP15K', title: 'Giảm 15k đơn từ 150k', minOrderAmount: 150000, discountValue: 15000, validTo: null },
+          { code: 'SHOP30K', title: 'Giảm 30k đơn từ 300k', minOrderAmount: 300000, discountValue: 30000, validTo: null },
+          { code: 'VIP10', title: 'Giảm 10% tối đa 100k', minOrderAmount: 200000, discountValue: 10, validTo: null },
+        ])
+      } finally {
+        setLoadingVouchers(false)
+      }
+    }
+
     loadShopData()
-  }, [shopId])
+    loadVouchers()
+  }, [shopId, isAuthenticated])
 
   // Fetch shop products
   useEffect(() => {
@@ -145,9 +207,25 @@ export default function ShopProfile() {
     })
   }
 
-  const handleSaveVoucher = (code) => {
+  const handleSaveVoucher = async (voucher) => {
+    const code = voucher.code
+    if (savedVouchers[code]) return
+
     setSavedVouchers((prev) => ({ ...prev, [code]: true }))
-    toast.success(`Đã lưu mã giảm giá ${code} vào ví của bạn!`)
+
+    if (isAuthenticated && voucher.id && String(voucher.id).length > 20) {
+      try {
+        await voucherService.claimVoucher(voucher.id)
+        toast.success(`Đã lưu mã giảm giá ${code} vào ví của bạn!`)
+      } catch (err) {
+        console.warn('Claim voucher API error:', err)
+        toast.error(err?.message || 'Không thể lưu mã voucher')
+      }
+    } else if (!isAuthenticated) {
+      toast.success(`Đã ghi nhớ mã ${code}! Đăng nhập để lưu vào ví của bạn.`)
+    } else {
+      toast.success(`Đã lưu mã giảm giá ${code} vào ví của bạn!`)
+    }
   }
 
   const handleShareShop = () => {
@@ -355,36 +433,38 @@ export default function ShopProfile() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            {[
-              { code: 'SHOP15K', text: 'Giảm 15k đơn từ 150k', hsd: 'HSD: 30 ngày' },
-              { code: 'SHOP30K', text: 'Giảm 30k đơn từ 300k', hsd: 'HSD: 15 ngày' },
-              { code: 'VIP10', text: 'Giảm 10% tối đa 100k', hsd: 'Freeship GHN' },
-            ].map((v) => (
-              <div
-                key={v.code}
-                className={cn(
-                  'flex items-center gap-3 rounded-xl border border-dashed px-3 py-2 text-xs transition-all',
-                  isDark ? 'border-amber-500/40 bg-amber-500/5' : 'border-amber-500/50 bg-amber-50/60'
-                )}
-              >
-                <div>
-                  <div className="font-bold text-amber-600 dark:text-amber-400">{v.text}</div>
-                  <div className="text-[10px] text-stone-400 dark:text-slate-500">{v.hsd}</div>
-                </div>
-                <button
-                  onClick={() => handleSaveVoucher(v.code)}
-                  disabled={savedVouchers[v.code]}
+            {shopVouchers.map((v) => {
+              const isSaved = savedVouchers[v.code]
+              const titleText = v.title || (v.discountType === 'PERCENTAGE' ? `Giảm ${v.discountValue}%` : `Giảm ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(v.discountValue || 0)}`)
+              const minText = v.minOrderAmount ? `Đơn từ ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(v.minOrderAmount)}` : 'Mọi đơn hàng'
+
+              return (
+                <div
+                  key={v.id || v.code}
                   className={cn(
-                    'rounded-lg px-2.5 py-1 font-bold text-[11px] transition-colors',
-                    savedVouchers[v.code]
-                      ? 'bg-stone-200 dark:bg-slate-800 text-stone-400 cursor-not-allowed'
-                      : 'bg-amber-500 text-white hover:bg-amber-600'
+                    'flex items-center gap-3 rounded-xl border border-dashed px-3 py-2 text-xs transition-all',
+                    isDark ? 'border-amber-500/40 bg-amber-500/5' : 'border-amber-500/50 bg-amber-50/60'
                   )}
                 >
-                  {savedVouchers[v.code] ? 'Đã lưu' : 'Lưu'}
-                </button>
-              </div>
-            ))}
+                  <div>
+                    <div className="font-bold text-amber-600 dark:text-amber-400">{titleText}</div>
+                    <div className="text-[10px] text-stone-400 dark:text-slate-500">{minText}</div>
+                  </div>
+                  <button
+                    onClick={() => handleSaveVoucher(v)}
+                    disabled={isSaved}
+                    className={cn(
+                      'rounded-lg px-2.5 py-1 font-bold text-[11px] transition-colors',
+                      isSaved
+                        ? 'bg-stone-200 dark:bg-slate-800 text-stone-400 cursor-not-allowed'
+                        : 'bg-amber-500 text-white hover:bg-amber-600'
+                    )}
+                  >
+                    {isSaved ? 'Đã lưu' : 'Lưu'}
+                  </button>
+                </div>
+              )
+            })}
           </div>
         </div>
       </section>

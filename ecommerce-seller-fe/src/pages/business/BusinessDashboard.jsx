@@ -16,11 +16,10 @@ import { useAuthStore } from '../../store/useAuthStore'
 import { cn } from '../../lib/cn'
 import toast from 'react-hot-toast'
 import sellerService from '../../services/seller'
-import categoryService from '../../services/category'
 import statisticsService from '../../services/statistics'
 import walletService from '../../services/wallet'
 import SellerProductCard from './components/SellerProductCard'
-import ImageUpload from './components/ImageUpload'
+import ProductFormModal from './components/ProductFormModal'
 import OrderStatusSummary from './components/OrderStatusSummary'
 
 export default function BusinessDashboard() {
@@ -465,6 +464,7 @@ export default function BusinessDashboard() {
   )
 }
 
+<<<<<<< HEAD
 // Product Form Modal Component
 function ProductFormModal({ product, onClose, onSuccess }) {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
@@ -959,3 +959,5 @@ function ProductFormModal({ product, onClose, onSuccess }) {
     </div>
   )
 }
+=======
+>>>>>>> develop

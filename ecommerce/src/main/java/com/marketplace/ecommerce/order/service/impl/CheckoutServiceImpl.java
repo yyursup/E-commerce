@@ -6,20 +6,18 @@ import com.marketplace.ecommerce.auth.repository.UserAddressRepository;
 import com.marketplace.ecommerce.auth.repository.UserRepository;
 import com.marketplace.ecommerce.cart.entity.Cart;
 import com.marketplace.ecommerce.cart.entity.CartItem;
-import com.marketplace.ecommerce.cart.repository.CartItemRepository;
 import com.marketplace.ecommerce.cart.repository.CartRepository;
 import com.marketplace.ecommerce.common.exception.CustomException;
 import com.marketplace.ecommerce.order.dto.request.QuoteRequest;
 import com.marketplace.ecommerce.order.dto.response.CheckoutConfirmResponse;
 import com.marketplace.ecommerce.order.dto.response.QuoteResponse;
-import com.marketplace.ecommerce.order.repository.OrderItemsRepository;
-import com.marketplace.ecommerce.order.repository.OrderRepository;
 import com.marketplace.ecommerce.order.service.CheckoutService;
-import com.marketplace.ecommerce.product.repository.ProductRepository;
 import com.marketplace.ecommerce.shipping.service.ShippingService;
-import com.marketplace.ecommerce.shipping.usecase.GHNClient;
 import com.marketplace.ecommerce.shop.entity.Shop;
 import com.marketplace.ecommerce.shop.repository.ShopRepository;
+import com.marketplace.ecommerce.voucher.dto.VoucherCalculationResponse;
+import com.marketplace.ecommerce.voucher.dto.VoucherResponse;
+import com.marketplace.ecommerce.voucher.service.VoucherService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,6 +36,7 @@ public class CheckoutServiceImpl implements CheckoutService {
     private final CartRepository cartRepository;
     private final UserAddressRepository userAddressRepository;
     private final ShippingService shippingService;
+    private final VoucherService voucherService;
 
     @Override
     @Transactional(readOnly = true)
@@ -67,9 +66,31 @@ public class CheckoutServiceImpl implements CheckoutService {
 
         BigDecimal shippingFee = shippingService.quoteFee(shop, items, addr.getDistrictId(), addr.getWardCode());
 
+        BigDecimal discountAmount = BigDecimal.ZERO;
+        String voucherCode = null;
+        if (req.getVoucherCode() != null && !req.getVoucherCode().isBlank()) {
+            VoucherCalculationResponse calc = voucherService.validateAndCalculate(
+                    accountId,
+                    req.getVoucherCode().trim(),
+                    req.getShopId(),
+                    subtotal,
+                    shippingFee
+            );
+            discountAmount = calc.getDiscountAmount();
+            voucherCode = calc.getVoucherCode();
+        }
+
+        BigDecimal total = subtotal.add(shippingFee).subtract(discountAmount);
+        if (total.compareTo(BigDecimal.ZERO) < 0) {
+            total = BigDecimal.ZERO;
+        }
+
         QuoteResponse res = new QuoteResponse();
+        res.setSubtotal(subtotal);
         res.setShippingFee(shippingFee);
-        res.setTotal(subtotal.add(shippingFee));
+        res.setDiscountAmount(discountAmount);
+        res.setVoucherCode(voucherCode);
+        res.setTotal(total);
         return res;
     }
 
@@ -105,7 +126,9 @@ public class CheckoutServiceImpl implements CheckoutService {
             shippingFee = shippingService.quoteFee(shop, items, addr.getDistrictId(), addr.getWardCode());
         }
 
-        return CheckoutConfirmResponse.of(shop, addr, items, subtotal, shippingFee);
+        List<VoucherResponse> availableVouchers = voucherService.listActiveVouchers(null, shopId, accountId);
+
+        return CheckoutConfirmResponse.of(shop, addr, items, subtotal, shippingFee, availableVouchers);
     }
 
 }

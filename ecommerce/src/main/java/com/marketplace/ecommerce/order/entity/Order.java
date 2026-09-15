@@ -72,6 +72,17 @@ public class Order {
     @Column(name = "notes", columnDefinition = "TEXT")
     private String notes;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "voucher_id")
+    private com.marketplace.ecommerce.voucher.entity.Voucher voucher;
+
+    @Column(name = "voucher_code", length = 50)
+    private String voucherCode;
+
+    @Builder.Default
+    @Column(name = "discount_amount", precision = 12, scale = 2)
+    private BigDecimal discountAmount = BigDecimal.ZERO;
+
     @Column(name = "subtotal", nullable = false, precision = 12, scale = 2)
     private BigDecimal subtotal;
 
@@ -120,6 +131,10 @@ public class Order {
         if (shippingFee == null) {
             shippingFee = BigDecimal.ZERO;
         }
-        total = subtotal.add(shippingFee);
+        if (discountAmount == null) {
+            discountAmount = BigDecimal.ZERO;
+        }
+        BigDecimal rawTotal = subtotal.add(shippingFee).subtract(discountAmount);
+        total = rawTotal.compareTo(BigDecimal.ZERO) < 0 ? BigDecimal.ZERO : rawTotal;
     }
 }

@@ -8,6 +8,7 @@ import { cn } from '../lib/cn'
 import { motion, AnimatePresence } from 'framer-motion'
 import { HiOutlineTrash, HiMinus, HiPlus, HiArrowRight, HiOutlineShoppingBag, HiTicket } from 'react-icons/hi'
 import toast from 'react-hot-toast'
+import Footer from '../components/Footer'
 
 export default function Cart() {
     const { isAuthenticated } = useAuthStore()
@@ -85,30 +86,36 @@ export default function Cart() {
 
     if (!isAuthenticated) {
         return (
-            <div className={cn("flex min-h-[60vh] flex-col items-center justify-center p-4 text-center", isDark ? "bg-slate-950" : "bg-stone-50")}>
-                <div className="mb-6 rounded-full bg-amber-100 p-6 dark:bg-amber-900/20">
-                    <HiOutlineShoppingBag className="h-12 w-12 text-amber-600 dark:text-amber-500" />
+            <div className={cn("min-h-screen flex flex-col justify-between transition-colors", isDark ? "bg-slate-950 text-slate-100" : "bg-stone-50 text-stone-900")}>
+                <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-8 text-center my-8">
+                    <div className="mb-6 rounded-full bg-amber-100 p-6 dark:bg-amber-900/20">
+                        <HiOutlineShoppingBag className="h-12 w-12 text-amber-600 dark:text-amber-500" />
+                    </div>
+                    <h2 className={cn("mb-2 text-2xl font-bold", isDark ? "text-white" : "text-stone-900")}>
+                        Bạn chưa đăng nhập
+                    </h2>
+                    <p className={cn("mb-8 max-w-sm", isDark ? "text-slate-400" : "text-stone-500")}>
+                        Vui lòng đăng nhập để xem giỏ hàng và thực hiện mua sắm
+                    </p>
+                    <Link
+                        to="/login"
+                        className="rounded-xl bg-amber-500 px-8 py-3 font-bold text-white transition hover:bg-amber-600 hover:shadow-lg hover:shadow-amber-500/25 active:scale-95"
+                    >
+                        Đăng nhập ngay
+                    </Link>
                 </div>
-                <h2 className={cn("mb-2 text-2xl font-bold", isDark ? "text-white" : "text-stone-900")}>
-                    Bạn chưa đăng nhập
-                </h2>
-                <p className={cn("mb-8 max-w-sm", isDark ? "text-slate-400" : "text-stone-500")}>
-                    Vui lòng đăng nhập để xem giỏ hàng và thực hiện mua sắm
-                </p>
-                <Link
-                    to="/login"
-                    className="rounded-full bg-amber-500 px-8 py-3 font-bold text-white transition hover:bg-amber-600 hover:shadow-lg hover:shadow-amber-500/25"
-                >
-                    Đăng nhập ngay
-                </Link>
+                <Footer />
             </div>
         )
     }
 
     if (loading) {
         return (
-            <div className={cn("flex min-h-screen items-center justify-center", isDark ? "bg-slate-950" : "bg-stone-50")}>
-                <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent"></div>
+            <div className={cn("min-h-screen flex flex-col justify-between transition-colors", isDark ? "bg-slate-950 text-slate-100" : "bg-stone-50 text-stone-900")}>
+                <div className="flex-1 flex items-center justify-center">
+                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent"></div>
+                </div>
+                <Footer />
             </div>
         )
     }
@@ -116,31 +123,34 @@ export default function Cart() {
     // Handle Empty Cart
     if (!items || items.length === 0) {
         return (
-            <div className={cn("flex min-h-[60vh] flex-col items-center justify-center p-4 text-center", isDark ? "bg-slate-950" : "bg-stone-50")}>
-                <motion.div
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    className="mb-6"
-                >
-                    <img
-                        src="https://cdni.iconscout.com/illustration/premium/thumb/empty-cart-2130356-1800917.png"
-                        alt="Empty Cart"
-                        className="w-64 opacity-80 grayscale mix-blend-luminosity hover:grayscale-0 transition-all duration-500"
-                    />
-                </motion.div>
+            <div className={cn("min-h-screen flex flex-col justify-between transition-colors", isDark ? "bg-slate-950 text-slate-100" : "bg-stone-50 text-stone-900")}>
+                <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-8 text-center my-8">
+                    <motion.div
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        className="mb-6"
+                    >
+                        <img
+                            src="https://cdni.iconscout.com/illustration/premium/thumb/empty-cart-2130356-1800917.png"
+                            alt="Empty Cart"
+                            className="w-64 opacity-80 grayscale mix-blend-luminosity hover:grayscale-0 transition-all duration-500"
+                        />
+                    </motion.div>
 
-                <h2 className={cn("mb-2 text-xl font-bold", isDark ? "text-white" : "text-stone-900")}>
-                    Giỏ hàng trống
-                </h2>
-                <p className={cn("mb-8 text-sm", isDark ? "text-slate-400" : "text-stone-500")}>
-                    Có vẻ như bạn chưa thêm sản phẩm nào vào giỏ hàng.
-                </p>
-                <Link
-                    to="/"
-                    className="rounded-xl bg-stone-900 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-stone-800 dark:bg-white dark:text-stone-900 dark:hover:bg-stone-200"
-                >
-                    Tiếp tục mua sắm
-                </Link>
+                    <h2 className={cn("mb-2 text-2xl font-bold", isDark ? "text-white" : "text-stone-900")}>
+                        Giỏ hàng trống
+                    </h2>
+                    <p className={cn("mb-8 text-sm", isDark ? "text-slate-400" : "text-stone-500")}>
+                        Có vẻ như bạn chưa thêm sản phẩm nào vào giỏ hàng.
+                    </p>
+                    <Link
+                        to="/"
+                        className="rounded-xl bg-amber-500 px-8 py-3 text-sm font-bold text-white transition hover:bg-amber-600 hover:shadow-lg hover:shadow-amber-500/25 active:scale-95"
+                    >
+                        Tiếp tục mua sắm
+                    </Link>
+                </div>
+                <Footer />
             </div>
         )
     }
@@ -161,8 +171,9 @@ export default function Cart() {
     }, {});
 
     return (
-        <div className={cn("min-h-screen py-10 px-4 sm:px-6 lg:px-8", isDark ? "bg-slate-950" : "bg-stone-50")}>
-            <div className="mx-auto max-w-7xl">
+        <div className={cn("min-h-screen flex flex-col justify-between transition-colors", isDark ? "bg-slate-950 text-slate-100" : "bg-stone-50 text-stone-900")}>
+            <div className="flex-1 py-10 px-4 sm:px-6 lg:px-8">
+                <div className="mx-auto max-w-7xl">
                 <h1 className={cn("mb-8 text-3xl font-bold", isDark ? "text-white" : "text-stone-900")}>
                     Giỏ hàng của bạn
                     <span className="ml-3 text-lg font-normal text-stone-500">
@@ -329,6 +340,8 @@ export default function Cart() {
                     </div>
                 </div>
             </div>
+            </div>
+            <Footer />
         </div>
     )
 }

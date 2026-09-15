@@ -10,15 +10,15 @@ import Verify from './pages/Verify'
 import Cart from './pages/Cart'
 import Kyc from './pages/kyc/Kyc'
 import Profile from './pages/Profile'
-import Checkout from './pages/Checkout'
 import PaymentResult from './pages/PaymentResult'
 import MyOrders from './pages/orders/MyOrders'
 import OrderDetail from './pages/orders/OrderDetail'
-import Deals from './pages/Deals'
 import Marketplace from './pages/Marketplace'
 import ShopProfile from './pages/ShopProfile'
 import ReportCreate from './pages/ReportCreate'
 import ProfileWallet from './pages/profile/ProfileWallet'
+import Deals from './pages/deals/Deals'
+import Checkout from './pages/checkout/Checkout'
 
 export default function App() {
   return (
@@ -29,6 +29,7 @@ export default function App() {
         <Route path="/deals" element={<Deals />} />
         <Route path="/marketplace" element={<Marketplace />} />
         <Route path="/shop/:shopId" element={<ShopProfile />} />
+        <Route path="/shops/:shopId" element={<ShopProfile />} />
         <Route path="/products" element={<Products />} />
         <Route path="/products/:productId" element={<ProductDetail />} />
         <Route path="/login" element={<Login />} />

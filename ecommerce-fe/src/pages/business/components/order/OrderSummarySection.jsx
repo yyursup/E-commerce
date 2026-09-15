@@ -4,6 +4,7 @@ import {
   HiOutlineLockClosed,
   HiOutlineShieldCheck,
   HiOutlineClock,
+  HiOutlineTag,
 } from 'react-icons/hi'
 
 const ESCROW_HELD_STATUSES = ['CONFIRMED', 'PROCESSING', 'SHIPPING', 'SHIPPED']
@@ -30,6 +31,17 @@ export default function OrderSummarySection({ order, isDark }) {
             {formatCurrency(order.shippingFee)}
           </span>
         </div>
+        {Number(order.discountAmount) > 0 && (
+          <div className="flex justify-between text-emerald-600 dark:text-emerald-400">
+            <span className="text-sm flex items-center gap-1 font-medium">
+              <HiOutlineTag className="h-4 w-4" />
+              Giảm giá voucher {order.voucherCode ? `(${order.voucherCode})` : ''}
+            </span>
+            <span className="text-sm font-bold">
+              -{formatCurrency(order.discountAmount)}
+            </span>
+          </div>
+        )}
         {order.platformCommission > 0 && (
           <div className="flex justify-between">
             <span className={cn('text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>

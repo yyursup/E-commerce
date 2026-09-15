@@ -11,6 +11,7 @@ import {
   HiOutlineChat,
   HiOutlineTrendingUp,
   HiOutlineCreditCard,
+  HiOutlineTicket,
 } from 'react-icons/hi'
 import { useAuthStore } from '../../store/useAuthStore'
 import { useThemeStore } from '../../store/useThemeStore'
@@ -20,6 +21,7 @@ const navItems = [
   { to: '/dashboard', label: 'Tổng quan (Dashboard)', icon: HiOutlineViewGrid },
   { to: '/requests', label: 'Duyệt mở Shop', icon: HiOutlineClipboardCheck },
   { to: '/orders', label: 'Quản lý Đơn hàng', icon: HiOutlineShoppingBag },
+  { to: '/vouchers', label: 'Voucher Toàn Sàn', icon: HiOutlineTicket },
   { to: '/escrows', label: 'Ký quỹ Escrow', icon: HiOutlineCurrencyDollar },
   { to: '/wallets', label: 'Tra cứu Ví tiền', icon: HiOutlineSearch },
   { to: '/platform-wallet', label: 'Ví của sàn', icon: HiOutlineCreditCard },

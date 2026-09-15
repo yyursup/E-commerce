@@ -34,6 +34,8 @@ public class OrderResponse {
     private Integer shippingDistrictId;
     private String shippingWardCode;
     private String notes;
+    private String voucherCode;
+    private BigDecimal discountAmount;
     private BigDecimal subtotal;
     private BigDecimal shippingFee;
     private BigDecimal total;
@@ -48,15 +50,17 @@ public class OrderResponse {
                 .toList();
 
         BigDecimal shippingFee = order.getShippingFee() != null ? order.getShippingFee() : BigDecimal.ZERO;
+        BigDecimal discountAmount = order.getDiscountAmount() != null ? order.getDiscountAmount() : BigDecimal.ZERO;
 
-        BigDecimal subtotal = items.stream()
+        BigDecimal subtotal = order.getSubtotal() != null
+                ? order.getSubtotal()
+                : items.stream()
                 .map(OrderItemResponse::getTotalPrice)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         BigDecimal total = order.getTotal() != null
                 ? order.getTotal()
-                : subtotal.add(shippingFee);
-
+                : subtotal.add(shippingFee).subtract(discountAmount);
 
         return OrderResponse.builder()
                 .id(order.getId())
@@ -75,6 +79,8 @@ public class OrderResponse {
                 .shippingDistrictId(order.getShippingDistrictId())
                 .shippingWardCode(order.getShippingWardCode())
                 .notes(order.getNotes())
+                .voucherCode(order.getVoucherCode() != null ? order.getVoucherCode() : (order.getVoucher() != null ? order.getVoucher().getCode() : null))
+                .discountAmount(discountAmount)
                 .subtotal(subtotal)
                 .shippingFee(shippingFee)
                 .total(total)

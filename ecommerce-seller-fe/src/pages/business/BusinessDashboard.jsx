@@ -19,7 +19,6 @@ import sellerService from '../../services/seller'
 import statisticsService from '../../services/statistics'
 import walletService from '../../services/wallet'
 import SellerProductCard from './components/SellerProductCard'
-import ProductFormModal from './components/ProductFormModal'
 import OrderStatusSummary from './components/OrderStatusSummary'
 
 export default function BusinessDashboard() {
@@ -464,7 +463,7 @@ export default function BusinessDashboard() {
   )
 }
 
-<<<<<<< HEAD
+
 // Product Form Modal Component
 function ProductFormModal({ product, onClose, onSuccess }) {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
@@ -491,7 +490,7 @@ function ProductFormModal({ product, onClose, onSuccess }) {
   useEffect(() => {
     setImageUrls(product?.images?.map((img) => img.imageUrl || img) || [])
     setVariants(product?.variants || [])
-    
+
     if (product) {
       setFormData(prev => ({
         ...prev,
@@ -522,7 +521,7 @@ function ProductFormModal({ product, onClose, onSuccess }) {
       const totalStock = variants.reduce((sum, v) => sum + (parseInt(v.stock) || 0), 0);
       const prices = variants.map(v => parseFloat(v.price) || 0).filter(p => p > 0);
       const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
-      
+
       setFormData(prev => ({
         ...prev,
         stockQuantity: totalStock,
@@ -570,11 +569,11 @@ function ProductFormModal({ product, onClose, onSuccess }) {
         stockQuantity: parseInt(formData.stockQuantity) || 0,
         categoryId: formData.categoryId,
         variants: variants.map(v => ({
-           id: v.id || null,
-           color: v.color || '',
-           size: v.size || '',
-           price: parseFloat(v.price) || 0,
-           stock: parseInt(v.stock) || 0
+          id: v.id || null,
+          color: v.color || '',
+          size: v.size || '',
+          price: parseFloat(v.price) || 0,
+          stock: parseInt(v.stock) || 0
         })),
         images: imageUrls.map((url, index) => ({
           imageUrl: url,
@@ -849,7 +848,7 @@ function ProductFormModal({ product, onClose, onSuccess }) {
                 Thêm phân loại
               </button>
             </div>
-            
+
             {variants.length > 0 && (
               <div className="space-y-3 mb-4">
                 {variants.map((variant, index) => (
@@ -959,5 +958,3 @@ function ProductFormModal({ product, onClose, onSuccess }) {
     </div>
   )
 }
-=======
->>>>>>> develop

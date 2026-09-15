@@ -10,15 +10,15 @@ import Verify from './pages/Verify'
 import Cart from './pages/Cart'
 import Kyc from './pages/kyc/Kyc'
 import Profile from './pages/Profile'
-import Checkout from './pages/Checkout'
 import PaymentResult from './pages/PaymentResult'
 import MyOrders from './pages/orders/MyOrders'
 import OrderDetail from './pages/orders/OrderDetail'
-import Deals from './pages/Deals'
 import Marketplace from './pages/Marketplace'
 import ShopProfile from './pages/ShopProfile'
 import ReportCreate from './pages/ReportCreate'
 import ProfileWallet from './pages/profile/ProfileWallet'
+import Deals from './pages/deals/Deals'
+import Checkout from './pages/checkout/Checkout'
 
 export default function App() {
   return (

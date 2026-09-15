@@ -289,7 +289,18 @@ export default function ProductDetail() {
   const variants = product.variants || []
   const hasVariants = variants.length > 0
 
-  const price = selectedVariant?.price ? Number(selectedVariant.price) : (product.basePrice ? Number(product.basePrice) : 0)
+  let price = 0
+  let isFromPrice = false
+
+  if (selectedVariant) {
+    price = Number(selectedVariant.price)
+  } else if (hasVariants) {
+    const prices = variants.map(v => Number(v.price) || 0).filter(p => p > 0)
+    price = prices.length > 0 ? Math.min(...prices) : (Number(product.basePrice) || 0)
+    isFromPrice = true
+  } else {
+    price = Number(product.basePrice) || 0
+  }
   const originalPrice = Math.round(price * 1.22) // Giá gốc trước giảm (giống Shopee gạch ngang)
   const displayStock = selectedVariant ? (selectedVariant.stock || 0) : (product.quantity || 0)
   const images = product.images || []
@@ -422,7 +433,7 @@ export default function ProductDetail() {
                 </span>
                 <div className="flex items-baseline gap-2">
                   <span className="text-2xl sm:text-3xl font-black text-rose-600 dark:text-rose-500">
-                    {formatVND(price)}
+                    {isFromPrice ? `Từ ${formatVND(price)}` : formatVND(price)}
                   </span>
                   <span className="rounded-md bg-rose-500/10 text-rose-600 dark:text-rose-400 px-2 py-0.5 text-xs font-black uppercase">
                     -18% Giảm
@@ -501,8 +512,12 @@ export default function ProductDetail() {
                         <button
                           key={variant.id}
                           onClick={() => {
-                            setSelectedVariant(variant)
-                            setQuantity(1)
+                            if (selectedVariant?.id === variant.id) {
+                              setSelectedVariant(null)
+                            } else {
+                              setSelectedVariant(variant)
+                              setQuantity(1)
+                            }
                           }}
                           className={cn(
                             'rounded-xl border px-3.5 py-2 text-xs font-bold transition-all cursor-pointer',

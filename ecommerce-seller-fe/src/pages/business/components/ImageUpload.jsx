@@ -49,7 +49,7 @@ export default function ImageUpload({ onUpload, existingImages = [], onRemove })
       uploading: true,
     }))
     
-    setPreviewUrls([...previewUrls, ...newPreviewUrls])
+    setPreviewUrls((prev) => [...prev, ...newPreviewUrls])
 
     // Upload files
     try {
@@ -256,16 +256,25 @@ export default function ImageUpload({ onUpload, existingImages = [], onRemove })
                 key={index}
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="group relative aspect-square overflow-hidden rounded-lg border"
+                className={cn(
+                  "group relative aspect-square overflow-hidden rounded-lg border",
+                  index === 0 ? "border-amber-500 ring-2 ring-amber-500 ring-offset-2 dark:ring-offset-slate-900" : "border-stone-200 dark:border-slate-700"
+                )}
               >
                 <img
                   src={imageUrl}
                   alt={`Preview ${index + 1}`}
-                  className="h-full w-full object-cover"
+                  className="h-full w-full object-contain bg-stone-100 dark:bg-slate-800"
                 />
                 
+                <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/60 to-transparent p-2 z-10">
+                   <span className="text-[10px] font-bold text-white drop-shadow-md">
+                      {index === 0 ? '✨ Ảnh chính (Avatar)' : `Ảnh phụ ${index}`}
+                   </span>
+                </div>
+
                 {isUploading && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-20">
                     <div className="h-8 w-8 animate-spin rounded-full border-4 border-white border-t-transparent"></div>
                   </div>
                 )}
@@ -275,7 +284,7 @@ export default function ImageUpload({ onUpload, existingImages = [], onRemove })
                   onClick={() => handleRemoveImage(index, imageUrl)}
                   disabled={isUploading}
                   className={cn(
-                    'absolute right-2 top-2 rounded-full p-1.5 transition-all',
+                    'absolute right-2 top-2 rounded-full p-1.5 transition-all z-20',
                     isUploading
                       ? 'cursor-not-allowed opacity-50'
                       : 'bg-red-500 text-white opacity-0 hover:bg-red-600 group-hover:opacity-100',

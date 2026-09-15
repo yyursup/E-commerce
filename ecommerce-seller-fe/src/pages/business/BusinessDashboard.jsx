@@ -9,6 +9,7 @@ import {
   HiOutlinePlusCircle,
   HiOutlineX,
   HiOutlineLockClosed,
+  HiOutlineTrash,
 } from 'react-icons/hi'
 import { useThemeStore } from '../../store/useThemeStore'
 import { useAuthStore } from '../../store/useAuthStore'
@@ -18,7 +19,6 @@ import sellerService from '../../services/seller'
 import statisticsService from '../../services/statistics'
 import walletService from '../../services/wallet'
 import SellerProductCard from './components/SellerProductCard'
-import ProductFormModal from './components/ProductFormModal'
 import OrderStatusSummary from './components/OrderStatusSummary'
 
 export default function BusinessDashboard() {
@@ -64,6 +64,7 @@ export default function BusinessDashboard() {
           categoryId: product.categoryId,
           images: product.images || [],
           image: imageUrl,
+          variants: product.variants || [],
         }
       })
 
@@ -462,3 +463,498 @@ export default function BusinessDashboard() {
   )
 }
 
+
+// Product Form Modal Component
+function ProductFormModal({ product, onClose, onSuccess }) {
+  const isDark = useThemeStore((s) => s.theme) === 'dark'
+  const [formData, setFormData] = useState({
+    name: product?.name || '',
+    description: product?.description || '',
+    sku: product?.sku || '',
+    basePrice: product?.price || '',
+    stockQuantity: product?.stock || 0,
+    categoryId: product?.categoryId || '',
+    images: product?.images || [],
+    status: product?.status || 'PUBLISHED',
+  })
+  const [submitting, setSubmitting] = useState(false)
+  const [categories, setCategories] = useState([])
+  const [loadingCategories, setLoadingCategories] = useState(true)
+  const [imageUrls, setImageUrls] = useState(
+    product?.images?.map((img) => img.imageUrl || img) || []
+  )
+  const [variants, setVariants] = useState(
+    product?.variants || []
+  )
+
+  useEffect(() => {
+    setImageUrls(product?.images?.map((img) => img.imageUrl || img) || [])
+    setVariants(product?.variants || [])
+
+    if (product) {
+      setFormData(prev => ({
+        ...prev,
+        name: product.name || '',
+        description: product.description || '',
+        sku: product.sku || '',
+        basePrice: product.price || '',
+        stockQuantity: product.stock || 0,
+        categoryId: product.categoryId || '',
+        status: product.status || 'PUBLISHED',
+      }))
+    } else {
+      setFormData({
+        name: '',
+        description: '',
+        sku: '',
+        basePrice: '',
+        stockQuantity: 0,
+        categoryId: '',
+        status: 'PUBLISHED',
+      })
+    }
+  }, [product])
+
+  // Auto-calculate base price and total stock from variants
+  useEffect(() => {
+    if (variants.length > 0) {
+      const totalStock = variants.reduce((sum, v) => sum + (parseInt(v.stock) || 0), 0);
+      const prices = variants.map(v => parseFloat(v.price) || 0).filter(p => p > 0);
+      const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
+
+      setFormData(prev => ({
+        ...prev,
+        stockQuantity: totalStock,
+        basePrice: minPrice > 0 ? minPrice : prev.basePrice
+      }));
+    }
+  }, [variants]);
+
+  // Fetch categories from API
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setLoadingCategories(true)
+        const categoriesData = await categoryService.getAllCategories()
+        setCategories(categoriesData)
+      } catch (err) {
+        console.error('Error fetching categories:', err)
+        toast.error('Không thể tải danh sách danh mục')
+        // Fallback to empty array
+        setCategories([])
+      } finally {
+        setLoadingCategories(false)
+      }
+    }
+
+    fetchCategories()
+  }, [])
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+
+    if (!formData.name || !formData.sku || !formData.basePrice || !formData.categoryId) {
+      toast.error('Vui lòng điền đầy đủ thông tin bắt buộc')
+      return
+    }
+
+    try {
+      setSubmitting(true)
+
+      const productData = {
+        name: formData.name,
+        description: formData.description || '',
+        sku: formData.sku,
+        basePrice: parseFloat(formData.basePrice),
+        stockQuantity: parseInt(formData.stockQuantity) || 0,
+        categoryId: formData.categoryId,
+        variants: variants.map(v => ({
+          id: v.id || null,
+          color: v.color || '',
+          size: v.size || '',
+          price: parseFloat(v.price) || 0,
+          stock: parseInt(v.stock) || 0
+        })),
+        images: imageUrls.map((url, index) => ({
+          imageUrl: url,
+          isThumbnail: index === 0,
+          displayOrder: index,
+        })),
+      }
+
+      if (product) {
+        // Update product
+        productData.status = formData.status
+        await sellerService.updateProduct(product.id, productData)
+        toast.success('Cập nhật sản phẩm thành công')
+      } else {
+        // Create product
+        await sellerService.createProduct(productData)
+        toast.success('Tạo sản phẩm thành công')
+      }
+
+      onSuccess()
+    } catch (err) {
+      console.error('Error saving product:', err)
+      const errorMessage = err?.response?.data?.message || err?.message || 'Không thể lưu sản phẩm'
+      toast.error(errorMessage)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleImageUpload = (newUrls) => {
+    setImageUrls([...imageUrls, ...newUrls])
+  }
+
+  const handleImageRemove = (removedUrl) => {
+    setImageUrls(imageUrls.filter((url) => url !== removedUrl))
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className={cn(
+          'relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl border p-6',
+          isDark ? 'border-slate-700 bg-slate-900' : 'border-stone-200 bg-white',
+        )}
+      >
+        <div className="mb-6 flex items-center justify-between">
+          <h2
+            className={cn(
+              'text-2xl font-bold',
+              isDark ? 'text-white' : 'text-stone-900',
+            )}
+          >
+            {product ? 'Chỉnh sửa sản phẩm' : 'Thêm sản phẩm mới'}
+          </h2>
+          <button
+            onClick={onClose}
+            className={cn(
+              'rounded-lg p-2 transition-colors',
+              isDark
+                ? 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900',
+            )}
+          >
+            <HiOutlineX className="h-6 w-6" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label
+              className={cn(
+                'mb-2 block text-sm font-medium',
+                isDark ? 'text-slate-300' : 'text-stone-700',
+              )}
+            >
+              Tên sản phẩm <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              required
+              className={cn(
+                'w-full rounded-lg border px-3 py-2',
+                isDark
+                  ? 'border-slate-700 bg-slate-800 text-white'
+                  : 'border-stone-300 bg-white text-stone-900',
+              )}
+            />
+          </div>
+
+          <div>
+            <label
+              className={cn(
+                'mb-2 block text-sm font-medium',
+                isDark ? 'text-slate-300' : 'text-stone-700',
+              )}
+            >
+              Mô tả
+            </label>
+            <textarea
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              rows={4}
+              className={cn(
+                'w-full rounded-lg border px-3 py-2',
+                isDark
+                  ? 'border-slate-700 bg-slate-800 text-white'
+                  : 'border-stone-300 bg-white text-stone-900',
+              )}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label
+                className={cn(
+                  'mb-2 block text-sm font-medium',
+                  isDark ? 'text-slate-300' : 'text-stone-700',
+                )}
+              >
+                SKU <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={formData.sku}
+                onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+                required
+                className={cn(
+                  'w-full rounded-lg border px-3 py-2',
+                  isDark
+                    ? 'border-slate-700 bg-slate-800 text-white'
+                    : 'border-stone-300 bg-white text-stone-900',
+                )}
+              />
+            </div>
+
+            <div>
+              <label
+                className={cn(
+                  'mb-2 block text-sm font-medium',
+                  isDark ? 'text-slate-300' : 'text-stone-700',
+                )}
+              >
+                Giá (VND) <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="number"
+                value={formData.basePrice}
+                onChange={(e) => setFormData({ ...formData, basePrice: e.target.value })}
+                required
+                min="0"
+                step="1000"
+                disabled={variants.length > 0}
+                className={cn(
+                  'w-full rounded-lg border px-3 py-2',
+                  isDark
+                    ? 'border-slate-700 bg-slate-800 text-white'
+                    : 'border-stone-300 bg-white text-stone-900',
+                  variants.length > 0 && 'opacity-50 cursor-not-allowed bg-stone-100 dark:bg-slate-900'
+                )}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label
+                className={cn(
+                  'mb-2 block text-sm font-medium',
+                  isDark ? 'text-slate-300' : 'text-stone-700',
+                )}
+              >
+                Số lượng tồn kho
+              </label>
+              <input
+                type="number"
+                value={formData.stockQuantity}
+                onChange={(e) => setFormData({ ...formData, stockQuantity: e.target.value })}
+                min="0"
+                disabled={variants.length > 0}
+                className={cn(
+                  'w-full rounded-lg border px-3 py-2',
+                  isDark
+                    ? 'border-slate-700 bg-slate-800 text-white'
+                    : 'border-stone-300 bg-white text-stone-900',
+                  variants.length > 0 && 'opacity-50 cursor-not-allowed bg-stone-100 dark:bg-slate-900'
+                )}
+              />
+            </div>
+
+            <div>
+              <label
+                className={cn(
+                  'mb-2 block text-sm font-medium',
+                  isDark ? 'text-slate-300' : 'text-stone-700',
+                )}
+              >
+                Danh mục <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={formData.categoryId}
+                onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
+                required
+                disabled={loadingCategories}
+                className={cn(
+                  'w-full rounded-lg border px-3 py-2',
+                  isDark
+                    ? 'border-slate-700 bg-slate-800 text-white'
+                    : 'border-stone-300 bg-white text-stone-900',
+                  loadingCategories && 'opacity-50 cursor-not-allowed',
+                )}
+              >
+                <option value="">
+                  {loadingCategories ? 'Đang tải danh mục...' : 'Chọn danh mục'}
+                </option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {product && (
+            <div>
+              <label
+                className={cn(
+                  'mb-2 block text-sm font-medium',
+                  isDark ? 'text-slate-300' : 'text-stone-700',
+                )}
+              >
+                Trạng thái
+              </label>
+              <select
+                value={formData.status}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                className={cn(
+                  'w-full rounded-lg border px-3 py-2',
+                  isDark
+                    ? 'border-slate-700 bg-slate-800 text-white'
+                    : 'border-stone-300 bg-white text-stone-900',
+                )}
+              >
+                <option value="PUBLISHED">Đang bán</option>
+                <option value="DRAFT">Bản nháp</option>
+                <option value="ARCHIVED">Đã lưu trữ</option>
+              </select>
+            </div>
+          )}
+
+          {/* Variants section */}
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <label
+                className={cn(
+                  'block text-sm font-medium',
+                  isDark ? 'text-slate-300' : 'text-stone-700',
+                )}
+              >
+                Phân loại (Màu sắc / Kích cỡ)
+              </label>
+              <button
+                type="button"
+                onClick={() => setVariants([...variants, { id: null, color: '', size: '', price: '', stock: '' }])}
+                className="text-xs font-medium text-amber-500 hover:text-amber-600 flex items-center gap-1"
+              >
+                <HiOutlinePlusCircle className="h-4 w-4" />
+                Thêm phân loại
+              </button>
+            </div>
+
+            {variants.length > 0 && (
+              <div className="space-y-3 mb-4">
+                {variants.map((variant, index) => (
+                  <div key={index} className={cn("p-3 rounded-lg border flex gap-3 items-start", isDark ? "border-slate-700 bg-slate-800/50" : "border-stone-200 bg-stone-50")}>
+                    <div className="grid grid-cols-2 gap-3 flex-1">
+                      <input
+                        type="text"
+                        placeholder="Màu sắc (VD: Đen)"
+                        value={variant.color || ''}
+                        onChange={(e) => {
+                          const newVar = [...variants];
+                          newVar[index].color = e.target.value;
+                          setVariants(newVar);
+                        }}
+                        className={cn('w-full rounded-md border px-2 py-2 text-sm', isDark ? 'border-slate-600 bg-slate-700 text-white' : 'border-stone-300 bg-white text-stone-900')}
+                      />
+                      <input
+                        type="text"
+                        placeholder="Kích cỡ (VD: XL)"
+                        value={variant.size || ''}
+                        onChange={(e) => {
+                          const newVar = [...variants];
+                          newVar[index].size = e.target.value;
+                          setVariants(newVar);
+                        }}
+                        className={cn('w-full rounded-md border px-2 py-2 text-sm', isDark ? 'border-slate-600 bg-slate-700 text-white' : 'border-stone-300 bg-white text-stone-900')}
+                      />
+                      <input
+                        type="number"
+                        placeholder="Giá riêng"
+                        value={variant.price === 0 && !variant.id ? '' : variant.price}
+                        onChange={(e) => {
+                          const newVar = [...variants];
+                          newVar[index].price = e.target.value;
+                          setVariants(newVar);
+                        }}
+                        className={cn('w-full rounded-md border px-2 py-2 text-sm', isDark ? 'border-slate-600 bg-slate-700 text-white' : 'border-stone-300 bg-white text-stone-900')}
+                      />
+                      <input
+                        type="number"
+                        placeholder="Tồn kho"
+                        value={variant.stock === 0 && !variant.id ? '' : variant.stock}
+                        onChange={(e) => {
+                          const newVar = [...variants];
+                          newVar[index].stock = e.target.value;
+                          setVariants(newVar);
+                        }}
+                        className={cn('w-full rounded-md border px-2 py-2 text-sm', isDark ? 'border-slate-600 bg-slate-700 text-white' : 'border-stone-300 bg-white text-stone-900')}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setVariants(variants.filter((_, i) => i !== index))}
+                      className="p-1.5 mt-1 text-stone-400 hover:text-red-500 rounded-md transition-colors"
+                      title="Xóa phân loại này"
+                    >
+                      <HiOutlineTrash className="h-5 w-5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label
+              className={cn(
+                'mb-2 block text-sm font-medium',
+                isDark ? 'text-slate-300' : 'text-stone-700',
+              )}
+            >
+              Hình ảnh
+            </label>
+            <ImageUpload
+              onUpload={handleImageUpload}
+              existingImages={imageUrls}
+              onRemove={handleImageRemove}
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className={cn(
+                'rounded-lg px-4 py-2 text-sm font-medium transition-colors',
+                isDark
+                  ? 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                  : 'bg-stone-100 text-stone-700 hover:bg-stone-200',
+              )}
+            >
+              Hủy
+            </button>
+            <button
+              type="submit"
+              disabled={submitting}
+              className={cn(
+                'rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors',
+                'bg-amber-500 hover:bg-amber-600 disabled:opacity-50',
+              )}
+            >
+              {submitting ? 'Đang lưu...' : product ? 'Cập nhật' : 'Tạo sản phẩm'}
+            </button>
+          </div>
+        </form>
+      </motion.div>
+    </div>
+  )
+}

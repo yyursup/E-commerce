@@ -23,6 +23,7 @@ import requestService from '../services/request'
 import kycService from '../services/kyc'
 import CameraCapture from '../components/CameraCapture'
 import BusinessLicenseUpload from '../components/BusinessLicenseUpload'
+import ShopCoverImageUpload from '../components/ShopCoverImageUpload'
 
 export default function SellerRegister() {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
@@ -851,34 +852,36 @@ export default function SellerRegister() {
                 <div className="space-y-5">
                   <h3 className={cn("text-lg font-semibold border-b pb-2", isDark ? "text-white border-slate-700" : "text-stone-900 border-stone-200")}>1. Hồ sơ shop</h3>
 
-                  <div className="grid gap-5 md:grid-cols-2">
-                    <div>
-                      <label className={cn('mb-1.5 block text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>Tên shop</label>
-                      <div className="relative">
-                        <HiOutlineUser className={cn('absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2', isDark ? 'text-slate-500' : 'text-stone-400')} />
-                        <input
-                          type="text"
-                          placeholder="VD: TechZone Official"
-                          className={cn('w-full rounded-xl border py-3 pl-10 pr-4 text-sm outline-none transition placeholder:opacity-60', isDark ? 'border-slate-600 bg-slate-800/50 text-white placeholder:text-slate-500 focus:border-amber-500/60 focus:ring-2 focus:ring-amber-500/20' : 'border-stone-300 bg-stone-50/80 text-stone-900 placeholder:text-stone-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20', errors.shopName && 'border-red-500/70 focus:border-red-500 focus:ring-red-500/20')}
-                          {...register('shopName', { required: 'Vui lòng nhập tên shop', maxLength: { value: 150, message: 'Tối đa 150 ký tự' } })}
-                        />
-                      </div>
-                      {errors.shopName && <p className="mt-1.5 text-sm text-red-500">{errors.shopName.message}</p>}
-                    </div>
+                  {/* Ảnh bìa gian hàng */}
+                  <div>
+                    <label className={cn('mb-1.5 block text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>
+                      Ảnh bìa gian hàng (Cover Banner)
+                    </label>
+                    <ShopCoverImageUpload
+                      value={watch('coverImageUrl')}
+                      onChange={(url) => setValue('coverImageUrl', url || '', { shouldValidate: true })}
+                      error={errors.coverImageUrl?.message}
+                    />
+                    <input
+                      type="hidden"
+                      {...register('coverImageUrl', { maxLength: { value: 255, message: 'Tối đa 255 ký tự' } })}
+                    />
+                  </div>
 
-                    <div>
-                      <label className={cn('mb-1.5 block text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>Ảnh bìa (URL)</label>
-                      <div className="relative">
-                        <HiOutlinePhotograph className={cn('absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2', isDark ? 'text-slate-500' : 'text-stone-400')} />
-                        <input
-                          type="url"
-                          placeholder="https://..."
-                          className={cn('w-full rounded-xl border py-3 pl-10 pr-4 text-sm outline-none transition placeholder:opacity-60', isDark ? 'border-slate-600 bg-slate-800/50 text-white placeholder:text-slate-500 focus:border-amber-500/60 focus:ring-2 focus:ring-amber-500/20' : 'border-stone-300 bg-stone-50/80 text-stone-900 placeholder:text-stone-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20', errors.coverImageUrl && 'border-red-500/70 focus:border-red-500 focus:ring-red-500/20')}
-                          {...register('coverImageUrl', { maxLength: { value: 255, message: 'Tối đa 255 ký tự' } })}
-                        />
-                      </div>
-                      {errors.coverImageUrl && <p className="mt-1.5 text-sm text-red-500">{errors.coverImageUrl.message}</p>}
+                  <div>
+                    <label className={cn('mb-1.5 block text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>
+                      Tên shop <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <HiOutlineUser className={cn('absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2', isDark ? 'text-slate-500' : 'text-stone-400')} />
+                      <input
+                        type="text"
+                        placeholder="VD: TechZone Official"
+                        className={cn('w-full rounded-xl border py-3 pl-10 pr-4 text-sm outline-none transition placeholder:opacity-60', isDark ? 'border-slate-600 bg-slate-800/50 text-white placeholder:text-slate-500 focus:border-amber-500/60 focus:ring-2 focus:ring-amber-500/20' : 'border-stone-300 bg-stone-50/80 text-stone-900 placeholder:text-stone-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20', errors.shopName && 'border-red-500/70 focus:border-red-500 focus:ring-red-500/20')}
+                        {...register('shopName', { required: 'Vui lòng nhập tên shop', maxLength: { value: 150, message: 'Tối đa 150 ký tự' } })}
+                      />
                     </div>
+                    {errors.shopName && <p className="mt-1.5 text-sm text-red-500">{errors.shopName.message}</p>}
                   </div>
 
                   <div>

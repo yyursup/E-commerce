@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
+import ThemeSync from './components/ThemeSync'
 import ProtectedRoute from './components/ProtectedRoute'
 import SellerLayout from './components/SellerLayout'
 import SellerLanding from './pages/SellerLanding'
@@ -14,7 +15,9 @@ import ShopVouchers from './pages/business/ShopVouchers'
 
 export default function App() {
   return (
-    <Routes>
+    <>
+      <ThemeSync />
+      <Routes>
       {/* Public Landing & Onboarding routes */}
       <Route path="/" element={<SellerLanding />} />
       <Route path="/login" element={<Login />} />
@@ -41,5 +44,6 @@ export default function App() {
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </>
   )
 }

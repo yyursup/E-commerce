@@ -446,29 +446,6 @@ export default function ProductDetail() {
                 </div>
               </div>
 
-              {/* Shop Vouchers Row */}
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs py-1">
-                <span className="w-28 shrink-0 text-stone-500 dark:text-slate-400 font-semibold">
-                  Mã Giảm Giá Shop
-                </span>
-                <div className="flex flex-wrap items-center gap-2">
-                  {['Giảm 15k', 'Giảm 30k', 'Giảm 5%'].map((vouch) => (
-                    <button
-                      key={vouch}
-                      onClick={() => handleSaveVoucher(vouch)}
-                      className={cn(
-                        'rounded-lg border border-dashed px-2.5 py-1 font-bold text-[11px] transition-all cursor-pointer',
-                        savedVoucher[vouch]
-                          ? 'border-stone-300 text-stone-400 dark:border-slate-700'
-                          : 'border-rose-500 bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20'
-                      )}
-                    >
-                      {savedVoucher[vouch] ? `${vouch} (Đã lưu)` : vouch}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
               {/* Escrow Guarantee Row */}
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs py-1">
                 <span className="w-28 shrink-0 text-stone-500 dark:text-slate-400 font-semibold">

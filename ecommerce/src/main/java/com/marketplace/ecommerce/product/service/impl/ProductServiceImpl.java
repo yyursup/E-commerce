@@ -69,6 +69,20 @@ public class ProductServiceImpl implements ProductService {
                 .deleted(false)
                 .build();
 
+        if (request.getVariants() != null && !request.getVariants().isEmpty()) {
+            request.getVariants().forEach(variantReq -> product.getVariants().add(
+                    com.marketplace.ecommerce.product.entity.ProductVariant.builder()
+                            .product(product)
+                            .color(variantReq.getColor())
+                            .size(variantReq.getSize())
+                            .price(variantReq.getPrice())
+                            .stock(variantReq.getStock())
+                            .createdAt(LocalDateTime.now())
+                            .deleted(false)
+                            .build()
+            ));
+        }
+
         productImageService.createProductImage(product, request);
 
         Product productSaved = productRepository.save(product);
@@ -90,6 +104,7 @@ public class ProductServiceImpl implements ProductService {
         applyStatus(product, req);
         applyCategory(product, req);
         applyImages(product, req);
+        applyVariants(product, req);
 
         return ProductResponse.from(productRepository.save(product));
     }
@@ -182,6 +197,46 @@ public class ProductServiceImpl implements ProductService {
                         .createdAt(LocalDateTime.now())
                         .build()
         ));
+    }
+
+    private void applyVariants(Product product, UpdateProductRequest req) {
+        if (req.getVariants() == null) return;
+        
+        // Mark all existing as deleted
+        if (product.getVariants() != null) {
+            product.getVariants().forEach(v -> v.setDeleted(true));
+        }
+
+        for (com.marketplace.ecommerce.product.dto.request.ProductVariantRequest variantReq : req.getVariants()) {
+            com.marketplace.ecommerce.product.entity.ProductVariant existing = null;
+            if (variantReq.getId() != null) {
+                existing = product.getVariants().stream()
+                        .filter(v -> v.getId().equals(variantReq.getId()))
+                        .findFirst()
+                        .orElse(null);
+            }
+
+            if (existing != null) {
+                existing.setColor(variantReq.getColor());
+                existing.setSize(variantReq.getSize());
+                existing.setPrice(variantReq.getPrice());
+                existing.setStock(variantReq.getStock());
+                existing.setDeleted(false);
+                existing.setUpdatedAt(LocalDateTime.now());
+            } else {
+                product.getVariants().add(
+                        com.marketplace.ecommerce.product.entity.ProductVariant.builder()
+                                .product(product)
+                                .color(variantReq.getColor())
+                                .size(variantReq.getSize())
+                                .price(variantReq.getPrice())
+                                .stock(variantReq.getStock())
+                                .createdAt(LocalDateTime.now())
+                                .deleted(false)
+                                .build()
+                );
+            }
+        }
     }
 
 

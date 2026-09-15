@@ -9,6 +9,7 @@ import {
   HiOutlinePlusCircle,
   HiOutlineX,
   HiOutlineLockClosed,
+  HiOutlineTrash,
 } from 'react-icons/hi'
 import { useThemeStore } from '../../store/useThemeStore'
 import { useAuthStore } from '../../store/useAuthStore'
@@ -65,6 +66,7 @@ export default function BusinessDashboard() {
           categoryId: product.categoryId,
           images: product.images || [],
           image: imageUrl,
+          variants: product.variants || [],
         }
       })
 
@@ -482,13 +484,52 @@ function ProductFormModal({ product, onClose, onSuccess }) {
   const [imageUrls, setImageUrls] = useState(
     product?.images?.map((img) => img.imageUrl || img) || []
   )
+  const [variants, setVariants] = useState(
+    product?.variants || []
+  )
 
-  // Update imageUrls when product changes
   useEffect(() => {
-    if (product?.images) {
-      setImageUrls(product.images.map((img) => img.imageUrl || img))
+    setImageUrls(product?.images?.map((img) => img.imageUrl || img) || [])
+    setVariants(product?.variants || [])
+    
+    if (product) {
+      setFormData(prev => ({
+        ...prev,
+        name: product.name || '',
+        description: product.description || '',
+        sku: product.sku || '',
+        basePrice: product.price || '',
+        stockQuantity: product.stock || 0,
+        categoryId: product.categoryId || '',
+        status: product.status || 'PUBLISHED',
+      }))
+    } else {
+      setFormData({
+        name: '',
+        description: '',
+        sku: '',
+        basePrice: '',
+        stockQuantity: 0,
+        categoryId: '',
+        status: 'PUBLISHED',
+      })
     }
   }, [product])
+
+  // Auto-calculate base price and total stock from variants
+  useEffect(() => {
+    if (variants.length > 0) {
+      const totalStock = variants.reduce((sum, v) => sum + (parseInt(v.stock) || 0), 0);
+      const prices = variants.map(v => parseFloat(v.price) || 0).filter(p => p > 0);
+      const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
+      
+      setFormData(prev => ({
+        ...prev,
+        stockQuantity: totalStock,
+        basePrice: minPrice > 0 ? minPrice : prev.basePrice
+      }));
+    }
+  }, [variants]);
 
   // Fetch categories from API
   useEffect(() => {
@@ -528,6 +569,13 @@ function ProductFormModal({ product, onClose, onSuccess }) {
         basePrice: parseFloat(formData.basePrice),
         stockQuantity: parseInt(formData.stockQuantity) || 0,
         categoryId: formData.categoryId,
+        variants: variants.map(v => ({
+           id: v.id || null,
+           color: v.color || '',
+           size: v.size || '',
+           price: parseFloat(v.price) || 0,
+           stock: parseInt(v.stock) || 0
+        })),
         images: imageUrls.map((url, index) => ({
           imageUrl: url,
           isThumbnail: index === 0,
@@ -682,11 +730,13 @@ function ProductFormModal({ product, onClose, onSuccess }) {
                 required
                 min="0"
                 step="1000"
+                disabled={variants.length > 0}
                 className={cn(
                   'w-full rounded-lg border px-3 py-2',
                   isDark
                     ? 'border-slate-700 bg-slate-800 text-white'
                     : 'border-stone-300 bg-white text-stone-900',
+                  variants.length > 0 && 'opacity-50 cursor-not-allowed bg-stone-100 dark:bg-slate-900'
                 )}
               />
             </div>
@@ -707,11 +757,13 @@ function ProductFormModal({ product, onClose, onSuccess }) {
                 value={formData.stockQuantity}
                 onChange={(e) => setFormData({ ...formData, stockQuantity: e.target.value })}
                 min="0"
+                disabled={variants.length > 0}
                 className={cn(
                   'w-full rounded-lg border px-3 py-2',
                   isDark
                     ? 'border-slate-700 bg-slate-800 text-white'
                     : 'border-stone-300 bg-white text-stone-900',
+                  variants.length > 0 && 'opacity-50 cursor-not-allowed bg-stone-100 dark:bg-slate-900'
                 )}
               />
             </div>
@@ -776,6 +828,91 @@ function ProductFormModal({ product, onClose, onSuccess }) {
               </select>
             </div>
           )}
+
+          {/* Variants section */}
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <label
+                className={cn(
+                  'block text-sm font-medium',
+                  isDark ? 'text-slate-300' : 'text-stone-700',
+                )}
+              >
+                Phân loại (Màu sắc / Kích cỡ)
+              </label>
+              <button
+                type="button"
+                onClick={() => setVariants([...variants, { id: null, color: '', size: '', price: '', stock: '' }])}
+                className="text-xs font-medium text-amber-500 hover:text-amber-600 flex items-center gap-1"
+              >
+                <HiOutlinePlusCircle className="h-4 w-4" />
+                Thêm phân loại
+              </button>
+            </div>
+            
+            {variants.length > 0 && (
+              <div className="space-y-3 mb-4">
+                {variants.map((variant, index) => (
+                  <div key={index} className={cn("p-3 rounded-lg border flex gap-3 items-start", isDark ? "border-slate-700 bg-slate-800/50" : "border-stone-200 bg-stone-50")}>
+                    <div className="grid grid-cols-2 gap-3 flex-1">
+                      <input
+                        type="text"
+                        placeholder="Màu sắc (VD: Đen)"
+                        value={variant.color || ''}
+                        onChange={(e) => {
+                          const newVar = [...variants];
+                          newVar[index].color = e.target.value;
+                          setVariants(newVar);
+                        }}
+                        className={cn('w-full rounded-md border px-2 py-2 text-sm', isDark ? 'border-slate-600 bg-slate-700 text-white' : 'border-stone-300 bg-white text-stone-900')}
+                      />
+                      <input
+                        type="text"
+                        placeholder="Kích cỡ (VD: XL)"
+                        value={variant.size || ''}
+                        onChange={(e) => {
+                          const newVar = [...variants];
+                          newVar[index].size = e.target.value;
+                          setVariants(newVar);
+                        }}
+                        className={cn('w-full rounded-md border px-2 py-2 text-sm', isDark ? 'border-slate-600 bg-slate-700 text-white' : 'border-stone-300 bg-white text-stone-900')}
+                      />
+                      <input
+                        type="number"
+                        placeholder="Giá riêng"
+                        value={variant.price === 0 && !variant.id ? '' : variant.price}
+                        onChange={(e) => {
+                          const newVar = [...variants];
+                          newVar[index].price = e.target.value;
+                          setVariants(newVar);
+                        }}
+                        className={cn('w-full rounded-md border px-2 py-2 text-sm', isDark ? 'border-slate-600 bg-slate-700 text-white' : 'border-stone-300 bg-white text-stone-900')}
+                      />
+                      <input
+                        type="number"
+                        placeholder="Tồn kho"
+                        value={variant.stock === 0 && !variant.id ? '' : variant.stock}
+                        onChange={(e) => {
+                          const newVar = [...variants];
+                          newVar[index].stock = e.target.value;
+                          setVariants(newVar);
+                        }}
+                        className={cn('w-full rounded-md border px-2 py-2 text-sm', isDark ? 'border-slate-600 bg-slate-700 text-white' : 'border-stone-300 bg-white text-stone-900')}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setVariants(variants.filter((_, i) => i !== index))}
+                      className="p-1.5 mt-1 text-stone-400 hover:text-red-500 rounded-md transition-colors"
+                      title="Xóa phân loại này"
+                    >
+                      <HiOutlineTrash className="h-5 w-5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
           <div>
             <label

@@ -679,7 +679,10 @@ export default function Checkout() {
                         </div>
 
                         {/* Modal List */}
-                        <div className="py-4 overflow-y-auto space-y-3 flex-1">
+                        <div className={cn(
+                            "py-4 overflow-y-auto space-y-3 flex-1 pr-2",
+                            isDark ? "custom-scrollbar-dark" : "custom-scrollbar-light"
+                        )}>
                             {loadingVouchers ? (
                                 <div className="py-8 text-center">
                                     <div className="h-6 w-6 animate-spin rounded-full border-2 border-amber-500 border-t-transparent mx-auto"></div>

@@ -54,6 +54,10 @@ export default function Deals() {
   // Category horizontal scroll ref
   const categoryScrollRef = useRef(null)
 
+  // Voucher Carousel ref & auto-play state
+  const voucherScrollRef = useRef(null)
+  const [isVoucherHovered, setIsVoucherHovered] = useState(false)
+
   // 1. Fetch Categories from Backend
   useEffect(() => {
     const fetchCategories = async () => {
@@ -288,6 +292,57 @@ export default function Deals() {
     return vouchers
   }, [vouchers, voucherFilter])
 
+  // Auto-scroll for platform vouchers carousel when > 4 vouchers
+  useEffect(() => {
+    if (filteredVouchers.length <= 4 || isVoucherHovered) return
+
+    const interval = setInterval(() => {
+      const container = voucherScrollRef.current
+      if (!container) return
+
+      const maxScrollLeft = container.scrollWidth - container.clientWidth
+      if (container.scrollLeft >= maxScrollLeft - 10) {
+        container.scrollTo({ left: 0, behavior: 'smooth' })
+      } else {
+        container.scrollBy({ left: 320, behavior: 'smooth' })
+      }
+    }, 3500)
+
+    return () => clearInterval(interval)
+  }, [filteredVouchers.length, isVoucherHovered])
+
+  // Mouse wheel listener for voucher carousel
+  useEffect(() => {
+    const el = voucherScrollRef.current
+    if (!el) return
+
+    const handleWheel = (e) => {
+      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+        const maxScrollLeft = el.scrollWidth - el.clientWidth
+        if (maxScrollLeft > 0) {
+          const canScrollRight = e.deltaY > 0 && el.scrollLeft < maxScrollLeft - 1
+          const canScrollLeft = e.deltaY < 0 && el.scrollLeft > 1
+          if (canScrollRight || canScrollLeft) {
+            e.preventDefault()
+            el.scrollLeft += e.deltaY
+          }
+        }
+      }
+    }
+
+    el.addEventListener('wheel', handleWheel, { passive: false })
+    return () => {
+      el.removeEventListener('wheel', handleWheel)
+    }
+  }, [filteredVouchers])
+
+  const scrollVouchers = (direction) => {
+    if (voucherScrollRef.current) {
+      const scrollAmount = direction === 'left' ? -320 : 320
+      voucherScrollRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' })
+    }
+  }
+
   // Toggle expand in "ALL" view
   const toggleExpandCategory = (catId) => {
     setExpandedCategories((prev) => {
@@ -363,47 +418,74 @@ export default function Deals() {
             </div>
           </div>
 
-          {/* Voucher filter pills */}
+          {/* Voucher filter pills & Navigation Controls */}
           {vouchers.length > 0 && (
-            <div className="flex items-center gap-1.5 self-start sm:self-auto bg-stone-100 dark:bg-slate-900 p-1 rounded-xl border border-stone-200/80 dark:border-slate-800">
-              <button
-                onClick={() => setVoucherFilter('ALL')}
-                className={cn(
-                  'px-3 py-1.5 text-xs font-semibold rounded-lg transition-all',
-                  voucherFilter === 'ALL'
-                    ? 'bg-white dark:bg-slate-800 text-amber-600 dark:text-amber-400 shadow-sm'
-                    : 'text-stone-600 dark:text-slate-400 hover:text-stone-900'
-                )}
-              >
-                Tất cả ({vouchers.length})
-              </button>
-              <button
-                onClick={() => setVoucherFilter('SHIPPING')}
-                className={cn(
-                  'px-3 py-1.5 text-xs font-semibold rounded-lg transition-all',
-                  voucherFilter === 'SHIPPING'
-                    ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm'
-                    : 'text-stone-600 dark:text-slate-400 hover:text-stone-900'
-                )}
-              >
-                Freeship
-              </button>
-              <button
-                onClick={() => setVoucherFilter('DISCOUNT')}
-                className={cn(
-                  'px-3 py-1.5 text-xs font-semibold rounded-lg transition-all',
-                  voucherFilter === 'DISCOUNT'
-                    ? 'bg-white dark:bg-slate-800 text-amber-600 dark:text-amber-400 shadow-sm'
-                    : 'text-stone-600 dark:text-slate-400 hover:text-stone-900'
-                )}
-              >
-                Giảm giá
-              </button>
+            <div className="flex items-center gap-2.5 self-start sm:self-auto">
+              <div className="flex items-center gap-1.5 bg-stone-100 dark:bg-slate-900 p-1 rounded-xl border border-stone-200/80 dark:border-slate-800">
+                <button
+                  onClick={() => setVoucherFilter('ALL')}
+                  className={cn(
+                    'px-3 py-1.5 text-xs font-semibold rounded-lg transition-all',
+                    voucherFilter === 'ALL'
+                      ? 'bg-white dark:bg-slate-800 text-amber-600 dark:text-amber-400 shadow-sm'
+                      : 'text-stone-600 dark:text-slate-400 hover:text-stone-900'
+                  )}
+                >
+                  Tất cả ({vouchers.length})
+                </button>
+                <button
+                  onClick={() => setVoucherFilter('SHIPPING')}
+                  className={cn(
+                    'px-3 py-1.5 text-xs font-semibold rounded-lg transition-all',
+                    voucherFilter === 'SHIPPING'
+                      ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm'
+                      : 'text-stone-600 dark:text-slate-400 hover:text-stone-900'
+                  )}
+                >
+                  Freeship
+                </button>
+                <button
+                  onClick={() => setVoucherFilter('DISCOUNT')}
+                  className={cn(
+                    'px-3 py-1.5 text-xs font-semibold rounded-lg transition-all',
+                    voucherFilter === 'DISCOUNT'
+                      ? 'bg-white dark:bg-slate-800 text-amber-600 dark:text-amber-400 shadow-sm'
+                      : 'text-stone-600 dark:text-slate-400 hover:text-stone-900'
+                  )}
+                >
+                  Giảm giá
+                </button>
+              </div>
+
+              {filteredVouchers.length > 4 && (
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => scrollVouchers('left')}
+                    className={cn(
+                      'p-2 rounded-xl border transition-all active:scale-95 shadow-sm',
+                      isDark ? 'border-slate-800 bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white' : 'border-stone-200 bg-white text-stone-700 hover:bg-stone-100'
+                    )}
+                    title="Voucher trước"
+                  >
+                    <HiOutlineChevronLeft className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => scrollVouchers('right')}
+                    className={cn(
+                      'p-2 rounded-xl border transition-all active:scale-95 shadow-sm',
+                      isDark ? 'border-slate-800 bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white' : 'border-stone-200 bg-white text-stone-700 hover:bg-stone-100'
+                    )}
+                    title="Voucher tiếp theo"
+                  >
+                    <HiOutlineChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
 
-        {/* Voucher Cards Grid */}
+        {/* Voucher Cards Display */}
         {loadingVouchers ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[1, 2, 3, 4].map((i) => (
@@ -427,7 +509,94 @@ export default function Deals() {
               Hiện chưa có voucher toàn sàn nào thuộc nhóm này. Bạn có thể xem thêm voucher tại trang từng Shop!
             </p>
           </div>
+        ) : filteredVouchers.length > 4 ? (
+          /* Carousel Slider Layout for > 4 Vouchers */
+          <div
+            className="relative group"
+            onMouseEnter={() => setIsVoucherHovered(true)}
+            onMouseLeave={() => setIsVoucherHovered(false)}
+          >
+            {/* Side Floating Controls */}
+            <button
+              onClick={() => scrollVouchers('left')}
+              className="absolute -left-3 top-1/2 -translate-y-1/2 z-10 hidden sm:flex h-9 w-9 items-center justify-center rounded-full bg-white/95 dark:bg-slate-900/95 text-stone-800 dark:text-white shadow-xl border border-stone-200 dark:border-slate-700 backdrop-blur opacity-0 group-hover:opacity-100 transition-all duration-200 hover:scale-110 active:scale-95"
+            >
+              <HiOutlineChevronLeft className="h-5 w-5" />
+            </button>
+            <button
+              onClick={() => scrollVouchers('right')}
+              className="absolute -right-3 top-1/2 -translate-y-1/2 z-10 hidden sm:flex h-9 w-9 items-center justify-center rounded-full bg-white/95 dark:bg-slate-900/95 text-stone-800 dark:text-white shadow-xl border border-stone-200 dark:border-slate-700 backdrop-blur opacity-0 group-hover:opacity-100 transition-all duration-200 hover:scale-110 active:scale-95"
+            >
+              <HiOutlineChevronRight className="h-5 w-5" />
+            </button>
+
+            <div
+              ref={voucherScrollRef}
+              className={cn(
+                'flex gap-4 overflow-x-auto pb-4 pt-1 scroll-smooth',
+                isDark ? 'custom-scrollbar-dark' : 'custom-scrollbar-light'
+              )}
+            >
+              {filteredVouchers.map((voucher) => {
+                const isCollected = collectedVouchers.has(voucher.code)
+                return (
+                  <div
+                    key={voucher.id || voucher.code}
+                    className={cn(
+                      'w-[285px] sm:w-[310px] shrink-0 relative rounded-2xl border p-5 flex flex-col justify-between shadow-sm transition-all duration-300 hover:shadow-md hover:border-amber-500/40',
+                      isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
+                    )}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-2.5">
+                        <span className={cn('rounded-lg px-2.5 py-0.5 text-xs font-bold border', voucher.color)}>
+                          {voucher.badge}
+                        </span>
+                        <span className="text-[11px] text-stone-400 dark:text-slate-500 font-medium">
+                          {voucher.expiry}
+                        </span>
+                      </div>
+
+                      <h3 className={cn('text-sm sm:text-base font-bold line-clamp-1', isDark ? 'text-white' : 'text-stone-900')}>
+                        {voucher.title}
+                      </h3>
+
+                      <p className="mt-1 text-xs text-stone-500 dark:text-slate-400 leading-relaxed line-clamp-2">
+                        {voucher.description}
+                      </p>
+                    </div>
+
+                    <div className="mt-4 pt-3 border-t border-dashed border-stone-200 dark:border-slate-800 flex items-center justify-between">
+                      <span className="font-mono text-xs font-bold text-amber-500 tracking-wider">
+                        {voucher.code}
+                      </span>
+                      <button
+                        onClick={() => handleCollectVoucher(voucher)}
+                        disabled={isCollected}
+                        className={cn(
+                          'rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all shadow-sm flex items-center gap-1.5',
+                          isCollected
+                            ? 'bg-emerald-500 text-white cursor-default shadow-emerald-500/20'
+                            : 'bg-amber-500 text-white hover:bg-amber-600 active:scale-95 shadow-amber-500/20'
+                        )}
+                      >
+                        {isCollected ? (
+                          <>
+                            <HiOutlineCheck className="h-4 w-4 stroke-[2.5]" />
+                            Đã lưu
+                          </>
+                        ) : (
+                          'Lưu mã'
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
         ) : (
+          /* Grid Layout for <= 4 Vouchers */
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {filteredVouchers.map((voucher) => {
               const isCollected = collectedVouchers.has(voucher.code)

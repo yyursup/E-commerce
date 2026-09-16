@@ -16,11 +16,13 @@ import {
   HiOutlineChartBar,
   HiOutlineShieldCheck,
   HiOutlineSearch,
+  HiOutlineChat,
 } from 'react-icons/hi'
 import { cn } from '../lib/cn'
 import { useThemeStore } from '../store/useThemeStore'
 import { useAuthStore } from '../store/useAuthStore'
 import { useCartStore } from '../store/useCartStore'
+import { useChatStore } from '../store/useChatStore'
 import cartService from '../services/cart'
 
 const navLinks = [
@@ -38,6 +40,8 @@ export default function Navbar() {
 
   const { user, isAuthenticated, logout } = useAuthStore()
   const { totalItems, updateCartCount, resetCart } = useCartStore()
+  const openInbox = useChatStore((s) => s.openInbox)
+  const unreadTotal = useChatStore((s) => s.unreadTotal)
   const navigate = useNavigate()
 
   const handleSearchSubmit = (e) => {
@@ -193,6 +197,26 @@ export default function Navbar() {
               </span>
             )}
           </Link>
+
+          {/* Chat / Inbox Button */}
+          <button
+            type="button"
+            onClick={() => openInbox()}
+            title="Hộp thư & Trò chuyện"
+            className={cn(
+              'group relative flex h-9 w-9 items-center justify-center rounded-xl transition-colors',
+              isDark
+                ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white'
+                : 'bg-stone-100 text-stone-600 hover:bg-stone-200 hover:text-stone-900',
+            )}
+          >
+            <HiOutlineChat className="h-5 w-5" />
+            {unreadTotal > 0 && (
+              <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 px-1 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white shadow-sm ring-2 ring-white dark:ring-slate-900">
+                {unreadTotal > 99 ? '99+' : unreadTotal}
+              </span>
+            )}
+          </button>
 
           {/* Theme toggle */}
           <button

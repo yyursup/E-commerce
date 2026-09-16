@@ -69,6 +69,7 @@ export function useChatNotification() {
         threadId: msg.threadId,
         senderName: msg.senderName || 'Người dùng',
         senderRole: msg.senderRole,
+        senderAvatar: msg.senderAvatar,
         content:
           msg.messageType === 'IMAGE'
             ? '📷 Đã gửi một hình ảnh'

@@ -26,8 +26,10 @@ public class ChatController {
     private final ChatService chatService;
 
     @GetMapping("/threads")
-    public ResponseEntity<List<ChatThreadResponse>> getThreads(@CurrentUser CurrentUserInfo principal) {
-        return ResponseEntity.ok(chatService.getThreads(principal));
+    public ResponseEntity<List<ChatThreadResponse>> getThreads(
+            @CurrentUser CurrentUserInfo principal,
+            @RequestParam(required = false) String type) {
+        return ResponseEntity.ok(chatService.getThreads(principal, type));
     }
 
     @PostMapping("/threads/support")
@@ -38,7 +40,7 @@ public class ChatController {
     @PostMapping("/threads/shop/{shopId}")
     public ResponseEntity<ChatThreadResponse> getOrCreateShopThread(
             @CurrentUser CurrentUserInfo principal,
-            @PathVariable UUID shopId) {
+            @PathVariable String shopId) {
         return ResponseEntity.ok(chatService.getOrCreateShopThread(principal, shopId));
     }
 

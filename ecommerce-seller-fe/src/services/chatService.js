@@ -1,8 +1,10 @@
 import axiosClient from '../api/axiosClient'
 
 export const chatService = {
-  getThreads: async () => {
-    const res = await axiosClient.get('/api/v1/chat/threads')
+  getThreads: async (type = null) => {
+    const res = await axiosClient.get('/api/v1/chat/threads', {
+      params: type ? { type } : {},
+    })
     return res.data
   },
 

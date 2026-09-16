@@ -24,6 +24,7 @@ import ReportActionButton from '../components/ReportActionButton'
 import Footer from '../components/Footer'
 import { useThemeStore } from '../store/useThemeStore'
 import { useAuthStore } from '../store/useAuthStore'
+import { useChatStore } from '../store/useChatStore'
 import { cn } from '../lib/cn'
 import shopService from '../services/shop'
 import productService from '../services/product'
@@ -320,7 +321,17 @@ export default function ShopProfile() {
                   </button>
 
                   <button
-                    onClick={() => toast.success('Đang kết nối trung tâm chat với người bán...')}
+                    onClick={() => {
+                      if (!shop?.id && !shopId) return
+                      useChatStore.getState().openShopChat({
+                        id: shop?.id || shopId,
+                        name: shop?.name || 'Cửa hàng',
+                        logo: shop?.logo,
+                        city: shop?.city,
+                        mallBadge: shop?.mallBadge,
+                        ekycVerified: shop?.ekycVerified,
+                      })
+                    }}
                     className="inline-flex items-center gap-1.5 rounded-xl border border-white/25 bg-white/10 px-4 py-2 text-xs font-bold text-white hover:bg-white/20 transition-all active:scale-95"
                   >
                     <HiOutlineChat className="h-4 w-4 text-amber-400" />

@@ -24,6 +24,7 @@ import kycService from '../services/kyc'
 import CameraCapture from '../components/CameraCapture'
 import BusinessLicenseUpload from '../components/BusinessLicenseUpload'
 import ShopCoverImageUpload from '../components/ShopCoverImageUpload'
+import GhnAddressSelector from '../components/GhnAddressSelector'
 
 export default function SellerRegister() {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
@@ -48,6 +49,8 @@ export default function SellerRegister() {
   const [isComparing, setIsComparing] = useState(false)
   const [showSellerForm, setShowSellerForm] = useState(false)
   const [sellerType, setSellerType] = useState('INDIVIDUAL') // 'INDIVIDUAL' or 'BUSINESS'
+  const [sameAsPickup, setSameAsPickup] = useState(false)
+  const [sameAsBusiness, setSameAsBusiness] = useState(false)
 
   const {
     register,
@@ -201,6 +204,32 @@ export default function SellerRegister() {
     }
   }
 
+  const handleSellerTypeChange = (newType) => {
+    if (newType === sellerType) return
+    setSellerType(newType)
+
+    if (newType === 'INDIVIDUAL') {
+      // 1. Reset trạng thái đồng bộ địa chỉ trụ sở
+      setSameAsBusiness(false)
+
+      // 2. Xóa sạch dữ liệu đặc thù của Hộ kinh doanh / Doanh nghiệp
+      setValue('businessType', '')
+      setValue('businessName', '')
+      setValue('businessAddress', '')
+      setValue('businessLicenseUrl', '')
+
+      // 3. Nếu địa chỉ lấy hàng trước đó copy từ địa chỉ trụ sở thì reset lại
+      if (sameAsBusiness) {
+        setValue('pickupAddress', '')
+        if (sameAsPickup) {
+          setValue('returnAddress', '')
+        }
+      }
+    } else if (newType === 'BUSINESS') {
+      setSameAsBusiness(false)
+    }
+  }
+
   const onSubmit = async (data) => {
     if (!isAuthenticated) {
       toast.error('Vui lòng đăng nhập để tiếp tục.')
@@ -222,7 +251,7 @@ export default function SellerRegister() {
       coverImageUrl: data.coverImageUrl?.trim() || null,
       pickupAddress: data.pickupAddress?.trim(),
       returnAddress: data.returnAddress?.trim(),
-      address: data.address?.trim() || null,
+      address: null,
       taxCode: data.taxCode?.trim() || null,
       invoiceEmail: data.invoiceEmail?.trim() || null,
       businessType: sellerType === 'BUSINESS' && data.businessType ? data.businessType : null,
@@ -814,7 +843,7 @@ export default function SellerRegister() {
               )}>
                 <button
                   type="button"
-                  onClick={() => setSellerType('INDIVIDUAL')}
+                  onClick={() => handleSellerTypeChange('INDIVIDUAL')}
                   className={cn(
                     'w-full rounded-xl py-2.5 text-xs font-bold transition-all flex items-center justify-center gap-2',
                     sellerType === 'INDIVIDUAL'
@@ -830,7 +859,7 @@ export default function SellerRegister() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setSellerType('BUSINESS')}
+                  onClick={() => handleSellerTypeChange('BUSINESS')}
                   className={cn(
                     'w-full rounded-xl py-2.5 text-xs font-bold transition-all flex items-center justify-center gap-2',
                     sellerType === 'BUSINESS'
@@ -967,17 +996,29 @@ export default function SellerRegister() {
                     </div>
 
                     <div>
-                      <label className={cn('mb-1.5 block text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>Địa chỉ trụ sở</label>
-                      <div className="relative">
-                        <HiOutlineLocationMarker className={cn('absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2', isDark ? 'text-slate-500' : 'text-stone-400')} />
-                        <input
-                          type="text"
-                          placeholder="Địa chỉ ghi trên Giấy phép kinh doanh"
-                          className={cn('w-full rounded-xl border py-3 pl-10 pr-4 text-sm outline-none transition', isDark ? 'border-slate-600 bg-slate-800/50 text-white' : 'border-stone-300 bg-stone-50/80 text-stone-900', errors.businessAddress && 'border-red-500/70')}
-                          {...register('businessAddress', { required: 'Vui lòng nhập địa chỉ trụ sở' })}
-                        />
-                      </div>
-                      {errors.businessAddress && <p className="mt-1.5 text-sm text-red-500">{errors.businessAddress.message}</p>}
+                      <GhnAddressSelector
+                        label="Địa chỉ trụ sở"
+                        required
+                        hint="Theo Giấy phép kinh doanh"
+                        value={watch('businessAddress')}
+                        onChange={(fullAddr) => {
+                          setValue('businessAddress', fullAddr, { shouldValidate: true })
+                          if (sameAsBusiness) {
+                            setValue('pickupAddress', fullAddr, { shouldValidate: true })
+                            if (sameAsPickup) {
+                              setValue('returnAddress', fullAddr, { shouldValidate: true })
+                            }
+                          }
+                        }}
+                        error={errors.businessAddress?.message}
+                        isDark={isDark}
+                      />
+                      <input
+                        type="hidden"
+                        {...register('businessAddress', {
+                          required: sellerType === 'BUSINESS' ? 'Vui lòng chọn địa chỉ trụ sở chuẩn GHN' : false,
+                        })}
+                      />
                     </div>
 
                     <div>
@@ -1014,39 +1055,90 @@ export default function SellerRegister() {
                 )}
 
                 {/* 3. LẤY/TRẢ HÀNG & PHÁP LÝ */}
-                <div className="space-y-5">
+                <div className="space-y-6">
                   <h3 className={cn("text-lg font-semibold border-b pb-2", isDark ? "text-white border-slate-700" : "text-stone-900 border-stone-200")}>
                     {sellerType === 'BUSINESS' ? '3. Lấy/trả hàng & Hóa đơn' : '2. Lấy/trả hàng & Pháp lý'}
                   </h3>
 
-                  <div className="grid gap-5 md:grid-cols-2">
-                    <div>
-                      <label className={cn('mb-1.5 block text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>Địa chỉ lấy hàng</label>
-                      <div className="relative">
-                        <HiOutlineLocationMarker className={cn('absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2', isDark ? 'text-slate-500' : 'text-stone-400')} />
+                  {/* Địa chỉ lấy hàng */}
+                  <div className="rounded-2xl border p-4 sm:p-5 space-y-3 bg-stone-50/50 dark:bg-slate-900/40 border-stone-200/80 dark:border-slate-800">
+                    {sellerType === 'BUSINESS' && (
+                      <label className="inline-flex items-center gap-2 text-xs font-semibold cursor-pointer select-none text-amber-600 dark:text-amber-400">
                         <input
-                          type="text"
-                          placeholder="Nhập địa chỉ lấy hàng"
-                          className={cn('w-full rounded-xl border py-3 pl-10 pr-4 text-sm outline-none transition', isDark ? 'border-slate-600 bg-slate-800/50 text-white' : 'border-stone-300 bg-stone-50/80 text-stone-900', errors.pickupAddress && 'border-red-500/70')}
-                          {...register('pickupAddress', { required: 'Vui lòng nhập địa chỉ lấy hàng' })}
+                          type="checkbox"
+                          checked={sameAsBusiness}
+                          onChange={(e) => {
+                            const checked = e.target.checked
+                            setSameAsBusiness(checked)
+                            if (checked) {
+                              const bAddr = watch('businessAddress') || ''
+                              setValue('pickupAddress', bAddr, { shouldValidate: true })
+                              if (sameAsPickup) {
+                                setValue('returnAddress', bAddr, { shouldValidate: true })
+                              }
+                            }
+                          }}
+                          className="rounded text-amber-500 focus:ring-amber-500 h-4 w-4"
                         />
-                      </div>
-                      {errors.pickupAddress && <p className="mt-1.5 text-sm text-red-500">{errors.pickupAddress.message}</p>}
-                    </div>
+                        <span>Địa chỉ lấy hàng giống Địa chỉ trụ sở</span>
+                      </label>
+                    )}
 
-                    <div>
-                      <label className={cn('mb-1.5 block text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>Địa chỉ trả hàng</label>
-                      <div className="relative">
-                        <HiOutlineLocationMarker className={cn('absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2', isDark ? 'text-slate-500' : 'text-stone-400')} />
-                        <input
-                          type="text"
-                          placeholder="Nhập địa chỉ nhận hàng hoàn trả"
-                          className={cn('w-full rounded-xl border py-3 pl-10 pr-4 text-sm outline-none transition', isDark ? 'border-slate-600 bg-slate-800/50 text-white' : 'border-stone-300 bg-stone-50/80 text-stone-900', errors.returnAddress && 'border-red-500/70')}
-                          {...register('returnAddress', { required: 'Vui lòng nhập địa chỉ trả hàng' })}
-                        />
-                      </div>
-                      {errors.returnAddress && <p className="mt-1.5 text-sm text-red-500">{errors.returnAddress.message}</p>}
-                    </div>
+                    <GhnAddressSelector
+                      label="Địa chỉ lấy hàng (Kho hàng cho GHN đến lấy)"
+                      required
+                      disabled={sameAsBusiness}
+                      hint="Chọn Tỉnh, Huyện, Xã theo chuẩn GHN"
+                      value={watch('pickupAddress')}
+                      onChange={(fullAddr) => {
+                        setValue('pickupAddress', fullAddr, { shouldValidate: true })
+                        if (sameAsPickup) {
+                          setValue('returnAddress', fullAddr, { shouldValidate: true })
+                        }
+                      }}
+                      error={errors.pickupAddress?.message}
+                      isDark={isDark}
+                    />
+                    <input
+                      type="hidden"
+                      {...register('pickupAddress', { required: 'Vui lòng chọn địa chỉ lấy hàng chuẩn GHN' })}
+                    />
+                  </div>
+
+                  {/* Địa chỉ trả hàng */}
+                  <div className="rounded-2xl border p-4 sm:p-5 space-y-3 bg-stone-50/50 dark:bg-slate-900/40 border-stone-200/80 dark:border-slate-800">
+                    <label className="inline-flex items-center gap-2 text-xs font-semibold cursor-pointer select-none text-amber-600 dark:text-amber-400">
+                      <input
+                        type="checkbox"
+                        checked={sameAsPickup}
+                        onChange={(e) => {
+                          const checked = e.target.checked
+                          setSameAsPickup(checked)
+                          if (checked) {
+                            setValue('returnAddress', watch('pickupAddress') || '', { shouldValidate: true })
+                          }
+                        }}
+                        className="rounded text-amber-500 focus:ring-amber-500 h-4 w-4"
+                      />
+                      <span>Địa chỉ trả hàng giống Địa chỉ lấy hàng</span>
+                    </label>
+
+                    <GhnAddressSelector
+                      label="Địa chỉ trả hàng (Nhận hàng hoàn trả từ GHN)"
+                      required
+                      disabled={sameAsPickup}
+                      hint="Nơi nhận hàng khi khách hoàn hàng"
+                      value={watch('returnAddress')}
+                      onChange={(fullAddr) => {
+                        setValue('returnAddress', fullAddr, { shouldValidate: true })
+                      }}
+                      error={errors.returnAddress?.message}
+                      isDark={isDark}
+                    />
+                    <input
+                      type="hidden"
+                      {...register('returnAddress', { required: 'Vui lòng chọn địa chỉ trả hàng chuẩn GHN' })}
+                    />
                   </div>
 
                   <div className="grid gap-5 md:grid-cols-2">

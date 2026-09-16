@@ -8,12 +8,14 @@ import {
   HiOutlineCube,
   HiOutlineRefresh,
   HiOutlineExternalLink,
+  HiOutlineEye,
 } from 'react-icons/hi'
 import toast from 'react-hot-toast'
 import { useThemeStore } from '../store/useThemeStore'
 import { cn } from '../lib/cn'
 import sellerService from '../services/seller'
 import ProductFormModal from './business/components/ProductFormModal'
+import ProductDetailModal from './business/components/ProductDetailModal'
 
 export default function ShopProducts() {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
@@ -24,6 +26,7 @@ export default function ShopProducts() {
   const [statusFilter, setStatusFilter] = useState('ALL') // 'ALL' | 'PUBLISHED' | 'DRAFT' | 'INACTIVE' | 'ARCHIVED'
   const [showProductModal, setShowProductModal] = useState(false)
   const [editingProduct, setEditingProduct] = useState(null)
+  const [selectedProduct, setSelectedProduct] = useState(null) // Product for detail modal
   const [deletingId, setDeletingId] = useState(null)
 
   const loadProducts = async () => {
@@ -50,12 +53,14 @@ export default function ShopProducts() {
     setShowProductModal(true)
   }
 
-  const handleEditProduct = (product) => {
+  const handleEditProduct = (product, e) => {
+    e?.stopPropagation()
     setEditingProduct(product)
     setShowProductModal(true)
   }
 
-  const handleDeleteProduct = async (productId, productName) => {
+  const handleDeleteProduct = async (productId, productName, e) => {
+    e?.stopPropagation()
     if (!window.confirm(`Bạn có chắc chắn muốn xóa sản phẩm "${productName || 'này'}" khỏi gian hàng?`)) {
       return
     }
@@ -179,7 +184,7 @@ export default function ShopProducts() {
           <HiOutlineSearch className={cn('absolute left-3.5 top-3 h-4 w-4', isDark ? 'text-slate-400' : 'text-stone-400')} />
         </div>
 
-        {/* Status Filter Tabs (Dark theme đồng bộ, không bị trắng lạc quẻ) */}
+        {/* Status Filter Tabs */}
         <div className={cn(
           'flex flex-wrap items-center gap-1.5 p-1.5 rounded-2xl border transition-all self-start lg:self-auto',
           isDark ? 'border-slate-800 bg-slate-900/90' : 'border-stone-200 bg-stone-100/90'
@@ -212,191 +217,199 @@ export default function ShopProducts() {
         </div>
       </div>
 
-      {/* Product List Table (High Contrast - Dễ nhìn tuyệt đối) */}
-      <div className={cn(
-        'rounded-3xl border overflow-hidden shadow-sm transition-colors',
-        isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
-      )}>
+      {/* Product List (Responsive Cards - Bấm vào hàng để xem chi tiết) */}
+      <div className="space-y-3.5">
         {loading ? (
-          <div className="py-20 text-center">
+          <div className={cn(
+            'rounded-3xl border py-20 text-center shadow-sm',
+            isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
+          )}>
             <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-r-transparent" />
             <p className={cn('mt-3 text-xs font-medium', isDark ? 'text-slate-400' : 'text-stone-500')}>
               Đang tải danh sách sản phẩm từ máy chủ...
             </p>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="py-16 text-center text-xs">
+          <div className={cn(
+            'rounded-3xl border py-16 text-center shadow-sm',
+            isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
+          )}>
             <HiOutlineCube className={cn('mx-auto h-12 w-12 mb-2', isDark ? 'text-slate-600' : 'text-stone-300')} />
-            <p className={cn('font-semibold', isDark ? 'text-slate-300' : 'text-stone-600')}>
+            <p className={cn('font-semibold text-sm', isDark ? 'text-slate-300' : 'text-stone-700')}>
               {search ? 'Không tìm thấy sản phẩm phù hợp với từ khóa' : 'Gian hàng chưa có sản phẩm nào thuộc nhóm này'}
             </p>
+            {search && (
+              <button
+                onClick={() => setSearch('')}
+                className="mt-3 text-xs font-bold text-amber-500 hover:underline"
+              >
+                Xóa tìm kiếm
+              </button>
+            )}
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className={cn(
-                'border-b text-[11px] font-extrabold uppercase tracking-wider',
-                isDark ? 'border-slate-800 bg-slate-800/80 text-slate-200' : 'border-stone-200 bg-stone-100 text-stone-700'
-              )}>
-                <tr>
-                  <th className="py-3.5 px-4 min-w-[260px]">Sản phẩm</th>
-                  <th className="py-3.5 px-4 min-w-[140px] whitespace-nowrap">Mã SKU</th>
-                  <th className="py-3.5 px-4 min-w-[140px]">Danh mục</th>
-                  <th className="py-3.5 px-4 min-w-[130px] whitespace-nowrap">Giá bán</th>
-                  <th className="py-3.5 px-4 min-w-[110px] whitespace-nowrap">Tồn kho</th>
-                  <th className="py-3.5 px-4 min-w-[120px] whitespace-nowrap">Trạng thái</th>
-                  <th className="py-3.5 px-4 min-w-[130px] text-right whitespace-nowrap">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody className={cn(
-                'divide-y',
-                isDark ? 'divide-slate-800/80' : 'divide-stone-100'
-              )}>
-                {filtered.map((prod) => {
-                  const thumb = prod.images?.find((img) => img.isThumbnail) || prod.images?.[0]
-                  const imgUrl = thumb?.imageUrl || prod.image || '/product-placeholder.svg'
-                  const price = prod.basePrice ? Number(prod.basePrice) : (prod.price ? Number(prod.price) : 0)
-                  const stock = prod.stockQuantity ?? prod.quantity ?? prod.stock ?? 0
-                  const statusBadge = getStatusBadge(prod.status)
-                  const isDeleting = deletingId === prod.id
+          filtered.map((prod) => {
+            const thumb = prod.images?.find((img) => img.isThumbnail) || prod.images?.[0]
+            const imgUrl = thumb?.imageUrl || prod.image || '/product-placeholder.svg'
+            const price = prod.basePrice ? Number(prod.basePrice) : (prod.price ? Number(prod.price) : 0)
+            const stock = prod.stockQuantity ?? prod.quantity ?? prod.stock ?? 0
+            const statusBadge = getStatusBadge(prod.status)
+            const isDeleting = deletingId === prod.id
 
-                  return (
-                    <tr
-                      key={prod.id}
-                      className={cn(
-                        'transition-colors',
-                        isDark ? 'hover:bg-slate-800/50' : 'hover:bg-amber-500/5'
-                      )}
-                    >
-                      {/* Product Name & Image */}
-                      <td className="py-3.5 px-4 flex items-center gap-3.5">
-                        <img
-                          src={imgUrl}
-                          alt={prod.name}
-                          onError={(e) => { e.target.src = '/product-placeholder.svg' }}
-                          className={cn(
-                            'h-12 w-12 rounded-xl object-cover border shrink-0',
-                            isDark ? 'border-slate-700 bg-slate-800' : 'border-stone-200 bg-stone-100'
-                          )}
-                        />
-                        <div className="overflow-hidden">
-                          <p className={cn(
-                            'font-bold text-sm line-clamp-1',
-                            isDark ? 'text-white' : 'text-stone-900'
-                          )}>
-                            {prod.name}
-                          </p>
-                        </div>
-                      </td>
+            return (
+              <motion.div
+                key={prod.id}
+                layout
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                onClick={() => setSelectedProduct(prod)}
+                className={cn(
+                  'group rounded-2xl border p-4 sm:p-5 transition-all duration-200 cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-4 relative',
+                  isDark
+                    ? 'border-slate-800 bg-slate-900 hover:border-amber-500/50 hover:bg-slate-900/90 hover:shadow-lg hover:shadow-amber-500/5'
+                    : 'border-stone-200 bg-white hover:border-amber-400 hover:bg-amber-50/20 hover:shadow-md'
+                )}
+                title="Nhấp để xem chi tiết sản phẩm"
+              >
+                {/* Left: Image & Product Info */}
+                <div className="flex items-start gap-4 flex-1 min-w-0">
+                  <img
+                    src={imgUrl}
+                    alt={prod.name}
+                    onError={(e) => { e.target.src = '/product-placeholder.svg' }}
+                    className={cn(
+                      'h-16 w-16 sm:h-20 sm:w-20 rounded-2xl object-cover border shrink-0 transition-transform duration-200 group-hover:scale-105',
+                      isDark ? 'border-slate-700 bg-slate-800' : 'border-stone-200 bg-stone-100'
+                    )}
+                  />
 
-                      {/* SKU (Always single line, no wrapping) */}
-                      <td className="py-3.5 px-4 whitespace-nowrap">
+                  <div className="space-y-1.5 flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className={cn(
+                        'inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-bold tracking-wide shrink-0',
+                        statusBadge.color
+                      )}>
+                        {statusBadge.label}
+                      </span>
+
+                      {prod.sku && (
                         <span className={cn(
-                          'inline-block whitespace-nowrap font-mono font-bold text-xs px-2.5 py-1 rounded-lg border tracking-wider',
+                          'font-mono font-bold text-[11px] px-2 py-0.5 rounded-lg border tracking-wider shrink-0',
                           isDark
                             ? 'border-amber-500/25 bg-amber-500/10 text-amber-400'
                             : 'border-amber-500/30 bg-amber-50 text-amber-700'
                         )}>
-                          {prod.sku || '---'}
+                          SKU: {prod.sku}
                         </span>
-                      </td>
+                      )}
 
-                      {/* Category */}
-                      <td className="py-3.5 px-4">
-                        <span className={cn(
-                          'font-semibold text-xs line-clamp-1',
-                          isDark ? 'text-slate-200' : 'text-stone-700'
-                        )}>
-                          {prod.categoryName || 'Mặc định'}
-                        </span>
-                      </td>
+                      <span className={cn(
+                        'text-xs px-2 py-0.5 rounded-lg border shrink-0',
+                        isDark ? 'border-slate-800 bg-slate-800/60 text-slate-300' : 'border-stone-200 bg-stone-50 text-stone-600'
+                      )}>
+                        {prod.categoryName || 'Mặc định'}
+                      </span>
+                    </div>
 
-                      {/* Price */}
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        <span className={cn(
-                          'font-black text-sm',
-                          isDark ? 'text-amber-400' : 'text-amber-600'
-                        )}>
-                          {formatVND(price)}
-                        </span>
-                      </td>
+                    <h3 className={cn(
+                      'font-bold text-sm sm:text-base leading-snug break-words group-hover:text-amber-500 transition-colors',
+                      isDark ? 'text-white' : 'text-stone-900'
+                    )}>
+                      {prod.name}
+                    </h3>
 
-                      {/* Stock Quantity */}
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        <span className={cn(
-                          'font-bold text-xs',
-                          stock === 0
-                            ? 'text-rose-500'
-                            : isDark ? 'text-slate-200' : 'text-stone-800'
-                        )}>
-                          {stock} cái {stock === 0 && <span className="text-rose-500 text-[10px] block">(Hết hàng)</span>}
-                        </span>
-                      </td>
+                    {/* Stock & Quick Stats */}
+                    <div className="flex items-center gap-3 text-xs">
+                      <span className={cn(
+                        'font-semibold',
+                        stock === 0 ? 'text-rose-500 font-bold' : isDark ? 'text-slate-400' : 'text-stone-500'
+                      )}>
+                        Kho: <strong className={isDark ? 'text-slate-200' : 'text-stone-800'}>{stock}</strong> cái
+                        {stock === 0 && <span className="ml-1 font-bold text-rose-500">(Hết hàng)</span>}
+                      </span>
+                    </div>
+                  </div>
+                </div>
 
-                      {/* Status Badge */}
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        <span className={cn(
-                          'inline-flex whitespace-nowrap rounded-full px-2.5 py-0.5 text-[11px] font-bold tracking-wide',
-                          statusBadge.color
-                        )}>
-                          {statusBadge.label}
-                        </span>
-                      </td>
+                {/* Right: Price & Action Buttons */}
+                <div className="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-center gap-3 pt-3 md:pt-0 border-t md:border-t-0 border-stone-100 dark:border-slate-800 shrink-0">
+                  <div className="text-left md:text-right">
+                    <span className="text-[11px] text-stone-400 block md:hidden">Giá bán:</span>
+                    <span className={cn(
+                      'font-black text-base sm:text-lg',
+                      isDark ? 'text-amber-400' : 'text-amber-600'
+                    )}>
+                      {formatVND(price)}
+                    </span>
+                  </div>
 
-                      {/* Actions */}
-                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                        <div className="flex items-center justify-end gap-1.5">
-                          <a
-                            href={`http://localhost:3000/products/${prod.id}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className={cn(
-                              'p-2 rounded-xl border transition-all active:scale-95',
-                              isDark
-                                ? 'border-slate-800 bg-slate-800/80 text-slate-300 hover:text-amber-400 hover:border-amber-500/40'
-                                : 'border-stone-200 bg-stone-50 text-stone-600 hover:text-amber-600 hover:border-amber-500/40'
-                            )}
-                            title="Xem trên sàn mua sắm"
-                          >
-                            <HiOutlineExternalLink className="h-4 w-4" />
-                          </a>
+                  {/* Actions Bar */}
+                  <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                    <a
+                      href={`http://localhost:3000/products/${prod.id}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className={cn(
+                        'p-2 rounded-xl border transition-all active:scale-95',
+                        isDark
+                          ? 'border-slate-800 bg-slate-800/80 text-slate-300 hover:text-amber-400 hover:border-amber-500/40'
+                          : 'border-stone-200 bg-stone-50 text-stone-600 hover:text-amber-600 hover:border-amber-500/40'
+                      )}
+                      title="Xem sản phẩm trên sàn"
+                    >
+                      <HiOutlineExternalLink className="h-4 w-4" />
+                    </a>
 
-                          <button
-                            onClick={() => handleEditProduct(prod)}
-                            className={cn(
-                              'p-2 rounded-xl border transition-all active:scale-95',
-                              isDark
-                                ? 'border-blue-500/30 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 hover:text-blue-300'
-                                : 'border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100'
-                            )}
-                            title="Chỉnh sửa thông tin"
-                          >
-                            <HiOutlinePencilAlt className="h-4 w-4" />
-                          </button>
+                    <button
+                      type="button"
+                      onClick={(e) => handleEditProduct(prod, e)}
+                      className={cn(
+                        'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all active:scale-95',
+                        isDark
+                          ? 'border-blue-500/30 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20'
+                          : 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100'
+                      )}
+                      title="Chỉnh sửa sản phẩm"
+                    >
+                      <HiOutlinePencilAlt className="h-4 w-4" />
+                      <span>Sửa</span>
+                    </button>
 
-                          <button
-                            onClick={() => handleDeleteProduct(prod.id, prod.name)}
-                            disabled={isDeleting}
-                            className={cn(
-                              'p-2 rounded-xl border transition-all active:scale-95 disabled:opacity-50',
-                              isDark
-                                ? 'border-rose-500/30 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 hover:text-rose-300'
-                                : 'border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100'
-                            )}
-                            title="Xóa sản phẩm"
-                          >
-                            <HiOutlineTrash className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+                    <button
+                      type="button"
+                      onClick={(e) => handleDeleteProduct(prod.id, prod.name, e)}
+                      disabled={isDeleting}
+                      className={cn(
+                        'p-2 rounded-xl border transition-all active:scale-95 disabled:opacity-50',
+                        isDark
+                          ? 'border-rose-500/30 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20'
+                          : 'border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100'
+                      )}
+                      title="Xóa sản phẩm"
+                    >
+                      <HiOutlineTrash className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            )
+          })
         )}
       </div>
+
+      {/* Product Detail Modal */}
+      {selectedProduct && (
+        <ProductDetailModal
+          product={selectedProduct}
+          onClose={() => setSelectedProduct(null)}
+          onEdit={(prod) => {
+            setSelectedProduct(null)
+            setEditingProduct(prod)
+            setShowProductModal(true)
+          }}
+        />
+      )}
 
       {/* Product Form Modal (Create / Edit) */}
       {showProductModal && (

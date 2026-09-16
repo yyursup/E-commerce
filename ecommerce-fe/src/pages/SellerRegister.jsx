@@ -23,10 +23,12 @@ import requestService from '../services/request'
 import kycService from '../services/kyc'
 import CameraCapture from '../components/CameraCapture'
 import BusinessLicenseUpload from '../components/BusinessLicenseUpload'
+import ShopCoverImageUpload from '../components/ShopCoverImageUpload'
+import GhnAddressSelector from '../components/GhnAddressSelector'
 
 export default function SellerRegister() {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
-  const { isAuthenticated, accountVerified, updateAccountVerified } = useAuthStore()
+  const { isAuthenticated, accountVerified, updateAccountVerified, user, updateUser } = useAuthStore()
   const navigate = useNavigate()
 
   const [sessionId, setSessionId] = useState('')
@@ -47,6 +49,8 @@ export default function SellerRegister() {
   const [isComparing, setIsComparing] = useState(false)
   const [showSellerForm, setShowSellerForm] = useState(false)
   const [sellerType, setSellerType] = useState('INDIVIDUAL') // 'INDIVIDUAL' or 'BUSINESS'
+  const [sameAsPickup, setSameAsPickup] = useState(false)
+  const [sameAsBusiness, setSameAsBusiness] = useState(false)
 
   const {
     register,
@@ -59,7 +63,7 @@ export default function SellerRegister() {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      toast.error('Vui lòng đăng nhập để đăng ký bán hàng.')
+      toast.error('Vui lòng đăng ký hoặc đăng nhập tài khoản trước.', { id: 'seller-register-auth-required' })
       navigate('/login')
       return
     }
@@ -80,10 +84,10 @@ export default function SellerRegister() {
       setSessionId(res?.sessionId || '')
       setSessionStatus(res?.status || '')
       setCurrentStep(1)
-      toast.success('Phiên KYC đã được tạo tự động. Vui lòng hoàn tất xác minh danh tính.')
+      toast.success('Phiên KYC đã được tạo tự động. Vui lòng hoàn tất xác minh danh tính.', { id: 'kyc-session-started' })
     } catch (error) {
       console.error('Start KYC error:', error)
-      toast.error(error?.message || 'Không thể tạo phiên KYC.')
+      toast.error(error?.message || 'Không thể tạo phiên KYC.', { id: 'kyc-session-start-failed' })
     } finally {
       setIsStarting(false)
     }
@@ -200,6 +204,32 @@ export default function SellerRegister() {
     }
   }
 
+  const handleSellerTypeChange = (newType) => {
+    if (newType === sellerType) return
+    setSellerType(newType)
+
+    if (newType === 'INDIVIDUAL') {
+      // 1. Reset trạng thái đồng bộ địa chỉ trụ sở
+      setSameAsBusiness(false)
+
+      // 2. Xóa sạch dữ liệu đặc thù của Hộ kinh doanh / Doanh nghiệp
+      setValue('businessType', '')
+      setValue('businessName', '')
+      setValue('businessAddress', '')
+      setValue('businessLicenseUrl', '')
+
+      // 3. Nếu địa chỉ lấy hàng trước đó copy từ địa chỉ trụ sở thì reset lại
+      if (sameAsBusiness) {
+        setValue('pickupAddress', '')
+        if (sameAsPickup) {
+          setValue('returnAddress', '')
+        }
+      }
+    } else if (newType === 'BUSINESS') {
+      setSameAsBusiness(false)
+    }
+  }
+
   const onSubmit = async (data) => {
     if (!isAuthenticated) {
       toast.error('Vui lòng đăng nhập để tiếp tục.')
@@ -221,7 +251,7 @@ export default function SellerRegister() {
       coverImageUrl: data.coverImageUrl?.trim() || null,
       pickupAddress: data.pickupAddress?.trim(),
       returnAddress: data.returnAddress?.trim(),
-      address: data.address?.trim() || null,
+      address: null,
       taxCode: data.taxCode?.trim() || null,
       invoiceEmail: data.invoiceEmail?.trim() || null,
       businessType: sellerType === 'BUSINESS' && data.businessType ? data.businessType : null,
@@ -236,6 +266,9 @@ export default function SellerRegister() {
     try {
       await requestService.registerSeller(payload)
       toast.success('Gửi yêu cầu đăng ký bán hàng thành công!')
+      if (updateUser) {
+        updateUser({ sellerStatus: 'PENDING' })
+      }
       reset()
       navigate('/')
     } catch (error) {
@@ -316,30 +349,31 @@ export default function SellerRegister() {
                             step
                           )}
                         </div>
-                        <p
+                        <span
                           className={cn(
-                            'mt-2 text-xs text-center',
+                            'mt-1 text-xs font-medium text-center',
                             currentStep >= step
-                              ? 'text-amber-500 font-medium'
+                              ? 'text-amber-500 font-semibold'
                               : isDark
-                                ? 'text-slate-400'
-                                : 'text-stone-500',
+                                ? 'text-slate-500'
+                                : 'text-stone-400',
                           )}
                         >
-                          {step === 1
-                            ? 'Mặt trước'
-                            : step === 2
-                              ? 'Mặt sau'
-                              : step === 3
-                                ? 'Khuôn mặt'
-                                : 'Xem lại'}
-                        </p>
+                          {step === 1 && 'CCCD Trước'}
+                          {step === 2 && 'CCCD Sau'}
+                          {step === 3 && 'Khuôn mặt'}
+                          {step === 4 && 'Hoàn tất'}
+                        </span>
                       </div>
                       {step < 4 && (
                         <div
                           className={cn(
-                            'h-0.5 flex-1 mx-2',
-                            currentStep > step ? 'bg-amber-500' : isDark ? 'bg-slate-700' : 'bg-stone-200',
+                            'h-0.5 flex-1 mx-2 transition',
+                            currentStep > step
+                              ? 'bg-amber-500'
+                              : isDark
+                                ? 'bg-slate-700'
+                                : 'bg-stone-300',
                           )}
                         />
                       )}
@@ -352,188 +386,227 @@ export default function SellerRegister() {
               <AnimatePresence mode="wait">
                 {currentStep === 1 && (
                   <motion.div
-                    key="step-1"
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    className="space-y-6"
+                    key="step1"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="space-y-4"
                   >
-                    <div>
-                      <h2
+                    <div className="text-center">
+                      <h3
                         className={cn(
-                          'text-lg font-semibold mb-2',
+                          'text-lg font-semibold',
                           isDark ? 'text-white' : 'text-stone-900',
                         )}
                       >
-                        Bước 1: Upload ảnh mặt trước CCCD
-                      </h2>
+                        Bước 1: Ảnh mặt trước CCCD
+                      </h3>
                       <p
-                        className={cn('text-sm', isDark ? 'text-slate-400' : 'text-stone-500')}
+                        className={cn(
+                          'text-sm mt-1',
+                          isDark ? 'text-slate-400' : 'text-stone-500',
+                        )}
                       >
-                        Vui lòng chụp hoặc upload ảnh mặt trước của CMND/CCCD
+                        Chụp hoặc tải lên ảnh mặt trước thẻ Căn cước công dân
                       </p>
                     </div>
 
-                    {frontPreview ? (
-                      <div className="relative">
-                        <img
-                          src={frontPreview}
-                          alt="Front preview"
-                          className="w-full rounded-xl border-2 border-amber-500"
-                        />
-                        <button
-                          onClick={() => {
-                            setFrontFile(null)
-                            setFrontPreview(null)
-                          }}
-                          className={cn(
-                            'absolute top-2 right-2 p-2 rounded-full',
-                            isDark ? 'bg-slate-800 text-white' : 'bg-white text-stone-900',
-                          )}
-                        >
-                          <HiOutlineX className="h-5 w-5" />
-                        </button>
-                        {frontUploaded && (
-                          <div className="absolute bottom-2 left-2 flex items-center gap-2 px-3 py-1.5 rounded-lg bg-green-500 text-white text-sm font-medium">
-                            <HiOutlineCheckCircle className="h-4 w-4" />
-                            Đã upload
+                    <div
+                      className={cn(
+                        'border-2 border-dashed rounded-2xl p-8 text-center transition cursor-pointer',
+                        frontPreview
+                          ? 'border-amber-500 bg-amber-50/10'
+                          : isDark
+                            ? 'border-slate-700 hover:border-slate-500 bg-slate-800/50'
+                            : 'border-stone-300 hover:border-stone-400 bg-stone-50',
+                      )}
+                      onClick={() =>
+                        document.getElementById('front-file-input').click()
+                      }
+                    >
+                      {frontPreview ? (
+                        <div className="relative">
+                          <img
+                            src={frontPreview}
+                            alt="Front preview"
+                            className="max-h-64 mx-auto rounded-xl shadow-md"
+                          />
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setFrontFile(null)
+                              setFrontPreview(null)
+                            }}
+                            className="absolute top-2 right-2 p-1.5 rounded-full bg-red-500 text-white hover:bg-red-600 transition"
+                          >
+                            <HiOutlineX className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          <HiOutlineIdentification
+                            className={cn(
+                              'h-12 w-12 mx-auto',
+                              isDark ? 'text-slate-500' : 'text-stone-400',
+                            )}
+                          />
+                          <div>
+                            <p
+                              className={cn(
+                                'text-sm font-medium',
+                                isDark ? 'text-slate-300' : 'text-stone-700',
+                              )}
+                            >
+                              Nhấp để tải ảnh lên
+                            </p>
+                            <p
+                              className={cn(
+                                'text-xs mt-1',
+                                isDark ? 'text-slate-500' : 'text-stone-400',
+                              )}
+                            >
+                              Hỗ trợ: JPG, PNG, WEBP (Tối đa 10MB)
+                            </p>
                           </div>
-                        )}
-                      </div>
-                    ) : (
-                      <label
-                        htmlFor="frontFile"
-                        className={cn(
-                          'flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-xl cursor-pointer transition',
-                          isDark
-                            ? 'border-slate-600 bg-slate-800/50 hover:border-amber-500/60'
-                            : 'border-stone-300 bg-stone-50 hover:border-amber-500',
-                        )}
-                      >
-                        <HiOutlineCloudUpload className={cn('h-12 w-12 mb-4', isDark ? 'text-slate-400' : 'text-stone-400')} />
-                        <p className={cn('text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>
-                          Click để chọn ảnh hoặc kéo thả vào đây
-                        </p>
-                        <input
-                          id="frontFile"
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => handleFileSelect(e.target.files?.[0], 'front')}
-                          className="hidden"
-                        />
-                      </label>
-                    )}
+                        </div>
+                      )}
+                      <input
+                        id="front-file-input"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) =>
+                          handleFileSelect(e.target.files[0], 'front')
+                        }
+                      />
+                    </div>
 
-                    {frontFile && !frontUploaded && (
+                    <div className="flex gap-3">
                       <button
                         onClick={() => handleUpload('front')}
-                        disabled={isUploading}
+                        disabled={!frontFile || isUploading}
                         className={cn(
                           'w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white shadow-lg transition',
-                          isUploading
+                          !frontFile || isUploading
                             ? 'cursor-not-allowed bg-amber-500/60'
                             : 'bg-amber-500 hover:bg-amber-600',
                         )}
                       >
-                        <HiOutlineCloudUpload className="h-5 w-5" />
-                        {isUploading ? 'Đang upload...' : 'Upload ảnh mặt trước'}
+                        {isUploading ? (
+                          'Đang tải lên...'
+                        ) : (
+                          <>
+                            <HiOutlineCloudUpload className="h-5 w-5" />
+                            Tiếp tục
+                          </>
+                        )}
                       </button>
-                    )}
+                    </div>
                   </motion.div>
                 )}
 
                 {currentStep === 2 && (
                   <motion.div
-                    key="step-2"
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    className="space-y-6"
+                    key="step2"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="space-y-4"
                   >
-                    <div>
-                      <h2
+                    <div className="text-center">
+                      <h3
                         className={cn(
-                          'text-lg font-semibold mb-2',
+                          'text-lg font-semibold',
                           isDark ? 'text-white' : 'text-stone-900',
                         )}
                       >
-                        Bước 2: Upload ảnh mặt sau CCCD (Tùy chọn)
-                      </h2>
+                        Bước 2: Ảnh mặt sau CCCD
+                      </h3>
                       <p
-                        className={cn('text-sm', isDark ? 'text-slate-400' : 'text-stone-500')}
+                        className={cn(
+                          'text-sm mt-1',
+                          isDark ? 'text-slate-400' : 'text-stone-500',
+                        )}
                       >
-                        Vui lòng chụp hoặc upload ảnh mặt sau của CMND/CCCD (có thể bỏ qua)
+                        Chụp hoặc tải lên ảnh mặt sau thẻ Căn cước công dân
                       </p>
                     </div>
 
-                    {backPreview ? (
-                      <div className="relative">
-                        <img
-                          src={backPreview}
-                          alt="Back preview"
-                          className="w-full rounded-xl border-2 border-amber-500"
-                        />
-                        <button
-                          onClick={() => {
-                            setBackFile(null)
-                            setBackPreview(null)
-                          }}
-                          className={cn(
-                            'absolute top-2 right-2 p-2 rounded-full',
-                            isDark ? 'bg-slate-800 text-white' : 'bg-white text-stone-900',
-                          )}
-                        >
-                          <HiOutlineX className="h-5 w-5" />
-                        </button>
-                        {backUploaded && (
-                          <div className="absolute bottom-2 left-2 flex items-center gap-2 px-3 py-1.5 rounded-lg bg-green-500 text-white text-sm font-medium">
-                            <HiOutlineCheckCircle className="h-4 w-4" />
-                            Đã upload
+                    <div
+                      className={cn(
+                        'border-2 border-dashed rounded-2xl p-8 text-center transition cursor-pointer',
+                        backPreview
+                          ? 'border-amber-500 bg-amber-50/10'
+                          : isDark
+                            ? 'border-slate-700 hover:border-slate-500 bg-slate-800/50'
+                            : 'border-stone-300 hover:border-stone-400 bg-stone-50',
+                      )}
+                      onClick={() =>
+                        document.getElementById('back-file-input').click()
+                      }
+                    >
+                      {backPreview ? (
+                        <div className="relative">
+                          <img
+                            src={backPreview}
+                            alt="Back preview"
+                            className="max-h-64 mx-auto rounded-xl shadow-md"
+                          />
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setBackFile(null)
+                              setBackPreview(null)
+                            }}
+                            className="absolute top-2 right-2 p-1.5 rounded-full bg-red-500 text-white hover:bg-red-600 transition"
+                          >
+                            <HiOutlineX className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          <HiOutlineIdentification
+                            className={cn(
+                              'h-12 w-12 mx-auto',
+                              isDark ? 'text-slate-500' : 'text-stone-400',
+                            )}
+                          />
+                          <div>
+                            <p
+                              className={cn(
+                                'text-sm font-medium',
+                                isDark ? 'text-slate-300' : 'text-stone-700',
+                              )}
+                            >
+                              Nhấp để tải ảnh lên
+                            </p>
+                            <p
+                              className={cn(
+                                'text-xs mt-1',
+                                isDark ? 'text-slate-500' : 'text-stone-400',
+                              )}
+                            >
+                              Hỗ trợ: JPG, PNG, WEBP (Tối đa 10MB)
+                            </p>
                           </div>
-                        )}
-                      </div>
-                    ) : (
-                      <label
-                        htmlFor="backFile"
-                        className={cn(
-                          'flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-xl cursor-pointer transition',
-                          isDark
-                            ? 'border-slate-600 bg-slate-800/50 hover:border-amber-500/60'
-                            : 'border-stone-300 bg-stone-50 hover:border-amber-500',
-                        )}
-                      >
-                        <HiOutlineCloudUpload className={cn('h-12 w-12 mb-4', isDark ? 'text-slate-400' : 'text-stone-400')} />
-                        <p className={cn('text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>
-                          Click để chọn ảnh hoặc kéo thả vào đây
-                        </p>
-                        <input
-                          id="backFile"
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => handleFileSelect(e.target.files?.[0], 'back')}
-                          className="hidden"
-                        />
-                      </label>
-                    )}
+                        </div>
+                      )}
+                      <input
+                        id="back-file-input"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) =>
+                          handleFileSelect(e.target.files[0], 'back')
+                        }
+                      />
+                    </div>
 
                     <div className="flex gap-3">
-                      {backFile && !backUploaded && (
-                        <button
-                          onClick={() => handleUpload('back')}
-                          disabled={isUploading}
-                          className={cn(
-                            'flex-1 inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white shadow-lg transition',
-                            isUploading
-                              ? 'cursor-not-allowed bg-amber-500/60'
-                              : 'bg-amber-500 hover:bg-amber-600',
-                          )}
-                        >
-                          <HiOutlineCloudUpload className="h-5 w-5" />
-                          {isUploading ? 'Đang upload...' : 'Upload ảnh mặt sau'}
-                        </button>
-                      )}
                       <button
-                        onClick={() => setCurrentStep(3)}
+                        onClick={() => setCurrentStep(1)}
                         className={cn(
                           'flex-1 inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition',
                           isDark
@@ -541,7 +614,26 @@ export default function SellerRegister() {
                             : 'border border-stone-300 text-stone-700 hover:bg-stone-100',
                         )}
                       >
-                        Bỏ qua
+                        Quay lại
+                      </button>
+                      <button
+                        onClick={() => handleUpload('back')}
+                        disabled={!backFile || isUploading}
+                        className={cn(
+                          'flex-1 inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white shadow-lg transition',
+                          !backFile || isUploading
+                            ? 'cursor-not-allowed bg-amber-500/60'
+                            : 'bg-amber-500 hover:bg-amber-600',
+                        )}
+                      >
+                        {isUploading ? (
+                          'Đang tải lên...'
+                        ) : (
+                          <>
+                            <HiOutlineCloudUpload className="h-5 w-5" />
+                            Tiếp tục
+                          </>
+                        )}
                       </button>
                     </div>
                   </motion.div>
@@ -549,114 +641,178 @@ export default function SellerRegister() {
 
                 {currentStep === 3 && (
                   <motion.div
-                    key="step-3"
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    className="space-y-6"
+                    key="step3"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="space-y-4"
                   >
-                    <div>
-                      <h2
+                    <div className="text-center">
+                      <h3
                         className={cn(
-                          'text-lg font-semibold mb-2',
+                          'text-lg font-semibold',
                           isDark ? 'text-white' : 'text-stone-900',
                         )}
                       >
-                        Bước 3: Chụp ảnh khuôn mặt
-                      </h2>
+                        Bước 3: Ảnh khuôn mặt (Selfie)
+                      </h3>
                       <p
-                        className={cn('text-sm', isDark ? 'text-slate-400' : 'text-stone-500')}
+                        className={cn(
+                          'text-sm mt-1',
+                          isDark ? 'text-slate-400' : 'text-stone-500',
+                        )}
                       >
-                        Chụp ảnh selfie trực tiếp để xác minh khuôn mặt
+                        Chụp ảnh khuôn mặt rõ nét, đủ ánh sáng, không đeo kính râm
                       </p>
                     </div>
 
-                    {selfiePreview ? (
-                      <div className="relative">
-                        <img
-                          src={selfiePreview}
-                          alt="Selfie preview"
-                          className="w-full rounded-xl border-2 border-amber-500"
-                        />
-                        <button
-                          onClick={() => {
-                            setSelfieFile(null)
-                            setSelfiePreview(null)
-                          }}
-                          className={cn(
-                            'absolute top-2 right-2 p-2 rounded-full',
-                            isDark ? 'bg-slate-800 text-white' : 'bg-white text-stone-900',
-                          )}
-                        >
-                          <HiOutlineX className="h-5 w-5" />
-                        </button>
-                        {selfieUploaded && (
-                          <div className="absolute bottom-2 left-2 flex items-center gap-2 px-3 py-1.5 rounded-lg bg-green-500 text-white text-sm font-medium">
-                            <HiOutlineCheckCircle className="h-4 w-4" />
-                            Đã upload
+                    <div
+                      className={cn(
+                        'border-2 border-dashed rounded-2xl p-8 text-center transition',
+                        selfiePreview
+                          ? 'border-amber-500 bg-amber-50/10'
+                          : isDark
+                            ? 'border-slate-700 bg-slate-800/50'
+                            : 'border-stone-300 bg-stone-50',
+                      )}
+                    >
+                      {selfiePreview ? (
+                        <div className="relative">
+                          <img
+                            src={selfiePreview}
+                            alt="Selfie preview"
+                            className="max-h-64 mx-auto rounded-xl shadow-md"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelfieFile(null)
+                              setSelfiePreview(null)
+                            }}
+                            className="absolute top-2 right-2 p-1.5 rounded-full bg-red-500 text-white hover:bg-red-600 transition"
+                          >
+                            <HiOutlineX className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          <HiOutlineCamera
+                            className={cn(
+                              'h-12 w-12 mx-auto',
+                              isDark ? 'text-slate-500' : 'text-stone-400',
+                            )}
+                          />
+                          <div className="flex justify-center gap-3">
+                            <button
+                              type="button"
+                              onClick={() => setShowCamera(true)}
+                              className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white shadow-md hover:bg-amber-600 transition"
+                            >
+                              <HiOutlineCamera className="h-5 w-5" />
+                              Chụp ảnh ngay
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                document
+                                  .getElementById('selfie-file-input')
+                                  .click()
+                              }
+                              className={cn(
+                                'inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition',
+                                isDark
+                                  ? 'border border-slate-600 text-slate-300 hover:bg-slate-800'
+                                  : 'border border-stone-300 text-stone-700 hover:bg-stone-100',
+                              )}
+                            >
+                              <HiOutlinePhotograph className="h-5 w-5" />
+                              Tải ảnh lên
+                            </button>
                           </div>
-                        )}
-                      </div>
-                    ) : (
+                          <p
+                            className={cn(
+                              'text-xs',
+                              isDark ? 'text-slate-500' : 'text-stone-400',
+                            )}
+                          >
+                            Hỗ trợ: JPG, PNG, WEBP (Tối đa 10MB)
+                          </p>
+                        </div>
+                      )}
+                      <input
+                        id="selfie-file-input"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) =>
+                          handleFileSelect(e.target.files[0], 'selfie')
+                        }
+                      />
+                    </div>
+
+                    <div className="flex gap-3">
                       <button
-                        onClick={() => setShowCamera(true)}
+                        onClick={() => setCurrentStep(2)}
                         className={cn(
-                          'flex w-full flex-col items-center justify-center h-64 border-2 border-dashed rounded-xl transition',
+                          'flex-1 inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition',
                           isDark
-                            ? 'border-slate-600 bg-slate-800/50 hover:border-amber-500/60'
-                            : 'border-stone-300 bg-stone-50 hover:border-amber-500',
+                            ? 'border border-slate-600 text-slate-300 hover:bg-slate-800'
+                            : 'border border-stone-300 text-stone-700 hover:bg-stone-100',
                         )}
                       >
-                        <HiOutlineCamera className={cn('h-12 w-12 mb-4', isDark ? 'text-slate-400' : 'text-stone-400')} />
-                        <p className={cn('text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>
-                          Chụp ảnh
-                        </p>
+                        Quay lại
                       </button>
-                    )}
-
-                    {selfieFile && !selfieUploaded && (
                       <button
                         onClick={() => handleUpload('selfie')}
-                        disabled={isUploading}
+                        disabled={!selfieFile || isUploading}
                         className={cn(
-                          'w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white shadow-lg transition',
-                          isUploading
+                          'flex-1 inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white shadow-lg transition',
+                          !selfieFile || isUploading
                             ? 'cursor-not-allowed bg-amber-500/60'
                             : 'bg-amber-500 hover:bg-amber-600',
                         )}
                       >
-                        <HiOutlineCloudUpload className="h-5 w-5" />
-                        {isUploading ? 'Đang upload...' : 'Upload ảnh khuôn mặt'}
+                        {isUploading ? (
+                          'Đang tải lên...'
+                        ) : (
+                          <>
+                            <HiOutlineCloudUpload className="h-5 w-5" />
+                            Tiếp tục
+                          </>
+                        )}
                       </button>
-                    )}
+                    </div>
                   </motion.div>
                 )}
 
                 {currentStep === 4 && (
                   <motion.div
-                    key="step-4"
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
+                    key="step4"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
                     className="space-y-6"
                   >
-                    <div>
-                      <h2
+                    <div className="text-center">
+                      <h3
                         className={cn(
-                          'text-lg font-semibold mb-2',
+                          'text-lg font-semibold',
                           isDark ? 'text-white' : 'text-stone-900',
                         )}
                       >
-                        Bước 4: Xem lại và xác minh
-                      </h2>
+                        Bước 4: Kiểm tra và xác thực
+                      </h3>
                       <p
-                        className={cn('text-sm', isDark ? 'text-slate-400' : 'text-stone-500')}
+                        className={cn(
+                          'text-sm mt-1',
+                          isDark ? 'text-slate-400' : 'text-stone-500',
+                        )}
                       >
-                        Kiểm tra lại các ảnh đã upload trước khi xác minh
+                        Vui lòng kiểm tra lại các hình ảnh đã tải lên trước khi xác minh
                       </p>
                     </div>
 
-                    <div className="grid gap-4">
+                    <div className="grid grid-cols-3 gap-4">
                       {frontPreview && (
                         <div className="relative">
                           <p className={cn('text-sm font-medium mb-2', isDark ? 'text-slate-300' : 'text-stone-700')}>
@@ -769,7 +925,7 @@ export default function SellerRegister() {
                   : 'border-stone-200/80 bg-white',
               )}
             >
-              <div className="mb-8 text-center">
+              <div className="mb-6 text-center">
                 <h1
                   className={cn(
                     'text-2xl font-bold tracking-tight',
@@ -788,27 +944,54 @@ export default function SellerRegister() {
                 </p>
               </div>
 
-              <div className="mb-6 flex p-1 space-x-1 bg-stone-100 dark:bg-slate-800 rounded-xl">
+              {/* Account Registration Notice Banner */}
+              <div className={cn(
+                'mb-6 rounded-2xl p-4 border text-left flex items-start gap-3 transition-colors',
+                isDark ? 'bg-amber-500/10 border-amber-500/20 text-amber-300' : 'bg-amber-50 border-amber-200 text-amber-900'
+              )}>
+                <span className="text-xl shrink-0">📝</span>
+                <div className="text-xs space-y-1">
+                  <p className="font-bold">
+                    Tài khoản đăng ký: <span className="underline">{user?.username || user?.email || 'Khách hàng'}</span>
+                  </p>
+                  <p className={isDark ? 'text-slate-300' : 'text-stone-600'}>
+                    Vui lòng điền chính xác thông tin gian hàng, tài khoản ngân hàng và kho lấy hàng bên dưới. Đối với Hộ kinh doanh/Doanh nghiệp, cần đính kèm Giấy phép kinh doanh để Ban quản trị xét duyệt.
+                  </p>
+                </div>
+              </div>
+
+              <div className={cn(
+                'mb-6 flex p-1.5 space-x-1.5 rounded-2xl border transition-colors',
+                isDark ? 'bg-slate-800/90 border-slate-700/80' : 'bg-stone-100 border-stone-200'
+              )}>
                 <button
                   type="button"
-                  onClick={() => setSellerType('INDIVIDUAL')}
+                  onClick={() => handleSellerTypeChange('INDIVIDUAL')}
                   className={cn(
-                    'w-full rounded-lg py-2.5 text-sm font-medium leading-5 transition-all',
+                    'w-full rounded-xl py-2.5 text-xs font-bold transition-all flex items-center justify-center gap-2',
                     sellerType === 'INDIVIDUAL'
-                      ? 'bg-white shadow text-amber-600 dark:bg-slate-700 dark:text-amber-500'
-                      : 'text-stone-700 hover:bg-white/[0.12] hover:text-stone-900 dark:text-slate-400 dark:hover:text-white'
+                      ? isDark
+                        ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/20'
+                        : 'bg-white text-amber-600 shadow-sm'
+                      : isDark
+                        ? 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+                        : 'text-stone-600 hover:text-stone-900 hover:bg-white/50'
                   )}
                 >
                   Cá nhân
                 </button>
                 <button
                   type="button"
-                  onClick={() => setSellerType('BUSINESS')}
+                  onClick={() => handleSellerTypeChange('BUSINESS')}
                   className={cn(
-                    'w-full rounded-lg py-2.5 text-sm font-medium leading-5 transition-all',
+                    'w-full rounded-xl py-2.5 text-xs font-bold transition-all flex items-center justify-center gap-2',
                     sellerType === 'BUSINESS'
-                      ? 'bg-white shadow text-amber-600 dark:bg-slate-700 dark:text-amber-500'
-                      : 'text-stone-700 hover:bg-white/[0.12] hover:text-stone-900 dark:text-slate-400 dark:hover:text-white'
+                      ? isDark
+                        ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/20'
+                        : 'bg-white text-amber-600 shadow-sm'
+                      : isDark
+                        ? 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+                        : 'text-stone-600 hover:text-stone-900 hover:bg-white/50'
                   )}
                 >
                   Hộ kinh doanh / Doanh nghiệp
@@ -821,34 +1004,36 @@ export default function SellerRegister() {
                 <div className="space-y-5">
                   <h3 className={cn("text-lg font-semibold border-b pb-2", isDark ? "text-white border-slate-700" : "text-stone-900 border-stone-200")}>1. Hồ sơ shop</h3>
 
-                  <div className="grid gap-5 md:grid-cols-2">
-                    <div>
-                      <label className={cn('mb-1.5 block text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>Tên shop</label>
-                      <div className="relative">
-                        <HiOutlineUser className={cn('absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2', isDark ? 'text-slate-500' : 'text-stone-400')} />
-                        <input
-                          type="text"
-                          placeholder="VD: TechZone Official"
-                          className={cn('w-full rounded-xl border py-3 pl-10 pr-4 text-sm outline-none transition placeholder:opacity-60', isDark ? 'border-slate-600 bg-slate-800/50 text-white placeholder:text-slate-500 focus:border-amber-500/60 focus:ring-2 focus:ring-amber-500/20' : 'border-stone-300 bg-stone-50/80 text-stone-900 placeholder:text-stone-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20', errors.shopName && 'border-red-500/70 focus:border-red-500 focus:ring-red-500/20')}
-                          {...register('shopName', { required: 'Vui lòng nhập tên shop', maxLength: { value: 150, message: 'Tối đa 150 ký tự' } })}
-                        />
-                      </div>
-                      {errors.shopName && <p className="mt-1.5 text-sm text-red-500">{errors.shopName.message}</p>}
-                    </div>
+                  {/* Ảnh bìa gian hàng */}
+                  <div>
+                    <label className={cn('mb-1.5 block text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>
+                      Ảnh bìa gian hàng (Cover Banner)
+                    </label>
+                    <ShopCoverImageUpload
+                      value={watch('coverImageUrl')}
+                      onChange={(url) => setValue('coverImageUrl', url || '', { shouldValidate: true })}
+                      error={errors.coverImageUrl?.message}
+                    />
+                    <input
+                      type="hidden"
+                      {...register('coverImageUrl', { maxLength: { value: 255, message: 'Tối đa 255 ký tự' } })}
+                    />
+                  </div>
 
-                    <div>
-                      <label className={cn('mb-1.5 block text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>Ảnh bìa (URL)</label>
-                      <div className="relative">
-                        <HiOutlinePhotograph className={cn('absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2', isDark ? 'text-slate-500' : 'text-stone-400')} />
-                        <input
-                          type="url"
-                          placeholder="https://..."
-                          className={cn('w-full rounded-xl border py-3 pl-10 pr-4 text-sm outline-none transition placeholder:opacity-60', isDark ? 'border-slate-600 bg-slate-800/50 text-white placeholder:text-slate-500 focus:border-amber-500/60 focus:ring-2 focus:ring-amber-500/20' : 'border-stone-300 bg-stone-50/80 text-stone-900 placeholder:text-stone-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20', errors.coverImageUrl && 'border-red-500/70 focus:border-red-500 focus:ring-red-500/20')}
-                          {...register('coverImageUrl', { maxLength: { value: 255, message: 'Tối đa 255 ký tự' } })}
-                        />
-                      </div>
-                      {errors.coverImageUrl && <p className="mt-1.5 text-sm text-red-500">{errors.coverImageUrl.message}</p>}
+                  <div>
+                    <label className={cn('mb-1.5 block text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>
+                      Tên shop <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <HiOutlineUser className={cn('absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2', isDark ? 'text-slate-500' : 'text-stone-400')} />
+                      <input
+                        type="text"
+                        placeholder="VD: TechZone Official"
+                        className={cn('w-full rounded-xl border py-3 pl-10 pr-4 text-sm outline-none transition placeholder:opacity-60', isDark ? 'border-slate-600 bg-slate-800/50 text-white placeholder:text-slate-500 focus:border-amber-500/60 focus:ring-2 focus:ring-amber-500/20' : 'border-stone-300 bg-stone-50/80 text-stone-900 placeholder:text-stone-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20', errors.shopName && 'border-red-500/70 focus:border-red-500 focus:ring-red-500/20')}
+                        {...register('shopName', { required: 'Vui lòng nhập tên shop', maxLength: { value: 150, message: 'Tối đa 150 ký tự' } })}
+                      />
                     </div>
+                    {errors.shopName && <p className="mt-1.5 text-sm text-red-500">{errors.shopName.message}</p>}
                   </div>
 
                   <div>
@@ -934,17 +1119,29 @@ export default function SellerRegister() {
                     </div>
 
                     <div>
-                      <label className={cn('mb-1.5 block text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>Địa chỉ trụ sở</label>
-                      <div className="relative">
-                        <HiOutlineLocationMarker className={cn('absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2', isDark ? 'text-slate-500' : 'text-stone-400')} />
-                        <input
-                          type="text"
-                          placeholder="Địa chỉ ghi trên Giấy phép kinh doanh"
-                          className={cn('w-full rounded-xl border py-3 pl-10 pr-4 text-sm outline-none transition', isDark ? 'border-slate-600 bg-slate-800/50 text-white' : 'border-stone-300 bg-stone-50/80 text-stone-900', errors.businessAddress && 'border-red-500/70')}
-                          {...register('businessAddress', { required: 'Vui lòng nhập địa chỉ trụ sở' })}
-                        />
-                      </div>
-                      {errors.businessAddress && <p className="mt-1.5 text-sm text-red-500">{errors.businessAddress.message}</p>}
+                      <GhnAddressSelector
+                        label="Địa chỉ trụ sở"
+                        required
+                        hint="Theo Giấy phép kinh doanh"
+                        value={watch('businessAddress')}
+                        onChange={(fullAddr) => {
+                          setValue('businessAddress', fullAddr, { shouldValidate: true })
+                          if (sameAsBusiness) {
+                            setValue('pickupAddress', fullAddr, { shouldValidate: true })
+                            if (sameAsPickup) {
+                              setValue('returnAddress', fullAddr, { shouldValidate: true })
+                            }
+                          }
+                        }}
+                        error={errors.businessAddress?.message}
+                        isDark={isDark}
+                      />
+                      <input
+                        type="hidden"
+                        {...register('businessAddress', {
+                          required: sellerType === 'BUSINESS' ? 'Vui lòng chọn địa chỉ trụ sở chuẩn GHN' : false,
+                        })}
+                      />
                     </div>
 
                     <div>
@@ -981,39 +1178,90 @@ export default function SellerRegister() {
                 )}
 
                 {/* 3. LẤY/TRẢ HÀNG & PHÁP LÝ */}
-                <div className="space-y-5">
+                <div className="space-y-6">
                   <h3 className={cn("text-lg font-semibold border-b pb-2", isDark ? "text-white border-slate-700" : "text-stone-900 border-stone-200")}>
                     {sellerType === 'BUSINESS' ? '3. Lấy/trả hàng & Hóa đơn' : '2. Lấy/trả hàng & Pháp lý'}
                   </h3>
 
-                  <div className="grid gap-5 md:grid-cols-2">
-                    <div>
-                      <label className={cn('mb-1.5 block text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>Địa chỉ lấy hàng</label>
-                      <div className="relative">
-                        <HiOutlineLocationMarker className={cn('absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2', isDark ? 'text-slate-500' : 'text-stone-400')} />
+                  {/* Địa chỉ lấy hàng */}
+                  <div className="rounded-2xl border p-4 sm:p-5 space-y-3 bg-stone-50/50 dark:bg-slate-900/40 border-stone-200/80 dark:border-slate-800">
+                    {sellerType === 'BUSINESS' && (
+                      <label className="inline-flex items-center gap-2 text-xs font-semibold cursor-pointer select-none text-amber-600 dark:text-amber-400">
                         <input
-                          type="text"
-                          placeholder="Nhập địa chỉ lấy hàng"
-                          className={cn('w-full rounded-xl border py-3 pl-10 pr-4 text-sm outline-none transition', isDark ? 'border-slate-600 bg-slate-800/50 text-white' : 'border-stone-300 bg-stone-50/80 text-stone-900', errors.pickupAddress && 'border-red-500/70')}
-                          {...register('pickupAddress', { required: 'Vui lòng nhập địa chỉ lấy hàng' })}
+                          type="checkbox"
+                          checked={sameAsBusiness}
+                          onChange={(e) => {
+                            const checked = e.target.checked
+                            setSameAsBusiness(checked)
+                            if (checked) {
+                              const bAddr = watch('businessAddress') || ''
+                              setValue('pickupAddress', bAddr, { shouldValidate: true })
+                              if (sameAsPickup) {
+                                setValue('returnAddress', bAddr, { shouldValidate: true })
+                              }
+                            }
+                          }}
+                          className="rounded text-amber-500 focus:ring-amber-500 h-4 w-4"
                         />
-                      </div>
-                      {errors.pickupAddress && <p className="mt-1.5 text-sm text-red-500">{errors.pickupAddress.message}</p>}
-                    </div>
+                        <span>Địa chỉ lấy hàng giống Địa chỉ trụ sở</span>
+                      </label>
+                    )}
 
-                    <div>
-                      <label className={cn('mb-1.5 block text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>Địa chỉ trả hàng</label>
-                      <div className="relative">
-                        <HiOutlineLocationMarker className={cn('absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2', isDark ? 'text-slate-500' : 'text-stone-400')} />
-                        <input
-                          type="text"
-                          placeholder="Nhập địa chỉ nhận hàng hoàn trả"
-                          className={cn('w-full rounded-xl border py-3 pl-10 pr-4 text-sm outline-none transition', isDark ? 'border-slate-600 bg-slate-800/50 text-white' : 'border-stone-300 bg-stone-50/80 text-stone-900', errors.returnAddress && 'border-red-500/70')}
-                          {...register('returnAddress', { required: 'Vui lòng nhập địa chỉ trả hàng' })}
-                        />
-                      </div>
-                      {errors.returnAddress && <p className="mt-1.5 text-sm text-red-500">{errors.returnAddress.message}</p>}
-                    </div>
+                    <GhnAddressSelector
+                      label="Địa chỉ lấy hàng (Kho hàng cho GHN đến lấy)"
+                      required
+                      disabled={sameAsBusiness}
+                      hint="Chọn Tỉnh, Huyện, Xã theo chuẩn GHN"
+                      value={watch('pickupAddress')}
+                      onChange={(fullAddr) => {
+                        setValue('pickupAddress', fullAddr, { shouldValidate: true })
+                        if (sameAsPickup) {
+                          setValue('returnAddress', fullAddr, { shouldValidate: true })
+                        }
+                      }}
+                      error={errors.pickupAddress?.message}
+                      isDark={isDark}
+                    />
+                    <input
+                      type="hidden"
+                      {...register('pickupAddress', { required: 'Vui lòng chọn địa chỉ lấy hàng chuẩn GHN' })}
+                    />
+                  </div>
+
+                  {/* Địa chỉ trả hàng */}
+                  <div className="rounded-2xl border p-4 sm:p-5 space-y-3 bg-stone-50/50 dark:bg-slate-900/40 border-stone-200/80 dark:border-slate-800">
+                    <label className="inline-flex items-center gap-2 text-xs font-semibold cursor-pointer select-none text-amber-600 dark:text-amber-400">
+                      <input
+                        type="checkbox"
+                        checked={sameAsPickup}
+                        onChange={(e) => {
+                          const checked = e.target.checked
+                          setSameAsPickup(checked)
+                          if (checked) {
+                            setValue('returnAddress', watch('pickupAddress') || '', { shouldValidate: true })
+                          }
+                        }}
+                        className="rounded text-amber-500 focus:ring-amber-500 h-4 w-4"
+                      />
+                      <span>Địa chỉ trả hàng giống Địa chỉ lấy hàng</span>
+                    </label>
+
+                    <GhnAddressSelector
+                      label="Địa chỉ trả hàng (Nhận hàng hoàn trả từ GHN)"
+                      required
+                      disabled={sameAsPickup}
+                      hint="Nơi nhận hàng khi khách hoàn hàng"
+                      value={watch('returnAddress')}
+                      onChange={(fullAddr) => {
+                        setValue('returnAddress', fullAddr, { shouldValidate: true })
+                      }}
+                      error={errors.returnAddress?.message}
+                      isDark={isDark}
+                    />
+                    <input
+                      type="hidden"
+                      {...register('returnAddress', { required: 'Vui lòng chọn địa chỉ trả hàng chuẩn GHN' })}
+                    />
                   </div>
 
                   <div className="grid gap-5 md:grid-cols-2">

@@ -30,6 +30,7 @@ import Footer from '../../components/Footer'
 import { useThemeStore } from '../../store/useThemeStore'
 import { useAuthStore } from '../../store/useAuthStore'
 import { useCartStore } from '../../store/useCartStore'
+import { useChatStore } from '../../store/useChatStore'
 import { cn } from '../../lib/cn'
 import productService from '../../services/product'
 import cartService from '../../services/cart'
@@ -646,7 +647,25 @@ export default function ProductDetail() {
                   </Link>
 
                   <button
-                    onClick={() => toast.success('Đang kết nối trung tâm chat với người bán...')}
+                    onClick={() => {
+                      if (!currentShopId) return
+                      useChatStore.getState().openShopChat(
+                        {
+                          id: currentShopId,
+                          name: product.shopName || shopData?.name || 'Cửa hàng',
+                          logo: shopData?.logo,
+                          city: shopData?.city,
+                          mallBadge: shopData?.mallBadge,
+                          ekycVerified: shopData?.ekycVerified,
+                        },
+                        {
+                          id: product.id,
+                          name: product.name,
+                          price: product.price || product.basePrice,
+                          image: product.images?.[0]?.imageUrl || product.images?.[0] || product.thumbnailUrl,
+                        }
+                      )
+                    }}
                     className={cn(
                       'inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-1.5 text-xs font-bold transition-colors',
                       isDark

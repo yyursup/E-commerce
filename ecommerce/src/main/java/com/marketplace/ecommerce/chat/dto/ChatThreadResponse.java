@@ -26,6 +26,7 @@ public class ChatThreadResponse {
     private String adminName;
     private UUID shopId;
     private String shopName;
+    private String shopLogo;
     private String title;
     private String lastMessage;
 
@@ -39,7 +40,11 @@ public class ChatThreadResponse {
     private LocalDateTime createdAt;
 
     public static ChatThreadResponse from(ChatThread thread, UUID currentUserId, boolean isAdmin) {
-        int unread = isAdmin ? thread.getUnreadAdmin() : thread.getUnreadCustomer();
+        boolean isShopOwner = false;
+        if (currentUserId != null && thread.getShop() != null && thread.getShop().getUser() != null && thread.getShop().getUser().getAccount() != null) {
+            isShopOwner = currentUserId.equals(thread.getShop().getUser().getAccount().getId());
+        }
+        int unread = (isAdmin || isShopOwner) ? thread.getUnreadAdmin() : thread.getUnreadCustomer();
         return ChatThreadResponse.builder()
                 .id(thread.getId())
                 .type(thread.getType())
@@ -50,6 +55,7 @@ public class ChatThreadResponse {
                 .adminName(thread.getAdmin() != null ? thread.getAdmin().getUsername() : null)
                 .shopId(thread.getShop() != null ? thread.getShop().getId() : null)
                 .shopName(thread.getShop() != null ? thread.getShop().getName() : null)
+                .shopLogo(thread.getShop() != null ? thread.getShop().getLogoUrl() : null)
                 .title(thread.getTitle())
                 .lastMessage(thread.getLastMessage())
                 .lastMessageAt(thread.getLastMessageAt() != null ? thread.getLastMessageAt() : thread.getCreatedAt())

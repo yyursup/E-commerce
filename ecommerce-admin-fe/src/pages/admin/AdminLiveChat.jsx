@@ -501,23 +501,6 @@ export default function AdminLiveChat() {
         </div>
 
         <div className="flex items-center gap-3">
-          <span
-            className={cn(
-              'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold',
-              connected
-                ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
-                : 'bg-rose-500/15 text-rose-600 dark:text-rose-400',
-            )}
-          >
-            <span
-              className={cn(
-                'h-2 w-2 rounded-full',
-                connected ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500',
-              )}
-            />
-            {connected ? 'WebSocket Trực tuyến' : 'Mất kết nối WebSocket'}
-          </span>
-
           {/* Notification bell toggle */}
           <button
             type="button"

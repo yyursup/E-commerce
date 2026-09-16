@@ -50,6 +50,12 @@ public class ChatServiceImpl implements ChatService {
     @Override
     @Transactional(readOnly = true)
     public List<ChatThreadResponse> getThreads(CurrentUserInfo principal) {
+        return getThreads(principal, null);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ChatThreadResponse> getThreads(CurrentUserInfo principal, String type) {
         if (principal == null || principal.getAccountId() == null) {
             throw new CustomException("Vui lòng đăng nhập để xem danh sách chat");
         }
@@ -57,8 +63,18 @@ public class ChatServiceImpl implements ChatService {
         boolean isAdmin = "ADMIN".equalsIgnoreCase(principal.getRole());
         List<ChatThread> threads;
 
-        if (isAdmin) {
+        if (isAdmin && (type == null || "ALL".equalsIgnoreCase(type))) {
             threads = chatThreadRepository.findAllOrderByLastMessageAtDesc();
+        } else if ("SHOP".equalsIgnoreCase(type) || "SELLER".equalsIgnoreCase(type)) {
+            Optional<User> userOpt = userRepository.findByAccountId(principal.getAccountId());
+            Shop shop = userOpt.flatMap(u -> shopRepository.findByUserId(u.getId())).orElse(null);
+            if (shop != null) {
+                threads = chatThreadRepository.findByShopId(shop.getId());
+            } else {
+                threads = List.of();
+            }
+        } else if ("CUSTOMER".equalsIgnoreCase(type)) {
+            threads = chatThreadRepository.findByCustomerId(principal.getAccountId());
         } else if ("BUSINESS".equalsIgnoreCase(principal.getRole())) {
             // Find shop owned by this user
             Optional<User> userOpt = userRepository.findByAccountId(principal.getAccountId());
@@ -123,17 +139,56 @@ public class ChatServiceImpl implements ChatService {
 
     @Override
     @Transactional
+    public ChatThreadResponse getOrCreateShopThread(CurrentUserInfo principal, String shopIdStr) {
+        if (shopIdStr == null || shopIdStr.isBlank()) {
+            throw new CustomException("Mã Shop không hợp lệ");
+        }
+
+        UUID resolvedShopId = null;
+        try {
+            resolvedShopId = UUID.fromString(shopIdStr);
+        } catch (IllegalArgumentException e) {
+            // Not a UUID string, search by shop name or fallback to first available shop in DB
+            Optional<Shop> matchingShop = shopRepository.findAll().stream()
+                    .filter(s -> s.getName() != null && (
+                            s.getName().equalsIgnoreCase(shopIdStr) ||
+                            s.getName().toLowerCase().contains(shopIdStr.toLowerCase()) ||
+                            shopIdStr.toLowerCase().contains(s.getName().toLowerCase())
+                    ))
+                    .findFirst();
+
+            if (matchingShop.isPresent()) {
+                resolvedShopId = matchingShop.get().getId();
+            } else {
+                resolvedShopId = shopRepository.findAll().stream()
+                        .findFirst()
+                        .map(Shop::getId)
+                        .orElse(null);
+            }
+        }
+
+        if (resolvedShopId == null) {
+            throw new CustomException("Không tìm thấy Shop phù hợp trên hệ thống");
+        }
+
+        return getOrCreateShopThread(principal, resolvedShopId);
+    }
+
+    @Override
+    @Transactional
     public ChatThreadResponse getOrCreateShopThread(CurrentUserInfo principal, UUID shopId) {
         if (principal == null || principal.getAccountId() == null) {
             throw new CustomException("Vui lòng đăng nhập để chat với Shop");
         }
 
-        Shop shop = shopRepository.findById(shopId)
-                .orElseThrow(() -> new CustomException("Không tìm thấy Shop"));
+        Shop shop = shopRepository.findById(shopId).orElseGet(() ->
+                shopRepository.findAll().stream().findFirst()
+                        .orElseThrow(() -> new CustomException("Không tìm thấy Shop"))
+        );
 
         UUID accountId = principal.getAccountId();
         Optional<ChatThread> existingOpt = chatThreadRepository.findFirstByCustomer_IdAndShop_IdAndStatus(
-                accountId, shopId, ThreadStatus.OPEN);
+                accountId, shop.getId(), ThreadStatus.OPEN);
 
         if (existingOpt.isPresent()) {
             return ChatThreadResponse.from(existingOpt.get(), accountId, false);
@@ -199,16 +254,20 @@ public class ChatServiceImpl implements ChatService {
         String senderRole = principal.getRole() != null ? principal.getRole() : "CUSTOMER";
         boolean isAdmin = checkIsAdmin(senderRole);
 
-        // Determine sender display name
-        Optional<User> userOpt = userRepository.findByAccountId(senderId);
-        String senderName = userOpt.map(User::getFullName).filter(s -> !s.isBlank()).orElse(principal.getUsername());
-        if (isAdmin) {
-            senderName = "Hỗ trợ viên (" + principal.getUsername() + ")";
-        }
+        // Determine sender display name (Shop name for shop owner in SHOP threads)
+        String senderName = resolveSenderDisplayName(thread, senderId, principal.getUsername(), isAdmin);
 
         UUID recipientId = request.getRecipientId();
         if (recipientId == null) {
-            if (isAdmin) {
+            if (thread.getType() == ThreadType.SHOP) {
+                if (senderId.equals(thread.getCustomer().getId())) {
+                    if (thread.getShop() != null && thread.getShop().getUser() != null && thread.getShop().getUser().getAccount() != null) {
+                        recipientId = thread.getShop().getUser().getAccount().getId();
+                    }
+                } else {
+                    recipientId = thread.getCustomer().getId();
+                }
+            } else if (isAdmin) {
                 recipientId = thread.getCustomer().getId();
             } else if (thread.getAdmin() != null) {
                 recipientId = thread.getAdmin().getId();
@@ -233,22 +292,13 @@ public class ChatServiceImpl implements ChatService {
         thread.setLastMessage(request.getContent().trim());
         thread.setLastMessageAt(now);
 
-        if (isAdmin) {
-            thread.setUnreadCustomer(thread.getUnreadCustomer() + 1);
-            if (thread.getAdmin() == null) {
-                accountRepository.findById(senderId).ifPresent(thread::setAdmin);
-            }
-        } else {
-            thread.setUnreadAdmin(thread.getUnreadAdmin() + 1);
-        }
-
+        updateThreadUnreadCounters(thread, senderId, isAdmin);
         chatThreadRepository.save(thread);
 
         ChatMessageResponse response = ChatMessageResponse.from(saved);
-        ChatThreadResponse threadResponse = ChatThreadResponse.from(thread, senderId, isAdmin);
 
-        // Dispatch via WebSocket
-        dispatchRealtimeMessage(thread, response, threadResponse, isAdmin);
+        // Dispatch via WebSocket with perspective-aware thread updates
+        dispatchRealtimeMessage(thread, response, isAdmin);
 
         return response;
     }
@@ -270,11 +320,7 @@ public class ChatServiceImpl implements ChatService {
         String senderRole = principal.getRole() != null ? principal.getRole() : "CUSTOMER";
         boolean isAdmin = checkIsAdmin(senderRole);
 
-        Optional<User> userOpt = userRepository.findByAccountId(senderId);
-        String senderName = userOpt.map(User::getFullName).filter(s -> !s.isBlank()).orElse(principal.getUsername());
-        if (isAdmin) {
-            senderName = "Hỗ trợ viên (" + principal.getUsername() + ")";
-        }
+        String senderName = resolveSenderDisplayName(thread, senderId, principal.getUsername(), isAdmin);
 
         ChatMessage message = ChatMessage.builder()
                 .thread(thread)
@@ -292,17 +338,12 @@ public class ChatServiceImpl implements ChatService {
         LocalDateTime now = LocalDateTime.now();
         thread.setLastMessage("[Hình ảnh]");
         thread.setLastMessageAt(now);
-        if (isAdmin) {
-            thread.setUnreadCustomer(thread.getUnreadCustomer() + 1);
-        } else {
-            thread.setUnreadAdmin(thread.getUnreadAdmin() + 1);
-        }
+        updateThreadUnreadCounters(thread, senderId, isAdmin);
         chatThreadRepository.save(thread);
 
         ChatMessageResponse response = ChatMessageResponse.from(saved);
-        ChatThreadResponse threadResponse = ChatThreadResponse.from(thread, senderId, isAdmin);
 
-        dispatchRealtimeMessage(thread, response, threadResponse, isAdmin);
+        dispatchRealtimeMessage(thread, response, isAdmin);
 
         return response;
     }
@@ -316,9 +357,14 @@ public class ChatServiceImpl implements ChatService {
         if (thread == null) return;
 
         boolean isAdmin = checkIsAdmin(principal.getRole());
+        boolean isShopOwner = false;
+        if (thread.getShop() != null && thread.getShop().getUser() != null && thread.getShop().getUser().getAccount() != null) {
+            isShopOwner = principal.getAccountId().equals(thread.getShop().getUser().getAccount().getId());
+        }
+
         chatMessageRepository.markAllAsRead(threadId, principal.getAccountId(), LocalDateTime.now());
 
-        if (isAdmin) {
+        if (isAdmin || isShopOwner) {
             thread.setUnreadAdmin(0);
         } else {
             thread.setUnreadCustomer(0);
@@ -331,11 +377,23 @@ public class ChatServiceImpl implements ChatService {
                 "readBy", principal.getUsername()
         );
 
-        if (isAdmin) {
-            webSocketSessionService.sendToUser(thread.getCustomer().getId(), "CHAT_READ", readEvent);
+        if (isAdmin || isShopOwner) {
+            if (thread.getCustomer() != null) {
+                webSocketSessionService.sendToUser(thread.getCustomer().getId(), "CHAT_READ", readEvent);
+            }
         } else {
-            webSocketSessionService.broadcastToAdmins("CHAT_READ", readEvent);
+            if (thread.getType() == ThreadType.SHOP) {
+                if (thread.getShop() != null && thread.getShop().getUser() != null && thread.getShop().getUser().getAccount() != null) {
+                    webSocketSessionService.sendToUser(thread.getShop().getUser().getAccount().getId(), "CHAT_READ", readEvent);
+                }
+            } else {
+                webSocketSessionService.broadcastToAdmins("CHAT_READ", readEvent);
+            }
         }
+
+        // Notify the reader so their unread badge resets to 0 immediately
+        ChatThreadResponse readerThreadRes = ChatThreadResponse.from(thread, principal.getAccountId(), isAdmin);
+        webSocketSessionService.sendToUser(principal.getAccountId(), "CHAT_THREAD_UPDATED", readerThreadRes);
     }
 
     @Override
@@ -370,11 +428,7 @@ public class ChatServiceImpl implements ChatService {
         String senderRole = principal.getRole() != null ? principal.getRole() : "CUSTOMER";
         boolean isAdmin = checkIsAdmin(senderRole);
 
-        Optional<User> userOpt = userRepository.findByAccountId(senderId);
-        String senderName = userOpt.map(User::getFullName).filter(s -> !s.isBlank()).orElse(principal.getUsername());
-        if (isAdmin) {
-            senderName = "Hỗ trợ viên (" + principal.getUsername() + ")";
-        }
+        String senderName = resolveSenderDisplayName(thread, senderId, principal.getUsername(), isAdmin);
 
         ChatMessage message = ChatMessage.builder()
                 .thread(thread)
@@ -392,17 +446,12 @@ public class ChatServiceImpl implements ChatService {
         LocalDateTime now = LocalDateTime.now();
         thread.setLastMessage("[Video]");
         thread.setLastMessageAt(now);
-        if (isAdmin) {
-            thread.setUnreadCustomer(thread.getUnreadCustomer() + 1);
-        } else {
-            thread.setUnreadAdmin(thread.getUnreadAdmin() + 1);
-        }
+        updateThreadUnreadCounters(thread, senderId, isAdmin);
         chatThreadRepository.save(thread);
 
         ChatMessageResponse response = ChatMessageResponse.from(saved);
-        ChatThreadResponse threadResponse = ChatThreadResponse.from(thread, senderId, isAdmin);
 
-        dispatchRealtimeMessage(thread, response, threadResponse, isAdmin);
+        dispatchRealtimeMessage(thread, response, isAdmin);
 
         return response;
     }
@@ -485,22 +534,90 @@ public class ChatServiceImpl implements ChatService {
         webSocketSessionService.broadcastToAdmins("CHAT_MESSAGE_DELETED", payload);
     }
 
-    private void dispatchRealtimeMessage(ChatThread thread, ChatMessageResponse response,
-                                         ChatThreadResponse threadResponse, boolean senderIsAdmin) {
+    private void dispatchRealtimeMessage(ChatThread thread, ChatMessageResponse response, boolean senderIsAdmin) {
+        if (thread.getType() == ThreadType.SHOP) {
+            UUID customerAccountId = thread.getCustomer() != null ? thread.getCustomer().getId() : null;
+            UUID shopOwnerAccountId = null;
+            if (thread.getShop() != null && thread.getShop().getUser() != null && thread.getShop().getUser().getAccount() != null) {
+                shopOwnerAccountId = thread.getShop().getUser().getAccount().getId();
+            }
+
+            if (customerAccountId != null) {
+                ChatThreadResponse customerThreadRes = ChatThreadResponse.from(thread, customerAccountId, false);
+                webSocketSessionService.sendToUser(customerAccountId, "CHAT_MESSAGE", response);
+                webSocketSessionService.sendToUser(customerAccountId, "CHAT_THREAD_UPDATED", customerThreadRes);
+            }
+            if (shopOwnerAccountId != null && !shopOwnerAccountId.equals(customerAccountId)) {
+                ChatThreadResponse shopThreadRes = ChatThreadResponse.from(thread, shopOwnerAccountId, false);
+                webSocketSessionService.sendToUser(shopOwnerAccountId, "CHAT_MESSAGE", response);
+                webSocketSessionService.sendToUser(shopOwnerAccountId, "CHAT_THREAD_UPDATED", shopThreadRes);
+            }
+            // Also notify admins for monitoring
+            ChatThreadResponse adminThreadRes = ChatThreadResponse.from(thread, null, true);
+            webSocketSessionService.broadcastToAdmins("CHAT_MESSAGE", response);
+            webSocketSessionService.broadcastToAdmins("CHAT_THREAD_UPDATED", adminThreadRes);
+            return;
+        }
+
+        ChatThreadResponse customerThreadRes = thread.getCustomer() != null
+                ? ChatThreadResponse.from(thread, thread.getCustomer().getId(), false)
+                : null;
+        ChatThreadResponse adminThreadRes = ChatThreadResponse.from(thread, null, true);
+
         if (senderIsAdmin) {
             // Send to customer
-            webSocketSessionService.sendToUser(thread.getCustomer().getId(), "CHAT_MESSAGE", response);
-            webSocketSessionService.sendToUser(thread.getCustomer().getId(), "CHAT_THREAD_UPDATED", threadResponse);
+            if (customerThreadRes != null) {
+                webSocketSessionService.sendToUser(thread.getCustomer().getId(), "CHAT_MESSAGE", response);
+                webSocketSessionService.sendToUser(thread.getCustomer().getId(), "CHAT_THREAD_UPDATED", customerThreadRes);
+            }
 
             // Broadcast to all admins (including the sender admin)
             webSocketSessionService.broadcastToAdmins("CHAT_MESSAGE", response);
-            webSocketSessionService.broadcastToAdmins("CHAT_THREAD_UPDATED", threadResponse);
+            webSocketSessionService.broadcastToAdmins("CHAT_THREAD_UPDATED", adminThreadRes);
         } else {
             // Customer sent: echo back to customer and broadcast to all admins
-            webSocketSessionService.sendToUser(response.getSenderId(), "CHAT_MESSAGE", response);
+            if (customerThreadRes != null) {
+                webSocketSessionService.sendToUser(response.getSenderId(), "CHAT_MESSAGE", response);
+                webSocketSessionService.sendToUser(response.getSenderId(), "CHAT_THREAD_UPDATED", customerThreadRes);
+            }
             webSocketSessionService.broadcastToAdmins("CHAT_MESSAGE", response);
-            webSocketSessionService.broadcastToAdmins("CHAT_THREAD_UPDATED", threadResponse);
+            webSocketSessionService.broadcastToAdmins("CHAT_THREAD_UPDATED", adminThreadRes);
         }
+    }
+
+    private boolean isCustomerSender(ChatThread thread, UUID senderId) {
+        if (thread == null || thread.getCustomer() == null || thread.getCustomer().getId() == null) {
+            return false;
+        }
+        return senderId != null && senderId.equals(thread.getCustomer().getId());
+    }
+
+    private void updateThreadUnreadCounters(ChatThread thread, UUID senderId, boolean isAdmin) {
+        if (isCustomerSender(thread, senderId)) {
+            // Customer sent message -> recipient is Shop/Admin
+            thread.setUnreadAdmin(thread.getUnreadAdmin() + 1);
+            thread.setUnreadCustomer(0);
+        } else {
+            // Shop owner or Admin sent message -> recipient is Customer
+            thread.setUnreadCustomer(thread.getUnreadCustomer() + 1);
+            thread.setUnreadAdmin(0);
+            if (isAdmin && thread.getAdmin() == null) {
+                accountRepository.findById(senderId).ifPresent(thread::setAdmin);
+            }
+        }
+    }
+
+    private String resolveSenderDisplayName(ChatThread thread, UUID senderId, String username, boolean isAdmin) {
+        if (isAdmin) {
+            return "Hỗ trợ viên (" + username + ")";
+        }
+        if (thread != null && thread.getType() == ThreadType.SHOP && !isCustomerSender(thread, senderId)) {
+            if (thread.getShop() != null && thread.getShop().getName() != null && !thread.getShop().getName().isBlank()) {
+                return thread.getShop().getName();
+            }
+        }
+        Optional<User> userOpt = userRepository.findByAccountId(senderId);
+        return userOpt.map(User::getFullName).filter(s -> !s.isBlank()).orElse(username);
     }
 
     private boolean checkIsAdmin(String role) {

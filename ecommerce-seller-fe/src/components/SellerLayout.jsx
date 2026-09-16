@@ -1,4 +1,5 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import {
   HiOutlineViewGrid,
   HiOutlineShoppingBag,
@@ -9,24 +10,38 @@ import {
   HiOutlineSun,
   HiOutlineMoon,
   HiOutlineTicket,
+  HiOutlineChat,
 } from 'react-icons/hi'
 import { useAuthStore } from '../store/useAuthStore'
 import { useThemeStore } from '../store/useThemeStore'
 import { cn } from '../lib/cn'
+import { getAccessToken } from '../lib/auth'
+import chatService from '../services/chatService'
+import {
+  createWebSocketConnection,
+  addWebSocketListener,
+} from '../services/websocketService'
+import { useChatNotification } from '../hooks/useChatNotification'
+import ChatNotificationToast from './ChatNotificationToast'
 
 const navItems = [
   { to: '/dashboard', label: 'Tổng quan (Dashboard)', icon: HiOutlineViewGrid },
   { to: '/orders', label: 'Quản lý Đơn hàng', icon: HiOutlineShoppingBag },
   { to: '/products', label: 'Quản lý Sản phẩm', icon: HiOutlineArchive },
   { to: '/vouchers', label: 'Mã Giảm Giá Shop', icon: HiOutlineTicket },
+  { to: '/chat', label: 'Tin nhắn (Chat CSKH)', icon: HiOutlineChat, isChat: true },
   { to: '/settings', label: 'Cài đặt Kho & Gian hàng', icon: HiOutlineCog },
 ]
 
 export default function SellerLayout() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { user, logout } = useAuthStore()
   const { theme, toggleTheme } = useThemeStore()
   const isDark = theme === 'dark'
+  const [unreadChatTotal, setUnreadChatTotal] = useState(0)
+
+  const { notifications, addNotification, dismissNotification } = useChatNotification()
 
   const handleLogout = () => {
     logout()
@@ -34,6 +49,56 @@ export default function SellerLayout() {
   }
 
   const shopId = user?.shopId
+  const token = getAccessToken()
+
+  // Track unread messages from customer threads
+  useEffect(() => {
+    if (!token) return
+    createWebSocketConnection(token)
+
+    const fetchUnread = async () => {
+      try {
+        const res = await chatService.getThreads('SHOP')
+        const list = Array.isArray(res) ? res : res?.content || []
+        const selectedId = sessionStorage.getItem('seller_selected_thread_id')
+        const total = list.reduce((acc, t) => {
+          if (
+            location.pathname.startsWith('/chat') &&
+            selectedId &&
+            String(t.id).toLowerCase() === String(selectedId).toLowerCase()
+          ) {
+            return acc
+          }
+          return acc + (t.unreadCount || 0)
+        }, 0)
+        setUnreadChatTotal(total)
+      } catch (err) {
+        console.warn('Lỗi tải số tin chưa đọc:', err)
+      }
+    }
+
+    fetchUnread()
+
+    const unregMsg = addWebSocketListener('CHAT_MESSAGE', (msg) => {
+      if (!msg) return
+      const isSelf = user?.id && String(msg.senderId).toLowerCase() === String(user.id).toLowerCase()
+      if (isSelf) return
+
+      fetchUnread()
+      if (!location.pathname.startsWith('/chat') && msg.senderRole === 'CUSTOMER') {
+        addNotification(msg)
+      }
+    })
+
+    const unregUpdated = addWebSocketListener('CHAT_THREAD_UPDATED', () => {
+      fetchUnread()
+    })
+
+    return () => {
+      unregMsg()
+      unregUpdated()
+    }
+  }, [token, location.pathname, addNotification])
 
   return (
     <div className={cn('min-h-screen flex flex-col', isDark ? 'bg-slate-950 text-slate-100' : 'bg-stone-50 text-stone-900')}>
@@ -109,12 +174,12 @@ export default function SellerLayout() {
 
               {/* Navigation */}
               <nav className="space-y-1">
-                {navItems.map(({ to, label, icon: Icon }) => (
+                {navItems.map(({ to, label, icon: Icon, isChat }) => (
                   <NavLink
                     key={to}
                     to={to}
                     className={({ isActive }) => cn(
-                      'flex items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-xs font-semibold transition-all',
+                      'flex items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-semibold transition-all',
                       isActive
                         ? 'bg-amber-500 text-white shadow-sm shadow-amber-500/20'
                         : isDark
@@ -122,8 +187,15 @@ export default function SellerLayout() {
                           : 'text-stone-600 hover:bg-stone-100',
                     )}
                   >
-                    <Icon className="h-4 w-4 shrink-0" />
-                    {label}
+                    <div className="flex items-center gap-2.5">
+                      <Icon className="h-4 w-4 shrink-0" />
+                      <span>{label}</span>
+                    </div>
+                    {isChat && unreadChatTotal > 0 && (
+                      <span className="flex h-5 min-w-5 px-1.5 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white shadow-xs">
+                        {unreadChatTotal > 99 ? '99+' : unreadChatTotal}
+                      </span>
+                    )}
                   </NavLink>
                 ))}
               </nav>
@@ -144,6 +216,17 @@ export default function SellerLayout() {
           </main>
         </div>
       </div>
+
+      {/* Incoming customer message notification popup when not on /chat */}
+      <ChatNotificationToast
+        notifications={notifications}
+        onDismiss={dismissNotification}
+        onOpen={(threadId) => {
+          if (threadId) sessionStorage.setItem('seller_selected_thread_id', threadId)
+          navigate('/chat')
+        }}
+        position="top-right"
+      />
     </div>
   )
 }

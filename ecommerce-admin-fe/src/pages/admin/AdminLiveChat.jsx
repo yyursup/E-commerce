@@ -3,7 +3,7 @@ import {
   HiOutlineChat, HiOutlinePaperAirplane, HiOutlinePhotograph,
   HiOutlineSearch, HiOutlineCheckCircle, HiOutlineDotsVertical, HiX,
   HiOutlineVideoCamera, HiOutlinePencil, HiOutlineTrash,
-  HiOutlineBell, HiCheck,
+  HiOutlineBell, HiCheck, HiPlus, HiOutlineEmojiHappy,
 } from 'react-icons/hi'
 import { HiOutlineBellSlash } from 'react-icons/hi2'
 import toast from 'react-hot-toast'
@@ -19,6 +19,8 @@ import {
 } from '../../services/websocketService'
 import { useChatNotification } from '../../hooks/useChatNotification'
 import ChatNotificationToast from '../../components/ChatNotificationToast'
+import EmojiPickerPopover from '../../components/EmojiPickerPopover'
+import MediaUploadPopover from '../../components/MediaUploadPopover'
 
 function formatTime(isoString) {
   if (!isoString) return ''
@@ -51,12 +53,22 @@ export default function AdminLiveChat() {
   const [editingContent, setEditingContent] = useState('')
   const [hoveredMsgId, setHoveredMsgId] = useState(null)
   const [activeMenuMsgId, setActiveMenuMsgId] = useState(null)
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false)
+  const [showMediaPopover, setShowMediaPopover] = useState(false)
 
   const messagesContainerRef = useRef(null)
   const fileInputRef = useRef(null)
   const videoInputRef = useRef(null)
   const editInputRef = useRef(null)
+  const textInputRef = useRef(null)
   const typingTimeoutRef = useRef(null)
+
+  const handleSelectEmoji = useCallback((emoji) => {
+    setReplyText((prev) => prev + emoji)
+    if (textInputRef.current) {
+      textInputRef.current.focus()
+    }
+  }, [])
 
   const { notifications, notifEnabled, addNotification, dismissNotification, toggleNotif } =
     useChatNotification()
@@ -899,79 +911,119 @@ export default function AdminLiveChat() {
                 )}
               </div>
 
-              {/* Input Area */}
-              <form
-                onSubmit={handleSend}
-                className={cn(
-                  'flex shrink-0 items-center gap-2 border-t p-3',
-                  isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white',
-                )}
-              >
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleImageUpload}
-                  accept="image/*"
-                  className="hidden"
-                />
-                <input
-                  type="file"
-                  ref={videoInputRef}
-                  onChange={handleVideoUpload}
-                  accept="video/*"
-                  className="hidden"
-                />
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={sending}
-                  title="Gửi hình ảnh"
-                  className={cn(
-                    'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition',
-                    isDark
-                      ? 'border-slate-700 hover:bg-slate-800 text-slate-300'
-                      : 'border-stone-200 hover:bg-stone-100 text-stone-600',
-                  )}
-                >
-                  <HiOutlinePhotograph className="h-5 w-5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => videoInputRef.current?.click()}
-                  disabled={sending}
-                  title="Gửi video (tối đa 50MB)"
-                  className={cn(
-                    'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition',
-                    isDark
-                      ? 'border-slate-700 hover:bg-slate-800 text-slate-300'
-                      : 'border-stone-200 hover:bg-stone-100 text-stone-600',
-                  )}
-                >
-                  <HiOutlineVideoCamera className="h-5 w-5" />
-                </button>
-
-                <input
-                  type="text"
-                  value={replyText}
-                  onChange={handleInputChange}
-                  placeholder="Nhập tin nhắn phản hồi..."
-                  disabled={sending}
-                  className={cn(
-                    'flex-1 rounded-xl border px-4 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-amber-500/30',
-                    isDark
-                      ? 'border-slate-700 bg-slate-800 text-white placeholder:opacity-50'
-                      : 'border-stone-200 bg-white text-stone-900 placeholder:opacity-50',
-                  )}
+              {/* Bottom Send Input Bar */}
+              <div className="relative">
+                {/* Media Popover (+ button) */}
+                <MediaUploadPopover
+                  isOpen={showMediaPopover}
+                  onClose={() => setShowMediaPopover(false)}
+                  onPickImage={() => {
+                    setShowMediaPopover(false)
+                    fileInputRef.current?.click()
+                  }}
+                  onPickVideo={() => {
+                    setShowMediaPopover(false)
+                    videoInputRef.current?.click()
+                  }}
+                  align="left"
                 />
 
-                <button
-                  type="submit"
-                  disabled={!replyText.trim() || sending}
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white transition hover:bg-amber-600 disabled:opacity-40 disabled:cursor-not-allowed shadow"
+                {/* Emoji Popover (😊 button) */}
+                <EmojiPickerPopover
+                  isOpen={showEmojiPicker}
+                  onClose={() => setShowEmojiPicker(false)}
+                  onSelectEmoji={handleSelectEmoji}
+                  align="left"
+                />
+
+                <form
+                  onSubmit={handleSend}
+                  className={cn(
+                    'flex shrink-0 items-center gap-2 border-t p-3',
+                    isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white',
+                  )}
                 >
-                  <HiOutlinePaperAirplane className="h-5 w-5" />
-                </button>
-              </form>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleImageUpload}
+                    accept="image/*"
+                    className="hidden"
+                  />
+                  <input
+                    type="file"
+                    ref={videoInputRef}
+                    onChange={handleVideoUpload}
+                    accept="video/*"
+                    className="hidden"
+                  />
+
+                  {/* Plus (+) Button for Media Options (Ảnh / Video) */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowMediaPopover((prev) => !prev)
+                      setShowEmojiPicker(false)
+                    }}
+                    disabled={sending}
+                    className={cn(
+                      'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition-all active:scale-95',
+                      showMediaPopover
+                        ? 'border-amber-500 bg-amber-500 text-white shadow-sm'
+                        : isDark
+                          ? 'border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-750'
+                          : 'border-stone-300 bg-white text-stone-600 hover:bg-stone-100'
+                    )}
+                    title="Đính kèm ảnh hoặc video"
+                  >
+                    <HiPlus className={cn('h-5 w-5 transition-transform duration-200', showMediaPopover && 'rotate-45')} />
+                  </button>
+
+                  {/* Emoji Button (😊) */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowEmojiPicker((prev) => !prev)
+                      setShowMediaPopover(false)
+                    }}
+                    disabled={sending}
+                    className={cn(
+                      'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition-all active:scale-95',
+                      showEmojiPicker
+                        ? 'border-amber-500 bg-amber-500 text-white shadow-sm'
+                        : isDark
+                          ? 'border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-750'
+                          : 'border-stone-300 bg-white text-stone-600 hover:bg-stone-100'
+                    )}
+                    title="Chọn biểu tượng cảm xúc"
+                  >
+                    <HiOutlineEmojiHappy className="h-5 w-5" />
+                  </button>
+
+                  <input
+                    ref={textInputRef}
+                    type="text"
+                    value={replyText}
+                    onChange={handleInputChange}
+                    placeholder="Nhập tin nhắn phản hồi..."
+                    disabled={sending}
+                    className={cn(
+                      'flex-1 rounded-xl border px-4 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-amber-500/30',
+                      isDark
+                        ? 'border-slate-700 bg-slate-800 text-white placeholder:opacity-50'
+                        : 'border-stone-200 bg-white text-stone-900 placeholder:opacity-50',
+                    )}
+                  />
+
+                  <button
+                    type="submit"
+                    disabled={!replyText.trim() || sending}
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white transition hover:bg-amber-600 disabled:opacity-40 disabled:cursor-not-allowed shadow"
+                  >
+                    <HiOutlinePaperAirplane className="h-5 w-5 rotate-90" />
+                  </button>
+                </form>
+              </div>
             </>
           )}
         </div>

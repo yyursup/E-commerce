@@ -38,7 +38,7 @@ export default function SellerLanding() {
     } else if (sellerStatus === 'PENDING' || sellerStatus === 'REJECTED') {
       navigate('/pending')
     } else {
-      navigate('/register')
+      navigate('/seller-register')
     }
   }
 

@@ -35,10 +35,6 @@ export default function AdminRequestOverviewCard({ detail, isDark }) {
           <p className="text-xs uppercase tracking-wide text-stone-500 dark:text-slate-400">Cập nhật lúc</p>
           <p className="mt-1 text-sm">{formatAdminRequestDate(detail?.updatedAt)}</p>
         </div>
-        <div className="md:col-span-2">
-          <p className="text-xs uppercase tracking-wide text-stone-500 dark:text-slate-400">Mã tài khoản</p>
-          <p className="mt-1 font-mono text-xs text-stone-700 dark:text-slate-300 break-all">{detail?.accountId || '-'}</p>
-        </div>
         {detail?.reviewedBy && (
           <div>
             <p className="text-xs uppercase tracking-wide text-stone-500 dark:text-slate-400">Người duyệt</p>

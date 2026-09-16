@@ -60,8 +60,8 @@ export default function SellerRegister() {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      toast.error('Vui lòng đăng nhập để đăng ký bán hàng.', { id: 'seller-register-auth-required' })
-      navigate('/login')
+      toast.error('Vui lòng đăng ký hoặc đăng nhập tài khoản Người Bán.', { id: 'seller-register-auth-required' })
+      navigate('/register')
       return
     }
 

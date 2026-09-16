@@ -51,7 +51,7 @@ export default function Login() {
       } else {
         // Customer who hasn't registered shop yet
         toast('Tài khoản của bạn chưa có gian hàng. Vui lòng hoàn tất hồ sơ đăng ký.', { icon: '📝' })
-        navigate('/register')
+        navigate('/seller-register')
       }
     } catch (error) {
       console.error('Seller Login error:', error)
@@ -131,9 +131,9 @@ export default function Login() {
 
           <div className="mt-6 border-t border-stone-100 dark:border-slate-800 pt-4 text-center space-y-2.5">
             <p className="text-xs text-stone-500 dark:text-slate-400">
-              Chưa có gian hàng?{' '}
+              Chưa có tài khoản Người Bán?{' '}
               <Link to="/register" className="font-bold text-amber-500 hover:underline">
-                Đăng ký mở Shop ngay
+                Đăng ký tài khoản ngay
               </Link>
             </p>
             <div className="flex items-center justify-center gap-4 text-[11px] text-stone-400">

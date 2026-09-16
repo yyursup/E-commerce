@@ -168,7 +168,7 @@ export default function PendingApproval() {
           <div className="flex flex-col sm:flex-row gap-3 pt-2">
             {isRejected ? (
               <Link
-                to="/register"
+                to="/seller-register"
                 className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 py-3 text-xs font-bold text-white shadow-md shadow-amber-500/20 hover:from-amber-600 hover:to-orange-600 transition-all"
               >
                 <HiOutlinePencilAlt className="h-4 w-4" />

@@ -23,7 +23,8 @@ const authService = {
             // Backend expects 'username' and 'password'
             const response = await api.post('/api/v1/auth/login', {
                 username: credentials.username,
-                password: credentials.password
+                password: credentials.password,
+                clientType: 'SELLER'
             });
             return response.data;
         } catch (error) {

@@ -16,6 +16,7 @@ import {
 import { useThemeStore } from '../../../store/useThemeStore'
 import { cn } from '../../../lib/cn'
 import toast from 'react-hot-toast'
+import { getVariantLabelsByCategory } from '../../../lib/variantMapping'
 
 export default function ProductDetailModal({
   product,
@@ -64,6 +65,7 @@ export default function ProductDetailModal({
   const price = product.basePrice ? Number(product.basePrice) : (product.price ? Number(product.price) : 0)
   const stock = product.stockQuantity ?? product.quantity ?? product.stock ?? 0
   const variants = product.variants || []
+  const { attr1, attr2 } = getVariantLabelsByCategory(product.categoryName || product.category?.name);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto">
@@ -225,13 +227,22 @@ export default function ProductDetailModal({
               {variants.length > 0 && (
                 <div className="space-y-2">
                   <h4 className={cn('text-xs font-bold uppercase tracking-wider', isDark ? 'text-slate-300' : 'text-stone-700')}>
-                    Phân loại biến thể ({variants.length})
+                    PHÂN LOẠI HÀNG ({variants.length})
                   </h4>
                   <div className={cn('rounded-2xl border divide-y overflow-hidden', isDark ? 'border-slate-800 divide-slate-800' : 'border-stone-200 divide-stone-100')}>
                     {variants.map((v, i) => (
                       <div key={i} className="flex items-center justify-between p-3 text-xs">
                         <div className="font-semibold">
-                          {v.variantName || v.name || `Biến thể #${i + 1}`}
+                          <span className={cn('mr-1.5', isDark ? 'text-amber-400' : 'text-amber-600')}>Phân loại {i + 1}:</span>
+                          {v.color || v.size ? (
+                            <span className={isDark ? 'text-slate-300' : 'text-stone-700'}>
+                              {v.color && `${attr1}: ${v.color}`}
+                              {v.color && v.size && ' | '}
+                              {v.size && `${attr2}: ${v.size}`}
+                            </span>
+                          ) : (
+                            v.variantName || v.name || `Biến thể #${i + 1}`
+                          )}
                           {v.sku && <span className="ml-2 font-mono text-[11px] text-stone-400">({v.sku})</span>}
                         </div>
                         <div className="flex items-center gap-4">

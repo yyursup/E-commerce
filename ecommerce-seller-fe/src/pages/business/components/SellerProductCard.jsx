@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { HiOutlineEye, HiOutlinePencil, HiOutlineTrash, HiStar } from 'react-icons/hi'
 import { useThemeStore } from '../../../store/useThemeStore'
@@ -71,7 +70,7 @@ export default function SellerProductCard({ product, onView, onEdit, onDelete })
       )}
 
       {/* Image */}
-      <Link to={`/products/${id}`} className="relative block aspect-square overflow-hidden">
+      <div onClick={() => onView?.(product)} className="relative block aspect-square overflow-hidden cursor-pointer">
         <motion.img
           src={thumbnailImage}
           alt={name}
@@ -132,7 +131,7 @@ export default function SellerProductCard({ product, onView, onEdit, onDelete })
             <HiOutlineTrash className="h-5 w-5" />
           </button>
         </motion.div>
-      </Link>
+      </div>
 
       {/* Content */}
       <div className="p-4">
@@ -148,7 +147,7 @@ export default function SellerProductCard({ product, onView, onEdit, onDelete })
           ))}
           <span className="ml-1 text-xs text-stone-500 dark:text-slate-400">4.5</span>
         </div>
-        <Link to={`/products/${id}`}>
+        <div onClick={() => onView?.(product)} className="cursor-pointer">
           <h3
             className={cn(
               'font-semibold line-clamp-2 transition hover:text-amber-600 dark:hover:text-amber-400',
@@ -157,7 +156,7 @@ export default function SellerProductCard({ product, onView, onEdit, onDelete })
           >
             {name}
           </h3>
-        </Link>
+        </div>
         {sku && (
           <p className={cn('mt-1 text-xs', isDark ? 'text-slate-500' : 'text-stone-500')}>
             SKU: {sku}

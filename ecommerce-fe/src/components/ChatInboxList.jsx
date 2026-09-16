@@ -249,7 +249,7 @@ export default function ChatInboxList({ onClose, notifEnabled, toggleNotif }) {
                 24/7
               </span>
             </div>
-            <p className="mt-0.5 truncate text-[11px] opacity-60">
+            <p className={cn('mt-0.5 truncate text-[11px]', isDark ? 'text-slate-400' : 'text-stone-500')}>
               Tư vấn mua sắm, gợi ý sản phẩm và giải đáp thắc mắc
             </p>
           </div>
@@ -282,7 +282,7 @@ export default function ChatInboxList({ onClose, notifEnabled, toggleNotif }) {
               )}
             </div>
             <div className="mt-0.5 flex items-center justify-between gap-2">
-              <p className={cn('truncate text-[11px]', supportThread?.unreadCount > 0 ? 'font-bold opacity-90' : 'opacity-60')}>
+              <p className={cn('truncate text-[11px]', supportThread?.unreadCount > 0 ? (isDark ? 'font-bold text-slate-200' : 'font-bold text-stone-900') : (isDark ? 'text-slate-400' : 'text-stone-500'))}>
                 {supportThread?.lastMessage || 'Kênh hỗ trợ chính thức sàn thương mại điện tử'}
               </p>
               {supportThread?.unreadCount > 0 && (
@@ -307,8 +307,8 @@ export default function ChatInboxList({ onClose, notifEnabled, toggleNotif }) {
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-500 mb-2">
               <HiOutlineShoppingBag className="h-6 w-6" />
             </div>
-            <p className="text-xs font-bold">Chưa có cuộc trò chuyện nào với Shop</p>
-            <p className="mt-1 text-[11px] opacity-60 max-w-xs leading-relaxed">
+            <p className={cn("text-xs font-bold", isDark ? "text-slate-300" : "text-stone-700")}>Chưa có cuộc trò chuyện nào với Shop</p>
+            <p className={cn("mt-1 text-[11px] max-w-xs leading-relaxed", isDark ? "text-slate-400" : "text-stone-500")}>
               Hãy nhấn nút <span className="font-semibold text-amber-500">"Chat Ngay"</span> tại trang chi tiết sản phẩm hoặc gian hàng để bắt đầu nhắn tin với người bán!
             </p>
           </div>
@@ -371,7 +371,7 @@ export default function ChatInboxList({ onClose, notifEnabled, toggleNotif }) {
                         'truncate text-[11px] leading-tight',
                         hasUnread
                           ? (isDark ? 'font-bold text-amber-300' : 'font-bold text-amber-700')
-                          : 'opacity-60'
+                          : (isDark ? 'text-slate-400' : 'text-stone-500')
                       )}
                     >
                       {thread.lastMessage || 'Bắt đầu cuộc trò chuyện với shop'}

@@ -5,8 +5,12 @@ export default function CheckoutOrderSummary({
     totalPrice = 0,
     shippingFee = 0,
     isCalculatingFee = false,
-    discountAmount = 0,
+    appliedShopVoucher = null,
+    appliedPlatformVoucher = null,
     appliedVoucher = null,
+    shopDiscountAmount = 0,
+    platformDiscountAmount = 0,
+    discountAmount = 0,
     voucherCodeInput = '',
     finalTotal = 0,
     onCreateOrder,
@@ -46,8 +50,34 @@ export default function CheckoutOrderSummary({
                     )}
                 </div>
 
-                {/* Voucher Discount Row */}
-                {discountAmount > 0 && (
+                {/* Shop Voucher Discount Row */}
+                {shopDiscountAmount > 0 && (
+                    <div className="flex justify-between items-center text-rose-600 dark:text-rose-400">
+                        <span className="flex items-center gap-1 font-medium">
+                            <HiOutlineTicket className="w-4 h-4" />
+                            Voucher Shop ({appliedShopVoucher?.code || 'Shop'})
+                        </span>
+                        <span className="font-bold">
+                            -{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(shopDiscountAmount)}
+                        </span>
+                    </div>
+                )}
+
+                {/* Platform Voucher Discount Row */}
+                {platformDiscountAmount > 0 && (
+                    <div className="flex justify-between items-center text-blue-600 dark:text-blue-400">
+                        <span className="flex items-center gap-1 font-medium">
+                            <HiOutlineTicket className="w-4 h-4" />
+                            Voucher Sàn ({appliedPlatformVoucher?.code || 'Sàn'})
+                        </span>
+                        <span className="font-bold">
+                            -{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(platformDiscountAmount)}
+                        </span>
+                    </div>
+                )}
+
+                {/* Fallback Single Voucher Discount Row */}
+                {discountAmount > 0 && shopDiscountAmount === 0 && platformDiscountAmount === 0 && (
                     <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400">
                         <span className="flex items-center gap-1 font-medium">
                             <HiOutlineTicket className="w-4 h-4" />

@@ -11,4 +11,7 @@ public class CreateOrderRequest {
     private UUID addressId;
     private String notes;
     private String voucherCode;
+    private String shopVoucherCode;
+    private String platformVoucherCode;
+    private java.util.List<String> voucherCodes;
 }

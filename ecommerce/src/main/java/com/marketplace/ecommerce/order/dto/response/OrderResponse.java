@@ -35,6 +35,10 @@ public class OrderResponse {
     private String shippingWardCode;
     private String notes;
     private String voucherCode;
+    private String shopVoucherCode;
+    private BigDecimal shopDiscountAmount;
+    private String platformVoucherCode;
+    private BigDecimal platformDiscountAmount;
     private BigDecimal discountAmount;
     private BigDecimal subtotal;
     private BigDecimal shippingFee;
@@ -50,7 +54,12 @@ public class OrderResponse {
                 .toList();
 
         BigDecimal shippingFee = order.getShippingFee() != null ? order.getShippingFee() : BigDecimal.ZERO;
-        BigDecimal discountAmount = order.getDiscountAmount() != null ? order.getDiscountAmount() : BigDecimal.ZERO;
+        BigDecimal shopDiscount = order.getShopDiscountAmount() != null ? order.getShopDiscountAmount() : BigDecimal.ZERO;
+        BigDecimal platformDiscount = order.getPlatformDiscountAmount() != null ? order.getPlatformDiscountAmount() : BigDecimal.ZERO;
+        BigDecimal sumDiscounts = shopDiscount.add(platformDiscount);
+        BigDecimal discountAmount = sumDiscounts.compareTo(BigDecimal.ZERO) > 0
+                ? sumDiscounts
+                : (order.getDiscountAmount() != null ? order.getDiscountAmount() : BigDecimal.ZERO);
 
         BigDecimal subtotal = order.getSubtotal() != null
                 ? order.getSubtotal()
@@ -61,6 +70,18 @@ public class OrderResponse {
         BigDecimal total = order.getTotal() != null
                 ? order.getTotal()
                 : subtotal.add(shippingFee).subtract(discountAmount);
+
+        String shopVoucherCode = order.getShopVoucherCode() != null
+                ? order.getShopVoucherCode()
+                : (order.getShopVoucher() != null ? order.getShopVoucher().getCode() : null);
+
+        String platformVoucherCode = order.getPlatformVoucherCode() != null
+                ? order.getPlatformVoucherCode()
+                : (order.getPlatformVoucher() != null ? order.getPlatformVoucher().getCode() : null);
+
+        String voucherCode = order.getVoucherCode() != null
+                ? order.getVoucherCode()
+                : (order.getVoucher() != null ? order.getVoucher().getCode() : null);
 
         return OrderResponse.builder()
                 .id(order.getId())
@@ -79,7 +100,11 @@ public class OrderResponse {
                 .shippingDistrictId(order.getShippingDistrictId())
                 .shippingWardCode(order.getShippingWardCode())
                 .notes(order.getNotes())
-                .voucherCode(order.getVoucherCode() != null ? order.getVoucherCode() : (order.getVoucher() != null ? order.getVoucher().getCode() : null))
+                .voucherCode(voucherCode)
+                .shopVoucherCode(shopVoucherCode)
+                .shopDiscountAmount(shopDiscount)
+                .platformVoucherCode(platformVoucherCode)
+                .platformDiscountAmount(platformDiscount)
                 .discountAmount(discountAmount)
                 .subtotal(subtotal)
                 .shippingFee(shippingFee)

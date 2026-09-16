@@ -30,5 +30,5 @@ public interface UserVoucherRepository extends JpaRepository<UserVoucher, UUID> 
             "WHERE uv.user.id = :userId AND uv.status = :status")
     List<UserVoucher> findMyVouchersWithDetails(@Param("userId") UUID userId, @Param("status") UserVoucherStatus status);
 
-    Optional<UserVoucher> findByOrderId(UUID orderId);
+    List<UserVoucher> findByOrderId(UUID orderId);
 }

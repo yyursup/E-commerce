@@ -31,7 +31,29 @@ export default function OrderSummarySection({ order, isDark }) {
             {formatCurrency(order.shippingFee)}
           </span>
         </div>
-        {Number(order.discountAmount) > 0 && (
+        {Number(order.shopDiscountAmount) > 0 && (
+          <div className="flex justify-between text-rose-600 dark:text-rose-400">
+            <span className="text-sm flex items-center gap-1 font-medium">
+              <HiOutlineTag className="h-4 w-4" />
+              Voucher Shop {order.shopVoucherCode ? `(${order.shopVoucherCode})` : ''}
+            </span>
+            <span className="text-sm font-bold">
+              -{formatCurrency(order.shopDiscountAmount)}
+            </span>
+          </div>
+        )}
+        {Number(order.platformDiscountAmount) > 0 && (
+          <div className="flex justify-between text-blue-600 dark:text-blue-400">
+            <span className="text-sm flex items-center gap-1 font-medium">
+              <HiOutlineTag className="h-4 w-4" />
+              Voucher Sàn {order.platformVoucherCode ? `(${order.platformVoucherCode})` : ''}
+            </span>
+            <span className="text-sm font-bold">
+              -{formatCurrency(order.platformDiscountAmount)}
+            </span>
+          </div>
+        )}
+        {Number(order.discountAmount) > 0 && !Number(order.shopDiscountAmount) && !Number(order.platformDiscountAmount) && (
           <div className="flex justify-between text-emerald-600 dark:text-emerald-400">
             <span className="text-sm flex items-center gap-1 font-medium">
               <HiOutlineTag className="h-4 w-4" />

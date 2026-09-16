@@ -60,7 +60,7 @@ export default function SellerRegister() {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      toast.error('Vui lòng đăng nhập để đăng ký bán hàng.')
+      toast.error('Vui lòng đăng nhập để đăng ký bán hàng.', { id: 'seller-register-auth-required' })
       navigate('/login')
       return
     }
@@ -81,10 +81,10 @@ export default function SellerRegister() {
       setSessionId(res?.sessionId || '')
       setSessionStatus(res?.status || '')
       setCurrentStep(1)
-      toast.success('Phiên KYC đã được tạo tự động. Vui lòng hoàn tất xác minh danh tính.')
+      toast.success('Phiên KYC đã được tạo tự động. Vui lòng hoàn tất xác minh danh tính.', { id: 'kyc-session-started' })
     } catch (error) {
       console.error('Start KYC error:', error)
-      toast.error(error?.message || 'Không thể tạo phiên KYC.')
+      toast.error(error?.message || 'Không thể tạo phiên KYC.', { id: 'kyc-session-start-failed' })
     } finally {
       setIsStarting(false)
     }

@@ -148,24 +148,127 @@ public class VoucherServiceImpl implements VoucherService {
         Voucher voucher = voucherRepository.findByCodeIgnoreCase(voucherCode.trim())
                 .orElseThrow(() -> new CustomException("Mã voucher '" + voucherCode + "' không tồn tại"));
 
-        if (!voucher.isCurrentlyActive()) {
-            throw new CustomException("Voucher '" + voucher.getCode() + "' đã hết hạn hoặc hết lượt sử dụng");
-        }
-
         if (voucher.getScope() == VoucherScope.SHOP) {
-            if (voucher.getShop() == null || !voucher.getShop().getId().equals(shopId)) {
-                throw new CustomException("Voucher '" + voucher.getCode() + "' chỉ áp dụng cho sản phẩm của shop: "
-                        + (voucher.getShop() != null ? voucher.getShop().getName() : "khác"));
-            }
+            return validateAndCalculateMulti(accountId, voucher.getCode(), null, shopId, subtotal, shippingFee);
+        } else {
+            return validateAndCalculateMulti(accountId, null, voucher.getCode(), shopId, subtotal, shippingFee);
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public VoucherCalculationResponse validateAndCalculateMulti(
+            UUID accountId,
+            String shopVoucherCode,
+            String platformVoucherCode,
+            UUID shopId,
+            BigDecimal subtotal,
+            BigDecimal shippingFee) {
+
+        boolean hasShopCode = shopVoucherCode != null && !shopVoucherCode.isBlank();
+        boolean hasPlatformCode = platformVoucherCode != null && !platformVoucherCode.isBlank();
+
+        if (!hasShopCode && !hasPlatformCode) {
+            throw new CustomException("Vui lòng cung cấp ít nhất 1 mã voucher");
         }
 
         BigDecimal safeSubtotal = subtotal != null ? subtotal : BigDecimal.ZERO;
         BigDecimal safeShipping = shippingFee != null ? shippingFee : BigDecimal.ZERO;
-        BigDecimal eligibleSubtotal = safeSubtotal;
+
+        User user = null;
+        if (accountId != null) {
+            user = getUser(accountId);
+        }
+
+        Voucher shopVoucher = null;
+        BigDecimal shopDiscount = BigDecimal.ZERO;
+        if (hasShopCode) {
+            shopVoucher = voucherRepository.findByCodeIgnoreCase(shopVoucherCode.trim())
+                    .orElseThrow(() -> new CustomException("Mã voucher shop '" + shopVoucherCode + "' không tồn tại"));
+
+            if (shopVoucher.getScope() != VoucherScope.SHOP) {
+                throw new CustomException("Mã '" + shopVoucher.getCode() + "' không phải là Voucher của Shop");
+            }
+            if (shopVoucher.getShop() == null || !shopVoucher.getShop().getId().equals(shopId)) {
+                throw new CustomException("Voucher '" + shopVoucher.getCode() + "' chỉ áp dụng cho sản phẩm của shop: "
+                        + (shopVoucher.getShop() != null ? shopVoucher.getShop().getName() : ""));
+            }
+
+            shopDiscount = validateAndGetDiscount(shopVoucher, user, shopId, safeSubtotal, safeShipping);
+        }
+
+        Voucher platformVoucher = null;
+        BigDecimal platformDiscount = BigDecimal.ZERO;
+        if (hasPlatformCode) {
+            platformVoucher = voucherRepository.findByCodeIgnoreCase(platformVoucherCode.trim())
+                    .orElseThrow(() -> new CustomException("Mã voucher sàn '" + platformVoucherCode + "' không tồn tại"));
+
+            if (platformVoucher.getScope() != VoucherScope.PLATFORM) {
+                throw new CustomException("Mã '" + platformVoucher.getCode() + "' không phải là Voucher của Sàn");
+            }
+
+            platformDiscount = validateAndGetDiscount(platformVoucher, user, shopId, safeSubtotal, safeShipping);
+        }
+
+        BigDecimal totalDiscount = shopDiscount.add(platformDiscount);
+        BigDecimal maxAllowedDiscount = safeSubtotal.add(safeShipping);
+        if (totalDiscount.compareTo(maxAllowedDiscount) > 0) {
+            totalDiscount = maxAllowedDiscount;
+        }
+
+        BigDecimal finalTotal = safeSubtotal.add(safeShipping).subtract(totalDiscount);
+        if (finalTotal.compareTo(BigDecimal.ZERO) < 0) {
+            finalTotal = BigDecimal.ZERO;
+        }
+
+        List<VoucherResponse> appliedList = new ArrayList<>();
+        if (shopVoucher != null) {
+            appliedList.add(VoucherResponse.from(shopVoucher));
+        }
+        if (platformVoucher != null) {
+            appliedList.add(VoucherResponse.from(platformVoucher));
+        }
+
+        String primaryCode = shopVoucher != null ? shopVoucher.getCode() : (platformVoucher != null ? platformVoucher.getCode() : null);
+        String primaryTitle = shopVoucher != null ? shopVoucher.getTitle() : (platformVoucher != null ? platformVoucher.getTitle() : null);
+        UUID primaryId = shopVoucher != null ? shopVoucher.getId() : (platformVoucher != null ? platformVoucher.getId() : null);
+
+        return VoucherCalculationResponse.builder()
+                .valid(true)
+                .message("Áp dụng mã giảm giá thành công!")
+                .voucherId(primaryId)
+                .voucherCode(primaryCode)
+                .code(primaryCode)
+                .title(primaryTitle)
+                .shopVoucherCode(shopVoucher != null ? shopVoucher.getCode() : null)
+                .shopVoucherTitle(shopVoucher != null ? shopVoucher.getTitle() : null)
+                .shopDiscountAmount(shopDiscount)
+                .platformVoucherCode(platformVoucher != null ? platformVoucher.getCode() : null)
+                .platformVoucherTitle(platformVoucher != null ? platformVoucher.getTitle() : null)
+                .platformDiscountAmount(platformDiscount)
+                .appliedVouchers(appliedList)
+                .discountAmount(totalDiscount)
+                .subtotal(safeSubtotal)
+                .shippingFee(safeShipping)
+                .finalTotal(finalTotal)
+                .build();
+    }
+
+    private BigDecimal validateAndGetDiscount(
+            Voucher voucher,
+            User user,
+            UUID shopId,
+            BigDecimal subtotal,
+            BigDecimal shippingFee) {
+
+        if (!voucher.isCurrentlyActive()) {
+            throw new CustomException("Voucher '" + voucher.getCode() + "' đã hết hạn hoặc hết lượt sử dụng");
+        }
+
+        BigDecimal eligibleSubtotal = subtotal;
 
         // Category-aware validation
-        if (voucher.getCategory() != null && accountId != null) {
-            User user = getUser(accountId);
+        if (voucher.getCategory() != null && user != null) {
             Optional<Cart> cartOpt = cartRepository.findByUserIdWithItems(user.getId());
             if (cartOpt.isPresent()) {
                 List<CartItem> matchingItems = cartOpt.get().getItems().stream()
@@ -191,19 +294,18 @@ public class VoucherServiceImpl implements VoucherService {
                             + new IntlFormatHelper(voucher.getMinOrderValue()) + "đ để áp dụng voucher này");
                 }
             }
-        } else if (voucher.getMinOrderValue() != null && safeSubtotal.compareTo(voucher.getMinOrderValue()) < 0) {
+        } else if (voucher.getMinOrderValue() != null && subtotal.compareTo(voucher.getMinOrderValue()) < 0) {
             throw new CustomException("Đơn hàng chưa đạt giá trị tối thiểu "
-                    + voucher.getMinOrderValue() + "đ để áp dụng voucher này");
+                    + voucher.getMinOrderValue() + "đ để áp dụng voucher '" + voucher.getCode() + "'");
         }
 
         boolean isFirstOrderVoucher = Boolean.TRUE.equals(voucher.getIsFirstOrderOnly())
                 || "ECOMNEW15".equalsIgnoreCase(voucher.getCode());
 
         if (isFirstOrderVoucher) {
-            if (accountId == null) {
+            if (user == null) {
                 throw new CustomException("Vui lòng đăng nhập để sử dụng mã ưu đãi dành cho khách hàng mới.");
             }
-            User user = getUser(accountId);
             long completedOrders = orderRepository.countCompletedOrdersByUserId(user.getId());
             if (completedOrders > 0) {
                 throw new CustomException("Mã giảm giá '" + voucher.getCode()
@@ -211,35 +313,17 @@ public class VoucherServiceImpl implements VoucherService {
             }
         }
 
-        if (accountId != null) {
-            User user = getUser(accountId);
+        if (user != null) {
             long usedCount = userVoucherRepository.countByUserIdAndVoucherIdAndStatus(user.getId(), voucher.getId(),
                     UserVoucherStatus.USED);
             int maxLimit = voucher.getUserUsageLimit() != null ? voucher.getUserUsageLimit() : 1;
             if (usedCount >= maxLimit) {
                 throw new CustomException(
-                        "Bạn đã sử dụng hết số lần cho phép đối với voucher này (" + maxLimit + " lần)");
+                        "Bạn đã sử dụng hết số lần cho phép đối với voucher '" + voucher.getCode() + "' (" + maxLimit + " lần)");
             }
         }
 
-        BigDecimal discountAmount = calculateDiscount(voucher, eligibleSubtotal, safeShipping);
-        BigDecimal finalTotal = safeSubtotal.add(safeShipping).subtract(discountAmount);
-        if (finalTotal.compareTo(BigDecimal.ZERO) < 0) {
-            finalTotal = BigDecimal.ZERO;
-        }
-
-        return VoucherCalculationResponse.builder()
-                .valid(true)
-                .message("Áp dụng mã giảm giá thành công!")
-                .voucherId(voucher.getId())
-                .voucherCode(voucher.getCode())
-                .code(voucher.getCode())
-                .title(voucher.getTitle())
-                .discountAmount(discountAmount)
-                .subtotal(safeSubtotal)
-                .shippingFee(safeShipping)
-                .finalTotal(finalTotal)
-                .build();
+        return calculateDiscount(voucher, eligibleSubtotal, shippingFee);
     }
 
     @Override
@@ -252,80 +336,103 @@ public class VoucherServiceImpl implements VoucherService {
         Voucher voucher = voucherRepository.findByCodeIgnoreCase(voucherCode.trim())
                 .orElseThrow(() -> new CustomException("Mã voucher '" + voucherCode + "' không tồn tại"));
 
-        if (!voucher.isCurrentlyActive()) {
-            throw new CustomException("Voucher '" + voucher.getCode() + "' đã hết hạn hoặc hết lượt sử dụng");
-        }
-
         if (voucher.getScope() == VoucherScope.SHOP) {
-            if (voucher.getShop() == null || !voucher.getShop().getId().equals(order.getShop().getId())) {
-                throw new CustomException("Voucher này chỉ áp dụng cho Shop: "
-                        + (voucher.getShop() != null ? voucher.getShop().getName() : ""));
-            }
+            return applyVouchersToOrder(order, voucher.getCode(), null);
+        } else {
+            return applyVouchersToOrder(order, null, voucher.getCode());
         }
+    }
 
-        BigDecimal subtotal = order.getSubtotal() != null ? order.getSubtotal() : BigDecimal.ZERO;
-        BigDecimal shippingFee = order.getShippingFee() != null ? order.getShippingFee() : BigDecimal.ZERO;
-        BigDecimal eligibleSubtotal = subtotal;
+    @Override
+    @Transactional
+    public BigDecimal applyVouchersToOrder(Order order, String shopVoucherCode, String platformVoucherCode) {
+        boolean hasShopCode = shopVoucherCode != null && !shopVoucherCode.isBlank();
+        boolean hasPlatformCode = platformVoucherCode != null && !platformVoucherCode.isBlank();
+
+        if (!hasShopCode && !hasPlatformCode) {
+            return BigDecimal.ZERO;
+        }
 
         User user = order.getUser();
+        UUID shopId = order.getShop() != null ? order.getShop().getId() : null;
+        BigDecimal subtotal = order.getSubtotal() != null ? order.getSubtotal() : BigDecimal.ZERO;
+        BigDecimal shippingFee = order.getShippingFee() != null ? order.getShippingFee() : BigDecimal.ZERO;
 
-        // Category-aware validation
-        if (voucher.getCategory() != null) {
-            Optional<Cart> cartOpt = cartRepository.findByUserIdWithItems(user.getId());
-            if (cartOpt.isPresent()) {
-                List<CartItem> matchingItems = cartOpt.get().getItems().stream()
-                        .filter(i -> !Boolean.TRUE.equals(i.getDeleted()))
-                        .filter(i -> order.getShop() == null || (i.getProduct().getShop() != null
-                                && i.getProduct().getShop().getId().equals(order.getShop().getId())))
-                        .filter(i -> isCategoryHierarchyMatch(i.getProduct().getProductCategory(),
-                                voucher.getCategory()))
-                        .toList();
+        BigDecimal shopDiscount = BigDecimal.ZERO;
+        if (hasShopCode) {
+            Voucher shopVoucher = voucherRepository.findByCodeIgnoreCase(shopVoucherCode.trim())
+                    .orElseThrow(() -> new CustomException("Mã voucher shop '" + shopVoucherCode + "' không tồn tại"));
 
-                if (matchingItems.isEmpty()) {
-                    throw new CustomException("Mã voucher '" + voucher.getCode()
-                            + "' chỉ áp dụng cho sản phẩm thuộc ngành hàng: " + voucher.getCategory().getName());
-                }
-
-                eligibleSubtotal = matchingItems.stream()
-                        .map(i -> i.getProduct().getBasePrice().multiply(BigDecimal.valueOf(i.getQuantity())))
-                        .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-                if (voucher.getMinOrderValue() != null && eligibleSubtotal.compareTo(voucher.getMinOrderValue()) < 0) {
-                    throw new CustomException(
-                            "Tổng giá trị các sản phẩm thuộc ngành hàng '" + voucher.getCategory().getName()
-                                    + "' trong đơn phải đạt tối thiểu " + voucher.getMinOrderValue() + "đ");
-                }
+            if (shopVoucher.getScope() != VoucherScope.SHOP) {
+                throw new CustomException("Voucher '" + shopVoucher.getCode() + "' không phải là Voucher của Shop");
             }
-        } else if (voucher.getMinOrderValue() != null && subtotal.compareTo(voucher.getMinOrderValue()) < 0) {
-            throw new CustomException(
-                    "Đơn hàng chưa đạt giá trị tối thiểu " + voucher.getMinOrderValue() + "đ để dùng voucher");
-        }
-
-        boolean isFirstOrderVoucher = Boolean.TRUE.equals(voucher.getIsFirstOrderOnly())
-                || "ECOMNEW15".equalsIgnoreCase(voucher.getCode());
-
-        if (isFirstOrderVoucher) {
-            long completedOrders = orderRepository.countCompletedOrdersByUserId(user.getId());
-            if (completedOrders > 0) {
-                throw new CustomException("Mã giảm giá '" + voucher.getCode()
-                        + "' chỉ dành riêng cho khách hàng mới chưa có đơn hàng hoàn thành nào.");
+            if (shopVoucher.getShop() == null || !shopVoucher.getShop().getId().equals(shopId)) {
+                throw new CustomException("Voucher này chỉ áp dụng cho Shop: "
+                        + (shopVoucher.getShop() != null ? shopVoucher.getShop().getName() : ""));
             }
+
+            shopDiscount = validateAndGetDiscount(shopVoucher, user, shopId, subtotal, shippingFee);
+
+            // Update voucher usage count
+            shopVoucher.setUsedCount(shopVoucher.getUsedCount() + 1);
+            voucherRepository.save(shopVoucher);
+
+            // Update or create UserVoucher record as USED
+            recordUserVoucherUsed(user, shopVoucher, order);
+
+            order.setShopVoucher(shopVoucher);
+            order.setShopVoucherCode(shopVoucher.getCode());
+            order.setShopDiscountAmount(shopDiscount);
         }
 
-        long usedCount = userVoucherRepository.countByUserIdAndVoucherIdAndStatus(user.getId(), voucher.getId(),
-                UserVoucherStatus.USED);
-        int maxLimit = voucher.getUserUsageLimit() != null ? voucher.getUserUsageLimit() : 1;
-        if (usedCount >= maxLimit) {
-            throw new CustomException("Bạn đã dùng hết số lần cho phép của voucher này");
+        BigDecimal platformDiscount = BigDecimal.ZERO;
+        if (hasPlatformCode) {
+            Voucher platformVoucher = voucherRepository.findByCodeIgnoreCase(platformVoucherCode.trim())
+                    .orElseThrow(() -> new CustomException("Mã voucher sàn '" + platformVoucherCode + "' không tồn tại"));
+
+            if (platformVoucher.getScope() != VoucherScope.PLATFORM) {
+                throw new CustomException("Voucher '" + platformVoucher.getCode() + "' không phải là Voucher của Sàn");
+            }
+
+            platformDiscount = validateAndGetDiscount(platformVoucher, user, shopId, subtotal, shippingFee);
+
+            // Update voucher usage count
+            platformVoucher.setUsedCount(platformVoucher.getUsedCount() + 1);
+            voucherRepository.save(platformVoucher);
+
+            // Update or create UserVoucher record as USED
+            recordUserVoucherUsed(user, platformVoucher, order);
+
+            order.setPlatformVoucher(platformVoucher);
+            order.setPlatformVoucherCode(platformVoucher.getCode());
+            order.setPlatformDiscountAmount(platformDiscount);
         }
 
-        BigDecimal discountAmount = calculateDiscount(voucher, eligibleSubtotal, shippingFee);
+        BigDecimal totalDiscount = shopDiscount.add(platformDiscount);
+        BigDecimal maxAllowed = subtotal.add(shippingFee);
+        if (totalDiscount.compareTo(maxAllowed) > 0) {
+            totalDiscount = maxAllowed;
+        }
 
-        // Update voucher usage count
-        voucher.setUsedCount(voucher.getUsedCount() + 1);
-        voucherRepository.save(voucher);
+        order.setDiscountAmount(totalDiscount);
 
-        // Update or create UserVoucher record as USED
+        // Populate backward-compatible fields
+        if (order.getShopVoucher() != null) {
+            order.setVoucher(order.getShopVoucher());
+            order.setVoucherCode(order.getShopVoucherCode());
+        } else if (order.getPlatformVoucher() != null) {
+            order.setVoucher(order.getPlatformVoucher());
+            order.setVoucherCode(order.getPlatformVoucherCode());
+        }
+
+        log.info("Vouchers applied to order {}: shopVoucher={}, platformVoucher={}, shopDiscount={}, platformDiscount={}, totalDiscount={}",
+                order.getOrderNumber(), order.getShopVoucherCode(), order.getPlatformVoucherCode(),
+                shopDiscount, platformDiscount, totalDiscount);
+
+        return totalDiscount;
+    }
+
+    private void recordUserVoucherUsed(User user, Voucher voucher, Order order) {
         Optional<UserVoucher> existingUv = userVoucherRepository.findByUserIdAndVoucherIdAndStatus(
                 user.getId(), voucher.getId(), UserVoucherStatus.UNUSED);
 
@@ -346,39 +453,48 @@ public class VoucherServiceImpl implements VoucherService {
                     .build();
         }
         userVoucherRepository.save(uv);
-
-        order.setVoucher(voucher);
-        order.setVoucherCode(voucher.getCode());
-        order.setDiscountAmount(discountAmount);
-        log.info("Voucher {} applied to order {}: discount={}", voucher.getCode(), order.getOrderNumber(),
-                discountAmount);
-
-        return discountAmount;
     }
 
     @Override
     @Transactional
     public void rollbackVoucherUsage(Order order) {
-        if (order.getVoucher() == null) {
-            return;
+        if (order.getShopVoucher() != null) {
+            Voucher v = order.getShopVoucher();
+            if (v.getUsedCount() > 0) {
+                v.setUsedCount(v.getUsedCount() - 1);
+                voucherRepository.save(v);
+            }
         }
 
-        Voucher voucher = order.getVoucher();
-        if (voucher.getUsedCount() > 0) {
-            voucher.setUsedCount(voucher.getUsedCount() - 1);
-            voucherRepository.save(voucher);
+        if (order.getPlatformVoucher() != null) {
+            Voucher v = order.getPlatformVoucher();
+            if (v.getUsedCount() > 0) {
+                v.setUsedCount(v.getUsedCount() - 1);
+                voucherRepository.save(v);
+            }
         }
 
-        Optional<UserVoucher> uvOpt = userVoucherRepository.findByOrderId(order.getId());
-        if (uvOpt.isPresent()) {
-            UserVoucher uv = uvOpt.get();
+        if (order.getVoucher() != null
+                && (order.getShopVoucher() == null || !order.getShopVoucher().getId().equals(order.getVoucher().getId()))
+                && (order.getPlatformVoucher() == null || !order.getPlatformVoucher().getId().equals(order.getVoucher().getId()))) {
+            Voucher v = order.getVoucher();
+            if (v.getUsedCount() > 0) {
+                v.setUsedCount(v.getUsedCount() - 1);
+                voucherRepository.save(v);
+            }
+        }
+
+        List<UserVoucher> uvList = userVoucherRepository.findByOrderId(order.getId());
+        for (UserVoucher uv : uvList) {
             uv.setStatus(UserVoucherStatus.UNUSED);
             uv.setOrder(null);
             uv.setUsedAt(null);
-            userVoucherRepository.save(uv);
+        }
+        if (!uvList.isEmpty()) {
+            userVoucherRepository.saveAll(uvList);
         }
 
-        log.info("Rollback voucher {} for cancelled order {}", voucher.getCode(), order.getOrderNumber());
+        log.info("Rollback {} voucher(s) for cancelled order {}", uvList.size(), order.getOrderNumber());
     }
 
     @Override

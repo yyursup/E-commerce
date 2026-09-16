@@ -20,7 +20,11 @@ public interface VoucherService {
 
     VoucherCalculationResponse validateAndCalculate(UUID accountId, String voucherCode, UUID shopId, BigDecimal subtotal, BigDecimal shippingFee);
 
+    VoucherCalculationResponse validateAndCalculateMulti(UUID accountId, String shopVoucherCode, String platformVoucherCode, UUID shopId, BigDecimal subtotal, BigDecimal shippingFee);
+
     BigDecimal applyVoucherToOrder(Order order, String voucherCode);
+
+    BigDecimal applyVouchersToOrder(Order order, String shopVoucherCode, String platformVoucherCode);
 
     void rollbackVoucherUsage(Order order);
 

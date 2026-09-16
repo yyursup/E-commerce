@@ -27,6 +27,7 @@ import { useChatStore } from '../store/useChatStore'
 import { useWishlistStore } from '../store/useWishlistStore'
 import cartService from '../services/cart'
 import notificationService from '../services/notification'
+import AdvancedSearchBar from './AdvancedSearchBar'
 
 const navLinks = [
   { to: '/', label: 'Trang chủ' },
@@ -141,7 +142,7 @@ export default function Navbar() {
           <span>Hotline CSKH: 1900 1234</span>
         </div>
       </div>
-      <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      <nav className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8 gap-4 md:gap-8">
         {/* Logo */}
         <Link
           to="/"
@@ -162,43 +163,9 @@ export default function Navbar() {
           </span>
         </Link>
 
-        {/* Desktop Search bar */}
-        <form
-          onSubmit={handleSearchSubmit}
-          className="hidden flex-1 max-w-md mx-6 lg:flex items-center relative"
-        >
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Tìm kiếm sản phẩm, danh mục, shop..."
-            className={cn(
-              'w-full rounded-full pl-10 pr-4 py-2 text-sm border transition-all focus:outline-none focus:ring-2 focus:ring-amber-500',
-              isDark
-                ? 'bg-slate-800/80 border-slate-700 text-white placeholder-slate-400 focus:bg-slate-800'
-                : 'bg-stone-100/90 border-stone-200 text-stone-900 placeholder-stone-400 focus:bg-white',
-            )}
-          />
-          <HiOutlineSearch className="absolute left-3.5 h-4 w-4 text-stone-400 dark:text-slate-400" />
-        </form>
+        <AdvancedSearchBar />
 
-        {/* Desktop nav */}
-        <div className="hidden items-center gap-1 md:flex">
-          {navLinks.map(({ to, label }) => (
-            <Link
-              key={to}
-              to={to}
-              className={cn(
-                'rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                isDark
-                  ? 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                  : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900',
-              )}
-            >
-              {label}
-            </Link>
-          ))}
-        </div>
+        {/* Desktop nav links moved to secondary bar below */}
 
         {/* Right: theme + dropdown + mobile menu */}
         <div className="flex items-center gap-2">
@@ -492,6 +459,27 @@ export default function Navbar() {
           </button>
         </div>
       </nav>
+
+      {/* Secondary Nav Bar for Links (Desktop) */}
+      <div className={cn(
+          "hidden md:flex border-t items-center",
+          isDark ? "border-slate-800 bg-slate-900/90" : "border-stone-100 bg-white"
+      )}>
+        <div className="mx-auto flex h-10 w-full max-w-7xl items-center gap-6 px-4 sm:px-6 lg:px-8">
+          {navLinks.map(({ to, label }) => (
+            <Link
+              key={to}
+              to={to}
+              className={cn(
+                'text-sm font-medium transition-colors hover:text-amber-500',
+                isDark ? 'text-slate-300' : 'text-stone-600'
+              )}
+            >
+              {label}
+            </Link>
+          ))}
+        </div>
+      </div>
 
       {/* Mobile menu */}
       <AnimatePresence>

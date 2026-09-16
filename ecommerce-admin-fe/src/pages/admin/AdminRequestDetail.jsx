@@ -97,7 +97,6 @@ export default function AdminRequestDetail() {
             ← Quay lại danh sách
           </Link>
           <h1 className="mt-2 text-2xl font-semibold">Chi tiết yêu cầu</h1>
-          <p className={cn('text-xs font-mono', isDark ? 'text-slate-400' : 'text-stone-500')}>{requestId}</p>
         </div>
       </div>
 

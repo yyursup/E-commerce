@@ -24,6 +24,7 @@ import kycService from '../services/kyc'
 import CameraCapture from '../components/CameraCapture'
 import BusinessLicenseUpload from '../components/BusinessLicenseUpload'
 import ShopCoverImageUpload from '../components/ShopCoverImageUpload'
+import GhnAddressSelector from '../components/GhnAddressSelector'
 
 export default function SellerRegister() {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
@@ -48,6 +49,8 @@ export default function SellerRegister() {
   const [isComparing, setIsComparing] = useState(false)
   const [showSellerForm, setShowSellerForm] = useState(false)
   const [sellerType, setSellerType] = useState('INDIVIDUAL') // 'INDIVIDUAL' or 'BUSINESS'
+  const [sameAsPickup, setSameAsPickup] = useState(false)
+  const [sameAsBusiness, setSameAsBusiness] = useState(false)
 
   const {
     register,
@@ -60,8 +63,8 @@ export default function SellerRegister() {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      toast.error('Vui lòng đăng nhập để đăng ký bán hàng.', { id: 'seller-register-auth-required' })
-      navigate('/login')
+      toast.error('Vui lòng đăng ký hoặc đăng nhập tài khoản Người Bán.', { id: 'seller-register-auth-required' })
+      navigate('/register')
       return
     }
 
@@ -201,6 +204,32 @@ export default function SellerRegister() {
     }
   }
 
+  const handleSellerTypeChange = (newType) => {
+    if (newType === sellerType) return
+    setSellerType(newType)
+
+    if (newType === 'INDIVIDUAL') {
+      // 1. Reset trạng thái đồng bộ địa chỉ trụ sở
+      setSameAsBusiness(false)
+
+      // 2. Xóa sạch dữ liệu đặc thù của Hộ kinh doanh / Doanh nghiệp
+      setValue('businessType', '')
+      setValue('businessName', '')
+      setValue('businessAddress', '')
+      setValue('businessLicenseUrl', '')
+
+      // 3. Nếu địa chỉ lấy hàng trước đó copy từ địa chỉ trụ sở thì reset lại
+      if (sameAsBusiness) {
+        setValue('pickupAddress', '')
+        if (sameAsPickup) {
+          setValue('returnAddress', '')
+        }
+      }
+    } else if (newType === 'BUSINESS') {
+      setSameAsBusiness(false)
+    }
+  }
+
   const onSubmit = async (data) => {
     if (!isAuthenticated) {
       toast.error('Vui lòng đăng nhập để tiếp tục.')
@@ -222,7 +251,7 @@ export default function SellerRegister() {
       coverImageUrl: data.coverImageUrl?.trim() || null,
       pickupAddress: data.pickupAddress?.trim(),
       returnAddress: data.returnAddress?.trim(),
-      address: data.address?.trim() || null,
+      address: null,
       taxCode: data.taxCode?.trim() || null,
       invoiceEmail: data.invoiceEmail?.trim() || null,
       businessType: sellerType === 'BUSINESS' && data.businessType ? data.businessType : null,
@@ -230,7 +259,7 @@ export default function SellerRegister() {
       businessAddress: sellerType === 'BUSINESS' ? (data.businessAddress?.trim() || null) : null,
       businessLicenseUrl: sellerType === 'BUSINESS' ? (data.businessLicenseUrl?.trim() || null) : null,
       bankName: data.bankName?.trim(),
-      bankAccountName: data.bankAccountName?.trim(),
+      bankAccountName: data.bankAccountName?.trim()?.toUpperCase(),
       bankAccountNumber: data.bankAccountNumber?.trim(),
     }
 
@@ -814,7 +843,7 @@ export default function SellerRegister() {
               )}>
                 <button
                   type="button"
-                  onClick={() => setSellerType('INDIVIDUAL')}
+                  onClick={() => handleSellerTypeChange('INDIVIDUAL')}
                   className={cn(
                     'w-full rounded-xl py-2.5 text-xs font-bold transition-all flex items-center justify-center gap-2',
                     sellerType === 'INDIVIDUAL'
@@ -830,7 +859,7 @@ export default function SellerRegister() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setSellerType('BUSINESS')}
+                  onClick={() => handleSellerTypeChange('BUSINESS')}
                   className={cn(
                     'w-full rounded-xl py-2.5 text-xs font-bold transition-all flex items-center justify-center gap-2',
                     sellerType === 'BUSINESS'
@@ -878,7 +907,12 @@ export default function SellerRegister() {
                         type="text"
                         placeholder="VD: TechZone Official"
                         className={cn('w-full rounded-xl border py-3 pl-10 pr-4 text-sm outline-none transition placeholder:opacity-60', isDark ? 'border-slate-600 bg-slate-800/50 text-white placeholder:text-slate-500 focus:border-amber-500/60 focus:ring-2 focus:ring-amber-500/20' : 'border-stone-300 bg-stone-50/80 text-stone-900 placeholder:text-stone-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20', errors.shopName && 'border-red-500/70 focus:border-red-500 focus:ring-red-500/20')}
-                        {...register('shopName', { required: 'Vui lòng nhập tên shop', maxLength: { value: 150, message: 'Tối đa 150 ký tự' } })}
+                        {...register('shopName', {
+                          required: 'Vui lòng nhập tên shop',
+                          minLength: { value: 3, message: 'Tên shop tối thiểu 3 ký tự' },
+                          maxLength: { value: 100, message: 'Tối đa 100 ký tự' },
+                          pattern: { value: /^[^<>{}\\]+$/, message: 'Tên shop không được chứa ký tự đặc biệt nguy hiểm' },
+                        })}
                       />
                     </div>
                     {errors.shopName && <p className="mt-1.5 text-sm text-red-500">{errors.shopName.message}</p>}
@@ -900,14 +934,19 @@ export default function SellerRegister() {
 
                   <div className="grid gap-5 md:grid-cols-2">
                     <div>
-                      <label className={cn('mb-1.5 block text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>Số điện thoại shop</label>
+                      <label className={cn('mb-1.5 block text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>
+                        Số điện thoại shop <span className="text-red-500">*</span>
+                      </label>
                       <div className="relative">
                         <HiOutlinePhone className={cn('absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2', isDark ? 'text-slate-500' : 'text-stone-400')} />
                         <input
                           type="tel"
                           placeholder="0912345678"
                           className={cn('w-full rounded-xl border py-3 pl-10 pr-4 text-sm outline-none transition placeholder:opacity-60', isDark ? 'border-slate-600 bg-slate-800/50 text-white placeholder:text-slate-500 focus:border-amber-500/60 focus:ring-2 focus:ring-amber-500/20' : 'border-stone-300 bg-stone-50/80 text-stone-900 placeholder:text-stone-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20', errors.shopPhone && 'border-red-500/70 focus:border-red-500 focus:ring-red-500/20')}
-                          {...register('shopPhone', { required: 'Vui lòng nhập số điện thoại', maxLength: { value: 20, message: 'Tối đa 20 ký tự' } })}
+                          {...register('shopPhone', {
+                            required: 'Vui lòng nhập số điện thoại',
+                            pattern: { value: /^(0|\+84)(3|5|7|8|9)[0-9]{8}$/, message: 'Số điện thoại không hợp lệ (10 chữ số, VD: 0912345678)' },
+                          })}
                         />
                       </div>
                       {errors.shopPhone && <p className="mt-1.5 text-sm text-red-500">{errors.shopPhone.message}</p>}
@@ -921,7 +960,10 @@ export default function SellerRegister() {
                           type="email"
                           placeholder="shop@example.com"
                           className={cn('w-full rounded-xl border py-3 pl-10 pr-4 text-sm outline-none transition placeholder:opacity-60', isDark ? 'border-slate-600 bg-slate-800/50 text-white placeholder:text-slate-500 focus:border-amber-500/60 focus:ring-2 focus:ring-amber-500/20' : 'border-stone-300 bg-stone-50/80 text-stone-900 placeholder:text-stone-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20', errors.shopEmail && 'border-red-500/70 focus:border-red-500 focus:ring-red-500/20')}
-                          {...register('shopEmail', { maxLength: { value: 120, message: 'Tối đa 120 ký tự' }, pattern: { value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i, message: 'Email không hợp lệ' } })}
+                          {...register('shopEmail', {
+                            maxLength: { value: 120, message: 'Tối đa 120 ký tự' },
+                            pattern: { value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i, message: 'Email không hợp lệ' },
+                          })}
                         />
                       </div>
                       {errors.shopEmail && <p className="mt-1.5 text-sm text-red-500">{errors.shopEmail.message}</p>}
@@ -936,7 +978,9 @@ export default function SellerRegister() {
 
                     <div className="grid gap-5 md:grid-cols-2">
                       <div>
-                        <label className={cn('mb-1.5 block text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>Loại hình kinh doanh</label>
+                        <label className={cn('mb-1.5 block text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>
+                          Loại hình kinh doanh <span className="text-red-500">*</span>
+                        </label>
                         <div className="relative">
                           <HiOutlineDocumentText className={cn('absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2', isDark ? 'text-slate-500' : 'text-stone-400')} />
                           <select
@@ -952,14 +996,20 @@ export default function SellerRegister() {
                       </div>
 
                       <div>
-                        <label className={cn('mb-1.5 block text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>Tên công ty / Hộ kinh doanh</label>
+                        <label className={cn('mb-1.5 block text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>
+                          Tên công ty / Hộ kinh doanh <span className="text-red-500">*</span>
+                        </label>
                         <div className="relative">
                           <HiOutlineDocumentText className={cn('absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2', isDark ? 'text-slate-500' : 'text-stone-400')} />
                           <input
                             type="text"
                             placeholder="Nhập tên đăng ký kinh doanh"
                             className={cn('w-full rounded-xl border py-3 pl-10 pr-4 text-sm outline-none transition', isDark ? 'border-slate-600 bg-slate-800/50 text-white' : 'border-stone-300 bg-stone-50/80 text-stone-900', errors.businessName && 'border-red-500/70')}
-                            {...register('businessName', { required: 'Vui lòng nhập tên công ty/HKD' })}
+                            {...register('businessName', {
+                              required: 'Vui lòng nhập tên công ty/HKD',
+                              minLength: { value: 3, message: 'Tên công ty tối thiểu 3 ký tự' },
+                              maxLength: { value: 255, message: 'Tối đa 255 ký tự' },
+                            })}
                           />
                         </div>
                         {errors.businessName && <p className="mt-1.5 text-sm text-red-500">{errors.businessName.message}</p>}
@@ -967,28 +1017,48 @@ export default function SellerRegister() {
                     </div>
 
                     <div>
-                      <label className={cn('mb-1.5 block text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>Địa chỉ trụ sở</label>
-                      <div className="relative">
-                        <HiOutlineLocationMarker className={cn('absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2', isDark ? 'text-slate-500' : 'text-stone-400')} />
-                        <input
-                          type="text"
-                          placeholder="Địa chỉ ghi trên Giấy phép kinh doanh"
-                          className={cn('w-full rounded-xl border py-3 pl-10 pr-4 text-sm outline-none transition', isDark ? 'border-slate-600 bg-slate-800/50 text-white' : 'border-stone-300 bg-stone-50/80 text-stone-900', errors.businessAddress && 'border-red-500/70')}
-                          {...register('businessAddress', { required: 'Vui lòng nhập địa chỉ trụ sở' })}
-                        />
-                      </div>
-                      {errors.businessAddress && <p className="mt-1.5 text-sm text-red-500">{errors.businessAddress.message}</p>}
+                      <GhnAddressSelector
+                        label="Địa chỉ trụ sở"
+                        required
+                        hint="Theo Giấy phép kinh doanh"
+                        value={watch('businessAddress')}
+                        onChange={(fullAddr) => {
+                          setValue('businessAddress', fullAddr, { shouldValidate: true })
+                          if (sameAsBusiness) {
+                            setValue('pickupAddress', fullAddr, { shouldValidate: true })
+                            if (sameAsPickup) {
+                              setValue('returnAddress', fullAddr, { shouldValidate: true })
+                            }
+                          }
+                        }}
+                        error={errors.businessAddress?.message}
+                        isDark={isDark}
+                      />
+                      <input
+                        type="hidden"
+                        {...register('businessAddress', {
+                          required: sellerType === 'BUSINESS' ? 'Vui lòng chọn địa chỉ trụ sở chuẩn GHN' : false,
+                        })}
+                      />
                     </div>
 
                     <div>
-                      <label className={cn('mb-1.5 block text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>Mã số thuế doanh nghiệp</label>
+                      <label className={cn('mb-1.5 block text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>
+                        Mã số thuế doanh nghiệp <span className="text-red-500">*</span>
+                      </label>
                       <div className="relative">
                         <HiOutlineDocumentText className={cn('absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2', isDark ? 'text-slate-500' : 'text-stone-400')} />
                         <input
                           type="text"
-                          placeholder="Mã số thuế doanh nghiệp"
+                          placeholder="VD: 0101234567 hoặc 0101234567-001"
                           className={cn('w-full rounded-xl border py-3 pl-10 pr-4 text-sm outline-none transition', isDark ? 'border-slate-600 bg-slate-800/50 text-white' : 'border-stone-300 bg-stone-50/80 text-stone-900', errors.taxCode && 'border-red-500/70')}
-                          {...register('taxCode', { required: 'Vui lòng nhập mã số thuế' })}
+                          {...register('taxCode', {
+                            required: sellerType === 'BUSINESS' ? 'Vui lòng nhập mã số thuế doanh nghiệp' : false,
+                            pattern: {
+                              value: /^[0-9]{10}(-[0-9]{3})?$|^[0-9]{13}$/,
+                              message: 'Mã số thuế không hợp lệ (gồm 10 hoặc 13 chữ số)',
+                            },
+                          })}
                         />
                       </div>
                       {errors.taxCode && <p className="mt-1.5 text-sm text-red-500">{errors.taxCode.message}</p>}
@@ -1014,52 +1084,111 @@ export default function SellerRegister() {
                 )}
 
                 {/* 3. LẤY/TRẢ HÀNG & PHÁP LÝ */}
-                <div className="space-y-5">
+                <div className="space-y-6">
                   <h3 className={cn("text-lg font-semibold border-b pb-2", isDark ? "text-white border-slate-700" : "text-stone-900 border-stone-200")}>
                     {sellerType === 'BUSINESS' ? '3. Lấy/trả hàng & Hóa đơn' : '2. Lấy/trả hàng & Pháp lý'}
                   </h3>
 
-                  <div className="grid gap-5 md:grid-cols-2">
-                    <div>
-                      <label className={cn('mb-1.5 block text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>Địa chỉ lấy hàng</label>
-                      <div className="relative">
-                        <HiOutlineLocationMarker className={cn('absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2', isDark ? 'text-slate-500' : 'text-stone-400')} />
+                  {/* Địa chỉ lấy hàng */}
+                  <div className="rounded-2xl border p-4 sm:p-5 space-y-3 bg-stone-50/50 dark:bg-slate-900/40 border-stone-200/80 dark:border-slate-800">
+                    {sellerType === 'BUSINESS' && (
+                      <label className="inline-flex items-center gap-2 text-xs font-semibold cursor-pointer select-none text-amber-600 dark:text-amber-400">
                         <input
-                          type="text"
-                          placeholder="Nhập địa chỉ lấy hàng"
-                          className={cn('w-full rounded-xl border py-3 pl-10 pr-4 text-sm outline-none transition', isDark ? 'border-slate-600 bg-slate-800/50 text-white' : 'border-stone-300 bg-stone-50/80 text-stone-900', errors.pickupAddress && 'border-red-500/70')}
-                          {...register('pickupAddress', { required: 'Vui lòng nhập địa chỉ lấy hàng' })}
+                          type="checkbox"
+                          checked={sameAsBusiness}
+                          onChange={(e) => {
+                            const checked = e.target.checked
+                            setSameAsBusiness(checked)
+                            if (checked) {
+                              const bAddr = watch('businessAddress') || ''
+                              setValue('pickupAddress', bAddr, { shouldValidate: true })
+                              if (sameAsPickup) {
+                                setValue('returnAddress', bAddr, { shouldValidate: true })
+                              }
+                            }
+                          }}
+                          className="rounded text-amber-500 focus:ring-amber-500 h-4 w-4"
                         />
-                      </div>
-                      {errors.pickupAddress && <p className="mt-1.5 text-sm text-red-500">{errors.pickupAddress.message}</p>}
-                    </div>
+                        <span>Địa chỉ lấy hàng giống Địa chỉ trụ sở</span>
+                      </label>
+                    )}
 
-                    <div>
-                      <label className={cn('mb-1.5 block text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>Địa chỉ trả hàng</label>
-                      <div className="relative">
-                        <HiOutlineLocationMarker className={cn('absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2', isDark ? 'text-slate-500' : 'text-stone-400')} />
-                        <input
-                          type="text"
-                          placeholder="Nhập địa chỉ nhận hàng hoàn trả"
-                          className={cn('w-full rounded-xl border py-3 pl-10 pr-4 text-sm outline-none transition', isDark ? 'border-slate-600 bg-slate-800/50 text-white' : 'border-stone-300 bg-stone-50/80 text-stone-900', errors.returnAddress && 'border-red-500/70')}
-                          {...register('returnAddress', { required: 'Vui lòng nhập địa chỉ trả hàng' })}
-                        />
-                      </div>
-                      {errors.returnAddress && <p className="mt-1.5 text-sm text-red-500">{errors.returnAddress.message}</p>}
-                    </div>
+                    <GhnAddressSelector
+                      label="Địa chỉ lấy hàng (Kho hàng cho GHN đến lấy)"
+                      required
+                      disabled={sameAsBusiness}
+                      hint="Chọn Tỉnh, Huyện, Xã theo chuẩn GHN"
+                      value={watch('pickupAddress')}
+                      onChange={(fullAddr) => {
+                        setValue('pickupAddress', fullAddr, { shouldValidate: true })
+                        if (sameAsPickup) {
+                          setValue('returnAddress', fullAddr, { shouldValidate: true })
+                        }
+                      }}
+                      error={errors.pickupAddress?.message}
+                      isDark={isDark}
+                    />
+                    <input
+                      type="hidden"
+                      {...register('pickupAddress', { required: 'Vui lòng chọn địa chỉ lấy hàng chuẩn GHN' })}
+                    />
+                  </div>
+
+                  {/* Địa chỉ trả hàng */}
+                  <div className="rounded-2xl border p-4 sm:p-5 space-y-3 bg-stone-50/50 dark:bg-slate-900/40 border-stone-200/80 dark:border-slate-800">
+                    <label className="inline-flex items-center gap-2 text-xs font-semibold cursor-pointer select-none text-amber-600 dark:text-amber-400">
+                      <input
+                        type="checkbox"
+                        checked={sameAsPickup}
+                        onChange={(e) => {
+                          const checked = e.target.checked
+                          setSameAsPickup(checked)
+                          if (checked) {
+                            setValue('returnAddress', watch('pickupAddress') || '', { shouldValidate: true })
+                          }
+                        }}
+                        className="rounded text-amber-500 focus:ring-amber-500 h-4 w-4"
+                      />
+                      <span>Địa chỉ trả hàng giống Địa chỉ lấy hàng</span>
+                    </label>
+
+                    <GhnAddressSelector
+                      label="Địa chỉ trả hàng (Nhận hàng hoàn trả từ GHN)"
+                      required
+                      disabled={sameAsPickup}
+                      hint="Nơi nhận hàng khi khách hoàn hàng"
+                      value={watch('returnAddress')}
+                      onChange={(fullAddr) => {
+                        setValue('returnAddress', fullAddr, { shouldValidate: true })
+                      }}
+                      error={errors.returnAddress?.message}
+                      isDark={isDark}
+                    />
+                    <input
+                      type="hidden"
+                      {...register('returnAddress', { required: 'Vui lòng chọn địa chỉ trả hàng chuẩn GHN' })}
+                    />
                   </div>
 
                   <div className="grid gap-5 md:grid-cols-2">
                     {sellerType === 'INDIVIDUAL' && (
                       <div>
-                        <label className={cn('mb-1.5 block text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>Mã số thuế cá nhân</label>
+                        <label className={cn('mb-1.5 block text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>
+                          Mã số thuế cá nhân <span className="text-red-500">*</span>
+                        </label>
                         <div className="relative">
                           <HiOutlineDocumentText className={cn('absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2', isDark ? 'text-slate-500' : 'text-stone-400')} />
                           <input
                             type="text"
-                            placeholder="Mã số thuế cá nhân"
+                            placeholder="VD: 0123456789"
                             className={cn('w-full rounded-xl border py-3 pl-10 pr-4 text-sm outline-none transition', isDark ? 'border-slate-600 bg-slate-800/50 text-white' : 'border-stone-300 bg-stone-50/80 text-stone-900', errors.taxCode && 'border-red-500/70')}
-                            {...register('taxCode', { required: 'Vui lòng nhập mã số thuế' })}
+                            {...register('taxCode', {
+                              required: sellerType === 'INDIVIDUAL' ? 'Vui lòng nhập mã số thuế cá nhân' : false,
+                              pattern: {
+                                value: /^[0-9]{10}(-[0-9]{3})?$|^[0-9]{13}$/,
+                                message: 'Mã số thuế không hợp lệ (gồm 10 hoặc 13 chữ số)',
+                              },
+                            })}
                           />
                         </div>
                         {errors.taxCode && <p className="mt-1.5 text-sm text-red-500">{errors.taxCode.message}</p>}
@@ -1073,10 +1202,14 @@ export default function SellerRegister() {
                         <input
                           type="email"
                           placeholder="email.hoadon@example.com"
-                          className={cn('w-full rounded-xl border py-3 pl-10 pr-4 text-sm outline-none transition', isDark ? 'border-slate-600 bg-slate-800/50 text-white' : 'border-stone-300 bg-stone-50/80 text-stone-900')}
-                          {...register('invoiceEmail')}
+                          className={cn('w-full rounded-xl border py-3 pl-10 pr-4 text-sm outline-none transition', isDark ? 'border-slate-600 bg-slate-800/50 text-white' : 'border-stone-300 bg-stone-50/80 text-stone-900', errors.invoiceEmail && 'border-red-500/70')}
+                          {...register('invoiceEmail', {
+                            maxLength: { value: 120, message: 'Tối đa 120 ký tự' },
+                            validate: (val) => !val || /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(val) || 'Email nhận hóa đơn không hợp lệ',
+                          })}
                         />
                       </div>
+                      {errors.invoiceEmail && <p className="mt-1.5 text-sm text-red-500">{errors.invoiceEmail.message}</p>}
                     </div>
                   </div>
                 </div>
@@ -1089,28 +1222,42 @@ export default function SellerRegister() {
 
                   <div className="grid gap-5 md:grid-cols-2">
                     <div>
-                      <label className={cn('mb-1.5 block text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>Tên ngân hàng</label>
+                      <label className={cn('mb-1.5 block text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>
+                        Tên ngân hàng <span className="text-red-500">*</span>
+                      </label>
                       <div className="relative">
                         <HiOutlineDocumentText className={cn('absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2', isDark ? 'text-slate-500' : 'text-stone-400')} />
                         <input
                           type="text"
-                          placeholder="VD: Vietcombank, Techcombank..."
+                          placeholder="VD: Vietcombank, Techcombank, MB Bank..."
                           className={cn('w-full rounded-xl border py-3 pl-10 pr-4 text-sm outline-none transition', isDark ? 'border-slate-600 bg-slate-800/50 text-white' : 'border-stone-300 bg-stone-50/80 text-stone-900', errors.bankName && 'border-red-500/70')}
-                          {...register('bankName', { required: 'Vui lòng nhập tên ngân hàng' })}
+                          {...register('bankName', {
+                            required: 'Vui lòng nhập tên ngân hàng',
+                            minLength: { value: 2, message: 'Tên ngân hàng tối thiểu 2 ký tự' },
+                            maxLength: { value: 150, message: 'Tối đa 150 ký tự' },
+                          })}
                         />
                       </div>
                       {errors.bankName && <p className="mt-1.5 text-sm text-red-500">{errors.bankName.message}</p>}
                     </div>
 
                     <div>
-                      <label className={cn('mb-1.5 block text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>Tên chủ tài khoản</label>
+                      <label className={cn('mb-1.5 block text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>
+                        Tên chủ tài khoản (in hoa không dấu) <span className="text-red-500">*</span>
+                      </label>
                       <div className="relative">
                         <HiOutlineUser className={cn('absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2', isDark ? 'text-slate-500' : 'text-stone-400')} />
                         <input
                           type="text"
-                          placeholder="NGUYEN VAN A"
-                          className={cn('w-full rounded-xl border py-3 pl-10 pr-4 text-sm outline-none transition', isDark ? 'border-slate-600 bg-slate-800/50 text-white' : 'border-stone-300 bg-stone-50/80 text-stone-900', errors.bankAccountName && 'border-red-500/70')}
-                          {...register('bankAccountName', { required: 'Vui lòng nhập tên chủ tài khoản' })}
+                          placeholder="VD: NGUYEN VAN A"
+                          className={cn('w-full rounded-xl border py-3 pl-10 pr-4 text-sm outline-none transition uppercase', isDark ? 'border-slate-600 bg-slate-800/50 text-white' : 'border-stone-300 bg-stone-50/80 text-stone-900', errors.bankAccountName && 'border-red-500/70')}
+                          {...register('bankAccountName', {
+                            required: 'Vui lòng nhập tên chủ tài khoản',
+                            minLength: { value: 3, message: 'Tên chủ tài khoản tối thiểu 3 ký tự' },
+                            maxLength: { value: 150, message: 'Tối đa 150 ký tự' },
+                            pattern: { value: /^[a-zA-Z\s]+$/i, message: 'Tên chủ tài khoản viết không dấu, không chứa số' },
+                          })}
+                          onChange={(e) => setValue('bankAccountName', e.target.value.toUpperCase())}
                         />
                       </div>
                       {errors.bankAccountName && <p className="mt-1.5 text-sm text-red-500">{errors.bankAccountName.message}</p>}
@@ -1118,14 +1265,19 @@ export default function SellerRegister() {
                   </div>
 
                   <div>
-                    <label className={cn('mb-1.5 block text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>Số tài khoản</label>
+                    <label className={cn('mb-1.5 block text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>
+                      Số tài khoản <span className="text-red-500">*</span>
+                    </label>
                     <div className="relative">
                       <HiOutlineDocumentText className={cn('absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2', isDark ? 'text-slate-500' : 'text-stone-400')} />
                       <input
                         type="text"
-                        placeholder="Nhập số tài khoản"
+                        placeholder="Nhập số tài khoản ngân hàng (chỉ gồm số)"
                         className={cn('w-full rounded-xl border py-3 pl-10 pr-4 text-sm outline-none transition', isDark ? 'border-slate-600 bg-slate-800/50 text-white' : 'border-stone-300 bg-stone-50/80 text-stone-900', errors.bankAccountNumber && 'border-red-500/70')}
-                        {...register('bankAccountNumber', { required: 'Vui lòng nhập số tài khoản' })}
+                        {...register('bankAccountNumber', {
+                          required: 'Vui lòng nhập số tài khoản ngân hàng',
+                          pattern: { value: /^[0-9]{6,20}$/, message: 'Số tài khoản ngân hàng chỉ gồm 6-20 chữ số' },
+                        })}
                       />
                     </div>
                     {errors.bankAccountNumber && <p className="mt-1.5 text-sm text-red-500">{errors.bankAccountNumber.message}</p>}

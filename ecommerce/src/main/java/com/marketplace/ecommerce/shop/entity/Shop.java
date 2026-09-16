@@ -16,7 +16,8 @@ import java.util.UUID;
 @Entity
 @Table(name = "shops", uniqueConstraints = {
     @UniqueConstraint(columnNames = "user_id"),
-    @UniqueConstraint(columnNames = "name")
+    @UniqueConstraint(columnNames = "name"),
+    @UniqueConstraint(columnNames = "tax_code")
 })
 @Getter
 @Setter

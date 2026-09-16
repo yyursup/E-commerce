@@ -15,6 +15,10 @@ import java.util.UUID;
 public interface ShopRepository extends JpaRepository<Shop, UUID> {
     boolean existsByNameIgnoreCase(String name);
 
+    boolean existsByTaxCode(String taxCode);
+
+    boolean existsByPhoneNumber(String phoneNumber);
+
     boolean existsByUserId(UUID userId);
 
     Optional<Shop> findByUserId(UUID userId);

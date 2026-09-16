@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { HiX, HiOutlineChat } from 'react-icons/hi'
+import { HiOutlineBellSlash } from 'react-icons/hi2'
 import { cn } from '../lib/cn'
 import { useThemeStore } from '../store/useThemeStore'
 
@@ -8,7 +9,7 @@ function formatTime(iso) {
   return new Intl.DateTimeFormat('vi-VN', { hour: '2-digit', minute: '2-digit' }).format(new Date(iso))
 }
 
-export default function ChatNotificationToast({ notifications, onDismiss, onOpen, position = 'top-right' }) {
+export default function ChatNotificationToast({ notifications, onDismiss, onOpen, onMute, position = 'top-right' }) {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
   const isTopRight = position === 'top-right'
 
@@ -52,20 +53,41 @@ export default function ChatNotificationToast({ notifications, onDismiss, onOpen
               </div>
               <p className="mt-1 text-xs opacity-80 line-clamp-2 leading-relaxed">{n.content}</p>
             </div>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation()
-                onDismiss(n.id)
-              }}
-              className={cn(
-                'shrink-0 rounded-lg p-1 transition',
-                isDark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-stone-100 text-stone-400',
+            <div className="flex items-center gap-1 shrink-0">
+              {onMute && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onMute(n.threadId, n.senderName)
+                    if (onDismiss) onDismiss(n.id)
+                  }}
+                  className={cn(
+                    'rounded-lg p-1 transition',
+                    isDark
+                      ? 'hover:bg-slate-700 text-slate-400 hover:text-rose-400'
+                      : 'hover:bg-stone-100 text-stone-400 hover:text-rose-500',
+                  )}
+                  title="Tắt thông báo người này"
+                >
+                  <HiOutlineBellSlash className="h-4 w-4" />
+                </button>
               )}
-              title="Đóng"
-            >
-              <HiX className="h-4 w-4" />
-            </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onDismiss(n.id)
+                }}
+                className={cn(
+                  'rounded-lg p-1 transition',
+                  isDark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-stone-100 text-stone-400',
+                )}
+                title="Đóng"
+              >
+                <HiX className="h-4 w-4" />
+              </button>
+            </div>
           </motion.div>
         ))}
       </AnimatePresence>

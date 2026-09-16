@@ -676,16 +676,21 @@ export default function ProductDetail() {
                   </Link>
 
                   <button
+                    type="button"
                     onClick={() => {
-                      if (!currentShopId) return
+                      const targetShopId = product?.shopId || shop?.id || currentShopId
+                      if (!targetShopId) {
+                        toast.error('Không tìm thấy thông tin gian hàng')
+                        return
+                      }
                       useChatStore.getState().openShopChat(
                         {
-                          id: currentShopId,
-                          name: product.shopName || shopData?.name || 'Cửa hàng',
-                          logo: shopData?.logo,
-                          city: shopData?.city,
-                          mallBadge: shopData?.mallBadge,
-                          ekycVerified: shopData?.ekycVerified,
+                          id: targetShopId,
+                          name: product.shopName || shopData?.name || shop?.name || 'Cửa hàng',
+                          logo: shopData?.logo || shop?.logo,
+                          city: shopData?.city || shop?.city,
+                          mallBadge: shopData?.mallBadge || shop?.mallBadge,
+                          ekycVerified: shopData?.ekycVerified || shop?.ekycVerified,
                         },
                         {
                           id: product.id,
@@ -696,7 +701,7 @@ export default function ProductDetail() {
                       )
                     }}
                     className={cn(
-                      'inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-1.5 text-xs font-bold transition-colors',
+                      'inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-1.5 text-xs font-bold transition-colors cursor-pointer',
                       isDark
                         ? 'border-slate-700 text-slate-300 hover:bg-slate-800'
                         : 'border-stone-200 text-stone-700 hover:bg-stone-100'

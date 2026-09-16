@@ -37,4 +37,6 @@ public interface ChatService {
     void markRead(CurrentUserInfo principal, UUID threadId);
 
     void closeThread(CurrentUserInfo principal, UUID threadId);
+
+    void handleTyping(CurrentUserInfo principal, UUID threadId, boolean isTyping);
 }

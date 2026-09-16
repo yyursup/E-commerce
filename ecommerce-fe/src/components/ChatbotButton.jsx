@@ -51,8 +51,9 @@ export default function ChatbotButton() {
   const location = useLocation()
 
   // Global Chat Store integration
-  const storeIsOpen = useChatStore((s) => s.isOpen)
-  const setStoreIsOpen = useChatStore((s) => s.setIsOpen)
+  const isOpen = useChatStore((s) => s.isOpen)
+  const setIsOpen = useChatStore((s) => s.setIsOpen)
+  const closeChat = useChatStore((s) => s.closeChat)
   const viewMode = useChatStore((s) => s.viewMode)
   const setViewMode = useChatStore((s) => s.setViewMode)
   const backToInbox = useChatStore((s) => s.backToInbox)
@@ -62,20 +63,22 @@ export default function ChatbotButton() {
   const clearActiveShop = useChatStore((s) => s.clearActiveShop)
   const storeChatMode = useChatStore((s) => s.chatMode)
 
-  const [isOpen, setIsOpen] = useState(false)
   const [activeTab, setActiveTab] = useState('bot') // 'bot' | 'live'
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [showMediaPopover, setShowMediaPopover] = useState(false)
 
-  // Sync with global chat store
+  // Sync activeTab with global chat store
   useEffect(() => {
-    if (storeIsOpen) {
-      setIsOpen(true)
-      if (storeChatMode) {
-        setActiveTab(storeChatMode)
-      }
+    if (storeChatMode) {
+      setActiveTab(storeChatMode)
     }
-  }, [storeIsOpen, storeChatMode])
+  }, [storeChatMode])
+
+  useEffect(() => {
+    if (activeShop) {
+      setActiveTab('live')
+    }
+  }, [activeShop])
 
   // --- BOT STATE ---
   const [botCurrentNodeId, setBotCurrentNodeId] = useState(null)
@@ -164,7 +167,6 @@ export default function ChatbotButton() {
   const handleToggle = () => {
     const nextOpen = !isOpen
     setIsOpen(nextOpen)
-    setStoreIsOpen(nextOpen)
     if (nextOpen && !activeShop) {
       setViewMode('inbox')
     }
@@ -288,13 +290,10 @@ export default function ChatbotButton() {
         chatService.markRead(currentThread.id).catch(() => {})
       }
 
-      // Show notification only for incoming messages from others when widget is closed or on bot tab
+      // Notification for incoming messages from seller or admin
       const isSelf = user?.id && String(msg.senderId).toLowerCase() === String(user.id).toLowerCase()
-      const isForMe =
-        (currentThread?.id && String(msg.threadId).toLowerCase() === String(currentThread.id).toLowerCase()) ||
-        (user?.id && msg.recipientId && String(msg.recipientId).toLowerCase() === String(user.id).toLowerCase())
-      if (!isSelf && isForMe && (!isOpen || activeTab !== 'live')) {
-        let senderName = msg.senderName
+      if (!isSelf && (msg.senderRole === 'BUSINESS' || msg.senderRole === 'ADMIN')) {
+        let senderName = msg.senderName || 'Người bán'
         let senderAvatar = msg.senderAvatar
         if (activeShop && currentThread?.shopId && String(currentThread.shopId).toLowerCase() === String(activeShop.id).toLowerCase()) {
           senderName = activeShop.name || senderName
@@ -710,10 +709,7 @@ export default function ChatbotButton() {
           >
             {viewMode === 'inbox' ? (
               <ChatInboxList
-                onClose={() => {
-                  setIsOpen(false)
-                  setStoreIsOpen(false)
-                }}
+                onClose={() => closeChat()}
                 notifEnabled={notifEnabled}
                 toggleNotif={toggleNotif}
               />
@@ -814,7 +810,7 @@ export default function ChatbotButton() {
 
                   <button
                     type="button"
-                    onClick={() => setIsOpen(false)}
+                    onClick={() => closeChat()}
                     className={cn(
                       'flex h-8 w-8 items-center justify-center rounded-xl transition',
                       isDark ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-stone-100 text-stone-600'
@@ -867,7 +863,7 @@ export default function ChatbotButton() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => setIsOpen(false)}
+                      onClick={() => closeChat()}
                       className="rounded-lg p-1 hover:bg-white/10"
                     >
                       <HiX className="h-5 w-5" />
@@ -1045,7 +1041,7 @@ export default function ChatbotButton() {
                     </p>
                     <Link
                       to="/login"
-                      onClick={() => setIsOpen(false)}
+                      onClick={() => closeChat()}
                       className="mt-4 inline-flex rounded-xl bg-amber-500 px-5 py-2 text-xs font-bold text-white shadow hover:bg-amber-600 transition"
                     >
                       Đăng nhập ngay

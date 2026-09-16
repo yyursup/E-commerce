@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 
 const MAX_NOTIFICATIONS = 5
 const AUTO_DISMISS_MS = 5000
@@ -9,6 +9,9 @@ function playNotificationSound() {
     const AudioContext = window.AudioContext || window.webkitAudioContext
     if (!AudioContext) return
     const ctx = new AudioContext()
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch(() => {})
+    }
     const now = ctx.currentTime
 
     // Tone 1: 587.33 Hz (D5)
@@ -50,6 +53,31 @@ export function useChatNotification() {
     }
   })
   const timersRef = useRef({})
+  const notifEnabledRef = useRef(notifEnabled)
+
+  useEffect(() => {
+    notifEnabledRef.current = notifEnabled
+  }, [notifEnabled])
+
+  useEffect(() => {
+    const handleStorage = (e) => {
+      if (e.key === STORAGE_KEY) {
+        setNotifEnabled(e.newValue === null ? true : e.newValue === 'true')
+      }
+    }
+    const handleSync = () => {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY)
+        setNotifEnabled(stored === null ? true : stored === 'true')
+      } catch {}
+    }
+    window.addEventListener('storage', handleStorage)
+    window.addEventListener('admin-notif-sync', handleSync)
+    return () => {
+      window.removeEventListener('storage', handleStorage)
+      window.removeEventListener('admin-notif-sync', handleSync)
+    }
+  }, [])
 
   const dismissNotification = useCallback((id) => {
     setNotifications((prev) => prev.filter((n) => n.id !== id))
@@ -61,7 +89,7 @@ export function useChatNotification() {
 
   const addNotification = useCallback(
     (msg) => {
-      if (!notifEnabled) return
+      if (!notifEnabledRef.current) return
       playNotificationSound()
       const id = `notif-${Date.now()}-${Math.random()}`
       const notif = {
@@ -87,7 +115,7 @@ export function useChatNotification() {
         dismissNotification(id)
       }, AUTO_DISMISS_MS)
     },
-    [notifEnabled, dismissNotification],
+    [dismissNotification],
   )
 
   const toggleNotif = useCallback(() => {
@@ -96,6 +124,7 @@ export function useChatNotification() {
       try {
         localStorage.setItem(STORAGE_KEY, String(next))
       } catch {}
+      window.dispatchEvent(new CustomEvent('admin-notif-sync'))
       return next
     })
   }, [])

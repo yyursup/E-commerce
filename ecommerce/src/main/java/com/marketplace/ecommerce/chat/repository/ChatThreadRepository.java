@@ -27,6 +27,9 @@ public interface ChatThreadRepository extends JpaRepository<ChatThread, UUID> {
     @Query("SELECT t FROM ChatThread t WHERE t.shop.id = :shopId ORDER BY COALESCE(t.lastMessageAt, t.createdAt) DESC")
     List<ChatThread> findByShopId(@Param("shopId") UUID shopId);
 
+    @Query("SELECT t FROM ChatThread t WHERE t.type = :type ORDER BY COALESCE(t.lastMessageAt, t.createdAt) DESC")
+    List<ChatThread> findByType(@Param("type") ThreadType type);
+
     Optional<ChatThread> findFirstByCustomer_IdAndTypeAndStatus(UUID customerId, ThreadType type, ThreadStatus status);
 
     Optional<ChatThread> findFirstByCustomer_IdAndShop_IdAndStatus(UUID customerId, UUID shopId, ThreadStatus status);

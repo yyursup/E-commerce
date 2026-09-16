@@ -120,6 +120,12 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
 
                 if (recipientIdStr != null && !recipientIdStr.isBlank()) {
                     sessionService.sendToUser(UUID.fromString(recipientIdStr), "CHAT_TYPING", payload);
+                } else if (threadIdStr != null && !threadIdStr.isBlank()) {
+                    try {
+                        chatService.handleTyping(userInfo, UUID.fromString(threadIdStr), isTyping);
+                    } catch (Exception e) {
+                        log.debug("Error handling typing for thread {}: {}", threadIdStr, e.getMessage());
+                    }
                 } else if (!"ADMIN".equalsIgnoreCase(role)) {
                     sessionService.broadcastToAdmins("CHAT_TYPING", payload);
                 }

@@ -379,10 +379,15 @@ export default function ShopProfile() {
                   </button>
 
                   <button
+                    type="button"
                     onClick={() => {
-                      if (!shop?.id && !shopId) return
+                      const targetShopId = shop?.id || shopId
+                      if (!targetShopId) {
+                        toast.error('Không tìm thấy thông tin gian hàng')
+                        return
+                      }
                       useChatStore.getState().openShopChat({
-                        id: shop?.id || shopId,
+                        id: targetShopId,
                         name: shop?.name || 'Cửa hàng',
                         logo: shop?.logo,
                         city: shop?.city,
@@ -390,7 +395,7 @@ export default function ShopProfile() {
                         ekycVerified: shop?.ekycVerified,
                       })
                     }}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-white/25 bg-white/10 px-4 py-2 text-xs font-bold text-white hover:bg-white/20 transition-all active:scale-95"
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-white/25 bg-white/10 px-4 py-2 text-xs font-bold text-white hover:bg-white/20 transition-all active:scale-95 cursor-pointer"
                   >
                     <HiOutlineChat className="h-4 w-4 text-amber-400" />
                     Chat Ngay

@@ -956,11 +956,11 @@ public class DataInitializer implements CommandLineRunner {
                         Request req1 = initializeRequest(
                                         customerAccount1,
                                         RequestType.SELLER_REGISTRATION,
-                                        RequestStatus.APPROVED,
+                                        RequestStatus.REJECTED,
                                         "Đăng ký mở gian hàng thời trang & phụ kiện thiết kế chính hãng",
                                         adminAccount,
                                         LocalDateTime.now().minusDays(5),
-                                        "Hồ sơ pháp lý hợp lệ, CCCD và chân dung eKYC trùng khớp 100%. Đã phê duyệt.");
+                                        "Từ chối: Ảnh chụp CCCD và thông tin định danh không khớp. Vui lòng cập nhật lại thông tin.");
                         initializeSellerDetail(req1, customerAccount1, SellerType.INDIVIDUAL, null, null, null, null,
                                         "Trendy Fashion Studio", "0901234567", "customer1@gmail.com",
                                         "123 Đường Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP.HCM",
@@ -1364,13 +1364,14 @@ public class DataInitializer implements CommandLineRunner {
 
                 order.setStockDeducted(pastPayment);
 
-                if (status == OrderStatus.DELIVERED || status == OrderStatus.COMPLETED) {
-                        order.setDeliveredAt(createdAt.plusDays(ThreadLocalRandom.current().nextInt(1, 4)));
-                }
-
-                if (status == OrderStatus.COMPLETED) {
+                if (status == OrderStatus.DELIVERED) {
+                        order.setDeliveredAt(LocalDateTime.now().minusHours(ThreadLocalRandom.current().nextInt(2, 48)));
+                        order.setReceivedByBuyer(false);
+                } else if (status == OrderStatus.COMPLETED) {
+                        LocalDateTime delivered = createdAt.plusDays(ThreadLocalRandom.current().nextInt(1, 3));
+                        order.setDeliveredAt(delivered);
                         order.setReceivedByBuyer(true);
-                        order.setReceivedAt(createdAt.plusDays(ThreadLocalRandom.current().nextInt(2, 6)));
+                        order.setReceivedAt(delivered.plusHours(ThreadLocalRandom.current().nextInt(1, 24)));
                 }
 
                 Order saved = orderRepository.save(order);

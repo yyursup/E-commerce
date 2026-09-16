@@ -60,9 +60,24 @@ public class VoucherController {
             @Valid @RequestBody ApplyVoucherRequest request
     ) {
         UUID accountId = c != null ? c.getAccountId() : null;
-        return ResponseEntity.ok(voucherService.validateAndCalculate(
+
+        String shopCode = request.getShopVoucherCode();
+        String platformCode = request.getPlatformVoucherCode();
+
+        if (shopCode == null && platformCode == null && request.getCode() != null && !request.getCode().isBlank()) {
+            return ResponseEntity.ok(voucherService.validateAndCalculate(
+                    accountId,
+                    request.getCode(),
+                    request.getShopId(),
+                    request.getSubtotal(),
+                    request.getShippingFee()
+            ));
+        }
+
+        return ResponseEntity.ok(voucherService.validateAndCalculateMulti(
                 accountId,
-                request.getCode(),
+                shopCode,
+                platformCode,
                 request.getShopId(),
                 request.getSubtotal(),
                 request.getShippingFee()

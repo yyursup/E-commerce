@@ -68,7 +68,27 @@ public class CheckoutServiceImpl implements CheckoutService {
 
         BigDecimal discountAmount = BigDecimal.ZERO;
         String voucherCode = null;
-        if (req.getVoucherCode() != null && !req.getVoucherCode().isBlank()) {
+        String shopVoucherCode = req.getShopVoucherCode();
+        String platformVoucherCode = req.getPlatformVoucherCode();
+        BigDecimal shopDiscountAmount = BigDecimal.ZERO;
+        BigDecimal platformDiscountAmount = BigDecimal.ZERO;
+
+        if (shopVoucherCode != null || platformVoucherCode != null) {
+            VoucherCalculationResponse calc = voucherService.validateAndCalculateMulti(
+                    accountId,
+                    shopVoucherCode,
+                    platformVoucherCode,
+                    req.getShopId(),
+                    subtotal,
+                    shippingFee
+            );
+            discountAmount = calc.getDiscountAmount();
+            shopDiscountAmount = calc.getShopDiscountAmount() != null ? calc.getShopDiscountAmount() : BigDecimal.ZERO;
+            platformDiscountAmount = calc.getPlatformDiscountAmount() != null ? calc.getPlatformDiscountAmount() : BigDecimal.ZERO;
+            shopVoucherCode = calc.getShopVoucherCode();
+            platformVoucherCode = calc.getPlatformVoucherCode();
+            voucherCode = calc.getVoucherCode();
+        } else if (req.getVoucherCode() != null && !req.getVoucherCode().isBlank()) {
             VoucherCalculationResponse calc = voucherService.validateAndCalculate(
                     accountId,
                     req.getVoucherCode().trim(),
@@ -77,6 +97,10 @@ public class CheckoutServiceImpl implements CheckoutService {
                     shippingFee
             );
             discountAmount = calc.getDiscountAmount();
+            shopDiscountAmount = calc.getShopDiscountAmount() != null ? calc.getShopDiscountAmount() : BigDecimal.ZERO;
+            platformDiscountAmount = calc.getPlatformDiscountAmount() != null ? calc.getPlatformDiscountAmount() : BigDecimal.ZERO;
+            shopVoucherCode = calc.getShopVoucherCode();
+            platformVoucherCode = calc.getPlatformVoucherCode();
             voucherCode = calc.getVoucherCode();
         }
 
@@ -89,6 +113,10 @@ public class CheckoutServiceImpl implements CheckoutService {
         res.setSubtotal(subtotal);
         res.setShippingFee(shippingFee);
         res.setDiscountAmount(discountAmount);
+        res.setShopDiscountAmount(shopDiscountAmount);
+        res.setPlatformDiscountAmount(platformDiscountAmount);
+        res.setShopVoucherCode(shopVoucherCode);
+        res.setPlatformVoucherCode(platformVoucherCode);
         res.setVoucherCode(voucherCode);
         res.setTotal(total);
         return res;

@@ -16,8 +16,13 @@ import java.util.UUID;
 @AllArgsConstructor
 public class ApplyVoucherRequest {
 
-    @NotBlank(message = "Mã voucher không được để trống")
     private String code;
+
+    private String shopVoucherCode;
+
+    private String platformVoucherCode;
+
+    private java.util.List<String> codes;
 
     @NotNull(message = "Shop ID không được để trống")
     private UUID shopId;

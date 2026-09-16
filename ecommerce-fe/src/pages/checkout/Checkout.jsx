@@ -34,9 +34,12 @@ export default function Checkout() {
     const [shippingFee, setShippingFee] = useState(0)
     const [isCalculatingFee, setIsCalculatingFee] = useState(false)
 
-    // Voucher States
+    // Dual Voucher States (1 Shop Voucher + 1 Platform Voucher)
     const [voucherCodeInput, setVoucherCodeInput] = useState('')
-    const [appliedVoucher, setAppliedVoucher] = useState(null)
+    const [selectedShopVoucher, setSelectedShopVoucher] = useState(null)
+    const [selectedPlatformVoucher, setSelectedPlatformVoucher] = useState(null)
+    const [shopDiscountAmount, setShopDiscountAmount] = useState(0)
+    const [platformDiscountAmount, setPlatformDiscountAmount] = useState(0)
     const [discountAmount, setDiscountAmount] = useState(0)
     const [isApplyingVoucher, setIsApplyingVoucher] = useState(false)
     const [availableVouchers, setAvailableVouchers] = useState([])
@@ -182,14 +185,20 @@ export default function Checkout() {
             setIsCalculatingFee(true)
 
             // Prefer Backend Quote API (SSOT)
-            const currentVoucherCode = appliedVoucher?.code || null
+            const voucherParams = {
+                shopVoucherCode: selectedShopVoucher?.code || null,
+                platformVoucherCode: selectedPlatformVoucher?.code || null
+            }
+
             try {
-                const quoteRes = await orderService.getQuote(shopId, selectedAddressId, currentVoucherCode)
+                const quoteRes = await orderService.getQuote(shopId, selectedAddressId, voucherParams)
                 if (quoteRes) {
                     const fee = Number(quoteRes.shippingFee || 0)
                     setShippingFee(fee)
-                    if (quoteRes.discountAmount !== undefined && currentVoucherCode) {
+                    if (quoteRes.discountAmount !== undefined) {
                         setDiscountAmount(Number(quoteRes.discountAmount || 0))
+                        setShopDiscountAmount(Number(quoteRes.shopDiscountAmount || 0))
+                        setPlatformDiscountAmount(Number(quoteRes.platformDiscountAmount || 0))
                     }
                     return
                 }
@@ -214,10 +223,9 @@ export default function Checkout() {
             const calculatedFee = feeData.total || 0
             setShippingFee(calculatedFee)
 
-            // If a voucher is already applied, recalculate discount with new shipping fee
-            const currentCode = appliedVoucher?.code
-            if (currentCode) {
-                recalculateAppliedVoucher(currentCode, calculatedFee)
+            // If vouchers are already applied, recalculate discount with new shipping fee
+            if (selectedShopVoucher || selectedPlatformVoucher) {
+                recalculateAppliedVouchers(selectedShopVoucher, selectedPlatformVoucher, calculatedFee)
             }
         } catch (error) {
             console.error("Failed to calculate shipping fee", error)
@@ -227,34 +235,92 @@ export default function Checkout() {
         }
     }
 
-    const recalculateAppliedVoucher = async (code, curShippingFee = shippingFee) => {
-        try {
-            const codeToUse = (code || appliedVoucher?.code || '').trim()
-            if (!codeToUse) return
+    const recalculateAppliedVouchers = async (shopV, platformV, curShippingFee = shippingFee) => {
+        if (!shopV && !platformV) {
+            setShopDiscountAmount(0)
+            setPlatformDiscountAmount(0)
+            setDiscountAmount(0)
+            return
+        }
 
+        try {
             const res = await voucherService.calculateDiscount({
-                code: codeToUse,
+                shopVoucherCode: shopV?.code || null,
+                platformVoucherCode: platformV?.code || null,
                 shopId: shopId,
                 subtotal: totalPrice,
                 shippingFee: curShippingFee
             })
+
             if (res?.valid) {
-                const voucherData = {
-                    ...res,
-                    code: res.code || codeToUse
-                }
-                setAppliedVoucher(voucherData)
-                setDiscountAmount(Number(res.discountAmount || 0))
+                const sDiscount = Number(res.shopDiscountAmount || 0)
+                const pDiscount = Number(res.platformDiscountAmount || 0)
+                const tDiscount = Number(res.discountAmount || (sDiscount + pDiscount))
+
+                setShopDiscountAmount(sDiscount)
+                setPlatformDiscountAmount(pDiscount)
+                setDiscountAmount(tDiscount)
             } else {
-                setAppliedVoucher(null)
+                setSelectedShopVoucher(null)
+                setSelectedPlatformVoucher(null)
+                setShopDiscountAmount(0)
+                setPlatformDiscountAmount(0)
                 setDiscountAmount(0)
                 toast.error(res?.message || "Voucher không còn thỏa mãn điều kiện đơn hàng")
             }
         } catch (err) {
-            console.warn("Recalculate voucher failed", err)
+            console.warn("Recalculate vouchers failed", err)
         }
     }
 
+    // Modal Confirmation handler
+    const handleApplyMultiVouchers = async ({ shopVoucher, platformVoucher }) => {
+        if (!shopVoucher && !platformVoucher) {
+            setSelectedShopVoucher(null)
+            setSelectedPlatformVoucher(null)
+            setShopDiscountAmount(0)
+            setPlatformDiscountAmount(0)
+            setDiscountAmount(0)
+            toast("Đã bỏ áp dụng tất cả voucher", { icon: 'ℹ️' })
+            return
+        }
+
+        try {
+            setIsApplyingVoucher(true)
+            const res = await voucherService.calculateDiscount({
+                shopVoucherCode: shopVoucher?.code || null,
+                platformVoucherCode: platformVoucher?.code || null,
+                shopId: shopId,
+                subtotal: totalPrice,
+                shippingFee: shippingFee
+            })
+
+            if (res?.valid) {
+                setSelectedShopVoucher(shopVoucher ? { ...shopVoucher, title: res.shopVoucherTitle || shopVoucher.title } : null)
+                setSelectedPlatformVoucher(platformVoucher ? { ...platformVoucher, title: res.platformVoucherTitle || platformVoucher.title } : null)
+
+                const sDiscount = Number(res.shopDiscountAmount || 0)
+                const pDiscount = Number(res.platformDiscountAmount || 0)
+                const tDiscount = Number(res.discountAmount || (sDiscount + pDiscount))
+
+                setShopDiscountAmount(sDiscount)
+                setPlatformDiscountAmount(pDiscount)
+                setDiscountAmount(tDiscount)
+
+                const appliedNames = [shopVoucher?.code, platformVoucher?.code].filter(Boolean).join(' + ')
+                toast.success(`Áp dụng voucher (${appliedNames}) thành công! -${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(tDiscount)}`)
+            } else {
+                toast.error(res?.message || "Không thể áp dụng các voucher đã chọn")
+            }
+        } catch (err) {
+            console.error("Apply vouchers error:", err)
+            toast.error(err?.message || err?.response?.data?.message || "Không thể áp dụng voucher")
+        } finally {
+            setIsApplyingVoucher(false)
+        }
+    }
+
+    // Input bar quick apply handler
     const handleApplyVoucher = async (codeToApply) => {
         const targetCode = (codeToApply || voucherCodeInput || '').trim().toUpperCase()
         if (!targetCode) {
@@ -264,23 +330,63 @@ export default function Checkout() {
 
         try {
             setIsApplyingVoucher(true)
-            const res = await voucherService.calculateDiscount({
-                code: targetCode,
+
+            // 1. Try to classify the entered code
+            const foundInAvailable = availableVouchers.find(v => v.code?.toUpperCase() === targetCode)
+            let isShop = false
+            if (foundInAvailable) {
+                isShop = foundInAvailable.scope === 'SHOP'
+            }
+
+            // Determine prospective slots
+            let prospectiveShopCode = isShop ? targetCode : (selectedShopVoucher?.code || null)
+            let prospectivePlatformCode = !isShop ? targetCode : (selectedPlatformVoucher?.code || null)
+
+            let res = await voucherService.calculateDiscount({
+                shopVoucherCode: prospectiveShopCode,
+                platformVoucherCode: prospectivePlatformCode,
                 shopId: shopId,
                 subtotal: totalPrice,
                 shippingFee: shippingFee
             })
 
+            // If failed due to classification guess, try alternative assignment
+            if (!res?.valid && !foundInAvailable) {
+                res = await voucherService.calculateDiscount({
+                    code: targetCode,
+                    shopId: shopId,
+                    subtotal: totalPrice,
+                    shippingFee: shippingFee
+                })
+            }
+
             if (res?.valid) {
-                const voucherData = {
-                    ...res,
-                    code: res.code || targetCode
+                if (res.shopVoucherCode) {
+                    setSelectedShopVoucher({
+                        code: res.shopVoucherCode,
+                        title: res.shopVoucherTitle || 'Voucher Shop',
+                        scope: 'SHOP'
+                    })
                 }
-                setAppliedVoucher(voucherData)
-                setDiscountAmount(Number(res.discountAmount || 0))
-                setVoucherCodeInput(targetCode)
+                if (res.platformVoucherCode) {
+                    setSelectedPlatformVoucher({
+                        code: res.platformVoucherCode,
+                        title: res.platformVoucherTitle || 'Voucher Sàn',
+                        scope: 'PLATFORM'
+                    })
+                }
+
+                const sDiscount = Number(res.shopDiscountAmount || 0)
+                const pDiscount = Number(res.platformDiscountAmount || 0)
+                const tDiscount = Number(res.discountAmount || (sDiscount + pDiscount))
+
+                setShopDiscountAmount(sDiscount)
+                setPlatformDiscountAmount(pDiscount)
+                setDiscountAmount(tDiscount)
+                setVoucherCodeInput('')
                 setShowVoucherModal(false)
-                toast.success(`Áp dụng mã ${targetCode} thành công! -${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(res.discountAmount)}`)
+
+                toast.success(`Áp dụng mã ${targetCode} thành công! -${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(tDiscount)}`)
             } else {
                 toast.error(res?.message || "Mã giảm giá không hợp lệ hoặc không áp dụng được cho đơn này")
             }
@@ -292,8 +398,25 @@ export default function Checkout() {
         }
     }
 
-    const handleRemoveVoucher = () => {
-        setAppliedVoucher(null)
+    const handleRemoveShopVoucher = () => {
+        setSelectedShopVoucher(null)
+        setShopDiscountAmount(0)
+        recalculateAppliedVouchers(null, selectedPlatformVoucher)
+        toast("Đã bỏ áp dụng Voucher Shop", { icon: 'ℹ️' })
+    }
+
+    const handleRemovePlatformVoucher = () => {
+        setSelectedPlatformVoucher(null)
+        setPlatformDiscountAmount(0)
+        recalculateAppliedVouchers(selectedShopVoucher, null)
+        toast("Đã bỏ áp dụng Voucher Sàn", { icon: 'ℹ️' })
+    }
+
+    const handleRemoveAllVouchers = () => {
+        setSelectedShopVoucher(null)
+        setSelectedPlatformVoucher(null)
+        setShopDiscountAmount(0)
+        setPlatformDiscountAmount(0)
         setDiscountAmount(0)
         setVoucherCodeInput('')
         toast("Đã bỏ áp dụng mã giảm giá", { icon: 'ℹ️' })
@@ -312,13 +435,19 @@ export default function Checkout() {
 
         try {
             setProcessing(true)
-            // 1. Create Order with Voucher Code (if applied)
-            const voucherCodeToSend = appliedVoucher?.code || (voucherCodeInput ? voucherCodeInput.trim() : null)
+
+            // 1. Create Order with Multi-Voucher params
+            const voucherParams = {
+                shopVoucherCode: selectedShopVoucher?.code || null,
+                platformVoucherCode: selectedPlatformVoucher?.code || null,
+                voucherCode: selectedShopVoucher?.code || selectedPlatformVoucher?.code || null
+            }
+
             const order = await orderService.createOrder(
                 shopId,
                 selectedAddressId,
                 notes,
-                voucherCodeToSend || null
+                voucherParams
             )
             toast.success("Đặt hàng thành công!")
 
@@ -403,12 +532,17 @@ export default function Checkout() {
                         <CheckoutVoucherSection
                             voucherCodeInput={voucherCodeInput}
                             setVoucherCodeInput={setVoucherCodeInput}
-                            appliedVoucher={appliedVoucher}
+                            appliedShopVoucher={selectedShopVoucher}
+                            appliedPlatformVoucher={selectedPlatformVoucher}
+                            shopDiscountAmount={shopDiscountAmount}
+                            platformDiscountAmount={platformDiscountAmount}
                             discountAmount={discountAmount}
                             isApplyingVoucher={isApplyingVoucher}
                             availableCount={availableVouchers.length}
                             onApplyVoucher={handleApplyVoucher}
-                            onRemoveVoucher={handleRemoveVoucher}
+                            onRemoveShopVoucher={handleRemoveShopVoucher}
+                            onRemovePlatformVoucher={handleRemovePlatformVoucher}
+                            onRemoveVoucher={handleRemoveAllVouchers}
                             onOpenVoucherModal={() => setShowVoucherModal(true)}
                             isDark={isDark}
                         />
@@ -419,8 +553,11 @@ export default function Checkout() {
                         <CheckoutOrderSummary
                             totalPrice={totalPrice}
                             shippingFee={shippingFee}
+                            appliedShopVoucher={selectedShopVoucher}
+                            appliedPlatformVoucher={selectedPlatformVoucher}
+                            shopDiscountAmount={shopDiscountAmount}
+                            platformDiscountAmount={platformDiscountAmount}
                             discountAmount={discountAmount}
-                            appliedVoucher={appliedVoucher}
                             voucherCodeInput={voucherCodeInput}
                             finalTotal={finalTotal}
                             isCalculatingFee={isCalculatingFee}
@@ -447,9 +584,12 @@ export default function Checkout() {
                 onClose={() => setShowVoucherModal(false)}
                 loading={loadingVouchers}
                 vouchers={availableVouchers}
-                appliedVoucher={appliedVoucher}
+                appliedShopVoucher={selectedShopVoucher}
+                appliedPlatformVoucher={selectedPlatformVoucher}
                 totalPrice={totalPrice}
+                shippingFee={shippingFee}
                 cartItems={cartItems}
+                onApplyMulti={handleApplyMultiVouchers}
                 onApply={handleApplyVoucher}
                 isDark={isDark}
             />
@@ -458,4 +598,5 @@ export default function Checkout() {
         </div>
     )
 }
+
 

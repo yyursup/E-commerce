@@ -17,13 +17,17 @@ const orderService = {
   },
 
   // Checkout Quote (Single Source of Truth for fee and totals)
-  getQuote: async (shopId, addressId, voucherCode = null) => {
+  getQuote: async (shopId, addressId, voucherParam = null) => {
     try {
-      const response = await axiosClient.post('/api/v1/checkout/quote', {
-        shopId,
-        addressId,
-        voucherCode
-      });
+      const payload = { shopId, addressId };
+      if (typeof voucherParam === 'string') {
+        payload.voucherCode = voucherParam;
+      } else if (voucherParam && typeof voucherParam === 'object') {
+        if (voucherParam.voucherCode) payload.voucherCode = voucherParam.voucherCode;
+        if (voucherParam.shopVoucherCode) payload.shopVoucherCode = voucherParam.shopVoucherCode;
+        if (voucherParam.platformVoucherCode) payload.platformVoucherCode = voucherParam.platformVoucherCode;
+      }
+      const response = await axiosClient.post('/api/v1/checkout/quote', payload);
       return response.data;
     } catch (error) {
       throw error.response ? error.response.data : error;
@@ -31,14 +35,17 @@ const orderService = {
   },
 
   // Create Order
-  createOrder: async (shopId, addressId, notes, voucherCode = null) => {
+  createOrder: async (shopId, addressId, notes, voucherParam = null) => {
     try {
-      const response = await axiosClient.post(ORDER_BASE, {
-        shopId,
-        addressId,
-        notes,
-        voucherCode
-      });
+      const payload = { shopId, addressId, notes };
+      if (typeof voucherParam === 'string') {
+        payload.voucherCode = voucherParam;
+      } else if (voucherParam && typeof voucherParam === 'object') {
+        if (voucherParam.voucherCode) payload.voucherCode = voucherParam.voucherCode;
+        if (voucherParam.shopVoucherCode) payload.shopVoucherCode = voucherParam.shopVoucherCode;
+        if (voucherParam.platformVoucherCode) payload.platformVoucherCode = voucherParam.platformVoucherCode;
+      }
+      const response = await axiosClient.post(ORDER_BASE, payload);
       return response.data;
     } catch (error) {
       throw error.response ? error.response.data : error;

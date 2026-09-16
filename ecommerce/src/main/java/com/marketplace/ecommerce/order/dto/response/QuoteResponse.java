@@ -11,5 +11,12 @@ public class QuoteResponse {
     private BigDecimal shippingFee;
     private BigDecimal discountAmount;
     private String voucherCode;
+
+    private String shopVoucherCode;
+    private BigDecimal shopDiscountAmount;
+
+    private String platformVoucherCode;
+    private BigDecimal platformDiscountAmount;
+
     private BigDecimal total;
 }

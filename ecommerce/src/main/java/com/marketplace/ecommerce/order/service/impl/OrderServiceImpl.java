@@ -241,7 +241,6 @@ public class OrderServiceImpl implements OrderService {
             commissionService.createCommission(order.getId());
         }
 
-
         return OrderResponse.from(order);
     }
 
@@ -328,13 +327,20 @@ public class OrderServiceImpl implements OrderService {
                 RoundingMode.HALF_UP);
         order.setPlatformCommission(platformCommission);
         order.setCommissionRate(commissionRate.doubleValue());
+        order.calculateTotal();
 
-        if (request.getVoucherCode() != null && !request.getVoucherCode().isBlank()) {
+        // 1. Persist Order first to avoid TransientPropertyValueException when
+        // UserVoucher references it
+        order = orderRepository.save(order);
+
+        // 2. Apply Vouchers and recalculate total
+        if (request.getShopVoucherCode() != null || request.getPlatformVoucherCode() != null) {
+            voucherService.applyVouchersToOrder(order, request.getShopVoucherCode(), request.getPlatformVoucherCode());
+        } else if (request.getVoucherCode() != null && !request.getVoucherCode().isBlank()) {
             voucherService.applyVoucherToOrder(order, request.getVoucherCode());
         }
 
         order.calculateTotal();
-
         order = orderRepository.save(order);
 
         for (CartItem cartItem : cartItems) {

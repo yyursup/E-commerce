@@ -7,6 +7,7 @@ import {
   HiOutlineUser,
   HiOutlineCog,
   HiOutlineHeart,
+  HiOutlineBell,
   HiOutlineMoon,
   HiOutlineSun,
   HiOutlineMenu,
@@ -23,7 +24,9 @@ import { useThemeStore } from '../store/useThemeStore'
 import { useAuthStore } from '../store/useAuthStore'
 import { useCartStore } from '../store/useCartStore'
 import { useChatStore } from '../store/useChatStore'
+import { useWishlistStore } from '../store/useWishlistStore'
 import cartService from '../services/cart'
+import notificationService from '../services/notification'
 
 const navLinks = [
   { to: '/', label: 'Trang chủ' },
@@ -40,8 +43,13 @@ export default function Navbar() {
 
   const { user, isAuthenticated, logout } = useAuthStore()
   const { totalItems, updateCartCount, resetCart } = useCartStore()
+
   const openInbox = useChatStore((s) => s.openInbox)
   const unreadTotal = useChatStore((s) => s.unreadTotal)
+
+  const { wishlistCount, fetchMyWishlist, resetWishlist } = useWishlistStore()
+  const [unreadNotifCount, setUnreadNotifCount] = useState(0)
+
   const navigate = useNavigate()
 
   const handleSearchSubmit = (e) => {
@@ -56,7 +64,7 @@ export default function Navbar() {
   const isBusiness = userRole === 'BUSINESS' || userRole === 'ADMIN'
   const isAdmin = userRole === 'ADMIN'
 
-  // Fetch cart when authenticated
+  // Fetch cart, wishlist & notifications when authenticated
   useEffect(() => {
     if (isAuthenticated) {
       const fetchCart = async () => {
@@ -64,21 +72,35 @@ export default function Navbar() {
           const cartData = await cartService.getCart()
           updateCartCount(cartData)
         } catch (error) {
-          // Cart might be empty or error, reset count
           console.log('Cart fetch error:', error)
           updateCartCount(null)
         }
       }
+      const fetchNotifCount = async () => {
+        try {
+          const count = await notificationService.getUnreadCount()
+          setUnreadNotifCount(count || 0)
+        } catch (e) {
+          // ignore
+        }
+      }
       fetchCart()
+      fetchMyWishlist()
+      fetchNotifCount()
+
+      const interval = setInterval(fetchNotifCount, 30000)
+      return () => clearInterval(interval)
     } else {
-      // Reset cart when logged out
       resetCart()
+      resetWishlist()
+      setUnreadNotifCount(0)
     }
-  }, [isAuthenticated, updateCartCount, resetCart])
+  }, [isAuthenticated, updateCartCount, resetCart, fetchMyWishlist, resetWishlist])
 
   const handleLogout = () => {
     logout()
-    resetCart() // Clear cart count on logout
+    resetCart()
+    resetWishlist()
     setMobileOpen(false)
     navigate('/login')
   }
@@ -180,6 +202,44 @@ export default function Navbar() {
 
         {/* Right: theme + dropdown + mobile menu */}
         <div className="flex items-center gap-2">
+          {/* Notification Button */}
+          <Link
+            to="/profile?tab=notifications"
+            className={cn(
+              'group relative flex h-9 w-9 items-center justify-center rounded-xl transition-colors',
+              isDark
+                ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-amber-400'
+                : 'bg-stone-100 text-stone-600 hover:bg-stone-200 hover:text-amber-500',
+            )}
+            title="Thông báo của tôi"
+          >
+            <HiOutlineBell className="h-5 w-5" />
+            {unreadNotifCount > 0 && (
+              <span className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-white shadow-sm ring-2 ring-white dark:ring-slate-900">
+                {unreadNotifCount > 99 ? '99+' : unreadNotifCount}
+              </span>
+            )}
+          </Link>
+
+          {/* Wishlist Button */}
+          <Link
+            to="/profile?tab=wishlist"
+            className={cn(
+              'group relative flex h-9 w-9 items-center justify-center rounded-xl transition-colors',
+              isDark
+                ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-rose-400'
+                : 'bg-stone-100 text-stone-600 hover:bg-stone-200 hover:text-rose-500',
+            )}
+            title="Sản phẩm yêu thích"
+          >
+            <HiOutlineHeart className="h-5 w-5" />
+            {wishlistCount > 0 && (
+              <span className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white shadow-sm ring-2 ring-white dark:ring-slate-900">
+                {wishlistCount}
+              </span>
+            )}
+          </Link>
+
           {/* Cart Button */}
           <Link
             to="/cart"
@@ -189,6 +249,7 @@ export default function Navbar() {
                 ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white'
                 : 'bg-stone-100 text-stone-600 hover:bg-stone-200 hover:text-stone-900',
             )}
+            title="Giỏ hàng"
           >
             <HiOutlineShoppingBag className="h-5 w-5" />
             {totalItems > 0 && (
@@ -343,13 +404,38 @@ export default function Navbar() {
                     </Link>
                   </MenuItem>
                   <MenuItem>
-                    <button className={cn(
-                      'flex w-full items-center gap-2 px-4 py-2.5 text-sm transition-colors',
-                      isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-stone-600 hover:bg-stone-50'
-                    )}>
-                      <HiOutlineHeart className="h-4 w-4" />
-                      Yêu thích
-                    </button>
+                    <Link
+                      to="/profile?tab=wishlist"
+                      className={cn(
+                        'flex w-full items-center gap-2 px-4 py-2.5 text-sm transition-colors',
+                        isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-stone-600 hover:bg-stone-50'
+                      )}
+                    >
+                      <HiOutlineHeart className="h-4 w-4 text-rose-500" />
+                      <span>Yêu thích</span>
+                      {wishlistCount > 0 && (
+                        <span className="ml-auto rounded-full bg-rose-500 px-1.5 py-0.2 text-[10px] font-bold text-white">
+                          {wishlistCount}
+                        </span>
+                      )}
+                    </Link>
+                  </MenuItem>
+                  <MenuItem>
+                    <Link
+                      to="/profile?tab=notifications"
+                      className={cn(
+                        'flex w-full items-center gap-2 px-4 py-2.5 text-sm transition-colors',
+                        isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-stone-600 hover:bg-stone-50'
+                      )}
+                    >
+                      <HiOutlineBell className="h-4 w-4 text-amber-500" />
+                      <span>Thông báo</span>
+                      {unreadNotifCount > 0 && (
+                        <span className="ml-auto rounded-full bg-amber-500 px-1.5 py-0.2 text-[10px] font-bold text-white">
+                          {unreadNotifCount > 99 ? '99+' : unreadNotifCount}
+                        </span>
+                      )}
+                    </Link>
                   </MenuItem>
                   <MenuItem>
                     <Link
@@ -502,6 +588,36 @@ export default function Navbar() {
                     className="rounded-lg px-4 py-3 text-left text-sm font-medium text-stone-700 hover:bg-stone-50 dark:text-slate-300 dark:hover:bg-slate-800"
                   >
                     Đơn hàng của tôi
+                  </Link>
+                  <Link
+                    to="/profile?tab=wishlist"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center justify-between rounded-lg px-4 py-3 text-left text-sm font-medium text-stone-700 hover:bg-stone-50 dark:text-slate-300 dark:hover:bg-slate-800"
+                  >
+                    <span className="flex items-center gap-2">
+                      <HiOutlineHeart className="h-4 w-4 text-rose-500" />
+                      Sản phẩm yêu thích
+                    </span>
+                    {wishlistCount > 0 && (
+                      <span className="rounded-full bg-rose-500 px-2 py-0.5 text-[10px] font-bold text-white">
+                        {wishlistCount}
+                      </span>
+                    )}
+                  </Link>
+                  <Link
+                    to="/profile?tab=notifications"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center justify-between rounded-lg px-4 py-3 text-left text-sm font-medium text-stone-700 hover:bg-stone-50 dark:text-slate-300 dark:hover:bg-slate-800"
+                  >
+                    <span className="flex items-center gap-2">
+                      <HiOutlineBell className="h-4 w-4 text-amber-500" />
+                      Thông báo
+                    </span>
+                    {unreadNotifCount > 0 && (
+                      <span className="rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-bold text-white">
+                        {unreadNotifCount > 99 ? '99+' : unreadNotifCount}
+                      </span>
+                    )}
                   </Link>
                   <Link
                     to="/profile"

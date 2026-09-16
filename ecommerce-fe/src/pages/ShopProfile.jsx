@@ -29,6 +29,7 @@ import { cn } from '../lib/cn'
 import shopService from '../services/shop'
 import productService from '../services/product'
 import voucherService from '../services/voucher'
+import socialService from '../services/social'
 
 export default function ShopProfile() {
   const { shopId } = useParams()
@@ -42,6 +43,8 @@ export default function ShopProfile() {
 
   // Interactive States
   const [isFollowing, setIsFollowing] = useState(false)
+  const [followerCount, setFollowerCount] = useState(0)
+  const [isFollowLoading, setIsFollowLoading] = useState(false)
   const [activeTab, setActiveTab] = useState('ALL_PRODUCTS') // 'HOME' | 'ALL_PRODUCTS' | 'ABOUT'
   const [sortBy, setSortBy] = useState('popular') // 'popular' | 'newest' | 'bestseller' | 'price_asc' | 'price_desc'
   const [searchInShop, setSearchInShop] = useState('')
@@ -120,6 +123,22 @@ export default function ShopProfile() {
 
     loadShopData()
     loadVouchers()
+
+    const loadFollowStatus = async () => {
+      if (!shopId) return
+      try {
+        const res = await socialService.getFollowStatus(shopId)
+        if (res) {
+          setIsFollowing(!!res.following)
+          if (typeof res.followerCount === 'number') {
+            setFollowerCount(res.followerCount)
+          }
+        }
+      } catch (err) {
+        console.warn('Could not load follow status:', err)
+      }
+    }
+    loadFollowStatus()
   }, [shopId, isAuthenticated])
 
   // Fetch shop products
@@ -196,16 +215,48 @@ export default function ShopProfile() {
     return list
   }, [products, searchInShop, sortBy])
 
-  const handleFollowToggle = () => {
-    setIsFollowing((prev) => {
-      const next = !prev
-      if (next) {
-        toast.success(`Đã theo dõi ${shop?.name || 'Shop'}`)
-      } else {
-        toast('Đã hủy theo dõi', { icon: '👋' })
+  const handleFollowToggle = async () => {
+    if (isFollowLoading) return
+
+    if (!isAuthenticated) {
+      toast.error('Vui lòng đăng nhập để theo dõi gian hàng và nhận thông báo ưu đãi!', {
+        id: 'shop-follow-toast',
+      })
+      return
+    }
+
+    try {
+      setIsFollowLoading(true)
+      const res = await socialService.toggleFollowShop(shopId)
+      const nextStatus = res?.following ?? !isFollowing
+      setIsFollowing(nextStatus)
+      if (typeof res?.followerCount === 'number') {
+        setFollowerCount(res.followerCount)
       }
-      return next
-    })
+
+      if (nextStatus) {
+        toast.success(
+          res?.message || `Đã theo dõi ${shop?.name || 'Shop'}! Bạn sẽ nhận được thông báo khi Shop có voucher mới.`,
+          {
+            id: 'shop-follow-toast',
+            duration: 3500,
+          }
+        )
+      } else {
+        toast(res?.message || 'Đã hủy theo dõi gian hàng', {
+          id: 'shop-follow-toast',
+          icon: '👋',
+          duration: 2500,
+        })
+      }
+    } catch (err) {
+      console.error('Follow toggle error:', err)
+      toast.error(err?.message || 'Không thể thực hiện thao tác theo dõi', {
+        id: 'shop-follow-toast',
+      })
+    } finally {
+      setIsFollowLoading(false)
+    }
   }
 
   const handleSaveVoucher = async (voucher) => {
@@ -300,14 +351,21 @@ export default function ShopProfile() {
                 <div className="mt-4 flex flex-wrap items-center justify-center sm:justify-start gap-2">
                   <button
                     onClick={handleFollowToggle}
+                    disabled={isFollowLoading}
                     className={cn(
                       'inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition-all active:scale-95 shadow-sm',
+                      isFollowLoading && 'opacity-70 cursor-not-allowed',
                       isFollowing
                         ? 'bg-white/20 text-white hover:bg-white/30 border border-white/20'
                         : 'bg-amber-500 text-white hover:bg-amber-600'
                     )}
                   >
-                    {isFollowing ? (
+                    {isFollowLoading ? (
+                      <>
+                        <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-r-transparent" />
+                        Đang xử lý...
+                      </>
+                    ) : isFollowing ? (
                       <>
                         <HiOutlineCheck className="h-4 w-4" />
                         Đang theo dõi
@@ -393,11 +451,13 @@ export default function ShopProfile() {
 
               <div className="flex items-center gap-3">
                 <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-amber-400 shrink-0">
-                  <HiOutlineClock className="h-5 w-5" />
+                  <HiOutlineUserAdd className="h-5 w-5" />
                 </span>
                 <div>
-                  <div className="text-slate-400 text-xs">Thời Gian Phản Hồi</div>
-                  <div className="font-bold text-white text-base">{shop?.responseTime || 'trong vài phút'}</div>
+                  <div className="text-slate-400 text-xs">Người Theo Dõi</div>
+                  <div className="font-bold text-white text-base">
+                    {followerCount > 0 ? followerCount.toLocaleString() : (shop?.followerCount || 0)}
+                  </div>
                 </div>
               </div>
 

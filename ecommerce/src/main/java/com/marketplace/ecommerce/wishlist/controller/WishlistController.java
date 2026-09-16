@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/wishlist")
+@RequestMapping(version = "1", path = "/wishlist")
 @RequiredArgsConstructor
 public class WishlistController {
 

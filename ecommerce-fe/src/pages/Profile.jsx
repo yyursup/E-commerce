@@ -1,25 +1,39 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuthStore } from '../store/useAuthStore';
 import { useThemeStore } from '../store/useThemeStore';
 import { cn } from '../lib/cn';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Navigate, Link } from 'react-router-dom';
+import { Navigate, Link, useLocation } from 'react-router-dom';
 import Footer from '../components/Footer';
 import AddressManager from '../components/AddressManager';
-import { FiEdit2, FiBell, FiUser, FiClipboard } from 'react-icons/fi';
+import { FiEdit2, FiBell, FiUser, FiClipboard, FiHeart } from 'react-icons/fi';
 import { HiOutlineCreditCard } from 'react-icons/hi';
 import ProfileInfo from './profile/ProfileInfo';
 import BankInfo from './profile/BankInfo';
 import ChangePassword from './profile/ChangePassword';
 import ProfileWallet from './profile/ProfileWallet';
+import WishlistTab from './profile/WishlistTab';
+import NotificationTab from './profile/NotificationTab';
 import MyOrders from './orders/MyOrders';
 
 export default function Profile() {
     const { user, isAuthenticated, logout } = useAuthStore();
     const isDark = useThemeStore((state) => state.theme) === 'dark';
+    const location = useLocation();
 
-    // Tab states: profile | bank | address | password | privacy | personal_info | notifications | orders
-    const [activeTab, setActiveTab] = useState('profile');
+    // Tab states: profile | bank | address | password | privacy | personal_info | notifications | orders | wishlist
+    const [activeTab, setActiveTab] = useState(() => {
+        const params = new URLSearchParams(window.location.search);
+        return params.get('tab') || 'profile';
+    });
+
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const tab = params.get('tab');
+        if (tab) {
+            setActiveTab(tab);
+        }
+    }, [location.search]);
 
     if (!isAuthenticated) {
         return <Navigate to="/login" replace />;
@@ -37,14 +51,10 @@ export default function Profile() {
                 return <ChangePassword isDark={isDark} />;
             case 'wallet':
                 return <ProfileWallet isDark={isDark} />;
+            case 'wishlist':
+                return <WishlistTab isDark={isDark} />;
             case 'notifications':
-                return (
-                    <div className="py-12 text-center">
-                        <p className={cn("text-sm", isDark ? "text-slate-400" : "text-stone-500")}>
-                            Chưa có thông báo nào.
-                        </p>
-                    </div>
-                );
+                return <NotificationTab isDark={isDark} />;
             case 'orders':
                 return (
                     <div className="-mx-4 md:-mx-8 md:-mt-8">
@@ -187,6 +197,24 @@ export default function Profile() {
                                         <FiClipboard size={20} />
                                     </div>
                                     <span>Đơn Mua</span>
+                                </button>
+                            </div>
+
+                            {/* Sản phẩm yêu thích */}
+                            <div>
+                                <button
+                                    onClick={() => setActiveTab('wishlist')}
+                                    className={cn(
+                                        "flex items-center gap-3 w-full text-left font-medium transition-colors mt-4",
+                                        activeTab === 'wishlist'
+                                            ? "text-rose-500"
+                                            : isDark ? "text-slate-200 hover:text-rose-400" : "text-stone-800 hover:text-rose-600"
+                                    )}
+                                >
+                                    <div className="w-6 flex justify-center text-rose-500">
+                                        <FiHeart size={20} />
+                                    </div>
+                                    <span>Yêu thích</span>
                                 </button>
                             </div>
 

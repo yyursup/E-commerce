@@ -127,7 +127,6 @@ public class OrderServiceImpl implements OrderService {
 
         order.setReceivedByBuyer(true);
         order.setReceivedAt(LocalDateTime.now());
-        order.setStatus(OrderStatus.COMPLETED);
         orderRepository.save(order);
         escrowService.releaseByOrder(order.getId());
 

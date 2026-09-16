@@ -8,11 +8,7 @@ import com.marketplace.ecommerce.config.CurrentUser;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping(version = "1", path = "/user")
@@ -37,5 +33,14 @@ public class UserController {
         return ResponseEntity.ok(
                 userService.updateProfile(currentUser.getAccountId(), request)
         );
+    }
+
+    @PutMapping("/password")
+    public ResponseEntity<Void> changePassword(
+            @CurrentUser CurrentUserInfo currentUser,
+            @RequestBody @Valid com.marketplace.ecommerce.auth.dto.request.ChangePasswordRequest request
+    ) {
+        userService.changePassword(currentUser.getAccountId(), request);
+        return ResponseEntity.ok().build();
     }
 }

@@ -53,4 +53,16 @@ public class AuthenticationController {
         AccountCreateResponse response = authenticationService.verifyAccount(request);
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("/forgot-password/send-otp")
+    public ResponseEntity<Void> forgotPasswordSendOtp(@Valid @RequestBody com.marketplace.ecommerce.auth.dto.request.ForgotPasswordRequest request) {
+        authenticationService.forgotPasswordSendOtp(request.getEmail());
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/forgot-password/reset")
+    public ResponseEntity<Void> forgotPasswordReset(@Valid @RequestBody com.marketplace.ecommerce.auth.dto.request.ResetPasswordRequest request) {
+        authenticationService.forgotPasswordReset(request.getEmail(), request.getOtp(), request.getNewPassword());
+        return ResponseEntity.ok().build();
+    }
 }

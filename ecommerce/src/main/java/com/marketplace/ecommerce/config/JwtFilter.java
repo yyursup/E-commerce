@@ -41,6 +41,8 @@ public class JwtFilter extends OncePerRequestFilter {
             "/api/v1/social/shop/follow-status/**",
             "/api/v1/auth/register",
             "/api/v1/auth/verify",
+            "/api/v1/auth/forgot-password/send-otp",
+            "/api/v1/auth/forgot-password/reset",
             "/api/v1/chat/**",
             "/api/v1/ws/chat",
             "/api/v1/ws/chat/**",

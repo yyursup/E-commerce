@@ -7,6 +7,7 @@ import ProductDetail from './pages/product-detail/ProductDetail'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Verify from './pages/Verify'
+import ForgotPassword from './pages/ForgotPassword'
 import Cart from './pages/Cart'
 import Kyc from './pages/kyc/Kyc'
 import Profile from './pages/Profile'
@@ -35,6 +36,7 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/verify" element={<Verify />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
 
         {/* Redirect seller register to Seller Portal */}
         <Route

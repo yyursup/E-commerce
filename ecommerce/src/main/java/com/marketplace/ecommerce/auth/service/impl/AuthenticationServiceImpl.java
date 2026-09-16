@@ -172,6 +172,36 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         emailService.sendOtpForVerifyAccount(mailBody, otp);
     }
 
+    @Override
+    public void forgotPasswordSendOtp(String email) {
+        Account account = accountRepository.findByEmail(email)
+                .orElseThrow(() -> new CustomException("Email not found"));
+        
+        String otp = emailService.generateOTP();
+        
+        MailBody mailBody = new MailBody();
+        mailBody.setTo(account);
+        mailBody.setSubject("Password Reset Request");
+        mailBody.setOtp(otp);
+        emailService.sendOtpForForgotPassword(mailBody, otp);
+    }
+
+    @Override
+    public void forgotPasswordReset(String email, String otp, String newPassword) {
+        boolean isOtpValid = emailService.verifyOtp(email, otp);
+        if (!isOtpValid) {
+            throw new CustomException("OTP is not valid, has expired, or does not match.");
+        }
+
+        Account account = accountRepository.findByEmail(email)
+                .orElseThrow(() -> new CustomException("Email not found"));
+
+        account.setPasswordHash(passwordEncoder.encode(newPassword));
+        accountRepository.save(account);
+        
+        emailService.clearOtp(email);
+    }
+
 
     @Override
     public LoginResponse login(LoginRequest request) {
@@ -194,6 +224,20 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             );
             SecurityContextHolder.getContext().setAuthentication(authentication);
             Account users = (Account) authentication.getPrincipal();
+
+            if (request.getClientType() != null) {
+                String role = users.getRole().getRoleName();
+                String clientType = request.getClientType().toUpperCase();
+                if (clientType.equals("USER") && !role.equals("CUSTOMER")) {
+                    throw new CustomException("Tài khoản của bạn không được phép đăng nhập vào ứng dụng dành cho Người mua.");
+                }
+                if (clientType.equals("SELLER") && !role.equals("BUSINESS")) {
+                    throw new CustomException("Bạn không có quyền truy cập kênh Người bán.");
+                }
+                if (clientType.equals("ADMIN") && !role.equals("ADMIN")) {
+                    throw new CustomException("Bạn không có quyền quản trị viên.");
+                }
+            }
 
             LoginResponse.LoginResponseBuilder builder = LoginResponse.builder()
                     .email(users.getEmail())

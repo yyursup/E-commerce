@@ -6,6 +6,8 @@ import com.marketplace.ecommerce.auth.dto.MailBody;
 public interface EmailService {
     void sendOtpForVerifyAccount(MailBody mailBody, String otp);
 
+    void sendOtpForForgotPassword(MailBody mailBody, String otp);
+
     String generateOTP();
 
     String storageOtp(MailBody mailBody, String otp);

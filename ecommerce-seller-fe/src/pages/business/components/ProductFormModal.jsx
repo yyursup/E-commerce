@@ -7,6 +7,7 @@ import toast from 'react-hot-toast'
 import sellerService from '../../../services/seller'
 import categoryService from '../../../services/category'
 import ImageUpload from './ImageUpload'
+import { getVariantLabelsByCategory } from '../../../lib/variantMapping'
 
 export default function ProductFormModal({ product = null, onClose, onSuccess }) {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
@@ -358,7 +359,11 @@ export default function ProductFormModal({ product = null, onClose, onSuccess })
                   isDark ? 'text-slate-300' : 'text-stone-700',
                 )}
               >
-                Phân loại hàng (Màu sắc / Kích cỡ)
+                Phân loại hàng ({(() => {
+                  const selectedCategoryName = categories.find(c => c.id === formData.categoryId)?.name || '';
+                  const { attr1, attr2 } = getVariantLabelsByCategory(selectedCategoryName);
+                  return `${attr1} / ${attr2}`;
+                })()})
               </label>
               <button
                 type="button"
@@ -372,7 +377,11 @@ export default function ProductFormModal({ product = null, onClose, onSuccess })
 
             {variants.length > 0 && (
               <div className="space-y-3 mb-2">
-                {variants.map((variant, index) => (
+                {variants.map((variant, index) => {
+                  const selectedCategoryName = categories.find(c => c.id === formData.categoryId)?.name || '';
+                  const { attr1, attr2 } = getVariantLabelsByCategory(selectedCategoryName);
+                  
+                  return (
                   <div
                     key={index}
                     className={cn(
@@ -383,7 +392,7 @@ export default function ProductFormModal({ product = null, onClose, onSuccess })
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 flex-1">
                       <input
                         type="text"
-                        placeholder="Màu (VD: Đen)"
+                        placeholder={`${attr1} (VD: Đen)`}
                         value={variant.color || ''}
                         onChange={(e) => {
                           const newVar = [...variants]
@@ -394,7 +403,7 @@ export default function ProductFormModal({ product = null, onClose, onSuccess })
                       />
                       <input
                         type="text"
-                        placeholder="Size (VD: XL, 256GB)"
+                        placeholder={`${attr2} (VD: XL, 256GB)`}
                         value={variant.size || ''}
                         onChange={(e) => {
                           const newVar = [...variants]
@@ -433,9 +442,10 @@ export default function ProductFormModal({ product = null, onClose, onSuccess })
                       title="Xóa phân loại này"
                     >
                       <HiOutlineTrash className="h-4 w-4" />
-                    </button>
-                  </div>
-                ))}
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>

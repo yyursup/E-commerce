@@ -21,6 +21,7 @@ import walletService from '../../services/wallet'
 import SellerProductCard from './components/SellerProductCard'
 import OrderStatusSummary from './components/OrderStatusSummary'
 import ProductFormModal from './components/ProductFormModal'
+import ProductDetailModal from './components/ProductDetailModal'
 
 export default function BusinessDashboard() {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
@@ -40,6 +41,7 @@ export default function BusinessDashboard() {
   const [statusFilter, setStatusFilter] = useState('')
   const [showProductForm, setShowProductForm] = useState(false)
   const [editingProduct, setEditingProduct] = useState(null)
+  const [selectedProduct, setSelectedProduct] = useState(null)
   const [error, setError] = useState(null)
   const [wallet, setWallet] = useState(null)
 
@@ -126,8 +128,8 @@ export default function BusinessDashboard() {
     }
   }
 
-  const handleViewProduct = (productId) => {
-    navigate(`/products/${productId}`)
+  const handleViewProduct = (product) => {
+    setSelectedProduct(product)
   }
 
   const handleEditProduct = (product) => {
@@ -423,7 +425,7 @@ export default function BusinessDashboard() {
                   >
                     <SellerProductCard
                       product={product}
-                      onView={() => handleViewProduct(product.id)}
+                      onView={() => handleViewProduct(product)}
                       onEdit={() => handleEditProduct(product)}
                       onDelete={() => handleDeleteProduct(product.id)}
                     />
@@ -458,6 +460,19 @@ export default function BusinessDashboard() {
           product={editingProduct}
           onClose={handleFormClose}
           onSuccess={handleFormSuccess}
+        />
+      )}
+
+      {/* Product Detail Modal */}
+      {selectedProduct && (
+        <ProductDetailModal
+          product={selectedProduct}
+          onClose={() => setSelectedProduct(null)}
+          onEdit={(prod) => {
+            setSelectedProduct(null)
+            setEditingProduct(prod)
+            setShowProductForm(true)
+          }}
         />
       )}
     </div>

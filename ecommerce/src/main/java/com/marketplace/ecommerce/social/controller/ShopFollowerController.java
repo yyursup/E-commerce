@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/social/shop")
+@RequestMapping(version = "1", path = "/social/shop")
 @RequiredArgsConstructor
 public class ShopFollowerController {
 

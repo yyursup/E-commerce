@@ -42,6 +42,7 @@ public class VoucherServiceImpl implements VoucherService {
     private final OrderRepository orderRepository;
     private final ProductCategoryRepository productCategoryRepository;
     private final CartRepository cartRepository;
+    private final com.marketplace.ecommerce.notification.service.NotificationService notificationService;
 
     @Override
     @Transactional(readOnly = true)
@@ -547,6 +548,15 @@ public class VoucherServiceImpl implements VoucherService {
                 .build();
 
         voucher = voucherRepository.save(voucher);
+
+        if (shop != null) {
+            try {
+                notificationService.notifyFollowersAboutVoucher(shop, voucher);
+            } catch (Exception ex) {
+                log.warn("Failed to send voucher notification to followers of shop {}: {}", shop.getId(), ex.getMessage());
+            }
+        }
+
         return VoucherResponse.from(voucher);
     }
 

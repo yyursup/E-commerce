@@ -12,4 +12,5 @@ import lombok.NoArgsConstructor;
 public class FollowStatusResponse {
     private boolean following;
     private long followerCount;
+    private String message;
 }

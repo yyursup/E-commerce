@@ -31,10 +31,12 @@ import { useThemeStore } from '../../store/useThemeStore'
 import { useAuthStore } from '../../store/useAuthStore'
 import { useCartStore } from '../../store/useCartStore'
 import { useChatStore } from '../../store/useChatStore'
+import { useWishlistStore } from '../../store/useWishlistStore'
 import { cn } from '../../lib/cn'
 import productService from '../../services/product'
 import cartService from '../../services/cart'
 import shopService, { FALLBACK_SHOPS } from '../../services/shop'
+import wishlistService from '../../services/wishlist'
 
 export default function ProductDetail() {
   const { productId } = useParams()
@@ -47,8 +49,7 @@ export default function ProductDetail() {
   const [error, setError] = useState(null)
   const [quantity, setQuantity] = useState(1)
   const [selectedVariant, setSelectedVariant] = useState(null)
-  const [isLiked, setIsLiked] = useState(false)
-  const [likeCount, setLikeCount] = useState(384)
+  const [likeCount, setLikeCount] = useState(0)
   const [addingToCart, setAddingToCart] = useState(false)
   const [showAddAnimation, setShowAddAnimation] = useState(false)
   const [shopProducts, setShopProducts] = useState([])
@@ -58,6 +59,8 @@ export default function ProductDetail() {
 
   const { isAuthenticated } = useAuthStore()
   const { updateCartCount } = useCartStore()
+  const { isWishlisted, toggleWishlist } = useWishlistStore()
+  const isLiked = isWishlisted(productId)
   const addButtonRef = useRef(null)
 
   // 1. Fetch Product
@@ -124,6 +127,15 @@ export default function ProductDetail() {
 
     if (productId) {
       fetchProduct()
+      // Fetch wishlist status and total count
+      wishlistService
+        .getWishlistStatus(productId)
+        .then((res) => {
+          if (res?.wishlistCount !== undefined) {
+            setLikeCount(res.wishlistCount)
+          }
+        })
+        .catch(() => {})
       window.scrollTo(0, 0)
     }
   }, [productId])
@@ -237,13 +249,30 @@ export default function ProductDetail() {
     }
   }
 
-  const handleLikeToggle = () => {
-    setIsLiked((prev) => {
-      const next = !prev
-      setLikeCount((c) => (next ? c + 1 : c - 1))
-      toast.success(next ? 'Đã thêm vào mục Yêu thích' : 'Đã bỏ yêu thích')
-      return next
-    })
+  const handleLikeToggle = async () => {
+    if (!isAuthenticated) {
+      toast.error('Vui lòng đăng nhập để lưu sản phẩm yêu thích')
+      navigate('/login')
+      return
+    }
+
+    try {
+      const res = await toggleWishlist(productId)
+      if (res?.wishlistCount !== undefined) {
+        setLikeCount(res.wishlistCount)
+      } else {
+        setLikeCount((c) => (res?.wishlisted ? c + 1 : Math.max(0, c - 1)))
+      }
+      if (res?.wishlisted) {
+        toast.success('Đã thêm vào mục Yêu thích', { id: 'wishlist-toast' })
+      } else {
+        toast.success('Đã bỏ yêu thích', { id: 'wishlist-toast' })
+      }
+    } catch (err) {
+      console.error('Wishlist toggle error:', err)
+      const msg = err?.message || err?.response?.data?.message || err?.error || 'Không thể cập nhật yêu thích'
+      toast.error(typeof msg === 'string' ? msg : 'Không thể cập nhật yêu thích', { id: 'wishlist-toast' })
+    }
   }
 
   const handleSaveVoucher = (code) => {

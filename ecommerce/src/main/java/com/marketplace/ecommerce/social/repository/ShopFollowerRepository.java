@@ -19,5 +19,7 @@ public interface ShopFollowerRepository extends JpaRepository<ShopFollower, UUID
 
     long countByShopId(UUID shopId);
 
+    java.util.List<ShopFollower> findByShopId(UUID shopId);
+
     Page<ShopFollower> findByUserId(UUID userId, Pageable pageable);
 }

@@ -56,9 +56,14 @@ public class ShopFollowerServiceImpl implements ShopFollowerService {
         }
 
         long count = shopFollowerRepository.countByShopId(shop.getId());
+        String msg = isFollowing
+                ? "Đã theo dõi " + (shop.getName() != null ? shop.getName() : "cửa hàng") + "! Bạn sẽ nhận được thông báo khi Shop có voucher mới."
+                : "Đã hủy theo dõi cửa hàng.";
+
         return FollowStatusResponse.builder()
                 .following(isFollowing)
                 .followerCount(count)
+                .message(msg)
                 .build();
     }
 

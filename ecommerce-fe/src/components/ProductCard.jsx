@@ -1,17 +1,48 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { HiOutlineHeart, HiOutlineShoppingCart, HiStar, HiOutlineCheckCircle } from 'react-icons/hi'
+import toast from 'react-hot-toast'
+import { HiOutlineHeart, HiHeart, HiOutlineShoppingCart, HiStar, HiOutlineCheckCircle } from 'react-icons/hi'
 import { useThemeStore } from '../store/useThemeStore'
+import { useAuthStore } from '../store/useAuthStore'
+import { useWishlistStore } from '../store/useWishlistStore'
 import { cn } from '../lib/cn'
 
 export default function ProductCard({ product, onQuickView, dataAos, dataAosDelay }) {
   const [hover, setHover] = useState(false)
   const isDark = useThemeStore((s) => s.theme) === 'dark'
+  const { isAuthenticated } = useAuthStore()
+  const { isWishlisted, toggleWishlist } = useWishlistStore()
+  const navigate = useNavigate()
 
   if (!product) return null
 
   const { name, price, oldPrice, image, badge, rating, id, shopName, categoryName, shopId } = product
+  const wishlisted = isWishlisted(id)
+
+  const handleWishlistClick = async (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    if (!isAuthenticated) {
+      toast.error('Vui lòng đăng nhập để lưu sản phẩm yêu thích')
+      navigate('/login')
+      return
+    }
+
+    try {
+      const res = await toggleWishlist(id)
+      if (res?.wishlisted) {
+        toast.success(`Đã thêm "${name}" vào mục yêu thích!`, { id: 'wishlist-toast' })
+      } else {
+        toast.success(`Đã bỏ yêu thích "${name}"`, { id: 'wishlist-toast' })
+      }
+    } catch (err) {
+      console.error('Wishlist toggle error:', err)
+      const msg = err?.message || err?.response?.data?.message || err?.error || 'Không thể cập nhật yêu thích'
+      toast.error(typeof msg === 'string' ? msg : 'Không thể cập nhật yêu thích', { id: 'wishlist-toast' })
+    }
+  }
 
   // Robustly resolve thumbnail image from direct prop or images array
   const thumbnailImg =
@@ -114,14 +145,21 @@ export default function ProductCard({ product, onQuickView, dataAos, dataAosDela
           </button>
           <button
             type="button"
-            onClick={(e) => {
-              e.preventDefault()
-              e.stopPropagation()
-            }}
-            className="rounded-xl bg-white/95 p-2 text-stone-700 shadow-lg backdrop-blur hover:bg-white hover:text-rose-500 transition-colors"
-            aria-label="Thêm vào yêu thích"
+            onClick={handleWishlistClick}
+            className={cn(
+              "rounded-xl bg-white/95 p-2 shadow-lg backdrop-blur transition-all",
+              wishlisted
+                ? "text-rose-500 hover:bg-rose-50"
+                : "text-stone-700 hover:bg-white hover:text-rose-500"
+            )}
+            title={wishlisted ? "Bỏ yêu thích" : "Thêm vào yêu thích"}
+            aria-label={wishlisted ? "Bỏ yêu thích" : "Thêm vào yêu thích"}
           >
-            <HiOutlineHeart className="h-4 w-4" />
+            {wishlisted ? (
+              <HiHeart className="h-4 w-4 fill-current text-rose-500" />
+            ) : (
+              <HiOutlineHeart className="h-4 w-4" />
+            )}
           </button>
         </motion.div>
       </Link>

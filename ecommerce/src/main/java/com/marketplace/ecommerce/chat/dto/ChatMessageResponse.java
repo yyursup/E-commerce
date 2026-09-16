@@ -30,6 +30,7 @@ public class ChatMessageResponse {
     private String imageUrl;
     private String videoUrl;
     private Boolean isDeleted;
+    private ThreadType threadType;
 
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime readAt;
@@ -55,6 +56,7 @@ public class ChatMessageResponse {
         return ChatMessageResponse.builder()
                 .id(message.getId())
                 .threadId(message.getThread() != null ? message.getThread().getId() : null)
+                .threadType(message.getThread() != null ? message.getThread().getType() : null)
                 .senderId(message.getSenderId())
                 .senderName(message.getSenderName())
                 .senderAvatar(senderAvatar)

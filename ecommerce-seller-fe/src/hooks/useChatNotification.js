@@ -1,8 +1,9 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 
 const MAX_NOTIFICATIONS = 5
 const AUTO_DISMISS_MS = 5000
 const STORAGE_KEY = 'chat_notif_enabled'
+const MUTED_THREADS_KEY = 'seller_muted_threads'
 
 function playNotificationSound() {
   try {
@@ -39,6 +40,17 @@ function playNotificationSound() {
   }
 }
 
+function getStoredMutedThreads() {
+  try {
+    const stored = localStorage.getItem(MUTED_THREADS_KEY)
+    if (!stored) return []
+    const parsed = JSON.parse(stored)
+    return Array.isArray(parsed) ? parsed.map((id) => String(id).toLowerCase()) : []
+  } catch {
+    return []
+  }
+}
+
 export function useChatNotification() {
   const [notifications, setNotifications] = useState([])
   const [notifEnabled, setNotifEnabled] = useState(() => {
@@ -49,7 +61,68 @@ export function useChatNotification() {
       return true
     }
   })
+  const [mutedThreads, setMutedThreads] = useState(getStoredMutedThreads)
+
   const timersRef = useRef({})
+  const mutedThreadsRef = useRef(mutedThreads)
+  const notifEnabledRef = useRef(notifEnabled)
+
+  useEffect(() => {
+    mutedThreadsRef.current = mutedThreads
+  }, [mutedThreads])
+
+  useEffect(() => {
+    notifEnabledRef.current = notifEnabled
+  }, [notifEnabled])
+
+  // Sync state across components and tabs via custom event and storage events
+  useEffect(() => {
+    const handleStorage = (e) => {
+      if (e.key === STORAGE_KEY) {
+        const next = e.newValue === null ? true : e.newValue === 'true'
+        setNotifEnabled(next)
+      }
+      if (e.key === MUTED_THREADS_KEY) {
+        setMutedThreads(getStoredMutedThreads())
+      }
+    }
+
+    const handleCustomSync = () => {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY)
+        setNotifEnabled(stored === null ? true : stored === 'true')
+      } catch {}
+      setMutedThreads(getStoredMutedThreads())
+    }
+
+    window.addEventListener('storage', handleStorage)
+    window.addEventListener('seller-notif-sync', handleCustomSync)
+
+    return () => {
+      window.removeEventListener('storage', handleStorage)
+      window.removeEventListener('seller-notif-sync', handleCustomSync)
+    }
+  }, [])
+
+  const isThreadMuted = useCallback((threadId) => {
+    if (!threadId) return false
+    const key = String(threadId).toLowerCase()
+    return mutedThreadsRef.current.includes(key)
+  }, [])
+
+  const toggleMuteThread = useCallback((threadId) => {
+    if (!threadId) return
+    const key = String(threadId).toLowerCase()
+    setMutedThreads((prev) => {
+      const exists = prev.includes(key)
+      const next = exists ? prev.filter((id) => id !== key) : [...prev, key]
+      try {
+        localStorage.setItem(MUTED_THREADS_KEY, JSON.stringify(next))
+      } catch {}
+      window.dispatchEvent(new CustomEvent('seller-notif-sync'))
+      return next
+    })
+  }, [])
 
   const dismissNotification = useCallback((id) => {
     setNotifications((prev) => prev.filter((n) => n.id !== id))
@@ -61,7 +134,11 @@ export function useChatNotification() {
 
   const addNotification = useCallback(
     (msg) => {
-      if (!notifEnabled) return
+      if (!notifEnabledRef.current) return
+      if (msg?.threadId && mutedThreadsRef.current.includes(String(msg.threadId).toLowerCase())) {
+        return
+      }
+
       playNotificationSound()
       const id = `notif-${Date.now()}-${Math.random()}`
       const notif = {
@@ -87,7 +164,7 @@ export function useChatNotification() {
         dismissNotification(id)
       }, AUTO_DISMISS_MS)
     },
-    [notifEnabled, dismissNotification],
+    [dismissNotification],
   )
 
   const toggleNotif = useCallback(() => {
@@ -96,6 +173,7 @@ export function useChatNotification() {
       try {
         localStorage.setItem(STORAGE_KEY, String(next))
       } catch {}
+      window.dispatchEvent(new CustomEvent('seller-notif-sync'))
       return next
     })
   }, [])
@@ -106,5 +184,15 @@ export function useChatNotification() {
     setNotifications([])
   }, [])
 
-  return { notifications, notifEnabled, addNotification, dismissNotification, toggleNotif, clearAll }
+  return {
+    notifications,
+    notifEnabled,
+    mutedThreads,
+    isThreadMuted,
+    toggleMuteThread,
+    addNotification,
+    dismissNotification,
+    toggleNotif,
+    clearAll,
+  }
 }

@@ -15,6 +15,7 @@ import { getAccessToken } from '../lib/auth'
 import chatService from '../services/chatService'
 import { addWebSocketListener } from '../services/websocketService'
 import { cn } from '../lib/cn'
+import toast from 'react-hot-toast'
 
 function formatTime(isoString) {
   if (!isoString) return ''
@@ -87,8 +88,15 @@ export default function ChatInboxList({ onClose, notifEnabled, toggleNotif }) {
     const unregUpdated = addWebSocketListener('CHAT_THREAD_UPDATED', (updated) => {
       if (!updated) return
       setThreads((prev) => {
-        const next = prev.filter((t) => String(t.id).toLowerCase() !== String(updated.id).toLowerCase())
-        return [updated, ...next]
+        const exists = prev.some((t) => String(t.id).toLowerCase() === String(updated.id).toLowerCase())
+        if (exists) {
+          return prev.map((t) =>
+            String(t.id).toLowerCase() === String(updated.id).toLowerCase()
+              ? { ...t, ...updated }
+              : t,
+          )
+        }
+        return [updated, ...prev]
       })
     })
 
@@ -149,7 +157,15 @@ export default function ChatInboxList({ onClose, notifEnabled, toggleNotif }) {
           {/* Notification toggle */}
           <button
             type="button"
-            onClick={toggleNotif}
+            onClick={() => {
+              const nextState = !notifEnabled
+              toggleNotif()
+              if (nextState) {
+                toast.success('Đã bật thông báo')
+              } else {
+                toast.success('Đã tắt thông báo')
+              }
+            }}
             className={cn(
               'flex h-8 w-8 items-center justify-center rounded-xl transition',
               isDark ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-stone-100 text-stone-600'

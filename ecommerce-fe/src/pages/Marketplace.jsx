@@ -13,6 +13,7 @@ import {
 } from 'react-icons/hi'
 import { useThemeStore } from '../store/useThemeStore'
 import { useAuthStore } from '../store/useAuthStore'
+import { useChatStore } from '../store/useChatStore'
 import { cn } from '../lib/cn'
 import Footer from '../components/Footer'
 
@@ -337,7 +338,17 @@ export default function Marketplace() {
                     <HiOutlineArrowRight className="h-3.5 w-3.5" />
                   </Link>
                   <button
-                    onClick={() => {}}
+                    type="button"
+                    onClick={() => {
+                      useChatStore.getState().openShopChat({
+                        id: shop.id,
+                        name: shop.name,
+                        logo: shop.logo,
+                        city: shop.city,
+                        mallBadge: shop.mallBadge,
+                        ekycVerified: shop.ekycVerified,
+                      })
+                    }}
                     className={cn(
                       'flex items-center justify-center p-2 rounded-xl border transition-colors',
                       isDark

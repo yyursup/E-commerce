@@ -92,8 +92,16 @@ export default function ShopLiveChat() {
     selectedThreadIdRef.current = selectedThreadId
   }, [selectedThreadId])
 
-  const { notifications, notifEnabled, addNotification, dismissNotification, toggleNotif } =
-    useChatNotification()
+  const {
+    notifications,
+    notifEnabled,
+    mutedThreads,
+    isThreadMuted,
+    toggleMuteThread,
+    addNotification,
+    dismissNotification,
+    toggleNotif,
+  } = useChatNotification()
 
   // Close menus on click outside
   useEffect(() => {
@@ -269,7 +277,12 @@ export default function ShopLiveChat() {
 
       // Toast notification for customer messages
       const isSelf = currentUser?.id && String(msg.senderId).toLowerCase() === String(currentUser.id).toLowerCase()
-      if (msg.senderRole === 'CUSTOMER' && !isSelf) {
+
+      if (
+        msg.senderRole === 'CUSTOMER' &&
+        !isSelf &&
+        !isThreadMuted(msg.threadId)
+      ) {
         addNotification(msg)
       }
     })
@@ -303,10 +316,17 @@ export default function ShopLiveChat() {
           ? { ...updatedThread, unreadCount: 0 }
           : updatedThread
 
-        const filtered = prev.filter(
-          (t) => String(t.id).toLowerCase() !== String(updatedThread.id).toLowerCase(),
+        const exists = prev.some(
+          (t) => String(t.id).toLowerCase() === String(updatedThread.id).toLowerCase(),
         )
-        return [threadWithAdjustedUnread, ...filtered]
+        if (exists) {
+          return prev.map((t) =>
+            String(t.id).toLowerCase() === String(updatedThread.id).toLowerCase()
+              ? { ...t, ...threadWithAdjustedUnread }
+              : t,
+          )
+        }
+        return [threadWithAdjustedUnread, ...prev]
       })
     })
 
@@ -339,7 +359,7 @@ export default function ShopLiveChat() {
       unregThreadNew()
       unregTyping()
     }
-  }, [loadThreads, currentUser?.id, addNotification])
+  }, [loadThreads, currentUser?.id, addNotification, isThreadMuted])
 
   // Load messages when selected thread changes
   useEffect(() => {
@@ -604,6 +624,10 @@ export default function ShopLiveChat() {
       <ChatNotificationToast
         notifications={notifications}
         onDismiss={dismissNotification}
+        onMute={(threadId, senderName) => {
+          toggleMuteThread(threadId)
+          toast.success(`Đã tắt thông báo từ ${senderName || 'khách hàng này'}`)
+        }}
         onOpen={(threadId) => handleSelectThread(threadId)}
         position="top-right"
       />
@@ -656,12 +680,20 @@ export default function ShopLiveChat() {
 
               <button
                 type="button"
-                onClick={toggleNotif}
+                onClick={() => {
+                  const nextState = !notifEnabled
+                  toggleNotif()
+                  if (nextState) {
+                    toast.success('Đã bật tất cả thông báo tin nhắn')
+                  } else {
+                    toast.success('Đã tắt tất cả thông báo tin nhắn')
+                  }
+                }}
                 className={cn(
                   'rounded-xl p-2 transition',
                   isDark ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-stone-200 text-stone-600'
                 )}
-                title={notifEnabled ? 'Tắt âm báo' : 'Bật âm báo'}
+                title={notifEnabled ? 'Tắt tất cả thông báo tin nhắn' : 'Bật thông báo tin nhắn'}
               >
                 {notifEnabled ? (
                   <HiOutlineBell className="h-4 w-4 text-amber-500" />
@@ -747,16 +779,24 @@ export default function ShopLiveChat() {
                     {/* Thread details */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-1 mb-1">
-                        <h4
-                          className={cn(
-                            'text-xs font-bold truncate',
-                            unread > 0
-                              ? isDark ? 'text-white' : 'text-stone-900 font-extrabold'
-                              : isDark ? 'text-slate-200' : 'text-stone-800'
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <h4
+                            className={cn(
+                              'text-xs font-bold truncate',
+                              unread > 0
+                                ? isDark ? 'text-white' : 'text-stone-900 font-extrabold'
+                                : isDark ? 'text-slate-200' : 'text-stone-800'
+                            )}
+                          >
+                            {t.customerName || 'Khách hàng'}
+                          </h4>
+                          {isThreadMuted(t.id) && (
+                            <HiOutlineBellSlash
+                              className="h-3.5 w-3.5 text-stone-400 dark:text-slate-500 shrink-0"
+                              title="Đã tắt thông báo từ khách hàng này"
+                            />
                           )}
-                        >
-                          {t.customerName || 'Khách hàng'}
-                        </h4>
+                        </div>
                         <span className="text-[10px] opacity-50 shrink-0">
                           {formatThreadDate(t.lastMessageAt || t.updatedAt)}
                         </span>
@@ -815,9 +855,17 @@ export default function ShopLiveChat() {
                   </div>
 
                   <div className="min-w-0">
-                    <h3 className="text-sm font-bold truncate">
-                      {selectedThread.customerName || 'Khách hàng'}
-                    </h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-bold truncate">
+                        {selectedThread.customerName || 'Khách hàng'}
+                      </h3>
+                      {isThreadMuted(selectedThread.id) && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-stone-100 dark:bg-slate-800 px-2 py-0.5 text-[10px] font-medium text-stone-500 dark:text-slate-400 border border-stone-200 dark:border-slate-700">
+                          <HiOutlineBellSlash className="h-3 w-3 text-rose-500" />
+                          Đã tắt thông báo
+                        </span>
+                      )}
+                    </div>
                     {partnerTyping ? (
                       <p className="text-[11px] text-amber-500 font-medium animate-pulse">
                         Khách hàng đang soạn tin...
@@ -831,6 +879,40 @@ export default function ShopLiveChat() {
                 </div>
 
                 <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const willMute = !isThreadMuted(selectedThread.id)
+                      toggleMuteThread(selectedThread.id)
+                      if (willMute) {
+                        toast.success(`Đã tắt thông báo từ ${selectedThread.customerName || 'khách hàng này'}`)
+                      } else {
+                        toast.success(`Đã bật thông báo từ ${selectedThread.customerName || 'khách hàng này'}`)
+                      }
+                    }}
+                    className={cn(
+                      'flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition shadow-xs',
+                      isThreadMuted(selectedThread.id)
+                        ? 'border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 hover:bg-rose-100'
+                        : isDark
+                          ? 'border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700'
+                          : 'border-stone-200 bg-white text-stone-700 hover:bg-stone-100'
+                    )}
+                    title={isThreadMuted(selectedThread.id) ? 'Bật lại thông báo từ khách hàng này' : 'Tắt thông báo từ khách hàng này'}
+                  >
+                    {isThreadMuted(selectedThread.id) ? (
+                      <>
+                        <HiOutlineBellSlash className="h-4 w-4 text-rose-500" />
+                        <span className="hidden sm:inline">Bật thông báo</span>
+                      </>
+                    ) : (
+                      <>
+                        <HiOutlineBell className="h-4 w-4 text-amber-500" />
+                        <span className="hidden sm:inline">Tắt thông báo</span>
+                      </>
+                    )}
+                  </button>
+
                   <span className="hidden sm:inline text-xs opacity-50">
                     Mã hội thoại: #{selectedThread.id.slice(0, 8)}
                   </span>

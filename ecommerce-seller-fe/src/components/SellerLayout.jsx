@@ -23,6 +23,7 @@ import {
 } from '../services/websocketService'
 import { useChatNotification } from '../hooks/useChatNotification'
 import ChatNotificationToast from './ChatNotificationToast'
+import toast from 'react-hot-toast'
 
 const navItems = [
   { to: '/dashboard', label: 'Tổng quan (Dashboard)', icon: HiOutlineViewGrid },
@@ -41,7 +42,13 @@ export default function SellerLayout() {
   const isDark = theme === 'dark'
   const [unreadChatTotal, setUnreadChatTotal] = useState(0)
 
-  const { notifications, addNotification, dismissNotification } = useChatNotification()
+  const {
+    notifications,
+    addNotification,
+    dismissNotification,
+    isThreadMuted,
+    toggleMuteThread,
+  } = useChatNotification()
 
   const handleLogout = () => {
     logout()
@@ -86,7 +93,9 @@ export default function SellerLayout() {
 
       fetchUnread()
       if (!location.pathname.startsWith('/chat') && msg.senderRole === 'CUSTOMER') {
-        addNotification(msg)
+        if (!isThreadMuted(msg.threadId)) {
+          addNotification(msg)
+        }
       }
     })
 
@@ -98,7 +107,7 @@ export default function SellerLayout() {
       unregMsg()
       unregUpdated()
     }
-  }, [token, location.pathname, addNotification])
+  }, [token, location.pathname, addNotification, isThreadMuted])
 
   return (
     <div className={cn('min-h-screen flex flex-col', isDark ? 'bg-slate-950 text-slate-100' : 'bg-stone-50 text-stone-900')}>
@@ -221,6 +230,10 @@ export default function SellerLayout() {
       <ChatNotificationToast
         notifications={notifications}
         onDismiss={dismissNotification}
+        onMute={(threadId, senderName) => {
+          toggleMuteThread(threadId)
+          toast.success(`Đã tắt thông báo từ ${senderName || 'khách hàng này'}`)
+        }}
         onOpen={(threadId) => {
           if (threadId) sessionStorage.setItem('seller_selected_thread_id', threadId)
           navigate('/chat')

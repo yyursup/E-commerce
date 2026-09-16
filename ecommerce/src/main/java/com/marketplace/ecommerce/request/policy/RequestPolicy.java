@@ -84,6 +84,17 @@ public class RequestPolicy {
         if (shopRepository.existsByNameIgnoreCase(shopName)) {
             throw new CustomException("Shop name already exists: " + shopName);
         }
+
+        String taxCode = sellerDetail.getTaxCode();
+        if (taxCode != null && !taxCode.trim().isEmpty() && shopRepository.existsByTaxCode(taxCode.trim())) {
+            throw new CustomException("Mã số thuế này đã được sử dụng bởi một gian hàng khác: " + taxCode);
+        }
+
+        String phone = sellerDetail.getShopPhone();
+        if (phone != null && !phone.trim().isEmpty() && shopRepository.existsByPhoneNumber(phone.trim())) {
+            throw new CustomException("Số điện thoại này đã được đăng ký bởi một gian hàng khác: " + phone);
+        }
+
         return new ApproveSellerContext(user, sellerDetail, shopName.trim());
     }
 }

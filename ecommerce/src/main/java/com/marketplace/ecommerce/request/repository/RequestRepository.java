@@ -2,12 +2,15 @@ package com.marketplace.ecommerce.request.repository;
 
 import com.marketplace.ecommerce.request.entity.Request;
 import com.marketplace.ecommerce.request.valueObjects.RequestStatus;
+import com.marketplace.ecommerce.request.valueObjects.RequestType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.UUID;
+
 @Repository
 public interface RequestRepository extends JpaRepository<Request, UUID> {
 
@@ -15,5 +18,7 @@ public interface RequestRepository extends JpaRepository<Request, UUID> {
 
     Page<Request> findAllByStatus(RequestStatus status, Pageable pageable);
 
-    java.util.List<Request> findByAccountIdAndTypeOrderByCreatedAtDesc(UUID accountId, com.marketplace.ecommerce.request.valueObjects.RequestType type);
+    List<Request> findByAccountIdAndTypeOrderByCreatedAtDesc(UUID accountId, RequestType type);
+
+    boolean existsByAccountIdAndTypeAndStatus(UUID accountId, RequestType type, RequestStatus status);
 }

@@ -157,6 +157,17 @@ export default function AdminOrderDetailCard({ order, isDark }) {
               </span>
             </div>
           )}
+          {Number(order.platformCommission) > 0 && (
+            <div className="flex justify-between text-amber-600 dark:text-amber-400">
+              <span className="text-sm flex items-center gap-1 font-medium">
+                <HiOutlineTag className="h-4 w-4" />
+                Hoa hồng sàn {order.commissionRate != null ? `(${order.commissionRate}%)` : ''}
+              </span>
+              <span className="text-sm font-bold">
+                +{formatAdminOrderCurrency(order.platformCommission)}
+              </span>
+            </div>
+          )}
           {order.ghnOrderCode && (
             <div className="flex justify-between">
               <span className={cn('text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
@@ -167,13 +178,26 @@ export default function AdminOrderDetailCard({ order, isDark }) {
               </span>
             </div>
           )}
-          <div className="border-t pt-3">
+          <div className="border-t pt-3 space-y-2">
             <div className="flex justify-between">
               <span className={cn('text-lg font-semibold', isDark ? 'text-white' : 'text-stone-900')}>
-                Tổng cộng
+                Tổng thanh toán khách
               </span>
               <span className={cn('text-lg font-bold', isDark ? 'text-white' : 'text-stone-900')}>
                 {formatAdminOrderCurrency(order.total)}
+              </span>
+            </div>
+            <div className="flex justify-between text-xs text-stone-500 dark:text-slate-400">
+              <span>Thực nhận của Shop (sau hoa hồng & voucher shop):</span>
+              <span className="font-bold text-amber-600 dark:text-amber-400">
+                {formatAdminOrderCurrency(
+                  Math.max(
+                    0,
+                    Number(order.subtotal || 0) -
+                      Number(order.shopDiscountAmount || 0) -
+                      Number(order.platformCommission || 0)
+                  )
+                )}
               </span>
             </div>
           </div>

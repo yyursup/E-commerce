@@ -43,6 +43,8 @@ public class OrderResponse {
     private BigDecimal subtotal;
     private BigDecimal shippingFee;
     private BigDecimal total;
+    private BigDecimal platformCommission;
+    private Double commissionRate;
     private String ghnOrderCode;
     private List<OrderItemResponse> items;
     private LocalDateTime createdAt;
@@ -109,6 +111,8 @@ public class OrderResponse {
                 .subtotal(subtotal)
                 .shippingFee(shippingFee)
                 .total(total)
+                .platformCommission(order.getPlatformCommission() != null ? order.getPlatformCommission() : BigDecimal.ZERO)
+                .commissionRate(order.getCommissionRate())
                 .ghnOrderCode(order.getGhnOrderCode())
                 .items(items)
                 .createdAt(order.getCreatedAt())

@@ -61,6 +61,10 @@ public class Product {
     @Column(name = "weight")
     private Integer weight = 500;
 
+    @Column(name = "sold", nullable = false)
+    @Builder.Default
+    private Integer sold = 0;
+
     @Column(nullable = false)
     private int reportCount = 0;
 

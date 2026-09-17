@@ -19,6 +19,7 @@ public class ProductVariantResponse {
     private String size;
     private BigDecimal price;
     private Integer stock;
+    private Integer sold;
 
     public static ProductVariantResponse from(ProductVariant variant) {
         return ProductVariantResponse.builder()
@@ -27,6 +28,7 @@ public class ProductVariantResponse {
                 .size(variant.getSize())
                 .price(variant.getPrice())
                 .stock(variant.getStock())
+                .sold(variant.getSold())
                 .build();
     }
 }

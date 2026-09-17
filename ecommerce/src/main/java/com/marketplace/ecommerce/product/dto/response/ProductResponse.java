@@ -26,6 +26,7 @@ public class ProductResponse {
     private String status;
     private BigDecimal basePrice;
     private Integer quantity;
+    private Integer sold;
     private List<ProductImageResponse> images;
     private UUID categoryId;
     private String categoryName;
@@ -45,6 +46,7 @@ public class ProductResponse {
                 .status(String.valueOf(product.getStatus()))
                 .basePrice(product.getBasePrice())
                 .quantity(product.getQuantity())
+                .sold(product.getSold())
                 .images(mapImages(product.getImages()))
                 .variants(mapVariants(product.getVariants()))
                 .categoryId(product.getProductCategory().getId())

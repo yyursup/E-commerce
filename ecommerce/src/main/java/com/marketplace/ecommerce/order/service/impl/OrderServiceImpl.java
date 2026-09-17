@@ -392,6 +392,7 @@ public class OrderServiceImpl implements OrderService {
                             + (variant.getSize() != null ? " " + variant.getSize() : "") + ") không đủ số lượng.");
                 }
                 variant.setStock(variant.getStock() - cartItem.getQuantity());
+                variant.setSold((variant.getSold() != null ? variant.getSold() : 0) + cartItem.getQuantity());
                 productVariantRepository.save(variant);
 
                 orderItem.setVariantId(variant.getId());
@@ -404,8 +405,9 @@ public class OrderServiceImpl implements OrderService {
 
             if (product.getQuantity() != null) {
                 product.setQuantity(Math.max(0, product.getQuantity() - cartItem.getQuantity()));
-                productRepository.save(product);
             }
+            product.setSold((product.getSold() != null ? product.getSold() : 0) + cartItem.getQuantity());
+            productRepository.save(product);
 
             orderItem.setUnitPrice(unitPrice);
             orderItem.calculateTotalPrice();

@@ -28,6 +28,12 @@ export default function Login() {
   const onSubmit = async (data) => {
     try {
       const res = await authService.login(data)
+
+      if (res.role === 'ADMIN') {
+        toast.error('Tài khoản Quản trị viên vui lòng đăng nhập tại Cổng Quản Trị (Port 3002).')
+        return
+      }
+
       const userPayload = { email: res.email, role: res.role }
       login(res.token, userPayload)
 

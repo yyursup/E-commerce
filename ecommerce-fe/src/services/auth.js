@@ -24,7 +24,7 @@ const authService = {
             const response = await api.post('/api/v1/auth/login', {
                 username: credentials.username,
                 password: credentials.password,
-                clientType: 'USER'
+                clientType: 'CUSTOMER'
             });
             return response.data;
         } catch (error) {

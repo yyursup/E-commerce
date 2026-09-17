@@ -44,11 +44,11 @@ export default function App() {
           element={<Navigate to="http://localhost:3001/register" replace />}
         />
 
-        {/* Protected routes - require CUSTOMER authentication */}
+        {/* Protected routes - require CUSTOMER or BUSINESS authentication */}
         <Route
           path="/cart"
           element={
-            <ProtectedRoute requireAuth={true} allowedRoles={['CUSTOMER']}>
+            <ProtectedRoute requireAuth={true} allowedRoles={['CUSTOMER', 'BUSINESS']}>
               <Cart />
             </ProtectedRoute>
           }
@@ -56,7 +56,7 @@ export default function App() {
         <Route
           path="/checkout"
           element={
-            <ProtectedRoute requireAuth={true} allowedRoles={['CUSTOMER']}>
+            <ProtectedRoute requireAuth={true} allowedRoles={['CUSTOMER', 'BUSINESS']}>
               <Checkout />
             </ProtectedRoute>
           }
@@ -64,7 +64,7 @@ export default function App() {
         <Route
           path="/payment/vnpay_return"
           element={
-            <ProtectedRoute requireAuth={true} allowedRoles={['CUSTOMER']}>
+            <ProtectedRoute requireAuth={true} allowedRoles={['CUSTOMER', 'BUSINESS']}>
               <PaymentResult />
             </ProtectedRoute>
           }
@@ -72,7 +72,7 @@ export default function App() {
         <Route
           path="/my-orders"
           element={
-            <ProtectedRoute requireAuth={true} allowedRoles={['CUSTOMER']}>
+            <ProtectedRoute requireAuth={true} allowedRoles={['CUSTOMER', 'BUSINESS']}>
               <MyOrders />
             </ProtectedRoute>
           }
@@ -80,7 +80,7 @@ export default function App() {
         <Route
           path="/profile"
           element={
-            <ProtectedRoute requireAuth={true} allowedRoles={['CUSTOMER']}>
+            <ProtectedRoute requireAuth={true} allowedRoles={['CUSTOMER', 'BUSINESS']}>
               <Profile />
             </ProtectedRoute>
           }
@@ -88,7 +88,7 @@ export default function App() {
         <Route
           path="/profile/wallet"
           element={
-            <ProtectedRoute requireAuth={true} allowedRoles={['CUSTOMER']}>
+            <ProtectedRoute requireAuth={true} allowedRoles={['CUSTOMER', 'BUSINESS']}>
               <ProfileWallet />
             </ProtectedRoute>
           }
@@ -96,7 +96,7 @@ export default function App() {
         <Route
           path="/orders"
           element={
-            <ProtectedRoute requireAuth={true} allowedRoles={['CUSTOMER']}>
+            <ProtectedRoute requireAuth={true} allowedRoles={['CUSTOMER', 'BUSINESS']}>
               <MyOrders />
             </ProtectedRoute>
           }
@@ -104,7 +104,7 @@ export default function App() {
         <Route
           path="/orders/:orderId"
           element={
-            <ProtectedRoute requireAuth={true} allowedRoles={['CUSTOMER']}>
+            <ProtectedRoute requireAuth={true} allowedRoles={['CUSTOMER', 'BUSINESS']}>
               <OrderDetail />
             </ProtectedRoute>
           }
@@ -112,7 +112,7 @@ export default function App() {
         <Route
           path="/kyc"
           element={
-            <ProtectedRoute requireAuth={true} allowedRoles={['CUSTOMER']}>
+            <ProtectedRoute requireAuth={true} allowedRoles={['CUSTOMER', 'BUSINESS']}>
               <Kyc />
             </ProtectedRoute>
           }
@@ -120,7 +120,7 @@ export default function App() {
         <Route
           path="/report"
           element={
-            <ProtectedRoute requireAuth={true} allowedRoles={['CUSTOMER']}>
+            <ProtectedRoute requireAuth={true} allowedRoles={['CUSTOMER', 'BUSINESS']}>
               <ReportCreate />
             </ProtectedRoute>
           }

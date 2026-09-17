@@ -36,8 +36,8 @@ export default function ProtectedRoute({ children, allowedRoles = [], requireAut
       if (sellerStatus === 'PENDING' || sellerStatus === 'REJECTED') {
         return <Navigate to="/pending" replace />
       }
-      // Chỉ khi chưa nộp đơn mới chuyển sang form đăng ký
-      return <Navigate to="/register" replace />
+      // Chỉ khi chưa nộp đơn mới chuyển sang form nộp hồ sơ mở shop
+      return <Navigate to="/seller-register" replace />
     }
 
     // Default fallback

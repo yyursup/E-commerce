@@ -25,6 +25,7 @@ import CameraCapture from '../components/CameraCapture'
 import BusinessLicenseUpload from '../components/BusinessLicenseUpload'
 import ShopCoverImageUpload from '../components/ShopCoverImageUpload'
 import GhnAddressSelector from '../components/GhnAddressSelector'
+import BankSelector from '../components/BankSelector'
 
 export default function SellerRegister() {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
@@ -1225,19 +1226,23 @@ export default function SellerRegister() {
                       <label className={cn('mb-1.5 block text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>
                         Tên ngân hàng <span className="text-red-500">*</span>
                       </label>
-                      <div className="relative">
-                        <HiOutlineDocumentText className={cn('absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2', isDark ? 'text-slate-500' : 'text-stone-400')} />
-                        <input
-                          type="text"
-                          placeholder="VD: Vietcombank, Techcombank, MB Bank..."
-                          className={cn('w-full rounded-xl border py-3 pl-10 pr-4 text-sm outline-none transition', isDark ? 'border-slate-600 bg-slate-800/50 text-white' : 'border-stone-300 bg-stone-50/80 text-stone-900', errors.bankName && 'border-red-500/70')}
-                          {...register('bankName', {
-                            required: 'Vui lòng nhập tên ngân hàng',
-                            minLength: { value: 2, message: 'Tên ngân hàng tối thiểu 2 ký tự' },
-                            maxLength: { value: 150, message: 'Tối đa 150 ký tự' },
-                          })}
-                        />
-                      </div>
+                      <BankSelector
+                        value={watch('bankName') || ''}
+                        onChange={(selectedBankName) => {
+                          setValue('bankName', selectedBankName, { shouldValidate: true, shouldDirty: true })
+                        }}
+                        error={errors.bankName?.message}
+                        isDark={isDark}
+                        placeholder="Tìm kiếm hoặc chọn ngân hàng (VD: VCB, MB, BIDV)..."
+                      />
+                      <input
+                        type="hidden"
+                        {...register('bankName', {
+                          required: 'Vui lòng chọn ngân hàng',
+                          minLength: { value: 2, message: 'Tên ngân hàng tối thiểu 2 ký tự' },
+                          maxLength: { value: 150, message: 'Tối đa 150 ký tự' },
+                        })}
+                      />
                       {errors.bankName && <p className="mt-1.5 text-sm text-red-500">{errors.bankName.message}</p>}
                     </div>
 

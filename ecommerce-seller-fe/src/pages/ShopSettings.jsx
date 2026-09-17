@@ -11,6 +11,7 @@ import toast from 'react-hot-toast'
 import { useThemeStore } from '../store/useThemeStore'
 import { useAuthStore } from '../store/useAuthStore'
 import { cn } from '../lib/cn'
+import BankSelector from '../components/BankSelector'
 
 export default function ShopSettings() {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
@@ -120,13 +121,11 @@ export default function ShopSettings() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
             <div>
               <label className="block font-semibold mb-1 text-stone-700 dark:text-slate-300">Tên Ngân Hàng</label>
-              <input
-                type="text"
+              <BankSelector
                 value={bankName}
-                onChange={(e) => setBankName(e.target.value)}
-                className={cn('w-full rounded-xl px-4 py-2.5 border transition-all focus:ring-2 focus:ring-amber-500 focus:outline-none',
-                  isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-200 bg-stone-50 text-stone-900'
-                )}
+                onChange={(val) => setBankName(val)}
+                isDark={isDark}
+                placeholder="Chọn ngân hàng..."
               />
             </div>
 

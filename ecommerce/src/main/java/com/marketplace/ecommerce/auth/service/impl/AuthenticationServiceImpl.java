@@ -225,17 +225,23 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             SecurityContextHolder.getContext().setAuthentication(authentication);
             Account users = (Account) authentication.getPrincipal();
 
-            if (request.getClientType() != null) {
+            if (request.getClientType() != null && !request.getClientType().isBlank()) {
                 String role = users.getRole().getRoleName();
                 String clientType = request.getClientType().toUpperCase();
-                if (clientType.equals("CUSTOMER") && !role.equals("CUSTOMER")) {
-                    throw new CustomException("Tài khoản của bạn không được phép đăng nhập vào ứng dụng dành cho Người mua.");
-                }
-                if (clientType.equals("BUSINESS") && !role.equals("BUSINESS")) {
-                    throw new CustomException("Bạn không có quyền truy cập kênh Người bán.");
-                }
+
+                // 1. Cổng Quản Trị (ADMIN): Chỉ tài khoản ADMIN mới được phép truy cập
                 if (clientType.equals("ADMIN") && !role.equals("ADMIN")) {
-                    throw new CustomException("Bạn không có quyền quản trị viên.");
+                    throw new CustomException("Tài khoản của bạn không có đặc quyền Quản trị viên.");
+                }
+
+                // 2. Cổng Người Mua (CUSTOMER / USER): Cả CUSTOMER và BUSINESS đều có quyền mua sắm. Chặn ADMIN
+                if ((clientType.equals("CUSTOMER") || clientType.equals("USER")) && role.equals("ADMIN")) {
+                    throw new CustomException("Tài khoản Quản trị viên vui lòng đăng nhập tại Cổng Quản Trị (Port 3002).");
+                }
+
+                // 3. Cổng Người Bán (BUSINESS / SELLER): Cho phép cả BUSINESS và CUSTOMER (onboarding). Chặn ADMIN
+                if ((clientType.equals("BUSINESS") || clientType.equals("SELLER")) && role.equals("ADMIN")) {
+                    throw new CustomException("Tài khoản Quản trị viên vui lòng đăng nhập tại Cổng Quản Trị (Port 3002).");
                 }
             }
 
@@ -288,6 +294,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
         LoginResponse.LoginResponseBuilder builder = LoginResponse.builder()
                 .email(account.getEmail())
+                .token(tokenService.createToken(account))
                 .role(account.getRole() != null ? account.getRole().getRoleName() : "CUSTOMER")
                 .accountId(account.getId());
 

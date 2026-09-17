@@ -324,7 +324,7 @@ export default function ProductFormModal({ product = null, onClose, onSuccess })
               {variants.length > 0 ? (
                 <p className="mt-1.5 flex items-start gap-1 text-[11px] font-medium text-amber-600 dark:text-amber-400 leading-tight">
                   <HiOutlineInformationCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-                  <span>Khi nhập phân loại hàng, số lượng tồn kho tự động được tính từ tổng các biến thể ({formData.stockQuantity}), bạn không cần nhập SL ở đây.</span>
+                  <span>Khi nhập phân loại hàng, số lượng tồn kho tự động được tính từ tổng các biến thể, bạn không cần nhập SL ở đây.</span>
                 </p>
               ) : (
                 <p className={cn('mt-1 text-[11px]', isDark ? 'text-slate-400' : 'text-stone-500')}>
@@ -404,68 +404,68 @@ export default function ProductFormModal({ product = null, onClose, onSuccess })
                 {variants.map((variant, index) => {
                   const selectedCategoryName = categories.find(c => c.id === formData.categoryId)?.name || '';
                   const { attr1, attr2 } = getVariantLabelsByCategory(selectedCategoryName);
-                  
+
                   return (
-                  <div
-                    key={index}
-                    className={cn(
-                      'p-3 rounded-xl border flex gap-3 items-start transition-colors',
-                      isDark ? 'border-slate-700 bg-slate-800/60' : 'border-stone-200 bg-stone-50'
-                    )}
-                  >
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 flex-1">
-                      <input
-                        type="text"
-                        placeholder={`${attr1} (VD: Đen)`}
-                        value={variant.color || ''}
-                        onChange={(e) => {
-                          const newVar = [...variants]
-                          newVar[index].color = e.target.value
-                          setVariants(newVar)
-                        }}
-                        className={cn('w-full rounded-lg border px-2.5 py-1.5 text-xs', isDark ? 'border-slate-600 bg-slate-700 text-white' : 'border-stone-300 bg-white text-stone-900')}
-                      />
-                      <input
-                        type="text"
-                        placeholder={`${attr2} (VD: XL, 256GB)`}
-                        value={variant.size || ''}
-                        onChange={(e) => {
-                          const newVar = [...variants]
-                          newVar[index].size = e.target.value
-                          setVariants(newVar)
-                        }}
-                        className={cn('w-full rounded-lg border px-2.5 py-1.5 text-xs', isDark ? 'border-slate-600 bg-slate-700 text-white' : 'border-stone-300 bg-white text-stone-900')}
-                      />
-                      <input
-                        type="number"
-                        placeholder="Giá riêng"
-                        value={variant.price === 0 && !variant.id ? '' : variant.price}
-                        onChange={(e) => {
-                          const newVar = [...variants]
-                          newVar[index].price = e.target.value
-                          setVariants(newVar)
-                        }}
-                        className={cn('w-full rounded-lg border px-2.5 py-1.5 text-xs', isDark ? 'border-slate-600 bg-slate-700 text-white' : 'border-stone-300 bg-white text-stone-900')}
-                      />
-                      <input
-                        type="number"
-                        placeholder="Tồn kho"
-                        value={variant.stock === 0 && !variant.id ? '' : variant.stock}
-                        onChange={(e) => {
-                          const newVar = [...variants]
-                          newVar[index].stock = e.target.value
-                          setVariants(newVar)
-                        }}
-                        className={cn('w-full rounded-lg border px-2.5 py-1.5 text-xs', isDark ? 'border-slate-600 bg-slate-700 text-white' : 'border-stone-300 bg-white text-stone-900')}
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setVariants(variants.filter((_, i) => i !== index))}
-                      className="p-1.5 text-stone-400 hover:text-red-500 rounded-lg transition-colors"
-                      title="Xóa phân loại này"
+                    <div
+                      key={index}
+                      className={cn(
+                        'p-3 rounded-xl border flex gap-3 items-start transition-colors',
+                        isDark ? 'border-slate-700 bg-slate-800/60' : 'border-stone-200 bg-stone-50'
+                      )}
                     >
-                      <HiOutlineTrash className="h-4 w-4" />
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 flex-1">
+                        <input
+                          type="text"
+                          placeholder={`${attr1} (VD: Đen)`}
+                          value={variant.color || ''}
+                          onChange={(e) => {
+                            const newVar = [...variants]
+                            newVar[index].color = e.target.value
+                            setVariants(newVar)
+                          }}
+                          className={cn('w-full rounded-lg border px-2.5 py-1.5 text-xs', isDark ? 'border-slate-600 bg-slate-700 text-white' : 'border-stone-300 bg-white text-stone-900')}
+                        />
+                        <input
+                          type="text"
+                          placeholder={`${attr2} (VD: XL, 256GB)`}
+                          value={variant.size || ''}
+                          onChange={(e) => {
+                            const newVar = [...variants]
+                            newVar[index].size = e.target.value
+                            setVariants(newVar)
+                          }}
+                          className={cn('w-full rounded-lg border px-2.5 py-1.5 text-xs', isDark ? 'border-slate-600 bg-slate-700 text-white' : 'border-stone-300 bg-white text-stone-900')}
+                        />
+                        <input
+                          type="number"
+                          placeholder="Giá riêng"
+                          value={variant.price === 0 && !variant.id ? '' : variant.price}
+                          onChange={(e) => {
+                            const newVar = [...variants]
+                            newVar[index].price = e.target.value
+                            setVariants(newVar)
+                          }}
+                          className={cn('w-full rounded-lg border px-2.5 py-1.5 text-xs', isDark ? 'border-slate-600 bg-slate-700 text-white' : 'border-stone-300 bg-white text-stone-900')}
+                        />
+                        <input
+                          type="number"
+                          placeholder="Tồn kho"
+                          value={variant.stock === 0 && !variant.id ? '' : variant.stock}
+                          onChange={(e) => {
+                            const newVar = [...variants]
+                            newVar[index].stock = e.target.value
+                            setVariants(newVar)
+                          }}
+                          className={cn('w-full rounded-lg border px-2.5 py-1.5 text-xs', isDark ? 'border-slate-600 bg-slate-700 text-white' : 'border-stone-300 bg-white text-stone-900')}
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setVariants(variants.filter((_, i) => i !== index))}
+                        className="p-1.5 text-stone-400 hover:text-red-500 rounded-lg transition-colors"
+                        title="Xóa phân loại này"
+                      >
+                        <HiOutlineTrash className="h-4 w-4" />
                       </button>
                     </div>
                   );

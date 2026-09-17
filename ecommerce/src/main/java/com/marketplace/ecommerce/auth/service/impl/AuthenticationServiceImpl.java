@@ -228,10 +228,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             if (request.getClientType() != null) {
                 String role = users.getRole().getRoleName();
                 String clientType = request.getClientType().toUpperCase();
-                if (clientType.equals("USER") && !role.equals("CUSTOMER")) {
+                if (clientType.equals("CUSTOMER") && !role.equals("CUSTOMER")) {
                     throw new CustomException("Tài khoản của bạn không được phép đăng nhập vào ứng dụng dành cho Người mua.");
                 }
-                if (clientType.equals("SELLER") && !role.equals("BUSINESS")) {
+                if (clientType.equals("BUSINESS") && !role.equals("BUSINESS")) {
                     throw new CustomException("Bạn không có quyền truy cập kênh Người bán.");
                 }
                 if (clientType.equals("ADMIN") && !role.equals("ADMIN")) {

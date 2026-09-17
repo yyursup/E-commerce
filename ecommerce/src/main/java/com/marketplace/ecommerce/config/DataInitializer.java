@@ -441,8 +441,8 @@ public class DataInitializer implements CommandLineRunner {
                                 "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=1200&h=400&fit=crop",
                                 "0987654326",
                                 "72A Nguyễn Trãi, Phường Thượng Đình, Quận Thanh Xuân",
-                                1490, // Thanh Xuân, Hà Nội
-                                "100201",
+                                1493, // Thanh Xuân, Hà Nội
+                                "1A0711",
                                 ShopStatus.ACTIVE,
                                 4.8f,
                                 SellerType.BUSINESS,
@@ -484,7 +484,7 @@ public class DataInitializer implements CommandLineRunner {
 
                 initializeUserAddress(customer4, "Đỗ Thùy Trang", "0906666666",
                                 "22 Phố Bà Triệu, Phường Tràng Tiền", "Hà Nội", "Hoàn Kiếm", "Phường Tràng Tiền",
-                                1482, "10001", true);
+                                1489, "1A0218", true);
 
                 initializeUserAddress(customer5, "Bùi Minh Quân", "0907777777",
                                 "101 Đường Nguyễn Văn Linh, Phường Nam Dương", "Đà Nẵng", "Hải Châu",

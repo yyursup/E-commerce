@@ -121,8 +121,9 @@ public class ShippingServiceImpl implements ShippingService {
             GHNCalculateFeeResponse feeRes = ghnClient.calculateFee(feeReq);
             return BigDecimal.valueOf(feeRes.getTotal());
         } catch (Exception e) {
-            log.error("GHN calculate fee failed", e);
-            throw new CustomException("Can not calculate fee for district " + fromDistrictId);
+            log.warn("GHN calculate fee failed for fromDistrict={}, fromWard={}, toDistrict={}, toWard={}: {}. Falling back to standard fee 30,000 VND.",
+                    fromDistrictId, fromWardCode, toDistrictId, toWardCode, e.getMessage());
+            return BigDecimal.valueOf(30000);
         }
     }
 }

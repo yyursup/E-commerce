@@ -14,4 +14,5 @@ public class CreateOrderRequest {
     private String shopVoucherCode;
     private String platformVoucherCode;
     private java.util.List<String> voucherCodes;
+    private String paymentMethod;
 }

@@ -194,6 +194,14 @@ export default function ShopOrderDetail() {
             <h1 className={cn('text-2xl sm:text-3xl font-black font-mono tracking-tight', isDark ? 'text-white' : 'text-stone-900')}>
               {order.orderNumber}
             </h1>
+            <span className={cn(
+              'px-3 py-1 rounded-full text-xs font-bold border',
+              order.paymentMethod === 'VNPAY'
+                ? 'border-blue-500/30 bg-blue-500/10 text-blue-500'
+                : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+            )}>
+              {order.paymentMethod === 'VNPAY' ? 'VNPAY (Trực tuyến)' : 'COD (Tiền mặt khi nhận)'}
+            </span>
             <OrderStatusBadge status={order.status} className="px-3 py-1 text-xs" />
           </div>
           <p className={cn('mt-1 text-xs sm:text-sm', isDark ? 'text-slate-400' : 'text-stone-500')}>

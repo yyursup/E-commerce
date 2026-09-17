@@ -18,6 +18,7 @@ import CheckoutOrderItems from './components/CheckoutOrderItems'
 import CheckoutVoucherSection from './components/CheckoutVoucherSection'
 import CheckoutVoucherModal from './components/CheckoutVoucherModal'
 import CheckoutOrderSummary from './components/CheckoutOrderSummary'
+import CheckoutPaymentMethodSection from './components/CheckoutPaymentMethodSection'
 
 export default function Checkout() {
     const { isAuthenticated } = useAuthStore()
@@ -49,6 +50,7 @@ export default function Checkout() {
     const [addresses, setAddresses] = useState([])
     const [selectedAddressId, setSelectedAddressId] = useState(null)
     const [notes, setNotes] = useState('')
+    const [paymentMethod, setPaymentMethod] = useState('COD')
     const [processing, setProcessing] = useState(false)
     const [showAddAddress, setShowAddAddress] = useState(false)
 
@@ -447,16 +449,22 @@ export default function Checkout() {
                 shopId,
                 selectedAddressId,
                 notes,
-                voucherParams
+                voucherParams,
+                paymentMethod
             )
             toast.success("Đặt hàng thành công!")
 
-            // 2. Create Payment URL
-            const paymentRes = await orderService.createPayment(order.id)
-            if (paymentRes.paymentUrl) {
-                window.location.href = paymentRes.paymentUrl
-            } else {
+            // 2. Handle Payment Redirection
+            if (paymentMethod === 'COD') {
                 navigate(`/orders/${order.id}`)
+            } else {
+                // VNPAY
+                const paymentRes = await orderService.createPayment(order.id)
+                if (paymentRes.paymentUrl) {
+                    window.location.href = paymentRes.paymentUrl
+                } else {
+                    navigate(`/orders/${order.id}`)
+                }
             }
 
         } catch (error) {
@@ -525,6 +533,13 @@ export default function Checkout() {
                             cartItems={cartItems}
                             notes={notes}
                             setNotes={setNotes}
+                            isDark={isDark}
+                        />
+
+                        {/* Payment Method Section */}
+                        <CheckoutPaymentMethodSection
+                            paymentMethod={paymentMethod}
+                            setPaymentMethod={setPaymentMethod}
                             isDark={isDark}
                         />
 

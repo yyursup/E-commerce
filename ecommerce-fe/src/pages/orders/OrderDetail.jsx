@@ -172,9 +172,19 @@ export default function OrderDetail() {
                 <h1 className={cn('text-2xl font-bold', isDark ? 'text-white' : 'text-stone-900')}>
                   Đơn hàng {order.orderNumber}
                 </h1>
-                <p className={cn('mt-1 text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
-                  Đặt ngày {formatDate(order.createdAt)}
-                </p>
+                <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                  <p className={cn('text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
+                    Đặt ngày {formatDate(order.createdAt)}
+                  </p>
+                  <span className={cn(
+                    "text-xs px-2.5 py-0.5 rounded-full font-medium inline-flex items-center gap-1",
+                    order.paymentMethod === 'VNPAY'
+                      ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
+                      : "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+                  )}>
+                    {order.paymentMethod === 'VNPAY' ? 'VNPAY (Trực tuyến)' : 'COD (Thanh toán khi nhận)'}
+                  </span>
+                </div>
               </div>
               <span
                 className={cn(
@@ -257,6 +267,11 @@ export default function OrderDetail() {
                     >
                       {item.productName}
                     </Link>
+                    {(item.variantColor || item.variantSize) && (
+                      <p className="mt-0.5 text-xs text-stone-500 dark:text-slate-400">
+                        Phân loại: <span className="font-medium text-stone-700 dark:text-slate-300">{[item.variantColor, item.variantSize].filter(Boolean).join(' - ')}</span>
+                      </p>
+                    )}
                     <p className={cn('mt-1 text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
                       Số lượng: {item.quantity}
                     </p>
@@ -355,32 +370,52 @@ export default function OrderDetail() {
                 </div>
               </div>
 
-              {/* Escrow / Payment Status */}
+              {/* Payment Status / Escrow */}
               {!['PENDING_PAYMENT', 'CANCELLED', 'REFUNDED'].includes(order.status) && (
                 <div className="border-t pt-4 mt-4">
                   <h3 className={cn('text-sm font-semibold mb-3', isDark ? 'text-slate-300' : 'text-stone-700')}>
-                    Trạng thái thanh toán (Escrow)
+                    {order.paymentMethod === 'COD' ? 'Phương thức & Thanh toán' : 'Trạng thái thanh toán (Escrow)'}
                   </h3>
-                  {['CONFIRMED', 'PROCESSING', 'SHIPPING', 'SHIPPED', 'DELIVERED'].includes(order.status) && (
-                    <div className={cn('flex items-start gap-3 rounded-xl p-4', isDark ? 'bg-amber-900/20 border border-amber-800/30' : 'bg-amber-50 border border-amber-100')}>
-                      <div className="mt-0.5 p-2 rounded-full bg-amber-500/10 shrink-0">
-                        <HiOutlineLockClosed className="h-4 w-4 text-amber-500" />
+                  {order.paymentMethod === 'COD' ? (
+                    <div className={cn('flex items-start gap-3 rounded-xl p-4', isDark ? 'bg-slate-800/60 border border-slate-700' : 'bg-stone-50 border border-stone-200')}>
+                      <div className="mt-0.5 p-2 rounded-full bg-emerald-500/10 shrink-0">
+                        <HiOutlineTruck className="h-4 w-4 text-emerald-500" />
                       </div>
                       <div>
-                        <p className={cn('text-sm font-semibold', isDark ? 'text-amber-400' : 'text-amber-700')}>
-                          Tiền đang được giữ an toàn (Escrow)
+                        <p className={cn('text-sm font-semibold', isDark ? 'text-emerald-400' : 'text-emerald-700')}>
+                          {order.status === 'COMPLETED' ? 'Đã thanh toán tiền mặt khi nhận hàng' : 'Thanh toán khi nhận hàng (COD)'}
                         </p>
                         <p className={cn('mt-1 text-xs', isDark ? 'text-slate-400' : 'text-stone-500')}>
-                          Số tiền <span className="font-semibold">{formatCurrency(order.subtotal || order.total)}</span> đang được giữ bởi hệ thống escrow.
-                          Tiền sẽ được chuyển cho người bán sau khi bạn xác nhận đã nhận hàng.
+                          {order.status === 'COMPLETED'
+                            ? `Bạn đã thanh toán ${formatCurrency(order.total)} cho nhân viên giao hàng khi nhận kiện hàng.`
+                            : `Vui lòng chuẩn bị sẵn số tiền mặt ${formatCurrency(order.total)} để thanh toán trực tiếp cho nhân viên giao hàng khi nhận hàng.`}
                         </p>
-                        {order.status === 'DELIVERED' && (
-                          <p className={cn('mt-2 text-xs font-medium', isDark ? 'text-amber-300' : 'text-amber-600')}>
-                            ⏱ Nếu bạn không xác nhận trong 3 ngày, hệ thống sẽ tự động giải phóng escrow.
-                          </p>
-                        )}
                       </div>
                     </div>
+                  ) : (
+                    <>
+                      {['CONFIRMED', 'PROCESSING', 'SHIPPING', 'SHIPPED', 'DELIVERED'].includes(order.status) && (
+                        <div className={cn('flex items-start gap-3 rounded-xl p-4', isDark ? 'bg-amber-900/20 border border-amber-800/30' : 'bg-amber-50 border border-amber-100')}>
+                          <div className="mt-0.5 p-2 rounded-full bg-amber-500/10 shrink-0">
+                            <HiOutlineLockClosed className="h-4 w-4 text-amber-500" />
+                          </div>
+                          <div>
+                            <p className={cn('text-sm font-semibold', isDark ? 'text-amber-400' : 'text-amber-700')}>
+                              Tiền đang được giữ an toàn (Escrow)
+                            </p>
+                            <p className={cn('mt-1 text-xs', isDark ? 'text-slate-400' : 'text-stone-500')}>
+                              Số tiền <span className="font-semibold">{formatCurrency(order.subtotal || order.total)}</span> đang được giữ bởi hệ thống escrow.
+                              Tiền sẽ được chuyển cho người bán sau khi bạn xác nhận đã nhận hàng.
+                            </p>
+                            {order.status === 'DELIVERED' && (
+                              <p className={cn('mt-2 text-xs font-medium', isDark ? 'text-amber-300' : 'text-amber-600')}>
+                                ⏱ Nếu bạn không xác nhận trong 3 ngày, hệ thống sẽ tự động giải phóng escrow.
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
                   {order.status === 'COMPLETED' && (
                     <div className={cn('flex items-start gap-3 rounded-xl p-4', isDark ? 'bg-emerald-900/20 border border-emerald-800/30' : 'bg-emerald-50 border border-emerald-100')}>

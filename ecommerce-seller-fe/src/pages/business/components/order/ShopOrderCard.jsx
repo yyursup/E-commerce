@@ -102,6 +102,17 @@ export default function ShopOrderCard({ order, isDark, onQuickStatusUpdate, acti
             </span>
           )}
 
+          <span
+            className={cn(
+              'px-2 py-0.5 rounded text-[11px] font-bold border',
+              order.paymentMethod === 'VNPAY'
+                ? 'border-blue-500/30 bg-blue-500/10 text-blue-500'
+                : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+            )}
+          >
+            {order.paymentMethod === 'VNPAY' ? 'VNPAY' : 'COD'}
+          </span>
+
           <OrderStatusBadge status={order.status} />
         </div>
       </div>
@@ -138,6 +149,17 @@ export default function ShopOrderCard({ order, isDark, onQuickStatusUpdate, acti
                 {items[0]?.productName || 'Sản phẩm'}
               </h4>
 
+              {(items[0]?.variantColor || items[0]?.variantSize) && (
+                <div className="mt-1">
+                  <span className={cn(
+                    'px-2 py-0.5 rounded text-[11px] font-semibold inline-block',
+                    isDark ? 'bg-amber-950/40 text-amber-400 border border-amber-800/40' : 'bg-amber-50 text-amber-700 border border-amber-200'
+                  )}>
+                    Phân loại: {[items[0].variantColor, items[0].variantSize].filter(Boolean).join(' - ')}
+                  </span>
+                </div>
+              )}
+
               <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
                 <span
                   className={cn(
@@ -149,7 +171,7 @@ export default function ShopOrderCard({ order, isDark, onQuickStatusUpdate, acti
                 </span>
                 <span className="text-stone-400">•</span>
                 <span className="font-semibold text-amber-600 dark:text-amber-400">
-                  {formatCurrency(items[0]?.price || items[0]?.totalPrice || 0)}
+                  {formatCurrency(items[0]?.unitPrice || items[0]?.price || items[0]?.totalPrice || 0)}
                 </span>
               </div>
 

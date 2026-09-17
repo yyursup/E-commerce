@@ -256,23 +256,37 @@ export default function MyOrders() {
                           />
                         )}
                         <div className="flex-1">
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <h3 className={cn('font-semibold', isDark ? 'text-white' : 'text-stone-900')}>
                               {order.orderNumber}
                             </h3>
                             <span
                               className={cn(
-                                'inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium',
+                                'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
                                 statusBadge.color,
                               )}
                             >
                               <StatusIcon className="h-3 w-3" />
                               {getStatusLabel(order.status)}
                             </span>
+                            <span className={cn(
+                              "text-[10px] px-2 py-0.5 rounded font-medium",
+                              order.paymentMethod === 'VNPAY'
+                                ? "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
+                                : "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+                            )}>
+                              {order.paymentMethod === 'VNPAY' ? 'VNPAY' : 'COD'}
+                            </span>
                           </div>
                           <p className={cn('mt-1 text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
                             {order.shopName}
                           </p>
+                          {order.items?.[0] && (order.items[0].variantColor || order.items[0].variantSize) && (
+                            <p className="text-xs text-stone-500 dark:text-slate-400 mt-0.5">
+                              Phân loại: {[order.items[0].variantColor, order.items[0].variantSize].filter(Boolean).join(' - ')}
+                              {order.items.length > 1 ? ` (+${order.items.length - 1} sp)` : ''}
+                            </p>
+                          )}
                           <p className={cn('mt-1 text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
                             {order.items?.length || 0} sản phẩm
                           </p>

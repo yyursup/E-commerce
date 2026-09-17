@@ -2,6 +2,7 @@ package com.marketplace.ecommerce.order.entity;
 
 import com.marketplace.ecommerce.auth.entity.User;
 import com.marketplace.ecommerce.order.valueObjects.OrderStatus;
+import com.marketplace.ecommerce.payment.valueObjects.PaymentMethod;
 import com.marketplace.ecommerce.shop.entity.Shop;
 import jakarta.persistence.*;
 import lombok.*;
@@ -44,6 +45,11 @@ public class Order {
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 50)
     private OrderStatus status = OrderStatus.PENDING;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_method", length = 50)
+    @Builder.Default
+    private PaymentMethod paymentMethod = PaymentMethod.COD;
 
     @Column(name = "shipping_name", nullable = false, length = 255)
     private String shippingName;

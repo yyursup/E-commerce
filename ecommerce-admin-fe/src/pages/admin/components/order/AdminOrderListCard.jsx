@@ -34,23 +34,39 @@ export default function AdminOrderListCard({ order, isDark }) {
               />
             )}
             <div className="flex-1">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h3 className={cn('font-semibold', isDark ? 'text-white' : 'text-stone-900')}>
                   {order.orderNumber}
                 </h3>
                 <span
                   className={cn(
-                    'inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium',
+                    'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
                     statusBadge.color,
                   )}
                 >
                   <StatusIcon className="h-3 w-3" />
                   {getAdminOrderStatusLabel(order.status)}
                 </span>
+                <span
+                  className={cn(
+                    'px-2 py-0.5 rounded text-[11px] font-bold border',
+                    order.paymentMethod === 'VNPAY'
+                      ? 'border-blue-500/30 bg-blue-500/10 text-blue-500'
+                      : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                  )}
+                >
+                  {order.paymentMethod === 'VNPAY' ? 'VNPAY' : 'COD'}
+                </span>
               </div>
               <p className={cn('mt-1 text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
                 Shop: {order.shopName} | Khách hàng: {order.userName}
               </p>
+              {order.items?.[0] && (order.items[0].variantColor || order.items[0].variantSize) && (
+                <p className="mt-0.5 text-xs text-stone-500 dark:text-slate-400">
+                  Phân loại: {[order.items[0].variantColor, order.items[0].variantSize].filter(Boolean).join(' - ')}
+                  {order.items.length > 1 ? ` (+${order.items.length - 1} sp)` : ''}
+                </p>
+              )}
               <p className={cn('mt-1 text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
                 {order.items?.length || 0} sản phẩm
               </p>

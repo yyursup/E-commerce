@@ -46,6 +46,7 @@ public class OrderResponse {
     private BigDecimal platformCommission;
     private Double commissionRate;
     private String ghnOrderCode;
+    private String paymentMethod;
     private List<OrderItemResponse> items;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -114,6 +115,7 @@ public class OrderResponse {
                 .platformCommission(order.getPlatformCommission() != null ? order.getPlatformCommission() : BigDecimal.ZERO)
                 .commissionRate(order.getCommissionRate())
                 .ghnOrderCode(order.getGhnOrderCode())
+                .paymentMethod(order.getPaymentMethod() != null ? order.getPaymentMethod().name() : "COD")
                 .items(items)
                 .createdAt(order.getCreatedAt())
                 .updatedAt(order.getUpdatedAt())

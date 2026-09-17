@@ -10,11 +10,25 @@ const BASE_RECONNECT_DELAY = 1000
 // Event listeners map: eventName -> Set of callbacks
 const listeners = new Map()
 
+export const isWebSocketConnected = () => {
+  return ws !== null && ws.readyState === WebSocket.OPEN
+}
+
 export const addWebSocketListener = (event, callback) => {
   if (!listeners.has(event)) {
     listeners.set(event, new Set())
   }
   listeners.get(event).add(callback)
+
+  // If already connected and listener is for CONNECT, fire immediately
+  if (event === 'CONNECT' && isWebSocketConnected()) {
+    try {
+      callback({ connected: true })
+    } catch (e) {
+      console.error('Error firing initial CONNECT event:', e)
+    }
+  }
+
   return () => {
     listeners.get(event)?.delete(callback)
   }
@@ -46,7 +60,12 @@ export const createWebSocketConnection = (token) => {
     closeWebSocketConnection()
   }
 
-  if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    dispatchEvent('CONNECT', { connected: true })
+    return
+  }
+
+  if (ws && ws.readyState === WebSocket.CONNECTING) {
     return
   }
 

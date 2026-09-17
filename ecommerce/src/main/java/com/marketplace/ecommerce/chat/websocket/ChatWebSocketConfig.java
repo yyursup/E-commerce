@@ -21,11 +21,7 @@ public class ChatWebSocketConfig implements WebSocketConfigurer {
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        String[] origins = allowedOrigins == null || allowedOrigins.isBlank()
-                ? new String[] { "*" }
-                : Arrays.stream(allowedOrigins.split("\\s*,\\s*")).filter(s -> !s.isBlank()).toArray(String[]::new);
-
         registry.addHandler(chatWebSocketHandler, "/ws/chat", "/api/v1/ws/chat")
-                .setAllowedOriginPatterns(origins.length > 0 ? origins : new String[] { "*" });
+                .setAllowedOriginPatterns("*");
     }
 }

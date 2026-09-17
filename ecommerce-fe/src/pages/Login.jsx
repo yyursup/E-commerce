@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
@@ -10,10 +10,12 @@ import { useCartStore } from '../store/useCartStore'
 import { cn } from '../lib/cn'
 import authService from '../services/auth'
 import cartService from '../services/cart'
+import voucherService from '../services/voucher'
 
 export default function Login() {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
   const navigate = useNavigate()
+  const location = useLocation()
   const login = useAuthStore((s) => s.login)
   const { updateCartCount } = useCartStore()
 
@@ -26,6 +28,12 @@ export default function Login() {
   const onSubmit = async (data) => {
     try {
       const res = await authService.login(data)
+
+      if (res.role === 'ADMIN') {
+        toast.error('Tài khoản Quản trị viên vui lòng đăng nhập tại Cổng Quản Trị (Port 3002).')
+        return
+      }
+
       const userPayload = { email: res.email, role: res.role }
       login(res.token, userPayload)
 
@@ -38,8 +46,30 @@ export default function Login() {
         updateCartCount(null)
       }
 
+      // Auto-claim pending voucher if coming from welcome modal
+      const pendingCode =
+        location.state?.autoClaimCode || sessionStorage.getItem('pendingClaimVoucherCode')
+      if (pendingCode) {
+        sessionStorage.removeItem('pendingClaimVoucherCode')
+        try {
+          const list = await voucherService.listVouchers({ scope: 'PLATFORM' })
+          const targetVoucher = list?.find(
+            (v) => v.code.toUpperCase() === pendingCode.toUpperCase()
+          )
+          if (targetVoucher && !targetVoucher.isClaimed) {
+            await voucherService.claimVoucher(targetVoucher.id)
+            toast.success(`Đã tự động lưu mã ưu đãi ${targetVoucher.code} vào ví của bạn! 🎉`, {
+              duration: 4000,
+            })
+          }
+        } catch (voucherErr) {
+          console.warn('Auto claim voucher after login error:', voucherErr)
+        }
+      }
+
       toast.success(`Chào mừng trở lại, ${res.email}!`)
-      navigate('/')
+      const redirectUrl = location.state?.from || '/'
+      navigate(redirectUrl)
     } catch (error) {
       console.error('Login error:', error)
       const message = error?.message

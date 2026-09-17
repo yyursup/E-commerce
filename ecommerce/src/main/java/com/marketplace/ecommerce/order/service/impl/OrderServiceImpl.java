@@ -63,6 +63,7 @@ public class OrderServiceImpl implements OrderService {
     private final PlatformSettingService platformSettingService;
     private final EscrowService escrowService;
     private final CommissionService commissionService;
+    private final com.marketplace.ecommerce.voucher.service.VoucherService voucherService;
 
     @Override
     @Transactional
@@ -126,7 +127,6 @@ public class OrderServiceImpl implements OrderService {
 
         order.setReceivedByBuyer(true);
         order.setReceivedAt(LocalDateTime.now());
-        order.setStatus(OrderStatus.COMPLETED);
         orderRepository.save(order);
         escrowService.releaseByOrder(order.getId());
 
@@ -210,6 +210,8 @@ public class OrderServiceImpl implements OrderService {
 
         if (newStatus == OrderStatus.CANCELLED) {
 
+            voucherService.rollbackVoucherUsage(order);
+
             for (OrderItem item : order.getItems()) {
                 if (item.getProduct() != null) {
                     Product p = item.getProduct();
@@ -237,7 +239,6 @@ public class OrderServiceImpl implements OrderService {
 
             commissionService.createCommission(order.getId());
         }
-
 
         return OrderResponse.from(order);
     }
@@ -327,6 +328,18 @@ public class OrderServiceImpl implements OrderService {
         order.setCommissionRate(commissionRate.doubleValue());
         order.calculateTotal();
 
+        // 1. Persist Order first to avoid TransientPropertyValueException when
+        // UserVoucher references it
+        order = orderRepository.save(order);
+
+        // 2. Apply Vouchers and recalculate total
+        if (request.getShopVoucherCode() != null || request.getPlatformVoucherCode() != null) {
+            voucherService.applyVouchersToOrder(order, request.getShopVoucherCode(), request.getPlatformVoucherCode());
+        } else if (request.getVoucherCode() != null && !request.getVoucherCode().isBlank()) {
+            voucherService.applyVoucherToOrder(order, request.getVoucherCode());
+        }
+
+        order.calculateTotal();
         order = orderRepository.save(order);
 
         for (CartItem cartItem : cartItems) {

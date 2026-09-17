@@ -23,7 +23,8 @@ const authService = {
             // Backend expects 'username' and 'password'
             const response = await api.post('/api/v1/auth/login', {
                 username: credentials.username,
-                password: credentials.password
+                password: credentials.password,
+                clientType: 'CUSTOMER'
             });
             return response.data;
         } catch (error) {
@@ -53,6 +54,16 @@ const authService = {
         }
     },
 
+    // Get current user profile & shop status
+    getMe: async () => {
+        try {
+            const response = await axiosClient.get('/api/v1/auth/me');
+            return response.data;
+        } catch (error) {
+            throw error.response ? error.response.data : error;
+        }
+    },
+
     // Update profile: fullName, phoneNumber, gender, dateOfBirth, avatarFile (optional)
     updateProfile: async ({ fullName, phoneNumber, gender, dateOfBirth, avatarFile }) => {
         const formData = new FormData();
@@ -71,6 +82,40 @@ const authService = {
             throw error.response ? error.response.data : error;
         }
     },
+
+    forgotPasswordSendOtp: async (email) => {
+        try {
+            const response = await api.post('/api/v1/auth/forgot-password/send-otp', { email });
+            return response.data;
+        } catch (error) {
+            throw error.response ? error.response.data : error;
+        }
+    },
+
+    forgotPasswordReset: async (data) => {
+        try {
+            const response = await api.post('/api/v1/auth/forgot-password/reset', {
+                email: data.email,
+                otp: data.otp,
+                newPassword: data.newPassword,
+            });
+            return response.data;
+        } catch (error) {
+            throw error.response ? error.response.data : error;
+        }
+    },
+
+    changePassword: async (data) => {
+        try {
+            const response = await axiosClient.put('/api/v1/user/password', {
+                oldPassword: data.oldPassword,
+                newPassword: data.newPassword,
+            });
+            return response.data;
+        } catch (error) {
+            throw error.response ? error.response.data : error;
+        }
+    }
 };
 
 export default authService;

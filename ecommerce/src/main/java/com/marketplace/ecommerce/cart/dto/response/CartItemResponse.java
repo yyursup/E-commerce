@@ -2,6 +2,7 @@ package com.marketplace.ecommerce.cart.dto.response;
 
 import com.marketplace.ecommerce.cart.entity.CartItem;
 import com.marketplace.ecommerce.product.entity.ProductImage;
+import com.marketplace.ecommerce.product.entity.ProductVariant;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -27,8 +28,15 @@ public class CartItemResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    private UUID variantId;
+    private String variantColor;
+    private String variantSize;
+
     private UUID shopId;
     private String shopName;
+
+    private UUID categoryId;
+    private String categoryName;
 
     public static CartItemResponse fromCartItem(CartItem cartItem) {
         String imageUrl = null;
@@ -45,6 +53,14 @@ public class CartItemResponse {
                     .findFirst()
                     .orElse(null);
         }
+        ProductVariant variant = null;
+        if (cartItem.getVariantId() != null && cartItem.getProduct() != null && cartItem.getProduct().getVariants() != null) {
+            variant = cartItem.getProduct().getVariants().stream()
+                    .filter(v -> v.getId().equals(cartItem.getVariantId()))
+                    .findFirst()
+                    .orElse(null);
+        }
+
         return CartItemResponse.builder()
                 .id(cartItem.getId())
                 .productId(cartItem.getProduct() != null ? cartItem.getProduct().getId() : null)
@@ -55,8 +71,13 @@ public class CartItemResponse {
                 .totalPrice(cartItem.getTotalPrice())
                 .createdAt(cartItem.getCreatedAt())
                 .updatedAt(cartItem.getUpdatedAt())
+                .variantId(cartItem.getVariantId())
+                .variantColor(variant != null ? variant.getColor() : null)
+                .variantSize(variant != null ? variant.getSize() : null)
                 .shopId(cartItem.getProduct() != null && cartItem.getProduct().getShop() != null ? cartItem.getProduct().getShop().getId() : null)
                 .shopName(cartItem.getProduct() != null && cartItem.getProduct().getShop() != null ? cartItem.getProduct().getShop().getName() : null)
+                .categoryId(cartItem.getProduct() != null && cartItem.getProduct().getProductCategory() != null ? cartItem.getProduct().getProductCategory().getId() : null)
+                .categoryName(cartItem.getProduct() != null && cartItem.getProduct().getProductCategory() != null ? cartItem.getProduct().getProductCategory().getName() : null)
                 .build();
     }
 }

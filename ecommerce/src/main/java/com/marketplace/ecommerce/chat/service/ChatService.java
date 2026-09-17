@@ -13,10 +13,12 @@ import java.util.UUID;
 public interface ChatService {
 
     List<ChatThreadResponse> getThreads(CurrentUserInfo principal);
+    List<ChatThreadResponse> getThreads(CurrentUserInfo principal, String type);
 
     ChatThreadResponse getOrCreateSupportThread(CurrentUserInfo principal);
 
     ChatThreadResponse getOrCreateShopThread(CurrentUserInfo principal, UUID shopId);
+    ChatThreadResponse getOrCreateShopThread(CurrentUserInfo principal, String shopIdStr);
 
     ChatThreadResponse getThreadById(CurrentUserInfo principal, UUID threadId);
 
@@ -35,4 +37,6 @@ public interface ChatService {
     void markRead(CurrentUserInfo principal, UUID threadId);
 
     void closeThread(CurrentUserInfo principal, UUID threadId);
+
+    void handleTyping(CurrentUserInfo principal, UUID threadId, boolean isTyping);
 }

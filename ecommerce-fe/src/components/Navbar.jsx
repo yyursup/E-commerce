@@ -7,6 +7,7 @@ import {
   HiOutlineUser,
   HiOutlineCog,
   HiOutlineHeart,
+  HiOutlineBell,
   HiOutlineMoon,
   HiOutlineSun,
   HiOutlineMenu,
@@ -16,12 +17,17 @@ import {
   HiOutlineChartBar,
   HiOutlineShieldCheck,
   HiOutlineSearch,
+  HiOutlineChat,
 } from 'react-icons/hi'
 import { cn } from '../lib/cn'
 import { useThemeStore } from '../store/useThemeStore'
 import { useAuthStore } from '../store/useAuthStore'
 import { useCartStore } from '../store/useCartStore'
+import { useChatStore } from '../store/useChatStore'
+import { useWishlistStore } from '../store/useWishlistStore'
 import cartService from '../services/cart'
+import notificationService from '../services/notification'
+import AdvancedSearchBar from './AdvancedSearchBar'
 
 const navLinks = [
   { to: '/', label: 'Trang chủ' },
@@ -38,6 +44,13 @@ export default function Navbar() {
 
   const { user, isAuthenticated, logout } = useAuthStore()
   const { totalItems, updateCartCount, resetCart } = useCartStore()
+
+  const openInbox = useChatStore((s) => s.openInbox)
+  const unreadTotal = useChatStore((s) => s.unreadTotal)
+
+  const { wishlistCount, fetchMyWishlist, resetWishlist } = useWishlistStore()
+  const [unreadNotifCount, setUnreadNotifCount] = useState(0)
+
   const navigate = useNavigate()
 
   const handleSearchSubmit = (e) => {
@@ -52,7 +65,7 @@ export default function Navbar() {
   const isBusiness = userRole === 'BUSINESS' || userRole === 'ADMIN'
   const isAdmin = userRole === 'ADMIN'
 
-  // Fetch cart when authenticated
+  // Fetch cart, wishlist & notifications when authenticated
   useEffect(() => {
     if (isAuthenticated) {
       const fetchCart = async () => {
@@ -60,21 +73,35 @@ export default function Navbar() {
           const cartData = await cartService.getCart()
           updateCartCount(cartData)
         } catch (error) {
-          // Cart might be empty or error, reset count
           console.log('Cart fetch error:', error)
           updateCartCount(null)
         }
       }
+      const fetchNotifCount = async () => {
+        try {
+          const count = await notificationService.getUnreadCount()
+          setUnreadNotifCount(count || 0)
+        } catch (e) {
+          // ignore
+        }
+      }
       fetchCart()
+      fetchMyWishlist()
+      fetchNotifCount()
+
+      const interval = setInterval(fetchNotifCount, 30000)
+      return () => clearInterval(interval)
     } else {
-      // Reset cart when logged out
       resetCart()
+      resetWishlist()
+      setUnreadNotifCount(0)
     }
-  }, [isAuthenticated, updateCartCount, resetCart])
+  }, [isAuthenticated, updateCartCount, resetCart, fetchMyWishlist, resetWishlist])
 
   const handleLogout = () => {
     logout()
-    resetCart() // Clear cart count on logout
+    resetCart()
+    resetWishlist()
     setMobileOpen(false)
     navigate('/login')
   }
@@ -88,7 +115,34 @@ export default function Navbar() {
           : 'border-stone-200/80 bg-white/95 backdrop-blur',
       )}
     >
-      <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      {/* Top micro bar */}
+      <div className={cn('border-b py-1 px-4 sm:px-8 text-[11px] flex justify-between items-center transition-colors',
+        isDark ? 'bg-slate-950/80 border-slate-800 text-slate-400' : 'bg-stone-50 border-stone-200 text-stone-500'
+      )}>
+        <div className="flex items-center gap-4">
+          <a
+            href="http://localhost:3001"
+            target="_blank"
+            rel="noreferrer"
+            className="font-semibold text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1"
+          >
+            🏪 Kênh Người Bán
+          </a>
+          <span className="hidden sm:inline text-stone-300 dark:text-slate-700">|</span>
+          <a
+            href="http://localhost:3001/register"
+            target="_blank"
+            rel="noreferrer"
+            className="hidden sm:inline hover:text-amber-500 transition-colors"
+          >
+            Trở thành Người bán
+          </a>
+        </div>
+        <div className="flex items-center gap-3 text-stone-400 text-[10px]">
+          <span>Hotline CSKH: 1900 1234</span>
+        </div>
+      </div>
+      <nav className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8 gap-4 md:gap-8">
         {/* Logo */}
         <Link
           to="/"
@@ -109,46 +163,50 @@ export default function Navbar() {
           </span>
         </Link>
 
-        {/* Desktop Search bar */}
-        <form
-          onSubmit={handleSearchSubmit}
-          className="hidden flex-1 max-w-md mx-6 lg:flex items-center relative"
-        >
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Tìm kiếm sản phẩm, danh mục, shop..."
-            className={cn(
-              'w-full rounded-full pl-10 pr-4 py-2 text-sm border transition-all focus:outline-none focus:ring-2 focus:ring-amber-500',
-              isDark
-                ? 'bg-slate-800/80 border-slate-700 text-white placeholder-slate-400 focus:bg-slate-800'
-                : 'bg-stone-100/90 border-stone-200 text-stone-900 placeholder-stone-400 focus:bg-white',
-            )}
-          />
-          <HiOutlineSearch className="absolute left-3.5 h-4 w-4 text-stone-400 dark:text-slate-400" />
-        </form>
+        <AdvancedSearchBar />
 
-        {/* Desktop nav */}
-        <div className="hidden items-center gap-1 md:flex">
-          {navLinks.map(({ to, label }) => (
-            <Link
-              key={to}
-              to={to}
-              className={cn(
-                'rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                isDark
-                  ? 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                  : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900',
-              )}
-            >
-              {label}
-            </Link>
-          ))}
-        </div>
+        {/* Desktop nav links moved to secondary bar below */}
 
         {/* Right: theme + dropdown + mobile menu */}
         <div className="flex items-center gap-2">
+          {/* Notification Button */}
+          <Link
+            to="/profile?tab=notifications"
+            className={cn(
+              'group relative flex h-9 w-9 items-center justify-center rounded-xl transition-colors',
+              isDark
+                ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-amber-400'
+                : 'bg-stone-100 text-stone-600 hover:bg-stone-200 hover:text-amber-500',
+            )}
+            title="Thông báo của tôi"
+          >
+            <HiOutlineBell className="h-5 w-5" />
+            {unreadNotifCount > 0 && (
+              <span className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-white shadow-sm ring-2 ring-white dark:ring-slate-900">
+                {unreadNotifCount > 99 ? '99+' : unreadNotifCount}
+              </span>
+            )}
+          </Link>
+
+          {/* Wishlist Button */}
+          <Link
+            to="/profile?tab=wishlist"
+            className={cn(
+              'group relative flex h-9 w-9 items-center justify-center rounded-xl transition-colors',
+              isDark
+                ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-rose-400'
+                : 'bg-stone-100 text-stone-600 hover:bg-stone-200 hover:text-rose-500',
+            )}
+            title="Sản phẩm yêu thích"
+          >
+            <HiOutlineHeart className="h-5 w-5" />
+            {wishlistCount > 0 && (
+              <span className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white shadow-sm ring-2 ring-white dark:ring-slate-900">
+                {wishlistCount}
+              </span>
+            )}
+          </Link>
+
           {/* Cart Button */}
           <Link
             to="/cart"
@@ -158,6 +216,7 @@ export default function Navbar() {
                 ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white'
                 : 'bg-stone-100 text-stone-600 hover:bg-stone-200 hover:text-stone-900',
             )}
+            title="Giỏ hàng"
           >
             <HiOutlineShoppingBag className="h-5 w-5" />
             {totalItems > 0 && (
@@ -166,6 +225,26 @@ export default function Navbar() {
               </span>
             )}
           </Link>
+
+          {/* Chat / Inbox Button */}
+          <button
+            type="button"
+            onClick={() => openInbox()}
+            title="Hộp thư & Trò chuyện"
+            className={cn(
+              'group relative flex h-9 w-9 items-center justify-center rounded-xl transition-colors',
+              isDark
+                ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white'
+                : 'bg-stone-100 text-stone-600 hover:bg-stone-200 hover:text-stone-900',
+            )}
+          >
+            <HiOutlineChat className="h-5 w-5" />
+            {unreadTotal > 0 && (
+              <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 px-1 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white shadow-sm ring-2 ring-white dark:ring-slate-900">
+                {unreadTotal > 99 ? '99+' : unreadTotal}
+              </span>
+            )}
+          </button>
 
           {/* Theme toggle */}
           <button
@@ -264,68 +343,21 @@ export default function Navbar() {
                       </p>
                     )}
                   </div>
-                  {isAdmin && (
-                    <MenuItem>
-                      <Link
-                        to="/admin"
-                        className={cn(
-                          'flex w-full items-center gap-2 px-4 py-2.5 text-sm transition-colors',
-                          isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-stone-600 hover:bg-stone-50'
-                        )}
-                      >
-                        <HiOutlineCog className="h-4 w-4" />
-                        Admin
-                      </Link>
-                    </MenuItem>
-                  )}
-
-                  {/* Business Dashboard Link */}
-                  {userRole === 'BUSINESS' && (
-                    <MenuItem>
-                      <Link
-                        to="/business"
-                        className={cn(
-                          'flex w-full items-center gap-2 px-4 py-2.5 text-sm transition-colors',
-                          isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-stone-600 hover:bg-stone-50'
-                        )}
-                      >
-                        <HiOutlineChartBar className="h-4 w-4" />
-                        Dashboard Doanh Nghiệp
-                      </Link>
-                    </MenuItem>
-                  )}
-
-                  {/* Admin Dashboard Link */}
-                  {isAdmin && (
-                    <MenuItem>
-                      <Link
-                        to="/admin"
-                        className={cn(
-                          'flex w-full items-center gap-2 px-4 py-2.5 text-sm transition-colors',
-                          isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-stone-600 hover:bg-stone-50'
-                        )}
-                      >
-                        <HiOutlineShieldCheck className="h-4 w-4" />
-                        Admin Dashboard
-                      </Link>
-                    </MenuItem>
-                  )}
-
-                  {/* Seller Register - only for CUSTOMER */}
-                  {userRole === 'CUSTOMER' && (
-                    <MenuItem>
-                      <Link
-                        to="/seller/register"
-                        className={cn(
-                          'flex w-full items-center gap-2 px-4 py-2.5 text-sm transition-colors',
-                          isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-stone-600 hover:bg-stone-50'
-                        )}
-                      >
-                        <HiOutlineShoppingBag className="h-4 w-4" />
-                        Đăng ký bán hàng
-                      </Link>
-                    </MenuItem>
-                  )}
+                  {/* Seller Portal Link */}
+                  <MenuItem>
+                    <a
+                      href="http://localhost:3001"
+                      target="_blank"
+                      rel="noreferrer"
+                      className={cn(
+                        'flex w-full items-center gap-2 px-4 py-2.5 text-sm font-semibold text-amber-600 dark:text-amber-400 transition-colors',
+                        isDark ? 'hover:bg-slate-700' : 'hover:bg-amber-50'
+                      )}
+                    >
+                      <HiOutlineShoppingBag className="h-4 w-4" />
+                      Kênh Người Bán (Seller Centre)
+                    </a>
+                  </MenuItem>
                   <MenuItem>
                     <Link
                       to="/my-orders"
@@ -339,13 +371,38 @@ export default function Navbar() {
                     </Link>
                   </MenuItem>
                   <MenuItem>
-                    <button className={cn(
-                      'flex w-full items-center gap-2 px-4 py-2.5 text-sm transition-colors',
-                      isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-stone-600 hover:bg-stone-50'
-                    )}>
-                      <HiOutlineHeart className="h-4 w-4" />
-                      Yêu thích
-                    </button>
+                    <Link
+                      to="/profile?tab=wishlist"
+                      className={cn(
+                        'flex w-full items-center gap-2 px-4 py-2.5 text-sm transition-colors',
+                        isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-stone-600 hover:bg-stone-50'
+                      )}
+                    >
+                      <HiOutlineHeart className="h-4 w-4 text-rose-500" />
+                      <span>Yêu thích</span>
+                      {wishlistCount > 0 && (
+                        <span className="ml-auto rounded-full bg-rose-500 px-1.5 py-0.2 text-[10px] font-bold text-white">
+                          {wishlistCount}
+                        </span>
+                      )}
+                    </Link>
+                  </MenuItem>
+                  <MenuItem>
+                    <Link
+                      to="/profile?tab=notifications"
+                      className={cn(
+                        'flex w-full items-center gap-2 px-4 py-2.5 text-sm transition-colors',
+                        isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-stone-600 hover:bg-stone-50'
+                      )}
+                    >
+                      <HiOutlineBell className="h-4 w-4 text-amber-500" />
+                      <span>Thông báo</span>
+                      {unreadNotifCount > 0 && (
+                        <span className="ml-auto rounded-full bg-amber-500 px-1.5 py-0.2 text-[10px] font-bold text-white">
+                          {unreadNotifCount > 99 ? '99+' : unreadNotifCount}
+                        </span>
+                      )}
+                    </Link>
                   </MenuItem>
                   <MenuItem>
                     <Link
@@ -402,6 +459,27 @@ export default function Navbar() {
           </button>
         </div>
       </nav>
+
+      {/* Secondary Nav Bar for Links (Desktop) */}
+      <div className={cn(
+          "hidden md:flex border-t items-center",
+          isDark ? "border-slate-800 bg-slate-900/90" : "border-stone-100 bg-white"
+      )}>
+        <div className="mx-auto flex h-10 w-full max-w-7xl items-center gap-6 px-4 sm:px-6 lg:px-8">
+          {navLinks.map(({ to, label }) => (
+            <Link
+              key={to}
+              to={to}
+              className={cn(
+                'text-sm font-medium transition-colors hover:text-amber-500',
+                isDark ? 'text-slate-300' : 'text-stone-600'
+              )}
+            >
+              {label}
+            </Link>
+          ))}
+        </div>
+      </div>
 
       {/* Mobile menu */}
       <AnimatePresence>
@@ -482,54 +560,52 @@ export default function Navbar() {
                       </span>
                     )}
                   </div>
-                  {isAdmin && (
-                    <Link
-                      to="/admin"
-                      onClick={() => setMobileOpen(false)}
-                      className="rounded-lg px-4 py-3 text-left text-sm font-medium text-stone-700 hover:bg-stone-50 dark:text-slate-300 dark:hover:bg-slate-800"
-                    >
-                      Admin
-                    </Link>
-                  )}
-
-                  {/* Business Dashboard Link - Mobile */}
-                  {userRole === 'BUSINESS' && (
-                    <Link
-                      to="/business"
-                      onClick={() => setMobileOpen(false)}
-                      className="rounded-lg px-4 py-3 text-left text-sm font-medium text-stone-700 hover:bg-stone-50 dark:text-slate-300 dark:hover:bg-slate-800"
-                    >
-                      Dashboard Doanh Nghiệp
-                    </Link>
-                  )}
-
-                  {/* Admin Dashboard Link - Mobile */}
-                  {isAdmin && (
-                    <Link
-                      to="/admin"
-                      onClick={() => setMobileOpen(false)}
-                      className="rounded-lg px-4 py-3 text-left text-sm font-medium text-stone-700 hover:bg-stone-50 dark:text-slate-300 dark:hover:bg-slate-800"
-                    >
-                      Admin Dashboard
-                    </Link>
-                  )}
-
-                  {/* Seller Register - only for CUSTOMER - Mobile */}
-                  {userRole === 'CUSTOMER' && (
-                    <Link
-                      to="/seller/register"
-                      onClick={() => setMobileOpen(false)}
-                      className="rounded-lg px-4 py-3 text-left text-sm font-medium text-stone-700 hover:bg-stone-50 dark:text-slate-300 dark:hover:bg-slate-800"
-                    >
-                      Đăng ký bán hàng
-                    </Link>
-                  )}
+                  {/* Seller Portal Link - Mobile */}
+                  <a
+                    href="http://localhost:3001"
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={() => setMobileOpen(false)}
+                    className="rounded-lg px-4 py-3 text-left text-sm font-semibold text-amber-600 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-slate-800"
+                  >
+                    🏪 Kênh Người Bán (Seller Centre)
+                  </a>
                   <Link
                     to="/my-orders"
                     onClick={() => setMobileOpen(false)}
                     className="rounded-lg px-4 py-3 text-left text-sm font-medium text-stone-700 hover:bg-stone-50 dark:text-slate-300 dark:hover:bg-slate-800"
                   >
                     Đơn hàng của tôi
+                  </Link>
+                  <Link
+                    to="/profile?tab=wishlist"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center justify-between rounded-lg px-4 py-3 text-left text-sm font-medium text-stone-700 hover:bg-stone-50 dark:text-slate-300 dark:hover:bg-slate-800"
+                  >
+                    <span className="flex items-center gap-2">
+                      <HiOutlineHeart className="h-4 w-4 text-rose-500" />
+                      Sản phẩm yêu thích
+                    </span>
+                    {wishlistCount > 0 && (
+                      <span className="rounded-full bg-rose-500 px-2 py-0.5 text-[10px] font-bold text-white">
+                        {wishlistCount}
+                      </span>
+                    )}
+                  </Link>
+                  <Link
+                    to="/profile?tab=notifications"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center justify-between rounded-lg px-4 py-3 text-left text-sm font-medium text-stone-700 hover:bg-stone-50 dark:text-slate-300 dark:hover:bg-slate-800"
+                  >
+                    <span className="flex items-center gap-2">
+                      <HiOutlineBell className="h-4 w-4 text-amber-500" />
+                      Thông báo
+                    </span>
+                    {unreadNotifCount > 0 && (
+                      <span className="rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-bold text-white">
+                        {unreadNotifCount > 99 ? '99+' : unreadNotifCount}
+                      </span>
+                    )}
                   </Link>
                   <Link
                     to="/profile"

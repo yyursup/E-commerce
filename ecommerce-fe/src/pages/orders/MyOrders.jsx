@@ -282,6 +282,11 @@ export default function MyOrders() {
                         </div>
                       </div>
                       <div className="text-right">
+                        {Number(order.shippingFee) > 0 && (
+                          <p className="text-xs text-stone-500 dark:text-slate-400 mb-0.5">
+                            Phí giao hàng: {formatCurrency(order.shippingFee)}
+                          </p>
+                        )}
                         <p className={cn('text-lg font-bold', isDark ? 'text-white' : 'text-stone-900')}>
                           {formatCurrency(order.total)}
                         </p>

@@ -74,6 +74,10 @@ public class Product {
     @Column(name = "deleted", nullable = false)
     private Boolean deleted = false;
 
+    @Builder.Default
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private Set<ProductVariant> variants = new HashSet<>();
+
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

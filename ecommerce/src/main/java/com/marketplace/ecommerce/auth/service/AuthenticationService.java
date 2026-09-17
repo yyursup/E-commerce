@@ -15,5 +15,11 @@ public interface AuthenticationService {
 
     AccountCreateResponse register(AccountCreateRequest request);
 
+    void forgotPasswordSendOtp(String email);
+    
+    void forgotPasswordReset(String email, String otp, String newPassword);
+
     AccountCreateResponse verifyAccount(VerifyRequest request);
+
+    LoginResponse getMyProfile(java.util.UUID accountId);
 }

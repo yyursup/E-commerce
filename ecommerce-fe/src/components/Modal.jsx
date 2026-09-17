@@ -81,32 +81,68 @@ export default function Modal({ open, onClose, title, children, size = 'md' }) {
 }
 
 /* Promo/Offer modal content component */
-export function PromoModalContent({ image, title, description, ctaText, onCta }) {
+export function PromoModalContent({ image, title, description, code, ctaText, onCta, isClaimed = false, loading = false, disabled = false }) {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
 
   return (
     <div className="space-y-4">
       {image && (
-        <div className="overflow-hidden rounded-xl">
+        <div className="relative overflow-hidden rounded-2xl shadow-md group">
           <img
             src={image}
             alt=""
-            className="h-48 w-full object-cover"
+            className="h-48 w-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+          {code && (
+            <div className="absolute bottom-3 left-3 bg-amber-500/90 backdrop-blur-sm text-white px-3 py-1 rounded-xl text-xs font-black tracking-wider shadow">
+              MÃ: {code}
+            </div>
+          )}
         </div>
       )}
-      <h3 className={cn('text-xl font-bold', isDark ? 'text-white' : 'text-stone-900')}>
-        {title}
-      </h3>
-      <p className={cn('text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
-        {description}
-      </p>
+      <div className="space-y-1.5">
+        <h3 className={cn('text-xl font-bold tracking-tight', isDark ? 'text-white' : 'text-stone-900')}>
+          {title}
+        </h3>
+        <p className={cn('text-sm leading-relaxed', isDark ? 'text-slate-400' : 'text-stone-600')}>
+          {description}
+        </p>
+      </div>
+
+      {code && (
+        <div className={cn(
+          'flex items-center justify-between p-3 rounded-xl border border-dashed',
+          isDark ? 'border-amber-500/40 bg-amber-500/10 text-amber-400' : 'border-amber-500/50 bg-amber-50 text-amber-800'
+        )}>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium">Mã Voucher:</span>
+            <span className="font-mono font-bold text-sm tracking-wider uppercase px-2 py-0.5 rounded bg-amber-500 text-white shadow-sm">
+              {code}
+            </span>
+          </div>
+          <span className="text-[11px] font-medium opacity-80">
+            {isClaimed ? '✓ Đã có trong ví' : 'Áp dụng toàn sàn'}
+          </span>
+        </div>
+      )}
+
       {ctaText && (
         <button
           type="button"
           onClick={onCta}
-          className="w-full rounded-xl bg-amber-500 py-3 text-sm font-semibold text-white transition hover:bg-amber-600"
+          disabled={loading || disabled}
+          className={cn(
+            'w-full rounded-xl py-3 text-sm font-bold text-white shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2',
+            isClaimed
+              ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/25'
+              : 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 shadow-amber-500/25',
+            (loading || disabled) && 'opacity-60 cursor-not-allowed active:scale-100'
+          )}
         >
+          {loading && (
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-solid border-white border-r-transparent" />
+          )}
           {ctaText}
         </button>
       )}

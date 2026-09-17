@@ -19,6 +19,8 @@ import java.util.UUID;
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final FileService fileService;
+    private final com.marketplace.ecommerce.auth.repository.AccountRepository accountRepository;
+    private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
     @Override
     public UserProfileResponse getUserProfile(UUID accountId) {
@@ -61,5 +63,19 @@ public class UserServiceImpl implements UserService {
 
         user = userRepository.save(user);
         return UserProfileResponse.from(user);
+    }
+
+    @Override
+    @Transactional
+    public void changePassword(UUID accountId, com.marketplace.ecommerce.auth.dto.request.ChangePasswordRequest request) {
+        com.marketplace.ecommerce.auth.entity.Account account = accountRepository.findById(accountId)
+                .orElseThrow(() -> new CustomException("Account not found"));
+
+        if (!passwordEncoder.matches(request.getOldPassword(), account.getPasswordHash())) {
+            throw new CustomException("Mật khẩu cũ không chính xác.");
+        }
+
+        account.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        accountRepository.save(account);
     }
 }

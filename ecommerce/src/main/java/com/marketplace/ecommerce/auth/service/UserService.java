@@ -13,4 +13,6 @@ public interface UserService {
     UserProfileResponse updateProfile(
             UUID accountId,
             UpdateUserProfileRequest request);
+            
+    void changePassword(UUID accountId, com.marketplace.ecommerce.auth.dto.request.ChangePasswordRequest request);
 }

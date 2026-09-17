@@ -18,83 +18,97 @@ import java.util.UUID;
 
 @Repository
 public interface OrderRepository extends JpaRepository<Order, UUID> {
-    Optional<Order> findByOrderNumber(String orderNumber);
+  Optional<Order> findByOrderNumber(String orderNumber);
 
-    Optional<Order> findByIdAndUserId(UUID id, UUID userId);
+  Optional<Order> findByIdAndUserId(UUID id, UUID userId);
 
-    Optional<Order> findByIdAndShopId(UUID id, UUID shopId);
+  Optional<Order> findByIdAndShopId(UUID id, UUID shopId);
 
-    List<Order> findByUserIdOrderByCreatedAtDesc(UUID userId);
+  List<Order> findByUserIdOrderByCreatedAtDesc(UUID userId);
 
-    List<Order> findByUserIdAndStatusOrderByCreatedAtDesc(UUID userId, OrderStatus status);
+  List<Order> findByUserIdAndStatusOrderByCreatedAtDesc(UUID userId, OrderStatus status);
 
-    List<Order> findByShopIdOrderByCreatedAtDesc(UUID shopId);
+  @Query("""
+          SELECT COUNT(o)
+          FROM Order o
+          WHERE o.user.id = :userId
+            AND (o.status = com.marketplace.ecommerce.order.valueObjects.OrderStatus.COMPLETED
+                 OR o.status = com.marketplace.ecommerce.order.valueObjects.OrderStatus.DELIVERED)
+      """)
+  long countCompletedOrdersByUserId(@Param("userId") UUID userId);
 
-    List<Order> findByShopIdAndStatusOrderByCreatedAtDesc(UUID shopId, OrderStatus status);
+  List<Order> findByShopIdOrderByCreatedAtDesc(UUID shopId);
 
-    List<Order> findAllByOrderByCreatedAtDesc();
+  List<Order> findByShopIdAndStatusOrderByCreatedAtDesc(UUID shopId, OrderStatus status);
 
-    List<Order> findByStatusOrderByCreatedAtDesc(OrderStatus status);
+  List<Order> findAllByOrderByCreatedAtDesc();
 
-    Optional<Order> findByGhnOrderCode(String ghnOrderCode);
+  List<Order> findByStatusOrderByCreatedAtDesc(OrderStatus status);
 
-    @Query("SELECT o FROM Order o WHERE o.shop = :shop ORDER BY o.createdAt DESC")
-    List<Order> getOrdersByShop(@Param("shop") Shop shop);
+  Optional<Order> findByGhnOrderCode(String ghnOrderCode);
 
-    @Query("""
-        select o.id
-        from Order o
-        where o.status = :status
-          and o.receivedByBuyer = false
-          and o.deliveredAt < :threshold
-        order by o.deliveredAt asc
-    """)
-    List<UUID> findIdsByStatusAndReceivedByBuyerFalseAndDeliveredAtBefore(
-            @Param("status") OrderStatus status,
-            @Param("threshold") LocalDateTime threshold
-    );
+  @Query("SELECT o FROM Order o WHERE o.shop = :shop ORDER BY o.createdAt DESC")
+  List<Order> getOrdersByShop(@Param("shop") Shop shop);
 
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("select o from Order o where o.id = :id")
-    Optional<Order> findByIdForUpdate(@Param("id") UUID id);
+  @Query("""
+          select o.id
+          from Order o
+          where o.status = :status
+            and o.receivedByBuyer = false
+            and o.deliveredAt < :threshold
+          order by o.deliveredAt asc
+      """)
+  List<UUID> findIdsByStatusAndReceivedByBuyerFalseAndDeliveredAtBefore(
+      @Param("status") OrderStatus status,
+      @Param("threshold") LocalDateTime threshold);
 
-    /** Doanh thu ước tính: tổng tiền hàng (subtotal), không bao gồm phí ship (bên thứ 3). */
-    @Query("""
-    SELECT COALESCE(SUM(o.subtotal), 0)
-    FROM Order o
-    WHERE o.shop.id = :shopId
-      AND o.status IN :statuses
-    """)
-    BigDecimal getEstimatedRevenueByShop(
-            @Param("shopId") UUID shopId,
-            @Param("statuses") List<OrderStatus> statuses
-    );
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  @Query("select o from Order o where o.id = :id")
+  Optional<Order> findByIdForUpdate(@Param("id") UUID id);
 
-    /** Doanh thu từ đơn đã giao/hoàn thành: tổng tiền hàng (subtotal), không bao gồm phí ship. */
-    @Query("""
-    SELECT COALESCE(SUM(o.subtotal), 0)
-    FROM Order o
-    WHERE o.shop.id = :shopId
-      AND o.status IN :revenueStatuses
-      AND o.deliveredAt IS NOT NULL
-    """)
-    BigDecimal getRevenueByShop(
-            @Param("shopId") UUID shopId,
-            @Param("revenueStatuses") List<OrderStatus> revenueStatuses
-    );
+  /**
+   * Doanh thu ước tính: tổng tiền hàng (subtotal), không bao gồm phí ship (bên
+   * thứ 3).
+   */
+  @Query("""
+      SELECT COALESCE(SUM(o.subtotal), 0)
+      FROM Order o
+      WHERE o.shop.id = :shopId
+        AND o.status IN :statuses
+      """)
+  BigDecimal getEstimatedRevenueByShop(
+      @Param("shopId") UUID shopId,
+      @Param("statuses") List<OrderStatus> statuses);
 
-    long countByShop_IdAndCreatedAtAfter(UUID shopId, LocalDateTime createdAt);
-    /**
-     * Bảng xếp hạng shop theo doanh thu (đơn DELIVERED hoặc COMPLETED).
-     * Returns: shopId (UUID), shopName (String), totalRevenue (BigDecimal), orderCount (Long).
-     */
-    @Query("""
-        SELECT o.shop.id, o.shop.name, COALESCE(SUM(o.total), 0), COUNT(o)
-        FROM Order o
-        WHERE o.status = com.marketplace.ecommerce.order.valueObjects.OrderStatus.DELIVERED 
-        OR o.status = com.marketplace.ecommerce.order.valueObjects.OrderStatus.COMPLETED
-        GROUP BY o.shop.id, o.shop.name
-        ORDER BY SUM(o.total) DESC
-        """)
-    List<Object[]> getShopRankingByRevenue();
+  /**
+   * Doanh thu từ đơn đã giao/hoàn thành: tổng tiền hàng (subtotal), không bao gồm
+   * phí ship.
+   */
+  @Query("""
+      SELECT COALESCE(SUM(o.subtotal), 0)
+      FROM Order o
+      WHERE o.shop.id = :shopId
+        AND o.status IN :revenueStatuses
+        AND o.deliveredAt IS NOT NULL
+      """)
+  BigDecimal getRevenueByShop(
+      @Param("shopId") UUID shopId,
+      @Param("revenueStatuses") List<OrderStatus> revenueStatuses);
+
+  long countByShop_IdAndCreatedAtAfter(UUID shopId, LocalDateTime createdAt);
+
+  /**
+   * Bảng xếp hạng shop theo doanh thu (đơn DELIVERED hoặc COMPLETED).
+   * Returns: shopId (UUID), shopName (String), totalRevenue (BigDecimal),
+   * orderCount (Long).
+   */
+  @Query("""
+      SELECT o.shop.id, o.shop.name, COALESCE(SUM(o.total), 0), COUNT(o)
+      FROM Order o
+      WHERE o.status = com.marketplace.ecommerce.order.valueObjects.OrderStatus.DELIVERED
+      OR o.status = com.marketplace.ecommerce.order.valueObjects.OrderStatus.COMPLETED
+      GROUP BY o.shop.id, o.shop.name
+      ORDER BY SUM(o.total) DESC
+      """)
+  List<Object[]> getShopRankingByRevenue();
 }

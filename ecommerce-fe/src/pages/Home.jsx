@@ -15,11 +15,15 @@ import { useCartStore } from '../store/useCartStore'
 import { cn } from '../lib/cn'
 import productService from '../services/product'
 import cartService from '../services/cart'
-import { Link } from 'react-router-dom'
+import voucherService from '../services/voucher'
+import { Link, useNavigate } from 'react-router-dom'
 
 export default function Home() {
+  const navigate = useNavigate()
   const [quickViewProduct, setQuickViewProduct] = useState(null)
   const [welcomeModalOpen, setWelcomeModalOpen] = useState(false)
+  const [welcomeVoucher, setWelcomeVoucher] = useState(null)
+  const [isClaimingVoucher, setIsClaimingVoucher] = useState(false)
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -111,6 +115,27 @@ export default function Home() {
     fetchRecommendations()
   }, [])
 
+  // Fetch Welcome Platform Voucher (e.g. ECOMNEW15)
+  useEffect(() => {
+    const fetchWelcomeVoucher = async () => {
+      try {
+        const list = await voucherService.listVouchers({ scope: 'PLATFORM' })
+        if (Array.isArray(list) && list.length > 0) {
+          const match =
+            list.find((v) => v.code === 'ECOMNEW15') ||
+            list.find((v) => v.isFirstOrderOnly) ||
+            list[0]
+          if (match) {
+            setWelcomeVoucher(match)
+          }
+        }
+      } catch (err) {
+        console.warn('Could not fetch welcome voucher:', err)
+      }
+    }
+    fetchWelcomeVoucher()
+  }, [isAuthenticated])
+
   // Show welcome popup once per session
   useEffect(() => {
     const shown = sessionStorage.getItem('welcomeModalShown')
@@ -122,6 +147,73 @@ export default function Home() {
       return () => clearTimeout(t)
     }
   }, [])
+
+  const handleClaimWelcomeVoucher = async () => {
+    // 1. Nếu chưa đăng nhập: nhắc đăng nhập và chuyển hướng sang /login
+    if (!isAuthenticated) {
+      const voucherCode = welcomeVoucher?.code || 'ECOMNEW15'
+      try {
+        sessionStorage.setItem('pendingClaimVoucherCode', voucherCode)
+      } catch (e) {
+        // ignore storage error
+      }
+      toast('Vui lòng đăng nhập để lưu mã voucher vào ví!', {
+        icon: '🔐',
+        id: 'voucher-login-required',
+      })
+      setWelcomeModalOpen(false)
+      navigate('/login', { state: { from: '/', autoClaimCode: voucherCode } })
+      return
+    }
+
+    // 2. Nếu đã đăng nhập và voucher đã có trong ví
+    if (welcomeVoucher?.isClaimed) {
+      toast.success('Mã đã có sẵn trong ví voucher của bạn!', { id: 'voucher-already-claimed' })
+      setWelcomeModalOpen(false)
+      return
+    }
+
+    // 3. Đã đăng nhập: tìm voucher và claim vào ví
+    try {
+      setIsClaimingVoucher(true)
+      let targetVoucher = welcomeVoucher
+
+      // Fallback nếu welcomeVoucher chưa kịp load vào state
+      if (!targetVoucher || !targetVoucher.id) {
+        const list = await voucherService.listVouchers({ scope: 'PLATFORM' })
+        targetVoucher =
+          list?.find((v) => v.code === 'ECOMNEW15') ||
+          list?.find((v) => v.isFirstOrderOnly) ||
+          list?.[0]
+      }
+
+      if (!targetVoucher || !targetVoucher.id) {
+        toast.error('Không tìm thấy thông tin mã voucher chào mừng', { id: 'voucher-not-found' })
+        setWelcomeModalOpen(false)
+        return
+      }
+
+      if (targetVoucher.isClaimed) {
+        toast.success('Mã đã có sẵn trong ví voucher của bạn!', { id: 'voucher-already-claimed' })
+        setWelcomeVoucher(targetVoucher)
+        setWelcomeModalOpen(false)
+        return
+      }
+
+      await voucherService.claimVoucher(targetVoucher.id)
+      setWelcomeVoucher({ ...targetVoucher, isClaimed: true })
+      toast.success(`Đã lưu mã ${targetVoucher.code} vào ví voucher của bạn! 🎉`, {
+        id: 'voucher-claimed-success',
+      })
+      setWelcomeModalOpen(false)
+    } catch (error) {
+      console.error('Error claiming welcome voucher:', error)
+      const msg = error?.message || error?.response?.data?.message || 'Không thể lưu mã voucher'
+      toast.error(msg, { id: 'voucher-claim-error' })
+    } finally {
+      setIsClaimingVoucher(false)
+    }
+  }
 
   const handleQuickView = (product) => setQuickViewProduct(product)
 
@@ -288,13 +380,22 @@ export default function Home() {
       >
         <PromoModalContent
           image="https://images.unsplash.com/photo-1607083206869-4c7672e72a8a?w=600&h=300&fit=crop"
-          title="Tặng Voucher Giảm 15% Đơn Đầu Tiên"
-          description="Đăng ký hoặc đăng nhập tài khoản E-commerce và nhập mã ECOM15 khi thanh toán để được giảm 15% (tối đa 100.000đ) cùng Freeship GHN."
-          ctaText="Lưu mã ngay"
-          onCta={() => {
-            setWelcomeModalOpen(false)
-            toast.success('Đã lưu mã ECOM15 vào ví voucher của bạn!')
-          }}
+          title={welcomeVoucher?.title || 'Tặng Voucher Giảm 15% Đơn Đầu Tiên'}
+          description={
+            welcomeVoucher?.description ||
+            'Đăng ký hoặc đăng nhập tài khoản E-commerce và lưu mã ECOMNEW15 khi thanh toán để được giảm 15% (tối đa 100.000đ).'
+          }
+          code={welcomeVoucher?.code || 'ECOMNEW15'}
+          isClaimed={welcomeVoucher?.isClaimed}
+          loading={isClaimingVoucher}
+          ctaText={
+            isClaimingVoucher
+              ? 'Đang lưu mã...'
+              : welcomeVoucher?.isClaimed
+              ? '✓ Đã có trong ví - Mua sắm ngay'
+              : 'Lưu mã ngay'
+          }
+          onCta={handleClaimWelcomeVoucher}
         />
       </Modal>
 

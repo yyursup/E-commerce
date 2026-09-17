@@ -2,7 +2,9 @@ package com.marketplace.ecommerce.chat.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.marketplace.ecommerce.chat.entity.ChatMessage;
+import com.marketplace.ecommerce.chat.entity.ChatThread;
 import com.marketplace.ecommerce.chat.enums.ChatMessageType;
+import com.marketplace.ecommerce.chat.enums.ThreadType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -20,6 +22,7 @@ public class ChatMessageResponse {
     private UUID threadId;
     private UUID senderId;
     private String senderName;
+    private String senderAvatar;
     private String senderRole;
     private UUID recipientId;
     private String content;
@@ -27,6 +30,7 @@ public class ChatMessageResponse {
     private String imageUrl;
     private String videoUrl;
     private Boolean isDeleted;
+    private ThreadType threadType;
 
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime readAt;
@@ -39,11 +43,23 @@ public class ChatMessageResponse {
 
     public static ChatMessageResponse from(ChatMessage message) {
         boolean deleted = Boolean.TRUE.equals(message.getIsDeleted());
+        String senderAvatar = null;
+        if (message.getThread() != null) {
+            ChatThread t = message.getThread();
+            if (t.getCustomer() != null && message.getSenderId() != null && message.getSenderId().equals(t.getCustomer().getId())) {
+                senderAvatar = t.getCustomerAvatar();
+            } else if (t.getType() == ThreadType.SHOP && t.getShop() != null) {
+                senderAvatar = t.getShop().getLogoUrl();
+            }
+        }
+
         return ChatMessageResponse.builder()
                 .id(message.getId())
                 .threadId(message.getThread() != null ? message.getThread().getId() : null)
+                .threadType(message.getThread() != null ? message.getThread().getType() : null)
                 .senderId(message.getSenderId())
                 .senderName(message.getSenderName())
+                .senderAvatar(senderAvatar)
                 .senderRole(message.getSenderRole())
                 .recipientId(message.getRecipientId())
                 .content(deleted ? "[Tin nhắn đã bị xóa]" : message.getContent())

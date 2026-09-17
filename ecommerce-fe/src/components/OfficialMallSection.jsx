@@ -1,6 +1,8 @@
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { HiOutlineBadgeCheck, HiOutlineShieldCheck, HiOutlineTruck, HiOutlineRefresh, HiOutlineChevronRight } from 'react-icons/hi'
 import { useThemeStore } from '../store/useThemeStore'
+import shopService from '../services/shop'
 import { cn } from '../lib/cn'
 
 const officialShops = [
@@ -48,6 +50,25 @@ const officialShops = [
 
 export default function OfficialMallSection() {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
+  const [shops, setShops] = useState(officialShops)
+
+  useEffect(() => {
+    let isMounted = true
+    shopService.getAllShops().then((res) => {
+      if (isMounted && Array.isArray(res) && res.length > 0) {
+        const mapped = res.slice(0, 4).map((s, idx) => ({
+          ...officialShops[idx % officialShops.length],
+          ...s,
+          id: s.id,
+          name: s.name,
+          logo: s.logo || officialShops[idx % officialShops.length].logo,
+          location: s.city || s.location || 'TP. Hồ Chí Minh',
+        }))
+        setShops(mapped)
+      }
+    }).catch(() => {})
+    return () => { isMounted = false }
+  }, [])
 
   return (
     <section className="py-8">
@@ -101,10 +122,10 @@ export default function OfficialMallSection() {
 
           {/* Shop Cards Grid */}
           <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {officialShops.map((shop) => (
+            {shops.map((shop) => (
               <Link
                 key={shop.id}
-                to={`/marketplace`}
+                to={`/shop/${shop.id}`}
                 className={cn(
                   'group flex flex-col p-4 rounded-2xl border transition-all duration-300 hover:-translate-y-1 hover:shadow-lg',
                   isDark

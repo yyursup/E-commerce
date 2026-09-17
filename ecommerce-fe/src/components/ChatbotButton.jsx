@@ -4,11 +4,14 @@ import {
   HiOutlineChat, HiX, HiOutlinePaperAirplane, HiOutlineSparkles,
   HiOutlinePhotograph, HiOutlineUserGroup, HiOutlineVideoCamera,
   HiOutlinePencil, HiOutlineTrash, HiOutlineBell, HiCheck, HiDotsVertical,
+  HiPlus, HiOutlineEmojiHappy, HiArrowLeft, HiOutlineBadgeCheck,
+  HiOutlineExternalLink, HiOutlineShoppingBag,
 } from 'react-icons/hi'
 import { HiOutlineBellSlash } from 'react-icons/hi2'
 import { Link, useLocation } from 'react-router-dom'
 import { useThemeStore } from '../store/useThemeStore'
 import { useAuthStore } from '../store/useAuthStore'
+import { useChatStore } from '../store/useChatStore'
 import { cn } from '../lib/cn'
 import { getAccessToken } from '../lib/auth'
 import chatbotService from '../services/chatbot'
@@ -19,7 +22,11 @@ import {
   sendWebSocketMessage,
 } from '../services/websocketService'
 import { useChatNotification } from '../hooks/useChatNotification'
+import toast from 'react-hot-toast'
 import ChatNotificationToast from './ChatNotificationToast'
+import EmojiPickerPopover from './EmojiPickerPopover'
+import MediaUploadPopover from './MediaUploadPopover'
+import ChatInboxList from './ChatInboxList'
 
 function formatPrice(value) {
   if (value == null) return ''
@@ -43,8 +50,35 @@ export default function ChatbotButton() {
   const token = getAccessToken()
   const location = useLocation()
 
-  const [isOpen, setIsOpen] = useState(false)
+  // Global Chat Store integration
+  const isOpen = useChatStore((s) => s.isOpen)
+  const setIsOpen = useChatStore((s) => s.setIsOpen)
+  const closeChat = useChatStore((s) => s.closeChat)
+  const viewMode = useChatStore((s) => s.viewMode)
+  const setViewMode = useChatStore((s) => s.setViewMode)
+  const backToInbox = useChatStore((s) => s.backToInbox)
+  const unreadTotal = useChatStore((s) => s.unreadTotal)
+  const activeShop = useChatStore((s) => s.activeShop)
+  const activeProduct = useChatStore((s) => s.activeProduct)
+  const clearActiveShop = useChatStore((s) => s.clearActiveShop)
+  const storeChatMode = useChatStore((s) => s.chatMode)
+
   const [activeTab, setActiveTab] = useState('bot') // 'bot' | 'live'
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false)
+  const [showMediaPopover, setShowMediaPopover] = useState(false)
+
+  // Sync activeTab with global chat store
+  useEffect(() => {
+    if (storeChatMode) {
+      setActiveTab(storeChatMode)
+    }
+  }, [storeChatMode])
+
+  useEffect(() => {
+    if (activeShop) {
+      setActiveTab('live')
+    }
+  }, [activeShop])
 
   // --- BOT STATE ---
   const [botCurrentNodeId, setBotCurrentNodeId] = useState(null)
@@ -86,16 +120,18 @@ export default function ChatbotButton() {
     supportThreadRef.current = supportThread
   }, [supportThread])
 
-  // Reset thread and messages when user/token changes (switching accounts)
+  // Reset thread and messages when user/token changes (switching accounts) or shop changes
   useEffect(() => {
     setSupportThread(null)
     supportThreadRef.current = null
     setLiveMessages([])
-  }, [token, user?.id])
+  }, [token, user?.id, activeShop?.id])
 
-  // Click outside to close message options menu
+  // Click outside to close message options menu or popovers
   useEffect(() => {
-    const handleDocClick = () => setActiveMenuMsgId(null)
+    const handleDocClick = () => {
+      setActiveMenuMsgId(null)
+    }
     if (activeMenuMsgId) {
       document.addEventListener('click', handleDocClick)
       return () => document.removeEventListener('click', handleDocClick)
@@ -129,7 +165,12 @@ export default function ChatbotButton() {
 
   // Toggle widget open/close
   const handleToggle = () => {
-    if (!isOpen && botMessages.length === 0) {
+    const nextOpen = !isOpen
+    setIsOpen(nextOpen)
+    if (nextOpen && !activeShop) {
+      setViewMode('inbox')
+    }
+    if (nextOpen && botMessages.length === 0) {
       setBotLoading(true)
       setBotError(null)
       chatbotService
@@ -163,7 +204,6 @@ export default function ChatbotButton() {
         })
         .finally(() => setBotLoading(false))
     }
-    setIsOpen(!isOpen)
   }
 
   // --- LIVE CHAT LOGIC ---
@@ -173,8 +213,13 @@ export default function ChatbotButton() {
       setLiveLoading(true)
       createWebSocketConnection(token)
 
-      // Fetch or create customer support thread
-      const thread = await chatService.getOrCreateSupportThread()
+      // Fetch or create thread: shop thread if activeShop is set, otherwise support thread
+      let thread
+      if (activeShop?.id) {
+        thread = await chatService.getOrCreateShopThread(activeShop.id)
+      } else {
+        thread = await chatService.getOrCreateSupportThread()
+      }
 
       // *** Fix race condition: update ref IMMEDIATELY (sync) before setState ***
       // This ensures WebSocket messages that arrive during getMessages() fetch
@@ -200,10 +245,11 @@ export default function ChatbotButton() {
       }
     } catch (err) {
       console.error('Lỗi khởi tạo Live Chat:', err)
+      toast.error('Không thể kết nối trò chuyện. Vui lòng thử lại sau!')
     } finally {
       setLiveLoading(false)
     }
-  }, [token])
+  }, [token, activeShop?.id])
 
   // Connect WebSocket when token is available so customer receives notifications even when widget is closed
   useEffect(() => {
@@ -216,7 +262,7 @@ export default function ChatbotButton() {
     if (isOpen && activeTab === 'live' && token) {
       initLiveChat()
     }
-  }, [isOpen, activeTab, token, initLiveChat])
+  }, [isOpen, activeTab, token, activeShop?.id, initLiveChat])
 
   // Listen to WebSocket events
   useEffect(() => {
@@ -244,13 +290,20 @@ export default function ChatbotButton() {
         chatService.markRead(currentThread.id).catch(() => {})
       }
 
-      // Show notification only for admin messages sent to this customer's thread when widget is closed or on bot tab
+      // Notification for incoming messages from seller or admin
       const isSelf = user?.id && String(msg.senderId).toLowerCase() === String(user.id).toLowerCase()
-      const isForMe =
-        (currentThread?.id && String(msg.threadId).toLowerCase() === String(currentThread.id).toLowerCase()) ||
-        (user?.id && msg.recipientId && String(msg.recipientId).toLowerCase() === String(user.id).toLowerCase())
-      if (!isSelf && msg.senderRole !== 'CUSTOMER' && isForMe && (!isOpen || activeTab !== 'live')) {
-        addNotification(msg)
+      if (!isSelf && (msg.senderRole === 'BUSINESS' || msg.senderRole === 'ADMIN')) {
+        let senderName = msg.senderName || 'Người bán'
+        let senderAvatar = msg.senderAvatar
+        if (activeShop && currentThread?.shopId && String(currentThread.shopId).toLowerCase() === String(activeShop.id).toLowerCase()) {
+          senderName = activeShop.name || senderName
+          senderAvatar = activeShop.logoUrl || senderAvatar
+        }
+        addNotification({
+          ...msg,
+          senderName,
+          senderAvatar,
+        })
       }
     })
 
@@ -300,7 +353,13 @@ export default function ChatbotButton() {
     e?.preventDefault()
     const content = liveInputValue.trim()
     const threadId = supportThread?.id || supportThreadRef.current?.id
-    if (!content || !threadId || liveSending) return
+    if (!content || liveSending) return
+
+    if (!threadId) {
+      toast.error('Đang kết nối lại phòng chat, vui lòng thử lại sau giây lát...')
+      initLiveChat()
+      return
+    }
 
     const tempId = 'temp-' + Date.now()
     const optimisticMsg = {
@@ -361,7 +420,12 @@ export default function ChatbotButton() {
     const file = e.target.files?.[0]
     if (fileInputRef.current) fileInputRef.current.value = ''
     const threadId = supportThread?.id || supportThreadRef.current?.id
-    if (!file || !threadId || liveSending) return
+    if (!file || liveSending) return
+    if (!threadId) {
+      toast.error('Đang kết nối lại phòng chat, vui lòng thử lại sau...')
+      initLiveChat()
+      return
+    }
     try {
       setLiveSending(true)
       const newMsg = await chatService.sendImage(threadId, file)
@@ -380,7 +444,12 @@ export default function ChatbotButton() {
     const file = e.target.files?.[0]
     if (videoInputRef.current) videoInputRef.current.value = ''
     const threadId = supportThread?.id || supportThreadRef.current?.id
-    if (!file || !threadId || liveSending) return
+    if (!file || liveSending) return
+    if (!threadId) {
+      toast.error('Đang kết nối lại phòng chat, vui lòng thử lại sau...')
+      initLiveChat()
+      return
+    }
     if (file.size > 50 * 1024 * 1024) { alert('Video tối đa 50MB'); return }
     try {
       setLiveSending(true)
@@ -393,6 +462,72 @@ export default function ChatbotButton() {
       })
     } catch (err) { console.error('Lỗi tải video:', err) }
     finally { setLiveSending(false) }
+  }
+
+  // Handle select emoji
+  const handleSelectEmoji = (emoji) => {
+    const input = liveInputRef.current
+    if (input) {
+      const start = input.selectionStart ?? liveInputValue.length
+      const end = input.selectionEnd ?? liveInputValue.length
+      const nextVal = liveInputValue.substring(0, start) + emoji + liveInputValue.substring(end)
+      setLiveInputValue(nextVal)
+      setTimeout(() => {
+        input.focus()
+        input.setSelectionRange(start + emoji.length, start + emoji.length)
+      }, 0)
+    } else {
+      setLiveInputValue((prev) => prev + emoji)
+    }
+  }
+
+  // Handle send product card info to chat
+  const handleSendProductCard = async () => {
+    if (!activeProduct) return
+    const threadId = supportThread?.id || supportThreadRef.current?.id
+    if (liveSending) return
+    if (!threadId) {
+      toast.error('Đang kết nối lại phòng chat, vui lòng thử lại sau...')
+      initLiveChat()
+      return
+    }
+
+    const productMsg = `[Sản phẩm #${activeProduct.id}] ${activeProduct.name}\nGiá: ${formatPrice(activeProduct.price)}\nXem tại: ${window.location.origin}/products/${activeProduct.id}`
+
+    const tempId = 'temp-' + Date.now()
+    const optimisticMsg = {
+      id: tempId,
+      threadId: threadId,
+      senderId: user?.id,
+      senderName: user?.username || user?.email || 'Khách hàng',
+      senderRole: 'CUSTOMER',
+      content: productMsg,
+      messageType: 'TEXT',
+      createdAt: new Date().toISOString(),
+    }
+
+    try {
+      setLiveSending(true)
+      setLiveMessages((prev) => [...prev, optimisticMsg])
+
+      const sentViaWs = sendWebSocketMessage('CHAT_SEND', {
+        threadId: threadId,
+        content: productMsg,
+      })
+
+      if (!sentViaWs) {
+        const newMsg = await chatService.sendMessage(threadId, productMsg)
+        setLiveMessages((prev) => prev.map((m) => (m.id === tempId ? newMsg : m)))
+      }
+
+      // Clear product card banner after sending
+      useChatStore.getState().openShopChat(activeShop, null)
+    } catch (err) {
+      console.error('Lỗi gửi thông tin sản phẩm:', err)
+      setLiveMessages((prev) => prev.filter((m) => m.id !== tempId))
+    } finally {
+      setLiveSending(false)
+    }
   }
 
   // Handle Edit Message
@@ -548,9 +683,13 @@ export default function ChatbotButton() {
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow"
+            className="absolute -right-1 -top-1 flex h-5 min-w-5 px-1 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow"
           >
-            <HiOutlineSparkles className="h-3 w-3" />
+            {unreadTotal > 0 ? (
+              <span>{unreadTotal > 99 ? '99+' : unreadTotal}</span>
+            ) : (
+              <HiOutlineSparkles className="h-3 w-3" />
+            )}
           </motion.div>
         )}
       </motion.button>
@@ -568,75 +707,201 @@ export default function ChatbotButton() {
               isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white',
             )}
           >
-            {/* Top Bar with Tab Selector */}
-            <div
-              className={cn(
-                'flex flex-col border-b px-4 pt-3 pb-2',
-                isDark ? 'border-slate-800 bg-slate-850' : 'border-stone-200 bg-amber-500 text-white',
-              )}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20">
-                    <HiOutlineChat className="h-5 w-5" />
+            {viewMode === 'inbox' ? (
+              <ChatInboxList
+                onClose={() => closeChat()}
+                notifEnabled={notifEnabled}
+                toggleNotif={toggleNotif}
+              />
+            ) : (
+              <>
+                {/* Top Bar */}
+                {activeShop ? (
+                  /* TikTok Shop Header */
+                  <div
+                    className={cn(
+                      'flex items-center justify-between border-b px-3.5 py-3 transition-colors',
+                      isDark ? 'border-slate-800 bg-slate-850' : 'border-stone-200 bg-white shadow-xs'
+                    )}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <button
+                        type="button"
+                        onClick={() => backToInbox()}
+                        className={cn(
+                          'flex h-8 w-8 items-center justify-center rounded-xl transition shrink-0',
+                          isDark ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-stone-100 text-stone-600'
+                        )}
+                        title="Quay lại Hộp thư"
+                      >
+                        <HiArrowLeft className="h-5 w-5" />
+                      </button>
+
+                  <div className="relative shrink-0">
+                    {activeShop.logo ? (
+                      <img
+                        src={activeShop.logo}
+                        alt={activeShop.name}
+                        className="h-9 w-9 rounded-full object-cover border border-amber-500/30 shadow-xs"
+                      />
+                    ) : (
+                      <div className="h-9 w-9 rounded-full bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center text-white font-bold text-xs shadow-xs">
+                        {activeShop.name?.charAt(0)?.toUpperCase() || 'S'}
+                      </div>
+                    )}
+                    <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900" />
                   </div>
-                  <div>
-                    <h3 className="text-sm font-bold leading-tight">Trung tâm Trợ giúp</h3>
-                    <p className="text-[11px] opacity-80">Trực tuyến 24/7</p>
+
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <h3
+                        className={cn(
+                          'text-sm font-bold truncate max-w-[140px]',
+                          isDark ? 'text-white' : 'text-stone-900'
+                        )}
+                        title={activeShop.name}
+                      >
+                        {activeShop.name}
+                      </h3>
+                      {activeShop.mallBadge && (
+                        <span className="rounded bg-rose-600 px-1 py-0.2 text-[9px] font-black uppercase text-white shrink-0">
+                          Mall
+                        </span>
+                      )}
+                      {activeShop.ekycVerified && (
+                        <HiOutlineBadgeCheck className="h-4 w-4 text-emerald-500 shrink-0" />
+                      )}
+                    </div>
+                    <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium leading-tight">
+                      Thường trả lời trong 1 giờ
+                    </p>
                   </div>
                 </div>
+
                 <div className="flex items-center gap-1">
-                  {/* Notification toggle bell */}
+                  <Link
+                    to={`/shop/${activeShop.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={cn(
+                      'flex h-8 w-8 items-center justify-center rounded-xl transition',
+                      isDark ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-stone-100 text-stone-600'
+                    )}
+                    title="Xem gian hàng của shop"
+                  >
+                    <HiOutlineShoppingBag className="h-4 w-4" />
+                  </Link>
+
                   <button
                     type="button"
                     onClick={toggleNotif}
-                    className="rounded-lg p-1.5 hover:bg-white/10 transition"
+                    className={cn(
+                      'flex h-8 w-8 items-center justify-center rounded-xl transition',
+                      isDark ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-stone-100 text-stone-600'
+                    )}
                     title={notifEnabled ? 'Tắt thông báo' : 'Bật thông báo'}
                   >
-                    {notifEnabled
-                      ? <HiOutlineBell className="h-4 w-4" />
-                      : <HiOutlineBellSlash className="h-4 w-4 opacity-60" />}
+                    {notifEnabled ? (
+                      <HiOutlineBell className="h-4 w-4 text-amber-500" />
+                    ) : (
+                      <HiOutlineBellSlash className="h-4 w-4 opacity-50" />
+                    )}
                   </button>
+
                   <button
                     type="button"
-                    onClick={() => setIsOpen(false)}
-                    className="rounded-lg p-1 hover:bg-white/10"
+                    onClick={() => closeChat()}
+                    className={cn(
+                      'flex h-8 w-8 items-center justify-center rounded-xl transition',
+                      isDark ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-stone-100 text-stone-600'
+                    )}
+                    title="Đóng cửa sổ chat"
                   >
                     <HiX className="h-5 w-5" />
                   </button>
                 </div>
               </div>
+            ) : (
+              /* Support / AI Chat Top Bar with Tabs */
+              <div
+                className={cn(
+                  'flex flex-col border-b px-4 pt-3 pb-2',
+                  isDark ? 'border-slate-800 bg-slate-850' : 'border-stone-200 bg-amber-500 text-white',
+                )}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => backToInbox()}
+                      className="rounded-lg p-1 text-white hover:bg-white/10 transition shrink-0"
+                      title="Quay lại Hộp thư"
+                    >
+                      <HiArrowLeft className="h-5 w-5" />
+                    </button>
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 shrink-0">
+                      <HiOutlineChat className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold leading-tight">Trung tâm Trợ giúp</h3>
+                      <p className="text-[11px] opacity-80">Trực tuyến 24/7</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {/* Notification toggle bell */}
+                    <button
+                      type="button"
+                      onClick={toggleNotif}
+                      className="rounded-lg p-1.5 hover:bg-white/10 transition"
+                      title={notifEnabled ? 'Tắt thông báo' : 'Bật thông báo'}
+                    >
+                      {notifEnabled ? (
+                        <HiOutlineBell className="h-4 w-4" />
+                      ) : (
+                        <HiOutlineBellSlash className="h-4 w-4 opacity-60" />
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => closeChat()}
+                      className="rounded-lg p-1 hover:bg-white/10"
+                    >
+                      <HiX className="h-5 w-5" />
+                    </button>
+                  </div>
+                </div>
 
-              {/* Tabs */}
-              <div className="mt-3 flex rounded-xl bg-black/10 p-1 text-xs font-semibold">
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('bot')}
-                  className={cn(
-                    'flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 transition',
-                    activeTab === 'bot'
-                      ? 'bg-white text-amber-600 shadow-sm dark:bg-slate-800 dark:text-amber-400'
-                      : 'text-white/80 hover:text-white',
-                  )}
-                >
-                  <HiOutlineSparkles className="h-4 w-4" />
-                  Trợ lý AI
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('live')}
-                  className={cn(
-                    'flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 transition',
-                    activeTab === 'live'
-                      ? 'bg-white text-amber-600 shadow-sm dark:bg-slate-800 dark:text-amber-400'
-                      : 'text-white/80 hover:text-white',
-                  )}
-                >
-                  <HiOutlineUserGroup className="h-4 w-4" />
-                  Hỗ trợ Trực tuyến
-                </button>
+                {/* Tabs */}
+                <div className="mt-3 flex rounded-xl bg-black/10 p-1 text-xs font-semibold">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('bot')}
+                    className={cn(
+                      'flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 transition',
+                      activeTab === 'bot'
+                        ? 'bg-white text-amber-600 shadow-sm dark:bg-slate-800 dark:text-amber-400'
+                        : 'text-white/80 hover:text-white',
+                    )}
+                  >
+                    <HiOutlineSparkles className="h-4 w-4" />
+                    Trợ lý AI
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('live')}
+                    className={cn(
+                      'flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 transition',
+                      activeTab === 'live'
+                        ? 'bg-white text-amber-600 shadow-sm dark:bg-slate-800 dark:text-amber-400'
+                        : 'text-white/80 hover:text-white',
+                    )}
+                  >
+                    <HiOutlineUserGroup className="h-4 w-4" />
+                    Hỗ trợ Trực tuyến
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* TAB CONTENT */}
             {activeTab === 'bot' ? (
@@ -776,7 +1041,7 @@ export default function ChatbotButton() {
                     </p>
                     <Link
                       to="/login"
-                      onClick={() => setIsOpen(false)}
+                      onClick={() => closeChat()}
                       className="mt-4 inline-flex rounded-xl bg-amber-500 px-5 py-2 text-xs font-bold text-white shadow hover:bg-amber-600 transition"
                     >
                       Đăng nhập ngay
@@ -794,7 +1059,8 @@ export default function ChatbotButton() {
                         </div>
                       ) : (
                         liveMessages.map((m) => {
-                          const isMe = m.senderRole === 'CUSTOMER'
+                          const isMe = user?.id && String(m.senderId).toLowerCase() === String(user.id).toLowerCase()
+                          const senderDisplayName = isMe ? 'Bạn' : (activeShop?.name || m.senderName || 'Người bán')
                           const isEditing = editingMsgId === String(m.id)
                           const isHovered = hoveredMsgId === String(m.id)
                           return (
@@ -805,7 +1071,7 @@ export default function ChatbotButton() {
                               onMouseLeave={() => setHoveredMsgId(null)}
                             >
                               <span className="text-[10px] mb-0.5 px-1 opacity-60">
-                                {m.senderName} • {formatTime(m.createdAt)}{m.editedAt && ' (đã sửa)'}
+                                {senderDisplayName} • {formatTime(m.createdAt)}{m.editedAt && ' (đã sửa)'}
                               </span>
 
                               {isEditing ? (
@@ -925,6 +1191,41 @@ export default function ChatbotButton() {
                                         onLoadedData={() => scrollToBottom(false)}
                                         className="max-h-44 max-w-full rounded-xl object-contain shadow-sm"
                                       />
+                                    ) : m.content && m.content.startsWith('[Sản phẩm #') ? (
+                                      <div className="space-y-1.5 text-left">
+                                        <div className="flex items-center gap-1.5 text-[11px] font-bold opacity-90">
+                                          <HiOutlineShoppingBag className="h-3.5 w-3.5 text-amber-500" />
+                                          <span>Thông tin sản phẩm</span>
+                                        </div>
+                                        <div
+                                          className={cn(
+                                            'rounded-xl p-2.5 border text-xs',
+                                            isDark
+                                              ? 'border-slate-700 bg-slate-900/60 text-slate-100'
+                                              : 'border-stone-200 bg-white/90 text-stone-900'
+                                          )}
+                                        >
+                                          <p className="font-semibold line-clamp-2 leading-tight">
+                                            {m.content.split('\n')[0].replace(/^\[Sản phẩm #\d+\]\s*/, '')}
+                                          </p>
+                                          {m.content.includes('Giá:') && (
+                                            <p className="mt-1 font-bold text-amber-500">
+                                              {m.content.split('Giá:')[1]?.split('\n')[0]?.trim()}
+                                            </p>
+                                          )}
+                                          {m.content.includes('Xem tại:') && (
+                                            <a
+                                              href={m.content.split('Xem tại:')[1]?.trim()}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-amber-500 hover:underline"
+                                            >
+                                              <span>Xem chi tiết sản phẩm</span>
+                                              <HiOutlineExternalLink className="h-3.5 w-3.5" />
+                                            </a>
+                                          )}
+                                        </div>
+                                      </div>
                                     ) : (
                                       <p className="whitespace-pre-wrap leading-relaxed">{m.content}</p>
                                     )}
@@ -947,75 +1248,169 @@ export default function ChatbotButton() {
                     </div>
 
 
-                    {/* Live input bar */}
-                    <form
-                      onSubmit={handleLiveSend}
-                      className={cn(
-                        'flex items-center gap-2 border-t p-3',
-                        isDark ? 'border-slate-800 bg-slate-850' : 'border-stone-200 bg-stone-50',
-                      )}
-                    >
-                      <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
-                      <input type="file" ref={videoInputRef} onChange={handleVideoUpload} accept="video/*" className="hidden" />
-
-                      <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={liveSending}
+                    {/* Active Product Bar (TikTok Shop style context) */}
+                    {activeProduct && (
+                      <div
                         className={cn(
-                          'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border transition',
-                          isDark
-                            ? 'border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-750'
-                            : 'border-stone-300 bg-white text-stone-600 hover:bg-stone-100',
+                          'flex items-center gap-2.5 border-t px-3 py-2 text-xs transition-colors',
+                          isDark ? 'border-slate-800 bg-slate-800/90' : 'border-amber-200/60 bg-amber-50/90'
                         )}
-                        title="Đính kèm ảnh"
                       >
-                        <HiOutlinePhotograph className="h-4 w-4" />
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => videoInputRef.current?.click()}
-                        disabled={liveSending}
-                        className={cn(
-                          'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border transition',
-                          isDark
-                            ? 'border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-750'
-                            : 'border-stone-300 bg-white text-stone-600 hover:bg-stone-100',
+                        {activeProduct.image && (
+                          <img
+                            src={activeProduct.image}
+                            alt={activeProduct.name}
+                            className="h-10 w-10 rounded-lg object-cover border border-amber-500/30 shrink-0 shadow-xs"
+                          />
                         )}
-                        title="Đính kèm video (max 50MB)"
-                      >
-                        <HiOutlineVideoCamera className="h-4 w-4" />
-                      </button>
+                        <div className="flex-1 min-w-0">
+                          <p className={cn('font-semibold truncate leading-tight', isDark ? 'text-slate-100' : 'text-stone-900')}>
+                            {activeProduct.name}
+                          </p>
+                          <p className="mt-0.5 text-amber-600 dark:text-amber-400 font-bold">
+                            {formatPrice(activeProduct.price)}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleSendProductCard}
+                          disabled={liveSending}
+                          className="shrink-0 rounded-lg bg-amber-500 px-2.5 py-1 text-xs font-bold text-white shadow-xs hover:bg-amber-600 transition active:scale-95 disabled:opacity-50"
+                        >
+                          Gửi sản phẩm
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => useChatStore.getState().openShopChat(activeShop, null)}
+                          className="rounded-lg p-1 text-stone-400 hover:bg-stone-200/50 hover:text-stone-600 dark:hover:bg-slate-700 dark:hover:text-white transition"
+                          title="Bỏ qua sản phẩm"
+                        >
+                          <HiX className="h-4 w-4" />
+                        </button>
+                      </div>
+                    )}
 
-                      <input
-                        ref={liveInputRef}
-                        type="text"
-                        value={liveInputValue}
-                        onChange={handleLiveInputChange}
-                        placeholder="Nhắn tin cho nhân viên..."
-                        disabled={liveSending}
-                        className={cn(
-                          'flex-1 rounded-xl border px-3.5 py-2 text-sm outline-none transition focus:ring-2 focus:ring-amber-500/20',
-                          isDark
-                            ? 'border-slate-700 bg-slate-800 text-white placeholder:opacity-50'
-                            : 'border-stone-300 bg-white text-stone-900 placeholder:opacity-50',
-                        )}
+                    {/* Live input bar with Media Popover and Emoji Picker */}
+                    <div className="relative">
+                      {/* Media Upload Popover (+ button) */}
+                      <MediaUploadPopover
+                        isOpen={showMediaPopover}
+                        onClose={() => setShowMediaPopover(false)}
+                        onPickImage={() => {
+                          setShowMediaPopover(false)
+                          fileInputRef.current?.click()
+                        }}
+                        onPickVideo={() => {
+                          setShowMediaPopover(false)
+                          videoInputRef.current?.click()
+                        }}
+                        align="left"
                       />
 
-                      <button
-                        type="submit"
-                        disabled={!liveInputValue.trim() || liveSending}
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white transition hover:bg-amber-600 disabled:opacity-40"
+                      {/* Emoji Picker Popover (😊 button) */}
+                      <EmojiPickerPopover
+                        isOpen={showEmojiPicker}
+                        onClose={() => setShowEmojiPicker(false)}
+                        onSelectEmoji={handleSelectEmoji}
+                        align="left"
+                      />
+
+                      <form
+                        onSubmit={handleLiveSend}
+                        className={cn(
+                          'flex items-center gap-2 border-t p-2.5',
+                          isDark ? 'border-slate-800 bg-slate-850' : 'border-stone-200 bg-stone-50',
+                        )}
                       >
-                        <HiOutlinePaperAirplane className="h-4 w-4" />
-                      </button>
-                    </form>
+                        <input
+                          type="file"
+                          ref={fileInputRef}
+                          onChange={handleImageUpload}
+                          accept="image/*"
+                          className="hidden"
+                        />
+                        <input
+                          type="file"
+                          ref={videoInputRef}
+                          onChange={handleVideoUpload}
+                          accept="video/*"
+                          className="hidden"
+                        />
+
+                        {/* Plus (+) Button for Media Options (Ảnh / Video) */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowMediaPopover((prev) => !prev)
+                            setShowEmojiPicker(false)
+                          }}
+                          disabled={liveSending}
+                          className={cn(
+                            'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border transition-all active:scale-95',
+                            showMediaPopover
+                              ? 'border-amber-500 bg-amber-500 text-white shadow-sm'
+                              : isDark
+                                ? 'border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-750'
+                                : 'border-stone-300 bg-white text-stone-600 hover:bg-stone-100',
+                          )}
+                          title="Đính kèm ảnh hoặc video"
+                        >
+                          <HiPlus className={cn('h-5 w-5 transition-transform duration-200', showMediaPopover && 'rotate-45')} />
+                        </button>
+
+                        {/* Emoji (😊) Button */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowEmojiPicker((prev) => !prev)
+                            setShowMediaPopover(false)
+                          }}
+                          disabled={liveSending}
+                          className={cn(
+                            'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border transition-all active:scale-95',
+                            showEmojiPicker
+                              ? 'border-amber-500 bg-amber-500 text-white shadow-sm'
+                              : isDark
+                                ? 'border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-750'
+                                : 'border-stone-300 bg-white text-stone-600 hover:bg-stone-100',
+                          )}
+                          title="Chèn biểu cảm Emoji"
+                        >
+                          <HiOutlineEmojiHappy className="h-5 w-5" />
+                        </button>
+
+                        <input
+                          ref={liveInputRef}
+                          type="text"
+                          value={liveInputValue}
+                          onChange={handleLiveInputChange}
+                          placeholder={activeShop ? `Gửi tin nhắn...` : 'Nhắn tin cho nhân viên...'}
+                          disabled={liveSending}
+                          className={cn(
+                            'flex-1 rounded-xl border px-3.5 py-2 text-sm outline-none transition focus:ring-2 focus:ring-amber-500/20',
+                            isDark
+                              ? 'border-slate-700 bg-slate-800 text-white placeholder:opacity-50'
+                              : 'border-stone-300 bg-white text-stone-900 placeholder:opacity-50',
+                          )}
+                        />
+
+                        <button
+                          type="submit"
+                          disabled={!liveInputValue.trim() || liveSending}
+                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white transition hover:bg-amber-600 disabled:opacity-40"
+                          title="Gửi"
+                        >
+                          <HiOutlinePaperAirplane className="h-4 w-4" />
+                        </button>
+                      </form>
+                    </div>
                   </>
                 )}
               </>
             )}
-          </motion.div>
+          </>
+        )}
+      </motion.div>
         )}
       </AnimatePresence>
 

@@ -57,6 +57,29 @@ public class EmailServiceImpl implements EmailService {
         }
     }
 
+    @Override
+    @Async
+    public void sendOtpForForgotPassword(MailBody mailBody, String otp) {
+        try {
+            storageOtp(mailBody, otp);
+            log.info("Sending forgot password email to: {}", mailBody.getTo().getEmail());
+            Context context = new Context();
+            context.setVariable("name", mailBody.getTo().getEmail());
+            context.setVariable("otp", otp);
+            String template = templateEngine.process("FORGOT_PASSWORD", context);
+            MimeMessage mimeMessage = javaMailSender.createMimeMessage();
+            MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(mimeMessage);
+            mimeMessageHelper.setFrom("movietheater8888@gmail.com");
+            mimeMessageHelper.setTo(mailBody.getTo().getEmail());
+            mimeMessageHelper.setText(template, true);
+            mimeMessageHelper.setSubject(mailBody.getSubject());
+            javaMailSender.send(mimeMessage);
+            log.info("Forgot password email sent successfully to: {}", mailBody.getTo().getEmail());
+        } catch (MessagingException e) {
+            log.error("Failed to send forgot password email to: {}, error: {}", mailBody.getTo().getEmail(), e.getMessage());
+        }
+    }
+
     public void resendOtp(String email) {
         if (email == null || email.trim().isEmpty()) {
             log.warn("OTP resend request received with null or empty email. Aborting.");

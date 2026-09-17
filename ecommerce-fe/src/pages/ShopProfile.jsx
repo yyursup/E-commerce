@@ -23,13 +23,18 @@ import ProductCard from '../components/ProductCard'
 import ReportActionButton from '../components/ReportActionButton'
 import Footer from '../components/Footer'
 import { useThemeStore } from '../store/useThemeStore'
+import { useAuthStore } from '../store/useAuthStore'
+import { useChatStore } from '../store/useChatStore'
 import { cn } from '../lib/cn'
 import shopService from '../services/shop'
 import productService from '../services/product'
+import voucherService from '../services/voucher'
+import socialService from '../services/social'
 
 export default function ShopProfile() {
   const { shopId } = useParams()
   const isDark = useThemeStore((s) => s.theme) === 'dark'
+  const { isAuthenticated } = useAuthStore()
 
   const [shop, setShop] = useState(null)
   const [loadingShop, setLoadingShop] = useState(true)
@@ -38,12 +43,16 @@ export default function ShopProfile() {
 
   // Interactive States
   const [isFollowing, setIsFollowing] = useState(false)
+  const [followerCount, setFollowerCount] = useState(0)
+  const [isFollowLoading, setIsFollowLoading] = useState(false)
   const [activeTab, setActiveTab] = useState('ALL_PRODUCTS') // 'HOME' | 'ALL_PRODUCTS' | 'ABOUT'
   const [sortBy, setSortBy] = useState('popular') // 'popular' | 'newest' | 'bestseller' | 'price_asc' | 'price_desc'
   const [searchInShop, setSearchInShop] = useState('')
   const [savedVouchers, setSavedVouchers] = useState({})
+  const [shopVouchers, setShopVouchers] = useState([])
+  const [loadingVouchers, setLoadingVouchers] = useState(false)
 
-  // Fetch shop details
+  // Fetch shop details & vouchers
   useEffect(() => {
     const loadShopData = async () => {
       try {
@@ -56,8 +65,81 @@ export default function ShopProfile() {
         setLoadingShop(false)
       }
     }
+
+    const loadVouchers = async () => {
+      if (!shopId) return
+      try {
+        setLoadingVouchers(true)
+        const mySavedCodes = new Set()
+
+        if (isAuthenticated) {
+          try {
+            const myVouchers = await voucherService.getMyVouchers()
+            if (Array.isArray(myVouchers)) {
+              myVouchers.forEach((uv) => {
+                if (uv.voucher?.code) mySavedCodes.add(uv.voucher.code)
+              })
+            }
+          } catch (e) {
+            console.warn('Could not load user vouchers in shop profile', e)
+          }
+        }
+
+        const vList = await voucherService.getShopVouchers(shopId)
+        if (Array.isArray(vList) && vList.length > 0) {
+          setShopVouchers(vList)
+          const saved = {}
+          vList.forEach((v) => {
+            if (v.isClaimed || v.claimed || mySavedCodes.has(v.code)) {
+              saved[v.code] = true
+            }
+          })
+          setSavedVouchers(saved)
+        } else {
+          // Fallback demo vouchers for shop
+          const fallbackList = [
+            { code: 'SHOP15K', title: 'Giảm 15k đơn từ 150k', minOrderAmount: 150000, discountValue: 15000, validTo: null },
+            { code: 'SHOP30K', title: 'Giảm 30k đơn từ 300k', minOrderAmount: 300000, discountValue: 30000, validTo: null },
+            { code: 'VIP10', title: 'Giảm 10% tối đa 100k', minOrderAmount: 200000, discountValue: 10, validTo: null },
+          ]
+          setShopVouchers(fallbackList)
+          const saved = {}
+          fallbackList.forEach((v) => {
+            if (mySavedCodes.has(v.code)) saved[v.code] = true
+          })
+          setSavedVouchers(saved)
+        }
+      } catch (err) {
+        console.warn('Could not load shop vouchers, using fallback', err)
+        setShopVouchers([
+          { code: 'SHOP15K', title: 'Giảm 15k đơn từ 150k', minOrderAmount: 150000, discountValue: 15000, validTo: null },
+          { code: 'SHOP30K', title: 'Giảm 30k đơn từ 300k', minOrderAmount: 300000, discountValue: 30000, validTo: null },
+          { code: 'VIP10', title: 'Giảm 10% tối đa 100k', minOrderAmount: 200000, discountValue: 10, validTo: null },
+        ])
+      } finally {
+        setLoadingVouchers(false)
+      }
+    }
+
     loadShopData()
-  }, [shopId])
+    loadVouchers()
+
+    const loadFollowStatus = async () => {
+      if (!shopId) return
+      try {
+        const res = await socialService.getFollowStatus(shopId)
+        if (res) {
+          setIsFollowing(!!res.following)
+          if (typeof res.followerCount === 'number') {
+            setFollowerCount(res.followerCount)
+          }
+        }
+      } catch (err) {
+        console.warn('Could not load follow status:', err)
+      }
+    }
+    loadFollowStatus()
+  }, [shopId, isAuthenticated])
 
   // Fetch shop products
   useEffect(() => {
@@ -133,21 +215,69 @@ export default function ShopProfile() {
     return list
   }, [products, searchInShop, sortBy])
 
-  const handleFollowToggle = () => {
-    setIsFollowing((prev) => {
-      const next = !prev
-      if (next) {
-        toast.success(`Đã theo dõi ${shop?.name || 'Shop'}`)
-      } else {
-        toast('Đã hủy theo dõi', { icon: '👋' })
+  const handleFollowToggle = async () => {
+    if (isFollowLoading) return
+
+    if (!isAuthenticated) {
+      toast.error('Vui lòng đăng nhập để theo dõi gian hàng và nhận thông báo ưu đãi!', {
+        id: 'shop-follow-toast',
+      })
+      return
+    }
+
+    try {
+      setIsFollowLoading(true)
+      const res = await socialService.toggleFollowShop(shopId)
+      const nextStatus = res?.following ?? !isFollowing
+      setIsFollowing(nextStatus)
+      if (typeof res?.followerCount === 'number') {
+        setFollowerCount(res.followerCount)
       }
-      return next
-    })
+
+      if (nextStatus) {
+        toast.success(
+          res?.message || `Đã theo dõi ${shop?.name || 'Shop'}! Bạn sẽ nhận được thông báo khi Shop có voucher mới.`,
+          {
+            id: 'shop-follow-toast',
+            duration: 3500,
+          }
+        )
+      } else {
+        toast(res?.message || 'Đã hủy theo dõi gian hàng', {
+          id: 'shop-follow-toast',
+          icon: '👋',
+          duration: 2500,
+        })
+      }
+    } catch (err) {
+      console.error('Follow toggle error:', err)
+      toast.error(err?.message || 'Không thể thực hiện thao tác theo dõi', {
+        id: 'shop-follow-toast',
+      })
+    } finally {
+      setIsFollowLoading(false)
+    }
   }
 
-  const handleSaveVoucher = (code) => {
+  const handleSaveVoucher = async (voucher) => {
+    const code = voucher.code
+    if (savedVouchers[code]) return
+
     setSavedVouchers((prev) => ({ ...prev, [code]: true }))
-    toast.success(`Đã lưu mã giảm giá ${code} vào ví của bạn!`)
+
+    if (isAuthenticated && voucher.id && String(voucher.id).length > 20) {
+      try {
+        await voucherService.claimVoucher(voucher.id)
+        toast.success(`Đã lưu mã giảm giá ${code} vào ví của bạn!`)
+      } catch (err) {
+        console.warn('Claim voucher API error:', err)
+        toast.error(err?.message || 'Không thể lưu mã voucher')
+      }
+    } else if (!isAuthenticated) {
+      toast.success(`Đã ghi nhớ mã ${code}! Đăng nhập để lưu vào ví của bạn.`)
+    } else {
+      toast.success(`Đã lưu mã giảm giá ${code} vào ví của bạn!`)
+    }
   }
 
   const handleShareShop = () => {
@@ -221,14 +351,21 @@ export default function ShopProfile() {
                 <div className="mt-4 flex flex-wrap items-center justify-center sm:justify-start gap-2">
                   <button
                     onClick={handleFollowToggle}
+                    disabled={isFollowLoading}
                     className={cn(
                       'inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition-all active:scale-95 shadow-sm',
+                      isFollowLoading && 'opacity-70 cursor-not-allowed',
                       isFollowing
                         ? 'bg-white/20 text-white hover:bg-white/30 border border-white/20'
                         : 'bg-amber-500 text-white hover:bg-amber-600'
                     )}
                   >
-                    {isFollowing ? (
+                    {isFollowLoading ? (
+                      <>
+                        <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-r-transparent" />
+                        Đang xử lý...
+                      </>
+                    ) : isFollowing ? (
                       <>
                         <HiOutlineCheck className="h-4 w-4" />
                         Đang theo dõi
@@ -242,8 +379,23 @@ export default function ShopProfile() {
                   </button>
 
                   <button
-                    onClick={() => toast.success('Đang kết nối trung tâm chat với người bán...')}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-white/25 bg-white/10 px-4 py-2 text-xs font-bold text-white hover:bg-white/20 transition-all active:scale-95"
+                    type="button"
+                    onClick={() => {
+                      const targetShopId = shop?.id || shopId
+                      if (!targetShopId) {
+                        toast.error('Không tìm thấy thông tin gian hàng')
+                        return
+                      }
+                      useChatStore.getState().openShopChat({
+                        id: targetShopId,
+                        name: shop?.name || 'Cửa hàng',
+                        logo: shop?.logo,
+                        city: shop?.city,
+                        mallBadge: shop?.mallBadge,
+                        ekycVerified: shop?.ekycVerified,
+                      })
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-white/25 bg-white/10 px-4 py-2 text-xs font-bold text-white hover:bg-white/20 transition-all active:scale-95 cursor-pointer"
                   >
                     <HiOutlineChat className="h-4 w-4 text-amber-400" />
                     Chat Ngay
@@ -304,11 +456,13 @@ export default function ShopProfile() {
 
               <div className="flex items-center gap-3">
                 <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-amber-400 shrink-0">
-                  <HiOutlineClock className="h-5 w-5" />
+                  <HiOutlineUserAdd className="h-5 w-5" />
                 </span>
                 <div>
-                  <div className="text-slate-400 text-xs">Thời Gian Phản Hồi</div>
-                  <div className="font-bold text-white text-base">{shop?.responseTime || 'trong vài phút'}</div>
+                  <div className="text-slate-400 text-xs">Người Theo Dõi</div>
+                  <div className="font-bold text-white text-base">
+                    {followerCount > 0 ? followerCount.toLocaleString() : (shop?.followerCount || 0)}
+                  </div>
                 </div>
               </div>
 
@@ -355,36 +509,38 @@ export default function ShopProfile() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            {[
-              { code: 'SHOP15K', text: 'Giảm 15k đơn từ 150k', hsd: 'HSD: 30 ngày' },
-              { code: 'SHOP30K', text: 'Giảm 30k đơn từ 300k', hsd: 'HSD: 15 ngày' },
-              { code: 'VIP10', text: 'Giảm 10% tối đa 100k', hsd: 'Freeship GHN' },
-            ].map((v) => (
-              <div
-                key={v.code}
-                className={cn(
-                  'flex items-center gap-3 rounded-xl border border-dashed px-3 py-2 text-xs transition-all',
-                  isDark ? 'border-amber-500/40 bg-amber-500/5' : 'border-amber-500/50 bg-amber-50/60'
-                )}
-              >
-                <div>
-                  <div className="font-bold text-amber-600 dark:text-amber-400">{v.text}</div>
-                  <div className="text-[10px] text-stone-400 dark:text-slate-500">{v.hsd}</div>
-                </div>
-                <button
-                  onClick={() => handleSaveVoucher(v.code)}
-                  disabled={savedVouchers[v.code]}
+            {shopVouchers.map((v) => {
+              const isSaved = savedVouchers[v.code]
+              const titleText = v.title || (v.discountType === 'PERCENTAGE' ? `Giảm ${v.discountValue}%` : `Giảm ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(v.discountValue || 0)}`)
+              const minText = v.minOrderAmount ? `Đơn từ ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(v.minOrderAmount)}` : 'Mọi đơn hàng'
+
+              return (
+                <div
+                  key={v.id || v.code}
                   className={cn(
-                    'rounded-lg px-2.5 py-1 font-bold text-[11px] transition-colors',
-                    savedVouchers[v.code]
-                      ? 'bg-stone-200 dark:bg-slate-800 text-stone-400 cursor-not-allowed'
-                      : 'bg-amber-500 text-white hover:bg-amber-600'
+                    'flex items-center gap-3 rounded-xl border border-dashed px-3 py-2 text-xs transition-all',
+                    isDark ? 'border-amber-500/40 bg-amber-500/5' : 'border-amber-500/50 bg-amber-50/60'
                   )}
                 >
-                  {savedVouchers[v.code] ? 'Đã lưu' : 'Lưu'}
-                </button>
-              </div>
-            ))}
+                  <div>
+                    <div className="font-bold text-amber-600 dark:text-amber-400">{titleText}</div>
+                    <div className="text-[10px] text-stone-400 dark:text-slate-500">{minText}</div>
+                  </div>
+                  <button
+                    onClick={() => handleSaveVoucher(v)}
+                    disabled={isSaved}
+                    className={cn(
+                      'rounded-lg px-2.5 py-1 font-bold text-[11px] transition-colors',
+                      isSaved
+                        ? 'bg-stone-200 dark:bg-slate-800 text-stone-400 cursor-not-allowed'
+                        : 'bg-amber-500 text-white hover:bg-amber-600'
+                    )}
+                  >
+                    {isSaved ? 'Đã lưu' : 'Lưu'}
+                  </button>
+                </div>
+              )
+            })}
           </div>
         </div>
       </section>

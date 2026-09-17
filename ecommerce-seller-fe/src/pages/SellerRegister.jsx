@@ -1181,13 +1181,14 @@ export default function SellerRegister() {
                           <HiOutlineDocumentText className={cn('absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2', isDark ? 'text-slate-500' : 'text-stone-400')} />
                           <input
                             type="text"
-                            placeholder="VD: 0123456789"
+                            maxLength={12}
+                            placeholder="VD: 0123456789 hoặc CCCD 12 số"
                             className={cn('w-full rounded-xl border py-3 pl-10 pr-4 text-sm outline-none transition', isDark ? 'border-slate-600 bg-slate-800/50 text-white' : 'border-stone-300 bg-stone-50/80 text-stone-900', errors.taxCode && 'border-red-500/70')}
                             {...register('taxCode', {
                               required: sellerType === 'INDIVIDUAL' ? 'Vui lòng nhập mã số thuế cá nhân' : false,
                               pattern: {
-                                value: /^[0-9]{10}(-[0-9]{3})?$|^[0-9]{13}$/,
-                                message: 'Mã số thuế không hợp lệ (gồm 10 hoặc 13 chữ số)',
+                                value: /^[0-9]{10,12}$/,
+                                message: 'Mã số thuế cá nhân không hợp lệ (gồm 10 đến 12 chữ số)',
                               },
                             })}
                           />

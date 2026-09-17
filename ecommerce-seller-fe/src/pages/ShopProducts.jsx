@@ -309,6 +309,11 @@ export default function ShopProducts() {
                       )}>
                         {prod.categoryName || 'Mặc định'}
                       </span>
+                      {prod.sold >= 50 && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/10 px-2 py-0.5 text-[11px] font-bold text-rose-500 border border-rose-500/20 shrink-0">
+                          🔥 Bán chạy
+                        </span>
+                      )}
                     </div>
 
                     <h3 className={cn(
@@ -326,6 +331,12 @@ export default function ShopProducts() {
                       )}>
                         Kho: <strong className={isDark ? 'text-slate-200' : 'text-stone-800'}>{stock}</strong> cái
                         {stock === 0 && <span className="ml-1 font-bold text-rose-500">(Hết hàng)</span>}
+                      </span>
+                      <span className={cn(
+                        'font-semibold border-l pl-3',
+                        isDark ? 'border-slate-700 text-slate-400' : 'border-stone-300 text-stone-500'
+                      )}>
+                        Đã bán: <strong className={isDark ? 'text-slate-200' : 'text-stone-800'}>{prod.sold || 0}</strong> cái
                       </span>
                     </div>
                   </div>

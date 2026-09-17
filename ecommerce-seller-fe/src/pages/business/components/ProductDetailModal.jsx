@@ -167,6 +167,11 @@ export default function ProductDetailModal({
                 </span>
                 <h3 className="text-lg sm:text-xl font-black leading-snug break-words">
                   {product.name}
+                  {product.sold >= 50 && (
+                    <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-rose-500/10 px-2.5 py-0.5 text-xs font-bold text-rose-500 border border-rose-500/20 align-middle">
+                      🔥 Bán chạy
+                    </span>
+                  )}
                 </h3>
               </div>
 
@@ -182,17 +187,25 @@ export default function ProductDetailModal({
                   </span>
                 </div>
 
-                <div className="text-right">
-                  <span className={cn('text-xs block', isDark ? 'text-slate-400' : 'text-stone-500')}>Tổng tồn kho:</span>
-                  <span className={cn(
-                    'text-lg font-black',
-                    stock === 0 ? 'text-rose-500' : isDark ? 'text-emerald-400' : 'text-emerald-600'
-                  )}>
-                    {stock} <span className="text-xs font-normal">sản phẩm</span>
-                  </span>
-                  {stock === 0 && (
-                    <span className="block text-[11px] font-bold text-rose-500">(Hết hàng)</span>
-                  )}
+                <div className="flex items-center gap-6 text-right">
+                  <div>
+                    <span className={cn('text-xs block', isDark ? 'text-slate-400' : 'text-stone-500')}>Đã bán:</span>
+                    <span className={cn('text-lg font-black', isDark ? 'text-slate-200' : 'text-stone-800')}>
+                      {product.sold || 0}
+                    </span>
+                  </div>
+                  <div>
+                    <span className={cn('text-xs block', isDark ? 'text-slate-400' : 'text-stone-500')}>Tổng tồn kho:</span>
+                    <span className={cn(
+                      'text-lg font-black',
+                      stock === 0 ? 'text-rose-500' : isDark ? 'text-emerald-400' : 'text-emerald-600'
+                    )}>
+                      {stock} <span className="text-xs font-normal">sản phẩm</span>
+                    </span>
+                    {stock === 0 && (
+                      <span className="block text-[11px] font-bold text-rose-500">(Hết hàng)</span>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -251,6 +264,9 @@ export default function ProductDetailModal({
                           </span>
                           <span className={cn('font-bold', Number(v.stock) === 0 ? 'text-rose-500' : isDark ? 'text-slate-300' : 'text-stone-700')}>
                             Kho: {v.stock}
+                          </span>
+                          <span className={cn('font-bold border-l pl-3', isDark ? 'border-slate-700' : 'border-stone-300', isDark ? 'text-slate-300' : 'text-stone-700')}>
+                            Đã bán: {v.sold || 0}
                           </span>
                         </div>
                       </div>

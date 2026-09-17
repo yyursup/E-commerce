@@ -65,4 +65,16 @@ public class AuthenticationController {
         authenticationService.forgotPasswordReset(request.getEmail(), request.getOtp(), request.getNewPassword());
         return ResponseEntity.ok().build();
     }
+
+    @PostMapping("/oauth2/google")
+    public ResponseEntity<LoginResponse> oauth2LoginGoogle(@RequestBody @Valid com.marketplace.ecommerce.auth.dto.request.OAuth2Request request) {
+        LoginResponse response = authenticationService.oauth2LoginGoogle(request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/oauth2/facebook")
+    public ResponseEntity<LoginResponse> oauth2LoginFacebook(@RequestBody @Valid com.marketplace.ecommerce.auth.dto.request.OAuth2Request request) {
+        LoginResponse response = authenticationService.oauth2LoginFacebook(request);
+        return ResponseEntity.ok(response);
+    }
 }

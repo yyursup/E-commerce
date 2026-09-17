@@ -44,6 +44,24 @@ const authService = {
         }
     },
 
+    oauth2Google: async (token) => {
+        try {
+            const response = await api.post('/api/v1/auth/oauth2/google', { token });
+            return response.data;
+        } catch (error) {
+            throw error.response ? error.response.data : error;
+        }
+    },
+
+    oauth2Facebook: async (token) => {
+        try {
+            const response = await api.post('/api/v1/auth/oauth2/facebook', { token });
+            return response.data;
+        } catch (error) {
+            throw error.response ? error.response.data : error;
+        }
+    },
+
     // Get all users (ADMIN only)
     getAllUsers: async () => {
         try {

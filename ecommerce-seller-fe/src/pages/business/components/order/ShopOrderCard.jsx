@@ -206,11 +206,38 @@ export default function ShopOrderCard({ order, isDark, onQuickStatusUpdate, acti
             </div>
           </div>
 
-          <div className="pt-2 flex items-baseline justify-between border-t border-dashed border-stone-200 dark:border-slate-800">
-            <span className="text-xs text-stone-500 dark:text-slate-400">Tổng thanh toán:</span>
-            <span className="text-base sm:text-lg font-black text-amber-600 dark:text-amber-400">
-              {formatCurrency(order.total)}
-            </span>
+          <div className="pt-2 space-y-1.5 border-t border-dashed border-stone-200 dark:border-slate-800">
+            {/* Phí giao hàng GHN */}
+            <div className="flex items-center justify-between text-xs text-stone-500 dark:text-slate-400">
+              <span className="flex items-center gap-1.5">
+                <HiOutlineTruck className="h-3.5 w-3.5 text-indigo-500" />
+                <span>Phí giao hàng:</span>
+              </span>
+              <span className="font-semibold text-stone-700 dark:text-slate-300">
+                {Number(order.shippingFee) > 0 ? formatCurrency(order.shippingFee) : '0 đ'}
+              </span>
+            </div>
+
+            {/* Giảm giá voucher nếu có */}
+            {Number(order.discountAmount || order.shopDiscountAmount) > 0 && (
+              <div className="flex items-center justify-between text-xs text-rose-500">
+                <span className="flex items-center gap-1.5">
+                  <HiOutlineTag className="h-3.5 w-3.5" />
+                  <span>Giảm giá voucher:</span>
+                </span>
+                <span className="font-semibold">
+                  -{formatCurrency(order.discountAmount || order.shopDiscountAmount)}
+                </span>
+              </div>
+            )}
+
+            {/* Tổng thanh toán */}
+            <div className="flex items-baseline justify-between pt-0.5">
+              <span className="text-xs text-stone-500 dark:text-slate-400">Tổng thanh toán:</span>
+              <span className="text-base sm:text-lg font-black text-amber-600 dark:text-amber-400">
+                {formatCurrency(order.total)}
+              </span>
+            </div>
           </div>
         </div>
       </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { HiOutlineX, HiOutlinePlusCircle, HiOutlineTrash } from 'react-icons/hi'
+import { HiOutlineX, HiOutlinePlusCircle, HiOutlineTrash, HiOutlineInformationCircle } from 'react-icons/hi'
 import { useThemeStore } from '../../../store/useThemeStore'
 import { cn } from '../../../lib/cn'
 import toast from 'react-hot-toast'
@@ -291,14 +291,21 @@ export default function ProductFormModal({ product = null, onClose, onSuccess })
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label
-                className={cn(
-                  'mb-1.5 block text-xs font-bold uppercase tracking-wider',
-                  isDark ? 'text-slate-300' : 'text-stone-700',
+              <div className="flex items-center justify-between mb-1.5">
+                <label
+                  className={cn(
+                    'block text-xs font-bold uppercase tracking-wider',
+                    isDark ? 'text-slate-300' : 'text-stone-700',
+                  )}
+                >
+                  Số lượng tồn kho <span className="text-rose-500">*</span>
+                </label>
+                {variants.length > 0 && (
+                  <span className="text-[10px] font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-md">
+                    Tự động tính từ biến thể
+                  </span>
                 )}
-              >
-                Số lượng tồn kho <span className="text-rose-500">*</span>
-              </label>
+              </div>
               <input
                 type="number"
                 value={formData.stockQuantity}
@@ -314,6 +321,16 @@ export default function ProductFormModal({ product = null, onClose, onSuccess })
                   variants.length > 0 && 'opacity-60 cursor-not-allowed bg-stone-100 dark:bg-slate-900'
                 )}
               />
+              {variants.length > 0 ? (
+                <p className="mt-1.5 flex items-start gap-1 text-[11px] font-medium text-amber-600 dark:text-amber-400 leading-tight">
+                  <HiOutlineInformationCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                  <span>Khi nhập phân loại hàng, số lượng tồn kho tự động được tính từ tổng các biến thể ({formData.stockQuantity}), bạn không cần nhập SL ở đây.</span>
+                </p>
+              ) : (
+                <p className={cn('mt-1 text-[11px]', isDark ? 'text-slate-400' : 'text-stone-500')}>
+                  * Lưu ý: Nếu nhập thêm biến thể phân loại bên dưới thì không cần nhập SL ở đây.
+                </p>
+              )}
             </div>
 
             <div>
@@ -374,6 +391,13 @@ export default function ProductFormModal({ product = null, onClose, onSuccess })
                 Thêm phân loại
               </button>
             </div>
+
+            {variants.length > 0 && (
+              <div className="mb-3 flex items-center gap-2 rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs font-medium text-amber-700 dark:text-amber-300">
+                <HiOutlineInformationCircle className="h-4 w-4 shrink-0 text-amber-500" />
+                <span>Bạn đang nhập biến thể: Số lượng tồn kho và giá bán sẽ tự động tính theo các biến thể dưới đây, không cần nhập SL ở trên.</span>
+              </div>
+            )}
 
             {variants.length > 0 && (
               <div className="space-y-3 mb-2">

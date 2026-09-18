@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { decodeJWT, getAccountVerified } from '../lib/jwt'
-import { setAccessToken, clearAccessToken } from '../lib/auth'
+import { setAccessToken, setRefreshToken, clearAccessToken } from '../lib/auth'
 import { closeWebSocketConnection } from '../services/websocketService'
 
 export const useAuthStore = create(
@@ -9,11 +9,15 @@ export const useAuthStore = create(
         (set, get) => ({
             user: null,
             token: null,
+            refreshToken: null,
             isAuthenticated: false,
             accountVerified: false,
 
-            login: (token, user) => {
+            login: (token, user, refreshToken = null) => {
                 setAccessToken(token)
+                if (refreshToken) {
+                    setRefreshToken(refreshToken)
+                }
                 const decoded = decodeJWT(token)
                 const accountVerified = getAccountVerified(token)
                 const enrichedUser = {
@@ -26,10 +30,22 @@ export const useAuthStore = create(
                 }
                 set({
                     token,
+                    refreshToken: refreshToken || null,
                     user: enrichedUser,
                     isAuthenticated: true,
                     accountVerified,
                 })
+            },
+
+            setTokens: (token, refreshToken = null) => {
+                setAccessToken(token)
+                if (refreshToken) {
+                    setRefreshToken(refreshToken)
+                }
+                set((state) => ({
+                    token,
+                    refreshToken: refreshToken || state.refreshToken,
+                }))
             },
 
             updateUser: (updatedFields) => {
@@ -50,6 +66,7 @@ export const useAuthStore = create(
                 clearAccessToken()
                 set({
                     token: null,
+                    refreshToken: null,
                     user: null,
                     isAuthenticated: false,
                     accountVerified: false,
@@ -58,7 +75,7 @@ export const useAuthStore = create(
         }),
         {
             name: 'auth-storage', // name of the item in the storage (must be unique)
-            partialize: (state) => ({ user: state.user, token: state.token, isAuthenticated: state.isAuthenticated, accountVerified: state.accountVerified }), // persist these fields
+            partialize: (state) => ({ user: state.user, token: state.token, refreshToken: state.refreshToken, isAuthenticated: state.isAuthenticated, accountVerified: state.accountVerified }), // persist these fields
         },
     ),
 )

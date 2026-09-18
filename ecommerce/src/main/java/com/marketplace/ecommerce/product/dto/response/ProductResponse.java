@@ -33,6 +33,7 @@ public class ProductResponse {
     private List<ProductVariantResponse> variants;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private boolean featured;
 
 
     public static ProductResponse from(Product product) {
@@ -53,6 +54,7 @@ public class ProductResponse {
                 .categoryName(product.getProductCategory().getName())
                 .createdAt(product.getCreatedAt())
                 .updatedAt(product.getUpdatedAt())
+                .featured(product.isFeatured())
                 .build();
     }
 

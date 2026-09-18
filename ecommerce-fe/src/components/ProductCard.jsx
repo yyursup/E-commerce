@@ -79,18 +79,24 @@ export default function ProductCard({ product, onQuickView, dataAos, dataAosDela
       onMouseLeave={() => setHover(false)}
       className={cn(
         'group relative flex flex-col justify-between overflow-hidden rounded-2xl border transition-all duration-300',
+        product.featured && 'ring-2 ring-amber-500/50 shadow-md shadow-amber-500/10',
         isDark
           ? 'border-slate-800 bg-slate-800/60 hover:border-amber-500/40 hover:shadow-xl hover:shadow-black/30'
           : 'border-stone-200/90 bg-white hover:border-amber-400 hover:shadow-xl hover:shadow-amber-500/5',
       )}
     >
       {/* Badges container */}
-      <div className="absolute left-2.5 top-2.5 z-10 flex flex-col gap-1">
+      <div className="absolute left-2.5 top-2.5 z-10 flex flex-col gap-1 items-start">
+        {product.featured && (
+          <span className="inline-flex items-center gap-1 rounded-md bg-gradient-to-r from-amber-500 to-orange-500 px-2 py-0.5 text-[10px] font-black text-white shadow-md tracking-wider">
+            ⭐ Shop Đề Xuất
+          </span>
+        )}
         {/* Mall / Verified badge */}
         <span className="inline-flex items-center gap-1 rounded-md bg-rose-600 px-2 py-0.5 text-[10px] font-extrabold text-white shadow-sm uppercase tracking-wider">
           Mall
         </span>
-        {badge && badge !== 'Bestseller' && (
+        {badge && badge !== 'Bestseller' && badge !== 'Shop Đề Xuất' && (
           <span className="rounded-md bg-amber-500 px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">
             {badge}
           </span>

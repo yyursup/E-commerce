@@ -26,6 +26,12 @@ public class AuthenticationController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/refresh-token")
+    public ResponseEntity<LoginResponse> refreshToken(@Valid @RequestBody com.marketplace.ecommerce.auth.dto.request.RefreshTokenRequest request) {
+        LoginResponse response = authenticationService.refreshToken(request.getRefreshToken());
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/me")
     public ResponseEntity<LoginResponse> getMyProfile(@CurrentUser CurrentUserInfo currentUser) {
         if (currentUser == null || currentUser.getAccountId() == null) {

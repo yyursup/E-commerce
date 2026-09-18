@@ -26,4 +26,6 @@ public interface AuthenticationService {
     LoginResponse oauth2LoginGoogle(com.marketplace.ecommerce.auth.dto.request.OAuth2Request request);
 
     LoginResponse oauth2LoginFacebook(com.marketplace.ecommerce.auth.dto.request.OAuth2Request request);
+
+    LoginResponse refreshToken(String refreshToken);
 }

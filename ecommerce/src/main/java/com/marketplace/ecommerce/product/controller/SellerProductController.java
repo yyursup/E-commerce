@@ -65,4 +65,13 @@ public class SellerProductController {
         productService.deleteProduct(u.getAccountId(), productId);
         return ResponseEntity.noContent().build();
     }
+
+    @PatchMapping("/{productId}/featured")
+    public ResponseEntity<ProductResponse> toggleFeatured(
+            @CurrentUser CurrentUserInfo u,
+            @PathVariable UUID productId
+    ) {
+        ProductResponse response = productService.toggleFeatured(u.getAccountId(), productId);
+        return ResponseEntity.ok(response);
+    }
 }

@@ -238,6 +238,27 @@ public class ProductServiceImpl implements ProductService {
             }
         }
     }
+    @Override
+    @Transactional
+    public ProductResponse toggleFeatured(UUID accountId, UUID productId) {
+        Shop shop = getShopByAccountId(accountId);
 
+        Product product = productRepository.findByIdAndDeletedFalse(productId)
+                .orElseThrow(() -> new CustomException("Sản phẩm không tồn tại"));
+
+        assertOwner(shop, product);
+
+        if (!product.isFeatured()) {
+            // Check limit: max 5 featured products per shop
+            long currentFeaturedCount = productRepository.countByShopIdAndFeaturedTrueAndDeletedFalse(shop.getId());
+            if (currentFeaturedCount >= 5) {
+                throw new CustomException("Bạn chỉ có thể đẩy nổi bật tối đa 5 sản phẩm. Hãy bỏ đẩy một sản phẩm khác trước.");
+            }
+        }
+
+        product.setFeatured(!product.isFeatured());
+        product.setUpdatedAt(java.time.LocalDateTime.now());
+        return ProductResponse.from(productRepository.save(product));
+    }
 
 }

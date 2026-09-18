@@ -139,4 +139,14 @@ public class QueryProductServiceImpl implements QueryProductService {
                 .orElseThrow(() -> new CustomException("Shop not found"));
     }
 
+    @Override
+    public List<ProductResponse> getFeaturedProductsByShop(UUID shopId) {
+        if (!shopRepository.existsById(shopId)) {
+            throw new CustomException("Shop không tồn tại");
+        }
+        return productRepository.findFeaturedByShopIdWithDetails(shopId).stream()
+                .map(ProductResponse::from)
+                .toList();
+    }
+
 }

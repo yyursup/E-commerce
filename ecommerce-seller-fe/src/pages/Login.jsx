@@ -39,7 +39,7 @@ export default function Login() {
         shopName: res.shopName,
         sellerStatus: res.sellerStatus,
       }
-      login(res.token, userPayload)
+      login(res.token, userPayload, res.refreshToken)
 
       toast.success(`Đăng nhập thành công, ${res.shopName || res.email}!`)
 

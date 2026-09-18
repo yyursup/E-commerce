@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
 import {
   HiOutlineShoppingBag,
   HiOutlineStar,
+  HiStar,
   HiOutlineUserAdd,
   HiOutlineCheck,
   HiOutlineChat,
@@ -50,7 +50,9 @@ export default function ShopProfile() {
   const [searchInShop, setSearchInShop] = useState('')
   const [savedVouchers, setSavedVouchers] = useState({})
   const [shopVouchers, setShopVouchers] = useState([])
-  const [loadingVouchers, setLoadingVouchers] = useState(false)
+  const [, setLoadingVouchers] = useState(false)
+  const [featuredProducts, setFeaturedProducts] = useState([])
+  const [loadingFeatured, setLoadingFeatured] = useState(false)
 
   // Fetch shop details & vouchers
   useEffect(() => {
@@ -141,26 +143,22 @@ export default function ShopProfile() {
     loadFollowStatus()
   }, [shopId, isAuthenticated])
 
-  // Fetch shop products
+  // Fetch shop products using real shop ID
   useEffect(() => {
+    const targetShopId = shop?.id || (shopId?.length > 20 ? shopId : null)
+    if (!targetShopId) return
+
     const loadShopProducts = async () => {
       try {
         setLoadingProducts(true)
-        // Try fetching products by shopId
         const res = await productService.getProducts({
-          shopId: shopId?.length > 20 ? shopId : undefined,
+          shopId: targetShopId,
           page: 0,
-          size: 40,
+          size: 50,
         })
         const items = res?.content || []
-        let rawList = items
-        if (rawList.length === 0) {
-          // If no products returned by this shopId, load all published products as fallback demo
-          const allRes = await productService.getProducts({ page: 0, size: 40 })
-          rawList = allRes?.content || []
-        }
 
-        const mapped = rawList.map((p) => {
+        const mapped = items.map((p) => {
           const thumb = p.images?.find((img) => img.isThumbnail) || p.images?.[0]
           const imageUrl = thumb?.imageUrl || (typeof thumb === 'string' ? thumb : '/product-placeholder.svg')
           const parsedPrice =
@@ -177,10 +175,11 @@ export default function ShopProfile() {
             image: imageUrl,
             price: parsedPrice,
             basePrice: p.basePrice,
-            badge: p.status === 'PUBLISHED' ? 'Chính hãng' : null,
+            badge: p.featured ? 'Shop Đề Xuất' : (p.status === 'PUBLISHED' ? 'Chính hãng' : null),
             rating: p.rating || 4.8,
             shopName: p.shopName || shop?.name || 'Shop',
-            shopId: p.shopId || shopId,
+            shopId: p.shopId || targetShopId,
+            featured: !!p.featured,
             originalProduct: p,
           }
         })
@@ -193,9 +192,38 @@ export default function ShopProfile() {
       }
     }
     loadShopProducts()
-  }, [shopId, shop?.name])
+  }, [shop?.id, shopId])
 
-  // Filter & Sort Products
+  // Fetch featured products for this shop
+  useEffect(() => {
+    const targetShopId = shop?.id || (shopId?.length > 20 ? shopId : null)
+    if (!targetShopId) return
+
+    const loadFeatured = async () => {
+      try {
+        setLoadingFeatured(true)
+        const data = await productService.getFeaturedProductsByShop(targetShopId)
+        if (Array.isArray(data) && data.length > 0) {
+          const mapped = data.map((p) => {
+            const thumb = p.images?.find((img) => img.isThumbnail) || p.images?.[0]
+            const imageUrl = thumb?.imageUrl || '/product-placeholder.svg'
+            const parsedPrice = p.basePrice !== undefined && p.basePrice !== null ? Number(p.basePrice) : 0
+            return { ...p, image: imageUrl, price: parsedPrice, featured: true }
+          })
+          setFeaturedProducts(mapped)
+        } else {
+          setFeaturedProducts([])
+        }
+      } catch {
+        setFeaturedProducts([])
+      } finally {
+        setLoadingFeatured(false)
+      }
+    }
+    loadFeatured()
+  }, [shop?.id, shopId])
+
+  // Filter & Sort Products (Ưu tiên ghim sản phẩm featured/được đẩy lên đầu tiên)
   const filteredProducts = useMemo(() => {
     let list = [...products]
 
@@ -204,13 +232,24 @@ export default function ShopProfile() {
       list = list.filter((p) => p.name?.toLowerCase().includes(q))
     }
 
-    if (sortBy === 'price_asc') {
-      list.sort((a, b) => (Number(a.price ?? a.basePrice) || 0) - (Number(b.price ?? b.basePrice) || 0))
-    } else if (sortBy === 'price_desc') {
-      list.sort((a, b) => (Number(b.price ?? b.basePrice) || 0) - (Number(a.price ?? a.basePrice) || 0))
-    } else if (sortBy === 'newest') {
-      list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
-    }
+    list.sort((a, b) => {
+      // 1. Luôn ghim sản phẩm được đẩy (featured = true) lên trên cùng
+      const aFeatured = a.featured ? 1 : 0
+      const bFeatured = b.featured ? 1 : 0
+      if (aFeatured !== bFeatured) {
+        return bFeatured - aFeatured
+      }
+
+      // 2. Sau đó sắp xếp theo tiêu chí lọc người dùng chọn
+      if (sortBy === 'price_asc') {
+        return (Number(a.price ?? a.basePrice) || 0) - (Number(b.price ?? b.basePrice) || 0)
+      } else if (sortBy === 'price_desc') {
+        return (Number(b.price ?? b.basePrice) || 0) - (Number(a.price ?? a.basePrice) || 0)
+      } else if (sortBy === 'newest') {
+        return new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
+      }
+      return (b.sold || 0) - (a.sold || 0)
+    })
 
     return list
   }, [products, searchInShop, sortBy])
@@ -428,7 +467,7 @@ export default function ShopProfile() {
                 </span>
                 <div>
                   <div className="text-slate-400 text-xs">Sản phẩm</div>
-                  <div className="font-bold text-white text-base">{shop?.productCount || products.length}</div>
+                  <div className="font-bold text-white text-base">{loadingProducts ? '...' : products.length}</div>
                 </div>
               </div>
 
@@ -702,7 +741,37 @@ export default function ShopProfile() {
               </div>
             </div>
 
-            {/* Featured Products */}
+            {/* ⭐ Sản Phẩm Nổi Bật (Seller Spotlight) */}
+            {(loadingFeatured || featuredProducts.length > 0) && (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <HiStar className="h-5 w-5 text-amber-500" />
+                    <h3 className={cn('text-lg font-bold', isDark ? 'text-white' : 'text-stone-900')}>
+                      Sản Phẩm Nổi Bật Của Shop
+                    </h3>
+                    <span className="text-[11px] font-bold bg-amber-500/10 text-amber-500 border border-amber-500/25 px-2 py-0.5 rounded-full">
+                      Được Đẩy Bởi Shop
+                    </span>
+                  </div>
+                </div>
+                {loadingFeatured ? (
+                  <div className="flex gap-3 overflow-x-auto pb-2">
+                    {[...Array(3)].map((_, i) => (
+                      <div key={i} className={cn('h-52 w-40 shrink-0 rounded-2xl animate-pulse', isDark ? 'bg-slate-800' : 'bg-stone-200')} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
+                    {featuredProducts.map((prod) => (
+                      <ProductCard key={prod.id} product={prod} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Featured Products (Bestseller) */}
             <div>
               <div className="flex items-center justify-between mb-4">
                 <h3 className={cn('text-lg font-bold', isDark ? 'text-white' : 'text-stone-900')}>

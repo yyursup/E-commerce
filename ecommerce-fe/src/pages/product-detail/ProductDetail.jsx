@@ -334,7 +334,7 @@ export default function ProductDetail() {
   const originalPrice = Math.round(price * 1.22) // Giá gốc trước giảm (giống Shopee gạch ngang)
   const displayStock = selectedVariant ? (selectedVariant.stock || 0) : (product.quantity || 0)
   const images = product.images || []
-  const currentShopId = product.shopId || 'shop-1'
+  const currentShopId = product.shopId || shopData?.id || shop?.id
   const shopData = shop || FALLBACK_SHOPS[0]
 
   return (

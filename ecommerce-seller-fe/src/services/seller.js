@@ -53,6 +53,16 @@ const sellerService = {
       throw error.response ? error.response.data : error;
     }
   },
+
+  // Toggle featured (đẩy/bỏ đẩy sản phẩm nổi bật)
+  toggleFeatured: async (productId) => {
+    try {
+      const response = await axiosClient.patch(`${SELLER_BASE}/${productId}/featured`);
+      return response.data;
+    } catch (error) {
+      throw error.response ? error.response.data : error;
+    }
+  },
 };
 
 export default sellerService;

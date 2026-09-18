@@ -152,7 +152,7 @@ const shopService = {
             city: s.address?.includes('Hồ Chí Minh') ? 'Hồ Chí Minh' : s.address?.includes('Đà Nẵng') ? 'Đà Nẵng' : 'Hà Nội',
             rating: s.averageRating ? Number(s.averageRating).toFixed(1) : 4.9,
             reviewCount: 450,
-            productCount: s.productCount || 35,
+            productCount: s.productCount !== undefined && s.productCount !== null ? Number(s.productCount) : 0,
             responseRate: '99%',
             responseTime: 'trong vài phút',
             joinedTime: '2 năm trước',
@@ -161,6 +161,43 @@ const shopService = {
             mallBadge: s.sellerType === 'BUSINESS' || s.name?.includes('Official') || s.name?.includes('Authorised'),
             tags: ['Chính Hãng', 'Ký Quỹ Escrow', 'GHN Express'],
           }
+        }
+      } else {
+        // If non-UUID passed (like 'shop-1' or 'apple'), attempt to find real shop from backend
+        try {
+          const allRes = await axiosClient.get(SHOP_BASE)
+          if (Array.isArray(allRes.data) && allRes.data.length > 0) {
+            // Find shop matching index or name
+            const mockShop = FALLBACK_SHOPS.find(
+              (fs) => String(fs.id).toLowerCase() === String(shopId).toLowerCase()
+            )
+            const searchKeyword = mockShop ? mockShop.name.toLowerCase() : String(shopId).toLowerCase()
+            const realShop = allRes.data.find((s) => s.name?.toLowerCase().includes(searchKeyword)) || allRes.data[0]
+            if (realShop) {
+              return {
+                id: realShop.id,
+                name: realShop.name,
+                description: realShop.description,
+                logo: realShop.logoUrl || 'https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?w=300&h=300&fit=crop',
+                cover: realShop.coverImageUrl || 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=1200&h=400&fit=crop',
+                phoneNumber: realShop.phoneNumber,
+                location: realShop.address || 'Hà Nội / TP.HCM',
+                city: realShop.address?.includes('Hồ Chí Minh') ? 'Hồ Chí Minh' : realShop.address?.includes('Đà Nẵng') ? 'Đà Nẵng' : 'Hà Nội',
+                rating: realShop.averageRating ? Number(realShop.averageRating).toFixed(1) : 4.9,
+                reviewCount: 450,
+                productCount: realShop.productCount !== undefined && realShop.productCount !== null ? Number(realShop.productCount) : 0,
+                responseRate: '99%',
+                responseTime: 'trong vài phút',
+                joinedTime: '2 năm trước',
+                followerCount: '32.5k',
+                ekycVerified: true,
+                mallBadge: realShop.sellerType === 'BUSINESS' || realShop.name?.includes('Official') || realShop.name?.includes('Authorised'),
+                tags: ['Chính Hãng', 'Ký Quỹ Escrow', 'GHN Express'],
+              }
+            }
+          }
+        } catch {
+          // ignore
         }
       }
     } catch (err) {
@@ -176,7 +213,7 @@ const shopService = {
     return found || FALLBACK_SHOPS[0]
   },
 
-  // Lấy danh sách tất cả các shop
+  // Lấy danh sách tất cả các shop từ API thật
   getAllShops: async () => {
     try {
       const response = await axiosClient.get(SHOP_BASE)
@@ -185,13 +222,16 @@ const shopService = {
           id: s.id,
           name: s.name,
           description: s.description,
+          sellerName: s.businessName || s.name,
+          category: s.name?.includes('Fashion') ? 'Thời Trang & Phụ Kiện' : s.name?.includes('Book') ? 'Sách & Văn Phòng Phẩm' : s.name?.includes('Sunhouse') ? 'Nhà Cửa & Đời Sống' : s.name?.includes('Beauty') ? 'Sức Khỏe & Sắc Đẹp' : s.name?.includes('Decathlon') ? 'Thể Thao & Dã Ngoại' : 'Điện Tử & Công Nghệ',
           logo: s.logoUrl || FALLBACK_SHOPS[idx % FALLBACK_SHOPS.length].logo,
           cover: s.coverImageUrl || FALLBACK_SHOPS[idx % FALLBACK_SHOPS.length].cover,
           location: s.address || 'Việt Nam',
           city: s.address?.includes('Hồ Chí Minh') ? 'Hồ Chí Minh' : s.address?.includes('Đà Nẵng') ? 'Đà Nẵng' : 'Hà Nội',
           rating: s.averageRating ? Number(s.averageRating).toFixed(1) : 4.9,
-          reviewCount: 300 + idx * 80,
-          productCount: s.productCount || 30,
+          reviewCount: 120 + idx * 45,
+          productCount: s.productCount !== undefined && s.productCount !== null ? Number(s.productCount) : 0,
+          followerCount: `${(15 + idx * 5.2).toFixed(1)}k`,
           ekycVerified: true,
           mallBadge: s.sellerType === 'BUSINESS',
           tags: ['Chính Hãng', 'Freeship GHN', 'Escrow Safe'],

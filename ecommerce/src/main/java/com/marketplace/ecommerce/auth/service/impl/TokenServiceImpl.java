@@ -59,8 +59,10 @@ public class TokenServiceImpl implements TokenService {
         long currentTime = System.currentTimeMillis();
         return Jwts.builder()
                 .subject(account.getUsername() + "")
+                .claim("type", "REFRESH")
+                .claim("accountId", account.getId())
                 .issuedAt(new Date(currentTime))
-                .expiration(new Date(currentTime + 1000 * 60 * 60 * 12))
+                .expiration(new Date(currentTime + 1000L * 60 * 60 * 24 * 7)) // 7 days
                 .signWith(getSignInKey())
                 .compact();
     }

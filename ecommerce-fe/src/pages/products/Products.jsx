@@ -98,11 +98,19 @@ export default function Products() {
             categoryName: product.categoryName,
             categoryId: product.categoryId,
             shopId: product.shopId,
+            featured: !!product.featured,
             originalProduct: product,
           }
         }) || []
         
-        setProducts(mappedProducts)
+        // Prioritize featured products at top
+        const prioritized = [...mappedProducts].sort((a, b) => {
+          const aF = a.featured ? 1 : 0
+          const bF = b.featured ? 1 : 0
+          return bF - aF
+        })
+
+        setProducts(prioritized)
         setTotalPages(response.totalPages || 0)
         setTotalElements(response.totalElements || 0)
       } catch (err) {

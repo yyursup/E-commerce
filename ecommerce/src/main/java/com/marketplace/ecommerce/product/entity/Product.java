@@ -71,6 +71,9 @@ public class Product {
     @Column(nullable = false)
     private boolean flagged = false;
 
+    @Column(name = "featured", nullable = false)
+    private boolean featured = false;
+
     @Builder.Default
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Set<ProductImage> images = new HashSet<>();

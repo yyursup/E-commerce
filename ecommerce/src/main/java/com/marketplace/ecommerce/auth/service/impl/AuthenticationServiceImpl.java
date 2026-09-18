@@ -257,6 +257,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             LoginResponse.LoginResponseBuilder builder = LoginResponse.builder()
                     .email(users.getEmail())
                     .token(tokenService.createToken(users))
+                    .refreshToken(tokenService.refreshToken(users))
                     .role(users.getRole().getRoleName());
 
             populateShopAndSellerStatus(builder, users.getId());
@@ -483,9 +484,39 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         LoginResponse.LoginResponseBuilder builder = LoginResponse.builder()
                 .email(account.getEmail())
                 .token(tokenService.createToken(account))
+                .refreshToken(tokenService.refreshToken(account))
                 .role(account.getRole().getRoleName());
         
         populateShopAndSellerStatus(builder, account.getId());
         return builder.build();
+    }
+
+    @Override
+    public LoginResponse refreshToken(String refreshToken) {
+        if (refreshToken == null || refreshToken.isBlank()) {
+            throw new CustomException("Refresh token không được để trống.");
+        }
+        try {
+            Account account = tokenService.getAccountFromToken(refreshToken);
+            if (account == null) {
+                throw new CustomException("Tài khoản không tồn tại.");
+            }
+            if (account.getStatus() == AccountStatus.BANNED || !Boolean.TRUE.equals(account.getIsActive())) {
+                throw new CustomException("Tài khoản đã bị khóa hoặc ngừng hoạt động.");
+            }
+
+            LoginResponse.LoginResponseBuilder builder = LoginResponse.builder()
+                    .email(account.getEmail())
+                    .token(tokenService.createToken(account))
+                    .refreshToken(tokenService.refreshToken(account))
+                    .role(account.getRole().getRoleName());
+
+            populateShopAndSellerStatus(builder, account.getId());
+            return builder.build();
+        } catch (CustomException ce) {
+            throw ce;
+        } catch (Exception e) {
+            throw new CustomException("Refresh token không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại.");
+        }
     }
 }

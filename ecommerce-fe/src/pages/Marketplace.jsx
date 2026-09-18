@@ -1,6 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
 import {
   HiOutlineSearch,
   HiOutlineBadgeCheck,
@@ -10,118 +9,13 @@ import {
   HiOutlineChat,
   HiOutlineShieldCheck,
   HiOutlineArrowRight,
+  HiOutlineRefresh,
 } from 'react-icons/hi'
 import { useThemeStore } from '../store/useThemeStore'
-import { useAuthStore } from '../store/useAuthStore'
 import { useChatStore } from '../store/useChatStore'
 import { cn } from '../lib/cn'
 import Footer from '../components/Footer'
-
-// Danh sách Shop thực tế từ hệ thống sàn E-commerce
-const mockMarketplaceShops = [
-  {
-    id: 'shop-1',
-    name: 'Apple Authorised Reseller',
-    sellerName: 'Nguyễn Thành Đạt',
-    category: 'Điện Tử & Công Nghệ',
-    rating: 4.9,
-    reviewCount: 382,
-    productCount: 35,
-    location: 'Bến Nghé, Quận 1, TP. Hồ Chí Minh',
-    city: 'Hồ Chí Minh',
-    logo: 'https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?w=300&h=300&fit=crop',
-    cover: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=1200&h=400&fit=crop',
-    description: 'Gian hàng chính hãng phân phối ủy quyền các sản phẩm Apple: iPhone, MacBook, iPad, AirPods và phụ kiện chính hãng.',
-    ekycVerified: true,
-    mallBadge: true,
-    tags: ['Chính Hãng VN/A', 'Đổi Trả 7 Ngày', 'Freeship GHN'],
-  },
-  {
-    id: 'shop-2',
-    name: 'Trendy Fashion Studio',
-    sellerName: 'Trần Thị Mai',
-    category: 'Thời Trang & Phụ Kiện',
-    rating: 4.8,
-    reviewCount: 245,
-    productCount: 42,
-    location: 'Dịch Vọng, Quận Cầu Giấy, Hà Nội',
-    city: 'Hà Nội',
-    logo: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&h=300&fit=crop',
-    cover: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&h=400&fit=crop',
-    description: 'Thương hiệu thời trang giới trẻ phong cách streetwear hiện đại, tối giản và thời thượng. Cam kết chất vải cao cấp.',
-    ekycVerified: true,
-    mallBadge: false,
-    tags: ['Shop Yêu Thích', 'Hàng Thiết Kế', 'Giao 24h'],
-  },
-  {
-    id: 'shop-3',
-    name: 'Nhã Nam Books & Stationery',
-    sellerName: 'Lê Tri Thức',
-    category: 'Sách & Văn Phòng Phẩm',
-    rating: 4.9,
-    reviewCount: 512,
-    productCount: 68,
-    location: 'Trung Hòa, Quận Cầu Giấy, Hà Nội',
-    city: 'Hà Nội',
-    logo: 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=300&h=300&fit=crop',
-    cover: 'https://images.unsplash.com/photo-1507842229451-7f01be837453?w=1200&h=400&fit=crop',
-    description: 'Nhà sách phát hành các tác phẩm văn học, kinh tế, tâm lý học và dụng cụ văn phòng phẩm nhập khẩu cao cấp.',
-    ekycVerified: true,
-    mallBadge: true,
-    tags: ['Sách Bản Quyền', 'Bọc Sách Miễn Phí', 'Giao Nhanh'],
-  },
-  {
-    id: 'shop-4',
-    name: 'Sunhouse Home Official',
-    sellerName: 'Phạm Hoàng Gia',
-    category: 'Nhà Cửa & Đời Sống',
-    rating: 4.7,
-    reviewCount: 198,
-    productCount: 28,
-    location: 'Hải Châu 1, Quận Hải Châu, Đà Nẵng',
-    city: 'Đà Nẵng',
-    logo: 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=300&h=300&fit=crop',
-    cover: 'https://images.unsplash.com/photo-1556912172-45b7abe8b7e1?w=1200&h=400&fit=crop',
-    description: 'Thiết bị gia dụng và đồ dùng nhà bếp thông minh hàng đầu Việt Nam. Nồi chiên, máy xay, chảo chống dính chuẩn chất lượng.',
-    ekycVerified: true,
-    mallBadge: true,
-    tags: ['Bảo Hành 12T', 'Chống Dính Kép', 'Tiết Kiệm Điện'],
-  },
-  {
-    id: 'shop-5',
-    name: 'Beauty Garden Cosmetics',
-    sellerName: 'Hoàng Thảo My',
-    category: 'Sức Khỏe & Sắc Đẹp',
-    rating: 4.8,
-    reviewCount: 420,
-    productCount: 50,
-    location: 'Phường 5, Quận Phú Nhuận, TP. Hồ Chí Minh',
-    city: 'Hồ Chí Minh',
-    logo: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=300&h=300&fit=crop',
-    cover: 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=1200&h=400&fit=crop',
-    description: 'Thiên đường mỹ phẩm và chăm sóc sắc đẹp chính hãng Hàn Quốc, Nhật Bản, Âu Mỹ. 100% hóa đơn chứng từ xác thực eKYC.',
-    ekycVerified: true,
-    mallBadge: true,
-    tags: ['Hóa Đơn Đỏ', 'Dược Mỹ Phẩm', 'Tư Vấn Miễn Phí'],
-  },
-  {
-    id: 'shop-6',
-    name: 'Decathlon Sports Hub',
-    sellerName: 'Vũ Quốc Dũng',
-    category: 'Thể Thao & Dã Ngoại',
-    rating: 4.8,
-    reviewCount: 165,
-    productCount: 30,
-    location: 'Thượng Đình, Quận Thanh Xuân, Hà Nội',
-    city: 'Hà Nội',
-    logo: 'https://images.unsplash.com/photo-1517649763962-0c623266ddc0?w=300&h=300&fit=crop',
-    cover: 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=1200&h=400&fit=crop',
-    description: 'Cửa hàng thể thao đa năng: Trang phục thể thao, thiết bị tập gym, yoga, dã ngoại và leo núi chuyên nghiệp.',
-    ekycVerified: true,
-    mallBadge: false,
-    tags: ['Thể Thao Chuyên Nghiệp', 'Bền Bỉ', 'Freeship'],
-  },
-]
+import shopService, { FALLBACK_SHOPS } from '../services/shop'
 
 const cityFilters = ['Tất cả', 'Hà Nội', 'Hồ Chí Minh', 'Đà Nẵng']
 const categoryFilters = [
@@ -136,17 +30,34 @@ const categoryFilters = [
 
 export default function Marketplace() {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
-  const { user } = useAuthStore()
+  const [shops, setShops] = useState([])
+  const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCity, setSelectedCity] = useState('Tất cả')
   const [selectedCategory, setSelectedCategory] = useState('Tất cả')
 
+  useEffect(() => {
+    const fetchShops = async () => {
+      try {
+        setLoading(true)
+        const data = await shopService.getAllShops()
+        setShops(Array.isArray(data) && data.length > 0 ? data : FALLBACK_SHOPS)
+      } catch (err) {
+        console.warn('Could not load shops from backend, using fallback:', err)
+        setShops(FALLBACK_SHOPS)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchShops()
+  }, [])
+
   // Filter shops
-  const filteredShops = mockMarketplaceShops.filter((shop) => {
+  const filteredShops = shops.filter((shop) => {
     const matchesSearch =
-      shop.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      shop.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      shop.sellerName.toLowerCase().includes(searchQuery.toLowerCase())
+      shop.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      shop.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      shop.sellerName?.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesCity = selectedCity === 'Tất cả' || shop.city === selectedCity
     const matchesCategory = selectedCategory === 'Tất cả' || shop.category === selectedCategory
     return matchesSearch && matchesCity && matchesCategory
@@ -239,16 +150,42 @@ export default function Marketplace() {
         </div>
 
         {/* Shops Grid */}
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredShops.map((shop) => (
-            <div
-              key={shop.id}
-              className={cn(
-                'group flex flex-col rounded-3xl border overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl',
-                isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
-              )}
-            >
-              {/* Cover Image */}
+        {loading ? (
+          <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <div
+                key={i}
+                className={cn(
+                  'h-80 rounded-3xl border animate-pulse p-6 flex flex-col justify-between',
+                  isDark ? 'border-slate-800 bg-slate-900/60' : 'border-stone-200 bg-white'
+                )}
+              >
+                <div className="h-32 rounded-2xl bg-stone-200 dark:bg-slate-800" />
+                <div className="space-y-3 mt-4">
+                  <div className="h-5 w-2/3 rounded bg-stone-200 dark:bg-slate-800" />
+                  <div className="h-4 w-full rounded bg-stone-200 dark:bg-slate-800" />
+                  <div className="h-4 w-1/2 rounded bg-stone-200 dark:bg-slate-800" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filteredShops.length === 0 ? (
+          <div className={cn('mt-8 rounded-3xl border p-12 text-center', isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white')}>
+            <HiOutlineShoppingBag className="mx-auto h-12 w-12 text-stone-300 dark:text-slate-600 mb-3" />
+            <h3 className={cn('text-base font-bold', isDark ? 'text-white' : 'text-stone-800')}>Không tìm thấy gian hàng phù hợp</h3>
+            <p className="mt-1 text-xs text-stone-500">Thử đổi từ khóa tìm kiếm hoặc lọc theo khu vực khác.</p>
+          </div>
+        ) : (
+          <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredShops.map((shop) => (
+              <div
+                key={shop.id}
+                className={cn(
+                  'group flex flex-col rounded-3xl border overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl',
+                  isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
+                )}
+              >
+                {/* Cover Image */}
               <div className="relative h-32 w-full overflow-hidden bg-slate-800">
                 <img
                   src={shop.cover}
@@ -314,7 +251,7 @@ export default function Marketplace() {
 
                   {/* Tags */}
                   <div className="mt-3 flex flex-wrap gap-1.5">
-                    {shop.tags.map((tag, idx) => (
+                    {(shop.tags || ['Chính Hãng', 'Ký Quỹ Escrow', 'GHN Express']).map((tag, idx) => (
                       <span
                         key={idx}
                         className={cn(
@@ -364,6 +301,7 @@ export default function Marketplace() {
             </div>
           ))}
         </div>
+        )}
 
         {/* Bottom Callout: Become a Seller */}
         <div className="mt-14 rounded-3xl bg-gradient-to-r from-amber-500 to-orange-500 p-8 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">

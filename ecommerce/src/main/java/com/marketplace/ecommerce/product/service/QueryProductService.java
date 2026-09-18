@@ -20,4 +20,6 @@ public interface QueryProductService {
     Page<ProductResponse> getPublishedProducts(PageQueryRequest req);
 
     List<ProductResponse> getPublishedProductsByIds(List<UUID> ids);
+
+    List<ProductResponse> getFeaturedProductsByShop(UUID shopId);
 }

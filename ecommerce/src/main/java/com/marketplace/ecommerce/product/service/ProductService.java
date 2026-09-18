@@ -17,5 +17,6 @@ public interface ProductService {
 
     void deleteProduct(UUID accountId, UUID productId);
 
+    ProductResponse toggleFeatured(UUID accountId, UUID productId);
 
 }

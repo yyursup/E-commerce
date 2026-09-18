@@ -35,7 +35,7 @@ export default function Login() {
     }
 
     const userPayload = { email: res.email, role: res.role }
-    login(res.token, userPayload)
+    login(res.token, userPayload, res.refreshToken)
 
     try {
       const cartData = await cartService.getCart()
@@ -86,7 +86,7 @@ export default function Login() {
       }
 
       const userPayload = { email: res.email, role: res.role }
-      login(res.token, userPayload)
+      login(res.token, userPayload, res.refreshToken)
 
       // Fetch cart after login to update count
       try {

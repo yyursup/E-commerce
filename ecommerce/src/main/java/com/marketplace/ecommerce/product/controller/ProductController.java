@@ -56,4 +56,9 @@ public class ProductController {
     ) {
         return recommendationService.getSimilarProducts(productId, limit);
     }
+
+    @GetMapping("/shop/{shopId}/featured")
+    public List<ProductResponse> getFeaturedProductsByShop(@PathVariable UUID shopId) {
+        return queryProductService.getFeaturedProductsByShop(shopId);
+    }
 }

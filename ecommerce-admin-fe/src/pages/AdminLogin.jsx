@@ -35,7 +35,7 @@ export default function AdminLogin() {
         role: res.role,
         accountId: res.accountId,
       }
-      login(res.token, userPayload)
+      login(res.token, userPayload, res.refreshToken)
 
       toast.success(`Chào mừng Quản trị viên, ${res.email}!`)
       navigate('/dashboard')

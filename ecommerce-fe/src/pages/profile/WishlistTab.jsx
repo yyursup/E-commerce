@@ -14,11 +14,14 @@ import wishlistService from '../../services/wishlist'
 import cartService from '../../services/cart'
 import { useWishlistStore } from '../../store/useWishlistStore'
 import { useCartStore } from '../../store/useCartStore'
+import Modal from '../../components/Modal'
+import ProductQuickView from '../../components/ProductQuickView'
 
 export default function WishlistTab({ isDark }) {
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState({})
+  const [quickViewProduct, setQuickViewProduct] = useState(null)
   const { toggleWishlist } = useWishlistStore()
   const { updateCartCount } = useCartStore()
 
@@ -57,13 +60,25 @@ export default function WishlistTab({ isDark }) {
   const handleAddToCart = async (product, e) => {
     e?.preventDefault()
     e?.stopPropagation()
+
+    // Nếu sản phẩm có phân loại hàng -> mở modal chọn phân loại
+    if (product?.variants && product.variants.length > 0) {
+      setQuickViewProduct(product)
+      return
+    }
+
     try {
       setActionLoading((prev) => ({ ...prev, [`cart_${product.id}`]: true }))
       const cartRes = await cartService.addToCart(product.id, 1)
       updateCartCount(cartRes)
       toast.success(`Đã thêm ${product.name} vào giỏ hàng`)
     } catch (err) {
-      toast.error(err?.message || 'Không thể thêm vào giỏ hàng')
+      // Nếu backend báo lỗi cần chọn phân loại hàng -> mở modal quick view
+      if (err?.message?.includes('phân loại') || err?.response?.data?.message?.includes('phân loại')) {
+        setQuickViewProduct(product)
+      } else {
+        toast.error(err?.message || 'Không thể thêm vào giỏ hàng')
+      }
     } finally {
       setActionLoading((prev) => ({ ...prev, [`cart_${product.id}`]: false }))
     }
@@ -127,7 +142,11 @@ export default function WishlistTab({ isDark }) {
             (typeof p.images?.[0] === 'string' ? p.images[0] : null) ||
             '/product-placeholder.svg'
 
-          const price = p.basePrice !== undefined ? Number(p.basePrice) : 0
+          const variants = p.variants || []
+          const prices = variants.map((v) => Number(v.price) || 0).filter((price) => price > 0)
+          const minPrice = prices.length > 0 ? Math.min(...prices) : (Number(p.basePrice || p.price) || 0)
+          const maxPrice = prices.length > 0 ? Math.max(...prices) : minPrice
+          const hasRange = variants.length > 0 && minPrice !== maxPrice
 
           return (
             <motion.div
@@ -161,9 +180,16 @@ export default function WishlistTab({ isDark }) {
                 </div>
 
                 <div className="mt-3">
-                  <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-400">
-                    {p.shopName || 'Shop'}
-                  </span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-400">
+                      {p.shopName || 'Shop'}
+                    </span>
+                    {variants.length > 0 && (
+                      <span className="text-[10px] font-medium text-stone-400 dark:text-slate-500 bg-stone-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
+                        {variants.length} phân loại
+                      </span>
+                    )}
+                  </div>
                   <Link to={`/products/${p.id}`}>
                     <h4
                       className={cn(
@@ -176,7 +202,7 @@ export default function WishlistTab({ isDark }) {
                     </h4>
                   </Link>
                   <div className="mt-2 text-base font-bold text-amber-600 dark:text-amber-400">
-                    {formatVND(price)}
+                    {hasRange ? `${formatVND(minPrice)} - ${formatVND(maxPrice)}` : formatVND(minPrice)}
                   </div>
                 </div>
               </div>
@@ -188,7 +214,11 @@ export default function WishlistTab({ isDark }) {
                   className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-amber-500 py-2 text-xs font-semibold text-white hover:bg-amber-600 transition-colors disabled:opacity-50"
                 >
                   <HiOutlineShoppingCart className="h-4 w-4" />
-                  {actionLoading[`cart_${p.id}`] ? 'Đang thêm...' : 'Thêm vào giỏ'}
+                  {actionLoading[`cart_${p.id}`]
+                    ? 'Đang thêm...'
+                    : variants.length > 0
+                    ? 'Chọn phân loại'
+                    : 'Thêm vào giỏ'}
                 </button>
                 <Link
                   to={`/products/${p.id}`}
@@ -205,6 +235,21 @@ export default function WishlistTab({ isDark }) {
           )
         })}
       </div>
+
+      {/* Quick View / Chọn phân loại Modal */}
+      <Modal
+        open={!!quickViewProduct}
+        onClose={() => setQuickViewProduct(null)}
+        title={quickViewProduct?.name ?? 'Chọn phân loại hàng'}
+        size="lg"
+      >
+        {quickViewProduct && (
+          <ProductQuickView
+            product={quickViewProduct}
+            onAddToCart={() => setQuickViewProduct(null)}
+          />
+        )}
+      </Modal>
     </div>
   )
 }

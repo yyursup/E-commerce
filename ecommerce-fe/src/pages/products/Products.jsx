@@ -334,7 +334,7 @@ export default function Products() {
         open={!!quickViewProduct}
         onClose={() => setQuickViewProduct(null)}
         title={quickViewProduct?.name ?? 'Sản phẩm'}
-        size="md"
+        size="lg"
       >
         {quickViewProduct && (
           <ProductQuickView

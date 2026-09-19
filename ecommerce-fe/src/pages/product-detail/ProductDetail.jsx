@@ -189,6 +189,19 @@ export default function ProductDetail() {
       return
     }
 
+    const currentVariants = product.variants || []
+    if (currentVariants.length > 0 && !selectedVariant) {
+      toast.error('Vui lòng chọn phân loại hàng (màu sắc / kích cỡ...) trước khi thêm vào giỏ hàng!', {
+        icon: '⚠️',
+      })
+      return
+    }
+
+    if (selectedVariant && selectedVariant.stock !== undefined && selectedVariant.stock < quantity) {
+      toast.error(`Phân loại này chỉ còn ${selectedVariant.stock} sản phẩm trong kho!`)
+      return
+    }
+
     try {
       setAddingToCart(true)
       const cartResponse = await cartService.addToCart(product.id, quantity, selectedVariant?.id || null)
@@ -218,6 +231,19 @@ export default function ProductDetail() {
 
     if (!product || !product.id) {
       toast.error('Thông tin sản phẩm không hợp lệ')
+      return
+    }
+
+    const currentVariants = product.variants || []
+    if (currentVariants.length > 0 && !selectedVariant) {
+      toast.error('Vui lòng chọn phân loại hàng (màu sắc / kích cỡ...) trước khi đặt mua!', {
+        icon: '⚠️',
+      })
+      return
+    }
+
+    if (selectedVariant && selectedVariant.stock !== undefined && selectedVariant.stock < quantity) {
+      toast.error(`Phân loại này chỉ còn ${selectedVariant.stock} sản phẩm trong kho!`)
       return
     }
 
@@ -319,20 +345,21 @@ export default function ProductDetail() {
   const variants = product.variants || []
   const hasVariants = variants.length > 0
 
-  let price = 0
-  let isFromPrice = false
+  const prices = variants.map(v => Number(v.price) || 0).filter(p => p > 0)
+  const minPrice = prices.length > 0 ? Math.min(...prices) : (Number(product.basePrice) || 0)
+  const maxPrice = prices.length > 0 ? Math.max(...prices) : minPrice
+
+  let price = minPrice
+  let isRangePrice = false
 
   if (selectedVariant) {
-    price = Number(selectedVariant.price)
-  } else if (hasVariants) {
-    const prices = variants.map(v => Number(v.price) || 0).filter(p => p > 0)
-    price = prices.length > 0 ? Math.min(...prices) : (Number(product.basePrice) || 0)
-    isFromPrice = true
-  } else {
-    price = Number(product.basePrice) || 0
+    price = Number(selectedVariant.price) || minPrice
+  } else if (hasVariants && minPrice !== maxPrice) {
+    isRangePrice = true
   }
-  const originalPrice = Math.round(price * 1.22) // Giá gốc trước giảm (giống Shopee gạch ngang)
-  const displayStock = selectedVariant ? (selectedVariant.stock || 0) : (product.quantity || 0)
+
+  const originalPrice = product.originalPrice ? Number(product.originalPrice) : null
+  const displayStock = selectedVariant ? (selectedVariant.stock ?? 0) : (product.quantity ?? 0)
   const images = product.images || []
   const currentShopId = product.shopId || shopData?.id || shop?.id
   const shopData = shop || FALLBACK_SHOPS[0]
@@ -410,32 +437,43 @@ export default function ProductDetail() {
               {/* Product Title & Badges */}
               <div>
                 <div className="flex items-start gap-2.5">
-                  <span className="rounded-md bg-rose-600 px-2 py-0.5 text-[11px] font-black uppercase text-white tracking-wider shrink-0 mt-1">
-                    E-Mall
-                  </span>
                   <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-stone-900 dark:text-white leading-snug">
                     {product.name}
                   </h1>
                 </div>
 
-                {/* Rating, Reviews & Sold Bar (Shopee Style) */}
+                {/* Rating, Reviews & Sold Bar (Real Data Only) */}
                 <div className="mt-3 flex flex-wrap items-center gap-4 text-xs">
-                  <div className="flex items-center gap-1 text-amber-500 font-bold border-r pr-4 border-stone-200 dark:border-slate-800">
-                    <span className="underline text-sm">4.9</span>
-                    <div className="flex">
-                      {[...Array(5)].map((_, i) => (
-                        <HiStar key={i} className="h-4 w-4 fill-amber-400" />
-                      ))}
+                  {product.rating !== undefined && product.rating !== null && (
+                    <div className="flex items-center gap-1 text-amber-500 font-bold border-r pr-4 border-stone-200 dark:border-slate-800">
+                      <span className="underline text-sm">{Number(product.rating).toFixed(1)}</span>
+                      <div className="flex">
+                        {[...Array(5)].map((_, i) => (
+                          <HiStar
+                            key={i}
+                            className={cn(
+                              'h-4 w-4',
+                              i < Math.floor(product.rating)
+                                ? 'fill-amber-400'
+                                : 'text-stone-300 dark:text-slate-600'
+                            )}
+                          />
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   <div className="border-r pr-4 border-stone-200 dark:border-slate-800 text-stone-600 dark:text-slate-400">
-                    <span className="font-bold text-stone-900 dark:text-white underline text-sm mr-1">382</span>
+                    <span className="font-bold text-stone-900 dark:text-white underline text-sm mr-1">
+                      {product.reviewCount ?? 0}
+                    </span>
                     Đánh Giá
                   </div>
 
                   <div className="text-stone-600 dark:text-slate-400">
-                    <span className="font-bold text-stone-900 dark:text-white text-sm mr-1">1.5k</span>
+                    <span className="font-bold text-stone-900 dark:text-white text-sm mr-1">
+                      {product.sold ?? 0}
+                    </span>
                     Đã Bán
                   </div>
 
@@ -454,25 +492,24 @@ export default function ProductDetail() {
               {/* Shopee Price Box */}
               <div
                 className={cn(
-                  'rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-baseline gap-3 sm:gap-4 transition-colors',
+                  'rounded-2xl p-4 sm:p-5 flex flex-wrap items-baseline gap-3 sm:gap-4 transition-colors',
                   isDark ? 'bg-slate-800/70 border border-slate-700/50' : 'bg-stone-50 border border-stone-200/80'
                 )}
               >
-                <span className="text-sm line-through text-stone-400 dark:text-slate-500">
-                  {formatVND(originalPrice)}
-                </span>
-                <div className="flex items-baseline gap-2">
+                <div className="flex flex-wrap items-baseline gap-2.5">
                   <span className="text-2xl sm:text-3xl font-black text-rose-600 dark:text-rose-500">
-                    {isFromPrice ? `Từ ${formatVND(price)}` : formatVND(price)}
+                    {isRangePrice ? `${formatVND(minPrice)} - ${formatVND(maxPrice)}` : formatVND(price)}
                   </span>
-                  <span className="rounded-md bg-rose-500/10 text-rose-600 dark:text-rose-400 px-2 py-0.5 text-xs font-black uppercase">
-                    -18% Giảm
-                  </span>
-                </div>
-                <div className="sm:ml-auto">
-                  <span className="rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 px-2.5 py-1 text-[11px] font-bold border border-amber-500/20">
-                    Gì Cũng Rẻ - Bao Giá Tốt Nhất
-                  </span>
+                  {originalPrice && originalPrice > price && (
+                    <>
+                      <span className="text-sm line-through text-stone-400 dark:text-slate-500">
+                        {formatVND(originalPrice)}
+                      </span>
+                      <span className="rounded-md bg-rose-500/10 text-rose-600 dark:text-rose-400 px-2 py-0.5 text-xs font-black uppercase">
+                        -{Math.round((1 - price / originalPrice) * 100)}%
+                      </span>
+                    </>
+                  )}
                 </div>
               </div>
 

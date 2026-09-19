@@ -284,6 +284,12 @@ export default function ShopProducts() {
             const thumb = prod.images?.find((img) => img.isThumbnail) || prod.images?.[0]
             const imgUrl = thumb?.imageUrl || prod.image || '/product-placeholder.svg'
             const price = prod.basePrice ? Number(prod.basePrice) : (prod.price ? Number(prod.price) : 0)
+            const variantPrices = prod.variants?.length
+              ? prod.variants.map((v) => Number(v.price) || 0).filter((p) => p > 0)
+              : []
+            const minPrice = variantPrices.length > 0 ? Math.min(...variantPrices) : price
+            const maxPrice = variantPrices.length > 0 ? Math.max(...variantPrices) : price
+            const hasMultiplePrices = variantPrices.length > 1 && minPrice !== maxPrice
             const stock = prod.stockQuantity ?? prod.quantity ?? prod.stock ?? 0
             const statusBadge = getStatusBadge(prod.status)
             const isDeleting = deletingId === prod.id
@@ -390,11 +396,18 @@ export default function ShopProducts() {
                   <div className="text-left md:text-right">
                     <span className="text-[11px] text-stone-400 block md:hidden">Giá bán:</span>
                     <span className={cn(
-                      'font-black text-base sm:text-lg',
+                      'font-black text-base sm:text-lg tracking-tight',
                       isDark ? 'text-amber-400' : 'text-amber-600'
                     )}>
-                      {formatVND(price)}
+                      {hasMultiplePrices
+                        ? `${formatVND(minPrice)} - ${formatVND(maxPrice)}`
+                        : formatVND(minPrice || price)}
                     </span>
+                    {prod.variants?.length > 0 && (
+                      <span className="block text-[11px] font-semibold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20 mt-0.5 md:ml-auto w-fit">
+                        {prod.variants.length} phân loại
+                      </span>
+                    )}
                   </div>
 
                   {/* Actions Bar */}

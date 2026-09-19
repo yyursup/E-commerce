@@ -404,7 +404,7 @@ export default function Home() {
         open={!!quickViewProduct}
         onClose={() => setQuickViewProduct(null)}
         title={quickViewProduct?.name ?? 'Chi tiết sản phẩm'}
-        size="md"
+        size="lg"
       >
         {quickViewProduct && (
           <ProductQuickView

@@ -15,37 +15,11 @@ import ProfileWallet from './profile/ProfileWallet';
 import WishlistTab from './profile/WishlistTab';
 import NotificationTab from './profile/NotificationTab';
 import MyOrders from './orders/MyOrders';
-import authService from '../services/auth';
 
 export default function Profile() {
-    const { user, isAuthenticated, logout, updateUser } = useAuthStore();
+    const { user, isAuthenticated, logout } = useAuthStore();
     const isDark = useThemeStore((state) => state.theme) === 'dark';
     const location = useLocation();
-
-    // Refresh profile data on mount to ensure avatar & profile are always in sync
-    useEffect(() => {
-        if (isAuthenticated) {
-            authService
-                .getUserProfile()
-                .then((data) => {
-                    if (data) {
-                        updateUser({
-                            fullName: data.fullName,
-                            name: data.fullName,
-                            avatarUrl: data.avatarUrl,
-                            phoneNumber: data.phoneNumber,
-                            gender: data.gender,
-                            dateOfBirth: data.dateOfBirth,
-                            email: data.email || user?.email,
-                            role: data.role || user?.role,
-                        });
-                    }
-                })
-                .catch((err) => {
-                    console.warn('Failed to refresh user profile:', err);
-                });
-        }
-    }, [isAuthenticated, updateUser]);
 
     // Tab states: profile | bank | address | password | privacy | personal_info | notifications | orders | wishlist
     const [activeTab, setActiveTab] = useState(() => {

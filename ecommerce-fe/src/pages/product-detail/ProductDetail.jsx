@@ -57,7 +57,7 @@ export default function ProductDetail() {
   const [similarLoading, setSimilarLoading] = useState(true)
   const [savedVoucher, setSavedVoucher] = useState({})
 
-  const { isAuthenticated } = useAuthStore()
+  const { isAuthenticated, user } = useAuthStore()
   const { updateCartCount } = useCartStore()
   const { isWishlisted, toggleWishlist } = useWishlistStore()
   const isLiked = isWishlisted(productId)
@@ -731,41 +731,64 @@ export default function ProductDetail() {
                     Xem Shop
                   </Link>
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const targetShopId = product?.shopId || shop?.id || currentShopId
-                      if (!targetShopId) {
-                        toast.error('Không tìm thấy thông tin gian hàng')
-                        return
-                      }
-                      useChatStore.getState().openShopChat(
-                        {
-                          id: targetShopId,
-                          name: product.shopName || shopData?.name || shop?.name || 'Cửa hàng',
-                          logo: shopData?.logo || shop?.logo,
-                          city: shopData?.city || shop?.city,
-                          mallBadge: shopData?.mallBadge || shop?.mallBadge,
-                          ekycVerified: shopData?.ekycVerified || shop?.ekycVerified,
-                        },
-                        {
-                          id: product.id,
-                          name: product.name,
-                          price: product.price || product.basePrice,
-                          image: product.images?.[0]?.imageUrl || product.images?.[0] || product.thumbnailUrl,
-                        }
+                  {(() => {
+                    const targetShopId = product?.shopId || shop?.id || currentShopId
+                    const isOwner = Boolean(
+                      user && (
+                        (user.shopId && targetShopId && String(user.shopId).toLowerCase() === String(targetShopId).toLowerCase()) ||
+                        (shopData?.ownerAccountId && String(user.accountId || user.id).toLowerCase() === String(shopData.ownerAccountId).toLowerCase())
                       )
-                    }}
-                    className={cn(
-                      'inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-1.5 text-xs font-bold transition-colors cursor-pointer',
-                      isDark
-                        ? 'border-slate-700 text-slate-300 hover:bg-slate-800'
-                        : 'border-stone-200 text-stone-700 hover:bg-stone-100'
-                    )}
-                  >
-                    <HiOutlineChat className="h-3.5 w-3.5 text-amber-500" />
-                    Chat Ngay
-                  </button>
+                    )
+
+                    if (isOwner) {
+                      return (
+                        <span className={cn(
+                          'inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-1.5 text-xs font-medium',
+                          isDark ? 'border-slate-800 bg-slate-800/60 text-slate-400' : 'border-stone-200 bg-stone-100 text-stone-500'
+                        )}>
+                          Gian Hàng Của Bạn
+                        </span>
+                      )
+                    }
+
+                    return (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!targetShopId) {
+                            toast.error('Không tìm thấy thông tin gian hàng')
+                            return
+                          }
+                          useChatStore.getState().openShopChat(
+                            {
+                              id: targetShopId,
+                              name: product.shopName || shopData?.name || shop?.name || 'Cửa hàng',
+                              logo: shopData?.logo || shop?.logo,
+                              city: shopData?.city || shop?.city,
+                              mallBadge: shopData?.mallBadge || shop?.mallBadge,
+                              ekycVerified: shopData?.ekycVerified || shop?.ekycVerified,
+                              ownerAccountId: shopData?.ownerAccountId,
+                            },
+                            {
+                              id: product.id,
+                              name: product.name,
+                              price: product.price || product.basePrice,
+                              image: product.images?.[0]?.imageUrl || product.images?.[0] || product.thumbnailUrl,
+                            }
+                          )
+                        }}
+                        className={cn(
+                          'inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-1.5 text-xs font-bold transition-colors cursor-pointer',
+                          isDark
+                            ? 'border-slate-700 text-slate-300 hover:bg-slate-800'
+                            : 'border-stone-200 text-stone-700 hover:bg-stone-100'
+                        )}
+                      >
+                        <HiOutlineChat className="h-3.5 w-3.5 text-amber-500" />
+                        Chat Ngay
+                      </button>
+                    )
+                  })()}
                 </div>
               </div>
             </div>

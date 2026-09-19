@@ -55,9 +55,9 @@ public class ReviewResponse {
                 .comment(review.getComment())
                 .sellerReply(reply == null ? null : SellerReplyResponse.from(reply))
                 .isVerifiedPurchase(review.getSubOrderId() != null)
-                .imageUrls(review.getImages().stream()
+                .imageUrls(review.getImages() != null ? review.getImages().stream()
                         .map(ReviewImage::getImageUrl)
-                        .collect(Collectors.toList()))
+                        .collect(Collectors.toList()) : java.util.Collections.emptyList())
                 .createdAt(review.getCreatedAt())
                 .status(review.getStatus())
                 .build();

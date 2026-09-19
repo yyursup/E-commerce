@@ -41,6 +41,7 @@ export default function Login() {
           dateOfBirth: profile.dateOfBirth,
           email: profile.email || email,
           role: profile.role || role,
+          shopId: profile.shopId,
         })
       }
     } catch (e) {

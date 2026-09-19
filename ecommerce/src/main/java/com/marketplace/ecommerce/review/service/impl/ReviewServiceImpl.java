@@ -103,7 +103,14 @@ public class ReviewServiceImpl implements ReviewService {
 
         review.setRating(request.getRating());
         review.setComment(request.getComment());
-        processImages(review, request.getNewImages());
+        List<MultipartFile> allNewFiles = new ArrayList<>();
+        if (request.getNewImages() != null) {
+            allNewFiles.addAll(request.getNewImages());
+        }
+        if (request.getNewVideos() != null) {
+            allNewFiles.addAll(request.getNewVideos());
+        }
+        processImages(review, allNewFiles);
 
         reviewRepository.save(review);
         return ReviewResponse.fromEntity(review);
@@ -138,7 +145,14 @@ public class ReviewServiceImpl implements ReviewService {
                 .createdAt(LocalDateTime.now())
                 .build();
 
-        processImages(review, request.getImages());
+        List<MultipartFile> allFiles = new ArrayList<>();
+        if (request.getImages() != null) {
+            allFiles.addAll(request.getImages());
+        }
+        if (request.getVideos() != null) {
+            allFiles.addAll(request.getVideos());
+        }
+        processImages(review, allFiles);
 
         reviewRepository.save(review);
 

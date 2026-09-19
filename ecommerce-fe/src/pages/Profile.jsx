@@ -44,7 +44,7 @@ export default function Profile() {
             case 'profile':
                 return <ProfileInfo isDark={isDark} user={user} />;
             case 'bank':
-                return <BankInfo isDark={isDark} />;
+                return <ProfileWallet isDark={isDark} />;
             case 'address':
                 return <AddressManager isDark={isDark} />;
             case 'password':
@@ -141,29 +141,24 @@ export default function Profile() {
                                     }}
                                     className={cn(
                                         "flex items-center gap-3 w-full text-left font-medium mb-2 transition-colors",
-                                        ['profile', 'bank', 'address', 'password'].includes(activeTab)
+                                        ['profile', 'address', 'password'].includes(activeTab)
                                             ? "text-amber-500"
                                             : isDark ? "text-slate-200 hover:text-amber-500" : "text-stone-800 hover:text-amber-600"
-                                    )}>
+                                    )}
+                                >
                                     <div className="w-6 flex justify-center text-blue-500">
                                         <FiUser size={20} />
                                     </div>
                                     <span>Tài Khoản Của Tôi</span>
                                 </button>
 
-                                {['profile', 'bank', 'address', 'password'].includes(activeTab) && (
+                                {['profile', 'address', 'password'].includes(activeTab) && (
                                     <div className="pl-9 flex flex-col space-y-2">
                                         <button
                                             onClick={() => setActiveTab('profile')}
                                             className={cn("text-left text-sm transition-colors", activeTab === 'profile' ? "text-amber-500 font-medium" : isDark ? "text-slate-400 hover:text-amber-500" : "text-stone-600 hover:text-amber-600")}
                                         >
                                             Hồ Sơ
-                                        </button>
-                                        <button
-                                            onClick={() => setActiveTab('bank')}
-                                            className={cn("text-left text-sm transition-colors", activeTab === 'bank' ? "text-amber-500 font-medium" : isDark ? "text-slate-400 hover:text-amber-500" : "text-stone-600 hover:text-amber-600")}
-                                        >
-                                            Ngân Hàng
                                         </button>
                                         <button
                                             onClick={() => setActiveTab('address')}

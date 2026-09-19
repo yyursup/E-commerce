@@ -30,6 +30,8 @@ import com.marketplace.ecommerce.shipping.dto.response.GHNCreateOrderResponse;
 import com.marketplace.ecommerce.shipping.service.ShippingService;
 import com.marketplace.ecommerce.shipping.usecase.GHNClient;
 import com.marketplace.ecommerce.order.valueObjects.OrderStatus;
+import com.marketplace.ecommerce.product.service.InventoryHistoryService;
+import com.marketplace.ecommerce.product.valueObjects.InventoryActionType;
 import com.marketplace.ecommerce.shop.entity.Shop;
 import com.marketplace.ecommerce.shop.repository.ShopRepository;
 import lombok.RequiredArgsConstructor;
@@ -68,6 +70,7 @@ public class OrderServiceImpl implements OrderService {
     private final EscrowService escrowService;
     private final CommissionService commissionService;
     private final com.marketplace.ecommerce.voucher.service.VoucherService voucherService;
+    private final InventoryHistoryService inventoryHistoryService;
 
     @Override
     @Transactional
@@ -225,16 +228,21 @@ public class OrderServiceImpl implements OrderService {
                     if (item.getProduct() != null) {
                         Product p = item.getProduct();
                         if (p.getQuantity() != null) {
+                            int oldQ = p.getQuantity();
                             p.setQuantity(p.getQuantity() + item.getQuantity());
                             productRepository.save(p);
+                            inventoryHistoryService.logInventoryChange(order.getShop(), p, null, oldQ, p.getQuantity(), InventoryActionType.ORDER_CANCELLED, order.getOrderNumber(), "Hủy đơn hàng: " + order.getOrderNumber());
                         }
                     }
                     if (item.getVariantId() != null) {
-                        productVariantRepository.findById(item.getVariantId()).ifPresent(variant -> {
+                        java.util.Optional<com.marketplace.ecommerce.product.entity.ProductVariant> optVariant = productVariantRepository.findById(item.getVariantId());
+                        if (optVariant.isPresent()) {
+                            com.marketplace.ecommerce.product.entity.ProductVariant variant = optVariant.get();
                             int currentStock = variant.getStock() != null ? variant.getStock() : 0;
                             variant.setStock(currentStock + item.getQuantity());
                             productVariantRepository.save(variant);
-                        });
+                            inventoryHistoryService.logInventoryChange(order.getShop(), item.getProduct(), variant, currentStock, variant.getStock(), InventoryActionType.ORDER_CANCELLED, order.getOrderNumber(), "Hủy đơn hàng: " + order.getOrderNumber());
+                        }
                     }
                 }
                 order.setStockDeducted(false);
@@ -391,9 +399,11 @@ public class OrderServiceImpl implements OrderService {
                     throw new CustomException("Biến thể (" + (variant.getColor() != null ? variant.getColor() : "")
                             + (variant.getSize() != null ? " " + variant.getSize() : "") + ") không đủ số lượng.");
                 }
+                int oldVStock = variant.getStock() != null ? variant.getStock() : 0;
                 variant.setStock(variant.getStock() - cartItem.getQuantity());
                 variant.setSold((variant.getSold() != null ? variant.getSold() : 0) + cartItem.getQuantity());
                 productVariantRepository.save(variant);
+                inventoryHistoryService.logInventoryChange(shop, product, variant, oldVStock, variant.getStock(), InventoryActionType.ORDER_PLACED, orderNumber, "Khách đặt đơn hàng: " + orderNumber);
 
                 orderItem.setVariantId(variant.getId());
                 orderItem.setVariantColor(variant.getColor());
@@ -404,7 +414,9 @@ public class OrderServiceImpl implements OrderService {
             }
 
             if (product.getQuantity() != null) {
+                int oldPStock = product.getQuantity();
                 product.setQuantity(Math.max(0, product.getQuantity() - cartItem.getQuantity()));
+                inventoryHistoryService.logInventoryChange(shop, product, null, oldPStock, product.getQuantity(), InventoryActionType.ORDER_PLACED, orderNumber, "Khách đặt đơn hàng: " + orderNumber);
             }
             product.setSold((product.getSold() != null ? product.getSold() : 0) + cartItem.getQuantity());
             productRepository.save(product);

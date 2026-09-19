@@ -63,6 +63,16 @@ const sellerService = {
       throw error.response ? error.response.data : error;
     }
   },
+
+  // Get inventory history
+  getInventoryHistory: async (page = 0, size = 20) => {
+    try {
+      const response = await axiosClient.get(`/api/v1/inventory-history/shop?page=${page}&size=${size}`);
+      return response.data;
+    } catch (error) {
+      throw error.response ? error.response.data : error;
+    }
+  },
 };
 
 export default sellerService;

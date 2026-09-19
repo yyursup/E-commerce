@@ -22,6 +22,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
+import com.marketplace.ecommerce.product.service.InventoryHistoryService;
+import com.marketplace.ecommerce.product.valueObjects.InventoryActionType;
 
 
 @Service
@@ -32,6 +34,7 @@ public class ProductServiceImpl implements ProductService {
     private final ShopRepository shopRepository;
     private final ProductImageService productImageService;
     private final ProductCategoryRepository productCategoryRepository;
+    private final InventoryHistoryService inventoryHistoryService;
 
     @Override
     @Transactional
@@ -87,6 +90,13 @@ public class ProductServiceImpl implements ProductService {
 
         Product productSaved = productRepository.save(product);
 
+        inventoryHistoryService.logInventoryChange(shop, productSaved, null, 0, productSaved.getQuantity(), InventoryActionType.PRODUCT_CREATED, null, "Khởi tạo sản phẩm");
+        if (productSaved.getVariants() != null && !productSaved.getVariants().isEmpty()) {
+            productSaved.getVariants().forEach(v -> {
+                inventoryHistoryService.logInventoryChange(shop, productSaved, v, 0, v.getStock(), InventoryActionType.PRODUCT_CREATED, null, "Khởi tạo biến thể");
+            });
+        }
+
         return ProductResponse.from(productSaved);
     }
 
@@ -99,12 +109,23 @@ public class ProductServiceImpl implements ProductService {
 
         assertOwner(shop, product);
 
+        Integer oldStock = product.getQuantity();
+
         applyBasicFields(product, req);
+        
+        Integer newStock = product.getQuantity();
+        if (oldStock != null && !oldStock.equals(newStock)) {
+            inventoryHistoryService.logInventoryChange(shop, product, null, oldStock, newStock, InventoryActionType.STOCK_UPDATED, null, "Người bán cập nhật kho");
+        }
+
         applySku(product, req);
         applyStatus(product, req);
         applyCategory(product, req);
         applyImages(product, req);
-        applyVariants(product, req);
+        
+        // save product once to persist new variants if any, to avoid TransientPropertyValueException
+        product = productRepository.save(product); 
+        applyVariants(product, req, shop);
 
         return ProductResponse.from(productRepository.save(product));
     }
@@ -199,7 +220,7 @@ public class ProductServiceImpl implements ProductService {
         ));
     }
 
-    private void applyVariants(Product product, UpdateProductRequest req) {
+    private void applyVariants(Product product, UpdateProductRequest req, Shop shop) {
         if (req.getVariants() == null) return;
         
         // Mark all existing as deleted
@@ -217,15 +238,18 @@ public class ProductServiceImpl implements ProductService {
             }
 
             if (existing != null) {
+                Integer oldStock = existing.getStock();
                 existing.setColor(variantReq.getColor());
                 existing.setSize(variantReq.getSize());
                 existing.setPrice(variantReq.getPrice());
                 existing.setStock(variantReq.getStock());
                 existing.setDeleted(false);
                 existing.setUpdatedAt(LocalDateTime.now());
+                if (oldStock != null && !oldStock.equals(variantReq.getStock())) {
+                    inventoryHistoryService.logInventoryChange(shop, product, existing, oldStock, variantReq.getStock(), InventoryActionType.STOCK_UPDATED, null, "Người bán cập nhật kho");
+                }
             } else {
-                product.getVariants().add(
-                        com.marketplace.ecommerce.product.entity.ProductVariant.builder()
+                com.marketplace.ecommerce.product.entity.ProductVariant newVariant = com.marketplace.ecommerce.product.entity.ProductVariant.builder()
                                 .product(product)
                                 .color(variantReq.getColor())
                                 .size(variantReq.getSize())
@@ -233,8 +257,9 @@ public class ProductServiceImpl implements ProductService {
                                 .stock(variantReq.getStock())
                                 .createdAt(LocalDateTime.now())
                                 .deleted(false)
-                                .build()
-                );
+                                .build();
+                product.getVariants().add(newVariant);
+                inventoryHistoryService.logInventoryChange(shop, product, newVariant, 0, variantReq.getStock(), InventoryActionType.STOCK_UPDATED, null, "Thêm biến thể mới");
             }
         }
     }

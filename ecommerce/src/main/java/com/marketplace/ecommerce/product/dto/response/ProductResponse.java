@@ -26,12 +26,16 @@ public class ProductResponse {
     private String status;
     private BigDecimal basePrice;
     private Integer quantity;
+    private Integer sold;
     private List<ProductImageResponse> images;
     private UUID categoryId;
     private String categoryName;
     private List<ProductVariantResponse> variants;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private boolean featured;
+    private Double rating;
+    private Long reviewCount;
 
 
     public static ProductResponse from(Product product) {
@@ -45,12 +49,14 @@ public class ProductResponse {
                 .status(String.valueOf(product.getStatus()))
                 .basePrice(product.getBasePrice())
                 .quantity(product.getQuantity())
+                .sold(product.getSold())
                 .images(mapImages(product.getImages()))
                 .variants(mapVariants(product.getVariants()))
                 .categoryId(product.getProductCategory().getId())
                 .categoryName(product.getProductCategory().getName())
                 .createdAt(product.getCreatedAt())
                 .updatedAt(product.getUpdatedAt())
+                .featured(product.isFeatured())
                 .build();
     }
 

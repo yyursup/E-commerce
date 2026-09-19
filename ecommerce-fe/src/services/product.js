@@ -43,6 +43,16 @@ const productService = {
       throw error.response ? error.response.data : error;
     }
   },
+
+  getFeaturedProductsByShop: async (shopId) => {
+    try {
+      const response = await api.get(`${PRODUCT_BASE}/shop/${shopId}/featured`);
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 404) return [];
+      throw error.response ? error.response.data : error;
+    }
+  },
 };
 
 export default productService;

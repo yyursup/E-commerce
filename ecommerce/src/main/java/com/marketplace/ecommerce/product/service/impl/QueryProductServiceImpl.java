@@ -12,6 +12,10 @@ import com.marketplace.ecommerce.product.service.QueryProductService;
 import com.marketplace.ecommerce.product.valueObjects.ProductStatus;
 import com.marketplace.ecommerce.shop.entity.Shop;
 import com.marketplace.ecommerce.shop.repository.ShopRepository;
+import com.marketplace.ecommerce.review.repository.ReviewRepository;
+import com.marketplace.ecommerce.review.dto.projection.ProductReviewStatsProjection;
+import com.marketplace.ecommerce.review.dto.projection.ReviewStatsProjection;
+import com.marketplace.ecommerce.review.valueObjects.ReviewStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -35,6 +39,42 @@ public class QueryProductServiceImpl implements QueryProductService {
     private final ShopRepository shopRepository;
     private final QueryUtils queryUtils;
     private final UserRepository userRepository;
+    private final ReviewRepository reviewRepository;
+
+    private void enrichReviewStats(List<ProductResponse> responses) {
+        if (responses == null || responses.isEmpty()) return;
+        List<UUID> ids = responses.stream().map(ProductResponse::getId).filter(Objects::nonNull).toList();
+        if (ids.isEmpty()) return;
+
+        List<ProductReviewStatsProjection> statsList = reviewRepository.getStatsForProducts(ids, ReviewStatus.ACTIVE);
+        Map<UUID, ProductReviewStatsProjection> statsMap = statsList.stream()
+                .collect(Collectors.toMap(ProductReviewStatsProjection::getProductId, s -> s, (a, b) -> a));
+
+        for (ProductResponse res : responses) {
+            ProductReviewStatsProjection stat = statsMap.get(res.getId());
+            if (stat != null && stat.getTotalReviews() != null && stat.getTotalReviews() > 0) {
+                double rounded = Math.round(stat.getAvgRating() * 10.0) / 10.0;
+                res.setRating(rounded);
+                res.setReviewCount(stat.getTotalReviews());
+            } else {
+                res.setRating(null);
+                res.setReviewCount(0L);
+            }
+        }
+    }
+
+    private void enrichSingleReviewStats(ProductResponse res) {
+        if (res == null || res.getId() == null) return;
+        ReviewStatsProjection stats = reviewRepository.getStats(res.getId(), ReviewStatus.ACTIVE);
+        if (stats != null && stats.getTotalReviews() != null && stats.getTotalReviews() > 0) {
+            double rounded = Math.round(stats.getAvgRating() * 10.0) / 10.0;
+            res.setRating(rounded);
+            res.setReviewCount(stats.getTotalReviews());
+        } else {
+            res.setRating(null);
+            res.setReviewCount(0L);
+        }
+    }
 
     @Override
     public Page<ProductResponse> getPublishedProducts(PageQueryRequest req) {
@@ -59,7 +99,9 @@ public class QueryProductServiceImpl implements QueryProductService {
                 pageable
         );
 
-        return products.map(ProductResponse::from);
+        Page<ProductResponse> responsePage = products.map(ProductResponse::from);
+        enrichReviewStats(responsePage.getContent());
+        return responsePage;
     }
 
     @Override
@@ -67,7 +109,9 @@ public class QueryProductServiceImpl implements QueryProductService {
         Product product = productRepository.findPublishedByIdWithDetails(productId)
                 .orElseThrow(() -> new CustomException("Sản phẩm không tồn tại hoặc chưa được xuất bản"));
 
-        return ProductResponse.from(product);
+        ProductResponse res = ProductResponse.from(product);
+        enrichSingleReviewStats(res);
+        return res;
     }
 
     @Override
@@ -75,24 +119,29 @@ public class QueryProductServiceImpl implements QueryProductService {
         Product product = productRepository.findByIdWithDetails(productId)
                 .orElseThrow(() -> new CustomException("Sản phẩm không tồn tại"));
 
-        return ProductResponse.from(product);
+        ProductResponse res = ProductResponse.from(product);
+        enrichSingleReviewStats(res);
+        return res;
     }
 
     @Override
     public List<ProductResponse> getProductsByShopAndStatus(UUID accountId, String status) {
         Shop shop = getShopByAccountId(accountId);
 
+        List<ProductResponse> list;
         if (status == null || status.isBlank()) {
-            return productRepository.findAllByShopIdWithDetails(shop.getId()).stream()
+            list = productRepository.findAllByShopIdWithDetails(shop.getId()).stream()
+                    .map(ProductResponse::from)
+                    .toList();
+        } else {
+            ProductStatus productStatus = parseStatus(status);
+            list = productRepository.findAllByShopIdAndStatusWithDetails(shop.getId(), productStatus).stream()
                     .map(ProductResponse::from)
                     .toList();
         }
 
-        ProductStatus productStatus = parseStatus(status);
-
-        return productRepository.findAllByShopIdAndStatusWithDetails(shop.getId(), productStatus).stream()
-                .map(ProductResponse::from)
-                .toList();
+        enrichReviewStats(list);
+        return list;
     }
 
     @Override
@@ -107,6 +156,7 @@ public class QueryProductServiceImpl implements QueryProductService {
                     .map(ProductResponse::from)
                     .ifPresent(out::add);
         }
+        enrichReviewStats(out);
         return out;
     }
 
@@ -137,6 +187,18 @@ public class QueryProductServiceImpl implements QueryProductService {
 
         return shopRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new CustomException("Shop not found"));
+    }
+
+    @Override
+    public List<ProductResponse> getFeaturedProductsByShop(UUID shopId) {
+        if (!shopRepository.existsById(shopId)) {
+            throw new CustomException("Shop không tồn tại");
+        }
+        List<ProductResponse> responses = productRepository.findFeaturedByShopIdWithDetails(shopId).stream()
+                .map(ProductResponse::from)
+                .toList();
+        enrichReviewStats(responses);
+        return responses;
     }
 
 }

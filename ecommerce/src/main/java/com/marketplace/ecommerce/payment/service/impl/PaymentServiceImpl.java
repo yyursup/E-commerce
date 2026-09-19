@@ -16,6 +16,7 @@ import com.marketplace.ecommerce.payment.valueObjects.PaymentMethod;
 import com.marketplace.ecommerce.payment.valueObjects.PaymentStatus;
 import com.marketplace.ecommerce.product.entity.Product;
 import com.marketplace.ecommerce.product.repository.ProductRepository;
+import com.marketplace.ecommerce.product.repository.ProductVariantRepository;
 import com.marketplace.ecommerce.wallet.service.WalletService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +35,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final UserRepository userRepository;
     private final VNPayService vnPayService;
     private final ProductRepository productRepository;
+    private final ProductVariantRepository productVariantRepository;
     private final WalletService walletService;
     private final OrderService orderService;
 
@@ -92,7 +94,17 @@ public class PaymentServiceImpl implements PaymentService {
             if (order.isStockDeducted()) {
                 for (OrderItem item : order.getItems()) {
                     Product p = item.getProduct();
-                    p.setQuantity(p.getQuantity() + item.getQuantity());
+                    if (p != null && p.getQuantity() != null) {
+                        p.setQuantity(p.getQuantity() + item.getQuantity());
+                        productRepository.save(p);
+                    }
+                    if (item.getVariantId() != null) {
+                        productVariantRepository.findById(item.getVariantId()).ifPresent(variant -> {
+                            int currentStock = variant.getStock() != null ? variant.getStock() : 0;
+                            variant.setStock(currentStock + item.getQuantity());
+                            productVariantRepository.save(variant);
+                        });
+                    }
                 }
                 order.setStockDeducted(false);
             }

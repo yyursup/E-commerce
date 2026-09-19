@@ -53,6 +53,26 @@ const sellerService = {
       throw error.response ? error.response.data : error;
     }
   },
+
+  // Toggle featured (đẩy/bỏ đẩy sản phẩm nổi bật)
+  toggleFeatured: async (productId) => {
+    try {
+      const response = await axiosClient.patch(`${SELLER_BASE}/${productId}/featured`);
+      return response.data;
+    } catch (error) {
+      throw error.response ? error.response.data : error;
+    }
+  },
+
+  // Get inventory history
+  getInventoryHistory: async (page = 0, size = 20) => {
+    try {
+      const response = await axiosClient.get(`/api/v1/inventory-history/shop?page=${page}&size=${size}`);
+      return response.data;
+    } catch (error) {
+      throw error.response ? error.response.data : error;
+    }
+  },
 };
 
 export default sellerService;

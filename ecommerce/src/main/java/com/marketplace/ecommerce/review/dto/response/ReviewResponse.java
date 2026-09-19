@@ -54,6 +54,7 @@ public class ReviewResponse {
                 .rating(review.getRating())
                 .comment(review.getComment())
                 .sellerReply(reply == null ? null : SellerReplyResponse.from(reply))
+                .isVerifiedPurchase(review.getSubOrderId() != null)
                 .imageUrls(review.getImages().stream()
                         .map(ReviewImage::getImageUrl)
                         .collect(Collectors.toList()))

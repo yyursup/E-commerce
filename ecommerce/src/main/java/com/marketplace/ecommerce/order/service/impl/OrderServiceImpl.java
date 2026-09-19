@@ -18,15 +18,20 @@ import com.marketplace.ecommerce.order.repository.OrderItemsRepository;
 import com.marketplace.ecommerce.order.repository.OrderRepository;
 import com.marketplace.ecommerce.order.service.OrderService;
 import com.marketplace.ecommerce.payment.service.EscrowService;
+import com.marketplace.ecommerce.payment.valueObjects.PaymentMethod;
 import com.marketplace.ecommerce.platform.service.CommissionService;
 import com.marketplace.ecommerce.platform.service.PlatformSettingService;
 import com.marketplace.ecommerce.product.entity.Product;
+import com.marketplace.ecommerce.product.entity.ProductVariant;
 import com.marketplace.ecommerce.product.repository.ProductRepository;
+import com.marketplace.ecommerce.product.repository.ProductVariantRepository;
 import com.marketplace.ecommerce.shipping.dto.request.GHNCreateOrderRequest;
 import com.marketplace.ecommerce.shipping.dto.response.GHNCreateOrderResponse;
 import com.marketplace.ecommerce.shipping.service.ShippingService;
 import com.marketplace.ecommerce.shipping.usecase.GHNClient;
 import com.marketplace.ecommerce.order.valueObjects.OrderStatus;
+import com.marketplace.ecommerce.product.service.InventoryHistoryService;
+import com.marketplace.ecommerce.product.valueObjects.InventoryActionType;
 import com.marketplace.ecommerce.shop.entity.Shop;
 import com.marketplace.ecommerce.shop.repository.ShopRepository;
 import lombok.RequiredArgsConstructor;
@@ -55,6 +60,7 @@ public class OrderServiceImpl implements OrderService {
     private final CartRepository cartRepository;
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
+    private final ProductVariantRepository productVariantRepository;
     private final OrderItemsRepository orderItemsRepository;
     private final CartItemRepository cartItemRepository;
     private final GHNClient ghnClient;
@@ -64,6 +70,7 @@ public class OrderServiceImpl implements OrderService {
     private final EscrowService escrowService;
     private final CommissionService commissionService;
     private final com.marketplace.ecommerce.voucher.service.VoucherService voucherService;
+    private final InventoryHistoryService inventoryHistoryService;
 
     @Override
     @Transactional
@@ -210,16 +217,35 @@ public class OrderServiceImpl implements OrderService {
 
         if (newStatus == OrderStatus.CANCELLED) {
 
+            if (order.getPaymentMethod() == PaymentMethod.COD) {
+                escrowService.cancelCodEscrow(order);
+            }
+
             voucherService.rollbackVoucherUsage(order);
 
-            for (OrderItem item : order.getItems()) {
-                if (item.getProduct() != null) {
-                    Product p = item.getProduct();
-                    if (p.getQuantity() != null) {
-                        p.setQuantity(p.getQuantity() + item.getQuantity());
-                        productRepository.save(p);
+            if (order.isStockDeducted()) {
+                for (OrderItem item : order.getItems()) {
+                    if (item.getProduct() != null) {
+                        Product p = item.getProduct();
+                        if (p.getQuantity() != null) {
+                            int oldQ = p.getQuantity();
+                            p.setQuantity(p.getQuantity() + item.getQuantity());
+                            productRepository.save(p);
+                            inventoryHistoryService.logInventoryChange(order.getShop(), p, null, oldQ, p.getQuantity(), InventoryActionType.ORDER_CANCELLED, order.getOrderNumber(), "Hủy đơn hàng: " + order.getOrderNumber());
+                        }
+                    }
+                    if (item.getVariantId() != null) {
+                        java.util.Optional<com.marketplace.ecommerce.product.entity.ProductVariant> optVariant = productVariantRepository.findById(item.getVariantId());
+                        if (optVariant.isPresent()) {
+                            com.marketplace.ecommerce.product.entity.ProductVariant variant = optVariant.get();
+                            int currentStock = variant.getStock() != null ? variant.getStock() : 0;
+                            variant.setStock(currentStock + item.getQuantity());
+                            productVariantRepository.save(variant);
+                            inventoryHistoryService.logInventoryChange(order.getShop(), item.getProduct(), variant, currentStock, variant.getStock(), InventoryActionType.ORDER_CANCELLED, order.getOrderNumber(), "Hủy đơn hàng: " + order.getOrderNumber());
+                        }
                     }
                 }
+                order.setStockDeducted(false);
             }
 
             if (order.getGhnOrderCode() != null && !order.getGhnOrderCode().isEmpty()) {
@@ -296,6 +322,15 @@ public class OrderServiceImpl implements OrderService {
             throw new CustomException("There's no items in this cart from the shop.");
         }
 
+        PaymentMethod paymentMethod = PaymentMethod.COD;
+        if (request.getPaymentMethod() != null && !request.getPaymentMethod().isBlank()) {
+            try {
+                paymentMethod = PaymentMethod.valueOf(request.getPaymentMethod().trim().toUpperCase());
+            } catch (Exception e) {
+                log.warn("Invalid payment method: {}, defaulting to COD", request.getPaymentMethod());
+            }
+        }
+
         BigDecimal subtotal = getBigDecimal(cartItems);
 
         BigDecimal shippingFee = shippingService.quoteFee(
@@ -307,7 +342,12 @@ public class OrderServiceImpl implements OrderService {
         order.setOrderNumber(orderNumber);
         order.setUser(user);
         order.setShop(shop);
-        order.setStatus(OrderStatus.PENDING_PAYMENT);
+        order.setPaymentMethod(paymentMethod);
+        if (paymentMethod == PaymentMethod.COD) {
+            order.setStatus(OrderStatus.CONFIRMED);
+        } else {
+            order.setStatus(OrderStatus.PENDING_PAYMENT);
+        }
         order.setShippingName(addr.getReceiverName());
         order.setShippingPhone(addr.getReceiverPhone());
         order.setShippingAddress(addr.getAddressLine());
@@ -349,7 +389,38 @@ public class OrderServiceImpl implements OrderService {
             orderItem.setProduct(product);
             orderItem.setProductName(product.getName());
             orderItem.setQuantity(cartItem.getQuantity());
+
             BigDecimal unitPrice = product.getBasePrice();
+            if (cartItem.getVariantId() != null) {
+                ProductVariant variant = productVariantRepository.findById(cartItem.getVariantId())
+                        .filter(v -> !Boolean.TRUE.equals(v.getDeleted()))
+                        .orElseThrow(() -> new CustomException("Biến thể sản phẩm không tồn tại: " + product.getName()));
+                if (variant.getStock() != null && variant.getStock() < cartItem.getQuantity()) {
+                    throw new CustomException("Biến thể (" + (variant.getColor() != null ? variant.getColor() : "")
+                            + (variant.getSize() != null ? " " + variant.getSize() : "") + ") không đủ số lượng.");
+                }
+                int oldVStock = variant.getStock() != null ? variant.getStock() : 0;
+                variant.setStock(variant.getStock() - cartItem.getQuantity());
+                variant.setSold((variant.getSold() != null ? variant.getSold() : 0) + cartItem.getQuantity());
+                productVariantRepository.save(variant);
+                inventoryHistoryService.logInventoryChange(shop, product, variant, oldVStock, variant.getStock(), InventoryActionType.ORDER_PLACED, orderNumber, "Khách đặt đơn hàng: " + orderNumber);
+
+                orderItem.setVariantId(variant.getId());
+                orderItem.setVariantColor(variant.getColor());
+                orderItem.setVariantSize(variant.getSize());
+                if (variant.getPrice() != null) {
+                    unitPrice = variant.getPrice();
+                }
+            }
+
+            if (product.getQuantity() != null) {
+                int oldPStock = product.getQuantity();
+                product.setQuantity(Math.max(0, product.getQuantity() - cartItem.getQuantity()));
+                inventoryHistoryService.logInventoryChange(shop, product, null, oldPStock, product.getQuantity(), InventoryActionType.ORDER_PLACED, orderNumber, "Khách đặt đơn hàng: " + orderNumber);
+            }
+            product.setSold((product.getSold() != null ? product.getSold() : 0) + cartItem.getQuantity());
+            productRepository.save(product);
+
             orderItem.setUnitPrice(unitPrice);
             orderItem.calculateTotalPrice();
             orderItem.setCreatedAt(LocalDateTime.now());
@@ -357,29 +428,51 @@ public class OrderServiceImpl implements OrderService {
             orderItemsRepository.save(orderItem);
         }
 
+        order.setStockDeducted(true);
+        order = orderRepository.save(order);
+
         for (CartItem cartItem : cartItems) {
             cartItem.setDeleted(true);
             cartItemRepository.save(cartItem);
+        }
+
+        if (paymentMethod == PaymentMethod.COD) {
+            escrowService.recordCodEscrow(order);
+            tryCreateGHNOrder(order);
+            order = orderRepository.save(order);
         }
 
         return OrderResponse.from(order);
     }
 
     @NotNull
-    private static BigDecimal getBigDecimal(List<CartItem> cartItems) {
+    private BigDecimal getBigDecimal(List<CartItem> cartItems) {
         BigDecimal subtotal = BigDecimal.ZERO;
 
         for (CartItem cartItem : cartItems) {
             Product product = cartItem.getProduct();
 
-            if (product.getQuantity() != null && product.getQuantity() < cartItem.getQuantity()) {
-                throw new CustomException(
-                        "Sản phẩm " + product.getName()
-                                + " không đủ số lượng. Còn lại: " + product.getQuantity());
-            }
+            if (cartItem.getVariantId() != null) {
+                ProductVariant variant = productVariantRepository.findById(cartItem.getVariantId())
+                        .filter(v -> !Boolean.TRUE.equals(v.getDeleted()))
+                        .orElseThrow(() -> new CustomException("Biến thể sản phẩm không tồn tại: " + product.getName()));
+                if (variant.getStock() != null && variant.getStock() < cartItem.getQuantity()) {
+                    throw new CustomException("Biến thể (" + (variant.getColor() != null ? variant.getColor() : "")
+                            + (variant.getSize() != null ? " " + variant.getSize() : "") + ") của sản phẩm "
+                            + product.getName() + " không đủ số lượng. Còn lại: " + variant.getStock());
+                }
+                BigDecimal unitPrice = variant.getPrice() != null ? variant.getPrice() : product.getBasePrice();
+                subtotal = subtotal.add(unitPrice.multiply(BigDecimal.valueOf(cartItem.getQuantity())));
+            } else {
+                if (product.getQuantity() != null && product.getQuantity() < cartItem.getQuantity()) {
+                    throw new CustomException(
+                            "Sản phẩm " + product.getName()
+                                    + " không đủ số lượng. Còn lại: " + product.getQuantity());
+                }
 
-            BigDecimal unitPrice = product.getBasePrice();
-            subtotal = subtotal.add(unitPrice.multiply(BigDecimal.valueOf(cartItem.getQuantity())));
+                BigDecimal unitPrice = cartItem.getUnitPrice() != null ? cartItem.getUnitPrice() : product.getBasePrice();
+                subtotal = subtotal.add(unitPrice.multiply(BigDecimal.valueOf(cartItem.getQuantity())));
+            }
         }
         return subtotal;
     }

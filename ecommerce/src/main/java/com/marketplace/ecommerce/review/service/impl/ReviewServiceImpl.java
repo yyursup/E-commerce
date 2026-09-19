@@ -42,6 +42,7 @@ public class ReviewServiceImpl implements ReviewService {
     private final FileService fileService;
 
     @Override
+    @Transactional(readOnly = true)
     public ReviewResponse getMyReview(UUID accountId, UUID productId, UUID subOrderId) {
         User user = userRepository.findByAccountId(accountId)
                 .orElseThrow(() -> new CustomException("Account not found"));
@@ -54,6 +55,7 @@ public class ReviewServiceImpl implements ReviewService {
 
 
     @Override
+    @Transactional(readOnly = true)
     public Page<ReviewResponse> getProductReviews(UUID productId, Integer rating, Boolean hasImages, Pageable pageable) {
 
         Page<Review> reviewPage = reviewRepository.findWithFilters(

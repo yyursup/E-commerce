@@ -26,6 +26,12 @@ public class AuthenticationController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/refresh-token")
+    public ResponseEntity<LoginResponse> refreshToken(@Valid @RequestBody com.marketplace.ecommerce.auth.dto.request.RefreshTokenRequest request) {
+        LoginResponse response = authenticationService.refreshToken(request.getRefreshToken());
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/me")
     public ResponseEntity<LoginResponse> getMyProfile(@CurrentUser CurrentUserInfo currentUser) {
         if (currentUser == null || currentUser.getAccountId() == null) {
@@ -64,5 +70,17 @@ public class AuthenticationController {
     public ResponseEntity<Void> forgotPasswordReset(@Valid @RequestBody com.marketplace.ecommerce.auth.dto.request.ResetPasswordRequest request) {
         authenticationService.forgotPasswordReset(request.getEmail(), request.getOtp(), request.getNewPassword());
         return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/oauth2/google")
+    public ResponseEntity<LoginResponse> oauth2LoginGoogle(@RequestBody @Valid com.marketplace.ecommerce.auth.dto.request.OAuth2Request request) {
+        LoginResponse response = authenticationService.oauth2LoginGoogle(request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/oauth2/facebook")
+    public ResponseEntity<LoginResponse> oauth2LoginFacebook(@RequestBody @Valid com.marketplace.ecommerce.auth.dto.request.OAuth2Request request) {
+        LoginResponse response = authenticationService.oauth2LoginFacebook(request);
+        return ResponseEntity.ok(response);
     }
 }

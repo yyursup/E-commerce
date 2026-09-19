@@ -44,6 +44,14 @@ public class Account extends BaseEntity implements UserDetails, Serializable {
     private String phoneNumber;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "auth_provider")
+    @Builder.Default
+    private com.marketplace.ecommerce.auth.valueObjects.AuthProvider authProvider = com.marketplace.ecommerce.auth.valueObjects.AuthProvider.LOCAL;
+
+    @Column(name = "provider_id")
+    private String providerId;
+
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private AccountStatus status = AccountStatus.ACTIVE;
 

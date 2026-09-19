@@ -103,7 +103,22 @@ export default function OrderSummarySection({ order, isDark }) {
           </span>
         </div>
 
-        {/* 6. Grand Total (Khách thanh toán) */}
+        {/* 6. Phương thức thanh toán */}
+        <div className="flex justify-between items-center text-sm">
+          <span className={isDark ? 'text-slate-400' : 'text-stone-600'}>
+            Phương thức thanh toán
+          </span>
+          <span className={cn(
+            'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-xs font-bold border',
+            order.paymentMethod === 'VNPAY'
+              ? 'border-blue-500/30 bg-blue-500/10 text-blue-500'
+              : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+          )}>
+            {order.paymentMethod === 'VNPAY' ? 'VNPAY (Trực tuyến)' : 'COD (Tiền mặt khi nhận)'}
+          </span>
+        </div>
+
+        {/* 7. Grand Total (Khách thanh toán) */}
         <div className="border-t border-stone-200 dark:border-slate-800 pt-3 flex items-baseline justify-between">
           <div>
             <span className={cn('text-base font-bold block', isDark ? 'text-white' : 'text-stone-900')}>

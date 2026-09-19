@@ -35,9 +35,9 @@ const orderService = {
   },
 
   // Create Order
-  createOrder: async (shopId, addressId, notes, voucherParam = null) => {
+  createOrder: async (shopId, addressId, notes, voucherParam = null, paymentMethod = 'COD') => {
     try {
-      const payload = { shopId, addressId, notes };
+      const payload = { shopId, addressId, notes, paymentMethod };
       if (typeof voucherParam === 'string') {
         payload.voucherCode = voucherParam;
       } else if (voucherParam && typeof voucherParam === 'object') {

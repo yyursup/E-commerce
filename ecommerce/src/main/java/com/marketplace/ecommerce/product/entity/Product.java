@@ -61,11 +61,18 @@ public class Product {
     @Column(name = "weight")
     private Integer weight = 500;
 
+    @Column(name = "sold", nullable = false)
+    @Builder.Default
+    private Integer sold = 0;
+
     @Column(nullable = false)
     private int reportCount = 0;
 
     @Column(nullable = false)
     private boolean flagged = false;
+
+    @Column(name = "featured", nullable = false)
+    private boolean featured = false;
 
     @Builder.Default
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)

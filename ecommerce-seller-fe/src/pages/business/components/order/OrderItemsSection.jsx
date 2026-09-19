@@ -50,8 +50,19 @@ export default function OrderItemsSection({ items, isDark }) {
                   </p>
                 )}
 
+                {(item.variantColor || item.variantSize) && (
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className={cn(
+                      'inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold',
+                      isDark ? 'bg-amber-950/40 text-amber-400 border border-amber-800/40' : 'bg-amber-50 text-amber-700 border border-amber-200'
+                    )}>
+                      Phân loại: {[item.variantColor, item.variantSize].filter(Boolean).join(' - ')}
+                    </span>
+                  </div>
+                )}
+
                 <div className="flex items-center gap-2 text-xs text-stone-500 dark:text-slate-400">
-                  <span>Đơn giá: {formatCurrency(item.price || 0)}</span>
+                  <span>Đơn giá: {formatCurrency(item.unitPrice || item.price || 0)}</span>
                   <span>•</span>
                   <span>Số lượng: <strong className="text-stone-900 dark:text-white font-bold">{item.quantity}</strong></span>
                 </div>

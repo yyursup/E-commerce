@@ -32,6 +32,8 @@ export default function Login() {
 
       const userPayload = {
         email: res.email,
+        phoneNumber: res.phoneNumber,
+        username: res.username,
         role: res.role,
         accountId: res.accountId,
         hasShop: res.hasShop,
@@ -39,7 +41,7 @@ export default function Login() {
         shopName: res.shopName,
         sellerStatus: res.sellerStatus,
       }
-      login(res.token, userPayload)
+      login(res.token, userPayload, res.refreshToken)
 
       toast.success(`Đăng nhập thành công, ${res.shopName || res.email}!`)
 

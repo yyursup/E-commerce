@@ -45,6 +45,16 @@ export default function CheckoutOrderItems({
                                 <h3 className={cn("text-sm font-medium line-clamp-2", isDark ? "text-white" : "text-stone-900")}>
                                     {item.productName}
                                 </h3>
+                                {(item.variantColor || item.variantSize) && (
+                                    <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+                                        <span className={cn(
+                                            "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium",
+                                            isDark ? "bg-slate-800 text-slate-300 border border-slate-700" : "bg-stone-100 text-stone-600 border border-stone-200"
+                                        )}>
+                                            Phân loại: {[item.variantColor, item.variantSize].filter(Boolean).join(' - ')}
+                                        </span>
+                                    </div>
+                                )}
                                 <div className="mt-1 flex justify-between items-center text-sm">
                                     <span className={isDark ? "text-slate-400" : "text-stone-500"}>x{item.quantity}</span>
                                     <span className={cn("font-medium", isDark ? "text-amber-400" : "text-amber-600")}>

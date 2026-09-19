@@ -146,4 +146,20 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
             @Param("shopId") UUID shopId,
             @Param("status") ProductStatus status
     );
+
+    @Query("""
+                select p
+                from Product p
+                join fetch p.shop s
+                join fetch p.productCategory c
+                left join fetch p.images i
+                where s.id = :shopId
+                  and p.featured = true
+                  and p.status = 'PUBLISHED'
+                  and p.deleted = false
+            """)
+    List<Product> findFeaturedByShopIdWithDetails(@Param("shopId") UUID shopId);
+
+    long countByShopIdAndFeaturedTrueAndDeletedFalse(UUID shopId);
 }
+

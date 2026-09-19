@@ -4,6 +4,7 @@ import com.marketplace.ecommerce.cart.entity.CartItem;
 import com.marketplace.ecommerce.common.exception.CustomException;
 import com.marketplace.ecommerce.order.entity.Order;
 import com.marketplace.ecommerce.order.entity.OrderItem;
+import com.marketplace.ecommerce.payment.valueObjects.PaymentMethod;
 import com.marketplace.ecommerce.shipping.dto.request.GHNCalculateFeeRequest;
 import com.marketplace.ecommerce.shipping.dto.request.GHNCreateOrderRequest;
 import com.marketplace.ecommerce.shipping.dto.response.GHNCalculateFeeResponse;
@@ -81,7 +82,8 @@ public class ShippingServiceImpl implements ShippingService {
                 .weight(totalWeight)
                 .length(20).width(20).height(10)
                 .service_type_id(2)
-                .insurance_value(order.getSubtotal().intValue())
+                .cod_amount(order.getPaymentMethod() == PaymentMethod.COD && order.getTotal() != null ? order.getTotal().intValue() : 0)
+                .insurance_value(order.getSubtotal() != null ? order.getSubtotal().intValue() : 0)
                 .client_order_code(order.getOrderNumber())
                 .items(ghnItems)
                 .build();

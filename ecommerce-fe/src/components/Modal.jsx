@@ -11,7 +11,9 @@ export default function Modal({ open, onClose, title, children, size = 'md' }) {
     sm: 'max-w-md',
     md: 'max-w-lg',
     lg: 'max-w-2xl',
-  }[size]
+    xl: 'max-w-3xl',
+    '2xl': 'max-w-4xl',
+  }[size] || 'max-w-2xl'
 
   return (
     <Transition appear show={open} as={Fragment}>

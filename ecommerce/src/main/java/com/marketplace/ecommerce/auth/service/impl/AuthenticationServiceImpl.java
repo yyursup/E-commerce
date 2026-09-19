@@ -70,6 +70,15 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final ShopRepository shopRepository;
     private final RequestRepository requestRepository;
 
+    @org.springframework.beans.factory.annotation.Value("${oauth2.google.client-id:}")
+    private String googleClientId;
+
+    @org.springframework.beans.factory.annotation.Value("${oauth2.facebook.client-id:}")
+    private String facebookClientId;
+
+    @org.springframework.beans.factory.annotation.Value("${oauth2.facebook.client-secret:}")
+    private String facebookClientSecret;
+
     @Override
     public AccountCreateResponse verifyAccount(VerifyRequest request) {
         boolean isOtpValid = emailService.verifyOtp(request.getEmail(), request.getOtp());
@@ -245,9 +254,17 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 }
             }
 
+            String phone = users.getPhoneNumber();
+            if (phone == null || phone.isBlank()) {
+                phone = userRepository.findByAccountId(users.getId()).map(User::getPhoneNumber).orElse(null);
+            }
+
             LoginResponse.LoginResponseBuilder builder = LoginResponse.builder()
                     .email(users.getEmail())
+                    .phoneNumber(phone)
+                    .username(users.getUsername())
                     .token(tokenService.createToken(users))
+                    .refreshToken(tokenService.refreshToken(users))
                     .role(users.getRole().getRoleName());
 
             populateShopAndSellerStatus(builder, users.getId());
@@ -292,8 +309,15 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new CustomException("Account not found"));
 
+        String phone = account.getPhoneNumber();
+        if (phone == null || phone.isBlank()) {
+            phone = userRepository.findByAccountId(account.getId()).map(User::getPhoneNumber).orElse(null);
+        }
+
         LoginResponse.LoginResponseBuilder builder = LoginResponse.builder()
                 .email(account.getEmail())
+                .phoneNumber(phone)
+                .username(account.getUsername())
                 .token(tokenService.createToken(account))
                 .role(account.getRole() != null ? account.getRole().getRoleName() : "CUSTOMER")
                 .accountId(account.getId());
@@ -341,5 +365,172 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .shopId(shopId)
                 .shopName(shopName)
                 .sellerStatus(sellerStatus);
+    }
+
+    @Override
+    @Transactional
+    public LoginResponse oauth2LoginGoogle(com.marketplace.ecommerce.auth.dto.request.OAuth2Request request) {
+        org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+        try {
+            // Validate Token
+            String tokenInfoUrl = "https://oauth2.googleapis.com/tokeninfo?access_token=" + request.getToken();
+            java.util.Map<String, Object> tokenInfo = restTemplate.getForObject(tokenInfoUrl, java.util.Map.class);
+            if (tokenInfo == null || !tokenInfo.containsKey("aud")) {
+                throw new CustomException("Invalid Google token");
+            }
+            String aud = (String) tokenInfo.get("aud");
+            if (googleClientId != null && !googleClientId.isBlank() && !googleClientId.equals(aud)) {
+                throw new CustomException("Unrecognized Google Client ID");
+            }
+
+            // Get User Info
+            String userInfoUrl = "https://www.googleapis.com/oauth2/v3/userinfo?access_token=" + request.getToken();
+            java.util.Map<String, Object> response = restTemplate.getForObject(userInfoUrl, java.util.Map.class);
+            if (response == null || !response.containsKey("email")) {
+                throw new CustomException("Google token is invalid");
+            }
+            String email = (String) response.get("email");
+            String name = (String) response.get("name");
+            String picture = (String) response.get("picture");
+            String providerId = (String) response.get("sub");
+            
+            return processOAuth2User(email, name, picture, providerId, com.marketplace.ecommerce.auth.valueObjects.AuthProvider.GOOGLE);
+        } catch (Exception e) {
+            log.error("Google Auth Error", e);
+            throw new CustomException("Failed to verify Google token: " + e.getMessage());
+        }
+    }
+
+    @Override
+    @Transactional
+    public LoginResponse oauth2LoginFacebook(com.marketplace.ecommerce.auth.dto.request.OAuth2Request request) {
+        org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+        try {
+            // Validate Token (if secret is configured)
+            if (facebookClientId != null && !facebookClientId.isBlank() && facebookClientSecret != null && !facebookClientSecret.isBlank()) {
+                String debugUrl = "https://graph.facebook.com/debug_token?input_token=" + request.getToken() + "&access_token=" + facebookClientId + "|" + facebookClientSecret;
+                java.util.Map<String, Object> debugInfo = restTemplate.getForObject(debugUrl, java.util.Map.class);
+                if (debugInfo != null && debugInfo.containsKey("data")) {
+                    java.util.Map<String, Object> data = (java.util.Map<String, Object>) debugInfo.get("data");
+                    Boolean isValid = (Boolean) data.get("is_valid");
+                    String appId = (String) data.get("app_id");
+                    if (isValid == null || !isValid || !facebookClientId.equals(appId)) {
+                        throw new CustomException("Invalid Facebook token or App ID mismatch");
+                    }
+                }
+            }
+
+            String url = "https://graph.facebook.com/me?fields=id,name,email,picture&access_token=" + request.getToken();
+            java.util.Map<String, Object> response = restTemplate.getForObject(url, java.util.Map.class);
+            if (response == null || !response.containsKey("email")) {
+                throw new CustomException("Facebook token is invalid or missing email permission");
+            }
+            String email = (String) response.get("email");
+            String name = (String) response.get("name");
+            String providerId = (String) response.get("id");
+            String picture = null;
+            if (response.containsKey("picture")) {
+                java.util.Map<String, Object> picObj = (java.util.Map<String, Object>) response.get("picture");
+                java.util.Map<String, Object> picData = (java.util.Map<String, Object>) picObj.get("data");
+                if (picData != null) {
+                    picture = (String) picData.get("url");
+                }
+            }
+            
+            return processOAuth2User(email, name, picture, providerId, com.marketplace.ecommerce.auth.valueObjects.AuthProvider.FACEBOOK);
+        } catch (Exception e) {
+            log.error("Facebook Auth Error", e);
+            throw new CustomException("Failed to verify Facebook token: " + e.getMessage());
+        }
+    }
+
+    private LoginResponse processOAuth2User(String email, String name, String avatar, String providerId, com.marketplace.ecommerce.auth.valueObjects.AuthProvider provider) {
+        Account account = accountRepository.findByEmail(email).orElse(null);
+        if (account == null) {
+            Role defaultRole = roleRepository.findByRoleName("CUSTOMER")
+                    .orElseThrow(() -> new RoleNotFoundException("Role not found"));
+            account = Account.builder()
+                    .username(email)
+                    .email(email)
+                    .passwordHash(passwordEncoder.encode(UUID.randomUUID().toString()))
+                    .status(AccountStatus.ACTIVE)
+                    .role(defaultRole)
+                    .isActive(true)
+                    .accountVerified(true)
+                    .authProvider(provider)
+                    .providerId(providerId)
+                    .violationCount(0)
+                    .disciplineLevel(DisciplineLevel.NONE)
+                    .build();
+            account = accountRepository.save(account);
+
+            User user = User.builder()
+                    .email(email)
+                    .fullName(name)
+                    .avatarUrl(avatar)
+                    .account(account)
+                    .build();
+            user = userRepository.save(user);
+
+            Wallet wallet = Wallet.builder()
+                    .user(user)
+                    .walletType(WalletType.USER)
+                    .availableBalance(BigDecimal.ZERO)
+                    .lockedBalance(BigDecimal.ZERO)
+                    .createdAt(LocalDateTime.now())
+                    .build();
+            walletRepository.save(wallet);
+
+            Cart cart = Cart.builder()
+                    .user(user)
+                    .createdAt(LocalDateTime.now())
+                    .build();
+            cartRepository.save(cart);
+        } else {
+            if (account.getAuthProvider() == com.marketplace.ecommerce.auth.valueObjects.AuthProvider.LOCAL) {
+                account.setAuthProvider(provider);
+                account.setProviderId(providerId);
+                account.setAccountVerified(true);
+                accountRepository.save(account);
+            }
+        }
+
+        LoginResponse.LoginResponseBuilder builder = LoginResponse.builder()
+                .email(account.getEmail())
+                .token(tokenService.createToken(account))
+                .refreshToken(tokenService.refreshToken(account))
+                .role(account.getRole().getRoleName());
+        
+        populateShopAndSellerStatus(builder, account.getId());
+        return builder.build();
+    }
+
+    @Override
+    public LoginResponse refreshToken(String refreshToken) {
+        if (refreshToken == null || refreshToken.isBlank()) {
+            throw new CustomException("Refresh token không được để trống.");
+        }
+        try {
+            Account account = tokenService.getAccountFromToken(refreshToken);
+            if (account == null) {
+                throw new CustomException("Tài khoản không tồn tại.");
+            }
+            if (account.getStatus() == AccountStatus.BANNED || !Boolean.TRUE.equals(account.getIsActive())) {
+                throw new CustomException("Tài khoản đã bị khóa hoặc ngừng hoạt động.");
+            }
+
+            LoginResponse.LoginResponseBuilder builder = LoginResponse.builder()
+                    .email(account.getEmail())
+                    .token(tokenService.createToken(account))
+                    .refreshToken(tokenService.refreshToken(account))
+                    .role(account.getRole().getRoleName());
+
+            populateShopAndSellerStatus(builder, account.getId());
+            return builder.build();
+        } catch (CustomException ce) {
+            throw ce;
+        } catch (Exception e) {
+            throw new CustomException("Refresh token không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại.");
+        }
     }
 }

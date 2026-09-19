@@ -17,6 +17,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.marketplace.ecommerce.product.entity.ProductVariant;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -84,7 +86,17 @@ public class CartServiceImpl implements CartService {
         Product product = getPublishedProduct(cartItem.getProduct().getId());
 
         int newQty = cartItem.getQuantity() + 1;
-        cartValidation.ensureStock(product, newQty, "Out of stock");
+        if (cartItem.getVariantId() != null && product.getVariants() != null) {
+            ProductVariant variant = product.getVariants().stream()
+                    .filter(v -> v.getId().equals(cartItem.getVariantId()) && !Boolean.TRUE.equals(v.getDeleted()))
+                    .findFirst()
+                    .orElse(null);
+            if (variant != null && variant.getStock() != null && newQty > variant.getStock()) {
+                throw new CustomException("Số lượng tồn kho của phân loại này đã đạt giới hạn (còn " + variant.getStock() + ")");
+            }
+        } else {
+            cartValidation.ensureStock(product, newQty, "Out of stock");
+        }
 
         cartItem.setQuantity(newQty);
         cartItemRepository.save(cartItem);
@@ -103,21 +115,52 @@ public class CartServiceImpl implements CartService {
 
         Cart cart = getCartWithItemsByUserId(user.getId());
 
+        // Kiểm tra phân loại hàng (Variants)
+        ProductVariant selectedVariant = null;
+        boolean hasVariants = product.getVariants() != null && product.getVariants().stream().anyMatch(v -> !Boolean.TRUE.equals(v.getDeleted()));
+
+        if (hasVariants) {
+            if (request.getVariantId() == null) {
+                throw new CustomException("Vui lòng chọn phân loại hàng (màu sắc / kích cỡ...)");
+            }
+            selectedVariant = product.getVariants().stream()
+                    .filter(v -> !Boolean.TRUE.equals(v.getDeleted()) && v.getId().equals(request.getVariantId()))
+                    .findFirst()
+                    .orElseThrow(() -> new CustomException("Phân loại hàng không tồn tại hoặc đã ngừng kinh doanh"));
+
+            if (selectedVariant.getStock() != null && selectedVariant.getStock() < reqQty) {
+                throw new CustomException("Số lượng tồn kho của phân loại này không đủ (còn " + selectedVariant.getStock() + ")");
+            }
+        }
+
         CartItem existing = findActiveItemByProductAndVariant(cart, product.getId(), request.getVariantId());
+
+        BigDecimal unitPrice = (selectedVariant != null && selectedVariant.getPrice() != null)
+                ? selectedVariant.getPrice()
+                : (product.getBasePrice() != null ? product.getBasePrice() : BigDecimal.ZERO);
 
         if (existing != null) {
             int newQty = existing.getQuantity() + reqQty;
-            cartValidation.ensureStock(product, newQty, "Not enough quantity");
+            if (selectedVariant != null && selectedVariant.getStock() != null) {
+                if (newQty > selectedVariant.getStock()) {
+                    throw new CustomException("Số lượng trong giỏ (" + newQty + ") vượt quá tồn kho còn lại (" + selectedVariant.getStock() + ")");
+                }
+            } else {
+                cartValidation.ensureStock(product, newQty, "Not enough quantity");
+            }
             existing.setQuantity(newQty);
+            existing.setUnitPrice(unitPrice);
         } else {
-            cartValidation.ensureStock(product, reqQty, "Not enough quantity");
+            if (selectedVariant == null) {
+                cartValidation.ensureStock(product, reqQty, "Not enough quantity");
+            }
 
             CartItem newItem = new CartItem();
             newItem.setCart(cart);
             newItem.setProduct(product);
             newItem.setQuantity(reqQty);
             newItem.setVariantId(request.getVariantId());
-            newItem.setUnitPrice(product.getBasePrice());
+            newItem.setUnitPrice(unitPrice);
             newItem.setCreatedAt(LocalDateTime.now());
             cart.getItems().add(newItem);
         }

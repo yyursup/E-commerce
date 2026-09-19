@@ -54,12 +54,19 @@ export default function ProductCard({ product, onQuickView, dataAos, dataAosDela
     '/product-placeholder.svg'
 
   // Robustly resolve price
-  const displayPrice =
+  const variants = product.variants || []
+  const prices = variants.map((v) => Number(v.price) || 0).filter((p) => p > 0)
+  const baseOrPropPrice =
     price !== undefined && price !== null
       ? Number(price)
       : product.basePrice !== undefined && product.basePrice !== null
       ? Number(product.basePrice)
       : 0
+
+  const minPrice = prices.length > 0 ? Math.min(...prices) : baseOrPropPrice
+  const maxPrice = prices.length > 0 ? Math.max(...prices) : minPrice
+  const isRangePrice = variants.length > 0 && minPrice !== maxPrice
+  const displayPrice = minPrice
 
   const displayOldPrice =
     oldPrice !== undefined && oldPrice !== null
@@ -68,8 +75,9 @@ export default function ProductCard({ product, onQuickView, dataAos, dataAosDela
       ? Number(product.originalPrice)
       : null
 
-  // Deterministic mock sold count based on product id length or char codes
-  const mockSold = ((String(id || '').charCodeAt(0) * 17) % 850) + 50
+  const formatVND = (amount) => {
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0)
+  }
 
   return (
     <motion.article
@@ -79,17 +87,19 @@ export default function ProductCard({ product, onQuickView, dataAos, dataAosDela
       onMouseLeave={() => setHover(false)}
       className={cn(
         'group relative flex flex-col justify-between overflow-hidden rounded-2xl border transition-all duration-300',
+        product.featured && 'ring-2 ring-amber-500/50 shadow-md shadow-amber-500/10',
         isDark
           ? 'border-slate-800 bg-slate-800/60 hover:border-amber-500/40 hover:shadow-xl hover:shadow-black/30'
           : 'border-stone-200/90 bg-white hover:border-amber-400 hover:shadow-xl hover:shadow-amber-500/5',
       )}
     >
       {/* Badges container */}
-      <div className="absolute left-2.5 top-2.5 z-10 flex flex-col gap-1">
-        {/* Mall / Verified badge */}
-        <span className="inline-flex items-center gap-1 rounded-md bg-rose-600 px-2 py-0.5 text-[10px] font-extrabold text-white shadow-sm uppercase tracking-wider">
-          Mall
-        </span>
+      <div className="absolute left-2.5 top-2.5 z-10 flex flex-col gap-1 items-start">
+        {product.featured && (
+          <span className="inline-flex items-center gap-1 rounded-md bg-gradient-to-r from-amber-500 to-orange-500 px-2 py-0.5 text-[10px] font-black text-white shadow-md tracking-wider">
+            ⭐ Nổi bật
+          </span>
+        )}
         {badge && badge !== 'Bestseller' && (
           <span className="rounded-md bg-amber-500 px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">
             {badge}
@@ -182,9 +192,11 @@ export default function ProductCard({ product, onQuickView, dataAos, dataAosDela
                 {shopName || categoryName || 'E-commerce'}
               </span>
             )}
-            <span className="text-[10px] text-stone-400 dark:text-slate-500 shrink-0">
-              Đã bán {mockSold}
-            </span>
+            {product.sold !== undefined && product.sold !== null && product.sold > 0 && (
+              <span className="text-[10px] text-stone-400 dark:text-slate-500 shrink-0">
+                Đã bán {product.sold}
+              </span>
+            )}
           </div>
 
           {/* Title */}
@@ -201,25 +213,29 @@ export default function ProductCard({ product, onQuickView, dataAos, dataAosDela
         </div>
 
         <div>
-          {/* Rating */}
-          <div className="mt-2 flex items-center gap-1">
-            <HiStar className="h-3.5 w-3.5 text-amber-400" />
-            <span className="text-xs font-bold text-stone-700 dark:text-slate-300">
-              {rating || 4.8}
-            </span>
-            <span className="text-[10px] text-stone-400 dark:text-slate-500">
-              (50+ đánh giá)
-            </span>
-          </div>
+          {/* Rating (Real only) */}
+          {product.rating !== undefined && product.rating !== null && Number(product.rating) > 0 && (
+            <div className="mt-2 flex items-center gap-1">
+              <HiStar className="h-3.5 w-3.5 text-amber-400 fill-amber-400" />
+              <span className="text-xs font-bold text-stone-700 dark:text-slate-300">
+                {Number(product.rating).toFixed(1)}
+              </span>
+              {product.reviewCount !== undefined && product.reviewCount !== null && product.reviewCount > 0 && (
+                <span className="text-[10px] text-stone-400 dark:text-slate-500">
+                  ({product.reviewCount})
+                </span>
+              )}
+            </div>
+          )}
 
           {/* Pricing */}
-          <div className="mt-2 flex items-baseline gap-2">
+          <div className="mt-2 flex flex-wrap items-baseline gap-2">
             <span className="text-base font-bold text-amber-600 dark:text-amber-400">
-              {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(displayPrice)}
+              {isRangePrice ? `${formatVND(minPrice)} - ${formatVND(maxPrice)}` : formatVND(displayPrice)}
             </span>
-            {displayOldPrice && (
+            {displayOldPrice && displayOldPrice > displayPrice && (
               <span className="text-xs text-stone-400 line-through dark:text-slate-500">
-                {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(displayOldPrice)}
+                {formatVND(displayOldPrice)}
               </span>
             )}
           </div>

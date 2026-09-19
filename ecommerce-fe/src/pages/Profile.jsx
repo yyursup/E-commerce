@@ -73,21 +73,40 @@ export default function Profile() {
                     {/* Sidebar Area */}
                     <div className="w-full lg:w-64 shrink-0">
                         {/* User Profile Mini Header */}
-                        <div className="flex items-center gap-3 mb-6 py-4">
-                            <div className="w-12 h-12 rounded-full overflow-hidden bg-stone-200 flex items-center justify-center shrink-0 border border-stone-200 dark:border-slate-700">
-                                <span className="text-xl font-bold text-stone-500">
-                                    {user?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
-                                </span>
+                        <div
+                            className={cn(
+                                "flex items-center gap-3.5 mb-6 p-4 rounded-2xl border transition-all shadow-xs",
+                                isDark
+                                    ? "bg-slate-900 border-slate-800"
+                                    : "bg-white border-stone-200"
+                            )}
+                        >
+                            <div className="relative w-12 h-12 rounded-full overflow-hidden bg-stone-100 dark:bg-slate-800 flex items-center justify-center shrink-0 border-2 border-amber-500/30">
+                                {user?.avatarUrl ? (
+                                    <img
+                                        src={user.avatarUrl}
+                                        alt={user?.fullName || user?.name || 'Avatar'}
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    <span className="text-lg font-bold text-amber-600 dark:text-amber-400">
+                                        {user?.fullName?.charAt(0) || user?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                                    </span>
+                                )}
                             </div>
-                            <div className="flex flex-col">
-                                <span className={cn("font-bold text-sm", isDark ? "text-gray-200" : "text-stone-800")}>
-                                    {user?.name || user?.email?.split('@')[0] || 'User'}
+                            <div className="flex flex-col min-w-0 flex-1">
+                                <span className={cn("font-bold text-sm truncate", isDark ? "text-slate-100" : "text-stone-800")}>
+                                    {user?.fullName || user?.name || user?.email?.split('@')[0] || 'User'}
                                 </span>
                                 <button
+                                    type="button"
                                     onClick={() => setActiveTab('profile')}
-                                    className={cn("flex items-center gap-1 text-xs mt-1", isDark ? "text-slate-400 hover:text-white" : "text-stone-500 hover:text-amber-600")}
+                                    className={cn(
+                                        "flex items-center gap-1.5 text-xs mt-0.5 font-medium transition-colors cursor-pointer",
+                                        isDark ? "text-slate-400 hover:text-amber-400" : "text-stone-500 hover:text-amber-600"
+                                    )}
                                 >
-                                    <FiEdit2 size={12} /> Sửa Hồ Sơ
+                                    <FiEdit2 size={12} className="text-amber-500" /> Sửa Hồ Sơ
                                 </button>
                             </div>
                         </div>

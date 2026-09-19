@@ -22,9 +22,21 @@ export default function AdminOrderDetailCard({ order, isDark }) {
       <div className="border-b p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className={cn('text-2xl font-bold', isDark ? 'text-white' : 'text-stone-900')}>
-              Đơn hàng {order.orderNumber}
-            </h1>
+            <div className="flex items-center gap-3 flex-wrap">
+              <h1 className={cn('text-2xl font-bold', isDark ? 'text-white' : 'text-stone-900')}>
+                Đơn hàng {order.orderNumber}
+              </h1>
+              <span
+                className={cn(
+                  'px-2.5 py-0.5 rounded-full text-xs font-bold border',
+                  order.paymentMethod === 'VNPAY'
+                    ? 'border-blue-500/30 bg-blue-500/10 text-blue-500'
+                    : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                )}
+              >
+                {order.paymentMethod === 'VNPAY' ? 'VNPAY' : 'COD'}
+              </span>
+            </div>
             <p className={cn('mt-1 text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
               Đặt ngày {formatAdminOrderDate(order.createdAt)}
             </p>
@@ -94,6 +106,11 @@ export default function AdminOrderDetailCard({ order, isDark }) {
                 >
                   {item.productName}
                 </Link>
+                {(item.variantColor || item.variantSize) && (
+                  <p className="mt-0.5 text-xs text-stone-500 dark:text-slate-400">
+                    Phân loại: <span className="font-semibold text-stone-700 dark:text-slate-300">{[item.variantColor, item.variantSize].filter(Boolean).join(' - ')}</span>
+                  </p>
+                )}
                 <p className={cn('mt-1 text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
                   Số lượng: {item.quantity}
                 </p>
@@ -122,6 +139,19 @@ export default function AdminOrderDetailCard({ order, isDark }) {
             </span>
             <span className={cn('text-sm font-medium', isDark ? 'text-white' : 'text-stone-900')}>
               {formatAdminOrderCurrency(order.shippingFee || 0)}
+            </span>
+          </div>
+          <div className="flex justify-between items-center text-sm">
+            <span className={isDark ? 'text-slate-400' : 'text-stone-600'}>
+              Phương thức thanh toán
+            </span>
+            <span className={cn(
+              'px-2 py-0.5 rounded text-xs font-bold border',
+              order.paymentMethod === 'VNPAY'
+                ? 'border-blue-500/30 bg-blue-500/10 text-blue-500'
+                : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+            )}>
+              {order.paymentMethod === 'VNPAY' ? 'VNPAY (Trực tuyến)' : 'COD (Tiền mặt khi nhận)'}
             </span>
           </div>
           {Number(order.shopDiscountAmount) > 0 && (

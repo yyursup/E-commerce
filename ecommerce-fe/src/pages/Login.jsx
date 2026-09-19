@@ -11,7 +11,10 @@ import { cn } from '../lib/cn'
 import authService from '../services/auth'
 import cartService from '../services/cart'
 import voucherService from '../services/voucher'
-
+import { useGoogleLogin } from '@react-oauth/google'
+import FBLogin from '@greatsumini/react-facebook-login'
+const FacebookLogin = FBLogin.default || FBLogin;
+import { FaFacebook, FaGoogle } from 'react-icons/fa'
 export default function Login() {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
   const navigate = useNavigate()
@@ -25,6 +28,77 @@ export default function Login() {
     formState: { errors, isSubmitting },
   } = useForm()
 
+  const fetchAndEnrichProfile = async (email, role) => {
+    try {
+      const profile = await authService.getUserProfile()
+      if (profile) {
+        useAuthStore.getState().updateUser({
+          fullName: profile.fullName,
+          name: profile.fullName,
+          avatarUrl: profile.avatarUrl,
+          phoneNumber: profile.phoneNumber,
+          gender: profile.gender,
+          dateOfBirth: profile.dateOfBirth,
+          email: profile.email || email,
+          role: profile.role || role,
+        })
+      }
+    } catch (e) {
+      console.warn('Could not fetch initial user profile on login:', e)
+    }
+  }
+
+  const handleOAuthSuccess = async (res) => {
+    if (res.role === 'ADMIN') {
+      toast.error('Tài khoản Quản trị viên vui lòng đăng nhập tại Cổng Quản Trị (Port 3002).')
+      return
+    }
+
+    const userPayload = { email: res.email, role: res.role }
+    login(res.token, userPayload, res.refreshToken)
+
+    // Load full profile (avatar, name, etc.) immediately
+    await fetchAndEnrichProfile(res.email, res.role)
+
+    try {
+      const cartData = await cartService.getCart()
+      updateCartCount(cartData)
+    } catch (cartError) {
+      updateCartCount(null)
+    }
+
+    const redirectUrl = location.state?.from || '/'
+    navigate(redirectUrl)
+    toast.success(`Chào mừng trở lại, ${res.email}!`)
+  }
+
+  const handleGoogleSuccess = async (tokenResponse) => {
+    try {
+      const res = await authService.oauth2Google(tokenResponse.access_token);
+      await handleOAuthSuccess(res);
+    } catch (error) {
+      toast.error(error?.message || 'Đăng nhập Google thất bại');
+    }
+  };
+
+  const handleGoogleLogin = useGoogleLogin({
+    onSuccess: handleGoogleSuccess,
+    onError: () => toast.error('Đăng nhập Google thất bại')
+  });
+
+  const handleFacebookResponse = async (response) => {
+    if (response.accessToken) {
+      try {
+        const res = await authService.oauth2Facebook(response.accessToken);
+        await handleOAuthSuccess(res);
+      } catch (error) {
+        toast.error(error?.message || 'Đăng nhập Facebook thất bại');
+      }
+    } else {
+      toast.error('Đăng nhập Facebook thất bại');
+    }
+  };
+
   const onSubmit = async (data) => {
     try {
       const res = await authService.login(data)
@@ -35,7 +109,10 @@ export default function Login() {
       }
 
       const userPayload = { email: res.email, role: res.role }
-      login(res.token, userPayload)
+      login(res.token, userPayload, res.refreshToken)
+
+      // Load full profile (avatar, name, etc.) immediately into store
+      await fetchAndEnrichProfile(res.email, res.role)
 
       // Fetch cart after login to update count
       try {
@@ -229,6 +306,50 @@ export default function Login() {
               {isSubmitting ? 'Đang đăng nhập...' : 'Đăng nhập'}
             </button>
           </form>
+
+          <div className="mt-6">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className={cn("w-full border-t", isDark ? 'border-slate-700' : 'border-stone-200')}></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className={cn("px-2 text-xs", isDark ? 'bg-slate-900/80 text-slate-400' : 'bg-white text-stone-500')}>Hoặc đăng nhập với</span>
+              </div>
+            </div>
+
+            <div className="mt-6 grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => handleGoogleLogin()}
+                className={cn(
+                  "flex w-full items-center justify-center gap-3 rounded-xl border px-3 py-2.5 text-sm font-semibold transition-all hover:bg-slate-50 dark:hover:bg-slate-800",
+                  isDark ? 'border-slate-700 text-white' : 'border-stone-200 text-stone-700'
+                )}
+              >
+                <FaGoogle className="text-rose-500" />
+                Google
+              </button>
+              
+              <FacebookLogin
+                appId={import.meta.env.VITE_FACEBOOK_APP_ID || 'dummy_app_id'}
+                onSuccess={handleFacebookResponse}
+                onFail={() => toast.error('Đăng nhập Facebook thất bại')}
+                render={({ onClick }) => (
+                  <button
+                    type="button"
+                    onClick={onClick}
+                    className={cn(
+                      "flex w-full items-center justify-center gap-3 rounded-xl border px-3 py-2.5 text-sm font-semibold transition-all hover:bg-slate-50 dark:hover:bg-slate-800",
+                      isDark ? 'border-slate-700 text-white' : 'border-stone-200 text-stone-700'
+                    )}
+                  >
+                    <FaFacebook className="text-blue-600" />
+                    Facebook
+                  </button>
+                )}
+              />
+            </div>
+          </div>
 
           <p
             className={cn(

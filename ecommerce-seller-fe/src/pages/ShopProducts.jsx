@@ -9,6 +9,8 @@ import {
   HiOutlineRefresh,
   HiOutlineExternalLink,
   HiOutlineEye,
+  HiStar,
+  HiOutlineStar,
 } from 'react-icons/hi'
 import toast from 'react-hot-toast'
 import { useThemeStore } from '../store/useThemeStore'
@@ -28,6 +30,7 @@ export default function ShopProducts() {
   const [editingProduct, setEditingProduct] = useState(null)
   const [selectedProduct, setSelectedProduct] = useState(null) // Product for detail modal
   const [deletingId, setDeletingId] = useState(null)
+  const [togglingFeaturedId, setTogglingFeaturedId] = useState(null)
 
   const loadProducts = async () => {
     try {
@@ -84,6 +87,27 @@ export default function ShopProducts() {
     loadProducts()
   }
 
+  const handleToggleFeatured = async (product, e) => {
+    e?.stopPropagation()
+    try {
+      setTogglingFeaturedId(product.id)
+      const updated = await sellerService.toggleFeatured(product.id)
+      setProducts((prev) => prev.map((p) => p.id === product.id ? { ...p, featured: updated.featured } : p))
+      if (updated.featured) {
+        toast.success(`⭐ Đã đẩy nổi bật "${product.name}"`)
+      } else {
+        toast('Đã bỏ đẩy nổi bật sản phẩm này', { icon: '🔕' })
+      }
+    } catch (err) {
+      const msg = err?.message || err?.error || 'Không thể thay đổi trạng thái nổi bật'
+      toast.error(msg)
+    } finally {
+      setTogglingFeaturedId(null)
+    }
+  }
+
+  const featuredCount = products.filter((p) => p.featured).length
+
   const filtered = products.filter((p) => {
     const q = search.toLowerCase().trim()
     if (!q) return true
@@ -135,9 +159,17 @@ export default function ShopProducts() {
           <h1 className={cn('text-2xl font-bold tracking-tight', isDark ? 'text-white' : 'text-stone-900')}>
             Quản Lý Sản Phẩm
           </h1>
-          <p className={cn('text-xs mt-1', isDark ? 'text-slate-400' : 'text-stone-500')}>
-            Tổng số: <span className="font-extrabold text-amber-500">{products.length}</span> sản phẩm trong gian hàng
-          </p>
+          <div className="flex items-center gap-3 mt-1 flex-wrap">
+            <p className={cn('text-xs', isDark ? 'text-slate-400' : 'text-stone-500')}>
+              Tổng số: <span className="font-extrabold text-amber-500">{products.length}</span> sản phẩm trong gian hàng
+            </p>
+            {featuredCount > 0 && (
+              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-500 bg-amber-500/10 border border-amber-500/25 px-2.5 py-0.5 rounded-full">
+                <HiStar className="h-3.5 w-3.5" />
+                Đang đẩy: {featuredCount}/5 sản phẩm
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -252,9 +284,17 @@ export default function ShopProducts() {
             const thumb = prod.images?.find((img) => img.isThumbnail) || prod.images?.[0]
             const imgUrl = thumb?.imageUrl || prod.image || '/product-placeholder.svg'
             const price = prod.basePrice ? Number(prod.basePrice) : (prod.price ? Number(prod.price) : 0)
+            const variantPrices = prod.variants?.length
+              ? prod.variants.map((v) => Number(v.price) || 0).filter((p) => p > 0)
+              : []
+            const minPrice = variantPrices.length > 0 ? Math.min(...variantPrices) : price
+            const maxPrice = variantPrices.length > 0 ? Math.max(...variantPrices) : price
+            const hasMultiplePrices = variantPrices.length > 1 && minPrice !== maxPrice
             const stock = prod.stockQuantity ?? prod.quantity ?? prod.stock ?? 0
             const statusBadge = getStatusBadge(prod.status)
             const isDeleting = deletingId === prod.id
+            const isTogglingFeatured = togglingFeaturedId === prod.id
+            const isFeatured = !!prod.featured
 
             return (
               <motion.div
@@ -265,7 +305,11 @@ export default function ShopProducts() {
                 onClick={() => setSelectedProduct(prod)}
                 className={cn(
                   'group rounded-2xl border p-4 sm:p-5 transition-all duration-200 cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-4 relative',
-                  isDark
+                  isFeatured
+                    ? isDark
+                      ? 'border-amber-500/50 bg-amber-500/5 hover:border-amber-400 hover:shadow-lg hover:shadow-amber-500/10'
+                      : 'border-amber-400/60 bg-amber-50/40 hover:border-amber-500 hover:shadow-md hover:shadow-amber-500/10'
+                    : isDark
                     ? 'border-slate-800 bg-slate-900 hover:border-amber-500/50 hover:bg-slate-900/90 hover:shadow-lg hover:shadow-amber-500/5'
                     : 'border-stone-200 bg-white hover:border-amber-400 hover:bg-amber-50/20 hover:shadow-md'
                 )}
@@ -309,6 +353,16 @@ export default function ShopProducts() {
                       )}>
                         {prod.categoryName || 'Mặc định'}
                       </span>
+                      {prod.sold >= 50 && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/10 px-2 py-0.5 text-[11px] font-bold text-rose-500 border border-rose-500/20 shrink-0">
+                          🔥 Bán chạy
+                        </span>
+                      )}
+                      {isFeatured && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] font-bold text-amber-500 border border-amber-500/25 shrink-0">
+                          <HiStar className="h-3 w-3" /> Đang đẩy
+                        </span>
+                      )}
                     </div>
 
                     <h3 className={cn(
@@ -327,6 +381,12 @@ export default function ShopProducts() {
                         Kho: <strong className={isDark ? 'text-slate-200' : 'text-stone-800'}>{stock}</strong> cái
                         {stock === 0 && <span className="ml-1 font-bold text-rose-500">(Hết hàng)</span>}
                       </span>
+                      <span className={cn(
+                        'font-semibold border-l pl-3',
+                        isDark ? 'border-slate-700 text-slate-400' : 'border-stone-300 text-stone-500'
+                      )}>
+                        Đã bán: <strong className={isDark ? 'text-slate-200' : 'text-stone-800'}>{prod.sold || 0}</strong> cái
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -336,15 +396,45 @@ export default function ShopProducts() {
                   <div className="text-left md:text-right">
                     <span className="text-[11px] text-stone-400 block md:hidden">Giá bán:</span>
                     <span className={cn(
-                      'font-black text-base sm:text-lg',
+                      'font-black text-base sm:text-lg tracking-tight',
                       isDark ? 'text-amber-400' : 'text-amber-600'
                     )}>
-                      {formatVND(price)}
+                      {hasMultiplePrices
+                        ? `${formatVND(minPrice)} - ${formatVND(maxPrice)}`
+                        : formatVND(minPrice || price)}
                     </span>
+                    {prod.variants?.length > 0 && (
+                      <span className="block text-[11px] font-semibold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20 mt-0.5 md:ml-auto w-fit">
+                        {prod.variants.length} phân loại
+                      </span>
+                    )}
                   </div>
 
                   {/* Actions Bar */}
                   <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                    {/* Featured Toggle Button */}
+                    <button
+                      type="button"
+                      onClick={(e) => handleToggleFeatured(prod, e)}
+                      disabled={isTogglingFeatured}
+                      title={isFeatured ? 'Bỏ đẩy nổi bật' : 'Đẩy sản phẩm này lên nổi bật'}
+                      className={cn(
+                        'p-2 rounded-xl border transition-all active:scale-95 disabled:opacity-50',
+                        isFeatured
+                          ? 'border-amber-500/50 bg-amber-500/15 text-amber-500 hover:bg-amber-500/25'
+                          : isDark
+                            ? 'border-slate-800 bg-slate-800/80 text-slate-400 hover:text-amber-400 hover:border-amber-500/40'
+                            : 'border-stone-200 bg-stone-50 text-stone-400 hover:text-amber-500 hover:border-amber-400'
+                      )}
+                    >
+                      {isTogglingFeatured
+                        ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-amber-500 border-t-transparent" />
+                        : isFeatured
+                          ? <HiStar className="h-4 w-4" />
+                          : <HiOutlineStar className="h-4 w-4" />
+                      }
+                    </button>
+
                     <a
                       href={`http://localhost:3000/products/${prod.id}`}
                       target="_blank"

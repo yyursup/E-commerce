@@ -41,6 +41,10 @@ public class ProductVariant {
     @Column(name = "stock", nullable = false)
     private Integer stock = 0;
 
+    @Column(name = "sold", nullable = false)
+    @Builder.Default
+    private Integer sold = 0;
+
     @Column(name = "deleted", nullable = false)
     @Builder.Default
     private Boolean deleted = false;

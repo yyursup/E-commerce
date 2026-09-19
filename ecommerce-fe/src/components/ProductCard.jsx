@@ -220,6 +220,11 @@ export default function ProductCard({ product, onQuickView, dataAos, dataAosDela
               <span className="text-xs font-bold text-stone-700 dark:text-slate-300">
                 {Number(product.rating).toFixed(1)}
               </span>
+              {product.reviewCount !== undefined && product.reviewCount !== null && product.reviewCount > 0 && (
+                <span className="text-[10px] text-stone-400 dark:text-slate-500">
+                  ({product.reviewCount})
+                </span>
+              )}
             </div>
           )}
 

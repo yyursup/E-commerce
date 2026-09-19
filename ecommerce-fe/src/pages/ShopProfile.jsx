@@ -31,6 +31,25 @@ import productService from '../services/product'
 import voucherService from '../services/voucher'
 import socialService from '../services/social'
 
+function formatJoinedTime(createdAt) {
+  if (!createdAt) return 'Mới tham gia'
+  try {
+    const created = new Date(createdAt)
+    if (isNaN(created.getTime())) return 'Mới tham gia'
+    const now = new Date()
+    const diffMs = now.getTime() - created.getTime()
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+    if (diffDays < 1) return 'Hôm nay'
+    if (diffDays < 30) return `${diffDays} ngày trước`
+    const diffMonths = Math.floor(diffDays / 30)
+    if (diffMonths < 12) return `${diffMonths} tháng trước`
+    const diffYears = Math.floor(diffMonths / 12)
+    return `${diffYears} năm trước`
+  } catch {
+    return 'Mới tham gia'
+  }
+}
+
 export default function ShopProfile() {
   const { shopId } = useParams()
   const isDark = useThemeStore((s) => s.theme) === 'dark'
@@ -61,6 +80,9 @@ export default function ShopProfile() {
         setLoadingShop(true)
         const data = await shopService.getShopById(shopId)
         setShop(data)
+        if (typeof data?.followerCount === 'number') {
+          setFollowerCount(data.followerCount)
+        }
       } catch (err) {
         console.error('Error loading shop:', err)
       } finally {
@@ -176,7 +198,8 @@ export default function ShopProfile() {
             price: parsedPrice,
             basePrice: p.basePrice,
             badge: p.featured ? 'Shop Đề Xuất' : (p.status === 'PUBLISHED' ? 'Chính hãng' : null),
-            rating: p.rating || 4.8,
+            rating: p.rating != null ? Number(p.rating) : null,
+            reviewCount: p.reviewCount != null ? Number(p.reviewCount) : 0,
             shopName: p.shopName || shop?.name || 'Shop',
             shopId: p.shopId || targetShopId,
             featured: !!p.featured,
@@ -478,7 +501,14 @@ export default function ShopProfile() {
                 <div>
                   <div className="text-slate-400 text-xs">Đánh Giá</div>
                   <div className="font-bold text-white text-base">
-                    {shop?.rating} <span className="text-xs text-slate-400 font-normal">({shop?.reviewCount})</span>
+                    {shop?.reviewCount > 0 ? (
+                      <>
+                        {Number(shop?.rating || 5.0).toFixed(1)}{' '}
+                        <span className="text-xs text-slate-400 font-normal">({shop?.reviewCount})</span>
+                      </>
+                    ) : (
+                      <span className="text-xs text-slate-300 font-medium">Chưa có đánh giá</span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -489,7 +519,7 @@ export default function ShopProfile() {
                 </span>
                 <div>
                   <div className="text-slate-400 text-xs">Tỉ Lệ Phản Hồi</div>
-                  <div className="font-bold text-white text-base">{shop?.responseRate || '99%'}</div>
+                  <div className="font-bold text-white text-base">{shop?.responseRate || '100%'}</div>
                 </div>
               </div>
 
@@ -500,7 +530,9 @@ export default function ShopProfile() {
                 <div>
                   <div className="text-slate-400 text-xs">Người Theo Dõi</div>
                   <div className="font-bold text-white text-base">
-                    {followerCount > 0 ? followerCount.toLocaleString() : (shop?.followerCount || 0)}
+                    {typeof followerCount === 'number'
+                      ? (followerCount >= 1000 ? (followerCount / 1000).toFixed(1) + 'k' : followerCount)
+                      : (shop?.followerCount || 0)}
                   </div>
                 </div>
               </div>
@@ -511,7 +543,7 @@ export default function ShopProfile() {
                 </span>
                 <div>
                   <div className="text-slate-400 text-xs">Tham Gia Sàn</div>
-                  <div className="font-bold text-white text-base">{shop?.joinedTime || '1 năm trước'}</div>
+                  <div className="font-bold text-white text-base">{formatJoinedTime(shop?.createdAt)}</div>
                 </div>
               </div>
 

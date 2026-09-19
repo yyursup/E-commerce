@@ -34,6 +34,8 @@ public class ProductResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private boolean featured;
+    private Double rating;
+    private Long reviewCount;
 
 
     public static ProductResponse from(Product product) {

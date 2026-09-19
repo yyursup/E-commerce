@@ -16,6 +16,12 @@ import com.marketplace.ecommerce.common.exception.CustomException;
 import com.marketplace.ecommerce.product.repository.ProductRepository;
 import com.marketplace.ecommerce.product.valueObjects.ProductStatus;
 import com.marketplace.ecommerce.shop.dto.response.ShopProfileResponse;
+import com.marketplace.ecommerce.social.repository.ShopFollowerRepository;
+import com.marketplace.ecommerce.review.repository.ReviewRepository;
+import com.marketplace.ecommerce.review.dto.projection.ShopReviewStatsProjection;
+import com.marketplace.ecommerce.review.valueObjects.ReviewStatus;
+import com.marketplace.ecommerce.chat.repository.ChatThreadRepository;
+import com.marketplace.ecommerce.chat.entity.ChatThread;
 
 import java.util.List;
 import java.util.UUID;
@@ -26,6 +32,9 @@ import java.util.stream.Collectors;
 public class ShopServiceImpl implements ShopService {
     private final ShopRepository shopRepository;
     private final ProductRepository productRepository;
+    private final ShopFollowerRepository shopFollowerRepository;
+    private final ReviewRepository reviewRepository;
+    private final ChatThreadRepository chatThreadRepository;
 
     @Override
     public Shop createShop(User ownerUser, String shopName, Request req, Seller sellerDetail) {
@@ -58,22 +67,39 @@ public class ShopServiceImpl implements ShopService {
         return shopRepository.save(shop);
     }
 
+    private ShopProfileResponse buildShopProfile(Shop s) {
+        long productCount = productRepository.countByShopIdAndStatusAndDeletedFalse(s.getId(), ProductStatus.PUBLISHED);
+        long followerCount = shopFollowerRepository.countByShopId(s.getId());
+
+        ShopReviewStatsProjection reviewStats = reviewRepository.getShopStats(s.getId(), ReviewStatus.ACTIVE);
+        long reviewCount = reviewStats != null && reviewStats.getTotalReviews() != null ? reviewStats.getTotalReviews() : 0L;
+        Float avgRating = (reviewCount > 0 && reviewStats.getAvgRating() != null)
+                ? (float) (Math.round(reviewStats.getAvgRating() * 10.0) / 10.0)
+                : (s.getAverageRating() != null && s.getAverageRating() > 0 ? s.getAverageRating() : null);
+
+        List<ChatThread> threads = chatThreadRepository.findByShopId(s.getId());
+        String responseRate = "100%";
+        if (threads != null && !threads.isEmpty()) {
+            long answered = threads.stream().filter(t -> t.getUnreadAdmin() == 0).count();
+            int rate = (int) Math.round((double) answered * 100.0 / threads.size());
+            responseRate = rate + "%";
+        }
+
+        return ShopProfileResponse.from(s, productCount, followerCount, reviewCount, avgRating, responseRate);
+    }
+
     @Override
     public ShopProfileResponse getShopProfileById(UUID shopId) {
         Shop shop = shopRepository.findById(shopId)
                 .orElseThrow(() -> new CustomException("Không tìm thấy thông tin cửa hàng"));
-        long count = productRepository.countByShopIdAndStatusAndDeletedFalse(shopId, ProductStatus.PUBLISHED);
-        return ShopProfileResponse.from(shop, count);
+        return buildShopProfile(shop);
     }
 
     @Override
     public List<ShopProfileResponse> getAllActiveShops() {
         return shopRepository.findAll().stream()
                 .filter(s -> s.getStatus() == ShopStatus.ACTIVE)
-                .map(s -> {
-                    long count = productRepository.countByShopIdAndStatusAndDeletedFalse(s.getId(), ProductStatus.PUBLISHED);
-                    return ShopProfileResponse.from(s, count);
-                })
+                .map(this::buildShopProfile)
                 .collect(Collectors.toList());
     }
 }

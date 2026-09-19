@@ -33,11 +33,22 @@ public class ShopProfileResponse {
     private BusinessType businessType;
     private String businessName;
     private Float averageRating;
+    private Long reviewCount;
+    private Long followerCount;
+    private String responseRate;
     private Long productCount;
     private LocalDateTime createdAt;
 
     public static ShopProfileResponse from(Shop shop, Long productCount) {
+        return from(shop, productCount, 0L, 0L, null, "100%");
+    }
+
+    public static ShopProfileResponse from(Shop shop, Long productCount, Long followerCount, Long reviewCount, Float averageRating, String responseRate) {
         if (shop == null) return null;
+        Float finalRating = averageRating != null
+                ? averageRating
+                : (shop.getAverageRating() != null && shop.getAverageRating() > 0 ? shop.getAverageRating() : null);
+
         return ShopProfileResponse.builder()
                 .id(shop.getId())
                 .name(shop.getName())
@@ -54,7 +65,10 @@ public class ShopProfileResponse {
                 .sellerType(shop.getSellerType())
                 .businessType(shop.getBusinessType())
                 .businessName(shop.getBusinessName())
-                .averageRating(shop.getAverageRating() != null ? shop.getAverageRating() : 5.0f)
+                .averageRating(finalRating)
+                .reviewCount(reviewCount != null ? reviewCount : 0L)
+                .followerCount(followerCount != null ? followerCount : 0L)
+                .responseRate(responseRate != null ? responseRate : "100%")
                 .productCount(productCount != null ? productCount : 0L)
                 .createdAt(shop.getCreatedAt())
                 .build();

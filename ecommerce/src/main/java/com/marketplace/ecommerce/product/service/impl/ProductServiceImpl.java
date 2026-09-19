@@ -13,6 +13,7 @@ import com.marketplace.ecommerce.product.repository.ProductCategoryRepository;
 import com.marketplace.ecommerce.product.repository.ProductRepository;
 import com.marketplace.ecommerce.product.service.ProductImageService;
 import com.marketplace.ecommerce.product.service.ProductService;
+import com.marketplace.ecommerce.product.validate.ProductValidation;
 import com.marketplace.ecommerce.product.valueObjects.ProductStatus;
 import com.marketplace.ecommerce.shop.entity.Shop;
 import com.marketplace.ecommerce.shop.repository.ShopRepository;
@@ -23,7 +24,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-
 @Service
 @RequiredArgsConstructor
 public class ProductServiceImpl implements ProductService {
@@ -32,6 +32,7 @@ public class ProductServiceImpl implements ProductService {
     private final ShopRepository shopRepository;
     private final ProductImageService productImageService;
     private final ProductCategoryRepository productCategoryRepository;
+    private final ProductValidation productValidation;
 
     @Override
     @Transactional
@@ -47,6 +48,8 @@ public class ProductServiceImpl implements ProductService {
     @Transactional
     public ProductResponse createProduct(UUID accountId, CreateProductRequest request) {
         Shop shop = getShopByAccountId(accountId);
+
+        productValidation.validateVariants(request.getVariants());
 
         if (productRepository.existsBySkuAndDeletedFalse(request.getSku())) {
             throw new CustomException("SKU already exists: " + request.getSku());
@@ -79,8 +82,7 @@ public class ProductServiceImpl implements ProductService {
                             .stock(variantReq.getStock())
                             .createdAt(LocalDateTime.now())
                             .deleted(false)
-                            .build()
-            ));
+                            .build()));
         }
 
         productImageService.createProductImage(product, request);
@@ -99,6 +101,10 @@ public class ProductServiceImpl implements ProductService {
 
         assertOwner(shop, product);
 
+        if (req.getVariants() != null) {
+            productValidation.validateVariants(req.getVariants());
+        }
+
         applyBasicFields(product, req);
         applySku(product, req);
         applyStatus(product, req);
@@ -113,8 +119,10 @@ public class ProductServiceImpl implements ProductService {
         User user = userRepository.findByAccountId(accountId)
                 .orElseThrow(() -> new CustomException("User not found"));
 
-        if (user.getAccount().getDisciplineLevel() == DisciplineLevel.SUSPENDED || user.getAccount().getDisciplineLevel() == DisciplineLevel.BANNED) {
-            throw new CustomException("You do not have permission to manage products because your account is suspended or banned.");
+        if (user.getAccount().getDisciplineLevel() == DisciplineLevel.SUSPENDED
+                || user.getAccount().getDisciplineLevel() == DisciplineLevel.BANNED) {
+            throw new CustomException(
+                    "You do not have permission to manage products because your account is suspended or banned.");
         }
 
         return shopRepository.findByUserId(user.getId())
@@ -137,14 +145,15 @@ public class ProductServiceImpl implements ProductService {
         if (req.getBasePrice() != null) {
             product.setBasePrice(req.getBasePrice());
         }
-        if( req.getStockQuantity() != null){
+        if (req.getStockQuantity() != null) {
             product.setQuantity(req.getStockQuantity());
         }
         product.setUpdatedAt(LocalDateTime.now());
     }
 
     private void applySku(Product product, UpdateProductRequest req) {
-        if (req.getSku() == null || req.getSku().isBlank()) return;
+        if (req.getSku() == null || req.getSku().isBlank())
+            return;
 
         String newSku = req.getSku().trim();
 
@@ -157,7 +166,8 @@ public class ProductServiceImpl implements ProductService {
     }
 
     private void applyStatus(Product product, UpdateProductRequest req) {
-        if (req.getStatus() == null || req.getStatus().isBlank()) return;
+        if (req.getStatus() == null || req.getStatus().isBlank())
+            return;
 
         try {
             product.setStatus(ProductStatus.valueOf(req.getStatus().trim().toUpperCase()));
@@ -167,7 +177,8 @@ public class ProductServiceImpl implements ProductService {
     }
 
     private void applyCategory(Product product, UpdateProductRequest req) {
-        if (req.getCategoryId() == null) return;
+        if (req.getCategoryId() == null)
+            return;
 
         ProductCategory category = productCategoryRepository.findById(req.getCategoryId())
                 .orElseThrow(() -> new CustomException("Category not found"));
@@ -176,7 +187,8 @@ public class ProductServiceImpl implements ProductService {
     }
 
     private void applyImages(Product product, UpdateProductRequest req) {
-        if (req.getImages() == null) return;
+        if (req.getImages() == null)
+            return;
 
         long thumbnailCount = req.getImages().stream()
                 .filter(i -> Boolean.TRUE.equals(i.getIsThumbnail()))
@@ -195,13 +207,13 @@ public class ProductServiceImpl implements ProductService {
                         .isThumbnail(Boolean.TRUE.equals(imgReq.getIsThumbnail()))
                         .displayOrder(imgReq.getDisplayOrder() == null ? 0 : imgReq.getDisplayOrder())
                         .createdAt(LocalDateTime.now())
-                        .build()
-        ));
+                        .build()));
     }
 
     private void applyVariants(Product product, UpdateProductRequest req) {
-        if (req.getVariants() == null) return;
-        
+        if (req.getVariants() == null)
+            return;
+
         // Mark all existing as deleted
         if (product.getVariants() != null) {
             product.getVariants().forEach(v -> v.setDeleted(true));
@@ -233,11 +245,11 @@ public class ProductServiceImpl implements ProductService {
                                 .stock(variantReq.getStock())
                                 .createdAt(LocalDateTime.now())
                                 .deleted(false)
-                                .build()
-                );
+                                .build());
             }
         }
     }
+
     @Override
     @Transactional
     public ProductResponse toggleFeatured(UUID accountId, UUID productId) {
@@ -252,7 +264,8 @@ public class ProductServiceImpl implements ProductService {
             // Check limit: max 5 featured products per shop
             long currentFeaturedCount = productRepository.countByShopIdAndFeaturedTrueAndDeletedFalse(shop.getId());
             if (currentFeaturedCount >= 5) {
-                throw new CustomException("Bạn chỉ có thể đẩy nổi bật tối đa 5 sản phẩm. Hãy bỏ đẩy một sản phẩm khác trước.");
+                throw new CustomException(
+                        "Bạn chỉ có thể đẩy nổi bật tối đa 5 sản phẩm. Hãy bỏ đẩy một sản phẩm khác trước.");
             }
         }
 

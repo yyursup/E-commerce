@@ -28,6 +28,26 @@ export default function Login() {
     formState: { errors, isSubmitting },
   } = useForm()
 
+  const fetchAndEnrichProfile = async (email, role) => {
+    try {
+      const profile = await authService.getUserProfile()
+      if (profile) {
+        useAuthStore.getState().updateUser({
+          fullName: profile.fullName,
+          name: profile.fullName,
+          avatarUrl: profile.avatarUrl,
+          phoneNumber: profile.phoneNumber,
+          gender: profile.gender,
+          dateOfBirth: profile.dateOfBirth,
+          email: profile.email || email,
+          role: profile.role || role,
+        })
+      }
+    } catch (e) {
+      console.warn('Could not fetch initial user profile on login:', e)
+    }
+  }
+
   const handleOAuthSuccess = async (res) => {
     if (res.role === 'ADMIN') {
       toast.error('Tài khoản Quản trị viên vui lòng đăng nhập tại Cổng Quản Trị (Port 3002).')
@@ -36,6 +56,9 @@ export default function Login() {
 
     const userPayload = { email: res.email, role: res.role }
     login(res.token, userPayload, res.refreshToken)
+
+    // Load full profile (avatar, name, etc.) immediately
+    await fetchAndEnrichProfile(res.email, res.role)
 
     try {
       const cartData = await cartService.getCart()
@@ -52,7 +75,7 @@ export default function Login() {
   const handleGoogleSuccess = async (tokenResponse) => {
     try {
       const res = await authService.oauth2Google(tokenResponse.access_token);
-      handleOAuthSuccess(res);
+      await handleOAuthSuccess(res);
     } catch (error) {
       toast.error(error?.message || 'Đăng nhập Google thất bại');
     }
@@ -67,7 +90,7 @@ export default function Login() {
     if (response.accessToken) {
       try {
         const res = await authService.oauth2Facebook(response.accessToken);
-        handleOAuthSuccess(res);
+        await handleOAuthSuccess(res);
       } catch (error) {
         toast.error(error?.message || 'Đăng nhập Facebook thất bại');
       }
@@ -87,6 +110,9 @@ export default function Login() {
 
       const userPayload = { email: res.email, role: res.role }
       login(res.token, userPayload, res.refreshToken)
+
+      // Load full profile (avatar, name, etc.) immediately into store
+      await fetchAndEnrichProfile(res.email, res.role)
 
       // Fetch cart after login to update count
       try {

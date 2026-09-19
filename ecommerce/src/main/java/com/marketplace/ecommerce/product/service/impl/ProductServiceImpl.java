@@ -9,6 +9,8 @@ import com.marketplace.ecommerce.product.dto.request.UpdateProductRequest;
 import com.marketplace.ecommerce.product.dto.response.ProductResponse;
 import com.marketplace.ecommerce.product.entity.Product;
 import com.marketplace.ecommerce.product.entity.ProductCategory;
+import com.marketplace.ecommerce.product.entity.ProductImage;
+import com.marketplace.ecommerce.product.entity.ProductVariant;
 import com.marketplace.ecommerce.product.repository.ProductCategoryRepository;
 import com.marketplace.ecommerce.product.repository.ProductRepository;
 import com.marketplace.ecommerce.product.service.ProductImageService;
@@ -222,7 +224,7 @@ public class ProductServiceImpl implements ProductService {
         product.getImages().clear();
 
         req.getImages().forEach(imgReq -> product.getImages().add(
-                com.marketplace.ecommerce.product.entity.ProductImage.builder()
+                ProductImage.builder()
                         .product(product)
                         .imageUrl(imgReq.getImageUrl())
                         .isThumbnail(Boolean.TRUE.equals(imgReq.getIsThumbnail()))
@@ -260,7 +262,7 @@ public class ProductServiceImpl implements ProductService {
                     inventoryHistoryService.logInventoryChange(shop, product, existing, oldStock, variantReq.getStock(), InventoryActionType.STOCK_UPDATED, null, "Người bán cập nhật kho");
                 }
             } else {
-                com.marketplace.ecommerce.product.entity.ProductVariant newVariant = com.marketplace.ecommerce.product.entity.ProductVariant.builder()
+                ProductVariant newVariant = ProductVariant.builder()
                                 .product(product)
                                 .color(variantReq.getColor())
                                 .size(variantReq.getSize())

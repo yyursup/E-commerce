@@ -15,10 +15,12 @@ import {
   HiOutlineCamera,
   HiOutlineCheckCircle,
   HiOutlineX,
+  HiOutlineLockClosed,
 } from 'react-icons/hi'
 import { useThemeStore } from '../store/useThemeStore'
 import { useAuthStore } from '../store/useAuthStore'
 import { cn } from '../lib/cn'
+import authService from '../services/auth'
 import requestService from '../services/request'
 import kycService from '../services/kyc'
 import CameraCapture from '../components/CameraCapture'
@@ -60,7 +62,50 @@ export default function SellerRegister() {
     setValue,
     watch,
     formState: { errors, isSubmitting },
-  } = useForm()
+  } = useForm({
+    defaultValues: {
+      shopPhone: user?.phoneNumber || '',
+      shopEmail: user?.email || '',
+    },
+  })
+
+  // Tự động đồng bộ số điện thoại và email từ tài khoản đăng ký
+  useEffect(() => {
+    const syncAccountContact = async () => {
+      let phone = user?.phoneNumber
+      let email = user?.email
+
+      if (!phone || !email) {
+        try {
+          const profile = await authService.getUserProfile()
+          if (profile) {
+            phone = profile.phoneNumber || phone
+            email = profile.email || email
+            if (updateUser) {
+              updateUser({
+                phoneNumber: profile.phoneNumber,
+                email: profile.email,
+                fullName: profile.fullName,
+              })
+            }
+          }
+        } catch (err) {
+          console.warn('Could not auto-fetch user profile for shop contact:', err)
+        }
+      }
+
+      if (phone) {
+        setValue('shopPhone', phone, { shouldValidate: true })
+      }
+      if (email) {
+        setValue('shopEmail', email, { shouldValidate: true })
+      }
+    }
+
+    if (isAuthenticated) {
+      syncAccountContact()
+    }
+  }, [isAuthenticated, user?.phoneNumber, user?.email, setValue, updateUser])
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -246,8 +291,8 @@ export default function SellerRegister() {
     const payload = {
       sellerType,
       shopName: data.shopName?.trim(),
-      shopPhone: data.shopPhone?.trim(),
-      shopEmail: data.shopEmail?.trim() || null,
+      shopPhone: (data.shopPhone || user?.phoneNumber)?.trim(),
+      shopEmail: (data.shopEmail || user?.email)?.trim() || null,
       description: data.description?.trim() || null,
       coverImageUrl: data.coverImageUrl?.trim() || null,
       pickupAddress: data.pickupAddress?.trim(),
@@ -935,18 +980,31 @@ export default function SellerRegister() {
 
                   <div className="grid gap-5 md:grid-cols-2">
                     <div>
-                      <label className={cn('mb-1.5 block text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>
-                        Số điện thoại shop <span className="text-red-500">*</span>
-                      </label>
+                      <div className="mb-1.5 flex items-center justify-between">
+                        <label className={cn('block text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>
+                          Số điện thoại shop <span className="text-red-500">*</span>
+                        </label>
+                        <span className="inline-flex items-center gap-1 text-xs font-normal text-amber-500/90 dark:text-amber-400">
+                          <HiOutlineLockClosed className="h-3.5 w-3.5" />
+                          Cố định theo tài khoản
+                        </span>
+                      </div>
                       <div className="relative">
                         <HiOutlinePhone className={cn('absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2', isDark ? 'text-slate-500' : 'text-stone-400')} />
                         <input
                           type="tel"
+                          readOnly
                           placeholder="0912345678"
-                          className={cn('w-full rounded-xl border py-3 pl-10 pr-4 text-sm outline-none transition placeholder:opacity-60', isDark ? 'border-slate-600 bg-slate-800/50 text-white placeholder:text-slate-500 focus:border-amber-500/60 focus:ring-2 focus:ring-amber-500/20' : 'border-stone-300 bg-stone-50/80 text-stone-900 placeholder:text-stone-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20', errors.shopPhone && 'border-red-500/70 focus:border-red-500 focus:ring-red-500/20')}
+                          title="Số điện thoại được lấy cố định từ tài khoản đăng ký và không thể chỉnh sửa"
+                          className={cn(
+                            'w-full rounded-xl border py-3 pl-10 pr-4 text-sm outline-none transition cursor-not-allowed select-none font-medium',
+                            isDark
+                              ? 'border-slate-700 bg-slate-800/80 text-slate-300 placeholder:text-slate-500'
+                              : 'border-stone-200 bg-stone-100/90 text-stone-700 placeholder:text-stone-400',
+                            errors.shopPhone && 'border-red-500/70'
+                          )}
                           {...register('shopPhone', {
-                            required: 'Vui lòng nhập số điện thoại',
-                            pattern: { value: /^(0|\+84)(3|5|7|8|9)[0-9]{8}$/, message: 'Số điện thoại không hợp lệ (10 chữ số, VD: 0912345678)' },
+                            required: 'Số điện thoại không được để trống',
                           })}
                         />
                       </div>
@@ -954,17 +1012,30 @@ export default function SellerRegister() {
                     </div>
 
                     <div>
-                      <label className={cn('mb-1.5 block text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>Email shop</label>
+                      <div className="mb-1.5 flex items-center justify-between">
+                        <label className={cn('block text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>
+                          Email shop
+                        </label>
+                        <span className="inline-flex items-center gap-1 text-xs font-normal text-amber-500/90 dark:text-amber-400">
+                          <HiOutlineLockClosed className="h-3.5 w-3.5" />
+                          Cố định theo tài khoản
+                        </span>
+                      </div>
                       <div className="relative">
                         <HiOutlineMail className={cn('absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2', isDark ? 'text-slate-500' : 'text-stone-400')} />
                         <input
                           type="email"
+                          readOnly
                           placeholder="shop@example.com"
-                          className={cn('w-full rounded-xl border py-3 pl-10 pr-4 text-sm outline-none transition placeholder:opacity-60', isDark ? 'border-slate-600 bg-slate-800/50 text-white placeholder:text-slate-500 focus:border-amber-500/60 focus:ring-2 focus:ring-amber-500/20' : 'border-stone-300 bg-stone-50/80 text-stone-900 placeholder:text-stone-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20', errors.shopEmail && 'border-red-500/70 focus:border-red-500 focus:ring-red-500/20')}
-                          {...register('shopEmail', {
-                            maxLength: { value: 120, message: 'Tối đa 120 ký tự' },
-                            pattern: { value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i, message: 'Email không hợp lệ' },
-                          })}
+                          title="Email được lấy cố định từ tài khoản đăng ký và không thể chỉnh sửa"
+                          className={cn(
+                            'w-full rounded-xl border py-3 pl-10 pr-4 text-sm outline-none transition cursor-not-allowed select-none font-medium',
+                            isDark
+                              ? 'border-slate-700 bg-slate-800/80 text-slate-300 placeholder:text-slate-500'
+                              : 'border-stone-200 bg-stone-100/90 text-stone-700 placeholder:text-stone-400',
+                            errors.shopEmail && 'border-red-500/70'
+                          )}
+                          {...register('shopEmail')}
                         />
                       </div>
                       {errors.shopEmail && <p className="mt-1.5 text-sm text-red-500">{errors.shopEmail.message}</p>}

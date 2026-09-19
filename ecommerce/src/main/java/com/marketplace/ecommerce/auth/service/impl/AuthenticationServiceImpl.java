@@ -254,8 +254,15 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 }
             }
 
+            String phone = users.getPhoneNumber();
+            if (phone == null || phone.isBlank()) {
+                phone = userRepository.findByAccountId(users.getId()).map(User::getPhoneNumber).orElse(null);
+            }
+
             LoginResponse.LoginResponseBuilder builder = LoginResponse.builder()
                     .email(users.getEmail())
+                    .phoneNumber(phone)
+                    .username(users.getUsername())
                     .token(tokenService.createToken(users))
                     .refreshToken(tokenService.refreshToken(users))
                     .role(users.getRole().getRoleName());
@@ -302,8 +309,15 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new CustomException("Account not found"));
 
+        String phone = account.getPhoneNumber();
+        if (phone == null || phone.isBlank()) {
+            phone = userRepository.findByAccountId(account.getId()).map(User::getPhoneNumber).orElse(null);
+        }
+
         LoginResponse.LoginResponseBuilder builder = LoginResponse.builder()
                 .email(account.getEmail())
+                .phoneNumber(phone)
+                .username(account.getUsername())
                 .token(tokenService.createToken(account))
                 .role(account.getRole() != null ? account.getRole().getRoleName() : "CUSTOMER")
                 .accountId(account.getId());

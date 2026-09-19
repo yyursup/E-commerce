@@ -21,4 +21,6 @@ public class LoginResponse {
     private UUID shopId;
     private String shopName;
     private String sellerStatus; // NONE, PENDING, APPROVED, REJECTED
+    private String phoneNumber;
+    private String username;
 }

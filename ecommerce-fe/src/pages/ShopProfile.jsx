@@ -53,12 +53,19 @@ function formatJoinedTime(createdAt) {
 export default function ShopProfile() {
   const { shopId } = useParams()
   const isDark = useThemeStore((s) => s.theme) === 'dark'
-  const { isAuthenticated } = useAuthStore()
+  const { isAuthenticated, user } = useAuthStore()
 
   const [shop, setShop] = useState(null)
   const [loadingShop, setLoadingShop] = useState(true)
   const [products, setProducts] = useState([])
   const [loadingProducts, setLoadingProducts] = useState(true)
+
+  const isOwner = Boolean(
+    user && shop && (
+      (user.shopId && String(user.shopId).toLowerCase() === String(shop.id).toLowerCase()) ||
+      (shop.ownerAccountId && String(user.accountId || user.id).toLowerCase() === String(shop.ownerAccountId).toLowerCase())
+    )
+  )
 
   // Interactive States
   const [isFollowing, setIsFollowing] = useState(false)
@@ -411,57 +418,67 @@ export default function ShopProfile() {
 
                 {/* Buttons: Follow + Chat + Report */}
                 <div className="mt-4 flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                  <button
-                    onClick={handleFollowToggle}
-                    disabled={isFollowLoading}
-                    className={cn(
-                      'inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition-all active:scale-95 shadow-sm',
-                      isFollowLoading && 'opacity-70 cursor-not-allowed',
-                      isFollowing
-                        ? 'bg-white/20 text-white hover:bg-white/30 border border-white/20'
-                        : 'bg-amber-500 text-white hover:bg-amber-600'
-                    )}
-                  >
-                    {isFollowLoading ? (
-                      <>
-                        <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-r-transparent" />
-                        Đang xử lý...
-                      </>
-                    ) : isFollowing ? (
-                      <>
-                        <HiOutlineCheck className="h-4 w-4" />
-                        Đang theo dõi
-                      </>
-                    ) : (
-                      <>
-                        <HiOutlineUserAdd className="h-4 w-4" />
-                        + Theo Dõi
-                      </>
-                    )}
-                  </button>
+                  {isOwner ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-amber-400/40 bg-amber-500/20 px-4 py-2 text-xs font-bold text-amber-300">
+                      <HiOutlineCheck className="h-4 w-4 text-amber-400" />
+                      Gian Hàng Của Bạn
+                    </span>
+                  ) : (
+                    <>
+                      <button
+                        onClick={handleFollowToggle}
+                        disabled={isFollowLoading}
+                        className={cn(
+                          'inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition-all active:scale-95 shadow-sm',
+                          isFollowLoading && 'opacity-70 cursor-not-allowed',
+                          isFollowing
+                            ? 'bg-white/20 text-white hover:bg-white/30 border border-white/20'
+                            : 'bg-amber-500 text-white hover:bg-amber-600'
+                        )}
+                      >
+                        {isFollowLoading ? (
+                          <>
+                            <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-r-transparent" />
+                            Đang xử lý...
+                          </>
+                        ) : isFollowing ? (
+                          <>
+                            <HiOutlineCheck className="h-4 w-4" />
+                            Đang theo dõi
+                          </>
+                        ) : (
+                          <>
+                            <HiOutlineUserAdd className="h-4 w-4" />
+                            + Theo Dõi
+                          </>
+                        )}
+                      </button>
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const targetShopId = shop?.id || shopId
-                      if (!targetShopId) {
-                        toast.error('Không tìm thấy thông tin gian hàng')
-                        return
-                      }
-                      useChatStore.getState().openShopChat({
-                        id: targetShopId,
-                        name: shop?.name || 'Cửa hàng',
-                        logo: shop?.logo,
-                        city: shop?.city,
-                        mallBadge: shop?.mallBadge,
-                        ekycVerified: shop?.ekycVerified,
-                      })
-                    }}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-white/25 bg-white/10 px-4 py-2 text-xs font-bold text-white hover:bg-white/20 transition-all active:scale-95 cursor-pointer"
-                  >
-                    <HiOutlineChat className="h-4 w-4 text-amber-400" />
-                    Chat Ngay
-                  </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const targetShopId = shop?.id || shopId
+                          if (!targetShopId) {
+                            toast.error('Không tìm thấy thông tin gian hàng')
+                            return
+                          }
+                          useChatStore.getState().openShopChat({
+                            id: targetShopId,
+                            name: shop?.name || 'Cửa hàng',
+                            logo: shop?.logo,
+                            city: shop?.city,
+                            mallBadge: shop?.mallBadge,
+                            ekycVerified: shop?.ekycVerified,
+                            ownerAccountId: shop?.ownerAccountId,
+                          })
+                        }}
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-white/25 bg-white/10 px-4 py-2 text-xs font-bold text-white hover:bg-white/20 transition-all active:scale-95 cursor-pointer"
+                      >
+                        <HiOutlineChat className="h-4 w-4 text-amber-400" />
+                        Chat Ngay
+                      </button>
+                    </>
+                  )}
 
                   <button
                     onClick={handleShareShop}

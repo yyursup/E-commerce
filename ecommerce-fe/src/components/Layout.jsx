@@ -25,6 +25,7 @@ export default function Layout() {
               dateOfBirth: profile.dateOfBirth,
               email: profile.email || user?.email,
               role: profile.role || user?.role,
+              shopId: profile.shopId,
             })
           }
         })

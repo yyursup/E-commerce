@@ -1,4 +1,6 @@
 import { create } from 'zustand'
+import toast from 'react-hot-toast'
+import { useAuthStore } from './useAuthStore'
 
 export const useChatStore = create((set) => ({
   isOpen: false,
@@ -40,6 +42,16 @@ export const useChatStore = create((set) => ({
   },
 
   openShopChat: (shop, product = null) => {
+    const authUser = useAuthStore.getState().user
+    if (authUser && shop) {
+      const isOwner =
+        (authUser.shopId && String(authUser.shopId).toLowerCase() === String(shop.id).toLowerCase()) ||
+        (shop.ownerAccountId && String(authUser.accountId || authUser.id).toLowerCase() === String(shop.ownerAccountId).toLowerCase())
+      if (isOwner) {
+        toast.error('Bạn không thể tự nhắn tin cho chính gian hàng của mình')
+        return
+      }
+    }
     set({
       isOpen: true,
       viewMode: 'conversation',

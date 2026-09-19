@@ -17,13 +17,13 @@ const reviewService = {
         }
     },
 
-    // Create a new review (using FormData for potential image uploads)
+    // Create a new review (using FormData for image/video uploads)
     createReview: async (productId, reviewData) => {
         try {
             const formData = new FormData();
             Object.entries(reviewData).forEach(([key, value]) => {
-                if (key === 'images' && Array.isArray(value)) {
-                    value.forEach(file => formData.append('images', file));
+                if ((key === 'images' || key === 'videos') && Array.isArray(value)) {
+                    value.forEach(file => formData.append(key, file));
                 } else if (value !== undefined && value !== null) {
                     formData.append(key, value);
                 }
@@ -47,8 +47,8 @@ const reviewService = {
         try {
             const formData = new FormData();
             Object.entries(reviewData).forEach(([key, value]) => {
-                if (key === 'images' && Array.isArray(value)) {
-                    value.forEach(file => formData.append('images', file));
+                if ((key === 'images' || key === 'videos' || key === 'newImages' || key === 'newVideos') && Array.isArray(value)) {
+                    value.forEach(file => formData.append(key, file));
                 } else if (value !== undefined && value !== null) {
                     formData.append(key, value);
                 }

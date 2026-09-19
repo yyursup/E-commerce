@@ -245,7 +245,9 @@ export default function ChatbotButton() {
       }
     } catch (err) {
       console.error('Lỗi khởi tạo Live Chat:', err)
-      toast.error('Không thể kết nối trò chuyện. Vui lòng thử lại sau!')
+      const errorMsg = err.response?.data?.message || 'Không thể kết nối trò chuyện. Vui lòng thử lại sau!'
+      toast.error(errorMsg)
+      useChatStore.getState().backToInbox()
     } finally {
       setLiveLoading(false)
     }

@@ -21,12 +21,15 @@ public class UserServiceImpl implements UserService {
     private final FileService fileService;
     private final com.marketplace.ecommerce.auth.repository.AccountRepository accountRepository;
     private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+    private final com.marketplace.ecommerce.shop.repository.ShopRepository shopRepository;
 
     @Override
     public UserProfileResponse getUserProfile(UUID accountId) {
         User user = userRepository.findByAccountId(accountId)
                 .orElseThrow(() -> new CustomException("User not found"));
-        return UserProfileResponse.from(user);
+        UserProfileResponse response = UserProfileResponse.from(user);
+        shopRepository.findByUserId(user.getId()).ifPresent(shop -> response.setShopId(shop.getId()));
+        return response;
     }
 
     @Override
@@ -62,7 +65,9 @@ public class UserServiceImpl implements UserService {
         }
 
         user = userRepository.save(user);
-        return UserProfileResponse.from(user);
+        UserProfileResponse response = UserProfileResponse.from(user);
+        shopRepository.findByUserId(user.getId()).ifPresent(shop -> response.setShopId(shop.getId()));
+        return response;
     }
 
     @Override

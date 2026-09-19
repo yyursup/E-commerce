@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { HiStar, HiOutlineChatAlt2 } from 'react-icons/hi'
+import { HiStar, HiOutlineChatAlt2, HiPlay, HiX } from 'react-icons/hi'
 import toast from 'react-hot-toast'
 import ReportActionButton from '../../../components/ReportActionButton'
 import { cn } from '../../../lib/cn'
@@ -8,6 +8,10 @@ import reviewService from '../../../services/review'
 import replyService from '../../../services/reply'
 import { useAuthStore } from '../../../store/useAuthStore'
 import { useThemeStore } from '../../../store/useThemeStore'
+
+const isVideoUrl = (url = '') => {
+  return /\.(mp4|mov|webm|ogg|m4v)(\?.*)?$/i.test(url) || url.includes('/video/')
+}
 
 export default function ProductReviews({ productId }) {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
@@ -20,6 +24,7 @@ export default function ProductReviews({ productId }) {
   const [page, setPage] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
   const [filterRating, setFilterRating] = useState(null)
+  const [selectedMedia, setSelectedMedia] = useState(null)
 
   const fetchReviews = useCallback(async () => {
     try {
@@ -183,15 +188,43 @@ export default function ProductReviews({ productId }) {
                     </p>
 
                     {review.imageUrls && review.imageUrls.length > 0 && (
-                      <div className="flex flex-wrap gap-2 pt-1">
-                        {review.imageUrls.map((imageUrl, index) => (
-                          <img
-                            key={index}
-                            src={imageUrl}
-                            alt="Review"
-                            className="h-20 w-20 rounded-lg border object-cover dark:border-slate-700"
-                          />
-                        ))}
+                      <div className="flex flex-wrap gap-2.5 pt-2">
+                        {review.imageUrls.map((mediaUrl, index) => {
+                          const isVideo = isVideoUrl(mediaUrl)
+                          return isVideo ? (
+                            <div
+                              key={index}
+                              onClick={() => setSelectedMedia({ url: mediaUrl, isVideo: true })}
+                              className="relative h-20 w-24 rounded-xl overflow-hidden border border-stone-200 dark:border-slate-700 bg-black group cursor-pointer shadow-xs"
+                            >
+                              <video
+                                src={mediaUrl}
+                                className="h-full w-full object-cover opacity-80"
+                                preload="metadata"
+                              />
+                              <div className="absolute inset-0 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                <div className="h-7 w-7 rounded-full bg-black/60 flex items-center justify-center text-white backdrop-blur-xs">
+                                  <HiPlay className="h-4 w-4 ml-0.5" />
+                                </div>
+                              </div>
+                              <span className="absolute bottom-1 left-1 rounded bg-rose-600 px-1 py-0.5 text-[8px] font-bold text-white uppercase tracking-wider">
+                                Video
+                              </span>
+                            </div>
+                          ) : (
+                            <div
+                              key={index}
+                              onClick={() => setSelectedMedia({ url: mediaUrl, isVideo: false })}
+                              className="relative h-20 w-20 rounded-xl overflow-hidden border border-stone-200 dark:border-slate-700 bg-stone-100 dark:bg-slate-800 cursor-pointer shadow-xs group"
+                            >
+                              <img
+                                src={mediaUrl}
+                                alt="Review attachment"
+                                className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-200"
+                              />
+                            </div>
+                          )
+                        })}
                       </div>
                     )}
 
@@ -289,6 +322,42 @@ export default function ProductReviews({ productId }) {
           </div>
         )}
       </div>
+
+      {/* Media Preview Modal Lightbox */}
+      {selectedMedia && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-xs"
+          onClick={() => setSelectedMedia(null)}
+        >
+          <div
+            className="relative max-w-4xl max-h-[90vh] w-full flex items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setSelectedMedia(null)}
+              className="absolute -top-11 right-0 p-1.5 text-white hover:text-amber-400 transition cursor-pointer"
+              title="Đóng xem trước"
+            >
+              <HiX className="h-7 w-7" />
+            </button>
+            {selectedMedia.isVideo ? (
+              <video
+                src={selectedMedia.url}
+                controls
+                autoPlay
+                className="max-h-[82vh] max-w-full rounded-2xl shadow-2xl bg-black"
+              />
+            ) : (
+              <img
+                src={selectedMedia.url}
+                alt="Enlarged review media"
+                className="max-h-[82vh] max-w-full rounded-2xl object-contain shadow-2xl"
+              />
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

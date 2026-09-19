@@ -23,4 +23,5 @@ public class CreateReviewRequest {
     private String comment;
 
     private List<MultipartFile> images;
+    private List<MultipartFile> videos;
 }

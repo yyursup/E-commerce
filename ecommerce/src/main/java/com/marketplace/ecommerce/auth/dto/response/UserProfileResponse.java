@@ -20,6 +20,7 @@ public class UserProfileResponse {
     private boolean accountVerified;
     private String role;
     private String email;
+    private UUID shopId;
 
 
     public static UserProfileResponse from(User user) {

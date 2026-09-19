@@ -82,6 +82,16 @@ const authService = {
         }
     },
 
+    // Get detailed user profile (fullName, avatarUrl, phone, gender, dateOfBirth...)
+    getUserProfile: async () => {
+        try {
+            const response = await axiosClient.get('/api/v1/user/me');
+            return response.data;
+        } catch (error) {
+            throw error.response ? error.response.data : error;
+        }
+    },
+
     // Update profile: fullName, phoneNumber, gender, dateOfBirth, avatarFile (optional)
     updateProfile: async ({ fullName, phoneNumber, gender, dateOfBirth, avatarFile }) => {
         const formData = new FormData();

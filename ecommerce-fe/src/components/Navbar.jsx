@@ -280,14 +280,25 @@ export default function Navbar() {
           <Menu as="div" className="relative hidden md:block">
             <MenuButton
               className={cn(
-                'flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                'flex items-center gap-2 rounded-xl px-2.5 py-1.5 text-sm font-medium transition-colors border',
                 isDark
-                  ? 'text-slate-300 hover:bg-slate-800'
-                  : 'text-stone-600 hover:bg-stone-100',
+                  ? 'border-slate-800 bg-slate-900 text-slate-300 hover:bg-slate-800'
+                  : 'border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100',
               )}
             >
               {isAuthenticated ? (
-                <span className="max-w-[150px] truncate">{user?.email || 'Tài khoản'}</span>
+                <>
+                  <div className="w-6 h-6 rounded-full overflow-hidden bg-stone-200 dark:bg-slate-700 flex items-center justify-center shrink-0 border border-amber-500/30">
+                    {user?.avatarUrl ? (
+                      <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400">
+                        {user?.fullName?.charAt(0) || user?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                      </span>
+                    )}
+                  </div>
+                  <span className="max-w-[130px] truncate">{user?.fullName || user?.name || user?.email || 'Tài khoản'}</span>
+                </>
               ) : (
                 'Tài khoản'
               )}
@@ -295,7 +306,7 @@ export default function Navbar() {
             </MenuButton>
             <MenuItems
               className={cn(
-                'absolute right-0 mt-2 w-56 origin-top-right rounded-xl border py-1 shadow-xl outline-none',
+                'absolute right-0 mt-2 w-60 origin-top-right rounded-2xl border py-1.5 shadow-xl outline-none',
                 isDark
                   ? 'border-slate-700 bg-slate-800'
                   : 'border-stone-200 bg-white',
@@ -330,18 +341,29 @@ export default function Navbar() {
                 </>
               ) : (
                 <>
-                  <div className="px-4 py-2 border-b border-stone-100 dark:border-slate-700/50">
-                    <p className={cn("text-xs font-medium", isDark ? "text-slate-400" : "text-stone-500")}>
-                      Xin chào,
-                    </p>
-                    <p className={cn("truncate text-sm font-semibold", isDark ? "text-white" : "text-stone-900")}>
-                      {user?.email}
-                    </p>
-                    {userRole && (
-                      <p className={cn("text-xs mt-1", isDark ? "text-slate-500" : "text-stone-500")}>
-                        {userRole === 'ADMIN' ? 'Quản trị viên' : userRole === 'BUSINESS' ? 'Doanh nghiệp' : 'Khách hàng'}
+                  <div className="px-4 py-3 border-b border-stone-100 dark:border-slate-700/50 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full overflow-hidden bg-stone-200 dark:bg-slate-700 flex items-center justify-center shrink-0 border border-amber-500/40">
+                      {user?.avatarUrl ? (
+                        <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-sm font-bold text-amber-600 dark:text-amber-400">
+                          {user?.fullName?.charAt(0) || user?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                        </span>
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className={cn("truncate text-sm font-bold", isDark ? "text-white" : "text-stone-900")}>
+                        {user?.fullName || user?.name || user?.email}
                       </p>
-                    )}
+                      <p className={cn("truncate text-xs text-stone-400 dark:text-slate-400", isDark ? "text-slate-400" : "text-stone-500")}>
+                        {user?.email}
+                      </p>
+                      {userRole && (
+                        <p className="text-[10px] font-semibold text-amber-500 mt-0.5">
+                          {userRole === 'ADMIN' ? 'Quản trị viên' : userRole === 'BUSINESS' ? 'Doanh nghiệp' : 'Khách hàng'}
+                        </p>
+                      )}
+                    </div>
                   </div>
                   {/* Seller Portal Link */}
                   <MenuItem>

@@ -11,6 +11,7 @@ import {
   HiOutlineMoon,
   HiOutlineTicket,
   HiOutlineChat,
+  HiOutlineClipboardList,
 } from 'react-icons/hi'
 import { useAuthStore } from '../store/useAuthStore'
 import { useThemeStore } from '../store/useThemeStore'
@@ -29,6 +30,7 @@ const navItems = [
   { to: '/dashboard', label: 'Tổng quan (Dashboard)', icon: HiOutlineViewGrid },
   { to: '/orders', label: 'Quản lý Đơn hàng', icon: HiOutlineShoppingBag },
   { to: '/products', label: 'Quản lý Sản phẩm', icon: HiOutlineArchive },
+  { to: '/inventory-history', label: 'Lịch sử Kho hàng', icon: HiOutlineClipboardList },
   { to: '/vouchers', label: 'Mã Giảm Giá Shop', icon: HiOutlineTicket },
   { to: '/chat', label: 'Tin nhắn (Chat CSKH)', icon: HiOutlineChat, isChat: true },
   { to: '/settings', label: 'Cài đặt Kho & Gian hàng', icon: HiOutlineCog },

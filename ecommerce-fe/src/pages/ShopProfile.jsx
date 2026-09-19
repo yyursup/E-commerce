@@ -501,10 +501,17 @@ export default function ShopProfile() {
                 <div>
                   <div className="text-slate-400 text-xs">Đánh Giá</div>
                   <div className="font-bold text-white text-base">
-                    {shop?.reviewCount > 0 ? (
+                    {shop?.rating !== undefined && shop?.rating !== null && Number(shop.rating) > 0 ? (
                       <>
-                        {Number(shop?.rating || 5.0).toFixed(1)}{' '}
-                        <span className="text-xs text-slate-400 font-normal">({shop?.reviewCount})</span>
+                        {Number(shop.rating).toFixed(1)}{' '}
+                        <span className="text-xs text-slate-400 font-normal">
+                          ({shop?.reviewCount != null ? shop.reviewCount : 0})
+                        </span>
+                      </>
+                    ) : shop?.reviewCount > 0 ? (
+                      <>
+                        5.0{' '}
+                        <span className="text-xs text-slate-400 font-normal">({shop.reviewCount})</span>
                       </>
                     ) : (
                       <span className="text-xs text-slate-300 font-medium">Chưa có đánh giá</span>

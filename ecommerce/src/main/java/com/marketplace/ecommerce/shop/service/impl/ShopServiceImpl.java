@@ -8,6 +8,7 @@ import com.marketplace.ecommerce.shop.repository.ShopRepository;
 import com.marketplace.ecommerce.shop.service.ShopService;
 import com.marketplace.ecommerce.shop.valueObjects.ShopStatus;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -27,6 +28,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ShopServiceImpl implements ShopService {
@@ -68,21 +70,44 @@ public class ShopServiceImpl implements ShopService {
     }
 
     private ShopProfileResponse buildShopProfile(Shop s) {
-        long productCount = productRepository.countByShopIdAndStatusAndDeletedFalse(s.getId(), ProductStatus.PUBLISHED);
-        long followerCount = shopFollowerRepository.countByShopId(s.getId());
+        long productCount = 0L;
+        try {
+            productCount = productRepository.countByShopIdAndStatusAndDeletedFalse(s.getId(), ProductStatus.PUBLISHED);
+        } catch (Throwable t) {
+            log.warn("Failed to count products for shop {}: {}", s.getId(), t.getMessage());
+        }
 
-        ShopReviewStatsProjection reviewStats = reviewRepository.getShopStats(s.getId(), ReviewStatus.ACTIVE);
-        long reviewCount = reviewStats != null && reviewStats.getTotalReviews() != null ? reviewStats.getTotalReviews() : 0L;
-        Float avgRating = (reviewCount > 0 && reviewStats.getAvgRating() != null)
-                ? (float) (Math.round(reviewStats.getAvgRating() * 10.0) / 10.0)
-                : (s.getAverageRating() != null && s.getAverageRating() > 0 ? s.getAverageRating() : null);
+        long followerCount = 0L;
+        try {
+            followerCount = shopFollowerRepository.countByShopId(s.getId());
+        } catch (Throwable t) {
+            log.warn("Failed to count followers for shop {}: {}", s.getId(), t.getMessage());
+        }
 
-        List<ChatThread> threads = chatThreadRepository.findByShopId(s.getId());
+        long reviewCount = 0L;
+        Float avgRating = (s.getAverageRating() != null && s.getAverageRating() > 0) ? s.getAverageRating() : null;
+        try {
+            ShopReviewStatsProjection reviewStats = reviewRepository.getShopStats(s.getId(), ReviewStatus.ACTIVE);
+            if (reviewStats != null && reviewStats.getTotalReviews() != null && reviewStats.getTotalReviews() > 0) {
+                reviewCount = reviewStats.getTotalReviews();
+                if (reviewStats.getAvgRating() != null) {
+                    avgRating = (float) (Math.round(reviewStats.getAvgRating() * 10.0) / 10.0);
+                }
+            }
+        } catch (Throwable t) {
+            log.warn("Failed to fetch review stats for shop {}: {}", s.getId(), t.getMessage());
+        }
+
         String responseRate = "100%";
-        if (threads != null && !threads.isEmpty()) {
-            long answered = threads.stream().filter(t -> t.getUnreadAdmin() == 0).count();
-            int rate = (int) Math.round((double) answered * 100.0 / threads.size());
-            responseRate = rate + "%";
+        try {
+            List<ChatThread> threads = chatThreadRepository.findByShopId(s.getId());
+            if (threads != null && !threads.isEmpty()) {
+                long answered = threads.stream().filter(t -> t.getUnreadAdmin() == 0).count();
+                int rate = (int) Math.round((double) answered * 100.0 / threads.size());
+                responseRate = rate + "%";
+            }
+        } catch (Throwable t) {
+            log.warn("Failed to compute response rate for shop {}: {}", s.getId(), t.getMessage());
         }
 
         return ShopProfileResponse.from(s, productCount, followerCount, reviewCount, avgRating, responseRate);

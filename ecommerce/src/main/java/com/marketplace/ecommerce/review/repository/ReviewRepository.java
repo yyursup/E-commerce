@@ -82,7 +82,8 @@ public interface ReviewRepository extends JpaRepository<Review, UUID> {
           AVG(r.rating) as avgRating,
           COUNT(r) as totalReviews
         FROM Review r
-        WHERE r.product.shop.id = :shopId
+        JOIN r.product p
+        WHERE p.shop.id = :shopId
           AND r.status = :status
     """)
     ShopReviewStatsProjection getShopStats(@Param("shopId") UUID shopId,

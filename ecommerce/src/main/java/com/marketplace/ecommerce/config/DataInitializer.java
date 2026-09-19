@@ -50,6 +50,13 @@ import com.marketplace.ecommerce.voucher.repository.VoucherRepository;
 import com.marketplace.ecommerce.voucher.valueObjects.VoucherScope;
 import com.marketplace.ecommerce.voucher.valueObjects.VoucherStatus;
 import com.marketplace.ecommerce.voucher.valueObjects.VoucherType;
+import com.marketplace.ecommerce.review.dto.projection.ShopReviewStatsProjection;
+import com.marketplace.ecommerce.review.entity.Reply;
+import com.marketplace.ecommerce.review.entity.Review;
+import com.marketplace.ecommerce.review.entity.ReviewImage;
+import com.marketplace.ecommerce.review.repository.ReplyRepository;
+import com.marketplace.ecommerce.review.repository.ReviewRepository;
+import com.marketplace.ecommerce.review.valueObjects.ReviewStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -94,6 +101,8 @@ public class DataInitializer implements CommandLineRunner {
         private final SellerRepository sellerRepository;
         private final CommissionRepository commissionRepository;
         private final VoucherRepository voucherRepository;
+        private final ReviewRepository reviewRepository;
+        private final ReplyRepository replyRepository;
 
         private final Random random = new Random();
 
@@ -497,6 +506,9 @@ public class DataInitializer implements CommandLineRunner {
                 // 13. Seed Multi-vendor Orders
                 List<Shop> allShops = List.of(shop1, shop2, shop3, shop4, shop5, shop6);
                 seedOrders(List.of(customer1, customer2, customer3, customer4, customer5), allShops);
+
+                // 14. Seed Reviews (Verified Purchases from Completed Orders)
+                seedReviews(allShops);
 
                 log.info("Comprehensive multi-vendor marketplace initialization finished successfully!");
         }
@@ -939,6 +951,196 @@ public class DataInitializer implements CommandLineRunner {
                 }
 
                 log.info("Seeded {} additional multi-vendor orders", needToCreate);
+        }
+
+        private void seedReviews(List<Shop> shops) {
+                long existingReviewCount = reviewRepository.count();
+                if (existingReviewCount >= 50) {
+                        log.debug("Skip seed reviews: already {} reviews present", existingReviewCount);
+                        return;
+                }
+
+                log.info("Seeding verified purchase reviews for multi-vendor shops...");
+
+                // 1. Ensure all shops have enough COMPLETED orders with receivedByBuyer = true
+                for (Shop shop : shops) {
+                        long completedOrders = orderRepository.findAll().stream()
+                                        .filter(o -> o.getShop() != null
+                                                        && o.getShop().getId().equals(shop.getId())
+                                                        && o.getStatus() == OrderStatus.COMPLETED
+                                                        && o.isReceivedByBuyer())
+                                        .count();
+
+                        if (completedOrders < 8) {
+                                List<Order> candidates = orderRepository.findAll().stream()
+                                                .filter(o -> o.getShop() != null
+                                                                && o.getShop().getId().equals(shop.getId())
+                                                                && o.getStatus() != OrderStatus.COMPLETED
+                                                                && o.getStatus() != OrderStatus.CANCELLED)
+                                                .limit(8 - completedOrders)
+                                                .collect(Collectors.toList());
+
+                                for (Order ord : candidates) {
+                                        ord.setStatus(OrderStatus.COMPLETED);
+                                        ord.setReceivedByBuyer(true);
+                                        LocalDateTime del = ord.getCreatedAt().plusDays(2);
+                                        ord.setDeliveredAt(del);
+                                        ord.setReceivedAt(del.plusHours(6));
+                                        orderRepository.save(ord);
+                                }
+                        }
+                }
+
+                // 2. Fetch all COMPLETED orders that were received by buyer
+                List<Order> completedOrders = orderRepository.findAll().stream()
+                                .filter(o -> o.getStatus() == OrderStatus.COMPLETED && o.isReceivedByBuyer())
+                                .collect(Collectors.toList());
+
+                int createdReviewsCount = 0;
+
+                for (Order order : completedOrders) {
+                        User buyer = order.getUser();
+                        Shop shop = order.getShop();
+                        if (buyer == null || shop == null || order.getItems() == null || order.getItems().isEmpty()) {
+                                continue;
+                        }
+
+                        for (OrderItem item : order.getItems()) {
+                                Product product = item.getProduct();
+                                if (product == null) {
+                                        continue;
+                                }
+
+                                boolean alreadyReviewed = reviewRepository.existsByUserIdAndProductIdAndSubOrderIdAndStatus(
+                                                buyer.getId(), product.getId(), order.getId(), ReviewStatus.ACTIVE);
+                                if (alreadyReviewed) {
+                                        continue;
+                                }
+
+                                // 85% 5 stars, 15% 4 stars (average ~4.85)
+                                int rating = random.nextInt(100) < 85 ? 5 : 4;
+                                String comment = getRealisticReviewComment(shop.getName(), product.getName(), rating);
+
+                                LocalDateTime reviewTime = order.getReceivedAt() != null
+                                                ? order.getReceivedAt().plusHours(ThreadLocalRandom.current().nextInt(2, 48))
+                                                : order.getCreatedAt().plusDays(3);
+                                if (reviewTime.isAfter(LocalDateTime.now())) {
+                                        reviewTime = LocalDateTime.now().minusHours(ThreadLocalRandom.current().nextInt(1, 24));
+                                }
+
+                                Review review = Review.builder()
+                                                .user(buyer)
+                                                .product(product)
+                                                .subOrderId(order.getId())
+                                                .status(ReviewStatus.ACTIVE)
+                                                .rating(rating)
+                                                .comment(comment)
+                                                .images(new ArrayList<>())
+                                                .build();
+                                review.setCreatedAt(reviewTime);
+                                review.setUpdatedAt(reviewTime);
+
+                                if (product.getImages() != null && !product.getImages().isEmpty() && random.nextBoolean()) {
+                                        ProductImage firstImg = product.getImages().iterator().next();
+                                        ReviewImage rImg = ReviewImage.builder()
+                                                        .review(review)
+                                                        .imageUrl(firstImg.getImageUrl())
+                                                        .displayOrder(0)
+                                                        .build();
+                                        rImg.setCreatedAt(reviewTime);
+                                        review.getImages().add(rImg);
+                                }
+
+                                Review savedReview = reviewRepository.save(review);
+                                createdReviewsCount++;
+
+                                if (random.nextInt(100) < 35) {
+                                        Reply reply = Reply.builder()
+                                                        .review(savedReview)
+                                                        .reply(getRealisticSellerReply(shop.getName()))
+                                                        .build();
+                                        reply.setRepliedAt(reviewTime.plusHours(ThreadLocalRandom.current().nextInt(1, 12)));
+                                        replyRepository.save(reply);
+                                }
+                        }
+                }
+
+                // 3. Update average_rating in shops table based on verified reviews
+                for (Shop shop : shops) {
+                        ShopReviewStatsProjection stats = reviewRepository.getShopStats(shop.getId(), ReviewStatus.ACTIVE);
+                        if (stats != null && stats.getTotalReviews() != null && stats.getTotalReviews() > 0 && stats.getAvgRating() != null) {
+                                float realAvg = (float) (Math.round(stats.getAvgRating() * 10.0) / 10.0);
+                                shop.setAverageRating(realAvg);
+                                shopRepository.save(shop);
+                                log.info("Updated shop '{}' averageRating to {} (from {} verified reviews)",
+                                                shop.getName(), realAvg, stats.getTotalReviews());
+                        }
+                }
+
+                log.info("Successfully seeded {} verified purchase reviews across all shops", createdReviewsCount);
+        }
+
+        private String getRealisticReviewComment(String shopName, String productName, int rating) {
+                String sName = shopName != null ? shopName.toLowerCase() : "";
+                String pName = productName != null ? productName.toLowerCase() : "";
+
+                List<String> options = new ArrayList<>();
+                if (sName.contains("apple") || pName.contains("iphone") || pName.contains("macbook") || pName.contains("airpods") || pName.contains("ipad")) {
+                        options.add("Máy mới 100% nguyên seal VN/A, kích hoạt bảo hành chuẩn chỉ. Đóng gói rất cẩn thận nhiều lớp chống sốc, giao hàng siêu nhanh. 5 sao cho shop!");
+                        options.add("Sản phẩm chính hãng Apple dùng cực kỳ mượt mà, pin trâu, màn hình sắc nét không một vết xước. Shop tư vấn rất có tâm.");
+                        options.add("Hàng chuẩn xịn Apple, nguyên đai nguyên kiện, phụ kiện theo máy đầy đủ. Dùng rất sướng, xứng đáng từng đồng.");
+                        options.add("Giao hàng siêu tốc trong ngày, đóng gói cẩn thận có tem niêm phong. Mua hàng của E-Mall rất yên tâm về nguồn gốc.");
+                        options.add("Tai nghe / máy dùng âm thanh đỉnh cao, kết nối iPhone tích tắc. Rất hài lòng với chất lượng dịch vụ của cửa hàng.");
+                } else if (sName.contains("fashion") || sName.contains("thời trang") || pName.contains("áo") || pName.contains("quần")) {
+                        options.add("Chất vải mềm mịn, dày dặn, đường may tỉ mỉ không hề có một sợi chỉ thừa. Form dáng lên người chuẩn đẹp y như mẫu!");
+                        options.add("Áo mặc rất tôn dáng, thoáng mát, màu sắc bên ngoài đẹp hơn cả trên ảnh chụp. Đóng gói hộp rất sang trọng.");
+                        options.add("Giao hàng nhanh bất ngờ, vải giặt máy không bị xù lông hay phai màu. Shop hỗ trợ đổi size rất nhiệt tình.");
+                        options.add("Thiết kế hiện đại, phong cách trẻ trung tối giản. Rất ưng ý với chất vải và form áo của shop!");
+                        options.add("Vải mát mẻ, lên đồ chụp ảnh cực kỳ ăn hình. Giá hợp lý so với chất lượng cao cấp, sẽ ủng hộ shop tiếp.");
+                } else if (sName.contains("nam") || sName.contains("sách") || sName.contains("book") || pName.contains("sách")) {
+                        options.add("Sách mới tinh 100%, góc bìa phẳng phiu không bị móp méo chút nào. Đóng hộp carton bọc xốp chống sốc rất có tâm. Sách hay và sâu sắc!");
+                        options.add("Chất lượng in ấn sắc nét, thơm mùi giấy mới. Nhà sách giao hàng nhanh, bọc sách cẩn thận còn tặng kèm bookmark xinh xắn.");
+                        options.add("Sách chuẩn bản quyền Nhã Nam, nội dung phong phú và dịch rất mượt. Đóng gói chu đáo, chấm 5 sao chất lượng!");
+                        options.add("Cuốn sách rất đáng đọc, bìa thiết kế đẹp, giấy ngà chống lóa mắt. Dịch vụ đóng gói và giao hàng 10/10.");
+                        options.add("Sách đóng gói đẹp, giao nhanh hơn mong đợi. Nội dung sâu sắc mở mang nhiều kiến thức hay. Rất thích cách phục vụ của Nhã Nam.");
+                } else if (sName.contains("sunhouse") || sName.contains("gia dụng") || pName.contains("nồi") || pName.contains("chảo") || pName.contains("máy")) {
+                        options.add("Thiết bị dùng rất êm, gia nhiệt đều và tiết kiệm điện. Đồ gia dụng Sunhouse chính hãng xài bền bỉ, an tâm tuyệt đối.");
+                        options.add("Chảo / nồi chống dính dày dặn, chiên xào không bị dính đáy, dễ dàng vệ sinh chùi rửa. Giao hàng nhanh có phiếu bảo hành đầy đủ.");
+                        options.add("Sản phẩm chất lượng cao chuẩn thương hiệu lớn. Nấu nướng nhanh và tiện lợi, gia đình mình ai cũng thích.");
+                        options.add("Đóng gói nhiều lớp xốp bảo vệ rất chắc chắn, máy hoạt động mượt mà không ồn. Đánh giá 5 sao cho sản phẩm!");
+                        options.add("Gia dụng Sunhouse dùng rất tiện lợi, tiết kiệm thời gian nấu nướng mỗi ngày. Rất đáng mua!");
+                } else if (sName.contains("beauty") || sName.contains("cosmetic") || sName.contains("mỹ phẩm") || pName.contains("kem") || pName.contains("serum") || pName.contains("son")) {
+                        options.add("Mỹ phẩm chính hãng 100%, quét mã vạch chuẩn auth, date xa tận 2027. Dùng lên da rất dịu nhẹ, cấp ẩm tốt và không hề kích ứng.");
+                        options.add("Shop đóng gói siêu cẩn thận với nhiều lớp bọc bóng khí. Mùi hương nhẹ nhàng, dùng một tuần thấy da mềm mịn và sáng hơn rõ.");
+                        options.add("Giao hàng hỏa tốc, sản phẩm date mới toanh, shop còn hào phóng tặng kèm quà tặng xinh xắn. Sẽ ủng hộ shop dài lâu!");
+                        options.add("Chất kem mịn màng thấm nhanh không nhờn rít, hàng auth chuẩn xịn. Mua ở shop lần thứ 3 rồi vẫn rất hài lòng.");
+                        options.add("Da mình nhạy cảm nhưng dùng sản phẩm của shop rất êm, nâng tông tự nhiên và không bết dính. Cho shop 5 sao!");
+                } else if (sName.contains("decathlon") || sName.contains("thể thao") || pName.contains("giày") || pName.contains("vợt") || pName.contains("thể thao")) {
+                        options.add("Đồ thể thao chất vải co giãn 4 chiều cực tốt, thấm hút mồ hôi nhanh khô, mặc tập gym hay chạy bộ đều rất thoải mái.");
+                        options.add("Dụng cụ hoàn thiện chắc chắn, độ chịu lực cao đúng chuẩn Decathlon châu Âu. Rất bền và tiện lợi khi tập luyện.");
+                        options.add("Sản phẩm đúng mô tả, đường may chắc nịch, size vừa vặn. Giao hàng nhanh chỉ trong 2 ngày, cực kỳ hài lòng!");
+                        options.add("Chất liệu thể thao cao cấp, bền đẹp theo thời gian. Mua đồ của Decathlon chưa bao giờ làm mình thất vọng.");
+                        options.add("Trang phục thoáng mát, nhẹ và bền. Đóng gói cẩn thận, nhân viên tư vấn chọn size rất chuẩn.");
+                } else {
+                        options.add("Sản phẩm đúng như mô tả, chất lượng tuyệt vời. Shop đóng gói cẩn thận và giao hàng rất nhanh chóng!");
+                        options.add("Hàng chuẩn chính hãng, dùng rất ưng ý. Dịch vụ chăm sóc khách hàng nhiệt tình, chu đáo. Cho shop 5 sao!");
+                        options.add("Chất lượng vượt xa mong đợi trong tầm giá. Đóng gói kỹ càng, giao hàng đúng hẹn. Sẽ tiếp tục ủng hộ!");
+                }
+
+                if (rating == 4) {
+                        return options.get(random.nextInt(options.size())).replace("5 sao", "4 sao")
+                                + " (Giao hàng hơi lâu hơn dự kiến một chút nhưng bù lại hàng rất tốt).";
+                }
+                return options.get(random.nextInt(options.size()));
+        }
+
+        private String getRealisticSellerReply(String shopName) {
+                List<String> replies = List.of(
+                        "Dạ " + shopName + " chân thành cảm ơn bạn đã tin tưởng và ủng hộ sản phẩm! Nếu trong quá trình sử dụng có bất kỳ thắc mắc nào, bạn cứ nhắn tin cho shop hỗ trợ ngay nhé ạ. Chúc bạn có những trải nghiệm thật tuyệt vời!",
+                        "Cảm ơn bạn rất nhiều vì đã dành thời gian đánh giá 5 sao cho shop! Sự hài lòng của bạn là động lực to lớn để shop không ngừng hoàn thiện chất lượng và dịch vụ hơn nữa ạ. Chúc bạn một ngày ngập tràn niềm vui!",
+                        "Dạ shop cảm ơn phản hồi tích cực từ bạn ạ! Cần tư vấn thêm về cách sử dụng hay chính sách bảo hành, bạn cứ liên hệ với shop bất cứ lúc nào nhé. Rất mong được tiếp tục phục vụ bạn ở những đơn hàng tới ạ!"
+                );
+                return replies.get(random.nextInt(replies.size()));
         }
 
         private void seedRequests(Account adminAccount, Role customerRole) {

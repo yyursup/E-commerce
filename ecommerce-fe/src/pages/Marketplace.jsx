@@ -240,7 +240,7 @@ export default function Marketplace() {
                     <div className="flex items-center gap-4 pt-1 font-medium">
                       <span className="flex items-center gap-1 text-amber-500 font-bold">
                         <HiOutlineStar className="h-4 w-4 fill-amber-400" />
-                        {shop.rating} ({shop.reviewCount})
+                        {shop.rating ? `${shop.rating} (${shop.reviewCount || 0})` : 'Chưa có đánh giá'}
                       </span>
                       <span className="flex items-center gap-1 text-stone-600 dark:text-slate-300">
                         <HiOutlineShoppingBag className="h-4 w-4" />

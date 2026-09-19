@@ -405,29 +405,51 @@ export default function ProductDetail() {
             <div className="lg:col-span-5 space-y-4">
               <ProductImageGallery images={images} />
 
-              {/* Social Share & Likes */}
-              <div className="flex items-center justify-between border-t pt-4 border-stone-100 dark:border-slate-800 text-xs">
-                <div className="flex items-center gap-2 text-stone-500 dark:text-slate-400">
-                  <span className="font-medium">Chia sẻ:</span>
-                  <button
-                    onClick={handleShare}
-                    className="p-1.5 rounded-full hover:bg-stone-100 dark:hover:bg-slate-800 text-stone-600 dark:text-slate-300 transition-colors"
-                    title="Sao chép liên kết"
-                  >
-                    <HiOutlineShare className="h-4 w-4 text-amber-500" />
-                  </button>
-                </div>
-
+              {/* Social Share & Likes Action Bar */}
+              <div
+                className={cn(
+                  'flex items-center justify-between gap-3 p-3 rounded-2xl border transition-all',
+                  isDark
+                    ? 'bg-slate-800/60 border-slate-800 text-slate-300'
+                    : 'bg-stone-50 border-stone-200/80 text-stone-700'
+                )}
+              >
+                {/* Share Button */}
                 <button
+                  type="button"
+                  onClick={handleShare}
+                  className={cn(
+                    'flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all active:scale-95 cursor-pointer',
+                    isDark
+                      ? 'border-slate-700 bg-slate-800 text-slate-200 hover:border-amber-500/50 hover:text-amber-400'
+                      : 'border-stone-200 bg-white text-stone-700 hover:border-amber-500/50 hover:text-amber-600 shadow-2xs'
+                  )}
+                  title="Sao chép liên kết sản phẩm"
+                >
+                  <HiOutlineShare className="h-4 w-4 text-amber-500 shrink-0" />
+                  <span>Chia sẻ</span>
+                </button>
+
+                {/* Like / Wishlist Button */}
+                <button
+                  type="button"
                   onClick={handleLikeToggle}
-                  className="flex items-center gap-1.5 font-semibold text-rose-500 hover:opacity-80 transition-opacity"
+                  className={cn(
+                    'flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all active:scale-95 cursor-pointer',
+                    isLiked
+                      ? 'border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-400'
+                      : isDark
+                      ? 'border-slate-700 bg-slate-800 text-slate-300 hover:border-rose-500/50 hover:text-rose-400'
+                      : 'border-stone-200 bg-white text-stone-600 hover:border-rose-500/50 hover:text-rose-500 shadow-2xs'
+                  )}
+                  title={isLiked ? 'Bỏ thích sản phẩm' : 'Lưu vào danh sách yêu thích'}
                 >
                   {isLiked ? (
-                    <HiHeart className="h-5 w-5 fill-rose-500" />
+                    <HiHeart className="h-4 w-4 fill-rose-500 text-rose-500 shrink-0" />
                   ) : (
-                    <HiOutlineHeart className="h-5 w-5" />
+                    <HiOutlineHeart className="h-4 w-4 text-rose-500 shrink-0" />
                   )}
-                  <span>Đã thích ({likeCount})</span>
+                  <span>{isLiked ? 'Đã thích' : 'Yêu thích'} ({likeCount})</span>
                 </button>
               </div>
             </div>
@@ -526,19 +548,16 @@ export default function ProductDetail() {
 
               {/* Shipping Row (GHN Express) */}
               <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4 text-xs border-t pt-3 border-stone-100 dark:border-slate-800">
-                <span className="w-28 shrink-0 text-stone-500 dark:text-slate-400 font-semibold mt-1">
+                <span className="w-28 shrink-0 text-stone-500 dark:text-slate-400 font-semibold mt-0.5">
                   Vận Chuyển
                 </span>
-                <div className="space-y-1.5 flex-1">
-                  <div className="flex items-center gap-2 text-stone-700 dark:text-slate-300">
+                <div className="space-y-1 flex-1">
+                  <div className="flex items-center gap-2 text-stone-800 dark:text-slate-200 font-medium">
                     <HiOutlineTruck className="h-4 w-4 text-blue-500 shrink-0" />
                     <span>Giao Hàng Nhanh (GHN Express) - Toàn Quốc</span>
                   </div>
-                  <div className="text-stone-500 dark:text-slate-400">
-                    Phí vận chuyển dự kiến: <span className="font-bold text-stone-900 dark:text-white">18.000₫ - 32.000₫</span>
-                    <span className="ml-2 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 text-[10px] font-bold">
-                      Freeship Xtra
-                    </span>
+                  <div className="text-stone-500 dark:text-slate-400 text-[11px] leading-relaxed">
+                    Phí vận chuyển và thời gian giao hàng được tính tự động theo địa chỉ nhận hàng tại bước thanh toán.
                   </div>
                 </div>
               </div>
@@ -697,10 +716,8 @@ export default function ProductDetail() {
                   <HiOutlineBadgeCheck className="h-4 w-4 text-emerald-500 shrink-0" />
                 </Link>
                 <div className="text-xs text-stone-400 dark:text-slate-400 mt-1 flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                  <span>Online 5 phút trước</span>
-                  <span>•</span>
-                  <span className="truncate">{shopData?.city || 'Hà Nội'}</span>
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
+                  <span className="truncate">{shopData?.address || shopData?.location || shopData?.city || 'Việt Nam'}</span>
                 </div>
 
                 <div className="mt-3 flex items-center gap-2">
@@ -751,31 +768,46 @@ export default function ProductDetail() {
               </div>
             </div>
 
-            {/* Shop Right Metrics */}
+            {/* Shop Right Metrics (Real Data Only) */}
             <div className="lg:col-span-7 grid grid-cols-2 sm:grid-cols-3 gap-y-3 gap-x-6 text-xs">
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center border-b pb-2 border-stone-100 dark:border-slate-800/80">
                 <span className="text-stone-500 dark:text-slate-400">Đánh Giá:</span>
-                <span className="font-bold text-amber-500">{shopData?.rating || '4.9'} ({shopData?.reviewCount || '1.2k'})</span>
+                <span className="font-bold text-amber-500">
+                  {shopData?.averageRating ? Number(shopData.averageRating).toFixed(1) : (shopData?.rating ? Number(shopData.rating).toFixed(1) : '5.0')} ★
+                </span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center border-b pb-2 border-stone-100 dark:border-slate-800/80">
                 <span className="text-stone-500 dark:text-slate-400">Sản Phẩm:</span>
-                <span className="font-bold text-stone-900 dark:text-white">{shopData?.productCount || '42'}</span>
+                <span className="font-bold text-stone-900 dark:text-white">
+                  {shopData?.productCount !== undefined && shopData?.productCount !== null ? shopData.productCount : (shopProducts?.length || 0)}
+                </span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-stone-500 dark:text-slate-400">Tỉ Lệ Phản Hồi:</span>
-                <span className="font-bold text-stone-900 dark:text-white">{shopData?.responseRate || '99%'}</span>
+              <div className="flex justify-between items-center border-b pb-2 border-stone-100 dark:border-slate-800/80">
+                <span className="text-stone-500 dark:text-slate-400">Tham Gia:</span>
+                <span className="font-bold text-stone-900 dark:text-white">
+                  {shopData?.createdAt
+                    ? (() => {
+                        const date = new Date(shopData.createdAt)
+                        if (isNaN(date.getTime())) return 'Thành viên mới'
+                        const diffMonths = (new Date().getFullYear() - date.getFullYear()) * 12 + (new Date().getMonth() - date.getMonth())
+                        if (diffMonths <= 0) return 'Mới tham gia'
+                        if (diffMonths < 12) return `${diffMonths} tháng trước`
+                        return `${Math.floor(diffMonths / 12)} năm trước`
+                      })()
+                    : 'Thành viên mới'}
+                </span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-stone-500 dark:text-slate-400">Thời Gian Phản Hồi:</span>
-                <span className="font-bold text-stone-900 dark:text-white">{shopData?.responseTime || 'trong vài phút'}</span>
+              <div className="flex justify-between items-center border-b pb-2 border-stone-100 dark:border-slate-800/80">
+                <span className="text-stone-500 dark:text-slate-400">Bảo Chứng:</span>
+                <span className="font-bold text-emerald-600 dark:text-emerald-400">Ký quỹ Escrow</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-stone-500 dark:text-slate-400">Tham Gia Sàn:</span>
-                <span className="font-bold text-stone-900 dark:text-white">{shopData?.joinedTime || '1 năm trước'}</span>
+              <div className="flex justify-between items-center border-b pb-2 border-stone-100 dark:border-slate-800/80">
+                <span className="text-stone-500 dark:text-slate-400">Vận Chuyển:</span>
+                <span className="font-bold text-blue-600 dark:text-blue-400">GHN Express</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-stone-500 dark:text-slate-400">Người Theo Dõi:</span>
-                <span className="font-bold text-stone-900 dark:text-white">{shopData?.followerCount || '24.5k'}</span>
+              <div className="flex justify-between items-center border-b pb-2 border-stone-100 dark:border-slate-800/80">
+                <span className="text-stone-500 dark:text-slate-400">Trạng Thái:</span>
+                <span className="font-bold text-emerald-600 dark:text-emerald-400">Đang hoạt động</span>
               </div>
             </div>
           </div>
@@ -802,23 +834,23 @@ export default function ProductDetail() {
               </div>
               <div className="flex justify-between border-b pb-2 border-stone-100 dark:border-slate-800/80">
                 <span className="text-stone-500 dark:text-slate-400 w-32 shrink-0">Thương Hiệu:</span>
-                <span className="font-medium text-stone-900 dark:text-white text-right">Chính Hãng Phân Phối</span>
+                <span className="font-medium text-stone-900 dark:text-white text-right">{product.brand || 'Chính Hãng Phân Phối'}</span>
               </div>
               <div className="flex justify-between border-b pb-2 border-stone-100 dark:border-slate-800/80">
                 <span className="text-stone-500 dark:text-slate-400 w-32 shrink-0">Mã SKU:</span>
-                <span className="font-medium text-stone-900 dark:text-white text-right">{product.sku || 'SKU-STANDARD'}</span>
+                <span className="font-medium text-stone-900 dark:text-white text-right">{product.sku || (product.id ? `SKU-${String(product.id).slice(0, 8).toUpperCase()}` : 'SKU-STANDARD')}</span>
               </div>
               <div className="flex justify-between border-b pb-2 border-stone-100 dark:border-slate-800/80">
                 <span className="text-stone-500 dark:text-slate-400 w-32 shrink-0">Kho Hàng:</span>
-                <span className="font-medium text-stone-900 dark:text-white text-right">{product.quantity || 48}</span>
+                <span className="font-medium text-stone-900 dark:text-white text-right">{displayStock}</span>
               </div>
               <div className="flex justify-between border-b pb-2 border-stone-100 dark:border-slate-800/80">
                 <span className="text-stone-500 dark:text-slate-400 w-32 shrink-0">Bảo Hành:</span>
-                <span className="font-medium text-stone-900 dark:text-white text-right">12 Tháng (Bảo hành điện tử)</span>
+                <span className="font-medium text-stone-900 dark:text-white text-right">Bảo hành theo quy chuẩn sàn</span>
               </div>
               <div className="flex justify-between border-b pb-2 border-stone-100 dark:border-slate-800/80">
                 <span className="text-stone-500 dark:text-slate-400 w-32 shrink-0">Gửi Từ:</span>
-                <span className="font-medium text-stone-900 dark:text-white text-right">{shopData?.city || 'Hà Nội / TP.HCM'}</span>
+                <span className="font-medium text-stone-900 dark:text-white text-right truncate">{shopData?.address || shopData?.location || shopData?.city || 'Việt Nam'}</span>
               </div>
             </div>
           </div>

@@ -23,6 +23,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
+import com.marketplace.ecommerce.product.service.InventoryHistoryService;
+import com.marketplace.ecommerce.product.valueObjects.InventoryActionType;
 
 @Service
 @RequiredArgsConstructor
@@ -32,6 +34,7 @@ public class ProductServiceImpl implements ProductService {
     private final ShopRepository shopRepository;
     private final ProductImageService productImageService;
     private final ProductCategoryRepository productCategoryRepository;
+    private final InventoryHistoryService inventoryHistoryService;
     private final ProductValidation productValidation;
 
     @Override
@@ -89,6 +92,13 @@ public class ProductServiceImpl implements ProductService {
 
         Product productSaved = productRepository.save(product);
 
+        inventoryHistoryService.logInventoryChange(shop, productSaved, null, 0, productSaved.getQuantity(), InventoryActionType.PRODUCT_CREATED, null, "Khởi tạo sản phẩm");
+        if (productSaved.getVariants() != null && !productSaved.getVariants().isEmpty()) {
+            productSaved.getVariants().forEach(v -> {
+                inventoryHistoryService.logInventoryChange(shop, productSaved, v, 0, v.getStock(), InventoryActionType.PRODUCT_CREATED, null, "Khởi tạo biến thể");
+            });
+        }
+
         return ProductResponse.from(productSaved);
     }
 
@@ -101,16 +111,27 @@ public class ProductServiceImpl implements ProductService {
 
         assertOwner(shop, product);
 
+        Integer oldStock = product.getQuantity();
+
         if (req.getVariants() != null) {
             productValidation.validateVariants(req.getVariants());
         }
 
         applyBasicFields(product, req);
+
+        Integer newStock = product.getQuantity();
+        if (oldStock != null && !oldStock.equals(newStock)) {
+            inventoryHistoryService.logInventoryChange(shop, product, null, oldStock, newStock, InventoryActionType.STOCK_UPDATED, null, "Người bán cập nhật kho");
+        }
+
         applySku(product, req);
         applyStatus(product, req);
         applyCategory(product, req);
         applyImages(product, req);
-        applyVariants(product, req);
+
+        // save product once to persist new variants if any, to avoid TransientPropertyValueException
+        product = productRepository.save(product);
+        applyVariants(product, req, shop);
 
         return ProductResponse.from(productRepository.save(product));
     }
@@ -210,10 +231,9 @@ public class ProductServiceImpl implements ProductService {
                         .build()));
     }
 
-    private void applyVariants(Product product, UpdateProductRequest req) {
-        if (req.getVariants() == null)
-            return;
-
+    private void applyVariants(Product product, UpdateProductRequest req, Shop shop) {
+        if (req.getVariants() == null) return;
+        
         // Mark all existing as deleted
         if (product.getVariants() != null) {
             product.getVariants().forEach(v -> v.setDeleted(true));
@@ -229,15 +249,18 @@ public class ProductServiceImpl implements ProductService {
             }
 
             if (existing != null) {
+                Integer oldStock = existing.getStock();
                 existing.setColor(variantReq.getColor());
                 existing.setSize(variantReq.getSize());
                 existing.setPrice(variantReq.getPrice());
                 existing.setStock(variantReq.getStock());
                 existing.setDeleted(false);
                 existing.setUpdatedAt(LocalDateTime.now());
+                if (oldStock != null && !oldStock.equals(variantReq.getStock())) {
+                    inventoryHistoryService.logInventoryChange(shop, product, existing, oldStock, variantReq.getStock(), InventoryActionType.STOCK_UPDATED, null, "Người bán cập nhật kho");
+                }
             } else {
-                product.getVariants().add(
-                        com.marketplace.ecommerce.product.entity.ProductVariant.builder()
+                com.marketplace.ecommerce.product.entity.ProductVariant newVariant = com.marketplace.ecommerce.product.entity.ProductVariant.builder()
                                 .product(product)
                                 .color(variantReq.getColor())
                                 .size(variantReq.getSize())
@@ -245,7 +268,9 @@ public class ProductServiceImpl implements ProductService {
                                 .stock(variantReq.getStock())
                                 .createdAt(LocalDateTime.now())
                                 .deleted(false)
-                                .build());
+                                .build();
+                product.getVariants().add(newVariant);
+                inventoryHistoryService.logInventoryChange(shop, product, newVariant, 0, variantReq.getStock(), InventoryActionType.STOCK_UPDATED, null, "Thêm biến thể mới");
             }
         }
     }
@@ -264,8 +289,7 @@ public class ProductServiceImpl implements ProductService {
             // Check limit: max 5 featured products per shop
             long currentFeaturedCount = productRepository.countByShopIdAndFeaturedTrueAndDeletedFalse(shop.getId());
             if (currentFeaturedCount >= 5) {
-                throw new CustomException(
-                        "Bạn chỉ có thể đẩy nổi bật tối đa 5 sản phẩm. Hãy bỏ đẩy một sản phẩm khác trước.");
+                throw new CustomException("Bạn chỉ có thể đẩy nổi bật tối đa 5 sản phẩm. Hãy bỏ đẩy một sản phẩm khác trước.");
             }
         }
 

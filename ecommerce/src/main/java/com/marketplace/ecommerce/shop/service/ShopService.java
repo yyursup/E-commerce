@@ -13,5 +13,6 @@ import java.util.UUID;
 public interface ShopService {
     Shop createShop(User ownerUser, String shopName, Request req, Seller sellerDetail);
     ShopProfileResponse getShopProfileById(UUID shopId);
+    ShopProfileResponse getMyShopProfile(UUID accountId);
     List<ShopProfileResponse> getAllActiveShops();
 }

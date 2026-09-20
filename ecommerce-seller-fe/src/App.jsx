@@ -16,6 +16,7 @@ import ShopVouchers from './pages/business/ShopVouchers'
 import ShopLiveChat from './pages/business/ShopLiveChat'
 import ShopInventoryHistory from './pages/business/ShopInventoryHistory'
 import ShopSettings from './pages/ShopSettings'
+import ShopViolations from './pages/business/ShopViolations'
 
 export default function App() {
   return (
@@ -46,6 +47,7 @@ export default function App() {
         <Route path="/products" element={<ShopProducts />} />
         <Route path="/inventory-history" element={<ShopInventoryHistory />} />
         <Route path="/vouchers" element={<ShopVouchers />} />
+        <Route path="/violations" element={<ShopViolations />} />
         <Route path="/chat" element={<ShopLiveChat />} />
         <Route path="/settings" element={<ShopSettings />} />
       </Route>

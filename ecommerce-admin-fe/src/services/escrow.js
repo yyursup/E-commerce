@@ -20,6 +20,17 @@ const escrowService = {
       throw error.response ? error.response.data : error
     }
   },
+
+  refundByOrder: async (orderId, reason = null) => {
+    try {
+      const response = await axiosClient.post(`${ESCROW_BASE}/orders/${orderId}/refund`, null, {
+        params: reason ? { reason } : {},
+      })
+      return response.data
+    } catch (error) {
+      throw error.response ? error.response.data : error
+    }
+  },
 }
 
 export default escrowService

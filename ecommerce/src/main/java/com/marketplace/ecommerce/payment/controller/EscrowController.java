@@ -44,4 +44,18 @@ public class EscrowController {
                 "orderId", orderId
         ));
     }
+
+    @PostMapping("/orders/{orderId}/refund")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, Object>> refundByOrder(
+            @PathVariable UUID orderId,
+            @RequestParam(required = false) String reason
+    ) {
+        escrowService.refundByOrder(orderId, reason);
+        return ResponseEntity.ok(Map.of(
+                "ok", true,
+                "message", "Escrow refunded to buyer wallet",
+                "orderId", orderId
+        ));
+    }
 }

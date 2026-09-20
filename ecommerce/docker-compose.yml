@@ -6,6 +6,7 @@ volumes:
   postgres_data:
   minio_data:
   ollama_data:
+  redis_data:
 
 services:
   postgres:
@@ -74,3 +75,17 @@ services:
     #         - driver: nvidia
     #           count: 1
     #           capabilities: [gpu]
+
+  # Redis - High speed cache & real-time counter cho Livestream (Online viewers, Like count)
+  redis:
+    image: redis:7-alpine
+    container_name: app-redis
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - backend
+    restart: unless-stopped
+

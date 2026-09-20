@@ -12,6 +12,7 @@ import {
   HiOutlineTicket,
   HiOutlineChat,
   HiOutlineClipboardList,
+  HiOutlineVideoCamera,
 } from 'react-icons/hi'
 import { useAuthStore } from '../store/useAuthStore'
 import { useThemeStore } from '../store/useThemeStore'
@@ -28,6 +29,7 @@ import toast from 'react-hot-toast'
 
 const navItems = [
   { to: '/dashboard', label: 'Tổng quan (Dashboard)', icon: HiOutlineViewGrid },
+  { to: '/live', label: 'Kênh Livestream', icon: HiOutlineVideoCamera },
   { to: '/orders', label: 'Quản lý Đơn hàng', icon: HiOutlineShoppingBag },
   { to: '/products', label: 'Quản lý Sản phẩm', icon: HiOutlineArchive },
   { to: '/inventory-history', label: 'Lịch sử Kho hàng', icon: HiOutlineClipboardList },

@@ -31,6 +31,7 @@ import AdvancedSearchBar from './AdvancedSearchBar'
 
 const navLinks = [
   { to: '/', label: 'Trang chủ' },
+  { to: '/live', label: 'Livestream', isLive: true },
   { to: '/products', label: 'Tất cả sản phẩm' },
   { to: '/deals', label: 'Khuyến mãi & Voucher' },
   { to: '/marketplace', label: 'Khám phá Gian hàng' },
@@ -488,15 +489,20 @@ export default function Navbar() {
           isDark ? "border-slate-800 bg-slate-900/90" : "border-stone-100 bg-white"
       )}>
         <div className="mx-auto flex h-10 w-full max-w-7xl items-center gap-6 px-4 sm:px-6 lg:px-8">
-          {navLinks.map(({ to, label }) => (
+          {navLinks.map(({ to, label, isLive }) => (
             <Link
               key={to}
               to={to}
               className={cn(
-                'text-sm font-medium transition-colors hover:text-amber-500',
-                isDark ? 'text-slate-300' : 'text-stone-600'
+                'text-sm font-medium transition-colors flex items-center gap-1.5',
+                isLive
+                  ? 'text-rose-500 font-bold hover:text-rose-600'
+                  : isDark
+                  ? 'text-slate-300 hover:text-amber-500'
+                  : 'text-stone-600 hover:text-amber-500'
               )}
             >
+              {isLive && <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>}
               {label}
             </Link>
           ))}
@@ -538,18 +544,21 @@ export default function Navbar() {
                 />
                 <HiOutlineSearch className="absolute left-3.5 h-4 w-4 text-stone-400 dark:text-slate-400" />
               </form>
-              {navLinks.map(({ to, label }) => (
+              {navLinks.map(({ to, label, isLive }) => (
                 <Link
                   key={to}
                   to={to}
                   onClick={() => setMobileOpen(false)}
                   className={cn(
-                    'rounded-lg px-4 py-3 text-sm font-medium',
-                    isDark
+                    'rounded-lg px-4 py-3 text-sm font-medium flex items-center gap-2',
+                    isLive
+                      ? 'text-rose-500 font-bold'
+                      : isDark
                       ? 'text-slate-300 hover:bg-slate-800'
                       : 'text-stone-600 hover:bg-stone-50',
                   )}
                 >
+                  {isLive && <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>}
                   {label}
                 </Link>
               ))}

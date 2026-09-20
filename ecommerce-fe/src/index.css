@@ -104,3 +104,39 @@ input[type="number"] {
   -moz-appearance: textfield;
   appearance: textfield;
 }
+
+/* Livestream Floating Hearts Animation */
+@keyframes floating-heart {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(0.8) rotate(-10deg);
+  }
+  50% {
+    opacity: 0.9;
+    transform: translateY(-120px) scale(1.2) rotate(15deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-240px) scale(1.4) rotate(-20deg);
+  }
+}
+
+.animate-floating-heart {
+  animation: floating-heart 2s ease-out forwards;
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+

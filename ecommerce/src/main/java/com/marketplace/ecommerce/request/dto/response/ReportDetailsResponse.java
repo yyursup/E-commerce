@@ -14,4 +14,6 @@ public class ReportDetailsResponse {
     private UUID targetId;
     private String evidenceUrl;
     private String moderatorNote;
+    private String targetName;
+    private String targetInfo;
 }

@@ -160,6 +160,17 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
             """)
     List<Product> findFeaturedByShopIdWithDetails(@Param("shopId") UUID shopId);
 
+    @Query("""
+                select distinct p
+                from Product p
+                join fetch p.shop s
+                join fetch p.productCategory c
+                left join fetch p.images i
+                where s.id = :shopId
+                  and (p.status = 'DELETED' or p.flagged = true or p.deleted = true)
+            """)
+    List<Product> findAllViolatedProductsByShopId(@Param("shopId") UUID shopId);
+
     long countByShopIdAndFeaturedTrueAndDeletedFalse(UUID shopId);
 }
 

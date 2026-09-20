@@ -4,8 +4,14 @@ import com.marketplace.ecommerce.auth.entity.Account;
 import com.marketplace.ecommerce.auth.entity.Role;
 import com.marketplace.ecommerce.auth.repository.AccountRepository;
 import com.marketplace.ecommerce.auth.repository.RoleRepository;
+import com.marketplace.ecommerce.auth.valueObjects.AccountStatus;
+import com.marketplace.ecommerce.auth.valueObjects.DisciplineLevel;
 import com.marketplace.ecommerce.common.exception.CustomException;
+import com.marketplace.ecommerce.product.entity.Product;
+import com.marketplace.ecommerce.product.repository.ProductRepository;
+import com.marketplace.ecommerce.product.valueObjects.ProductStatus;
 import com.marketplace.ecommerce.request.constant.RequestConstant;
+import com.marketplace.ecommerce.request.dto.request.CreateAppealRequest;
 import com.marketplace.ecommerce.request.dto.request.CreateSendRequest;
 import com.marketplace.ecommerce.request.dto.response.*;
 import com.marketplace.ecommerce.request.entity.Report;
@@ -18,9 +24,15 @@ import com.marketplace.ecommerce.request.service.RequestService;
 import com.marketplace.ecommerce.request.policy.RequestPolicy;
 import com.marketplace.ecommerce.request.valueObjects.ApproveSellerContext;
 import com.marketplace.ecommerce.request.valueObjects.RequestStatus;
+import com.marketplace.ecommerce.request.valueObjects.RequestType;
 import com.marketplace.ecommerce.request.valueObjects.TargetType;
+import com.marketplace.ecommerce.review.entity.Review;
+import com.marketplace.ecommerce.review.repository.ReviewRepository;
+import com.marketplace.ecommerce.review.valueObjects.ReviewStatus;
 import com.marketplace.ecommerce.shop.entity.Shop;
+import com.marketplace.ecommerce.shop.repository.ShopRepository;
 import com.marketplace.ecommerce.shop.service.ShopService;
+import com.marketplace.ecommerce.shop.valueObjects.ShopStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Page;
@@ -44,6 +56,9 @@ public class RequestServiceImpl implements RequestService {
     private final RoleRepository roleRepository;
     private final RequestPolicy requestValidation;
     private final ShopService shopService;
+    private final ProductRepository productRepository;
+    private final ShopRepository shopRepository;
+    private final ReviewRepository reviewRepository;
 
     @Transactional
     public RequestResponse approveSellerRegistration(UUID requestId, UUID adminAccountId, String response) {
@@ -71,6 +86,83 @@ public class RequestServiceImpl implements RequestService {
         return RequestResponse.from(req);
     }
 
+    @Override
+    @Transactional
+    public RequestResponse approveRequest(UUID requestId, UUID adminAccountId, String response) {
+        Request req = requestRepository.findById(requestId)
+                .orElseThrow(() -> new CustomException("Request not found: " + requestId));
+
+        if (req.getType() == RequestType.SELLER_REGISTRATION) {
+            return approveSellerRegistration(requestId, adminAccountId, response);
+        }
+
+        if (req.getType() == RequestType.APPEAL) {
+            Account admin = accountRepository.findById(adminAccountId)
+                    .orElseThrow(() -> new CustomException("Admin account not found: " + adminAccountId));
+
+            Report report = reportRepository.findByRequestId(requestId);
+            if (report != null && report.getTargetType() != null && report.getTargetId() != null) {
+                TargetType targetType = report.getTargetType();
+                UUID targetId = report.getTargetId();
+
+                switch (targetType) {
+                    case SHOP -> {
+                        Shop shop = shopRepository.findById(targetId)
+                                .orElseThrow(() -> new CustomException("Shop not found: " + targetId));
+                        shop.setStatus(ShopStatus.ACTIVE);
+                        shopRepository.save(shop);
+                        // Khôi phục các sản phẩm INACTIVE về PUBLISHED
+                        productRepository.updateStatusByShopId(shop.getId(), ProductStatus.PUBLISHED);
+
+                        // Giảm điểm vi phạm của chủ shop về mức an toàn (< 3 để không dính WARNED)
+                        if (shop.getUser() != null && shop.getUser().getAccount() != null) {
+                            Account owner = shop.getUser().getAccount();
+                            int safeCount = Math.min(2, Math.max(0, owner.getViolationCount() - 3));
+                            owner.setViolationCount(safeCount);
+                            owner.setDisciplineLevel(DisciplineLevel.NONE);
+                            owner.setStatus(AccountStatus.ACTIVE);
+                            owner.setIsActive(true);
+                            owner.setBannedUntil(null);
+                            accountRepository.save(owner);
+                        }
+                    }
+                    case PRODUCT -> {
+                        Product product = productRepository.findById(targetId)
+                                .orElseThrow(() -> new CustomException("Product not found: " + targetId));
+                        product.setStatus(ProductStatus.PUBLISHED);
+                        product.setFlagged(false);
+                        product.setReportCount(0);
+                        product.setDeleted(false);
+                        productRepository.save(product);
+                    }
+                    case REVIEW -> {
+                        Review review = reviewRepository.findById(targetId)
+                                .orElseThrow(() -> new CustomException("Review not found: " + targetId));
+                        review.setStatus(ReviewStatus.ACTIVE);
+                        review.setFlagged(false);
+                        review.setReportCount(0);
+                        reviewRepository.save(review);
+                    }
+                    case USER -> {
+                        Account userAcc = accountRepository.findById(targetId)
+                                .orElseThrow(() -> new CustomException("Target user account not found: " + targetId));
+                        userAcc.setStatus(AccountStatus.ACTIVE);
+                        userAcc.setIsActive(true);
+                        userAcc.setDisciplineLevel(DisciplineLevel.NONE);
+                        userAcc.setViolationCount(0);
+                        userAcc.setBannedUntil(null);
+                        accountRepository.save(userAcc);
+                    }
+                }
+            }
+
+            markApprovedRequest(req, admin, response);
+            return RequestResponse.from(req);
+        }
+
+        throw new CustomException("Unsupported request type for approve: " + req.getType());
+    }
+
     public void markApprovedRequest(Request req, Account admin, String response) {
         req.setStatus(RequestStatus.APPROVED);
         req.setReviewedBy(admin);
@@ -80,10 +172,54 @@ public class RequestServiceImpl implements RequestService {
     }
 
     @Override
+    @Transactional
+    public CreateRequestResponse createAppeal(UUID accountId, CreateAppealRequest req) {
+        Account acc = accountRepository.findById(accountId)
+                .orElseThrow(() -> new CustomException("Account not found: " + accountId));
+
+        Request r = Request.builder()
+                .account(acc)
+                .type(RequestType.APPEAL)
+                .status(RequestStatus.PENDING)
+                .description(req.getDescription())
+                .coverImageUrl(req.getEvidenceUrl())
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+
+        r = requestRepository.save(r);
+
+        Report appealReport = Report.builder()
+                .request(r)
+                .targetType(req.getTargetType())
+                .targetId(req.getTargetId())
+                .evidenceUrl(req.getEvidenceUrl())
+                .moderatorNote(null)
+                .build();
+        reportRepository.save(appealReport);
+
+        return CreateRequestResponse.from(r);
+    }
+
+    @Override
+    @Transactional
     public RequestResponse rejectRequest(UUID adminAccountId, UUID requestId, String response) {
         Account acc = accountRepository.findById(adminAccountId).orElseThrow(() -> new CustomException("Account not found"));
 
         Request request = requestRepository.findById(requestId).orElseThrow(() -> new CustomException("Request not found"));
+
+        if (request.getType() == RequestType.APPEAL) {
+            Report report = reportRepository.findByRequestId(requestId);
+            if (report != null && report.getTargetType() == TargetType.PRODUCT && report.getTargetId() != null) {
+                // Nếu bác đơn kháng cáo sản phẩm vi phạm -> Chuyển sang DELETED với flagged = true
+                productRepository.findById(report.getTargetId()).ifPresent(p -> {
+                    p.setStatus(ProductStatus.DELETED);
+                    p.setFlagged(true);
+                    p.setDeleted(true);
+                    productRepository.save(p);
+                });
+            }
+        }
 
         request.setStatus(RequestStatus.REJECTED);
         request.setResponse(response);
@@ -104,14 +240,61 @@ public class RequestServiceImpl implements RequestService {
 
         Object detail = switch (r.getType()) {
 
-            case REPORT -> {
+            case REPORT, APPEAL -> {
                 Report rep = reportRepository.findByRequestId(requestId);
-                if (rep == null) throw new CustomException("Report detail not found for request: " + requestId);
+                if (rep == null) {
+                    yield null;
+                }
+                String targetName = "Không xác định";
+                String targetInfo = "";
+                if (rep.getTargetType() != null && rep.getTargetId() != null) {
+                    switch (rep.getTargetType()) {
+                        case SHOP -> {
+                            var shopOpt = shopRepository.findById(rep.getTargetId());
+                            if (shopOpt.isPresent()) {
+                                var s = shopOpt.get();
+                                targetName = s.getName();
+                                targetInfo = "SĐT: " + (s.getPhoneNumber() != null ? s.getPhoneNumber() : "N/A")
+                                        + " | Địa chỉ: " + (s.getAddress() != null ? s.getAddress() : "N/A");
+                            }
+                        }
+                        case PRODUCT -> {
+                            var prodOpt = productRepository.findById(rep.getTargetId());
+                            if (prodOpt.isPresent()) {
+                                var p = prodOpt.get();
+                                targetName = p.getName();
+                                targetInfo = "SKU: " + (p.getSku() != null ? p.getSku() : "N/A")
+                                        + " | Gian hàng: " + (p.getShop() != null ? p.getShop().getName() : "N/A")
+                                        + " | Giá: " + (p.getBasePrice() != null ? p.getBasePrice() + " đ" : "");
+                            }
+                        }
+                        case USER -> {
+                            var accOpt = accountRepository.findById(rep.getTargetId());
+                            if (accOpt.isPresent()) {
+                                var a = accOpt.get();
+                                targetName = a.getEmail();
+                                targetInfo = "Số lần vi phạm: " + a.getViolationCount() + " lần"
+                                        + " | Trạng thái: " + a.getStatus();
+                            }
+                        }
+                        case REVIEW -> {
+                            var revOpt = reviewRepository.findById(rep.getTargetId());
+                            if (revOpt.isPresent()) {
+                                var rv = revOpt.get();
+                                targetName = "Đánh giá " + rv.getRating() + " sao";
+                                targetInfo = "Nội dung: " + (rv.getComment() != null ? rv.getComment() : "");
+                            }
+                        }
+                    }
+                }
 
-                yield ReportDetailsResponse.builder().targetId(rep.getTargetId())
+                yield ReportDetailsResponse.builder()
+                        .targetId(rep.getTargetId())
                         .targetType(rep.getTargetType() != null ? TargetType.valueOf(rep.getTargetType().name()) : null)
                         .evidenceUrl(rep.getEvidenceUrl())
                         .moderatorNote(rep.getModeratorNote())
+                        .targetName(targetName)
+                        .targetInfo(targetInfo)
                         .build();
             }
 
@@ -142,15 +325,28 @@ public class RequestServiceImpl implements RequestService {
     @Override
     @Transactional(readOnly = true)
     public Page<CreateRequestResponse> getAllRequests(RequestStatus status, Pageable pageable) {
+        return getAllRequests(null, status, pageable);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<CreateRequestResponse> getAllRequests(RequestType type, RequestStatus status, Pageable pageable) {
         Pageable newestFirstPageable = PageRequest.of(
                 pageable.getPageNumber(),
                 pageable.getPageSize(),
                 Sort.by(Sort.Direction.DESC, RequestConstant.CREATED_AT)
         );
 
-        Page<Request> requests = status == null
-                ? requestRepository.findAll(newestFirstPageable)
-                : requestRepository.findAllByStatus(status, newestFirstPageable);
+        Page<Request> requests;
+        if (type != null) {
+            requests = status == null
+                    ? requestRepository.findAllByType(type, newestFirstPageable)
+                    : requestRepository.findAllByTypeAndStatus(type, status, newestFirstPageable);
+        } else {
+            requests = status == null
+                    ? requestRepository.findAll(newestFirstPageable)
+                    : requestRepository.findAllByStatus(status, newestFirstPageable);
+        }
 
         return requests.map(r -> CreateRequestResponse.builder()
                 .requestId(r.getId())

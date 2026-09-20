@@ -332,15 +332,20 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         UUID shopId = null;
         String shopName = null;
         String sellerStatus = "NONE";
+        String shopStatus = "ACTIVE";
 
         Optional<User> userOpt = userRepository.findByAccountId(accountId);
         if (userOpt.isPresent()) {
             Optional<Shop> shopOpt = shopRepository.findByUserId(userOpt.get().getId());
             if (shopOpt.isPresent()) {
                 hasShop = true;
-                shopId = shopOpt.get().getId();
-                shopName = shopOpt.get().getName();
+                Shop s = shopOpt.get();
+                shopId = s.getId();
+                shopName = s.getName();
                 sellerStatus = "APPROVED";
+                if (s.getStatus() != null) {
+                    shopStatus = s.getStatus().name();
+                }
             }
         }
 
@@ -360,11 +365,22 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             }
         }
 
+        Account account = accountRepository.findById(accountId).orElse(null);
+        int violationCount = account != null ? account.getViolationCount() : 0;
+        String disciplineLevel = (account != null && account.getDisciplineLevel() != null)
+                ? account.getDisciplineLevel().name()
+                : "NONE";
+        LocalDateTime bannedUntil = account != null ? account.getBannedUntil() : null;
+
         builder.accountId(accountId)
                 .hasShop(hasShop)
                 .shopId(shopId)
                 .shopName(shopName)
-                .sellerStatus(sellerStatus);
+                .sellerStatus(sellerStatus)
+                .shopStatus(shopStatus)
+                .violationCount(violationCount)
+                .disciplineLevel(disciplineLevel)
+                .bannedUntil(bannedUntil);
     }
 
     @Override

@@ -330,4 +330,68 @@ public class EscrowServiceImpl implements EscrowService {
         order.setStatus(OrderStatus.COMPLETED);
         orderRepository.save(order);
     }
+
+    @Override
+    @Transactional
+    public void refundByOrder(UUID orderId, String reason) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new CustomException("Order not found: " + orderId));
+
+        Escrow escrow = escrowRepository.findByOrderIdForUpdate(orderId)
+                .orElseThrow(() -> new CustomException("Escrow not found for order: " + orderId));
+
+        if (escrow.getStatus() == EscrowStatus.REFUNDED) {
+            return;
+        }
+
+        if (escrow.getStatus() != EscrowStatus.HELD && escrow.getStatus() != EscrowStatus.DISPUTED) {
+            throw new CustomException("Escrow status không hợp lệ để hoàn tiền: " + escrow.getStatus());
+        }
+
+        Wallet escrowWallet = escrow.getEscrowWallet();
+        Wallet buyerWallet = escrow.getBuyerWallet();
+
+        if (escrowWallet == null)
+            throw new CustomException("Escrow wallet missing");
+        if (buyerWallet == null)
+            throw new CustomException("Buyer wallet missing");
+
+        BigDecimal amount = escrow.getAmount();
+        if (amount == null || amount.signum() <= 0) {
+            throw new CustomException("Escrow amount invalid");
+        }
+
+        if (escrowWallet.getLockedBalance().compareTo(amount) < 0) {
+            escrowWallet.setLockedBalance(amount);
+        }
+
+        escrowWallet.subLocked(amount);
+        buyerWallet.addAvailable(amount);
+
+        walletRepository.saveAll(List.of(escrowWallet, buyerWallet));
+
+        String refundDedupe = "ESCROW_REFUND:" + order.getId();
+        if (!transactionRepository.existsByDedupeKey(refundDedupe)) {
+            Transaction txRefund = Transaction.builder()
+                    .fromWallet(escrowWallet)
+                    .toWallet(buyerWallet)
+                    .amount(amount)
+                    .type(TransactionType.REFUND)
+                    .status(TransactionStatus.SUCCESS)
+                    .referenceType(ReferenceType.ESCROW)
+                    .referenceId(escrow.getId())
+                    .createdAt(LocalDateTime.now())
+                    .dedupeKey(refundDedupe)
+                    .note(reason != null ? reason : "Hoàn tiền ký quỹ về ví người mua cho đơn " + order.getOrderNumber())
+                    .build();
+            transactionRepository.save(txRefund);
+        }
+
+        escrow.setStatus(EscrowStatus.REFUNDED);
+        escrow.setUpdatedAt(LocalDateTime.now());
+        escrowRepository.save(escrow);
+
+        order.setStatus(OrderStatus.REFUNDED);
+        orderRepository.save(order);
+    }
 }

@@ -18,6 +18,7 @@ import ShopInventoryHistory from './pages/business/ShopInventoryHistory'
 import ShopSettings from './pages/ShopSettings'
 import LiveManagement from './pages/live/LiveManagement'
 import SellerLiveStudio from './pages/live/SellerLiveStudio'
+import ShopViolations from './pages/business/ShopViolations'
 
 export default function App() {
   return (
@@ -50,6 +51,7 @@ export default function App() {
         <Route path="/products" element={<ShopProducts />} />
         <Route path="/inventory-history" element={<ShopInventoryHistory />} />
         <Route path="/vouchers" element={<ShopVouchers />} />
+        <Route path="/violations" element={<ShopViolations />} />
         <Route path="/chat" element={<ShopLiveChat />} />
         <Route path="/settings" element={<ShopSettings />} />
       </Route>

@@ -97,6 +97,18 @@ const reviewService = {
         } catch (error) {
             throw error.response ? error.response.data : error;
         }
+    },
+
+    // Get all reviews written by current user
+    getMyAllReviews: async ({ page = 0, size = 10 } = {}) => {
+        try {
+            const response = await axiosClient.get(`${REVIEW_BASE}/my-reviews`, {
+                params: { page, size }
+            });
+            return response.data;
+        } catch (error) {
+            throw error.response ? error.response.data : error;
+        }
     }
 };
 

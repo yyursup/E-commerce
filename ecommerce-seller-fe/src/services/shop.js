@@ -202,6 +202,17 @@ const shopService = {
     }
     return FALLBACK_SHOPS
   },
+
+  // Lấy thông tin shop của tài khoản hiện tại kèm chỉ số sức khỏe & vi phạm
+  getMyShop: async () => {
+    try {
+      const response = await axiosClient.get(`${SHOP_BASE}/my-shop`)
+      return response.data
+    } catch (err) {
+      console.warn('API fetch my shop failed:', err)
+      throw err
+    }
+  },
 }
 
 export default shopService

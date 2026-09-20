@@ -60,6 +60,15 @@ const requestService = {
       throw error.response ? error.response.data : error;
     }
   },
+
+  createAppeal: async (payload) => {
+    try {
+      const response = await api.post(`${REQUEST_BASE}/appeal`, payload);
+      return response.data;
+    } catch (error) {
+      throw error.response ? error.response.data : error;
+    }
+  },
 };
 
 export default requestService;

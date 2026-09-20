@@ -133,6 +133,10 @@ public class QueryProductServiceImpl implements QueryProductService {
             list = productRepository.findAllByShopIdWithDetails(shop.getId()).stream()
                     .map(ProductResponse::from)
                     .toList();
+        } else if ("VIOLATION".equalsIgnoreCase(status) || "DELETED".equalsIgnoreCase(status)) {
+            list = productRepository.findAllViolatedProductsByShopId(shop.getId()).stream()
+                    .map(ProductResponse::from)
+                    .toList();
         } else {
             ProductStatus productStatus = parseStatus(status);
             list = productRepository.findAllByShopIdAndStatusWithDetails(shop.getId(), productStatus).stream()

@@ -9,6 +9,7 @@ import com.marketplace.ecommerce.request.dto.response.RequestDetailsResponse;
 import com.marketplace.ecommerce.request.service.RegisterSellerService;
 import com.marketplace.ecommerce.request.service.RequestService;
 import com.marketplace.ecommerce.request.valueObjects.RequestStatus;
+import com.marketplace.ecommerce.request.valueObjects.RequestType;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -36,6 +37,13 @@ public class RequestController {
         return registerSellerService.createSellerRegistration(u.getAccountId(), request);
     }
 
+    @PostMapping("/appeal")
+    public CreateRequestResponse createAppeal(
+            @CurrentUser CurrentUserInfo u,
+            @Valid @RequestBody com.marketplace.ecommerce.request.dto.request.CreateAppealRequest request) {
+        return requestService.createAppeal(u.getAccountId(), request);
+    }
+
 
     @PutMapping("reject")
     @PreAuthorize("hasRole('ADMIN')")
@@ -54,7 +62,7 @@ public class RequestController {
             @RequestParam UUID requestId,
             @RequestParam String response
     ) {
-        return requestService.approveSellerRegistration(requestId, u.getAccountId(), response);
+        return requestService.approveRequest(requestId, u.getAccountId(), response);
     }
 
     @GetMapping
@@ -68,9 +76,13 @@ public class RequestController {
     @GetMapping("/admin")
     @PreAuthorize("hasRole('ADMIN')")
     public Page<CreateRequestResponse> getAllRequests(
+            @RequestParam(value = "type", required = false) RequestType type,
             @RequestParam(value = "status", required = false) RequestStatus status,
             @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
+        if (type != null) {
+            return requestService.getAllRequests(type, status, pageable);
+        }
         return requestService.getAllRequests(status, pageable);
     }
 

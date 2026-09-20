@@ -72,6 +72,14 @@ public class ReviewController {
         return ResponseEntity.ok(reviewService.getMyReview(u.getAccountId(), productId, subOrderId));
     }
 
+    @GetMapping("/my-reviews")
+    public ResponseEntity<Page<ReviewResponse>> getMyReviews(
+            @CurrentUser CurrentUserInfo u,
+            @PageableDefault(size = 10, sort = "createdAt", direction = org.springframework.data.domain.Sort.Direction.DESC) Pageable pageable
+    ) {
+        return ResponseEntity.ok(reviewService.getMyReviews(u.getAccountId(), pageable));
+    }
+
     @GetMapping("/products/{productId}/reviews/stats")
     public ResponseEntity<ReviewStatsResponse> getStats(@PathVariable UUID productId) {
         return ResponseEntity.ok(reviewQueryService.getProductReviewStats(productId));

@@ -24,6 +24,8 @@ import com.marketplace.ecommerce.review.valueObjects.ReviewStatus;
 import com.marketplace.ecommerce.chat.repository.ChatThreadRepository;
 import com.marketplace.ecommerce.chat.entity.ChatThread;
 
+import com.marketplace.ecommerce.auth.repository.UserRepository;
+
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -37,6 +39,7 @@ public class ShopServiceImpl implements ShopService {
     private final ShopFollowerRepository shopFollowerRepository;
     private final ReviewRepository reviewRepository;
     private final ChatThreadRepository chatThreadRepository;
+    private final UserRepository userRepository;
 
     @Override
     public Shop createShop(User ownerUser, String shopName, Request req, Seller sellerDetail) {
@@ -117,6 +120,15 @@ public class ShopServiceImpl implements ShopService {
     public ShopProfileResponse getShopProfileById(UUID shopId) {
         Shop shop = shopRepository.findById(shopId)
                 .orElseThrow(() -> new CustomException("Không tìm thấy thông tin cửa hàng"));
+        return buildShopProfile(shop);
+    }
+
+    @Override
+    public ShopProfileResponse getMyShopProfile(UUID accountId) {
+        User user = userRepository.findByAccountId(accountId)
+                .orElseThrow(() -> new CustomException("Không tìm thấy thông tin người dùng"));
+        Shop shop = shopRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new CustomException("Tài khoản chưa có thông tin cửa hàng"));
         return buildShopProfile(shop);
     }
 

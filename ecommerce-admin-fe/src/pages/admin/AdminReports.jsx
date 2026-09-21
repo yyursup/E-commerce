@@ -23,6 +23,22 @@ import requestService from '../../services/request'
 import escrowService from '../../services/escrow'
 import toast from 'react-hot-toast'
 
+// Helper tách và gom tất cả link ảnh từ các nguồn (hỗ trợ nhiều ảnh phân cách bằng dấu phẩy)
+export const parseImages = (...sources) => {
+  const urls = []
+  sources.forEach((src) => {
+    if (typeof src === 'string' && src.trim()) {
+      src.split(',').forEach((url) => {
+        const trimmed = url.trim()
+        if (trimmed && !urls.includes(trimmed)) {
+          urls.push(trimmed)
+        }
+      })
+    }
+  })
+  return urls
+}
+
 export default function AdminReports() {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
   const [activeTab, setActiveTab] = useState('REPORTS') // 'REPORTS' | 'APPEALS' | 'ESCROW'
@@ -106,25 +122,33 @@ export default function AdminReports() {
     const { type, item, note } = actionModal
     if (!item) return
 
+    const trimmedNote = note?.trim() || ''
+
+    // Bắt buộc nhập lý do phán quyết đối với duyệt / từ chối report hoặc kháng cáo
+    if (!trimmedNote && ['REPORT_APPROVE', 'REPORT_REJECT', 'APPEAL_APPROVE', 'APPEAL_REJECT'].includes(type)) {
+      toast.error('Vui lòng nhập hoặc chọn lý do / phán quyết của Ban Quản Trị!')
+      return
+    }
+
     try {
       setSubmitting(true)
       const requestId = item.requestId || item.id
 
       if (type === 'REPORT_APPROVE') {
-        await reportService.handleReport(requestId, 'APPROVE', note || 'Xác nhận vi phạm chính sách sàn')
+        await reportService.handleReport(requestId, 'APPROVE', trimmedNote)
         toast.success('Đã xác nhận vi phạm! Hệ thống đã tự động áp dụng chế tài & tính chu kỳ hoàn lương 30 ngày.')
       } else if (type === 'REPORT_REJECT') {
-        await reportService.handleReport(requestId, 'REJECT', note || 'Bác bỏ báo cáo: Không đủ bằng chứng vi phạm')
+        await reportService.handleReport(requestId, 'REJECT', trimmedNote)
         toast.success('Đã bác bỏ báo cáo vi phạm.')
       } else if (type === 'APPEAL_APPROVE') {
-        await requestService.approveRequest(requestId, note || 'Chấp thuận kháng cáo: Khôi phục trạng thái hoạt động')
+        await requestService.approveRequest(requestId, trimmedNote)
         toast.success('Đã chấp thuận kháng cáo! Đã khôi phục trạng thái và điều chỉnh điểm vi phạm về an toàn.')
       } else if (type === 'APPEAL_REJECT') {
-        await requestService.rejectRequest(requestId, note || 'Từ chối kháng cáo: Bằng chứng giải trình không hợp lệ')
+        await requestService.rejectRequest(requestId, trimmedNote)
         toast.success('Đã từ chối kháng cáo.')
       } else if (type === 'ESCROW_REFUND') {
         const orderId = item.orderId || item.order?.id
-        await escrowService.refundByOrder(orderId, note || 'Admin phân xử hoàn tiền 100% cho người mua do Shop vi phạm')
+        await escrowService.refundByOrder(orderId, trimmedNote || 'Admin phân xử hoàn tiền 100% cho người mua do Shop vi phạm')
         toast.success('Đã kích hoạt hoàn tiền ký quỹ Escrow về Ví người mua thành công!')
       } else if (type === 'ESCROW_RELEASE') {
         const orderId = item.orderId || item.order?.id
@@ -320,12 +344,41 @@ export default function AdminReports() {
                       {item.description || 'Báo cáo vi phạm tiêu chuẩn cộng đồng'}
                     </p>
 
-                    {item.coverImageUrl && (
-                      <span className="inline-flex items-center gap-1 text-[11px] text-amber-500">
-                        <HiOutlineExternalLink className="h-3.5 w-3.5" />
-                        Có tệp bằng chứng đính kèm
-                      </span>
-                    )}
+                    {(() => {
+                      const covImgs = parseImages(item.coverImageUrl)
+                      const evImgs = parseImages(item.evidenceUrl)
+                      if (!covImgs.length && !evImgs.length) return null
+                      return (
+                        <div className="flex flex-wrap items-center gap-2 mt-1">
+                          {evImgs.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleOpenDetail(item)
+                              }}
+                              className="inline-flex items-center gap-1 text-[11px] text-red-500 hover:underline font-medium"
+                            >
+                              <HiOutlineExternalLink className="h-3.5 w-3.5" />
+                              Bằng chứng ({evImgs.length} ảnh)
+                            </button>
+                          )}
+                          {covImgs.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleOpenDetail(item)
+                              }}
+                              className="inline-flex items-center gap-1 text-[11px] text-blue-400 hover:underline font-medium"
+                            >
+                              <HiOutlineExternalLink className="h-3.5 w-3.5" />
+                              Minh họa shop ({covImgs.length} ảnh)
+                            </button>
+                          )}
+                        </div>
+                      )
+                    })()}
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0 flex-wrap">
@@ -419,12 +472,22 @@ export default function AdminReports() {
                       <strong>Giải trình:</strong> {item.description || 'Không có mô tả'}
                     </p>
 
-                    {item.coverImageUrl && (
-                      <span className="inline-flex items-center gap-1 text-[11px] text-amber-500">
-                        <HiOutlineExternalLink className="h-3.5 w-3.5" />
-                        Có chứng từ gỡ tội đính kèm
-                      </span>
-                    )}
+                    {item.coverImageUrl && (() => {
+                      const imgs = parseImages(item.coverImageUrl)
+                      if (!imgs.length) return null
+                      return (
+                        <a
+                          href={imgs[0]}
+                          target="_blank"
+                          rel="noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-flex items-center gap-1 text-[11px] text-amber-500 hover:underline mt-0.5"
+                        >
+                          <HiOutlineExternalLink className="h-3.5 w-3.5" />
+                          {imgs.length === 1 ? 'Xem bằng chứng đính kèm' : `Xem bằng chứng đính kèm (${imgs.length} ảnh)`}
+                        </a>
+                      )
+                    })()}
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0 flex-wrap">
@@ -671,54 +734,115 @@ export default function AdminReports() {
                       </div>
                     </div>
 
-                    {/* Phần 3: Bằng chứng / Ảnh / Chứng từ đính kèm */}
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-slate-400">
-                        Bằng chứng & Tài liệu xác minh:
-                      </label>
-                      {detailModal.data?.coverImageUrl ||
-                        detailModal.data?.detail?.evidenceUrl ||
-                        detailModal.rawItem?.coverImageUrl ? (
-                        <div className="space-y-2">
-                          <div className="overflow-hidden rounded-2xl border dark:border-slate-800 border-stone-200 max-h-64 bg-stone-900/10 flex items-center justify-center p-2">
-                            <img
-                              src={
-                                detailModal.data?.coverImageUrl ||
-                                detailModal.data?.detail?.evidenceUrl ||
-                                detailModal.rawItem?.coverImageUrl
-                              }
-                              alt="Bằng chứng vi phạm"
-                              className="max-h-60 object-contain rounded-xl"
-                              onError={(e) => {
-                                e.currentTarget.style.display = 'none'
-                              }}
-                            />
-                          </div>
-                          <a
-                            href={
-                              detailModal.data?.coverImageUrl ||
-                              detailModal.data?.detail?.evidenceUrl ||
-                              detailModal.rawItem?.coverImageUrl
-                            }
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-1.5 text-xs text-amber-500 hover:text-amber-600 font-semibold"
+                    {/* Phần 3: Bằng chứng / Ảnh / Chứng từ đính kèm (Phân tách rõ ràng) */}
+                    {(() => {
+                      const evImgs = parseImages(detailModal.data?.detail?.evidenceUrl)
+                      const covImgs = parseImages(
+                        detailModal.data?.coverImageUrl,
+                        detailModal.rawItem?.coverImageUrl
+                      )
+
+                      if (!evImgs.length && !covImgs.length) {
+                        return (
+                          <div
+                            className={cn(
+                              'p-4 rounded-2xl border text-center text-xs text-stone-400',
+                              isDark ? 'border-slate-800 bg-slate-800/30' : 'border-stone-100 bg-stone-50',
+                            )}
                           >
-                            <HiOutlineExternalLink className="h-4 w-4" />
-                            Mở tệp bằng chứng trong tab mới
-                          </a>
-                        </div>
-                      ) : (
-                        <div
-                          className={cn(
-                            'p-4 rounded-2xl border text-center text-xs text-stone-400',
-                            isDark ? 'border-slate-800 bg-slate-800/30' : 'border-stone-100 bg-stone-50',
+                            Không có tệp hình ảnh hoặc tài liệu bằng chứng đính kèm.
+                          </div>
+                        )
+                      }
+
+                      return (
+                        <div className="space-y-4">
+                          {/* Mục 1: Bằng chứng vi phạm từ người tố cáo */}
+                          {evImgs.length > 0 && (
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between">
+                                <label className="text-xs font-bold uppercase tracking-wider text-red-500 dark:text-red-400 flex items-center gap-1.5">
+                                  <span className="h-2 w-2 rounded-full bg-red-500 inline-block" />
+                                  Hình ảnh bằng chứng vi phạm ({evImgs.length} tệp):
+                                </label>
+                                <span className="text-[11px] text-stone-400">Do người tố cáo tải lên làm bằng chứng</span>
+                              </div>
+                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                                {evImgs.map((imgUrl, idx) => (
+                                  <div
+                                    key={idx}
+                                    className="relative group overflow-hidden rounded-2xl border border-red-500/25 bg-stone-900/10 h-36 flex items-center justify-center p-1.5"
+                                  >
+                                    <img
+                                      src={imgUrl}
+                                      alt={`Bằng chứng vi phạm ${idx + 1}`}
+                                      className="h-full w-full object-cover rounded-xl"
+                                      onError={(e) => {
+                                        e.currentTarget.style.display = 'none'
+                                      }}
+                                    />
+                                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1.5 p-2 text-center">
+                                      <span className="text-[11px] text-white font-medium">Bằng chứng #{idx + 1}</span>
+                                      <a
+                                        href={imgUrl}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow transition-transform active:scale-95"
+                                      >
+                                        <HiOutlineExternalLink className="h-4 w-4" />
+                                        Mở tab mới
+                                      </a>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
                           )}
-                        >
-                          Không có tệp hình ảnh hoặc liên kết bằng chứng đính kèm.
+
+                          {/* Mục 2: Hình ảnh minh họa của gian hàng / sản phẩm */}
+                          {covImgs.length > 0 && (
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between">
+                                <label className="text-xs font-bold uppercase tracking-wider text-blue-500 dark:text-blue-400 flex items-center gap-1.5">
+                                  <span className="h-2 w-2 rounded-full bg-blue-500 inline-block" />
+                                  Hình ảnh minh họa của gian hàng / sản phẩm ({covImgs.length} tệp):
+                                </label>
+                                <span className="text-[11px] text-stone-400">Hình ảnh gian hàng hoặc sản phẩm bị tố cáo</span>
+                              </div>
+                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                                {covImgs.map((imgUrl, idx) => (
+                                  <div
+                                    key={idx}
+                                    className="relative group overflow-hidden rounded-2xl border border-blue-500/25 bg-stone-900/10 h-36 flex items-center justify-center p-1.5"
+                                  >
+                                    <img
+                                      src={imgUrl}
+                                      alt={`Minh họa shop ${idx + 1}`}
+                                      className="h-full w-full object-cover rounded-xl"
+                                      onError={(e) => {
+                                        e.currentTarget.style.display = 'none'
+                                      }}
+                                    />
+                                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1.5 p-2 text-center">
+                                      <span className="text-[11px] text-white font-medium">Minh họa #{idx + 1}</span>
+                                      <a
+                                        href={imgUrl}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow transition-transform active:scale-95"
+                                      >
+                                        <HiOutlineExternalLink className="h-4 w-4" />
+                                        Mở tab mới
+                                      </a>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
+                      )
+                    })()}
 
                     {/* Phần 4: Lịch sử thẩm định (nếu đã xử lý) */}
                     {(detailModal.data?.status || detailModal.rawItem?.status) !== 'PENDING' && (
@@ -847,18 +971,146 @@ export default function AdminReports() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               className={cn(
-                'w-full max-w-md rounded-3xl border p-6 shadow-2xl relative',
+                'w-full max-w-lg rounded-3xl border p-6 shadow-2xl relative',
                 isDark ? 'border-slate-800 bg-slate-900 text-white' : 'border-stone-200 bg-white text-stone-900',
               )}
             >
-              <h2 className="text-lg font-bold mb-2">Xác Nhận Thao Tác Phán Quyết</h2>
-              <p className={cn('text-xs mb-4', isDark ? 'text-slate-400' : 'text-stone-500')}>
-                Ghi chú lý do thẩm định của Quản trị viên (lý do này sẽ được lưu trữ và phản hồi trực tiếp cho đương sự):
+              <h2 className="text-base font-bold mb-1">
+                {actionModal.type === 'REPORT_APPROVE' && 'Phán Quyết: Xác Nhận Vi Phạm & Áp Chế Tài'}
+                {actionModal.type === 'REPORT_REJECT' && 'Phán Quyết: Bác Bỏ Báo Cáo Vi Phạm'}
+                {actionModal.type === 'APPEAL_APPROVE' && 'Phán Quyết: Chấp Thuận Kháng Cáo (Gỡ Phạt)'}
+                {actionModal.type === 'APPEAL_REJECT' && 'Phán Quyết: Bác Bỏ Đơn Kháng Cáo'}
+                {actionModal.type === 'ESCROW_REFUND' && 'Phân Xử Ký Quỹ: Hoàn Tiền Cho Người Mua'}
+                {actionModal.type === 'ESCROW_RELEASE' && 'Phân Xử Ký Quỹ: Giải Ngân Cho Người Bán'}
+              </h2>
+              <p className={cn('text-xs mb-3', isDark ? 'text-slate-400' : 'text-stone-500')}>
+                Vui lòng nhập lý do / phán quyết chính thức từ Ban Quản Trị. Thông tin này sẽ được gửi trực tiếp tới gian hàng và lưu trữ trong hồ sơ vi phạm:
               </p>
+
+              {/* Quick tags gợi ý lý do vi phạm nhanh */}
+              {actionModal.type === 'REPORT_APPROVE' && (
+                <div className="mb-3">
+                  <span className="text-[11px] font-bold text-amber-500 block mb-1.5">Gợi ý lý do vi phạm nhanh:</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      'Gian hàng có dấu hiệu lừa đảo người mua',
+                      'Kinh doanh hàng giả, hàng nhái, vi phạm nhãn hiệu',
+                      'Mô tả sản phẩm sai sự thật, gian lận thông số',
+                      'Gian lận đơn hàng / Lập đơn ảo trục lợi sàn',
+                      'Hàng hóa thuộc danh mục cấm giao dịch',
+                      'Thái độ xúc phạm hoặc quấy rối khách hàng',
+                    ].map((tag) => (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => setActionModal((prev) => ({ ...prev, note: tag }))}
+                        className={cn(
+                          'text-[10px] font-medium px-2 py-1 rounded-lg border transition active:scale-95 text-left',
+                          actionModal.note === tag
+                            ? 'bg-rose-600 text-white border-rose-600 font-bold'
+                            : isDark
+                              ? 'border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-750'
+                              : 'border-stone-200 bg-stone-100 text-stone-700 hover:bg-stone-200',
+                        )}
+                      >
+                        + {tag}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {actionModal.type === 'REPORT_REJECT' && (
+                <div className="mb-3">
+                  <span className="text-[11px] font-bold text-stone-400 block mb-1.5">Gợi ý lý do bác đơn nhanh:</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      'Không đủ bằng chứng xác thực hành vi vi phạm',
+                      'Nội dung thuộc tranh chấp bảo hành / khiếu nại thông thường',
+                      'Hình ảnh đính kèm không liên quan đến sản phẩm/đơn hàng',
+                      'Báo cáo không có căn cứ thực tế',
+                    ].map((tag) => (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => setActionModal((prev) => ({ ...prev, note: tag }))}
+                        className={cn(
+                          'text-[10px] font-medium px-2 py-1 rounded-lg border transition active:scale-95 text-left',
+                          actionModal.note === tag
+                            ? 'bg-stone-600 text-white border-stone-600 font-bold'
+                            : isDark
+                              ? 'border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-750'
+                              : 'border-stone-200 bg-stone-100 text-stone-700 hover:bg-stone-200',
+                        )}
+                      >
+                        + {tag}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {actionModal.type === 'APPEAL_APPROVE' && (
+                <div className="mb-3">
+                  <span className="text-[11px] font-bold text-emerald-500 block mb-1.5">Gợi ý lý do chấp thuận nhanh:</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      'Chấp thuận: Giấy tờ chứng từ hóa đơn hợp lệ và rõ ràng',
+                      'Chấp thuận: Xác nhận nhầm lẫn trong quá trình kiểm duyệt',
+                      'Chấp thuận: Gian hàng đã giải quyết thỏa đáng khiếu nại của khách',
+                    ].map((tag) => (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => setActionModal((prev) => ({ ...prev, note: tag }))}
+                        className={cn(
+                          'text-[10px] font-medium px-2 py-1 rounded-lg border transition active:scale-95 text-left',
+                          actionModal.note === tag
+                            ? 'bg-emerald-600 text-white border-emerald-600 font-bold'
+                            : isDark
+                              ? 'border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-750'
+                              : 'border-stone-200 bg-stone-100 text-stone-700 hover:bg-stone-200',
+                        )}
+                      >
+                        + {tag}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {actionModal.type === 'APPEAL_REJECT' && (
+                <div className="mb-3">
+                  <span className="text-[11px] font-bold text-rose-400 block mb-1.5">Gợi ý lý do từ chối nhanh:</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      'Từ chối: Hóa đơn chứng từ không có giá trị pháp lý / mờ không rõ',
+                      'Từ chối: Bằng chứng giải trình không làm rõ được vi phạm',
+                      'Từ chối: Không cung cấp được ủy quyền phân phối chính hãng',
+                    ].map((tag) => (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => setActionModal((prev) => ({ ...prev, note: tag }))}
+                        className={cn(
+                          'text-[10px] font-medium px-2 py-1 rounded-lg border transition active:scale-95 text-left',
+                          actionModal.note === tag
+                            ? 'bg-rose-600 text-white border-rose-600 font-bold'
+                            : isDark
+                              ? 'border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-750'
+                              : 'border-stone-200 bg-stone-100 text-stone-700 hover:bg-stone-200',
+                        )}
+                      >
+                        + {tag}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <textarea
                 rows={3}
-                placeholder="Nhập lý do phán quyết..."
+                placeholder="Nhập chi tiết phán quyết của Ban Quản Trị (bắt buộc)..."
                 value={actionModal.note}
                 onChange={(e) => setActionModal({ ...actionModal, note: e.target.value })}
                 className={cn(

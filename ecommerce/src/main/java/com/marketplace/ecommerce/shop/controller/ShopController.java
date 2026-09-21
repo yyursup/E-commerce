@@ -3,6 +3,7 @@ package com.marketplace.ecommerce.shop.controller;
 import com.marketplace.ecommerce.config.CurrentUser;
 import com.marketplace.ecommerce.common.CurrentUserInfo;
 import com.marketplace.ecommerce.shop.dto.response.ShopProfileResponse;
+import com.marketplace.ecommerce.shop.dto.response.ShopViolationResponse;
 import com.marketplace.ecommerce.shop.service.ShopService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +27,14 @@ public class ShopController {
             return ResponseEntity.status(401).build();
         }
         return ResponseEntity.ok(shopService.getMyShopProfile(currentUser.getAccountId()));
+    }
+
+    @GetMapping("/my-violations")
+    public ResponseEntity<List<ShopViolationResponse>> getMyShopViolations(@CurrentUser CurrentUserInfo currentUser) {
+        if (currentUser == null || currentUser.getAccountId() == null) {
+            return ResponseEntity.status(401).build();
+        }
+        return ResponseEntity.ok(shopService.getMyShopViolations(currentUser.getAccountId()));
     }
 
     @GetMapping("/{shopId}")

@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
-import { HiOutlineArrowLeft, HiOutlineFlag } from 'react-icons/hi'
+import { HiOutlineArrowLeft, HiOutlineFlag, HiOutlineUpload, HiOutlineTrash, HiOutlineExternalLink } from 'react-icons/hi'
 import { useThemeStore } from '../store/useThemeStore'
 import { cn } from '../lib/cn'
 import reportService from '../services/report'
+import fileService from '../services/fileService'
 import {
   formatReportDescription,
   getReportTargetMeta,
@@ -28,9 +29,73 @@ export default function ReportCreate() {
 
   const [description, setDescription] = useState('')
   const [selectedReason, setSelectedReason] = useState(reportMeta.reasons[0]?.value || 'OTHER')
-  const [evidenceUrl, setEvidenceUrl] = useState('')
-  const [coverImageUrl, setCoverImageUrl] = useState('')
+  const [evidenceUrls, setEvidenceUrls] = useState([])
+  const [coverImageUrls, setCoverImageUrls] = useState([])
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [uploadingEvidence, setUploadingEvidence] = useState(false)
+  const [uploadingCover, setUploadingCover] = useState(false)
+
+  const evidenceFileRef = useRef(null)
+  const coverFileRef = useRef(null)
+
+  const handleUploadFiles = async (e, type) => {
+    const files = Array.from(e.target.files || [])
+    if (!files.length) return
+
+    const validFiles = []
+    for (const file of files) {
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error(`Ảnh "${file.name}" vượt quá dung lượng tối đa 10MB!`)
+      } else {
+        validFiles.push(file)
+      }
+    }
+
+    if (!validFiles.length) {
+      if (type === 'evidence' && evidenceFileRef.current) evidenceFileRef.current.value = ''
+      if (type === 'cover' && coverFileRef.current) coverFileRef.current.value = ''
+      return
+    }
+
+    try {
+      if (type === 'evidence') {
+        setUploadingEvidence(true)
+      } else {
+        setUploadingCover(true)
+      }
+
+      const uploaded = []
+      for (const file of validFiles) {
+        const res = await fileService.uploadFile(file, 'reports')
+        const uploadedUrl = res?.url || res?.data?.url
+        if (uploadedUrl) {
+          uploaded.push(uploadedUrl)
+        }
+      }
+
+      if (uploaded.length > 0) {
+        if (type === 'evidence') {
+          setEvidenceUrls((prev) => [...prev, ...uploaded])
+        } else {
+          setCoverImageUrls((prev) => [...prev, ...uploaded])
+        }
+        toast.success(`Đã tải lên ${uploaded.length} ảnh thành công!`)
+      } else {
+        toast.error('Không nhận được đường dẫn ảnh từ máy chủ.')
+      }
+    } catch (err) {
+      console.error('Upload error:', err)
+      toast.error(err?.message || 'Lỗi khi tải ảnh lên.')
+    } finally {
+      if (type === 'evidence') {
+        setUploadingEvidence(false)
+        if (evidenceFileRef.current) evidenceFileRef.current.value = ''
+      } else {
+        setUploadingCover(false)
+        if (coverFileRef.current) coverFileRef.current.value = ''
+      }
+    }
+  }
 
   useEffect(() => {
     if (!targetId) {
@@ -86,8 +151,8 @@ export default function ReportCreate() {
           reason: selectedReason,
           description: trimmedDescription,
         }),
-        evidenceUrl: evidenceUrl.trim() || null,
-        coverImageUrl: coverImageUrl.trim() || null,
+        evidenceUrl: evidenceUrls.length > 0 ? evidenceUrls.join(',') : null,
+        coverImageUrl: coverImageUrls.length > 0 ? coverImageUrls.join(',') : null,
       }
 
       await reportService.createReport(payload)
@@ -276,49 +341,163 @@ export default function ReportCreate() {
               </p>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-6 sm:grid-cols-2">
+              {/* Ảnh Bằng Chứng */}
               <div className="space-y-2">
-                <label
-                  htmlFor="evidenceUrl"
-                  className={cn('block text-sm font-medium', isDark ? 'text-slate-200' : 'text-stone-800')}
-                >
-                  Link bằng chứng
-                </label>
+                <div className="flex items-center justify-between">
+                  <label
+                    className={cn('block text-sm font-medium', isDark ? 'text-slate-200' : 'text-stone-800')}
+                  >
+                    Hình ảnh bằng chứng ({evidenceUrls.length})
+                  </label>
+                  <span className="text-[11px] text-stone-400">Tối đa 10MB / ảnh</span>
+                </div>
                 <input
-                  id="evidenceUrl"
-                  type="url"
-                  value={evidenceUrl}
-                  onChange={(e) => setEvidenceUrl(e.target.value)}
-                  placeholder="https://..."
-                  className={cn(
-                    'w-full rounded-2xl border px-4 py-3 text-sm outline-none transition',
-                    isDark
-                      ? 'border-slate-700 bg-slate-950/60 text-slate-100 placeholder:text-slate-500 focus:border-red-500/60'
-                      : 'border-stone-300 bg-white text-stone-900 placeholder:text-stone-400 focus:border-red-400',
-                  )}
+                  type="file"
+                  ref={evidenceFileRef}
+                  accept="image/*"
+                  multiple
+                  onChange={(e) => handleUploadFiles(e, 'evidence')}
+                  className="hidden"
                 />
+
+                {evidenceUrls.length > 0 && (
+                  <div className="grid grid-cols-2 gap-2 mb-2">
+                    {evidenceUrls.map((url, idx) => (
+                      <div key={idx} className="relative rounded-xl border border-stone-200 dark:border-slate-800 overflow-hidden group h-28 bg-stone-900/10">
+                        <img
+                          src={url}
+                          alt={`Bằng chứng ${idx + 1}`}
+                          className="w-full h-full object-cover rounded-xl"
+                        />
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                          <a
+                            href={url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="p-1.5 rounded-lg bg-white text-stone-900 hover:bg-stone-100 text-xs font-bold shadow"
+                            title="Xem ảnh gốc"
+                          >
+                            <HiOutlineExternalLink className="h-4 w-4" />
+                          </a>
+                          <button
+                            type="button"
+                            onClick={() => setEvidenceUrls((prev) => prev.filter((_, i) => i !== idx))}
+                            className="p-1.5 rounded-lg bg-red-600 text-white hover:bg-red-700 text-xs font-bold shadow"
+                            title="Xóa ảnh"
+                          >
+                            <HiOutlineTrash className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div
+                  onClick={() => evidenceFileRef.current?.click()}
+                  className={cn(
+                    'w-full border-2 border-dashed rounded-2xl p-4 text-center cursor-pointer transition',
+                    uploadingEvidence ? 'opacity-50 pointer-events-none' : '',
+                    isDark
+                      ? 'border-slate-700 hover:border-red-500 bg-slate-950/60'
+                      : 'border-stone-300 hover:border-red-500 bg-white'
+                  )}
+                >
+                  {uploadingEvidence ? (
+                    <div className="flex flex-col items-center justify-center gap-1 py-1">
+                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-red-500 border-r-transparent" />
+                      <span className="text-xs font-medium text-red-500">Đang tải ảnh lên...</span>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center gap-1 py-1">
+                      <HiOutlineUpload className="h-5 w-5 text-red-500" />
+                      <span className="text-xs font-semibold">
+                        {evidenceUrls.length > 0 ? '+ Thêm ảnh bằng chứng' : 'Tải ảnh bằng chứng lên'}
+                      </span>
+                      <span className="text-[11px] text-stone-400">Chọn 1 hoặc nhiều ảnh (JPG, PNG, WEBP)</span>
+                    </div>
+                  )}
+                </div>
               </div>
 
+              {/* Ảnh Minh Họa */}
               <div className="space-y-2">
-                <label
-                  htmlFor="coverImageUrl"
-                  className={cn('block text-sm font-medium', isDark ? 'text-slate-200' : 'text-stone-800')}
-                >
-                  Link ảnh minh họa
-                </label>
+                <div className="flex items-center justify-between">
+                  <label
+                    className={cn('block text-sm font-medium', isDark ? 'text-slate-200' : 'text-stone-800')}
+                  >
+                    Hình ảnh minh họa ({coverImageUrls.length})
+                  </label>
+                  <span className="text-[11px] text-stone-400">Tối đa 10MB / ảnh</span>
+                </div>
                 <input
-                  id="coverImageUrl"
-                  type="url"
-                  value={coverImageUrl}
-                  onChange={(e) => setCoverImageUrl(e.target.value)}
-                  placeholder="https://..."
-                  className={cn(
-                    'w-full rounded-2xl border px-4 py-3 text-sm outline-none transition',
-                    isDark
-                      ? 'border-slate-700 bg-slate-950/60 text-slate-100 placeholder:text-slate-500 focus:border-red-500/60'
-                      : 'border-stone-300 bg-white text-stone-900 placeholder:text-stone-400 focus:border-red-400',
-                  )}
+                  type="file"
+                  ref={coverFileRef}
+                  accept="image/*"
+                  multiple
+                  onChange={(e) => handleUploadFiles(e, 'cover')}
+                  className="hidden"
                 />
+
+                {coverImageUrls.length > 0 && (
+                  <div className="grid grid-cols-2 gap-2 mb-2">
+                    {coverImageUrls.map((url, idx) => (
+                      <div key={idx} className="relative rounded-xl border border-stone-200 dark:border-slate-800 overflow-hidden group h-28 bg-stone-900/10">
+                        <img
+                          src={url}
+                          alt={`Minh họa ${idx + 1}`}
+                          className="w-full h-full object-cover rounded-xl"
+                        />
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                          <a
+                            href={url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="p-1.5 rounded-lg bg-white text-stone-900 hover:bg-stone-100 text-xs font-bold shadow"
+                            title="Xem ảnh gốc"
+                          >
+                            <HiOutlineExternalLink className="h-4 w-4" />
+                          </a>
+                          <button
+                            type="button"
+                            onClick={() => setCoverImageUrls((prev) => prev.filter((_, i) => i !== idx))}
+                            className="p-1.5 rounded-lg bg-red-600 text-white hover:bg-red-700 text-xs font-bold shadow"
+                            title="Xóa ảnh"
+                          >
+                            <HiOutlineTrash className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div
+                  onClick={() => coverFileRef.current?.click()}
+                  className={cn(
+                    'w-full border-2 border-dashed rounded-2xl p-4 text-center cursor-pointer transition',
+                    uploadingCover ? 'opacity-50 pointer-events-none' : '',
+                    isDark
+                      ? 'border-slate-700 hover:border-red-500 bg-slate-950/60'
+                      : 'border-stone-300 hover:border-red-500 bg-white'
+                  )}
+                >
+                  {uploadingCover ? (
+                    <div className="flex flex-col items-center justify-center gap-1 py-1">
+                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-red-500 border-r-transparent" />
+                      <span className="text-xs font-medium text-red-500">Đang tải ảnh lên...</span>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center gap-1 py-1">
+                      <HiOutlineUpload className="h-5 w-5 text-red-500" />
+                      <span className="text-xs font-semibold">
+                        {coverImageUrls.length > 0 ? '+ Thêm ảnh minh họa' : 'Tải ảnh minh họa lên'}
+                      </span>
+                      <span className="text-[11px] text-stone-400">Chọn 1 hoặc nhiều ảnh (JPG, PNG, WEBP)</span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -342,11 +521,11 @@ export default function ReportCreate() {
                 </button>
                 <button
                   type="submit"
-                  disabled={isSubmitting || !targetId}
+                  disabled={isSubmitting || !targetId || uploadingEvidence || uploadingCover}
                   className={cn(
                     'rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition',
                     'bg-red-600 hover:bg-red-700',
-                    (isSubmitting || !targetId) && 'cursor-not-allowed opacity-60',
+                    (isSubmitting || !targetId || uploadingEvidence || uploadingCover) && 'cursor-not-allowed opacity-60',
                   )}
                 >
                   {isSubmitting ? 'Đang gửi...' : 'Gửi báo cáo'}

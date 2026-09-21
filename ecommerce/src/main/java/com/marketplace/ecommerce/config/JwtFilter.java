@@ -49,6 +49,9 @@ public class JwtFilter extends OncePerRequestFilter {
             "/api/v1/auth/forgot-password/send-otp",
             "/api/v1/auth/forgot-password/reset",
             "/api/v1/auth/oauth2/**",
+
+            
+
             "/api/v1/chat/**",
             "/api/v1/ws/chat",
             "/api/v1/ws/chat/**",
@@ -119,8 +122,8 @@ public class JwtFilter extends OncePerRequestFilter {
 
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(
-                            info, // <= inject vào @CurrentUser
-                            null, // NEVER put token here
+                            info,
+                            null,
                             account.getAuthorities()
                     );
 
@@ -148,5 +151,4 @@ public class JwtFilter extends OncePerRequestFilter {
             }
         }
     }
-
 }

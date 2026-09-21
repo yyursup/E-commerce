@@ -60,7 +60,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
                 left join fetch p.images i
                 where p.id = :id
                   and p.status = 'PUBLISHED'
-                  and s.status = 'ACTIVE'
+                  and s.status in ('ACTIVE', 'WARNED')
                   and s.user.account.isActive = true
                   and p.deleted = false
             """)
@@ -73,7 +73,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
                 join fetch p.productCategory c
                 where p.id <> :excludeId
                   and p.status = 'PUBLISHED'
-                  and p.shop.status = 'ACTIVE'
+                  and p.shop.status in ('ACTIVE', 'WARNED')
                   and p.shop.user.account.isActive = true
                   and p.deleted = false
                   and (:categoryId is null or p.productCategory.id = :categoryId)
@@ -87,7 +87,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
                 select p
                 from Product p
                 where p.status = 'PUBLISHED'
-                  and p.shop.status = 'ACTIVE'
+                  and p.shop.status in ('ACTIVE', 'WARNED')
                   and p.shop.user.account.isActive = true
                   and p.deleted = false
                   and (:categoryId is null or p.productCategory.id = :categoryId)

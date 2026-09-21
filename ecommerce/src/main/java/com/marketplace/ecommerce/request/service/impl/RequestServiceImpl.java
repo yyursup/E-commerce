@@ -42,12 +42,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class RequestServiceImpl implements RequestService {
-
 
     private final RequestRepository requestRepository;
     private final ReportRepository reportRepository;
@@ -63,9 +63,11 @@ public class RequestServiceImpl implements RequestService {
     @Transactional
     public RequestResponse approveSellerRegistration(UUID requestId, UUID adminAccountId, String response) {
 
-        Account acc = accountRepository.findById(adminAccountId).orElseThrow(() -> new CustomException("Account not found"));
+        Account acc = accountRepository.findById(adminAccountId)
+                .orElseThrow(() -> new CustomException("Account not found"));
 
-        Request req = requestRepository.findById(requestId).orElseThrow(() -> new CustomException("Request not found: " + requestId));
+        Request req = requestRepository.findById(requestId)
+                .orElseThrow(() -> new CustomException("Request not found: " + requestId));
 
         ApproveSellerContext ctx = requestValidation.validateApproveSellerRequest(req, requestId);
 
@@ -109,21 +111,26 @@ public class RequestServiceImpl implements RequestService {
                     case SHOP -> {
                         Shop shop = shopRepository.findById(targetId)
                                 .orElseThrow(() -> new CustomException("Shop not found: " + targetId));
-                        shop.setStatus(ShopStatus.ACTIVE);
-                        shopRepository.save(shop);
-                        // Khôi phục các sản phẩm INACTIVE về PUBLISHED
-                        productRepository.updateStatusByShopId(shop.getId(), ProductStatus.PUBLISHED);
 
-                        // Giảm điểm vi phạm của chủ shop về mức an toàn (< 3 để không dính WARNED)
                         if (shop.getUser() != null && shop.getUser().getAccount() != null) {
                             Account owner = shop.getUser().getAccount();
-                            int safeCount = Math.min(2, Math.max(0, owner.getViolationCount() - 3));
-                            owner.setViolationCount(safeCount);
-                            owner.setDisciplineLevel(DisciplineLevel.NONE);
-                            owner.setStatus(AccountStatus.ACTIVE);
-                            owner.setIsActive(true);
-                            owner.setBannedUntil(null);
+                            // Mỗi lần duyệt kháng cáo thành công chỉ giảm trừ đúng 1 lần vi phạm tương ứng
+                            int newViolationCount = Math.max(0, owner.getViolationCount() - 1);
+                            owner.setViolationCount(newViolationCount);
+
+                            // Cập nhật lại trạng thái tương ứng với số điểm vi phạm mới
+                            if (newViolationCount < 5) {
+                                // Đã giảm xuống dưới ngưỡng 5 -> Thoát đình chỉ SUSPENDED, khôi phục sản phẩm
+                                shop.setStatus(newViolationCount >= 3 ? ShopStatus.WARNED : ShopStatus.ACTIVE);
+                                productRepository.updateStatusByShopId(shop.getId(), ProductStatus.PUBLISHED);
+                                owner.setStatus(AccountStatus.ACTIVE);
+                                owner.setIsActive(true);
+                                owner.setBannedUntil(null);
+                                owner.setDisciplineLevel(
+                                        newViolationCount >= 3 ? DisciplineLevel.WARNED : DisciplineLevel.NONE);
+                            }
                             accountRepository.save(owner);
+                            shopRepository.save(shop);
                         }
                     }
                     case PRODUCT -> {
@@ -177,6 +184,37 @@ public class RequestServiceImpl implements RequestService {
         Account acc = accountRepository.findById(accountId)
                 .orElseThrow(() -> new CustomException("Account not found: " + accountId));
 
+        // Kiểm tra lịch sử kháng cáo của vi phạm này để tuân thủ quy tắc kháng cáo chuẩn
+        if (req.getReportId() != null) {
+            List<Report> existingAppeals = reportRepository.findAppealsByViolationReportId(req.getReportId());
+            for (Report appeal : existingAppeals) {
+                if (appeal.getRequest() != null) {
+                    RequestStatus st = appeal.getRequest().getStatus();
+                    if (st == RequestStatus.PENDING) {
+                        throw new CustomException("Bạn đã có đơn kháng cáo đang chờ quản trị viên xử lý cho vi phạm này.");
+                    } else if (st == RequestStatus.REJECTED) {
+                        throw new CustomException("Đơn kháng cáo cho vi phạm này đã bị từ chối. Quyết định của Quản trị viên là quyết định cuối cùng.");
+                    } else if (st == RequestStatus.APPROVED) {
+                        throw new CustomException("Đơn kháng cáo cho vi phạm này đã được chấp thuận trước đó.");
+                    }
+                }
+            }
+        } else {
+            List<Report> existingAppeals = reportRepository.findAppealsByAccountIdAndTargetId(accountId, req.getTargetId());
+            for (Report appeal : existingAppeals) {
+                if (appeal.getRequest() != null) {
+                    RequestStatus st = appeal.getRequest().getStatus();
+                    if (st == RequestStatus.PENDING) {
+                        throw new CustomException("Bạn đã có đơn kháng cáo đang chờ quản trị viên xử lý cho mục này.");
+                    } else if (st == RequestStatus.REJECTED) {
+                        throw new CustomException("Đơn kháng cáo cho vi phạm này đã bị từ chối. Quyết định của Quản trị viên là quyết định cuối cùng.");
+                    } else if (st == RequestStatus.APPROVED) {
+                        throw new CustomException("Đơn kháng cáo cho vi phạm này đã được chấp thuận trước đó.");
+                    }
+                }
+            }
+        }
+
         Request r = Request.builder()
                 .account(acc)
                 .type(RequestType.APPEAL)
@@ -193,6 +231,7 @@ public class RequestServiceImpl implements RequestService {
                 .request(r)
                 .targetType(req.getTargetType())
                 .targetId(req.getTargetId())
+                .violationReportId(req.getReportId())
                 .evidenceUrl(req.getEvidenceUrl())
                 .moderatorNote(null)
                 .build();
@@ -204,14 +243,17 @@ public class RequestServiceImpl implements RequestService {
     @Override
     @Transactional
     public RequestResponse rejectRequest(UUID adminAccountId, UUID requestId, String response) {
-        Account acc = accountRepository.findById(adminAccountId).orElseThrow(() -> new CustomException("Account not found"));
+        Account acc = accountRepository.findById(adminAccountId)
+                .orElseThrow(() -> new CustomException("Account not found"));
 
-        Request request = requestRepository.findById(requestId).orElseThrow(() -> new CustomException("Request not found"));
+        Request request = requestRepository.findById(requestId)
+                .orElseThrow(() -> new CustomException("Request not found"));
 
         if (request.getType() == RequestType.APPEAL) {
             Report report = reportRepository.findByRequestId(requestId);
             if (report != null && report.getTargetType() == TargetType.PRODUCT && report.getTargetId() != null) {
-                // Nếu bác đơn kháng cáo sản phẩm vi phạm -> Chuyển sang DELETED với flagged = true
+                // Nếu bác đơn kháng cáo sản phẩm vi phạm -> Chuyển sang DELETED với flagged =
+                // true
                 productRepository.findById(report.getTargetId()).ifPresent(p -> {
                     p.setStatus(ProductStatus.DELETED);
                     p.setFlagged(true);
@@ -231,12 +273,12 @@ public class RequestServiceImpl implements RequestService {
         return RequestResponse.from(request);
     }
 
-
     @Override
     @Transactional(readOnly = true)
     public RequestDetailsResponse getDetails(UUID requestId) {
 
-        Request r = requestRepository.findById(requestId).orElseThrow(() -> new CustomException("Request not found: " + requestId));
+        Request r = requestRepository.findById(requestId)
+                .orElseThrow(() -> new CustomException("Request not found: " + requestId));
 
         Object detail = switch (r.getType()) {
 
@@ -300,7 +342,8 @@ public class RequestServiceImpl implements RequestService {
 
             case SELLER_REGISTRATION -> {
                 Seller s = sellerRepository.findByRequestId(requestId);
-                if (s == null) throw new CustomException("Seller detail not found for request: " + requestId);
+                if (s == null)
+                    throw new CustomException("Seller detail not found for request: " + requestId);
 
                 yield RegisterSellerResponse.from(s);
             }
@@ -313,13 +356,7 @@ public class RequestServiceImpl implements RequestService {
 
     @Override
     public Page<CreateRequestResponse> getRequests(UUID accountId, Pageable pageable) {
-        return requestRepository.findAllRequestByAccountId(accountId, pageable).map(r -> CreateRequestResponse.builder()
-                .requestId(r.getId())
-                .accountId(accountId)
-                .type(r.getType())
-                .status(r.getStatus())
-                .createdAt(r.getCreatedAt())
-                .build());
+        return requestRepository.findAllRequestByAccountId(accountId, pageable).map(CreateRequestResponse::from);
     }
 
     @Override
@@ -334,8 +371,7 @@ public class RequestServiceImpl implements RequestService {
         Pageable newestFirstPageable = PageRequest.of(
                 pageable.getPageNumber(),
                 pageable.getPageSize(),
-                Sort.by(Sort.Direction.DESC, RequestConstant.CREATED_AT)
-        );
+                Sort.by(Sort.Direction.DESC, RequestConstant.CREATED_AT));
 
         Page<Request> requests;
         if (type != null) {
@@ -348,19 +384,15 @@ public class RequestServiceImpl implements RequestService {
                     : requestRepository.findAllByStatus(status, newestFirstPageable);
         }
 
-        return requests.map(r -> CreateRequestResponse.builder()
-                .requestId(r.getId())
-                .accountId(r.getAccount() != null ? r.getAccount().getId() : null)
-                .type(r.getType())
-                .status(r.getStatus())
-                .createdAt(r.getCreatedAt())
-                .build());
+        return requests.map(CreateRequestResponse::from);
     }
 
     @Override
     public Request createRequest(Account account, CreateSendRequest request) {
 
-        Request re = Request.builder().account(account).type(request.getRequestType()).status(RequestStatus.PENDING).description(request.getDescription()).coverImageUrl(request.getCoverImage()).createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build();
+        Request re = Request.builder().account(account).type(request.getRequestType()).status(RequestStatus.PENDING)
+                .description(request.getDescription()).coverImageUrl(request.getCoverImage())
+                .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build();
 
         return requestRepository.save(re);
     }

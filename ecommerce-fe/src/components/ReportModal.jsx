@@ -1,18 +1,21 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { HiOutlineExclamationCircle, HiX, HiCheck } from 'react-icons/hi';
+import { HiOutlineExclamationCircle, HiX, HiCheck, HiOutlineUpload, HiOutlineTrash, HiOutlineExternalLink } from 'react-icons/hi';
 import { cn } from '../lib/cn';
 import { useThemeStore } from '../store/useThemeStore';
 import reportService from '../services/report';
+import fileService from '../services/fileService';
 import toast from 'react-hot-toast';
 
 export default function ReportModal({ isOpen, onClose, targetId, targetName }) {
     const isDark = useThemeStore((s) => s.theme) === 'dark';
     const [loading, setLoading] = useState(false);
+    const [uploadingImage, setUploadingImage] = useState(false);
+    const fileInputRef = useRef(null);
     const [formData, setFormData] = useState({
         description: '',
         reason: 'SPAM', // Default reason
-        evidenceUrl: '', // Could be multiple, but we'll start with one
+        evidenceUrls: [],
     });
 
     const reasons = [
@@ -22,6 +25,55 @@ export default function ReportModal({ isOpen, onClose, targetId, targetName }) {
         { value: 'BAD_QUALITY', label: 'Chất lượng quá kém' },
         { value: 'OTHER', label: 'Khác' },
     ];
+
+    const handleImageUpload = async (e) => {
+        const files = Array.from(e.target.files || []);
+        if (!files.length) return;
+
+        const validFiles = [];
+        for (const file of files) {
+            if (file.size > 10 * 1024 * 1024) {
+                toast.error(`Ảnh "${file.name}" vượt quá dung lượng tối đa 10MB!`);
+            } else {
+                validFiles.push(file);
+            }
+        }
+
+        if (!validFiles.length) {
+            if (fileInputRef.current) fileInputRef.current.value = '';
+            return;
+        }
+
+        try {
+            setUploadingImage(true);
+            const uploaded = [];
+            for (const file of validFiles) {
+                const res = await fileService.uploadFile(file, 'reports');
+                const uploadedUrl = res?.url || res?.data?.url;
+                if (uploadedUrl) {
+                    uploaded.push(uploadedUrl);
+                }
+            }
+
+            if (uploaded.length > 0) {
+                setFormData((prev) => ({
+                    ...prev,
+                    evidenceUrls: [...prev.evidenceUrls, ...uploaded],
+                }));
+                toast.success(`Đã tải lên ${uploaded.length} ảnh thành công!`);
+            } else {
+                toast.error('Không nhận được đường dẫn ảnh từ máy chủ.');
+            }
+        } catch (err) {
+            console.error('Upload image error:', err);
+            toast.error(err?.message || 'Lỗi khi tải ảnh lên.');
+        } finally {
+            setUploadingImage(false);
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+        }
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -35,7 +87,7 @@ export default function ReportModal({ isOpen, onClose, targetId, targetName }) {
             await reportService.createReport({
                 targetId,
                 description: `[${formData.reason}] ${formData.description}`,
-                evidenceUrl: formData.evidenceUrl || null,
+                evidenceUrl: formData.evidenceUrls.length > 0 ? formData.evidenceUrls.join(',') : null,
             });
             toast.success('Báo cáo của bạn đã được gửi. Chúng tôi sẽ xem xét sớm nhất.');
             onClose();
@@ -133,17 +185,80 @@ export default function ReportModal({ isOpen, onClose, targetId, targetName }) {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-sm font-medium">Link bằng chứng (nếu có)</label>
+                                <div className="flex items-center justify-between">
+                                    <label className="text-sm font-medium">Hình ảnh bằng chứng ({formData.evidenceUrls.length})</label>
+                                    <span className="text-[11px] text-stone-400">Tối đa 10MB / ảnh</span>
+                                </div>
                                 <input
-                                    type="url"
-                                    value={formData.evidenceUrl}
-                                    onChange={(e) => setFormData({ ...formData, evidenceUrl: e.target.value })}
-                                    placeholder="URL ảnh hoặc video bằng chứng..."
-                                    className={cn(
-                                        'w-full rounded-xl border p-3 text-sm transition focus:outline-none focus:ring-2 focus:ring-red-500/50',
-                                        isDark ? 'border-slate-700 bg-slate-800 focus:border-red-500' : 'border-stone-200 bg-stone-50 focus:border-red-500'
-                                    )}
+                                    type="file"
+                                    ref={fileInputRef}
+                                    accept="image/*"
+                                    multiple
+                                    onChange={handleImageUpload}
+                                    className="hidden"
                                 />
+
+                                {formData.evidenceUrls.length > 0 && (
+                                    <div className="grid grid-cols-2 gap-2 mb-2">
+                                        {formData.evidenceUrls.map((url, idx) => (
+                                            <div key={idx} className="relative rounded-xl border border-stone-200 dark:border-slate-800 overflow-hidden group h-28 bg-stone-900/10">
+                                                <img
+                                                    src={url}
+                                                    alt={`Bằng chứng ${idx + 1}`}
+                                                    className="w-full h-full object-cover rounded-xl"
+                                                />
+                                                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                                    <a
+                                                        href={url}
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                        className="p-1.5 rounded-lg bg-white text-stone-900 hover:bg-stone-100 text-xs font-bold shadow"
+                                                        title="Xem ảnh gốc"
+                                                    >
+                                                        <HiOutlineExternalLink className="h-4 w-4" />
+                                                    </a>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setFormData((prev) => ({
+                                                            ...prev,
+                                                            evidenceUrls: prev.evidenceUrls.filter((_, i) => i !== idx),
+                                                        }))}
+                                                        className="p-1.5 rounded-lg bg-red-600 text-white hover:bg-red-700 text-xs font-bold shadow"
+                                                        title="Xóa ảnh"
+                                                    >
+                                                        <HiOutlineTrash className="h-4 w-4" />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                <div
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className={cn(
+                                        'w-full border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition',
+                                        uploadingImage ? 'opacity-50 pointer-events-none' : '',
+                                        isDark
+                                            ? 'border-slate-700 hover:border-red-500 bg-slate-800/50'
+                                            : 'border-stone-300 hover:border-red-500 bg-stone-50'
+                                    )}
+                                >
+                                    {uploadingImage ? (
+                                        <div className="flex flex-col items-center justify-center gap-2 py-1">
+                                            <div className="h-5 w-5 animate-spin rounded-full border-2 border-red-500 border-r-transparent" />
+                                            <span className="text-xs font-medium text-red-500">Đang tải ảnh lên...</span>
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center gap-1 py-1">
+                                            <HiOutlineUpload className="h-6 w-6 text-red-500" />
+                                            <span className="text-xs font-semibold">
+                                                {formData.evidenceUrls.length > 0 ? '+ Thêm ảnh bằng chứng' : 'Bấm để tải ảnh bằng chứng lên'}
+                                            </span>
+                                            <span className="text-[11px] text-stone-400">Chọn 1 hoặc nhiều ảnh (JPG, PNG, WEBP)</span>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
 
                             <div className="flex gap-3 pt-4">
@@ -159,7 +274,7 @@ export default function ReportModal({ isOpen, onClose, targetId, targetName }) {
                                 </button>
                                 <button
                                     type="submit"
-                                    disabled={loading}
+                                    disabled={loading || uploadingImage}
                                     className={cn(
                                         'flex-1 rounded-xl bg-red-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-50'
                                     )}

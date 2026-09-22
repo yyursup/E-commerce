@@ -211,7 +211,7 @@ export default function ViolationDetailModal({
                   className="px-5 py-2.5 rounded-2xl text-xs font-bold text-white bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 active:scale-95 shadow-md shadow-amber-500/25 transition-all flex items-center gap-1.5"
                 >
                   <HiOutlineDocumentText className="h-4 w-4" />
-                  Kháng cáo vi phạm này
+                  Kháng cáo phục hồi uy tín
                 </button>
               )}
             </div>

@@ -102,7 +102,7 @@ export default function ShopViolations() {
           })
         }
       } catch (shopErr) {
-        console.warn('Không thể lấy chi tiết sức khỏe shop:', shopErr)
+        console.warn('Không thể lấy chi tiết điểm uy tín shop:', shopErr)
       }
 
       // 2. Fetch danh sách vi phạm của Shop
@@ -270,10 +270,10 @@ export default function ShopViolations() {
             </div>
             <div>
               <h1 className={cn('text-2xl font-bold tracking-tight', isDark ? 'text-white' : 'text-stone-900')}>
-                Sức Khỏe Shop & Quản Lý Vi Phạm
+                Điểm Uy Tín Shop
               </h1>
               <p className={cn('text-xs mt-0.5', isDark ? 'text-slate-400' : 'text-stone-500')}>
-                Giám sát kỷ luật gian hàng, theo dõi chu kỳ giảm trừ 30 ngày và kháng cáo từng vi phạm cụ thể
+                Theo dõi điểm uy tín gian hàng, chu kỳ phục hồi điểm và quản lý các hồ sơ kháng cáo giải trình
               </p>
             </div>
           </div>
@@ -315,7 +315,7 @@ export default function ShopViolations() {
         </div>
       </div>
 
-      {/* 1. Tổng quan Sức Khỏe Shop & Banners Kỷ Luật */}
+      {/* 1. Tổng quan Điểm Uy Tín Shop & Banners Kỷ Luật */}
       <ShopHealthOverview
         isDark={isDark}
         shopHealth={shopHealth}

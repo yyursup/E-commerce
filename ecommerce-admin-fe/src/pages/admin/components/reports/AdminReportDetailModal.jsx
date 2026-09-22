@@ -64,7 +64,7 @@ export default function AdminReportDetailModal({
                   </span>
                 </div>
                 <h2 className="text-lg font-bold mt-2 flex items-center gap-2">
-                  Chi tiết hồ sơ #{String(detailModal.data?.requestId || detailModal.rawItem?.requestId || detailModal.rawItem?.id).substring(0, 8)}
+                  Chi tiết hồ sơ {detailModal.data?.displayCode || detailModal.rawItem?.displayCode || `#${String(detailModal.data?.requestId || detailModal.rawItem?.requestId || detailModal.rawItem?.id).substring(0, 8)}`}
                   <button
                     type="button"
                     onClick={() =>

@@ -53,8 +53,8 @@ export default function AdminAppealsTab({
                     ? 'Bị từ chối'
                     : 'Chờ xét duyệt'}
               </span>
-              <span className="text-xs text-stone-400 font-mono">
-                #{String(item.requestId || item.id).substring(0, 8)}
+              <span className="text-xs text-stone-400 font-mono" title={item.requestId || item.id}>
+                {item.displayCode || `#${String(item.requestId || item.id).substring(0, 8)}`}
               </span>
               <span className="text-xs text-stone-400">
                 {item.createdAt ? new Date(item.createdAt).toLocaleString('vi-VN') : ''}

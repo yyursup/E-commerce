@@ -6,6 +6,7 @@ import com.marketplace.ecommerce.common.QueryUtils;
 import com.marketplace.ecommerce.common.exception.CustomException;
 import com.marketplace.ecommerce.product.dto.request.PageQueryRequest;
 import com.marketplace.ecommerce.product.dto.response.ProductResponse;
+import com.marketplace.ecommerce.product.dto.response.SellerProductResponse;
 import com.marketplace.ecommerce.product.entity.Product;
 import com.marketplace.ecommerce.product.repository.ProductRepository;
 import com.marketplace.ecommerce.product.service.QueryProductService;
@@ -24,8 +25,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;

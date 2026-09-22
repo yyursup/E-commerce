@@ -32,6 +32,8 @@ export default function Login() {
 
       const userPayload = {
         email: res.email,
+        phoneNumber: res.phoneNumber,
+        username: res.username,
         role: res.role,
         accountId: res.accountId,
         hasShop: res.hasShop,

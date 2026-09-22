@@ -57,7 +57,7 @@ export default function ProductDetail() {
   const [similarLoading, setSimilarLoading] = useState(true)
   const [savedVoucher, setSavedVoucher] = useState({})
 
-  const { isAuthenticated } = useAuthStore()
+  const { isAuthenticated, user } = useAuthStore()
   const { updateCartCount } = useCartStore()
   const { isWishlisted, toggleWishlist } = useWishlistStore()
   const isLiked = isWishlisted(productId)
@@ -105,7 +105,8 @@ export default function ProductDetail() {
                   price: parsedPrice,
                   basePrice: p.basePrice,
                   badge: p.status === 'PUBLISHED' ? 'Cùng shop' : null,
-                  rating: p.rating || 4.8,
+                  rating: p.rating != null ? Number(p.rating) : null,
+                  reviewCount: p.reviewCount != null ? Number(p.reviewCount) : 0,
                   shopName: p.shopName || shopData?.name || data?.shopName || 'Shop',
                   shopId: p.shopId || data?.shopId,
                   originalProduct: p,
@@ -158,7 +159,8 @@ export default function ProductDetail() {
               price: p.basePrice ? Number(p.basePrice) : 0,
               image: thumb?.imageUrl || '/product-placeholder.svg',
               badge: p.status === 'PUBLISHED' ? 'Gợi ý AI' : null,
-              rating: 4.8,
+              rating: p.rating != null ? Number(p.rating) : null,
+              reviewCount: p.reviewCount != null ? Number(p.reviewCount) : 0,
               description: p.description,
               basePrice: p.basePrice,
               shopName: p.shopName,
@@ -186,6 +188,19 @@ export default function ProductDetail() {
 
     if (!product || !product.id) {
       toast.error('Thông tin sản phẩm không hợp lệ')
+      return
+    }
+
+    const currentVariants = product.variants || []
+    if (currentVariants.length > 0 && !selectedVariant) {
+      toast.error('Vui lòng chọn phân loại hàng (màu sắc / kích cỡ...) trước khi thêm vào giỏ hàng!', {
+        icon: '⚠️',
+      })
+      return
+    }
+
+    if (selectedVariant && selectedVariant.stock !== undefined && selectedVariant.stock < quantity) {
+      toast.error(`Phân loại này chỉ còn ${selectedVariant.stock} sản phẩm trong kho!`)
       return
     }
 
@@ -218,6 +233,19 @@ export default function ProductDetail() {
 
     if (!product || !product.id) {
       toast.error('Thông tin sản phẩm không hợp lệ')
+      return
+    }
+
+    const currentVariants = product.variants || []
+    if (currentVariants.length > 0 && !selectedVariant) {
+      toast.error('Vui lòng chọn phân loại hàng (màu sắc / kích cỡ...) trước khi đặt mua!', {
+        icon: '⚠️',
+      })
+      return
+    }
+
+    if (selectedVariant && selectedVariant.stock !== undefined && selectedVariant.stock < quantity) {
+      toast.error(`Phân loại này chỉ còn ${selectedVariant.stock} sản phẩm trong kho!`)
       return
     }
 
@@ -319,20 +347,21 @@ export default function ProductDetail() {
   const variants = product.variants || []
   const hasVariants = variants.length > 0
 
-  let price = 0
-  let isFromPrice = false
+  const prices = variants.map(v => Number(v.price) || 0).filter(p => p > 0)
+  const minPrice = prices.length > 0 ? Math.min(...prices) : (Number(product.basePrice) || 0)
+  const maxPrice = prices.length > 0 ? Math.max(...prices) : minPrice
+
+  let price = minPrice
+  let isRangePrice = false
 
   if (selectedVariant) {
-    price = Number(selectedVariant.price)
-  } else if (hasVariants) {
-    const prices = variants.map(v => Number(v.price) || 0).filter(p => p > 0)
-    price = prices.length > 0 ? Math.min(...prices) : (Number(product.basePrice) || 0)
-    isFromPrice = true
-  } else {
-    price = Number(product.basePrice) || 0
+    price = Number(selectedVariant.price) || minPrice
+  } else if (hasVariants && minPrice !== maxPrice) {
+    isRangePrice = true
   }
-  const originalPrice = Math.round(price * 1.22) // Giá gốc trước giảm (giống Shopee gạch ngang)
-  const displayStock = selectedVariant ? (selectedVariant.stock || 0) : (product.quantity || 0)
+
+  const originalPrice = product.originalPrice ? Number(product.originalPrice) : null
+  const displayStock = selectedVariant ? (selectedVariant.stock ?? 0) : (product.quantity ?? 0)
   const images = product.images || []
   const currentShopId = product.shopId || shopData?.id || shop?.id
   const shopData = shop || FALLBACK_SHOPS[0]
@@ -378,29 +407,51 @@ export default function ProductDetail() {
             <div className="lg:col-span-5 space-y-4">
               <ProductImageGallery images={images} />
 
-              {/* Social Share & Likes */}
-              <div className="flex items-center justify-between border-t pt-4 border-stone-100 dark:border-slate-800 text-xs">
-                <div className="flex items-center gap-2 text-stone-500 dark:text-slate-400">
-                  <span className="font-medium">Chia sẻ:</span>
-                  <button
-                    onClick={handleShare}
-                    className="p-1.5 rounded-full hover:bg-stone-100 dark:hover:bg-slate-800 text-stone-600 dark:text-slate-300 transition-colors"
-                    title="Sao chép liên kết"
-                  >
-                    <HiOutlineShare className="h-4 w-4 text-amber-500" />
-                  </button>
-                </div>
-
+              {/* Social Share & Likes Action Bar */}
+              <div
+                className={cn(
+                  'flex items-center justify-between gap-3 p-3 rounded-2xl border transition-all',
+                  isDark
+                    ? 'bg-slate-800/60 border-slate-800 text-slate-300'
+                    : 'bg-stone-50 border-stone-200/80 text-stone-700'
+                )}
+              >
+                {/* Share Button */}
                 <button
+                  type="button"
+                  onClick={handleShare}
+                  className={cn(
+                    'flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all active:scale-95 cursor-pointer',
+                    isDark
+                      ? 'border-slate-700 bg-slate-800 text-slate-200 hover:border-amber-500/50 hover:text-amber-400'
+                      : 'border-stone-200 bg-white text-stone-700 hover:border-amber-500/50 hover:text-amber-600 shadow-2xs'
+                  )}
+                  title="Sao chép liên kết sản phẩm"
+                >
+                  <HiOutlineShare className="h-4 w-4 text-amber-500 shrink-0" />
+                  <span>Chia sẻ</span>
+                </button>
+
+                {/* Like / Wishlist Button */}
+                <button
+                  type="button"
                   onClick={handleLikeToggle}
-                  className="flex items-center gap-1.5 font-semibold text-rose-500 hover:opacity-80 transition-opacity"
+                  className={cn(
+                    'flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all active:scale-95 cursor-pointer',
+                    isLiked
+                      ? 'border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-400'
+                      : isDark
+                      ? 'border-slate-700 bg-slate-800 text-slate-300 hover:border-rose-500/50 hover:text-rose-400'
+                      : 'border-stone-200 bg-white text-stone-600 hover:border-rose-500/50 hover:text-rose-500 shadow-2xs'
+                  )}
+                  title={isLiked ? 'Bỏ thích sản phẩm' : 'Lưu vào danh sách yêu thích'}
                 >
                   {isLiked ? (
-                    <HiHeart className="h-5 w-5 fill-rose-500" />
+                    <HiHeart className="h-4 w-4 fill-rose-500 text-rose-500 shrink-0" />
                   ) : (
-                    <HiOutlineHeart className="h-5 w-5" />
+                    <HiOutlineHeart className="h-4 w-4 text-rose-500 shrink-0" />
                   )}
-                  <span>Đã thích ({likeCount})</span>
+                  <span>{isLiked ? 'Đã thích' : 'Yêu thích'} ({likeCount})</span>
                 </button>
               </div>
             </div>
@@ -410,32 +461,43 @@ export default function ProductDetail() {
               {/* Product Title & Badges */}
               <div>
                 <div className="flex items-start gap-2.5">
-                  <span className="rounded-md bg-rose-600 px-2 py-0.5 text-[11px] font-black uppercase text-white tracking-wider shrink-0 mt-1">
-                    E-Mall
-                  </span>
                   <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-stone-900 dark:text-white leading-snug">
                     {product.name}
                   </h1>
                 </div>
 
-                {/* Rating, Reviews & Sold Bar (Shopee Style) */}
+                {/* Rating, Reviews & Sold Bar (Real Data Only) */}
                 <div className="mt-3 flex flex-wrap items-center gap-4 text-xs">
-                  <div className="flex items-center gap-1 text-amber-500 font-bold border-r pr-4 border-stone-200 dark:border-slate-800">
-                    <span className="underline text-sm">4.9</span>
-                    <div className="flex">
-                      {[...Array(5)].map((_, i) => (
-                        <HiStar key={i} className="h-4 w-4 fill-amber-400" />
-                      ))}
+                  {product.rating !== undefined && product.rating !== null && (
+                    <div className="flex items-center gap-1 text-amber-500 font-bold border-r pr-4 border-stone-200 dark:border-slate-800">
+                      <span className="underline text-sm">{Number(product.rating).toFixed(1)}</span>
+                      <div className="flex">
+                        {[...Array(5)].map((_, i) => (
+                          <HiStar
+                            key={i}
+                            className={cn(
+                              'h-4 w-4',
+                              i < Math.floor(product.rating)
+                                ? 'fill-amber-400'
+                                : 'text-stone-300 dark:text-slate-600'
+                            )}
+                          />
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   <div className="border-r pr-4 border-stone-200 dark:border-slate-800 text-stone-600 dark:text-slate-400">
-                    <span className="font-bold text-stone-900 dark:text-white underline text-sm mr-1">382</span>
+                    <span className="font-bold text-stone-900 dark:text-white underline text-sm mr-1">
+                      {product.reviewCount ?? 0}
+                    </span>
                     Đánh Giá
                   </div>
 
                   <div className="text-stone-600 dark:text-slate-400">
-                    <span className="font-bold text-stone-900 dark:text-white text-sm mr-1">1.5k</span>
+                    <span className="font-bold text-stone-900 dark:text-white text-sm mr-1">
+                      {product.sold ?? 0}
+                    </span>
                     Đã Bán
                   </div>
 
@@ -454,25 +516,24 @@ export default function ProductDetail() {
               {/* Shopee Price Box */}
               <div
                 className={cn(
-                  'rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-baseline gap-3 sm:gap-4 transition-colors',
+                  'rounded-2xl p-4 sm:p-5 flex flex-wrap items-baseline gap-3 sm:gap-4 transition-colors',
                   isDark ? 'bg-slate-800/70 border border-slate-700/50' : 'bg-stone-50 border border-stone-200/80'
                 )}
               >
-                <span className="text-sm line-through text-stone-400 dark:text-slate-500">
-                  {formatVND(originalPrice)}
-                </span>
-                <div className="flex items-baseline gap-2">
+                <div className="flex flex-wrap items-baseline gap-2.5">
                   <span className="text-2xl sm:text-3xl font-black text-rose-600 dark:text-rose-500">
-                    {isFromPrice ? `Từ ${formatVND(price)}` : formatVND(price)}
+                    {isRangePrice ? `${formatVND(minPrice)} - ${formatVND(maxPrice)}` : formatVND(price)}
                   </span>
-                  <span className="rounded-md bg-rose-500/10 text-rose-600 dark:text-rose-400 px-2 py-0.5 text-xs font-black uppercase">
-                    -18% Giảm
-                  </span>
-                </div>
-                <div className="sm:ml-auto">
-                  <span className="rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 px-2.5 py-1 text-[11px] font-bold border border-amber-500/20">
-                    Gì Cũng Rẻ - Bao Giá Tốt Nhất
-                  </span>
+                  {originalPrice && originalPrice > price && (
+                    <>
+                      <span className="text-sm line-through text-stone-400 dark:text-slate-500">
+                        {formatVND(originalPrice)}
+                      </span>
+                      <span className="rounded-md bg-rose-500/10 text-rose-600 dark:text-rose-400 px-2 py-0.5 text-xs font-black uppercase">
+                        -{Math.round((1 - price / originalPrice) * 100)}%
+                      </span>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -489,19 +550,16 @@ export default function ProductDetail() {
 
               {/* Shipping Row (GHN Express) */}
               <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4 text-xs border-t pt-3 border-stone-100 dark:border-slate-800">
-                <span className="w-28 shrink-0 text-stone-500 dark:text-slate-400 font-semibold mt-1">
+                <span className="w-28 shrink-0 text-stone-500 dark:text-slate-400 font-semibold mt-0.5">
                   Vận Chuyển
                 </span>
-                <div className="space-y-1.5 flex-1">
-                  <div className="flex items-center gap-2 text-stone-700 dark:text-slate-300">
+                <div className="space-y-1 flex-1">
+                  <div className="flex items-center gap-2 text-stone-800 dark:text-slate-200 font-medium">
                     <HiOutlineTruck className="h-4 w-4 text-blue-500 shrink-0" />
                     <span>Giao Hàng Nhanh (GHN Express) - Toàn Quốc</span>
                   </div>
-                  <div className="text-stone-500 dark:text-slate-400">
-                    Phí vận chuyển dự kiến: <span className="font-bold text-stone-900 dark:text-white">18.000₫ - 32.000₫</span>
-                    <span className="ml-2 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 text-[10px] font-bold">
-                      Freeship Xtra
-                    </span>
+                  <div className="text-stone-500 dark:text-slate-400 text-[11px] leading-relaxed">
+                    Phí vận chuyển và thời gian giao hàng được tính tự động theo địa chỉ nhận hàng tại bước thanh toán.
                   </div>
                 </div>
               </div>
@@ -660,10 +718,8 @@ export default function ProductDetail() {
                   <HiOutlineBadgeCheck className="h-4 w-4 text-emerald-500 shrink-0" />
                 </Link>
                 <div className="text-xs text-stone-400 dark:text-slate-400 mt-1 flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                  <span>Online 5 phút trước</span>
-                  <span>•</span>
-                  <span className="truncate">{shopData?.city || 'Hà Nội'}</span>
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
+                  <span className="truncate">{shopData?.address || shopData?.location || shopData?.city || 'Việt Nam'}</span>
                 </div>
 
                 <div className="mt-3 flex items-center gap-2">
@@ -675,70 +731,108 @@ export default function ProductDetail() {
                     Xem Shop
                   </Link>
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const targetShopId = product?.shopId || shop?.id || currentShopId
-                      if (!targetShopId) {
-                        toast.error('Không tìm thấy thông tin gian hàng')
-                        return
-                      }
-                      useChatStore.getState().openShopChat(
-                        {
-                          id: targetShopId,
-                          name: product.shopName || shopData?.name || shop?.name || 'Cửa hàng',
-                          logo: shopData?.logo || shop?.logo,
-                          city: shopData?.city || shop?.city,
-                          mallBadge: shopData?.mallBadge || shop?.mallBadge,
-                          ekycVerified: shopData?.ekycVerified || shop?.ekycVerified,
-                        },
-                        {
-                          id: product.id,
-                          name: product.name,
-                          price: product.price || product.basePrice,
-                          image: product.images?.[0]?.imageUrl || product.images?.[0] || product.thumbnailUrl,
-                        }
+                  {(() => {
+                    const targetShopId = product?.shopId || shop?.id || currentShopId
+                    const isOwner = Boolean(
+                      user && (
+                        (user.shopId && targetShopId && String(user.shopId).toLowerCase() === String(targetShopId).toLowerCase()) ||
+                        (shopData?.ownerAccountId && String(user.accountId || user.id).toLowerCase() === String(shopData.ownerAccountId).toLowerCase())
                       )
-                    }}
-                    className={cn(
-                      'inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-1.5 text-xs font-bold transition-colors cursor-pointer',
-                      isDark
-                        ? 'border-slate-700 text-slate-300 hover:bg-slate-800'
-                        : 'border-stone-200 text-stone-700 hover:bg-stone-100'
-                    )}
-                  >
-                    <HiOutlineChat className="h-3.5 w-3.5 text-amber-500" />
-                    Chat Ngay
-                  </button>
+                    )
+
+                    if (isOwner) {
+                      return (
+                        <span className={cn(
+                          'inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-1.5 text-xs font-medium',
+                          isDark ? 'border-slate-800 bg-slate-800/60 text-slate-400' : 'border-stone-200 bg-stone-100 text-stone-500'
+                        )}>
+                          Gian Hàng Của Bạn
+                        </span>
+                      )
+                    }
+
+                    return (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!targetShopId) {
+                            toast.error('Không tìm thấy thông tin gian hàng')
+                            return
+                          }
+                          useChatStore.getState().openShopChat(
+                            {
+                              id: targetShopId,
+                              name: product.shopName || shopData?.name || shop?.name || 'Cửa hàng',
+                              logo: shopData?.logo || shop?.logo,
+                              city: shopData?.city || shop?.city,
+                              mallBadge: shopData?.mallBadge || shop?.mallBadge,
+                              ekycVerified: shopData?.ekycVerified || shop?.ekycVerified,
+                              ownerAccountId: shopData?.ownerAccountId,
+                            },
+                            {
+                              id: product.id,
+                              name: product.name,
+                              price: product.price || product.basePrice,
+                              image: product.images?.[0]?.imageUrl || product.images?.[0] || product.thumbnailUrl,
+                            }
+                          )
+                        }}
+                        className={cn(
+                          'inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-1.5 text-xs font-bold transition-colors cursor-pointer',
+                          isDark
+                            ? 'border-slate-700 text-slate-300 hover:bg-slate-800'
+                            : 'border-stone-200 text-stone-700 hover:bg-stone-100'
+                        )}
+                      >
+                        <HiOutlineChat className="h-3.5 w-3.5 text-amber-500" />
+                        Chat Ngay
+                      </button>
+                    )
+                  })()}
                 </div>
               </div>
             </div>
 
-            {/* Shop Right Metrics */}
+            {/* Shop Right Metrics (Real Data Only) */}
             <div className="lg:col-span-7 grid grid-cols-2 sm:grid-cols-3 gap-y-3 gap-x-6 text-xs">
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center border-b pb-2 border-stone-100 dark:border-slate-800/80">
                 <span className="text-stone-500 dark:text-slate-400">Đánh Giá:</span>
-                <span className="font-bold text-amber-500">{shopData?.rating || '4.9'} ({shopData?.reviewCount || '1.2k'})</span>
+                <span className="font-bold text-amber-500">
+                  {shopData?.averageRating ? Number(shopData.averageRating).toFixed(1) : (shopData?.rating ? Number(shopData.rating).toFixed(1) : '5.0')} ★
+                </span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center border-b pb-2 border-stone-100 dark:border-slate-800/80">
                 <span className="text-stone-500 dark:text-slate-400">Sản Phẩm:</span>
-                <span className="font-bold text-stone-900 dark:text-white">{shopData?.productCount || '42'}</span>
+                <span className="font-bold text-stone-900 dark:text-white">
+                  {shopData?.productCount !== undefined && shopData?.productCount !== null ? shopData.productCount : (shopProducts?.length || 0)}
+                </span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-stone-500 dark:text-slate-400">Tỉ Lệ Phản Hồi:</span>
-                <span className="font-bold text-stone-900 dark:text-white">{shopData?.responseRate || '99%'}</span>
+              <div className="flex justify-between items-center border-b pb-2 border-stone-100 dark:border-slate-800/80">
+                <span className="text-stone-500 dark:text-slate-400">Tham Gia:</span>
+                <span className="font-bold text-stone-900 dark:text-white">
+                  {shopData?.createdAt
+                    ? (() => {
+                        const date = new Date(shopData.createdAt)
+                        if (isNaN(date.getTime())) return 'Thành viên mới'
+                        const diffMonths = (new Date().getFullYear() - date.getFullYear()) * 12 + (new Date().getMonth() - date.getMonth())
+                        if (diffMonths <= 0) return 'Mới tham gia'
+                        if (diffMonths < 12) return `${diffMonths} tháng trước`
+                        return `${Math.floor(diffMonths / 12)} năm trước`
+                      })()
+                    : 'Thành viên mới'}
+                </span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-stone-500 dark:text-slate-400">Thời Gian Phản Hồi:</span>
-                <span className="font-bold text-stone-900 dark:text-white">{shopData?.responseTime || 'trong vài phút'}</span>
+              <div className="flex justify-between items-center border-b pb-2 border-stone-100 dark:border-slate-800/80">
+                <span className="text-stone-500 dark:text-slate-400">Bảo Chứng:</span>
+                <span className="font-bold text-emerald-600 dark:text-emerald-400">Ký quỹ Escrow</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-stone-500 dark:text-slate-400">Tham Gia Sàn:</span>
-                <span className="font-bold text-stone-900 dark:text-white">{shopData?.joinedTime || '1 năm trước'}</span>
+              <div className="flex justify-between items-center border-b pb-2 border-stone-100 dark:border-slate-800/80">
+                <span className="text-stone-500 dark:text-slate-400">Vận Chuyển:</span>
+                <span className="font-bold text-blue-600 dark:text-blue-400">GHN Express</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-stone-500 dark:text-slate-400">Người Theo Dõi:</span>
-                <span className="font-bold text-stone-900 dark:text-white">{shopData?.followerCount || '24.5k'}</span>
+              <div className="flex justify-between items-center border-b pb-2 border-stone-100 dark:border-slate-800/80">
+                <span className="text-stone-500 dark:text-slate-400">Trạng Thái:</span>
+                <span className="font-bold text-emerald-600 dark:text-emerald-400">Đang hoạt động</span>
               </div>
             </div>
           </div>
@@ -765,23 +859,23 @@ export default function ProductDetail() {
               </div>
               <div className="flex justify-between border-b pb-2 border-stone-100 dark:border-slate-800/80">
                 <span className="text-stone-500 dark:text-slate-400 w-32 shrink-0">Thương Hiệu:</span>
-                <span className="font-medium text-stone-900 dark:text-white text-right">Chính Hãng Phân Phối</span>
+                <span className="font-medium text-stone-900 dark:text-white text-right">{product.brand || 'Chính Hãng Phân Phối'}</span>
               </div>
               <div className="flex justify-between border-b pb-2 border-stone-100 dark:border-slate-800/80">
                 <span className="text-stone-500 dark:text-slate-400 w-32 shrink-0">Mã SKU:</span>
-                <span className="font-medium text-stone-900 dark:text-white text-right">{product.sku || 'SKU-STANDARD'}</span>
+                <span className="font-medium text-stone-900 dark:text-white text-right">{product.sku || (product.id ? `SKU-${String(product.id).slice(0, 8).toUpperCase()}` : 'SKU-STANDARD')}</span>
               </div>
               <div className="flex justify-between border-b pb-2 border-stone-100 dark:border-slate-800/80">
                 <span className="text-stone-500 dark:text-slate-400 w-32 shrink-0">Kho Hàng:</span>
-                <span className="font-medium text-stone-900 dark:text-white text-right">{product.quantity || 48}</span>
+                <span className="font-medium text-stone-900 dark:text-white text-right">{displayStock}</span>
               </div>
               <div className="flex justify-between border-b pb-2 border-stone-100 dark:border-slate-800/80">
                 <span className="text-stone-500 dark:text-slate-400 w-32 shrink-0">Bảo Hành:</span>
-                <span className="font-medium text-stone-900 dark:text-white text-right">12 Tháng (Bảo hành điện tử)</span>
+                <span className="font-medium text-stone-900 dark:text-white text-right">Bảo hành theo quy chuẩn sàn</span>
               </div>
               <div className="flex justify-between border-b pb-2 border-stone-100 dark:border-slate-800/80">
                 <span className="text-stone-500 dark:text-slate-400 w-32 shrink-0">Gửi Từ:</span>
-                <span className="font-medium text-stone-900 dark:text-white text-right">{shopData?.city || 'Hà Nội / TP.HCM'}</span>
+                <span className="font-medium text-stone-900 dark:text-white text-right truncate">{shopData?.address || shopData?.location || shopData?.city || 'Việt Nam'}</span>
               </div>
             </div>
           </div>

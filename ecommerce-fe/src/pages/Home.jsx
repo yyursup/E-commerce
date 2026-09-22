@@ -59,7 +59,8 @@ export default function Home() {
               price: price,
               image: imageUrl,
               badge: product.status === 'PUBLISHED' ? 'Bestseller' : null,
-              rating: 4.8,
+              rating: product.rating != null ? Number(product.rating) : null,
+              reviewCount: product.reviewCount != null ? Number(product.reviewCount) : 0,
               description: product.description,
               basePrice: product.basePrice,
               shopName: product.shopName,
@@ -404,7 +405,7 @@ export default function Home() {
         open={!!quickViewProduct}
         onClose={() => setQuickViewProduct(null)}
         title={quickViewProduct?.name ?? 'Chi tiết sản phẩm'}
-        size="md"
+        size="lg"
       >
         {quickViewProduct && (
           <ProductQuickView

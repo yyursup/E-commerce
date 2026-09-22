@@ -37,6 +37,11 @@ public class JwtFilter extends OncePerRequestFilter {
             "/payments/vnpay/callback",
             "/api/v1/product",
             "/api/v1/product/**",
+            "/api/v1/category",
+            "/api/v1/category/**",
+            "/api/v1/shop",
+            "/api/v1/shop/**",
+            "/api/v1/review/products/**",
             "/api/v1/wishlist/status/**",
             "/api/v1/social/shop/follow-status/**",
             "/api/v1/auth/register",
@@ -50,7 +55,11 @@ public class JwtFilter extends OncePerRequestFilter {
             "/api/v1/ws-chat",
             "/api/v1/ws-chat/**",
             "/ws/chat",
-            "/ws/chat/**"
+            "/ws/chat/**",
+            "/api/v1/livestreams/active",
+            "/api/v1/livestreams/*",
+            "/api/v1/livestreams/*/join",
+            "/api/v1/livestreams/*/like"
     );
 
     public JwtFilter(

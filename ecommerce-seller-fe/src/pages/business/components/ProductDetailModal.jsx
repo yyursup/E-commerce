@@ -63,8 +63,14 @@ export default function ProductDetailModal({
 
   const statusBadge = getStatusBadge(product.status)
   const price = product.basePrice ? Number(product.basePrice) : (product.price ? Number(product.price) : 0)
-  const stock = product.stockQuantity ?? product.quantity ?? product.stock ?? 0
   const variants = product.variants || []
+  const variantPrices = variants.length
+    ? variants.map((v) => Number(v.price) || 0).filter((p) => p > 0)
+    : []
+  const minPrice = variantPrices.length > 0 ? Math.min(...variantPrices) : price
+  const maxPrice = variantPrices.length > 0 ? Math.max(...variantPrices) : price
+  const hasMultiplePrices = variantPrices.length > 1 && minPrice !== maxPrice
+  const stock = product.stockQuantity ?? product.quantity ?? product.stock ?? 0
   const { attr1, attr2 } = getVariantLabelsByCategory(product.categoryName || product.category?.name);
 
   return (
@@ -181,9 +187,20 @@ export default function ProductDetailModal({
                 isDark ? 'border-slate-800 bg-slate-800/50' : 'border-amber-100 bg-amber-50/50'
               )}>
                 <div>
-                  <span className={cn('text-xs block', isDark ? 'text-slate-400' : 'text-stone-500')}>Giá niêm yết:</span>
-                  <span className={cn('text-2xl font-black', isDark ? 'text-amber-400' : 'text-amber-600')}>
-                    {formatVND(price)}
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className={cn('text-xs block font-medium', isDark ? 'text-slate-400' : 'text-stone-500')}>
+                      Giá niêm yết:
+                    </span>
+                    {variants.length > 0 && (
+                      <span className="text-[10px] font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
+                        {variants.length} phân loại
+                      </span>
+                    )}
+                  </div>
+                  <span className={cn('text-2xl font-black tracking-tight', isDark ? 'text-amber-400' : 'text-amber-600')}>
+                    {hasMultiplePrices
+                      ? `${formatVND(minPrice)} - ${formatVND(maxPrice)}`
+                      : formatVND(minPrice || price)}
                   </span>
                 </div>
 
@@ -239,33 +256,41 @@ export default function ProductDetailModal({
               {/* Variants Section (if any) */}
               {variants.length > 0 && (
                 <div className="space-y-2">
-                  <h4 className={cn('text-xs font-bold uppercase tracking-wider', isDark ? 'text-slate-300' : 'text-stone-700')}>
-                    PHÂN LOẠI HÀNG ({variants.length})
-                  </h4>
+                  <div className="flex items-center justify-between">
+                    <h4 className={cn('text-xs font-bold uppercase tracking-wider', isDark ? 'text-slate-300' : 'text-stone-700')}>
+                      DANH SÁCH PHÂN LOẠI HÀNG ({variants.length})
+                    </h4>
+                    <span className="text-[11px] text-stone-400 font-medium">
+                      {attr1} / {attr2}
+                    </span>
+                  </div>
+
                   <div className={cn('rounded-2xl border divide-y overflow-hidden', isDark ? 'border-slate-800 divide-slate-800' : 'border-stone-200 divide-stone-100')}>
                     {variants.map((v, i) => (
-                      <div key={i} className="flex items-center justify-between p-3 text-xs">
-                        <div className="font-semibold">
-                          <span className={cn('mr-1.5', isDark ? 'text-amber-400' : 'text-amber-600')}>Phân loại {i + 1}:</span>
+                      <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 text-xs gap-2">
+                        <div className="font-semibold flex items-center gap-1.5 flex-wrap">
+                          <span className={cn('h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-mono font-bold shrink-0', isDark ? 'bg-slate-800 text-amber-400' : 'bg-stone-100 text-amber-700')}>
+                            #{i + 1}
+                          </span>
                           {v.color || v.size ? (
-                            <span className={isDark ? 'text-slate-300' : 'text-stone-700'}>
-                              {v.color && `${attr1}: ${v.color}`}
-                              {v.color && v.size && ' | '}
-                              {v.size && `${attr2}: ${v.size}`}
+                            <span className={isDark ? 'text-slate-200' : 'text-stone-800'}>
+                              {v.color && <span className="font-bold">{v.color}</span>}
+                              {v.color && v.size && <span className="text-stone-400 mx-1">/</span>}
+                              {v.size && <span>{v.size}</span>}
                             </span>
                           ) : (
                             v.variantName || v.name || `Biến thể #${i + 1}`
                           )}
-                          {v.sku && <span className="ml-2 font-mono text-[11px] text-stone-400">({v.sku})</span>}
+                          {v.sku && <span className="font-mono text-[11px] text-stone-400">({v.sku})</span>}
                         </div>
-                        <div className="flex items-center gap-4">
-                          <span className={cn('font-bold', isDark ? 'text-amber-400' : 'text-amber-600')}>
+                        <div className="flex items-center gap-4 text-right justify-between sm:justify-end">
+                          <span className={cn('font-black text-sm', isDark ? 'text-amber-400' : 'text-amber-600')}>
                             {formatVND(v.price)}
                           </span>
                           <span className={cn('font-bold', Number(v.stock) === 0 ? 'text-rose-500' : isDark ? 'text-slate-300' : 'text-stone-700')}>
                             Kho: {v.stock}
                           </span>
-                          <span className={cn('font-bold border-l pl-3', isDark ? 'border-slate-700' : 'border-stone-300', isDark ? 'text-slate-300' : 'text-stone-700')}>
+                          <span className={cn('font-bold border-l pl-3', isDark ? 'border-slate-700 text-slate-400' : 'border-stone-300 text-stone-500')}>
                             Đã bán: {v.sold || 0}
                           </span>
                         </div>

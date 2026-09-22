@@ -17,13 +17,13 @@ const reviewService = {
         }
     },
 
-    // Create a new review (using FormData for potential image uploads)
+    // Create a new review (using FormData for image/video uploads)
     createReview: async (productId, reviewData) => {
         try {
             const formData = new FormData();
             Object.entries(reviewData).forEach(([key, value]) => {
-                if (key === 'images' && Array.isArray(value)) {
-                    value.forEach(file => formData.append('images', file));
+                if ((key === 'images' || key === 'videos') && Array.isArray(value)) {
+                    value.forEach(file => formData.append(key, file));
                 } else if (value !== undefined && value !== null) {
                     formData.append(key, value);
                 }
@@ -47,8 +47,8 @@ const reviewService = {
         try {
             const formData = new FormData();
             Object.entries(reviewData).forEach(([key, value]) => {
-                if (key === 'images' && Array.isArray(value)) {
-                    value.forEach(file => formData.append('images', file));
+                if ((key === 'images' || key === 'videos' || key === 'newImages' || key === 'newVideos') && Array.isArray(value)) {
+                    value.forEach(file => formData.append(key, file));
                 } else if (value !== undefined && value !== null) {
                     formData.append(key, value);
                 }
@@ -93,6 +93,18 @@ const reviewService = {
     getProductReviewStats: async (productId) => {
         try {
             const response = await axiosClient.get(`${REVIEW_BASE}/products/${productId}/reviews/stats`);
+            return response.data;
+        } catch (error) {
+            throw error.response ? error.response.data : error;
+        }
+    },
+
+    // Get all reviews written by current user
+    getMyAllReviews: async ({ page = 0, size = 10 } = {}) => {
+        try {
+            const response = await axiosClient.get(`${REVIEW_BASE}/my-reviews`, {
+                params: { page, size }
+            });
             return response.data;
         } catch (error) {
             throw error.response ? error.response.data : error;

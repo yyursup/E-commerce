@@ -42,6 +42,7 @@ public class ReviewServiceImpl implements ReviewService {
     private final FileService fileService;
 
     @Override
+    @Transactional(readOnly = true)
     public ReviewResponse getMyReview(UUID accountId, UUID productId, UUID subOrderId) {
         User user = userRepository.findByAccountId(accountId)
                 .orElseThrow(() -> new CustomException("Account not found"));
@@ -52,8 +53,19 @@ public class ReviewServiceImpl implements ReviewService {
         return ReviewResponse.fromEntity(review);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ReviewResponse> getMyReviews(UUID accountId, Pageable pageable) {
+        User user = userRepository.findByAccountId(accountId)
+                .orElseThrow(() -> new CustomException("Account not found"));
+
+        return reviewRepository.findByUserIdWithDetails(user.getId(), pageable)
+                .map(ReviewResponse::fromEntity);
+    }
+
 
     @Override
+    @Transactional(readOnly = true)
     public Page<ReviewResponse> getProductReviews(UUID productId, Integer rating, Boolean hasImages, Pageable pageable) {
 
         Page<Review> reviewPage = reviewRepository.findWithFilters(
@@ -101,7 +113,14 @@ public class ReviewServiceImpl implements ReviewService {
 
         review.setRating(request.getRating());
         review.setComment(request.getComment());
-        processImages(review, request.getNewImages());
+        List<MultipartFile> allNewFiles = new ArrayList<>();
+        if (request.getNewImages() != null) {
+            allNewFiles.addAll(request.getNewImages());
+        }
+        if (request.getNewVideos() != null) {
+            allNewFiles.addAll(request.getNewVideos());
+        }
+        processImages(review, allNewFiles);
 
         reviewRepository.save(review);
         return ReviewResponse.fromEntity(review);
@@ -136,7 +155,14 @@ public class ReviewServiceImpl implements ReviewService {
                 .createdAt(LocalDateTime.now())
                 .build();
 
-        processImages(review, request.getImages());
+        List<MultipartFile> allFiles = new ArrayList<>();
+        if (request.getImages() != null) {
+            allFiles.addAll(request.getImages());
+        }
+        if (request.getVideos() != null) {
+            allFiles.addAll(request.getVideos());
+        }
+        processImages(review, allFiles);
 
         reviewRepository.save(review);
 

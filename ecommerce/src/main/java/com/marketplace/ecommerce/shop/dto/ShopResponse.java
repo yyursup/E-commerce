@@ -25,10 +25,14 @@ public class ShopResponse {
     private String address;
     private ShopStatus status;
     private Float averageRating;
+    private UUID ownerAccountId;
     private LocalDateTime createdAt;
 
     public static ShopResponse from(Shop s) {
         if (s == null) return null;
+        UUID ownerAccountId = (s.getUser() != null && s.getUser().getAccount() != null)
+                ? s.getUser().getAccount().getId()
+                : null;
         return ShopResponse.builder()
                 .id(s.getId())
                 .name(s.getName())
@@ -39,6 +43,7 @@ public class ShopResponse {
                 .address(s.getAddress())
                 .status(s.getStatus())
                 .averageRating(s.getAverageRating() != null ? s.getAverageRating() : 5.0f)
+                .ownerAccountId(ownerAccountId)
                 .createdAt(s.getCreatedAt())
                 .build();
     }

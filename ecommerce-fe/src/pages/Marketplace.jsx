@@ -13,6 +13,7 @@ import {
 } from 'react-icons/hi'
 import { useThemeStore } from '../store/useThemeStore'
 import { useChatStore } from '../store/useChatStore'
+import { useAuthStore } from '../store/useAuthStore'
 import { cn } from '../lib/cn'
 import Footer from '../components/Footer'
 import shopService, { FALLBACK_SHOPS } from '../services/shop'
@@ -30,6 +31,7 @@ const categoryFilters = [
 
 export default function Marketplace() {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
+  const user = useAuthStore((s) => s.user)
   const [shops, setShops] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -240,7 +242,7 @@ export default function Marketplace() {
                     <div className="flex items-center gap-4 pt-1 font-medium">
                       <span className="flex items-center gap-1 text-amber-500 font-bold">
                         <HiOutlineStar className="h-4 w-4 fill-amber-400" />
-                        {shop.rating} ({shop.reviewCount})
+                        {shop.rating ? `${shop.rating} (${shop.reviewCount || 0})` : 'Chưa có đánh giá'}
                       </span>
                       <span className="flex items-center gap-1 text-stone-600 dark:text-slate-300">
                         <HiOutlineShoppingBag className="h-4 w-4" />
@@ -274,28 +276,44 @@ export default function Marketplace() {
                     Vào Gian Hàng
                     <HiOutlineArrowRight className="h-3.5 w-3.5" />
                   </Link>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      useChatStore.getState().openShopChat({
-                        id: shop.id,
-                        name: shop.name,
-                        logo: shop.logo,
-                        city: shop.city,
-                        mallBadge: shop.mallBadge,
-                        ekycVerified: shop.ekycVerified,
-                      })
-                    }}
-                    className={cn(
-                      'flex items-center justify-center p-2 rounded-xl border transition-colors',
-                      isDark
-                        ? 'border-slate-700 text-slate-300 hover:bg-slate-800'
-                        : 'border-stone-200 text-stone-700 hover:bg-stone-100'
-                    )}
-                    title="Nhắn tin với Shop"
-                  >
-                    <HiOutlineChat className="h-4 w-4" />
-                  </button>
+                  {(() => {
+                    const isShopOwner = Boolean(
+                      user && (
+                        (user.shopId && String(user.shopId).toLowerCase() === String(shop.id).toLowerCase()) ||
+                        (shop.ownerAccountId && String(user.accountId || user.id).toLowerCase() === String(shop.ownerAccountId).toLowerCase())
+                      )
+                    )
+
+                    if (isShopOwner) {
+                      return null
+                    }
+
+                    return (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          useChatStore.getState().openShopChat({
+                            id: shop.id,
+                            name: shop.name,
+                            logo: shop.logo,
+                            city: shop.city,
+                            mallBadge: shop.mallBadge,
+                            ekycVerified: shop.ekycVerified,
+                            ownerAccountId: shop.ownerAccountId,
+                          })
+                        }}
+                        className={cn(
+                          'flex items-center justify-center p-2 rounded-xl border transition-colors',
+                          isDark
+                            ? 'border-slate-700 text-slate-300 hover:bg-slate-800'
+                            : 'border-stone-200 text-stone-700 hover:bg-stone-100'
+                        )}
+                        title="Nhắn tin với Shop"
+                      >
+                        <HiOutlineChat className="h-4 w-4" />
+                      </button>
+                    )
+                  })()}
                 </div>
               </div>
             </div>

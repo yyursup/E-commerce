@@ -15,6 +15,7 @@ import com.marketplace.ecommerce.request.dto.response.CreateRequestResponse;
 import com.marketplace.ecommerce.request.entity.Report;
 import com.marketplace.ecommerce.request.entity.Request;
 import com.marketplace.ecommerce.request.repository.ReportRepository;
+import com.marketplace.ecommerce.request.repository.RequestRepository;
 import com.marketplace.ecommerce.request.service.ReportService;
 import com.marketplace.ecommerce.request.service.RequestService;
 import com.marketplace.ecommerce.request.policy.RequestPolicy;
@@ -39,6 +40,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ReportServiceImpl implements ReportService {
     private final RequestService requestService;
+    private final RequestRepository requestRepository;
     private final ReportRepository reportRepository;
     private final RequestPolicy requestValidation;
     private final AccountRepository accountRepository;
@@ -74,7 +76,7 @@ public class ReportServiceImpl implements ReportService {
         }
 
         UUID targetId = report.getTargetId();
-        TargetType type = requestPolicy.resolve(targetId);
+        TargetType type = report.getTargetType() != null ? report.getTargetType() : requestPolicy.resolve(targetId);
 
         switch (type) {
             case USER -> handleReportUser(targetId, now);
@@ -92,6 +94,7 @@ public class ReportServiceImpl implements ReportService {
         r.setReviewedBy(admin);
         r.setReviewedAt(now);
         r.setResponse(note);
+        requestRepository.save(r);
     }
 
     private void approveRequest(Request r, Account admin, LocalDateTime now, String note, Report report) {
@@ -100,6 +103,8 @@ public class ReportServiceImpl implements ReportService {
         r.setReviewedAt(now);
         r.setResponse(note);
         report.setModeratorNote(note);
+        requestRepository.save(r);
+        reportRepository.save(report);
     }
 
     @Override
@@ -168,7 +173,7 @@ public class ReportServiceImpl implements ReportService {
         }
 
         if (nextCount >= 5) {
-            product.setStatus(ProductStatus.DELETED);
+            product.setStatus(ProductStatus.INACTIVE);
         }
 
         UUID accountId = requestPolicy.resolveTargetAccountId(TargetType.PRODUCT, targetId);
@@ -213,32 +218,43 @@ public class ReportServiceImpl implements ReportService {
             throw new CustomException("Account is already banned");
         }
 
+        // Thuật toán Hoàn lương (30-Day Monthly Decay):
+        // Cứ mỗi 30 ngày liên tục không có vi phạm mới, số lần vi phạm được trừ đi 1 lần cho đến khi về 0.
+        if (target.getLastViolationAt() != null && target.getViolationCount() > 0) {
+            long daysPassed = java.time.temporal.ChronoUnit.DAYS.between(target.getLastViolationAt(), now);
+            long decayCycles = daysPassed / 30;
+            if (decayCycles > 0) {
+                int decayedCount = Math.max(0, target.getViolationCount() - (int) decayCycles);
+                target.setViolationCount(decayedCount);
+            }
+        }
+
         int next = target.getViolationCount() + 1;
         target.setViolationCount(next);
         target.setLastViolationAt(now);
 
+        DisciplineLevel finalLevel;
         if (next >= 7) {
             target.setDisciplineLevel(DisciplineLevel.BANNED);
             target.setBannedUntil(now.plusDays(7));
             target.setStatus(AccountStatus.BANNED);
             target.setIsActive(false);
-            return DisciplineLevel.BANNED;
-        }
-
-        if (next >= 5) {
+            finalLevel = DisciplineLevel.BANNED;
+        } else if (next >= 5) {
             target.setDisciplineLevel(DisciplineLevel.SUSPENDED);
             target.setStatus(AccountStatus.SUSPENDED);
             target.setIsActive(true);
-            return DisciplineLevel.SUSPENDED;
-        }
-
-        if (next >= 3) {
+            finalLevel = DisciplineLevel.SUSPENDED;
+        } else if (next >= 3) {
             target.setDisciplineLevel(DisciplineLevel.WARNED);
-            return DisciplineLevel.WARNED;
+            finalLevel = DisciplineLevel.WARNED;
+        } else {
+            target.setDisciplineLevel(DisciplineLevel.NONE);
+            finalLevel = DisciplineLevel.NONE;
         }
 
-        target.setDisciplineLevel(DisciplineLevel.NONE);
-        return DisciplineLevel.NONE;
+        accountRepository.save(target);
+        return finalLevel;
     }
 
     private void handleReportShop(UUID shopId, LocalDateTime now) {
@@ -257,28 +273,18 @@ public class ReportServiceImpl implements ReportService {
 
         DisciplineLevel level = punishAccount(ownerAccountId, now);
 
-        if (level == DisciplineLevel.NONE) {
-            return;
-        }
-
         if (level == DisciplineLevel.WARNED) {
             if (shop.getStatus() == ShopStatus.ACTIVE) {
                 shop.setStatus(ShopStatus.WARNED);
             }
-            return;
-        }
-
-        if (level == DisciplineLevel.SUSPENDED) {
-            if (shop.getStatus() != ShopStatus.SUSPENDED) {
-                shop.setStatus(ShopStatus.SUSPENDED);
-            }
+        } else if (level == DisciplineLevel.SUSPENDED) {
+            shop.setStatus(ShopStatus.SUSPENDED);
             productRepository.updateStatusByShopId(shopId, ProductStatus.INACTIVE);
-            return;
-        }
-
-        if (level == DisciplineLevel.BANNED) {
+        } else if (level == DisciplineLevel.BANNED) {
             shop.setStatus(ShopStatus.BANNED);
             productRepository.updateStatusByShopId(shopId, ProductStatus.DELETED);
         }
+
+        shopRepository.save(shop);
     }
 }

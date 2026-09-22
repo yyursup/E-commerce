@@ -254,8 +254,15 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 }
             }
 
+            String phone = users.getPhoneNumber();
+            if (phone == null || phone.isBlank()) {
+                phone = userRepository.findByAccountId(users.getId()).map(User::getPhoneNumber).orElse(null);
+            }
+
             LoginResponse.LoginResponseBuilder builder = LoginResponse.builder()
                     .email(users.getEmail())
+                    .phoneNumber(phone)
+                    .username(users.getUsername())
                     .token(tokenService.createToken(users))
                     .refreshToken(tokenService.refreshToken(users))
                     .role(users.getRole().getRoleName());
@@ -302,8 +309,15 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new CustomException("Account not found"));
 
+        String phone = account.getPhoneNumber();
+        if (phone == null || phone.isBlank()) {
+            phone = userRepository.findByAccountId(account.getId()).map(User::getPhoneNumber).orElse(null);
+        }
+
         LoginResponse.LoginResponseBuilder builder = LoginResponse.builder()
                 .email(account.getEmail())
+                .phoneNumber(phone)
+                .username(account.getUsername())
                 .token(tokenService.createToken(account))
                 .role(account.getRole() != null ? account.getRole().getRoleName() : "CUSTOMER")
                 .accountId(account.getId());
@@ -318,15 +332,20 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         UUID shopId = null;
         String shopName = null;
         String sellerStatus = "NONE";
+        String shopStatus = "ACTIVE";
 
         Optional<User> userOpt = userRepository.findByAccountId(accountId);
         if (userOpt.isPresent()) {
             Optional<Shop> shopOpt = shopRepository.findByUserId(userOpt.get().getId());
             if (shopOpt.isPresent()) {
                 hasShop = true;
-                shopId = shopOpt.get().getId();
-                shopName = shopOpt.get().getName();
+                Shop s = shopOpt.get();
+                shopId = s.getId();
+                shopName = s.getName();
                 sellerStatus = "APPROVED";
+                if (s.getStatus() != null) {
+                    shopStatus = s.getStatus().name();
+                }
             }
         }
 
@@ -346,11 +365,22 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             }
         }
 
+        Account account = accountRepository.findById(accountId).orElse(null);
+        int violationCount = account != null ? account.getViolationCount() : 0;
+        String disciplineLevel = (account != null && account.getDisciplineLevel() != null)
+                ? account.getDisciplineLevel().name()
+                : "NONE";
+        LocalDateTime bannedUntil = account != null ? account.getBannedUntil() : null;
+
         builder.accountId(accountId)
                 .hasShop(hasShop)
                 .shopId(shopId)
                 .shopName(shopName)
-                .sellerStatus(sellerStatus);
+                .sellerStatus(sellerStatus)
+                .shopStatus(shopStatus)
+                .violationCount(violationCount)
+                .disciplineLevel(disciplineLevel)
+                .bannedUntil(bannedUntil);
     }
 
     @Override

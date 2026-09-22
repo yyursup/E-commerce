@@ -61,12 +61,12 @@ export default function AdminLogin() {
               Cổng Quản Trị Sàn
             </h1>
             <p className="mt-1 text-xs text-stone-500 dark:text-slate-400 font-medium">
-              E-commerce Platform Administration Portal (Port 3002)
+              E-commerce Platform Administration Portal
             </p>
           </div>
 
           <div className="mb-6 rounded-2xl bg-rose-500/10 border border-rose-500/20 p-3 text-center text-xs text-rose-600 dark:text-rose-400 font-medium">
-            🔒 Khu vực bảo mật cao. Chỉ dành cho Ban Quản Trị sàn.
+            Khu vực bảo mật cao. Chỉ dành cho Ban Quản Trị sàn.
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -120,12 +120,12 @@ export default function AdminLogin() {
           <div className="mt-6 border-t border-stone-100 dark:border-slate-800 pt-4 text-center space-y-1 text-[11px] text-stone-400">
             <p>
               <a href="http://localhost:3000" target="_blank" rel="noreferrer" className="hover:underline text-amber-500">
-                &larr; Đến Sàn mua sắm (Port 3000)
+                Đến Sàn mua sắm
               </a>
             </p>
             <p>
               <a href="http://localhost:3001" target="_blank" rel="noreferrer" className="hover:underline">
-                Đến Kênh Người Bán (Port 3001)
+                Đến Kênh Người Bán
               </a>
             </p>
           </div>

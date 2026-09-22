@@ -1,6 +1,8 @@
 package com.marketplace.ecommerce.review.repository;
 
 import com.marketplace.ecommerce.review.dto.projection.ReviewStatsProjection;
+import com.marketplace.ecommerce.review.dto.projection.ShopReviewStatsProjection;
+import com.marketplace.ecommerce.review.dto.projection.ProductReviewStatsProjection;
 import com.marketplace.ecommerce.review.entity.Review;
 import com.marketplace.ecommerce.review.valueObjects.ReviewStatus;
 import jakarta.persistence.LockModeType;
@@ -13,6 +15,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -24,6 +27,10 @@ public interface ReviewRepository extends JpaRepository<Review, UUID> {
     Optional<Review> findByUserIdAndProductIdAndSubOrderId(
             UUID userId, UUID productId, UUID subOrderId
     );
+
+    @EntityGraph(attributePaths = {"product", "product.images", "images", "reply"})
+    @Query("SELECT r FROM Review r WHERE r.user.id = :userId ORDER BY r.createdAt DESC")
+    Page<Review> findByUserIdWithDetails(@Param("userId") UUID userId, Pageable pageable);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select r from Review r where r.id = :id")
@@ -73,4 +80,29 @@ public interface ReviewRepository extends JpaRepository<Review, UUID> {
             """)
     ReviewStatsProjection getStats(@Param("productId") UUID productId,
                                    @Param("status") ReviewStatus status);
+
+    @Query("""
+        SELECT
+          AVG(r.rating) as avgRating,
+          COUNT(r) as totalReviews
+        FROM Review r
+        JOIN r.product p
+        WHERE p.shop.id = :shopId
+          AND r.status = :status
+    """)
+    ShopReviewStatsProjection getShopStats(@Param("shopId") UUID shopId,
+                                           @Param("status") ReviewStatus status);
+
+    @Query("""
+        SELECT
+          r.product.id as productId,
+          AVG(r.rating) as avgRating,
+          COUNT(r) as totalReviews
+        FROM Review r
+        WHERE r.product.id IN :productIds
+          AND r.status = :status
+        GROUP BY r.product.id
+    """)
+    List<ProductReviewStatsProjection> getStatsForProducts(@Param("productIds") List<UUID> productIds,
+                                                           @Param("status") ReviewStatus status);
 }

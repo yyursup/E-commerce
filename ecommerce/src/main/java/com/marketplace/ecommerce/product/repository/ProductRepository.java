@@ -60,7 +60,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
                 left join fetch p.images i
                 where p.id = :id
                   and p.status = 'PUBLISHED'
-                  and s.status = 'ACTIVE'
+                  and s.status in ('ACTIVE', 'WARNED')
                   and s.user.account.isActive = true
                   and p.deleted = false
             """)
@@ -73,7 +73,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
                 join fetch p.productCategory c
                 where p.id <> :excludeId
                   and p.status = 'PUBLISHED'
-                  and p.shop.status = 'ACTIVE'
+                  and p.shop.status in ('ACTIVE', 'WARNED')
                   and p.shop.user.account.isActive = true
                   and p.deleted = false
                   and (:categoryId is null or p.productCategory.id = :categoryId)
@@ -87,7 +87,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
                 select p
                 from Product p
                 where p.status = 'PUBLISHED'
-                  and p.shop.status = 'ACTIVE'
+                  and p.shop.status in ('ACTIVE', 'WARNED')
                   and p.shop.user.account.isActive = true
                   and p.deleted = false
                   and (:categoryId is null or p.productCategory.id = :categoryId)
@@ -159,6 +159,17 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
                   and p.deleted = false
             """)
     List<Product> findFeaturedByShopIdWithDetails(@Param("shopId") UUID shopId);
+
+    @Query("""
+                select distinct p
+                from Product p
+                join fetch p.shop s
+                join fetch p.productCategory c
+                left join fetch p.images i
+                where s.id = :shopId
+                  and (p.status = 'DELETED' or p.flagged = true or p.deleted = true)
+            """)
+    List<Product> findAllViolatedProductsByShopId(@Param("shopId") UUID shopId);
 
     long countByShopIdAndFeaturedTrueAndDeletedFalse(UUID shopId);
 }

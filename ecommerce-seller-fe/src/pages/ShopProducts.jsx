@@ -142,6 +142,12 @@ export default function ShopProducts() {
         color: 'bg-sky-500/15 text-sky-400 border border-sky-500/30',
       }
     }
+    if (st === 'DELETED') {
+      return {
+        label: 'Bị sàn khóa / Vi phạm',
+        color: 'bg-rose-500/15 text-rose-500 border border-rose-500/30 font-bold',
+      }
+    }
     return {
       label: 'Đã lưu trữ',
       color: 'bg-slate-500/15 text-slate-400 border border-slate-500/30',
@@ -227,6 +233,7 @@ export default function ShopProducts() {
             { key: 'DRAFT', label: 'Bản nháp' },
             { key: 'INACTIVE', label: 'Tạm ngưng' },
             { key: 'ARCHIVED', label: 'Đã lưu trữ' },
+            { key: 'VIOLATION', label: 'Vi phạm' },
           ].map((tab) => {
             const isActive = statusFilter === tab.key
             return (
@@ -284,6 +291,12 @@ export default function ShopProducts() {
             const thumb = prod.images?.find((img) => img.isThumbnail) || prod.images?.[0]
             const imgUrl = thumb?.imageUrl || prod.image || '/product-placeholder.svg'
             const price = prod.basePrice ? Number(prod.basePrice) : (prod.price ? Number(prod.price) : 0)
+            const variantPrices = prod.variants?.length
+              ? prod.variants.map((v) => Number(v.price) || 0).filter((p) => p > 0)
+              : []
+            const minPrice = variantPrices.length > 0 ? Math.min(...variantPrices) : price
+            const maxPrice = variantPrices.length > 0 ? Math.max(...variantPrices) : price
+            const hasMultiplePrices = variantPrices.length > 1 && minPrice !== maxPrice
             const stock = prod.stockQuantity ?? prod.quantity ?? prod.stock ?? 0
             const statusBadge = getStatusBadge(prod.status)
             const isDeleting = deletingId === prod.id
@@ -304,8 +317,8 @@ export default function ShopProducts() {
                       ? 'border-amber-500/50 bg-amber-500/5 hover:border-amber-400 hover:shadow-lg hover:shadow-amber-500/10'
                       : 'border-amber-400/60 bg-amber-50/40 hover:border-amber-500 hover:shadow-md hover:shadow-amber-500/10'
                     : isDark
-                    ? 'border-slate-800 bg-slate-900 hover:border-amber-500/50 hover:bg-slate-900/90 hover:shadow-lg hover:shadow-amber-500/5'
-                    : 'border-stone-200 bg-white hover:border-amber-400 hover:bg-amber-50/20 hover:shadow-md'
+                      ? 'border-slate-800 bg-slate-900 hover:border-amber-500/50 hover:bg-slate-900/90 hover:shadow-lg hover:shadow-amber-500/5'
+                      : 'border-stone-200 bg-white hover:border-amber-400 hover:bg-amber-50/20 hover:shadow-md'
                 )}
                 title="Nhấp để xem chi tiết sản phẩm"
               >
@@ -350,6 +363,11 @@ export default function ShopProducts() {
                       {prod.sold >= 50 && (
                         <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/10 px-2 py-0.5 text-[11px] font-bold text-rose-500 border border-rose-500/20 shrink-0">
                           🔥 Bán chạy
+                        </span>
+                      )}
+                      {prod.flagged && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-bold text-amber-500 border border-amber-500/30 shrink-0">
+                          ⚠️ Bị cảnh báo ({prod.reportCount || 0} tố cáo)
                         </span>
                       )}
                       {isFeatured && (
@@ -406,83 +424,98 @@ export default function ShopProducts() {
                   <div className="text-left md:text-right">
                     <span className="text-[11px] text-stone-400 block md:hidden">Giá bán:</span>
                     <span className={cn(
-                      'font-black text-base sm:text-lg',
+                      'font-black text-base sm:text-lg tracking-tight',
                       isDark ? 'text-amber-400' : 'text-amber-600'
                     )}>
-                      {formatVND(price)}
+                      {hasMultiplePrices
+                        ? `${formatVND(minPrice)} - ${formatVND(maxPrice)}`
+                        : formatVND(minPrice || price)}
                     </span>
+                    {prod.variants?.length > 0 && (
+                      <span className="block text-[11px] font-semibold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20 mt-0.5 md:ml-auto w-fit">
+                        {prod.variants.length} phân loại
+                      </span>
+                    )}
                   </div>
 
                   {/* Actions Bar */}
                   <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-                    {/* Featured Toggle Button */}
-                    <button
-                      type="button"
-                      onClick={(e) => handleToggleFeatured(prod, e)}
-                      disabled={isTogglingFeatured}
-                      title={isFeatured ? 'Bỏ đẩy nổi bật' : 'Đẩy sản phẩm này lên nổi bật'}
-                      className={cn(
-                        'p-2 rounded-xl border transition-all active:scale-95 disabled:opacity-50',
-                        isFeatured
-                          ? 'border-amber-500/50 bg-amber-500/15 text-amber-500 hover:bg-amber-500/25'
-                          : isDark
-                            ? 'border-slate-800 bg-slate-800/80 text-slate-400 hover:text-amber-400 hover:border-amber-500/40'
-                            : 'border-stone-200 bg-stone-50 text-stone-400 hover:text-amber-500 hover:border-amber-400'
-                      )}
-                    >
-                      {isTogglingFeatured
-                        ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-amber-500 border-t-transparent" />
-                        : isFeatured
-                          ? <HiStar className="h-4 w-4" />
-                          : <HiOutlineStar className="h-4 w-4" />
-                      }
-                    </button>
+                    {prod.status === 'DELETED' ? (
+                      <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-500 font-bold text-xs tracking-wide">
+                        🚫 Bị sàn cấm (Chỉ xem)
+                      </span>
+                    ) : (
+                      <>
+                        {/* Featured Toggle Button */}
+                        <button
+                          type="button"
+                          onClick={(e) => handleToggleFeatured(prod, e)}
+                          disabled={isTogglingFeatured}
+                          title={isFeatured ? 'Bỏ đẩy nổi bật' : 'Đẩy sản phẩm này lên nổi bật'}
+                          className={cn(
+                            'p-2 rounded-xl border transition-all active:scale-95 disabled:opacity-50',
+                            isFeatured
+                              ? 'border-amber-500/50 bg-amber-500/15 text-amber-500 hover:bg-amber-500/25'
+                              : isDark
+                                ? 'border-slate-800 bg-slate-800/80 text-slate-400 hover:text-amber-400 hover:border-amber-500/40'
+                                : 'border-stone-200 bg-stone-50 text-stone-400 hover:text-amber-500 hover:border-amber-400'
+                          )}
+                        >
+                          {isTogglingFeatured
+                            ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-amber-500 border-t-transparent" />
+                            : isFeatured
+                              ? <HiStar className="h-4 w-4" />
+                              : <HiOutlineStar className="h-4 w-4" />
+                          }
+                        </button>
 
-                    <a
-                      href={`http://localhost:3000/products/${prod.id}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                      className={cn(
-                        'p-2 rounded-xl border transition-all active:scale-95',
-                        isDark
-                          ? 'border-slate-800 bg-slate-800/80 text-slate-300 hover:text-amber-400 hover:border-amber-500/40'
-                          : 'border-stone-200 bg-stone-50 text-stone-600 hover:text-amber-600 hover:border-amber-500/40'
-                      )}
-                      title="Xem sản phẩm trên sàn"
-                    >
-                      <HiOutlineExternalLink className="h-4 w-4" />
-                    </a>
+                        <a
+                          href={`http://localhost:3000/products/${prod.id}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className={cn(
+                            'p-2 rounded-xl border transition-all active:scale-95',
+                            isDark
+                              ? 'border-slate-800 bg-slate-800/80 text-slate-300 hover:text-amber-400 hover:border-amber-500/40'
+                              : 'border-stone-200 bg-stone-50 text-stone-600 hover:text-amber-600 hover:border-amber-500/40'
+                          )}
+                          title="Xem sản phẩm trên sàn"
+                        >
+                          <HiOutlineExternalLink className="h-4 w-4" />
+                        </a>
 
-                    <button
-                      type="button"
-                      onClick={(e) => handleEditProduct(prod, e)}
-                      className={cn(
-                        'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all active:scale-95',
-                        isDark
-                          ? 'border-blue-500/30 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20'
-                          : 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100'
-                      )}
-                      title="Chỉnh sửa sản phẩm"
-                    >
-                      <HiOutlinePencilAlt className="h-4 w-4" />
-                      <span>Sửa</span>
-                    </button>
+                        <button
+                          type="button"
+                          onClick={(e) => handleEditProduct(prod, e)}
+                          className={cn(
+                            'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all active:scale-95',
+                            isDark
+                              ? 'border-blue-500/30 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20'
+                              : 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100'
+                          )}
+                          title="Chỉnh sửa sản phẩm"
+                        >
+                          <HiOutlinePencilAlt className="h-4 w-4" />
+                          <span>Sửa</span>
+                        </button>
 
-                    <button
-                      type="button"
-                      onClick={(e) => handleDeleteProduct(prod.id, prod.name, e)}
-                      disabled={isDeleting}
-                      className={cn(
-                        'p-2 rounded-xl border transition-all active:scale-95 disabled:opacity-50',
-                        isDark
-                          ? 'border-rose-500/30 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20'
-                          : 'border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100'
-                      )}
-                      title="Xóa sản phẩm"
-                    >
-                      <HiOutlineTrash className="h-4 w-4" />
-                    </button>
+                        <button
+                          type="button"
+                          onClick={(e) => handleDeleteProduct(prod.id, prod.name, e)}
+                          disabled={isDeleting}
+                          className={cn(
+                            'p-2 rounded-xl border transition-all active:scale-95 disabled:opacity-50',
+                            isDark
+                              ? 'border-rose-500/30 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20'
+                              : 'border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100'
+                          )}
+                          title="Xóa sản phẩm"
+                        >
+                          <HiOutlineTrash className="h-4 w-4" />
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               </motion.div>

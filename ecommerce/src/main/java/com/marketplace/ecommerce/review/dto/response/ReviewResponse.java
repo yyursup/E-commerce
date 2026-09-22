@@ -30,12 +30,14 @@ public class ReviewResponse {
     private boolean warning;
     private int flagCount;
     private ReviewStatus status;
+    private String productName;
+    private String productThumbnail;
 
 
     public static ReviewResponse fromEntity(Review review) {
-        String originalName = review.getUser().getFullName();
+        String originalName = review.getUser() != null ? review.getUser().getFullName() : null;
         if (originalName == null || originalName.isEmpty()) {
-            originalName = review.getUser().getEmail();
+            originalName = review.getUser() != null ? review.getUser().getEmail() : "Người dùng";
         }
 
         String maskedName = originalName;
@@ -44,21 +46,34 @@ public class ReviewResponse {
         }
         Reply reply = review.getReply();
 
+        String prodName = null;
+        String prodThumb = null;
+        if (review.getProduct() != null) {
+            prodName = review.getProduct().getName();
+            if (review.getProduct().getImages() != null && !review.getProduct().getImages().isEmpty()) {
+                prodThumb = review.getProduct().getImages().iterator().next().getImageUrl();
+            }
+        }
 
         return ReviewResponse.builder()
                 .id(review.getId())
-                .userId(review.getUser().getId())
-                .productId(review.getProduct().getId())
+                .userId(review.getUser() != null ? review.getUser().getId() : null)
+                .productId(review.getProduct() != null ? review.getProduct().getId() : null)
+                .productName(prodName)
+                .productThumbnail(prodThumb)
                 .userFullName(maskedName)
-                .userAvatarUrl(review.getUser().getAvatarUrl())
+                .userAvatarUrl(review.getUser() != null ? review.getUser().getAvatarUrl() : null)
                 .rating(review.getRating())
                 .comment(review.getComment())
                 .sellerReply(reply == null ? null : SellerReplyResponse.from(reply))
-                .imageUrls(review.getImages().stream()
+                .isVerifiedPurchase(review.getSubOrderId() != null)
+                .imageUrls(review.getImages() != null ? review.getImages().stream()
                         .map(ReviewImage::getImageUrl)
-                        .collect(Collectors.toList()))
+                        .collect(Collectors.toList()) : java.util.Collections.emptyList())
                 .createdAt(review.getCreatedAt())
                 .status(review.getStatus())
+                .warning(review.isFlagged())
+                .flagCount(review.getReportCount())
                 .build();
     }
 

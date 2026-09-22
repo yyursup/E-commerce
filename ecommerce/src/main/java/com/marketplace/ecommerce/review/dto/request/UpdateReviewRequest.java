@@ -19,4 +19,5 @@ public class UpdateReviewRequest {
     private String comment;
 
     private List<MultipartFile> newImages;
+    private List<MultipartFile> newVideos;
 }

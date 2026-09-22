@@ -1,258 +1,342 @@
-import { useCallback, useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import toast from 'react-hot-toast'
-import { HiOutlineDuplicate } from 'react-icons/hi'
-import { useThemeStore } from '../../store/useThemeStore'
+import { useState, useEffect, useCallback } from 'react'
+import {
+  HiOutlineExclamationCircle,
+  HiOutlineShieldCheck,
+  HiOutlineRefresh,
+  HiOutlineCash,
+  HiOutlineScale,
+  HiOutlineShoppingBag,
+  HiOutlineTag,
+  HiOutlineUser,
+  HiOutlineStar,
+} from 'react-icons/hi'
 import { cn } from '../../lib/cn'
+import { useThemeStore } from '../../store/useThemeStore'
+import reportService from '../../services/report'
 import requestService from '../../services/request'
-import { getRequestTypeBadge, formatAdminRequestDate, shortUUID } from './components/request/requestHelpers'
+import escrowService from '../../services/escrow'
+import toast from 'react-hot-toast'
 
-const getStatusBadge = (status, isDark) => {
-  switch (status) {
-    case 'APPROVED':
-      return {
-        label: 'Đã duyệt phạt',
-        className: isDark
-          ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
-          : 'bg-emerald-50 text-emerald-700 border border-emerald-200',
-      }
-    case 'REJECTED':
-      return {
-        label: 'Bỏ qua báo cáo',
-        className: isDark
-          ? 'bg-rose-500/15 text-rose-300 border border-rose-500/30'
-          : 'bg-rose-50 text-rose-700 border border-rose-200',
-      }
-    case 'PENDING':
-    default:
-      return {
-        label: 'Chờ duyệt',
-        className: isDark
-          ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
-          : 'bg-amber-50 text-amber-700 border border-amber-200',
-      }
-  }
-}
+import AdminReportsTab from './components/reports/AdminReportsTab'
+import AdminAppealsTab from './components/reports/AdminAppealsTab'
+import AdminEscrowTab from './components/reports/AdminEscrowTab'
+import AdminReportDetailModal from './components/reports/AdminReportDetailModal'
+import AdminActionModal from './components/reports/AdminActionModal'
 
-const shortId = (value) => {
-  if (!value) return '-'
-  const str = String(value)
-  return str.length > 8 ? `${str.slice(0, 8)}...` : str
+// Helper tách và gom tất cả link ảnh từ các nguồn (hỗ trợ nhiều ảnh phân cách bằng dấu phẩy)
+export const parseImages = (...sources) => {
+  const urls = []
+  sources.forEach((src) => {
+    if (typeof src === 'string' && src.trim()) {
+      src.split(',').forEach((url) => {
+        const trimmed = url.trim()
+        if (trimmed && !urls.includes(trimmed)) {
+          urls.push(trimmed)
+        }
+      })
+    }
+  })
+  return urls
 }
 
 export default function AdminReports() {
-  const isDark = useThemeStore((state) => state.theme) === 'dark'
+  const isDark = useThemeStore((s) => s.theme) === 'dark'
+  const [activeTab, setActiveTab] = useState('REPORTS') // 'REPORTS' | 'APPEALS' | 'ESCROW'
+  const [loading, setLoading] = useState(true)
 
-  const [requests, setRequests] = useState([])
-  const [statusFilter, setStatusFilter] = useState('')
-  const [page, setPage] = useState(0)
-  const [size] = useState(10)
-  const [totalPages, setTotalPages] = useState(0)
-  const [totalElements, setTotalElements] = useState(0)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
+  // Data states
+  const [reports, setReports] = useState([])
+  const [appeals, setAppeals] = useState([])
+  const [escrows, setEscrows] = useState([])
 
-  const fetchRequests = useCallback(async () => {
+  // Modal actions (xác nhận/từ chối kèm ghi chú)
+  const [actionModal, setActionModal] = useState({
+    isOpen: false,
+    type: '', // 'REPORT_APPROVE', 'REPORT_REJECT', 'APPEAL_APPROVE', 'APPEAL_REJECT', 'ESCROW_REFUND', 'ESCROW_RELEASE'
+    item: null,
+    note: '',
+  })
+  const [submitting, setSubmitting] = useState(false)
+
+  // Modal xem chi tiết
+  const [detailModal, setDetailModal] = useState({
+    isOpen: false,
+    loading: false,
+    data: null,
+    rawItem: null,
+  })
+
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true)
-      setError(null)
-      const params = { page, size, type: 'REPORT' }
-      if (statusFilter) params.status = statusFilter
-      const res = await requestService.getAdminRequests(params)
-      const content = Array.isArray(res?.content) ? res.content : Array.isArray(res) ? res : []
-      setRequests(content)
-      setTotalPages(typeof res?.totalPages === 'number' ? res.totalPages : 0)
-      setTotalElements(typeof res?.totalElements === 'number' ? res.totalElements : content.length)
+      if (activeTab === 'REPORTS' || activeTab === 'APPEALS') {
+        const [reportRes, appealRes] = await Promise.all([
+          requestService.getAdminRequests({ type: 'REPORT' }),
+          requestService.getAdminRequests({ type: 'APPEAL' }),
+        ])
+        const reportList = reportRes?.content || (Array.isArray(reportRes) ? reportRes : [])
+        const appealList = appealRes?.content || (Array.isArray(appealRes) ? appealRes : [])
+        setReports(reportList)
+        setAppeals(appealList)
+      } else if (activeTab === 'ESCROW') {
+        const res = await escrowService.getAdminEscrows()
+        const list = res?.content || (Array.isArray(res) ? res : [])
+        setEscrows(list)
+      }
     } catch (err) {
-      console.error('Admin report list error:', err)
-      setError(err?.message || 'Failed to load reports.')
-      toast.error(err?.message || 'Failed to load reports.')
+      console.error('Lỗi tải dữ liệu kiểm duyệt:', err)
+      toast.error('Không thể tải danh sách dữ liệu kiểm duyệt.')
     } finally {
       setLoading(false)
     }
-  }, [page, size, statusFilter])
+  }, [activeTab])
 
   useEffect(() => {
-    fetchRequests()
-  }, [fetchRequests])
+    fetchData()
+  }, [fetchData])
+
+  const handleOpenDetail = async (item) => {
+    const requestId = item.requestId || item.id
+    setDetailModal({
+      isOpen: true,
+      loading: true,
+      data: null,
+      rawItem: item,
+    })
+    try {
+      const details = await requestService.getRequestDetails(requestId)
+      setDetailModal({
+        isOpen: true,
+        loading: false,
+        data: details,
+        rawItem: item,
+      })
+    } catch (err) {
+      console.error('Lỗi tải chi tiết yêu cầu:', err)
+      toast.error('Không thể tải chi tiết. Vui lòng thử lại.')
+      setDetailModal((prev) => ({ ...prev, loading: false }))
+    }
+  }
+
+  const handleActionConfirm = async () => {
+    const { type, item, note } = actionModal
+    if (!item) return
+
+    const trimmedNote = note?.trim() || ''
+
+    // Bắt buộc nhập lý do phán quyết đối với duyệt / từ chối report hoặc kháng cáo
+    if (!trimmedNote && ['REPORT_APPROVE', 'REPORT_REJECT', 'APPEAL_APPROVE', 'APPEAL_REJECT'].includes(type)) {
+      toast.error('Vui lòng nhập hoặc chọn lý do / phán quyết của Ban Quản Trị!')
+      return
+    }
+
+    try {
+      setSubmitting(true)
+      const requestId = item.requestId || item.id
+
+      if (type === 'REPORT_APPROVE') {
+        await reportService.handleReport(requestId, 'APPROVE', trimmedNote)
+        toast.success('Đã xác nhận vi phạm! Hệ thống đã tự động áp dụng chế tài & tính chu kỳ hoàn lương 30 ngày.')
+      } else if (type === 'REPORT_REJECT') {
+        await reportService.handleReport(requestId, 'REJECT', trimmedNote)
+        toast.success('Đã bác bỏ báo cáo vi phạm.')
+      } else if (type === 'APPEAL_APPROVE') {
+        await requestService.approveRequest(requestId, trimmedNote)
+        toast.success('Đã chấp thuận kháng cáo! Đã khôi phục trạng thái và điều chỉnh điểm vi phạm về an toàn.')
+      } else if (type === 'APPEAL_REJECT') {
+        await requestService.rejectRequest(requestId, trimmedNote)
+        toast.success('Đã từ chối kháng cáo.')
+      } else if (type === 'ESCROW_REFUND') {
+        const orderId = item.orderId || item.order?.id
+        await escrowService.refundByOrder(orderId, trimmedNote || 'Admin phân xử hoàn tiền 100% cho người mua do Shop vi phạm')
+        toast.success('Đã kích hoạt hoàn tiền ký quỹ Escrow về Ví người mua thành công!')
+      } else if (type === 'ESCROW_RELEASE') {
+        const orderId = item.orderId || item.order?.id
+        await escrowService.releaseByOrder(orderId)
+        toast.success('Đã giải ngân tiền ký quỹ về Ví người bán!')
+      }
+
+      setActionModal({ isOpen: false, type: '', item: null, note: '' })
+      setDetailModal({ isOpen: false, loading: false, data: null, rawItem: null })
+      fetchData()
+    } catch (err) {
+      console.error('Action error:', err)
+      toast.error(err?.response?.data?.message || err?.message || 'Có lỗi xảy ra khi thực hiện thao tác.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const copyToClipboard = (text) => {
+    if (!text) return
+    navigator.clipboard.writeText(text)
+    toast.success('Đã sao chép mã ID vào bộ nhớ đệm')
+  }
+
+  const formatVND = (amt) => {
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amt || 0)
+  }
+
+  const getTargetIcon = (targetType) => {
+    switch (targetType) {
+      case 'SHOP':
+        return <HiOutlineShoppingBag className="h-5 w-5 text-amber-500" />
+      case 'PRODUCT':
+        return <HiOutlineTag className="h-5 w-5 text-indigo-500" />
+      case 'USER':
+        return <HiOutlineUser className="h-5 w-5 text-sky-500" />
+      case 'REVIEW':
+        return <HiOutlineStar className="h-5 w-5 text-yellow-500" />
+      default:
+        return <HiOutlineExclamationCircle className="h-5 w-5 text-stone-400" />
+    }
+  }
+
+  const getTargetLabel = (targetType) => {
+    switch (targetType) {
+      case 'SHOP':
+        return 'Gian hàng (Shop)'
+      case 'PRODUCT':
+        return 'Sản phẩm (Product)'
+      case 'USER':
+        return 'Tài khoản người dùng (User)'
+      case 'REVIEW':
+        return 'Đánh giá / Nhận xét (Review)'
+      default:
+        return 'Đối tượng chưa xác định'
+    }
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold">Quản lý báo cáo vi phạm</h1>
-          <p className={cn('text-sm', isDark ? 'text-slate-400' : 'text-stone-500')}>
-            Tổng số: {totalElements}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <select
-            value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value)
-              setPage(0)
-            }}
-            className={cn(
-              'rounded-lg border px-3 py-2 text-sm outline-none transition',
-              isDark
-                ? 'border-slate-700 bg-slate-900 text-slate-100 focus:border-amber-500/60'
-                : 'border-stone-300 bg-white text-stone-700 focus:border-amber-500',
-            )}
-          >
-            <option value="">Tất cả trạng thái</option>
-            <option value="PENDING">Chờ duyệt</option>
-            <option value="APPROVED">Đã duyệt phạt</option>
-            <option value="REJECTED">Bỏ qua báo cáo</option>
-          </select>
-          <button
-            onClick={fetchRequests}
-            className={cn(
-              'rounded-lg px-4 py-2 text-sm font-semibold transition',
-              isDark ? 'bg-slate-800 text-slate-100 hover:bg-slate-700' : 'bg-white text-stone-700 hover:bg-stone-100',
-            )}
-          >
-            Làm mới
-          </button>
-        </div>
-      </div>
-
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.2 }}
+      {/* Header */}
+      <div
         className={cn(
-          'overflow-hidden rounded-2xl border shadow-sm',
+          'rounded-3xl border p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-colors',
           isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white',
         )}
       >
-        <div className="grid grid-cols-12 gap-3 border-b px-6 py-4 text-xs font-semibold uppercase tracking-wide text-stone-500 dark:border-slate-800 dark:text-slate-400">
-          <div className="col-span-3">Mã báo cáo</div>
-          <div className="col-span-3">Loại yêu cầu</div>
-          <div className="col-span-2">Trạng thái</div>
-          <div className="col-span-2">Thời gian gửi</div>
-          <div className="col-span-2 text-right">Thao tác</div>
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-500 border border-amber-500/25 shadow-sm">
+            <HiOutlineShieldCheck className="h-6 w-6" />
+          </div>
+          <div>
+            <h1 className={cn('text-2xl font-bold tracking-tight', isDark ? 'text-white' : 'text-stone-900')}>
+              Kiểm Soát An Toàn, Vi Phạm & Kháng Cáo (Trust & Safety)
+            </h1>
+            <p className={cn('text-xs mt-0.5', isDark ? 'text-slate-400' : 'text-stone-500')}>
+              Thẩm định báo cáo vi phạm, xét duyệt kháng cáo và phân xử ký quỹ Escrow bảo vệ người mua
+            </p>
+          </div>
         </div>
 
-        {loading && (
-          <div className="flex items-center justify-center gap-3 px-6 py-10 text-sm">
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-amber-500 border-r-transparent" />
-            Đang tải danh sách báo cáo...
-          </div>
-        )}
+        <button
+          onClick={fetchData}
+          disabled={loading}
+          className={cn(
+            'p-2.5 rounded-2xl border transition-all active:scale-95 disabled:opacity-50',
+            isDark
+              ? 'border-slate-800 bg-slate-800/80 text-slate-200 hover:bg-slate-800'
+              : 'border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100',
+          )}
+          title="Tải lại dữ liệu"
+        >
+          <HiOutlineRefresh className={cn('h-5 w-5', loading && 'animate-spin')} />
+        </button>
+      </div>
 
-        {!loading && error && (
-          <div className="px-6 py-6 text-sm text-red-500">{error}</div>
+      {/* Tabs Navigation */}
+      <div
+        className={cn(
+          'flex flex-wrap items-center gap-2 p-1.5 rounded-2xl border transition-all',
+          isDark ? 'border-slate-800 bg-slate-900/90' : 'border-stone-200 bg-stone-100/90',
         )}
-
-        {!loading && !error && requests.length === 0 && (
-          <div className="px-6 py-10 text-center text-sm text-stone-500 dark:text-slate-400">
-            Không có báo cáo nào.
-          </div>
-        )}
-
-        {!loading && !error && requests.map((req) => {
-          const typeBadge = getRequestTypeBadge(req.type, isDark)
-          const statusBadge = getStatusBadge(req.status, isDark)
+      >
+        {[
+          { key: 'REPORTS', label: `Báo Cáo Vi Phạm (${reports.length})`, icon: HiOutlineExclamationCircle },
+          { key: 'APPEALS', label: `Hàng Đợi Kháng Cáo (${appeals.length})`, icon: HiOutlineScale },
+          { key: 'ESCROW', label: `Xử Lý Ký Quỹ Escrow (${escrows.length})`, icon: HiOutlineCash },
+        ].map((tab) => {
+          const isActive = activeTab === tab.key
+          const Icon = tab.icon
           return (
-            <div
-              key={req.requestId || req.id}
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
               className={cn(
-                'grid grid-cols-12 items-center gap-3 px-6 py-4 text-sm transition-colors',
-                isDark ? 'border-slate-800 text-slate-200 hover:bg-slate-800/40' : 'border-stone-100 text-stone-700 hover:bg-stone-50',
-                'border-b last:border-b-0',
+                'flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all',
+                isActive
+                  ? 'bg-amber-500 text-white shadow-md shadow-amber-500/25'
+                  : isDark
+                    ? 'text-slate-300 hover:text-white hover:bg-slate-800'
+                    : 'text-stone-600 hover:text-stone-900 hover:bg-white',
               )}
             >
-              <div className="col-span-3 flex items-center gap-2 font-mono text-xs font-semibold">
-                <span title={req.requestId}>{req.displayCode || shortUUID(req.requestId)}</span>
-                {req.requestId && (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      navigator.clipboard.writeText(req.displayCode || req.requestId);
-                      toast.success('Đã copy Mã báo cáo');
-                    }}
-                    className={cn(
-                      'p-1.5 rounded-lg transition hover:shadow-sm',
-                      isDark ? 'text-slate-400 hover:bg-slate-700 hover:text-slate-200' : 'text-stone-400 hover:bg-stone-200 hover:text-stone-600'
-                    )}
-                    title="Copy Mã báo cáo"
-                  >
-                    <HiOutlineDuplicate className="h-3.5 w-3.5" />
-                  </button>
-                )}
-              </div>
-              <div className="col-span-3">
-                <span className={cn('inline-block rounded-full px-2.5 py-1 text-xs font-medium border', typeBadge.className)}>
-                  {typeBadge.label}
-                </span>
-              </div>
-              <div className="col-span-2">
-                <span className={cn('inline-block rounded-full px-2.5 py-1 text-xs font-medium', statusBadge.className)}>
-                  {statusBadge.label}
-                </span>
-              </div>
-              <div className="col-span-2 text-xs text-stone-500 dark:text-slate-400">
-                {formatAdminRequestDate(req.createdAt)}
-              </div>
-              <div className="col-span-2 text-right">
-                {req.requestId ? (
-                  <Link
-                    to={`/reports/${req.requestId}`}
-                    className={cn(
-                      'inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold transition',
-                      isDark
-                        ? 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30'
-                        : 'bg-amber-100 text-amber-700 hover:bg-amber-200',
-                    )}
-                  >
-                    Xem xét →
-                  </Link>
-                ) : (
-                  <span className="text-xs text-stone-400">-</span>
-                )}
-              </div>
-            </div>
+              <Icon className="h-4 w-4" />
+              {tab.label}
+            </button>
           )
         })}
-      </motion.div>
+      </div>
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between text-sm">
-          <button
-            disabled={page <= 0}
-            onClick={() => setPage((p) => Math.max(0, p - 1))}
-            className={cn(
-              'rounded-lg px-4 py-2 font-semibold transition',
-              page <= 0
-                ? 'cursor-not-allowed opacity-50'
-                : isDark
-                  ? 'bg-slate-800 text-slate-100 hover:bg-slate-700'
-                  : 'bg-white text-stone-700 hover:bg-stone-100',
-            )}
-          >
-            Prev
-          </button>
-          <span className={cn(isDark ? 'text-slate-400' : 'text-stone-500')}>
-            Page {page + 1} / {totalPages}
-          </span>
-          <button
-            disabled={page + 1 >= totalPages}
-            onClick={() => setPage((p) => p + 1)}
-            className={cn(
-              'rounded-lg px-4 py-2 font-semibold transition',
-              page + 1 >= totalPages
-                ? 'cursor-not-allowed opacity-50'
-                : isDark
-                  ? 'bg-slate-800 text-slate-100 hover:bg-slate-700'
-                  : 'bg-white text-stone-700 hover:bg-stone-100',
-            )}
-          >
-            Next
-          </button>
-        </div>
-      )}
+      {/* Content Container */}
+      <div
+        className={cn(
+          'rounded-3xl border p-6 shadow-sm overflow-hidden transition-colors',
+          isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white',
+        )}
+      >
+        {loading ? (
+          <div className="py-20 text-center">
+            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-r-transparent" />
+            <p className="mt-3 text-xs text-stone-400">Đang tải dữ liệu kiểm duyệt...</p>
+          </div>
+        ) : activeTab === 'REPORTS' ? (
+          <AdminReportsTab
+            reports={reports}
+            isDark={isDark}
+            handleOpenDetail={handleOpenDetail}
+            setActionModal={setActionModal}
+            parseImages={parseImages}
+          />
+        ) : activeTab === 'APPEALS' ? (
+          <AdminAppealsTab
+            appeals={appeals}
+            isDark={isDark}
+            handleOpenDetail={handleOpenDetail}
+            setActionModal={setActionModal}
+            parseImages={parseImages}
+          />
+        ) : (
+          <AdminEscrowTab
+            escrows={escrows}
+            isDark={isDark}
+            formatVND={formatVND}
+            setActionModal={setActionModal}
+          />
+        )}
+      </div>
+
+      {/* Detail Modal (Xem Chi Tiết Đầy Đủ) */}
+      <AdminReportDetailModal
+        detailModal={detailModal}
+        setDetailModal={setDetailModal}
+        isDark={isDark}
+        copyToClipboard={copyToClipboard}
+        getTargetIcon={getTargetIcon}
+        getTargetLabel={getTargetLabel}
+        parseImages={parseImages}
+        setActionModal={setActionModal}
+      />
+
+      {/* Action Modal (Nhập ghi chú phán quyết) */}
+      <AdminActionModal
+        actionModal={actionModal}
+        setActionModal={setActionModal}
+        isDark={isDark}
+        submitting={submitting}
+        handleActionConfirm={handleActionConfirm}
+      />
     </div>
   )
 }

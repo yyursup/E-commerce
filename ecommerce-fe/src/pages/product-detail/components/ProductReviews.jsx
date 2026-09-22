@@ -1,13 +1,18 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { HiStar, HiOutlineChatAlt2 } from 'react-icons/hi'
+import { HiStar, HiOutlineChatAlt2, HiPlay, HiX, HiOutlineScale, HiOutlineExclamationCircle } from 'react-icons/hi'
 import toast from 'react-hot-toast'
 import ReportActionButton from '../../../components/ReportActionButton'
+import ReviewAppealModal from '../../../components/ReviewAppealModal'
 import { cn } from '../../../lib/cn'
 import reviewService from '../../../services/review'
 import replyService from '../../../services/reply'
 import { useAuthStore } from '../../../store/useAuthStore'
 import { useThemeStore } from '../../../store/useThemeStore'
+
+const isVideoUrl = (url = '') => {
+  return /\.(mp4|mov|webm|ogg|m4v)(\?.*)?$/i.test(url) || url.includes('/video/')
+}
 
 export default function ProductReviews({ productId }) {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
@@ -20,24 +25,37 @@ export default function ProductReviews({ productId }) {
   const [page, setPage] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
   const [filterRating, setFilterRating] = useState(null)
+  const [selectedMedia, setSelectedMedia] = useState(null)
+  const [myReview, setMyReview] = useState(null)
+  const [appealModal, setAppealModal] = useState({ isOpen: false, review: null })
 
   const fetchReviews = useCallback(async () => {
     try {
       setLoading(true)
-      const [statsData, reviewsData] = await Promise.all([
+      const promises = [
         reviewService.getProductReviewStats(productId),
         reviewService.getProductReviews(productId, { rating: filterRating, page, size: 5 }),
-      ])
+      ]
+      if (currentUserId) {
+        promises.push(reviewService.getMyAllReviews({ size: 50 }).catch(() => null))
+      }
+      const [statsData, reviewsData, myAll] = await Promise.all(promises)
 
       setStats(statsData)
       setReviews(reviewsData.content || [])
       setTotalPages(reviewsData.totalPages || 0)
+
+      if (myAll) {
+        const myRevList = myAll?.content || (Array.isArray(myAll) ? myAll : [])
+        const found = myRevList.find((r) => String(r.productId).toLowerCase() === String(productId).toLowerCase())
+        setMyReview(found || null)
+      }
     } catch (error) {
       console.error('Error fetching reviews:', error)
     } finally {
       setLoading(false)
     }
-  }, [productId, filterRating, page])
+  }, [productId, filterRating, page, currentUserId])
 
   useEffect(() => {
     fetchReviews()
@@ -123,6 +141,41 @@ export default function ProductReviews({ productId }) {
         </div>
       </div>
 
+      {/* Banner cảnh báo nếu đánh giá của chính người dùng bị ẩn hoặc gắn cờ */}
+      {myReview && (myReview.status === 'HIDDEN' || myReview.warning || myReview.flagCount > 0) && (
+        <div
+          className={cn(
+            'p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3',
+            myReview.status === 'HIDDEN'
+              ? 'border-rose-500/30 bg-rose-500/10 text-rose-300'
+              : 'border-amber-500/30 bg-amber-500/10 text-amber-300',
+          )}
+        >
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 font-bold text-xs sm:text-sm">
+              <HiOutlineExclamationCircle className="h-5 w-5 shrink-0" />
+              <span>
+                {myReview.status === 'HIDDEN'
+                  ? `Đánh giá của bạn về sản phẩm này đã bị ẩn do vi phạm tiêu chuẩn (${myReview.flagCount || 0} lượt báo cáo)`
+                  : `Đánh giá của bạn về sản phẩm này đang bị cảnh báo vi phạm (${myReview.flagCount || 0} lượt báo cáo)`}
+              </span>
+            </div>
+            <p className="text-xs text-stone-400 italic">
+              Nội dung đánh giá: &ldquo;{myReview.comment || 'Không có văn bản'}&rdquo;
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setAppealModal({ isOpen: true, review: myReview })}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-amber-500 hover:bg-amber-600 active:scale-95 transition shrink-0 shadow-sm"
+          >
+            <HiOutlineScale className="h-4 w-4" />
+            Kháng cáo đánh giá này
+          </button>
+        </div>
+      )}
+
       <div className="space-y-6">
         {reviews.length === 0 ? (
           <div className={cn('py-10 text-center', isDark ? 'text-slate-500' : 'text-stone-400')}>
@@ -183,15 +236,43 @@ export default function ProductReviews({ productId }) {
                     </p>
 
                     {review.imageUrls && review.imageUrls.length > 0 && (
-                      <div className="flex flex-wrap gap-2 pt-1">
-                        {review.imageUrls.map((imageUrl, index) => (
-                          <img
-                            key={index}
-                            src={imageUrl}
-                            alt="Review"
-                            className="h-20 w-20 rounded-lg border object-cover dark:border-slate-700"
-                          />
-                        ))}
+                      <div className="flex flex-wrap gap-2.5 pt-2">
+                        {review.imageUrls.map((mediaUrl, index) => {
+                          const isVideo = isVideoUrl(mediaUrl)
+                          return isVideo ? (
+                            <div
+                              key={index}
+                              onClick={() => setSelectedMedia({ url: mediaUrl, isVideo: true })}
+                              className="relative h-20 w-24 rounded-xl overflow-hidden border border-stone-200 dark:border-slate-700 bg-black group cursor-pointer shadow-xs"
+                            >
+                              <video
+                                src={mediaUrl}
+                                className="h-full w-full object-cover opacity-80"
+                                preload="metadata"
+                              />
+                              <div className="absolute inset-0 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                <div className="h-7 w-7 rounded-full bg-black/60 flex items-center justify-center text-white backdrop-blur-xs">
+                                  <HiPlay className="h-4 w-4 ml-0.5" />
+                                </div>
+                              </div>
+                              <span className="absolute bottom-1 left-1 rounded bg-rose-600 px-1 py-0.5 text-[8px] font-bold text-white uppercase tracking-wider">
+                                Video
+                              </span>
+                            </div>
+                          ) : (
+                            <div
+                              key={index}
+                              onClick={() => setSelectedMedia({ url: mediaUrl, isVideo: false })}
+                              className="relative h-20 w-20 rounded-xl overflow-hidden border border-stone-200 dark:border-slate-700 bg-stone-100 dark:bg-slate-800 cursor-pointer shadow-xs group"
+                            >
+                              <img
+                                src={mediaUrl}
+                                alt="Review attachment"
+                                className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-200"
+                              />
+                            </div>
+                          )
+                        })}
                       </div>
                     )}
 
@@ -289,6 +370,50 @@ export default function ProductReviews({ productId }) {
           </div>
         )}
       </div>
+
+      {/* Media Preview Modal Lightbox */}
+      {selectedMedia && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-xs"
+          onClick={() => setSelectedMedia(null)}
+        >
+          <div
+            className="relative max-w-4xl max-h-[90vh] w-full flex items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setSelectedMedia(null)}
+              className="absolute -top-11 right-0 p-1.5 text-white hover:text-amber-400 transition cursor-pointer"
+              title="Đóng xem trước"
+            >
+              <HiX className="h-7 w-7" />
+            </button>
+            {selectedMedia.isVideo ? (
+              <video
+                src={selectedMedia.url}
+                controls
+                autoPlay
+                className="max-h-[82vh] max-w-full rounded-2xl shadow-2xl bg-black"
+              />
+            ) : (
+              <img
+                src={selectedMedia.url}
+                alt="Enlarged review media"
+                className="max-h-[82vh] max-w-full rounded-2xl object-contain shadow-2xl"
+              />
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Modal Kháng cáo đánh giá vi phạm */}
+      <ReviewAppealModal
+        isOpen={appealModal.isOpen}
+        onClose={() => setAppealModal({ isOpen: false, review: null })}
+        review={appealModal.review}
+        onSuccess={fetchReviews}
+      />
     </div>
   )
 }

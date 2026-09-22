@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Data
@@ -21,4 +22,10 @@ public class LoginResponse {
     private UUID shopId;
     private String shopName;
     private String sellerStatus; // NONE, PENDING, APPROVED, REJECTED
+    private String shopStatus; // ACTIVE, WARNED, SUSPENDED, BANNED, CLOSED
+    private String phoneNumber;
+    private String username;
+    private Integer violationCount;
+    private String disciplineLevel;
+    private LocalDateTime bannedUntil;
 }

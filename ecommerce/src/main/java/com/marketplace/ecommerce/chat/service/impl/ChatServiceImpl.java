@@ -79,21 +79,20 @@ public class ChatServiceImpl implements ChatService {
             } else {
                 threads = List.of();
             }
-        } else if ("CUSTOMER".equalsIgnoreCase(type)) {
-            threads = chatThreadRepository.findByCustomerId(principal.getAccountId());
-        } else if ("BUSINESS".equalsIgnoreCase(principal.getRole())) {
-            // Find shop owned by this user
-            Optional<User> userOpt = userRepository.findByAccountId(principal.getAccountId());
-            Shop shop = userOpt.flatMap(u -> shopRepository.findByUserId(u.getId())).orElse(null);
-
-            if (shop != null) {
-                threads = chatThreadRepository.findByShopId(shop.getId());
-            } else {
-                threads = chatThreadRepository.findByCustomerId(principal.getAccountId());
-            }
         } else {
+            // Default or "CUSTOMER": Always return customer threads for current user
             threads = chatThreadRepository.findByCustomerId(principal.getAccountId());
         }
+
+        // Filter out any self-chat threads where customer is also the shop owner
+        threads = threads.stream()
+                .filter(t -> !(t.getType() == ThreadType.SHOP
+                        && t.getShop() != null
+                        && t.getShop().getUser() != null
+                        && t.getShop().getUser().getAccount() != null
+                        && t.getCustomer() != null
+                        && t.getCustomer().getId().equals(t.getShop().getUser().getAccount().getId())))
+                .collect(Collectors.toList());
 
         return threads.stream()
                 .map(t -> ChatThreadResponse.from(t, principal.getAccountId(), isAdmin))
@@ -193,6 +192,13 @@ public class ChatServiceImpl implements ChatService {
         );
 
         UUID accountId = principal.getAccountId();
+
+        // Prevent self-chat: shop owner cannot create a chat thread with their own shop
+        if (shop.getUser() != null && shop.getUser().getAccount() != null
+                && shop.getUser().getAccount().getId().equals(accountId)) {
+            throw new CustomException("Bạn không thể tự nhắn tin cho chính gian hàng của mình");
+        }
+
         Optional<ChatThread> existingOpt = chatThreadRepository.findFirstByCustomer_IdAndShop_IdAndStatus(
                 accountId, shop.getId(), ThreadStatus.OPEN);
 
@@ -256,6 +262,8 @@ public class ChatServiceImpl implements ChatService {
         ChatThread thread = chatThreadRepository.findById(request.getThreadId())
                 .orElseThrow(() -> new CustomException("Không tìm thấy cuộc hội thoại"));
 
+        validateNotSelfChat(thread);
+
         UUID senderId = principal.getAccountId();
         String senderRole = principal.getRole() != null ? principal.getRole() : "CUSTOMER";
         boolean isAdmin = checkIsAdmin(senderRole);
@@ -318,6 +326,8 @@ public class ChatServiceImpl implements ChatService {
 
         ChatThread thread = chatThreadRepository.findById(threadId)
                 .orElseThrow(() -> new CustomException("Không tìm thấy cuộc hội thoại"));
+
+        validateNotSelfChat(thread);
 
         String fileName = fileService.uploadFile(file, "chat");
         String fileUrl = fileService.getFileUrl(fileName);
@@ -442,6 +452,8 @@ public class ChatServiceImpl implements ChatService {
 
         ChatThread thread = chatThreadRepository.findById(threadId)
                 .orElseThrow(() -> new CustomException("Không tìm thấy cuộc hội thoại"));
+
+        validateNotSelfChat(thread);
 
         String fileName = fileService.uploadFile(file, "chat");
         String fileUrl = fileService.getFileUrl(fileName);
@@ -631,6 +643,16 @@ public class ChatServiceImpl implements ChatService {
             }
             webSocketSessionService.broadcastToAdmins("CHAT_MESSAGE", response);
             webSocketSessionService.broadcastToAdmins("CHAT_THREAD_UPDATED", adminThreadRes);
+        }
+    }
+
+    private void validateNotSelfChat(ChatThread thread) {
+        if (thread != null && thread.getType() == ThreadType.SHOP && thread.getShop() != null
+                && thread.getShop().getUser() != null && thread.getShop().getUser().getAccount() != null) {
+            UUID shopOwnerAccountId = thread.getShop().getUser().getAccount().getId();
+            if (thread.getCustomer() != null && thread.getCustomer().getId().equals(shopOwnerAccountId)) {
+                throw new CustomException("Bạn không thể tự nhắn tin cho chính gian hàng của mình");
+            }
         }
     }
 

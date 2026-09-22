@@ -31,15 +31,41 @@ import productService from '../services/product'
 import voucherService from '../services/voucher'
 import socialService from '../services/social'
 
+function formatJoinedTime(createdAt) {
+  if (!createdAt) return 'Mới tham gia'
+  try {
+    const created = new Date(createdAt)
+    if (isNaN(created.getTime())) return 'Mới tham gia'
+    const now = new Date()
+    const diffMs = now.getTime() - created.getTime()
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+    if (diffDays < 1) return 'Hôm nay'
+    if (diffDays < 30) return `${diffDays} ngày trước`
+    const diffMonths = Math.floor(diffDays / 30)
+    if (diffMonths < 12) return `${diffMonths} tháng trước`
+    const diffYears = Math.floor(diffMonths / 12)
+    return `${diffYears} năm trước`
+  } catch {
+    return 'Mới tham gia'
+  }
+}
+
 export default function ShopProfile() {
   const { shopId } = useParams()
   const isDark = useThemeStore((s) => s.theme) === 'dark'
-  const { isAuthenticated } = useAuthStore()
+  const { isAuthenticated, user } = useAuthStore()
 
   const [shop, setShop] = useState(null)
   const [loadingShop, setLoadingShop] = useState(true)
   const [products, setProducts] = useState([])
   const [loadingProducts, setLoadingProducts] = useState(true)
+
+  const isOwner = Boolean(
+    user && shop && (
+      (user.shopId && String(user.shopId).toLowerCase() === String(shop.id).toLowerCase()) ||
+      (shop.ownerAccountId && String(user.accountId || user.id).toLowerCase() === String(shop.ownerAccountId).toLowerCase())
+    )
+  )
 
   // Interactive States
   const [isFollowing, setIsFollowing] = useState(false)
@@ -61,6 +87,9 @@ export default function ShopProfile() {
         setLoadingShop(true)
         const data = await shopService.getShopById(shopId)
         setShop(data)
+        if (typeof data?.followerCount === 'number') {
+          setFollowerCount(data.followerCount)
+        }
       } catch (err) {
         console.error('Error loading shop:', err)
       } finally {
@@ -176,7 +205,8 @@ export default function ShopProfile() {
             price: parsedPrice,
             basePrice: p.basePrice,
             badge: p.featured ? 'Shop Đề Xuất' : (p.status === 'PUBLISHED' ? 'Chính hãng' : null),
-            rating: p.rating || 4.8,
+            rating: p.rating != null ? Number(p.rating) : null,
+            reviewCount: p.reviewCount != null ? Number(p.reviewCount) : 0,
             shopName: p.shopName || shop?.name || 'Shop',
             shopId: p.shopId || targetShopId,
             featured: !!p.featured,
@@ -388,57 +418,67 @@ export default function ShopProfile() {
 
                 {/* Buttons: Follow + Chat + Report */}
                 <div className="mt-4 flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                  <button
-                    onClick={handleFollowToggle}
-                    disabled={isFollowLoading}
-                    className={cn(
-                      'inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition-all active:scale-95 shadow-sm',
-                      isFollowLoading && 'opacity-70 cursor-not-allowed',
-                      isFollowing
-                        ? 'bg-white/20 text-white hover:bg-white/30 border border-white/20'
-                        : 'bg-amber-500 text-white hover:bg-amber-600'
-                    )}
-                  >
-                    {isFollowLoading ? (
-                      <>
-                        <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-r-transparent" />
-                        Đang xử lý...
-                      </>
-                    ) : isFollowing ? (
-                      <>
-                        <HiOutlineCheck className="h-4 w-4" />
-                        Đang theo dõi
-                      </>
-                    ) : (
-                      <>
-                        <HiOutlineUserAdd className="h-4 w-4" />
-                        + Theo Dõi
-                      </>
-                    )}
-                  </button>
+                  {isOwner ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-amber-400/40 bg-amber-500/20 px-4 py-2 text-xs font-bold text-amber-300">
+                      <HiOutlineCheck className="h-4 w-4 text-amber-400" />
+                      Gian Hàng Của Bạn
+                    </span>
+                  ) : (
+                    <>
+                      <button
+                        onClick={handleFollowToggle}
+                        disabled={isFollowLoading}
+                        className={cn(
+                          'inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition-all active:scale-95 shadow-sm',
+                          isFollowLoading && 'opacity-70 cursor-not-allowed',
+                          isFollowing
+                            ? 'bg-white/20 text-white hover:bg-white/30 border border-white/20'
+                            : 'bg-amber-500 text-white hover:bg-amber-600'
+                        )}
+                      >
+                        {isFollowLoading ? (
+                          <>
+                            <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-r-transparent" />
+                            Đang xử lý...
+                          </>
+                        ) : isFollowing ? (
+                          <>
+                            <HiOutlineCheck className="h-4 w-4" />
+                            Đang theo dõi
+                          </>
+                        ) : (
+                          <>
+                            <HiOutlineUserAdd className="h-4 w-4" />
+                            + Theo Dõi
+                          </>
+                        )}
+                      </button>
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const targetShopId = shop?.id || shopId
-                      if (!targetShopId) {
-                        toast.error('Không tìm thấy thông tin gian hàng')
-                        return
-                      }
-                      useChatStore.getState().openShopChat({
-                        id: targetShopId,
-                        name: shop?.name || 'Cửa hàng',
-                        logo: shop?.logo,
-                        city: shop?.city,
-                        mallBadge: shop?.mallBadge,
-                        ekycVerified: shop?.ekycVerified,
-                      })
-                    }}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-white/25 bg-white/10 px-4 py-2 text-xs font-bold text-white hover:bg-white/20 transition-all active:scale-95 cursor-pointer"
-                  >
-                    <HiOutlineChat className="h-4 w-4 text-amber-400" />
-                    Chat Ngay
-                  </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const targetShopId = shop?.id || shopId
+                          if (!targetShopId) {
+                            toast.error('Không tìm thấy thông tin gian hàng')
+                            return
+                          }
+                          useChatStore.getState().openShopChat({
+                            id: targetShopId,
+                            name: shop?.name || 'Cửa hàng',
+                            logo: shop?.logo,
+                            city: shop?.city,
+                            mallBadge: shop?.mallBadge,
+                            ekycVerified: shop?.ekycVerified,
+                            ownerAccountId: shop?.ownerAccountId,
+                          })
+                        }}
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-white/25 bg-white/10 px-4 py-2 text-xs font-bold text-white hover:bg-white/20 transition-all active:scale-95 cursor-pointer"
+                      >
+                        <HiOutlineChat className="h-4 w-4 text-amber-400" />
+                        Chat Ngay
+                      </button>
+                    </>
+                  )}
 
                   <button
                     onClick={handleShareShop}
@@ -478,7 +518,21 @@ export default function ShopProfile() {
                 <div>
                   <div className="text-slate-400 text-xs">Đánh Giá</div>
                   <div className="font-bold text-white text-base">
-                    {shop?.rating} <span className="text-xs text-slate-400 font-normal">({shop?.reviewCount})</span>
+                    {shop?.rating !== undefined && shop?.rating !== null && Number(shop.rating) > 0 ? (
+                      <>
+                        {Number(shop.rating).toFixed(1)}{' '}
+                        <span className="text-xs text-slate-400 font-normal">
+                          ({shop?.reviewCount != null ? shop.reviewCount : 0})
+                        </span>
+                      </>
+                    ) : shop?.reviewCount > 0 ? (
+                      <>
+                        5.0{' '}
+                        <span className="text-xs text-slate-400 font-normal">({shop.reviewCount})</span>
+                      </>
+                    ) : (
+                      <span className="text-xs text-slate-300 font-medium">Chưa có đánh giá</span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -489,7 +543,7 @@ export default function ShopProfile() {
                 </span>
                 <div>
                   <div className="text-slate-400 text-xs">Tỉ Lệ Phản Hồi</div>
-                  <div className="font-bold text-white text-base">{shop?.responseRate || '99%'}</div>
+                  <div className="font-bold text-white text-base">{shop?.responseRate || '100%'}</div>
                 </div>
               </div>
 
@@ -500,7 +554,9 @@ export default function ShopProfile() {
                 <div>
                   <div className="text-slate-400 text-xs">Người Theo Dõi</div>
                   <div className="font-bold text-white text-base">
-                    {followerCount > 0 ? followerCount.toLocaleString() : (shop?.followerCount || 0)}
+                    {typeof followerCount === 'number'
+                      ? (followerCount >= 1000 ? (followerCount / 1000).toFixed(1) + 'k' : followerCount)
+                      : (shop?.followerCount || 0)}
                   </div>
                 </div>
               </div>
@@ -511,7 +567,7 @@ export default function ShopProfile() {
                 </span>
                 <div>
                   <div className="text-slate-400 text-xs">Tham Gia Sàn</div>
-                  <div className="font-bold text-white text-base">{shop?.joinedTime || '1 năm trước'}</div>
+                  <div className="font-bold text-white text-base">{formatJoinedTime(shop?.createdAt)}</div>
                 </div>
               </div>
 

@@ -15,5 +15,7 @@ public interface EscrowService {
 
     void releaseByOrder(UUID orderId);
 
+    void refundByOrder(UUID orderId, String reason);
+
     Page<EscrowAdminResponse> adminList(EscrowStatus status, Pageable pageable);
 }

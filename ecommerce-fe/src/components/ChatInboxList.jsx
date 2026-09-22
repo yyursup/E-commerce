@@ -11,6 +11,7 @@ import {
 import { HiOutlineBellSlash } from 'react-icons/hi2'
 import { useThemeStore } from '../store/useThemeStore'
 import { useChatStore } from '../store/useChatStore'
+import { useAuthStore } from '../store/useAuthStore'
 import { getAccessToken } from '../lib/auth'
 import chatService from '../services/chatService'
 import { addWebSocketListener } from '../services/websocketService'
@@ -87,6 +88,19 @@ export default function ChatInboxList({ onClose, notifEnabled, toggleNotif }) {
     // Listen to real-time thread updates
     const unregUpdated = addWebSocketListener('CHAT_THREAD_UPDATED', (updated) => {
       if (!updated) return
+
+      // In customer inbox, only accept threads where the current user is the customer
+      const currentAccountId = useAuthStore.getState().user?.accountId || useAuthStore.getState().user?.id
+      const userShopId = useAuthStore.getState().user?.shopId
+      if (updated.type === 'SHOP') {
+        if (userShopId && updated.shopId && String(updated.shopId).toLowerCase() === String(userShopId).toLowerCase()) {
+          return
+        }
+        if (currentAccountId && updated.customerId && String(updated.customerId).toLowerCase() !== String(currentAccountId).toLowerCase()) {
+          return
+        }
+      }
+
       setThreads((prev) => {
         const exists = prev.some((t) => String(t.id).toLowerCase() === String(updated.id).toLowerCase())
         if (exists) {
@@ -126,7 +140,20 @@ export default function ChatInboxList({ onClose, notifEnabled, toggleNotif }) {
   }, [threads])
 
   const shopThreads = useMemo(() => {
-    const list = threads.filter((t) => t.type === 'SHOP')
+    const currentAccountId = useAuthStore.getState().user?.accountId || useAuthStore.getState().user?.id
+    const userShopId = useAuthStore.getState().user?.shopId
+    const list = threads.filter((t) => {
+      if (t.type !== 'SHOP') return false
+      // Filter out threads if user owns the shop
+      if (userShopId && t.shopId && String(t.shopId).toLowerCase() === String(userShopId).toLowerCase()) {
+        return false
+      }
+      // Filter out threads where current user is not customer
+      if (currentAccountId && t.customerId && String(t.customerId).toLowerCase() !== String(currentAccountId).toLowerCase()) {
+        return false
+      }
+      return true
+    })
     if (!searchQuery.trim()) return list
     const q = searchQuery.toLowerCase().trim()
     return list.filter(

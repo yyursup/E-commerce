@@ -20,6 +20,8 @@ public class CreateAppealRequest {
     @NotNull(message = "targetType is required")
     private TargetType targetType;
 
+    private UUID reportId;
+
     @NotBlank(message = "description is required")
     private String description;
 

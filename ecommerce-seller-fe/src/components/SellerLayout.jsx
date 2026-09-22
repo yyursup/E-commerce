@@ -228,7 +228,7 @@ export default function SellerLayout() {
           {/* Main Workspace */}
           <main className="lg:col-span-3">
             {/* Top Banner cảnh báo vi phạm tinh gọn chuẩn Responsive */}
-            {(user?.shopStatus === 'WARNED' || user?.shopStatus === 'SUSPENDED' || (user?.violationCount && user.violationCount >= 3)) && (
+            {Boolean(user?.shopStatus === 'WARNED' || user?.shopStatus === 'SUSPENDED' || (Number(user?.violationCount || 0) >= 3)) && (
               <div className="mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 rounded-2xl border border-amber-500/35 bg-amber-500/10 px-4 py-3 text-xs text-amber-600 dark:text-amber-400">
                 <div className="flex items-center gap-2">
                   <span className="text-sm shrink-0">⚠️</span>

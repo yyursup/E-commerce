@@ -19,6 +19,7 @@ public class CreateRequestResponse {
     private RequestType type;
     private RequestStatus status;
     private LocalDateTime createdAt;
+    private String displayCode;
 
     public static CreateRequestResponse from(Request request) {
         return CreateRequestResponse.builder()
@@ -27,6 +28,7 @@ public class CreateRequestResponse {
                 .type(request.getType())
                 .status(request.getStatus())
                 .createdAt(request.getCreatedAt())
+                .displayCode(request.getDisplayCode())
                 .build();
     }
 }

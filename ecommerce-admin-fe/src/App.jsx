@@ -13,6 +13,7 @@ import AdminPlatformWallet from './pages/admin/AdminPlatformWallet'
 import AdminShopRanking from './pages/admin/AdminShopRanking'
 import AdminCommissions from './pages/admin/AdminCommissions'
 import AdminReports from './pages/admin/AdminReports'
+import AdminReportDetail from './pages/admin/AdminReportDetail'
 import AdminLiveChat from './pages/admin/AdminLiveChat'
 import AdminVouchers from './pages/admin/AdminVouchers'
 
@@ -43,6 +44,8 @@ export default function App() {
         <Route path="/shop-ranking" element={<AdminShopRanking />} />
         <Route path="/commissions" element={<AdminCommissions />} />
         <Route path="/reports" element={<AdminReports />} />
+        <Route path="/reports/:reportId" element={<AdminReportDetail />} />
+
         <Route path="/live-chat" element={<AdminLiveChat />} />
       </Route>
 

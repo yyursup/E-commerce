@@ -1,0 +1,88 @@
+package com.marketplace.ecommerce.product.dto.response;
+
+import com.marketplace.ecommerce.product.entity.Product;
+import com.marketplace.ecommerce.product.entity.ProductImage;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class SellerProductResponse {
+    private UUID id;
+    private UUID shopId;
+    private String shopName;
+    private String name;
+    private String description;
+    private String sku;
+    private String status;
+    private BigDecimal basePrice;
+    private Integer quantity;
+    private Integer sold;
+    private List<ProductImageResponse> images;
+    private UUID categoryId;
+    private String categoryName;
+    private List<ProductVariantResponse> variants;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private boolean featured;
+
+    // Seller specific fields for reports
+    private int reportCount;
+    private boolean flagged;
+    private LocalDateTime lastReportedAt;
+
+    public static SellerProductResponse from(Product product) {
+        return SellerProductResponse.builder()
+                .id(product.getId())
+                .shopId(product.getShop().getId())
+                .shopName(product.getShop().getName())
+                .name(product.getName())
+                .description(product.getDescription())
+                .sku(product.getSku())
+                .status(String.valueOf(product.getStatus()))
+                .basePrice(product.getBasePrice())
+                .quantity(product.getQuantity())
+                .sold(product.getSold())
+                .images(mapImages(product.getImages()))
+                .variants(mapVariants(product.getVariants()))
+                .categoryId(product.getProductCategory().getId())
+                .categoryName(product.getProductCategory().getName())
+                .createdAt(product.getCreatedAt())
+                .updatedAt(product.getUpdatedAt())
+                .featured(product.isFeatured())
+                .reportCount(product.getReportCount())
+                .flagged(product.isFlagged())
+                .lastReportedAt(product.getLastReportedAt())
+                .build();
+    }
+
+    private static List<ProductVariantResponse> mapVariants(Set<com.marketplace.ecommerce.product.entity.ProductVariant> variants) {
+        if (variants == null || variants.isEmpty()) return Collections.emptyList();
+        return variants.stream()
+                .filter(v -> v.getDeleted() == null || !v.getDeleted())
+                .map(ProductVariantResponse::from)
+                .collect(Collectors.toList());
+    }
+
+    private static List<ProductImageResponse> mapImages(Set<ProductImage> images) {
+        if (images == null || images.isEmpty()) return Collections.emptyList();
+
+        return images.stream()
+                .sorted(Comparator
+                        .comparing(ProductImage::getIsThumbnail, Comparator.nullsLast(Comparator.reverseOrder()))
+                        .thenComparing(ProductImage::getDisplayOrder, Comparator.nullsLast(Integer::compareTo))
+                        .thenComparing(ProductImage::getCreatedAt, Comparator.nullsLast(LocalDateTime::compareTo))
+                )
+                .map(ProductImageResponse::from)
+                .collect(Collectors.toList());
+    }
+}

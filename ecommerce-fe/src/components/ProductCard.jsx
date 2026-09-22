@@ -69,7 +69,8 @@ export default function ProductCard({ product, onQuickView, dataAos, dataAosDela
       : null
 
   // Deterministic mock sold count based on product id length or char codes
-  const mockSold = ((String(id || '').charCodeAt(0) * 17) % 850) + 50
+  // Use real sold count from database
+  const soldCount = product.sold || 0
 
   return (
     <motion.article
@@ -189,7 +190,7 @@ export default function ProductCard({ product, onQuickView, dataAos, dataAosDela
               </span>
             )}
             <span className="text-[10px] text-stone-400 dark:text-slate-500 shrink-0">
-              Đã bán {mockSold}
+              Đã bán {soldCount}
             </span>
           </div>
 

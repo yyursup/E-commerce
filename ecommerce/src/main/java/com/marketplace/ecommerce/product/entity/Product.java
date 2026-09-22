@@ -71,6 +71,9 @@ public class Product {
     @Column(nullable = false)
     private boolean flagged = false;
 
+    @Column(name = "last_reported_at")
+    private LocalDateTime lastReportedAt;
+
     @Column(name = "featured", nullable = false)
     private boolean featured = false;
 

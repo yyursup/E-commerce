@@ -6,6 +6,7 @@ import com.marketplace.ecommerce.common.QueryUtils;
 import com.marketplace.ecommerce.common.exception.CustomException;
 import com.marketplace.ecommerce.product.dto.request.PageQueryRequest;
 import com.marketplace.ecommerce.product.dto.response.ProductResponse;
+import com.marketplace.ecommerce.product.dto.response.SellerProductResponse;
 import com.marketplace.ecommerce.product.entity.Product;
 import com.marketplace.ecommerce.product.repository.ProductRepository;
 import com.marketplace.ecommerce.product.service.QueryProductService;
@@ -71,27 +72,27 @@ public class QueryProductServiceImpl implements QueryProductService {
     }
 
     @Override
-    public ProductResponse getProductById(UUID productId) {
+    public SellerProductResponse getProductById(UUID productId) {
         Product product = productRepository.findByIdWithDetails(productId)
                 .orElseThrow(() -> new CustomException("Sản phẩm không tồn tại"));
 
-        return ProductResponse.from(product);
+        return SellerProductResponse.from(product);
     }
 
     @Override
-    public List<ProductResponse> getProductsByShopAndStatus(UUID accountId, String status) {
+    public List<SellerProductResponse> getProductsByShopAndStatus(UUID accountId, String status) {
         Shop shop = getShopByAccountId(accountId);
 
         if (status == null || status.isBlank()) {
             return productRepository.findAllByShopIdWithDetails(shop.getId()).stream()
-                    .map(ProductResponse::from)
+                    .map(SellerProductResponse::from)
                     .toList();
         }
 
         ProductStatus productStatus = parseStatus(status);
 
         return productRepository.findAllByShopIdAndStatusWithDetails(shop.getId(), productStatus).stream()
-                .map(ProductResponse::from)
+                .map(SellerProductResponse::from)
                 .toList();
     }
 

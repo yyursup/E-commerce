@@ -68,10 +68,11 @@ public class RequestController {
     @GetMapping("/admin")
     @PreAuthorize("hasRole('ADMIN')")
     public Page<CreateRequestResponse> getAllRequests(
+            @RequestParam(value = "type", required = false) com.marketplace.ecommerce.request.valueObjects.RequestType type,
             @RequestParam(value = "status", required = false) RequestStatus status,
             @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        return requestService.getAllRequests(status, pageable);
+        return requestService.getAllRequests(type, status, pageable);
     }
 
     @GetMapping("/{id}")

@@ -2,10 +2,11 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
+import { HiOutlineDuplicate } from 'react-icons/hi'
 import { useThemeStore } from '../../store/useThemeStore'
 import { cn } from '../../lib/cn'
 import requestService from '../../services/request'
-import { getRequestTypeBadge, formatAdminRequestDate } from './components/request/requestHelpers'
+import { getRequestTypeBadge, formatAdminRequestDate, shortUUID } from './components/request/requestHelpers'
 
 const getStatusBadge = (status, isDark) => {
   switch (status) {
@@ -56,7 +57,7 @@ export default function AdminRequests() {
     try {
       setLoading(true)
       setError(null)
-      const params = { page, size }
+      const params = { page, size, type: 'SELLER_REGISTRATION' }
       if (statusFilter) params.status = statusFilter
       const res = await requestService.getAdminRequests(params)
       const content = Array.isArray(res?.content) ? res.content : Array.isArray(res) ? res : []
@@ -162,8 +163,25 @@ export default function AdminRequests() {
                 'border-b last:border-b-0',
               )}
             >
-              <div className="col-span-3 font-mono text-xs font-semibold">
-                <span title={req.requestId}>{shortId(req.requestId)}</span>
+              <div className="col-span-3 flex items-center gap-2 font-mono text-xs font-semibold">
+                <span title={req.requestId}>{req.displayCode || shortUUID(req.requestId)}</span>
+                {req.requestId && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      navigator.clipboard.writeText(req.displayCode || req.requestId);
+                      toast.success('Đã copy Mã yêu cầu');
+                    }}
+                    className={cn(
+                      'p-1.5 rounded-lg transition hover:shadow-sm',
+                      isDark ? 'text-slate-400 hover:bg-slate-700 hover:text-slate-200' : 'text-stone-400 hover:bg-stone-200 hover:text-stone-600'
+                    )}
+                    title="Copy Mã yêu cầu"
+                  >
+                    <HiOutlineDuplicate className="h-3.5 w-3.5" />
+                  </button>
+                )}
               </div>
               <div className="col-span-3">
                 <span className={cn('inline-block rounded-full px-2.5 py-1 text-xs font-medium border', typeBadge.className)}>

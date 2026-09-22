@@ -1,63 +1,258 @@
-import { useState, useEffect, useCallback } from 'react';
-import { motion } from 'framer-motion';
-import { HiOutlineExclamationCircle, HiOutlineCheck, HiOutlineX } from 'react-icons/hi';
-import { cn } from '../../lib/cn';
-import { useThemeStore } from '../../store/useThemeStore';
-import reportService from '../../services/report';
-import toast from 'react-hot-toast';
+import { useCallback, useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { motion } from 'framer-motion'
+import toast from 'react-hot-toast'
+import { HiOutlineDuplicate } from 'react-icons/hi'
+import { useThemeStore } from '../../store/useThemeStore'
+import { cn } from '../../lib/cn'
+import requestService from '../../services/request'
+import { getRequestTypeBadge, formatAdminRequestDate, shortUUID } from './components/request/requestHelpers'
+
+const getStatusBadge = (status, isDark) => {
+  switch (status) {
+    case 'APPROVED':
+      return {
+        label: 'Đã duyệt phạt',
+        className: isDark
+          ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
+          : 'bg-emerald-50 text-emerald-700 border border-emerald-200',
+      }
+    case 'REJECTED':
+      return {
+        label: 'Bỏ qua báo cáo',
+        className: isDark
+          ? 'bg-rose-500/15 text-rose-300 border border-rose-500/30'
+          : 'bg-rose-50 text-rose-700 border border-rose-200',
+      }
+    case 'PENDING':
+    default:
+      return {
+        label: 'Chờ duyệt',
+        className: isDark
+          ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
+          : 'bg-amber-50 text-amber-700 border border-amber-200',
+      }
+  }
+}
+
+const shortId = (value) => {
+  if (!value) return '-'
+  const str = String(value)
+  return str.length > 8 ? `${str.slice(0, 8)}...` : str
+}
 
 export default function AdminReports() {
-    const isDark = useThemeStore((s) => s.theme) === 'dark';
-    const [reports, setReports] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [filter, setFilter] = useState('ALL');
+  const isDark = useThemeStore((state) => state.theme) === 'dark'
 
-    // Note: Backend might need a listReports API. 
-    // If it doesn't exist, we might need to use the generic request list if they are stored there.
-    // Looking at RequestController.java, it has getRequests and getAllRequests.
-    // It's likely Reports are a type of Request.
+  const [requests, setRequests] = useState([])
+  const [statusFilter, setStatusFilter] = useState('')
+  const [page, setPage] = useState(0)
+  const [size] = useState(10)
+  const [totalPages, setTotalPages] = useState(0)
+  const [totalElements, setTotalElements] = useState(0)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
 
-    const fetchReports = useCallback(async () => {
-        try {
-            setLoading(true);
-            // Assuming reports are fetched via the general request API with a type filter or similar
-            // For now, let's use the getAllRequests and filter by type if possible, 
-            // or if there's a specific report list API (not seen in Controller though).
-            // If I don't see a specific one, I'll assume they are in the request list.
-            // Wait, ReportController doesn't have a GET list. 
-            // RequestController DOES have Page<CreateRequestResponse> getAllRequests.
+  const fetchRequests = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const params = { page, size, type: 'REPORT' }
+      if (statusFilter) params.status = statusFilter
+      const res = await requestService.getAdminRequests(params)
+      const content = Array.isArray(res?.content) ? res.content : Array.isArray(res) ? res : []
+      setRequests(content)
+      setTotalPages(typeof res?.totalPages === 'number' ? res.totalPages : 0)
+      setTotalElements(typeof res?.totalElements === 'number' ? res.totalElements : content.length)
+    } catch (err) {
+      console.error('Admin report list error:', err)
+      setError(err?.message || 'Failed to load reports.')
+      toast.error(err?.message || 'Failed to load reports.')
+    } finally {
+      setLoading(false)
+    }
+  }, [page, size, statusFilter])
 
-            const response = await fetch('/api/v1/request/admin?type=REPORT').then(r => r.json());
-            setReports(response.content || []);
-        } catch (error) {
-            console.error('Error fetching reports:', error);
-        } finally {
-            setLoading(false);
-        }
-    }, []);
+  useEffect(() => {
+    fetchRequests()
+  }, [fetchRequests])
 
-    useEffect(() => {
-        // fetchReports(); // This might fail if the endpoint is wrong. 
-        // I'll stick to what I know exists in RequestController.
-    }, []);
-
-    return (
-        <div className="space-y-6">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-                <h1 className={cn('text-2xl font-bold', isDark ? 'text-white' : 'text-stone-900')}>
-                    Quản lý báo cáo vi phạm
-                </h1>
-            </div>
-
-            <div className={cn(
-                'rounded-2xl border overflow-hidden',
-                isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
-            )}>
-                <div className="p-12 text-center">
-                    <HiOutlineExclamationCircle className="mx-auto h-12 w-12 text-stone-400" />
-                    <p className="mt-4 text-stone-500">Tính năng quản lý báo cáo đang được cập nhật kết nối với Request System...</p>
-                </div>
-            </div>
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold">Quản lý báo cáo vi phạm</h1>
+          <p className={cn('text-sm', isDark ? 'text-slate-400' : 'text-stone-500')}>
+            Tổng số: {totalElements}
+          </p>
         </div>
-    );
+        <div className="flex items-center gap-2">
+          <select
+            value={statusFilter}
+            onChange={(e) => {
+              setStatusFilter(e.target.value)
+              setPage(0)
+            }}
+            className={cn(
+              'rounded-lg border px-3 py-2 text-sm outline-none transition',
+              isDark
+                ? 'border-slate-700 bg-slate-900 text-slate-100 focus:border-amber-500/60'
+                : 'border-stone-300 bg-white text-stone-700 focus:border-amber-500',
+            )}
+          >
+            <option value="">Tất cả trạng thái</option>
+            <option value="PENDING">Chờ duyệt</option>
+            <option value="APPROVED">Đã duyệt phạt</option>
+            <option value="REJECTED">Bỏ qua báo cáo</option>
+          </select>
+          <button
+            onClick={fetchRequests}
+            className={cn(
+              'rounded-lg px-4 py-2 text-sm font-semibold transition',
+              isDark ? 'bg-slate-800 text-slate-100 hover:bg-slate-700' : 'bg-white text-stone-700 hover:bg-stone-100',
+            )}
+          >
+            Làm mới
+          </button>
+        </div>
+      </div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2 }}
+        className={cn(
+          'overflow-hidden rounded-2xl border shadow-sm',
+          isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white',
+        )}
+      >
+        <div className="grid grid-cols-12 gap-3 border-b px-6 py-4 text-xs font-semibold uppercase tracking-wide text-stone-500 dark:border-slate-800 dark:text-slate-400">
+          <div className="col-span-3">Mã báo cáo</div>
+          <div className="col-span-3">Loại yêu cầu</div>
+          <div className="col-span-2">Trạng thái</div>
+          <div className="col-span-2">Thời gian gửi</div>
+          <div className="col-span-2 text-right">Thao tác</div>
+        </div>
+
+        {loading && (
+          <div className="flex items-center justify-center gap-3 px-6 py-10 text-sm">
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-amber-500 border-r-transparent" />
+            Đang tải danh sách báo cáo...
+          </div>
+        )}
+
+        {!loading && error && (
+          <div className="px-6 py-6 text-sm text-red-500">{error}</div>
+        )}
+
+        {!loading && !error && requests.length === 0 && (
+          <div className="px-6 py-10 text-center text-sm text-stone-500 dark:text-slate-400">
+            Không có báo cáo nào.
+          </div>
+        )}
+
+        {!loading && !error && requests.map((req) => {
+          const typeBadge = getRequestTypeBadge(req.type, isDark)
+          const statusBadge = getStatusBadge(req.status, isDark)
+          return (
+            <div
+              key={req.requestId || req.id}
+              className={cn(
+                'grid grid-cols-12 items-center gap-3 px-6 py-4 text-sm transition-colors',
+                isDark ? 'border-slate-800 text-slate-200 hover:bg-slate-800/40' : 'border-stone-100 text-stone-700 hover:bg-stone-50',
+                'border-b last:border-b-0',
+              )}
+            >
+              <div className="col-span-3 flex items-center gap-2 font-mono text-xs font-semibold">
+                <span title={req.requestId}>{req.displayCode || shortUUID(req.requestId)}</span>
+                {req.requestId && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      navigator.clipboard.writeText(req.displayCode || req.requestId);
+                      toast.success('Đã copy Mã báo cáo');
+                    }}
+                    className={cn(
+                      'p-1.5 rounded-lg transition hover:shadow-sm',
+                      isDark ? 'text-slate-400 hover:bg-slate-700 hover:text-slate-200' : 'text-stone-400 hover:bg-stone-200 hover:text-stone-600'
+                    )}
+                    title="Copy Mã báo cáo"
+                  >
+                    <HiOutlineDuplicate className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+              <div className="col-span-3">
+                <span className={cn('inline-block rounded-full px-2.5 py-1 text-xs font-medium border', typeBadge.className)}>
+                  {typeBadge.label}
+                </span>
+              </div>
+              <div className="col-span-2">
+                <span className={cn('inline-block rounded-full px-2.5 py-1 text-xs font-medium', statusBadge.className)}>
+                  {statusBadge.label}
+                </span>
+              </div>
+              <div className="col-span-2 text-xs text-stone-500 dark:text-slate-400">
+                {formatAdminRequestDate(req.createdAt)}
+              </div>
+              <div className="col-span-2 text-right">
+                {req.requestId ? (
+                  <Link
+                    to={`/reports/${req.requestId}`}
+                    className={cn(
+                      'inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold transition',
+                      isDark
+                        ? 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30'
+                        : 'bg-amber-100 text-amber-700 hover:bg-amber-200',
+                    )}
+                  >
+                    Xem xét →
+                  </Link>
+                ) : (
+                  <span className="text-xs text-stone-400">-</span>
+                )}
+              </div>
+            </div>
+          )
+        })}
+      </motion.div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between text-sm">
+          <button
+            disabled={page <= 0}
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            className={cn(
+              'rounded-lg px-4 py-2 font-semibold transition',
+              page <= 0
+                ? 'cursor-not-allowed opacity-50'
+                : isDark
+                  ? 'bg-slate-800 text-slate-100 hover:bg-slate-700'
+                  : 'bg-white text-stone-700 hover:bg-stone-100',
+            )}
+          >
+            Prev
+          </button>
+          <span className={cn(isDark ? 'text-slate-400' : 'text-stone-500')}>
+            Page {page + 1} / {totalPages}
+          </span>
+          <button
+            disabled={page + 1 >= totalPages}
+            onClick={() => setPage((p) => p + 1)}
+            className={cn(
+              'rounded-lg px-4 py-2 font-semibold transition',
+              page + 1 >= totalPages
+                ? 'cursor-not-allowed opacity-50'
+                : isDark
+                  ? 'bg-slate-800 text-slate-100 hover:bg-slate-700'
+                  : 'bg-white text-stone-700 hover:bg-stone-100',
+            )}
+          >
+            Next
+          </button>
+        </div>
+      )}
+    </div>
+  )
 }

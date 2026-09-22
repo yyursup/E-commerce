@@ -136,21 +136,29 @@ public class RequestServiceImpl implements RequestService {
                 .type(r.getType())
                 .status(r.getStatus())
                 .createdAt(r.getCreatedAt())
+                .displayCode(r.getDisplayCode())
                 .build());
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Page<CreateRequestResponse> getAllRequests(RequestStatus status, Pageable pageable) {
+    public Page<CreateRequestResponse> getAllRequests(com.marketplace.ecommerce.request.valueObjects.RequestType type, RequestStatus status, Pageable pageable) {
         Pageable newestFirstPageable = PageRequest.of(
                 pageable.getPageNumber(),
                 pageable.getPageSize(),
                 Sort.by(Sort.Direction.DESC, RequestConstant.CREATED_AT)
         );
 
-        Page<Request> requests = status == null
-                ? requestRepository.findAll(newestFirstPageable)
-                : requestRepository.findAllByStatus(status, newestFirstPageable);
+        Page<Request> requests;
+        if (type != null && status != null) {
+            requests = requestRepository.findAllByTypeAndStatus(type, status, newestFirstPageable);
+        } else if (type != null) {
+            requests = requestRepository.findAllByType(type, newestFirstPageable);
+        } else if (status != null) {
+            requests = requestRepository.findAllByStatus(status, newestFirstPageable);
+        } else {
+            requests = requestRepository.findAll(newestFirstPageable);
+        }
 
         return requests.map(r -> CreateRequestResponse.builder()
                 .requestId(r.getId())
@@ -158,13 +166,31 @@ public class RequestServiceImpl implements RequestService {
                 .type(r.getType())
                 .status(r.getStatus())
                 .createdAt(r.getCreatedAt())
+                .displayCode(r.getDisplayCode())
                 .build());
+    }
+
+    private String generateDisplayCode(com.marketplace.ecommerce.request.valueObjects.RequestType type) {
+        String prefix = type == com.marketplace.ecommerce.request.valueObjects.RequestType.REPORT ? "REP" : "REG";
+        String randomSuffix = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        return prefix + "-" + randomSuffix;
     }
 
     @Override
     public Request createRequest(Account account, CreateSendRequest request) {
 
-        Request re = Request.builder().account(account).type(request.getRequestType()).status(RequestStatus.PENDING).description(request.getDescription()).coverImageUrl(request.getCoverImage()).createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build();
+        String displayCode = generateDisplayCode(request.getRequestType());
+
+        Request re = Request.builder()
+                .account(account)
+                .type(request.getRequestType())
+                .status(RequestStatus.PENDING)
+                .description(request.getDescription())
+                .coverImageUrl(request.getCoverImage())
+                .displayCode(displayCode)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
 
         return requestRepository.save(re);
     }

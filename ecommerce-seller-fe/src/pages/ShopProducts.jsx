@@ -357,6 +357,22 @@ export default function ShopProducts() {
                           <HiStar className="h-3 w-3" /> Đang đẩy
                         </span>
                       )}
+                      {prod.flagged && (
+                        <span 
+                          className="inline-flex items-center gap-1 rounded-full bg-rose-500/15 px-2 py-0.5 text-[11px] font-bold text-rose-500 border border-rose-500/30 shrink-0"
+                          title={prod.lastReportedAt ? `Bị report gần nhất lúc: ${new Date(prod.lastReportedAt).toLocaleString('vi-VN')}` : 'Sản phẩm đang bị cảnh báo khóa'}
+                        >
+                          🚩 Bị cắm cờ (Lỗi: {prod.reportCount || 0}/5)
+                        </span>
+                      )}
+                      {!prod.flagged && prod.reportCount > 0 && (
+                        <span 
+                          className="inline-flex items-center gap-1 rounded-full bg-orange-500/15 px-2 py-0.5 text-[11px] font-bold text-orange-500 border border-orange-500/30 shrink-0"
+                          title={prod.lastReportedAt ? `Bị report gần nhất lúc: ${new Date(prod.lastReportedAt).toLocaleString('vi-VN')}` : 'Sản phẩm bị khách hàng report'}
+                        >
+                          ⚠️ Bị báo cáo ({prod.reportCount}/5)
+                        </span>
+                      )}
                     </div>
 
                     <h3 className={cn(

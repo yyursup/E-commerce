@@ -36,9 +36,9 @@ export default function AppealModal({
               isDark ? 'border-slate-800 bg-slate-900 text-white' : 'border-stone-200 bg-white text-stone-900'
             )}
           >
-            <h2 className="text-lg font-bold mb-1">Gửi Đơn Kháng Cáo Vi Phạm</h2>
+            <h2 className="text-lg font-bold mb-1">Gửi Đơn Kháng Cáo Phục Hồi Điểm Uy Tín</h2>
             <p className={cn('text-xs mb-4', isDark ? 'text-slate-400' : 'text-stone-500')}>
-              Vui lòng cung cấp đầy đủ lý do giải trình và tải lên hình ảnh bằng chứng (hóa đơn VAT, chứng từ phân phối)
+              Cung cấp đầy đủ lý do giải trình và tải lên tài liệu/hình ảnh chứng từ để Ban Quản Trị thẩm định và khôi phục điểm uy tín
             </p>
 
             <form onSubmit={handleSubmitAppeal} className="space-y-4">

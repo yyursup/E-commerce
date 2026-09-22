@@ -29,10 +29,10 @@ export default function ViolationsTable({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
           <h2 className={cn('text-lg font-bold tracking-tight', isDark ? 'text-white' : 'text-stone-900')}>
-            Danh Sách Hồ Sơ Vi Phạm Của Gian Hàng
+            Hồ Sơ Ghi Nhận Điểm Uy Tín
           </h2>
           <p className={cn('text-xs', isDark ? 'text-slate-400' : 'text-stone-500')}>
-            Lựa chọn đúng sự vụ vi phạm để nộp đơn giải trình kèm tài liệu hóa đơn chứng minh
+            Lựa chọn đúng sự vụ vi phạm để nộp đơn giải trình nhằm khôi phục điểm uy tín gian hàng
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
@@ -56,10 +56,10 @@ export default function ViolationsTable({
         <div className="py-10 text-center rounded-2xl border border-dashed border-emerald-500/20 bg-emerald-500/5">
           <HiOutlineCheckCircle className="mx-auto h-12 w-12 text-emerald-500 mb-2" />
           <p className="font-bold text-sm text-emerald-600 dark:text-emerald-400">
-            Gian hàng hiện không có vi phạm nào!
+            Gian hàng duy trì trọn vẹn điểm uy tín tuyệt đối!
           </p>
           <p className="text-xs text-stone-400 mt-1">
-            Bạn đang tuân thủ rất tốt các tiêu chuẩn cộng đồng và quy định bán hàng của sàn.
+            Không có vi phạm nào được ghi nhận. Bạn đang tuân thủ rất tốt các tiêu chuẩn cộng đồng và quy định bán hàng của sàn.
           </p>
         </div>
       ) : (

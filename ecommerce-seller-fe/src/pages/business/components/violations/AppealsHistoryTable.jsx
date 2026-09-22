@@ -22,10 +22,10 @@ export default function AppealsHistoryTable({
       <div className="flex items-center justify-between">
         <div>
           <h2 className={cn('text-lg font-bold tracking-tight', isDark ? 'text-white' : 'text-stone-900')}>
-            Lịch Sử Đơn Kháng Cáo Đã Gửi
+            Lịch Sử Đơn Kháng Cáo
           </h2>
           <p className={cn('text-xs', isDark ? 'text-slate-400' : 'text-stone-500')}>
-            Danh sách các hồ sơ giải trình đang được Quản trị viên sàn thẩm định
+            Danh sách các hồ sơ giải trình đang được Quản trị viên sàn thẩm định để khôi phục điểm uy tín
           </p>
         </div>
         <span className="text-xs font-bold text-amber-500">{appeals.length} hồ sơ</span>
@@ -43,7 +43,7 @@ export default function AppealsHistoryTable({
             Gian hàng chưa nộp đơn kháng cáo nào
           </p>
           <p className="text-xs text-stone-400 mt-1">
-            Khi phát sinh vi phạm cần giải trình, hãy chọn "Kháng cáo vi phạm này" ở bảng vi phạm phía trên.
+            Khi phát sinh sự vụ làm giảm điểm uy tín cần giải trình, hãy chọn "Kháng cáo vi phạm này" ở bảng phía trên.
           </p>
         </div>
       ) : (

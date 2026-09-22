@@ -35,7 +35,7 @@ const navItems = [
   { to: '/products', label: 'Quản lý Sản phẩm', icon: HiOutlineArchive },
   { to: '/inventory-history', label: 'Lịch sử Kho hàng', icon: HiOutlineClipboardList },
   { to: '/vouchers', label: 'Mã Giảm Giá Shop', icon: HiOutlineTicket },
-  { to: '/violations', label: 'Sức khỏe Shop & Vi phạm', icon: HiOutlineShieldCheck },
+  { to: '/violations', label: 'Điểm uy tín Shop', icon: HiOutlineShieldCheck },
   { to: '/chat', label: 'Tin nhắn (Chat CSKH)', icon: HiOutlineChat, isChat: true },
   { to: '/settings', label: 'Cài đặt Kho & Gian hàng', icon: HiOutlineCog },
 ]

@@ -259,17 +259,18 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 phone = userRepository.findByAccountId(users.getId()).map(User::getPhoneNumber).orElse(null);
             }
 
-            LoginResponse.LoginResponseBuilder builder = LoginResponse.builder()
+            LoginResponse response = LoginResponse.builder()
                     .email(users.getEmail())
                     .phoneNumber(phone)
                     .username(users.getUsername())
                     .token(tokenService.createToken(users))
                     .refreshToken(tokenService.refreshToken(users))
-                    .role(users.getRole().getRoleName());
+                    .role(users.getRole().getRoleName())
+                    .build();
 
-            populateShopAndSellerStatus(builder, users.getId());
+            populateShopAndSellerStatus(response, users.getId());
 
-            return builder.build();
+            return response;
 
         } catch (BadCredentialsException e) {
             throw new InvalidCredentialsException("Tên đăng nhập hoặc mật khẩu không chính xác.");
@@ -314,20 +315,21 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             phone = userRepository.findByAccountId(account.getId()).map(User::getPhoneNumber).orElse(null);
         }
 
-        LoginResponse.LoginResponseBuilder builder = LoginResponse.builder()
+        LoginResponse response = LoginResponse.builder()
                 .email(account.getEmail())
                 .phoneNumber(phone)
                 .username(account.getUsername())
                 .token(tokenService.createToken(account))
                 .role(account.getRole() != null ? account.getRole().getRoleName() : "CUSTOMER")
-                .accountId(account.getId());
+                .accountId(account.getId())
+                .build();
 
-        populateShopAndSellerStatus(builder, account.getId());
+        populateShopAndSellerStatus(response, account.getId());
 
-        return builder.build();
+        return response;
     }
 
-    private void populateShopAndSellerStatus(LoginResponse.LoginResponseBuilder builder, UUID accountId) {
+    private void populateShopAndSellerStatus(LoginResponse builder, UUID accountId) {
         boolean hasShop = false;
         UUID shopId = null;
         String shopName = null;
@@ -372,15 +374,15 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 : "NONE";
         LocalDateTime bannedUntil = account != null ? account.getBannedUntil() : null;
 
-        builder.accountId(accountId)
-                .hasShop(hasShop)
-                .shopId(shopId)
-                .shopName(shopName)
-                .sellerStatus(sellerStatus)
-                .shopStatus(shopStatus)
-                .violationCount(violationCount)
-                .disciplineLevel(disciplineLevel)
-                .bannedUntil(bannedUntil);
+        builder.setAccountId(accountId);
+        builder.setHasShop(hasShop);
+        builder.setShopId(shopId);
+        builder.setShopName(shopName);
+        builder.setSellerStatus(sellerStatus);
+        builder.setShopStatus(shopStatus);
+        builder.setViolationCount(violationCount);
+        builder.setDisciplineLevel(disciplineLevel);
+        builder.setBannedUntil(bannedUntil);
     }
 
     @Override
@@ -511,14 +513,15 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             }
         }
 
-        LoginResponse.LoginResponseBuilder builder = LoginResponse.builder()
+        LoginResponse response = LoginResponse.builder()
                 .email(account.getEmail())
                 .token(tokenService.createToken(account))
                 .refreshToken(tokenService.refreshToken(account))
-                .role(account.getRole().getRoleName());
+                .role(account.getRole().getRoleName())
+                .build();
         
-        populateShopAndSellerStatus(builder, account.getId());
-        return builder.build();
+        populateShopAndSellerStatus(response, account.getId());
+        return response;
     }
 
     @Override
@@ -535,14 +538,15 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 throw new CustomException("Tài khoản đã bị khóa hoặc ngừng hoạt động.");
             }
 
-            LoginResponse.LoginResponseBuilder builder = LoginResponse.builder()
+            LoginResponse response = LoginResponse.builder()
                     .email(account.getEmail())
                     .token(tokenService.createToken(account))
                     .refreshToken(tokenService.refreshToken(account))
-                    .role(account.getRole().getRoleName());
+                    .role(account.getRole().getRoleName())
+                    .build();
 
-            populateShopAndSellerStatus(builder, account.getId());
-            return builder.build();
+            populateShopAndSellerStatus(response, account.getId());
+            return response;
         } catch (CustomException ce) {
             throw ce;
         } catch (Exception e) {

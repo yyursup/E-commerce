@@ -152,8 +152,21 @@ public class ReportServiceImpl implements ReportService {
             throw new CustomException("Product is already deleted");
         }
 
+        if (product.getLastReportedAt() != null && product.getReportCount() > 0) {
+            long daysPassed = java.time.temporal.ChronoUnit.DAYS.between(product.getLastReportedAt(), now);
+            long decayCycles = daysPassed / 30;
+            if (decayCycles > 0) {
+                int decayedCount = Math.max(0, product.getReportCount() - (int) decayCycles);
+                product.setReportCount(decayedCount);
+                if (decayedCount < 3) {
+                    product.setFlagged(false);
+                }
+            }
+        }
+
         int nextCount = product.getReportCount() + 1;
         product.setReportCount(nextCount);
+        product.setLastReportedAt(now);
 
         if (nextCount >= 3) {
             product.setFlagged(true);

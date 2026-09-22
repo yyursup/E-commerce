@@ -1,4 +1,4 @@
-﻿export const formatAdminRequestDate = (value) => {
+export const formatAdminRequestDate = (value) => {
   if (!value) return '-'
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return String(value)
@@ -9,6 +9,19 @@
     month: '2-digit',
     year: 'numeric',
   })
+}
+
+export const isUUID = (str) => {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(str || ''))
+}
+
+export const shortUUID = (str) => {
+  if (!str) return '-'
+  const s = String(str)
+  if (isUUID(s)) {
+    return `${s.slice(0, 8)}...${s.slice(-4)}`
+  }
+  return s.length > 12 ? `${s.slice(0, 8)}...` : s
 }
 
 export const isSellerBusiness = (detail) => {
@@ -124,8 +137,15 @@ export const buildRequestDetailEntries = (requestType, requestDetail) => {
   }
 
   if (requestType === 'REPORT') {
+    const targetTypeStr = String(requestDetail.targetType || '').toUpperCase();
+    let targetTypeLabel = requestDetail.targetType;
+    if (targetTypeStr === 'PRODUCT') targetTypeLabel = 'Sản phẩm (Product)';
+    else if (targetTypeStr === 'SHOP') targetTypeLabel = 'Gian hàng (Shop)';
+    else if (targetTypeStr === 'USER') targetTypeLabel = 'Người dùng (User)';
+    else if (targetTypeStr === 'REVIEW') targetTypeLabel = 'Đánh giá (Review)';
+
     return [
-      ['Đối tượng báo cáo', requestDetail.targetType],
+      ['Đối tượng báo cáo', targetTypeLabel],
       ['ID đối tượng', requestDetail.targetId],
       ['Bằng chứng vi phạm', requestDetail.evidenceUrl],
       ['Ghi chú kiểm duyệt', requestDetail.moderatorNote],

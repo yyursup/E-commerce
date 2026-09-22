@@ -7,6 +7,7 @@ import com.marketplace.ecommerce.common.exception.CustomException;
 import com.marketplace.ecommerce.product.dto.request.CreateProductRequest;
 import com.marketplace.ecommerce.product.dto.request.UpdateProductRequest;
 import com.marketplace.ecommerce.product.dto.response.ProductResponse;
+import com.marketplace.ecommerce.product.dto.response.SellerProductResponse;
 import com.marketplace.ecommerce.product.entity.Product;
 import com.marketplace.ecommerce.product.entity.ProductCategory;
 import com.marketplace.ecommerce.product.entity.ProductImage;
@@ -51,7 +52,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public ProductResponse createProduct(UUID accountId, CreateProductRequest request) {
+    public SellerProductResponse createProduct(UUID accountId, CreateProductRequest request) {
         Shop shop = getShopByAccountId(accountId);
 
         productValidation.validateVariants(request.getVariants());
@@ -101,11 +102,11 @@ public class ProductServiceImpl implements ProductService {
             });
         }
 
-        return ProductResponse.from(productSaved);
+        return SellerProductResponse.from(productSaved);
     }
 
     @Override
-    public ProductResponse updateProduct(UUID accountId, UUID productId, UpdateProductRequest req) {
+    public SellerProductResponse updateProduct(UUID accountId, UUID productId, UpdateProductRequest req) {
         Shop shop = getShopByAccountId(accountId);
 
         Product product = productRepository.findByIdAndDeletedFalse(productId)
@@ -135,7 +136,7 @@ public class ProductServiceImpl implements ProductService {
         product = productRepository.save(product);
         applyVariants(product, req, shop);
 
-        return ProductResponse.from(productRepository.save(product));
+        return SellerProductResponse.from(productRepository.save(product));
     }
 
     private Shop getShopByAccountId(UUID accountId) {
@@ -279,7 +280,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public ProductResponse toggleFeatured(UUID accountId, UUID productId) {
+    public SellerProductResponse toggleFeatured(UUID accountId, UUID productId) {
         Shop shop = getShopByAccountId(accountId);
 
         Product product = productRepository.findByIdAndDeletedFalse(productId)
@@ -297,7 +298,7 @@ public class ProductServiceImpl implements ProductService {
 
         product.setFeatured(!product.isFeatured());
         product.setUpdatedAt(java.time.LocalDateTime.now());
-        return ProductResponse.from(productRepository.save(product));
+        return SellerProductResponse.from(productRepository.save(product));
     }
 
 }

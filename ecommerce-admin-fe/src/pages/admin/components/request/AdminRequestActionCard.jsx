@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
+import toast from 'react-hot-toast'
 import {
   HiOutlineOfficeBuilding,
   HiOutlineUser,
@@ -11,10 +12,11 @@ import {
   HiOutlineExclamation,
   HiOutlineCheckCircle,
   HiOutlineXCircle,
+  HiOutlineDuplicate,
 } from 'react-icons/hi'
 import { cn } from '../../../../lib/cn'
 import LicenseImageModal from './LicenseImageModal'
-import { buildSellerInfoSections } from './requestHelpers'
+import { buildSellerInfoSections, isUUID, shortUUID } from './requestHelpers'
 
 export default function AdminRequestActionCard({
   detail,
@@ -227,6 +229,24 @@ export default function AdminRequestActionCard({
                   ) : (
                     '-'
                   )
+                ) : isUUID(value) ? (
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium font-mono" title={value}>{shortUUID(value)}</p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(value);
+                        toast.success('Đã copy ID');
+                      }}
+                      className={cn(
+                        'p-1.5 rounded-lg transition hover:shadow-sm',
+                        isDark ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-stone-100 text-stone-500 hover:bg-stone-200'
+                      )}
+                      title="Copy ID"
+                    >
+                      <HiOutlineDuplicate className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
                 ) : (
                   <p className="text-sm break-all font-medium">{value || '-'}</p>
                 )}

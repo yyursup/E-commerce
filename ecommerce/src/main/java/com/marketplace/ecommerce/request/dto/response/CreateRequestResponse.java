@@ -23,6 +23,7 @@ public class CreateRequestResponse {
     private String response;
     private LocalDateTime reviewedAt;
     private LocalDateTime createdAt;
+    private String displayCode;
 
     public static CreateRequestResponse from(Request request) {
         return CreateRequestResponse.builder()
@@ -35,6 +36,7 @@ public class CreateRequestResponse {
                 .response(request.getResponse())
                 .reviewedAt(request.getReviewedAt())
                 .createdAt(request.getCreatedAt())
+                .displayCode(request.getDisplayCode())
                 .build();
     }
 }

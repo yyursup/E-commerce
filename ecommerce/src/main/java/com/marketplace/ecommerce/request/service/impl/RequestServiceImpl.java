@@ -387,11 +387,19 @@ public class RequestServiceImpl implements RequestService {
         return requests.map(CreateRequestResponse::from);
     }
 
+    private String generateDisplayCode(com.marketplace.ecommerce.request.valueObjects.RequestType type) {
+        String prefix = type == com.marketplace.ecommerce.request.valueObjects.RequestType.REPORT ? "REP" : "REG";
+        String randomSuffix = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        return prefix + "-" + randomSuffix;
+    }
+
     @Override
     public Request createRequest(Account account, CreateSendRequest request) {
+        String displayCode = generateDisplayCode(request.getRequestType());
 
         Request re = Request.builder().account(account).type(request.getRequestType()).status(RequestStatus.PENDING)
                 .description(request.getDescription()).coverImageUrl(request.getCoverImage())
+                .displayCode(displayCode)
                 .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build();
 
         return requestRepository.save(re);

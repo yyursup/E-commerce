@@ -302,6 +302,35 @@ export default function ProductDetailModal({
             </div>
           </div>
 
+          {/* Violation Status */}
+          {(product.flagged || product.reportCount > 0) && (
+            <div className="space-y-2 border-t pt-4 dark:border-slate-800 border-stone-200">
+              <h4 className={cn('text-xs font-bold uppercase tracking-wider flex items-center gap-1.5', isDark ? 'text-rose-400' : 'text-rose-600')}>
+                <HiOutlineInformationCircle className="h-4 w-4" /> Trạng Thái Vi Phạm Sản Phẩm
+              </h4>
+              <div className={cn(
+                'rounded-2xl p-4 border text-xs sm:text-sm leading-relaxed',
+                product.flagged 
+                  ? (isDark ? 'border-rose-900 bg-rose-900/20 text-rose-300' : 'border-rose-200 bg-rose-50 text-rose-700')
+                  : (isDark ? 'border-orange-900 bg-orange-900/20 text-orange-300' : 'border-orange-200 bg-orange-50 text-orange-700')
+              )}>
+                <div className="flex flex-col gap-2">
+                  <p>
+                    <span className="font-bold">Số lượt bị report hiện tại:</span> {product.reportCount || 0} / 5
+                  </p>
+                  <p>
+                    <span className="font-bold">Thời gian vi phạm gần nhất:</span> {product.lastReportedAt ? new Date(product.lastReportedAt).toLocaleString('vi-VN') : 'Không có dữ liệu'}
+                  </p>
+                  <p className="mt-1 font-bold opacity-90">
+                    {product.flagged 
+                      ? 'Sản phẩm đã bị cắm cờ cảnh báo do vi phạm nhiều lần. Sản phẩm có nguy cơ bị khóa/xóa bất kỳ lúc nào nếu tiếp tục bị báo cáo.' 
+                      : 'Nếu đạt ngưỡng 5 lượt, sản phẩm sẽ bị cắm cờ cảnh báo. Hệ thống sẽ tự động trừ đi 1 lỗi nếu sau 30 ngày không có vi phạm mới.'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Description Box */}
           <div className="space-y-2 border-t pt-4 dark:border-slate-800 border-stone-200">
             <h4 className={cn('text-xs font-bold uppercase tracking-wider', isDark ? 'text-slate-300' : 'text-stone-700')}>

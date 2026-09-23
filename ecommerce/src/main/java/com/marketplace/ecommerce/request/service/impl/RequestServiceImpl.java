@@ -184,30 +184,35 @@ public class RequestServiceImpl implements RequestService {
         Account acc = accountRepository.findById(accountId)
                 .orElseThrow(() -> new CustomException("Account not found: " + accountId));
 
-        // Kiểm tra lịch sử kháng cáo của vi phạm này để tuân thủ quy tắc kháng cáo chuẩn
+        // Kiểm tra lịch sử kháng cáo của vi phạm này để tuân thủ quy tắc kháng cáo
+        // chuẩn
         if (req.getReportId() != null) {
             List<Report> existingAppeals = reportRepository.findAppealsByViolationReportId(req.getReportId());
             for (Report appeal : existingAppeals) {
                 if (appeal.getRequest() != null) {
                     RequestStatus st = appeal.getRequest().getStatus();
                     if (st == RequestStatus.PENDING) {
-                        throw new CustomException("Bạn đã có đơn kháng cáo đang chờ quản trị viên xử lý cho vi phạm này.");
+                        throw new CustomException(
+                                "Bạn đã có đơn kháng cáo đang chờ quản trị viên xử lý cho vi phạm này.");
                     } else if (st == RequestStatus.REJECTED) {
-                        throw new CustomException("Đơn kháng cáo cho vi phạm này đã bị từ chối. Quyết định của Quản trị viên là quyết định cuối cùng.");
+                        throw new CustomException(
+                                "Đơn kháng cáo cho vi phạm này đã bị từ chối. Quyết định của Quản trị viên là quyết định cuối cùng.");
                     } else if (st == RequestStatus.APPROVED) {
                         throw new CustomException("Đơn kháng cáo cho vi phạm này đã được chấp thuận trước đó.");
                     }
                 }
             }
         } else {
-            List<Report> existingAppeals = reportRepository.findAppealsByAccountIdAndTargetId(accountId, req.getTargetId());
+            List<Report> existingAppeals = reportRepository.findAppealsByAccountIdAndTargetId(accountId,
+                    req.getTargetId());
             for (Report appeal : existingAppeals) {
                 if (appeal.getRequest() != null) {
                     RequestStatus st = appeal.getRequest().getStatus();
                     if (st == RequestStatus.PENDING) {
                         throw new CustomException("Bạn đã có đơn kháng cáo đang chờ quản trị viên xử lý cho mục này.");
                     } else if (st == RequestStatus.REJECTED) {
-                        throw new CustomException("Đơn kháng cáo cho vi phạm này đã bị từ chối. Quyết định của Quản trị viên là quyết định cuối cùng.");
+                        throw new CustomException(
+                                "Đơn kháng cáo cho vi phạm này đã bị từ chối. Quyết định của Quản trị viên là quyết định cuối cùng.");
                     } else if (st == RequestStatus.APPROVED) {
                         throw new CustomException("Đơn kháng cáo cho vi phạm này đã được chấp thuận trước đó.");
                     }

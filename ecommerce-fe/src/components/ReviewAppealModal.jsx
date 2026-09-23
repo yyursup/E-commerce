@@ -1,18 +1,82 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { HiStar, HiX, HiOutlineScale, HiOutlineUpload, HiOutlineExclamationCircle } from 'react-icons/hi'
+import { HiStar, HiX, HiOutlineScale, HiOutlineUpload, HiOutlineExclamationCircle, HiOutlineTrash, HiOutlineExternalLink } from 'react-icons/hi'
 import { cn } from '../lib/cn'
 import { useThemeStore } from '../store/useThemeStore'
 import requestService from '../services/request'
+import fileService from '../services/fileService'
 import toast from 'react-hot-toast'
 
 export default function ReviewAppealModal({ isOpen, onClose, review, onSuccess }) {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
   const [description, setDescription] = useState('')
-  const [evidenceUrl, setEvidenceUrl] = useState('')
+  const [evidenceUrls, setEvidenceUrls] = useState([])
+  const [uploadingImage, setUploadingImage] = useState(false)
+  const fileInputRef = useRef(null)
   const [submitting, setSubmitting] = useState(false)
 
   if (!isOpen || !review) return null
+
+  const handleImageUpload = async (e) => {
+    const files = Array.from(e.target.files || [])
+    if (!files.length) return
+
+    const MAX_IMAGES = 4
+    const remainingSlots = MAX_IMAGES - evidenceUrls.length
+
+    if (remainingSlots <= 0) {
+      toast.error('Chỉ được tải lên tối đa 4 hình ảnh chứng minh!')
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      return
+    }
+
+    const validFiles = []
+    for (const file of files) {
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error(`Ảnh "${file.name}" vượt quá dung lượng tối đa 10MB!`)
+      } else {
+        validFiles.push(file)
+      }
+    }
+
+    if (!validFiles.length) {
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      return
+    }
+
+    let filesToUpload = validFiles
+    if (validFiles.length > remainingSlots) {
+      toast.error(`Chỉ được tải tối đa ${MAX_IMAGES} ảnh. Hệ thống sẽ xử lý ${remainingSlots} ảnh hợp lệ đầu tiên.`)
+      filesToUpload = validFiles.slice(0, remainingSlots)
+    }
+
+    try {
+      setUploadingImage(true)
+      const uploaded = []
+      for (const file of filesToUpload) {
+        const res = await fileService.uploadFile(file, 'appeals')
+        const uploadedUrl = res?.url || res?.data?.url
+        if (uploadedUrl) {
+          uploaded.push(uploadedUrl)
+        }
+      }
+
+      if (uploaded.length > 0) {
+        setEvidenceUrls((prev) => [...prev, ...uploaded])
+        toast.success(`Đã tải lên ${uploaded.length} ảnh chứng minh thành công!`)
+      } else {
+        toast.error('Không nhận được link ảnh từ máy chủ.')
+      }
+    } catch (err) {
+      console.error('Upload image error:', err)
+      toast.error(err?.message || 'Tải ảnh thất bại. Vui lòng thử lại.')
+    } finally {
+      setUploadingImage(false)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    }
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -27,7 +91,7 @@ export default function ReviewAppealModal({ isOpen, onClose, review, onSuccess }
         targetType: 'REVIEW',
         targetId: review.id,
         description: description.trim(),
-        evidenceUrl: evidenceUrl.trim() || null,
+        evidenceUrl: evidenceUrls.length > 0 ? evidenceUrls.join(',') : null,
       })
       toast.success('Gửi đơn kháng cáo thành công! Quản trị viên sẽ thẩm định hồ sơ của bạn.')
       if (onSuccess) onSuccess()
@@ -134,28 +198,94 @@ export default function ReviewAppealModal({ isOpen, onClose, review, onSuccess }
               />
             </div>
 
-            {/* Link ảnh hoặc chứng từ chứng minh */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-slate-400">
-                Đường dẫn ảnh chụp thực tế / Hóa đơn chứng từ (tùy chọn)
-              </label>
-              <div className="relative">
-                <input
-                  type="url"
-                  value={evidenceUrl}
-                  onChange={(e) => setEvidenceUrl(e.target.value)}
-                  placeholder="https://... (Ảnh mở hộp, tin nhắn với shop hoặc video bằng chứng)"
-                  className={cn(
-                    'w-full rounded-2xl px-3.5 py-2.5 text-xs border outline-none transition',
-                    isDark
-                      ? 'border-slate-800 bg-slate-800 text-white placeholder:text-slate-500 focus:border-amber-500'
-                      : 'border-stone-200 bg-white text-stone-900 placeholder:text-stone-400 focus:border-amber-500',
-                  )}
-                />
+            {/* Upload ảnh hoặc chứng từ chứng minh */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-slate-400">
+                  Ảnh chụp thực tế / Bằng chứng ({evidenceUrls.length}/4)
+                </label>
+                <span className="text-[11px] text-stone-400">Tối đa 4 ảnh, 10MB / ảnh</span>
               </div>
-              <p className="text-[11px] text-stone-400">
-                Cung cấp hình ảnh sản phẩm bạn nhận được thực tế để chứng minh trải nghiệm chân thực của bạn.
-              </p>
+              <input
+                type="file"
+                ref={fileInputRef}
+                accept="image/*"
+                multiple
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+
+              {evidenceUrls.length > 0 && (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
+                  {evidenceUrls.map((url, idx) => (
+                    <div key={idx} className="relative rounded-2xl border border-stone-200 dark:border-slate-800 overflow-hidden group h-24 sm:h-28 bg-stone-900/10">
+                      <img
+                        src={url}
+                        alt={`Bằng chứng ${idx + 1}`}
+                        className="w-full h-full object-cover rounded-2xl"
+                      />
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                        <a
+                          href={url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="p-1.5 rounded-xl bg-white text-stone-900 hover:bg-stone-100 text-xs font-bold shadow"
+                          title="Xem ảnh gốc"
+                        >
+                          <HiOutlineExternalLink className="h-4 w-4" />
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => setEvidenceUrls((prev) => prev.filter((_, i) => i !== idx))}
+                          className="p-1.5 rounded-xl bg-rose-600 text-white hover:bg-rose-700 text-xs font-bold shadow"
+                          title="Gỡ ảnh"
+                        >
+                          <HiOutlineTrash className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {evidenceUrls.length >= 4 ? (
+                <div
+                  className={cn(
+                    'w-full border border-dashed rounded-2xl p-3 text-center transition-colors',
+                    isDark ? 'border-slate-800 bg-slate-900/40 text-slate-400' : 'border-stone-200 bg-stone-50 text-stone-500'
+                  )}
+                >
+                  <span className="text-xs font-medium">Đã đạt giới hạn tối đa 4/4 ảnh chứng minh</span>
+                </div>
+              ) : (
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className={cn(
+                    'w-full border-2 border-dashed rounded-2xl p-3.5 text-center cursor-pointer transition-colors',
+                    uploadingImage ? 'opacity-50 pointer-events-none' : '',
+                    isDark
+                      ? 'border-slate-700 hover:border-amber-500 bg-slate-800/50'
+                      : 'border-stone-300 hover:border-amber-500 bg-stone-50'
+                  )}
+                >
+                  {uploadingImage ? (
+                    <div className="flex flex-col items-center justify-center gap-1.5 py-1">
+                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-amber-500 border-r-transparent" />
+                      <span className="text-xs font-semibold text-amber-500">Đang tải ảnh lên...</span>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center gap-1 py-1">
+                      <div className="p-1.5 rounded-full bg-amber-500/10 text-amber-500">
+                        <HiOutlineUpload className="h-4 w-4" />
+                      </div>
+                      <span className="text-xs font-bold">
+                        {evidenceUrls.length > 0 ? '+ Thêm ảnh chứng minh khác' : 'Bấm để tải ảnh chứng minh lên'}
+                      </span>
+                      <span className="text-[11px] text-stone-400">Hỗ trợ JPG, PNG, WEBP (Tối đa 4 ảnh, 10MB / ảnh)</span>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Actions */}

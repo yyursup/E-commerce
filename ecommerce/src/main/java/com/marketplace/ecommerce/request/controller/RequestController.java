@@ -2,6 +2,7 @@ package com.marketplace.ecommerce.request.controller;
 
 import com.marketplace.ecommerce.common.CurrentUserInfo;
 import com.marketplace.ecommerce.config.CurrentUser;
+import com.marketplace.ecommerce.request.dto.request.CreateAppealRequest;
 import com.marketplace.ecommerce.request.dto.request.RegisterSellerRequest;
 import com.marketplace.ecommerce.request.dto.response.CreateRequestResponse;
 import com.marketplace.ecommerce.request.dto.response.RequestResponse;
@@ -36,6 +37,13 @@ public class RequestController {
         return registerSellerService.createSellerRegistration(u.getAccountId(), request);
     }
 
+    @PostMapping("/appeal")
+    public CreateRequestResponse createAppeal(
+            @CurrentUser CurrentUserInfo u,
+            @Valid @RequestBody CreateAppealRequest request) {
+        return requestService.createAppeal(u.getAccountId(), request);
+    }
+
 
     @PutMapping("reject")
     @PreAuthorize("hasRole('ADMIN')")
@@ -54,7 +62,7 @@ public class RequestController {
             @RequestParam UUID requestId,
             @RequestParam String response
     ) {
-        return requestService.approveSellerRegistration(requestId, u.getAccountId(), response);
+        return requestService.approveRequest(requestId, u.getAccountId(), response);
     }
 
     @GetMapping

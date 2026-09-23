@@ -153,6 +153,15 @@ export default function ShopViolations() {
     const files = Array.from(e.target.files || [])
     if (!files.length) return
 
+    const MAX_IMAGES = 4
+    const remainingSlots = MAX_IMAGES - evidenceUrls.length
+
+    if (remainingSlots <= 0) {
+      toast.error('Chỉ được tải lên tối đa 4 hình ảnh!')
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      return
+    }
+
     const validFiles = []
     for (const file of files) {
       if (file.size > 10 * 1024 * 1024) {
@@ -167,10 +176,16 @@ export default function ShopViolations() {
       return
     }
 
+    let filesToUpload = validFiles
+    if (validFiles.length > remainingSlots) {
+      toast.error(`Chỉ được tải tối đa ${MAX_IMAGES} ảnh. Hệ thống sẽ xử lý ${remainingSlots} ảnh hợp lệ đầu tiên.`)
+      filesToUpload = validFiles.slice(0, remainingSlots)
+    }
+
     try {
       setUploadingImage(true)
       const uploaded = []
-      for (const file of validFiles) {
+      for (const file of filesToUpload) {
         const res = await fileService.uploadFile(file, 'appeals')
         const uploadedUrl = res?.url || res?.data?.url
         if (uploadedUrl) {

@@ -30,6 +30,15 @@ export default function ReportModal({ isOpen, onClose, targetId, targetName }) {
         const files = Array.from(e.target.files || []);
         if (!files.length) return;
 
+        const MAX_IMAGES = 4;
+        const remainingSlots = MAX_IMAGES - formData.evidenceUrls.length;
+
+        if (remainingSlots <= 0) {
+            toast.error('Chỉ được tải lên tối đa 4 hình ảnh bằng chứng!');
+            if (fileInputRef.current) fileInputRef.current.value = '';
+            return;
+        }
+
         const validFiles = [];
         for (const file of files) {
             if (file.size > 10 * 1024 * 1024) {
@@ -44,10 +53,16 @@ export default function ReportModal({ isOpen, onClose, targetId, targetName }) {
             return;
         }
 
+        let filesToUpload = validFiles;
+        if (validFiles.length > remainingSlots) {
+            toast.error(`Chỉ được tải tối đa ${MAX_IMAGES} ảnh. Hệ thống chỉ xử lý ${remainingSlots} ảnh hợp lệ đầu tiên.`);
+            filesToUpload = validFiles.slice(0, remainingSlots);
+        }
+
         try {
             setUploadingImage(true);
             const uploaded = [];
-            for (const file of validFiles) {
+            for (const file of filesToUpload) {
                 const res = await fileService.uploadFile(file, 'reports');
                 const uploadedUrl = res?.url || res?.data?.url;
                 if (uploadedUrl) {
@@ -186,8 +201,8 @@ export default function ReportModal({ isOpen, onClose, targetId, targetName }) {
 
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between">
-                                    <label className="text-sm font-medium">Hình ảnh bằng chứng ({formData.evidenceUrls.length})</label>
-                                    <span className="text-[11px] text-stone-400">Tối đa 10MB / ảnh</span>
+                                    <label className="text-sm font-medium">Hình ảnh bằng chứng ({formData.evidenceUrls.length}/4)</label>
+                                    <span className="text-[11px] text-stone-400">Tối đa 4 ảnh, 10MB / ảnh</span>
                                 </div>
                                 <input
                                     type="file"
@@ -199,9 +214,9 @@ export default function ReportModal({ isOpen, onClose, targetId, targetName }) {
                                 />
 
                                 {formData.evidenceUrls.length > 0 && (
-                                    <div className="grid grid-cols-2 gap-2 mb-2">
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
                                         {formData.evidenceUrls.map((url, idx) => (
-                                            <div key={idx} className="relative rounded-xl border border-stone-200 dark:border-slate-800 overflow-hidden group h-28 bg-stone-900/10">
+                                            <div key={idx} className="relative rounded-xl border border-stone-200 dark:border-slate-800 overflow-hidden group h-24 sm:h-28 bg-stone-900/10">
                                                 <img
                                                     src={url}
                                                     alt={`Bằng chứng ${idx + 1}`}
@@ -234,31 +249,42 @@ export default function ReportModal({ isOpen, onClose, targetId, targetName }) {
                                     </div>
                                 )}
 
-                                <div
-                                    onClick={() => fileInputRef.current?.click()}
-                                    className={cn(
-                                        'w-full border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition',
-                                        uploadingImage ? 'opacity-50 pointer-events-none' : '',
-                                        isDark
-                                            ? 'border-slate-700 hover:border-red-500 bg-slate-800/50'
-                                            : 'border-stone-300 hover:border-red-500 bg-stone-50'
-                                    )}
-                                >
-                                    {uploadingImage ? (
-                                        <div className="flex flex-col items-center justify-center gap-2 py-1">
-                                            <div className="h-5 w-5 animate-spin rounded-full border-2 border-red-500 border-r-transparent" />
-                                            <span className="text-xs font-medium text-red-500">Đang tải ảnh lên...</span>
-                                        </div>
-                                    ) : (
-                                        <div className="flex flex-col items-center justify-center gap-1 py-1">
-                                            <HiOutlineUpload className="h-6 w-6 text-red-500" />
-                                            <span className="text-xs font-semibold">
-                                                {formData.evidenceUrls.length > 0 ? '+ Thêm ảnh bằng chứng' : 'Bấm để tải ảnh bằng chứng lên'}
-                                            </span>
-                                            <span className="text-[11px] text-stone-400">Chọn 1 hoặc nhiều ảnh (JPG, PNG, WEBP)</span>
-                                        </div>
-                                    )}
-                                </div>
+                                {formData.evidenceUrls.length >= 4 ? (
+                                    <div
+                                        className={cn(
+                                            'w-full border border-dashed rounded-xl p-3 text-center transition',
+                                            isDark ? 'border-slate-800 bg-slate-900/40 text-slate-400' : 'border-stone-200 bg-stone-50 text-stone-500'
+                                        )}
+                                    >
+                                        <span className="text-xs font-medium">Đã đạt giới hạn tối đa 4/4 ảnh bằng chứng</span>
+                                    </div>
+                                ) : (
+                                    <div
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className={cn(
+                                            'w-full border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition',
+                                            uploadingImage ? 'opacity-50 pointer-events-none' : '',
+                                            isDark
+                                                ? 'border-slate-700 hover:border-red-500 bg-slate-800/50'
+                                                : 'border-stone-300 hover:border-red-500 bg-stone-50'
+                                        )}
+                                    >
+                                        {uploadingImage ? (
+                                            <div className="flex flex-col items-center justify-center gap-2 py-1">
+                                                <div className="h-5 w-5 animate-spin rounded-full border-2 border-red-500 border-r-transparent" />
+                                                <span className="text-xs font-medium text-red-500">Đang tải ảnh lên...</span>
+                                            </div>
+                                        ) : (
+                                            <div className="flex flex-col items-center justify-center gap-1 py-1">
+                                                <HiOutlineUpload className="h-6 w-6 text-red-500" />
+                                                <span className="text-xs font-semibold">
+                                                    {formData.evidenceUrls.length > 0 ? '+ Thêm ảnh bằng chứng' : 'Bấm để tải ảnh bằng chứng lên'}
+                                                </span>
+                                                <span className="text-[11px] text-stone-400">Hỗ trợ JPG, PNG, WEBP (Tối đa 4 ảnh, 10MB / ảnh)</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
 
                             <div className="flex gap-3 pt-4">

@@ -69,6 +69,10 @@ public class RequestServiceImpl implements RequestService {
         Request req = requestRepository.findById(requestId)
                 .orElseThrow(() -> new CustomException("Request not found: " + requestId));
 
+        if (req.getType() == RequestType.APPEAL) {
+            return approveRequest(requestId, adminAccountId, response);
+        }
+
         ApproveSellerContext ctx = requestValidation.validateApproveSellerRequest(req, requestId);
 
         Shop savedShop = shopService.createShop(ctx.ownerUser(), ctx.shopName(), req, ctx.sellerDetail());

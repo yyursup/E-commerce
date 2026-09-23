@@ -106,9 +106,9 @@ export default function AppealModal({
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="block text-xs font-bold">
-                    Hình ảnh tài liệu / Hóa đơn chứng từ ({evidenceUrls.length})
+                    Hình ảnh tài liệu / Hóa đơn chứng từ ({evidenceUrls.length}/4)
                   </label>
-                  <span className="text-[11px] text-stone-400">Tối đa 10MB / ảnh</span>
+                  <span className="text-[11px] text-stone-400">Tối đa 4 ảnh, 10MB / ảnh</span>
                 </div>
                 <input
                   type="file"
@@ -120,9 +120,9 @@ export default function AppealModal({
                 />
 
                 {evidenceUrls.length > 0 && (
-                  <div className="grid grid-cols-2 gap-2 mb-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
                     {evidenceUrls.map((url, idx) => (
-                      <div key={idx} className="relative rounded-2xl border border-stone-200 dark:border-slate-800 overflow-hidden group h-32 bg-stone-900/10">
+                      <div key={idx} className="relative rounded-2xl border border-stone-200 dark:border-slate-800 overflow-hidden group h-24 sm:h-28 bg-stone-900/10">
                         <img
                           src={url}
                           alt={`Hình ảnh ${idx + 1}`}
@@ -152,33 +152,44 @@ export default function AppealModal({
                   </div>
                 )}
 
-                <div
-                  onClick={() => fileInputRef.current?.click()}
-                  className={cn(
-                    'w-full border-2 border-dashed rounded-2xl p-4 text-center cursor-pointer transition-colors',
-                    uploadingImage ? 'opacity-50 pointer-events-none' : '',
-                    isDark
-                      ? 'border-slate-700 hover:border-amber-500 bg-slate-800/50'
-                      : 'border-stone-300 hover:border-amber-500 bg-stone-50'
-                  )}
-                >
-                  {uploadingImage ? (
-                    <div className="flex flex-col items-center justify-center gap-2 py-1">
-                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-amber-500 border-r-transparent" />
-                      <span className="text-xs font-semibold text-amber-500">Đang tải ảnh lên máy chủ...</span>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center gap-1.5 py-1">
-                      <div className="p-2 rounded-full bg-amber-500/10 text-amber-500">
-                        <HiOutlineUpload className="h-5 w-5" />
+                {evidenceUrls.length >= 4 ? (
+                  <div
+                    className={cn(
+                      'w-full border border-dashed rounded-2xl p-3 text-center transition-colors',
+                      isDark ? 'border-slate-800 bg-slate-900/40 text-slate-400' : 'border-stone-200 bg-stone-50 text-stone-500'
+                    )}
+                  >
+                    <span className="text-xs font-medium">Đã đạt giới hạn tối đa 4/4 ảnh chứng từ</span>
+                  </div>
+                ) : (
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className={cn(
+                      'w-full border-2 border-dashed rounded-2xl p-4 text-center cursor-pointer transition-colors',
+                      uploadingImage ? 'opacity-50 pointer-events-none' : '',
+                      isDark
+                        ? 'border-slate-700 hover:border-amber-500 bg-slate-800/50'
+                        : 'border-stone-300 hover:border-amber-500 bg-stone-50'
+                    )}
+                  >
+                    {uploadingImage ? (
+                      <div className="flex flex-col items-center justify-center gap-2 py-1">
+                        <div className="h-5 w-5 animate-spin rounded-full border-2 border-amber-500 border-r-transparent" />
+                        <span className="text-xs font-semibold text-amber-500">Đang tải ảnh lên máy chủ...</span>
                       </div>
-                      <span className="text-xs font-bold">
-                        {evidenceUrls.length > 0 ? '+ Thêm ảnh chứng từ khác' : 'Bấm để tải ảnh chứng từ lên'}
-                      </span>
-                      <span className="text-[11px] text-stone-400">Hỗ trợ JPG, PNG, WEBP (Tối đa 10MB / ảnh)</span>
-                    </div>
-                  )}
-                </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center gap-1.5 py-1">
+                        <div className="p-2 rounded-full bg-amber-500/10 text-amber-500">
+                          <HiOutlineUpload className="h-5 w-5" />
+                        </div>
+                        <span className="text-xs font-bold">
+                          {evidenceUrls.length > 0 ? '+ Thêm ảnh chứng từ khác' : 'Bấm để tải ảnh chứng từ lên'}
+                        </span>
+                        <span className="text-[11px] text-stone-400">Hỗ trợ JPG, PNG, WEBP (Tối đa 4 ảnh, 10MB / ảnh)</span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-stone-100 dark:border-slate-800">

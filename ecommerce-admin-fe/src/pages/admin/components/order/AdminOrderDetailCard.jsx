@@ -31,10 +31,12 @@ export default function AdminOrderDetailCard({ order, isDark }) {
                   'px-2.5 py-0.5 rounded-full text-xs font-bold border',
                   order.paymentMethod === 'VNPAY'
                     ? 'border-blue-500/30 bg-blue-500/10 text-blue-500'
-                    : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                    : order.paymentMethod === 'WALLET'
+                      ? 'border-purple-500/30 bg-purple-500/10 text-purple-600 dark:text-purple-400'
+                      : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
                 )}
               >
-                {order.paymentMethod === 'VNPAY' ? 'VNPAY' : 'COD'}
+                {order.paymentMethod === 'VNPAY' ? 'VNPAY' : order.paymentMethod === 'WALLET' ? 'Ví sàn' : 'COD'}
               </span>
             </div>
             <p className={cn('mt-1 text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
@@ -149,9 +151,15 @@ export default function AdminOrderDetailCard({ order, isDark }) {
               'px-2 py-0.5 rounded text-xs font-bold border',
               order.paymentMethod === 'VNPAY'
                 ? 'border-blue-500/30 bg-blue-500/10 text-blue-500'
-                : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                : order.paymentMethod === 'WALLET'
+                  ? 'border-purple-500/30 bg-purple-500/10 text-purple-600 dark:text-purple-400'
+                  : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
             )}>
-              {order.paymentMethod === 'VNPAY' ? 'VNPAY (Trực tuyến)' : 'COD (Tiền mặt khi nhận)'}
+              {order.paymentMethod === 'VNPAY'
+                ? 'VNPAY (Trực tuyến)'
+                : order.paymentMethod === 'WALLET'
+                  ? 'Ví sàn (Ký quỹ)'
+                  : 'COD (Tiền mặt khi nhận)'}
             </span>
           </div>
           {Number(order.shopDiscountAmount) > 0 && (

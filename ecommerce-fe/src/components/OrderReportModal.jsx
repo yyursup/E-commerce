@@ -260,7 +260,11 @@ export default function OrderReportModal({ isOpen, onClose, order, onSuccess }) 
                   <div className="flex items-center gap-1.5 text-[11px] text-stone-500 dark:text-slate-400">
                     <span>Thanh toán:</span>
                     <span className="font-semibold text-stone-700 dark:text-slate-300">
-                      {order.paymentMethod === 'VNPAY' ? 'VNPay Escrow (Ký quỹ trực tuyến)' : 'COD Escrow (Thu hộ & Ký quỹ sàn)'}
+                      {order.paymentMethod === 'VNPAY'
+                        ? 'VNPay Escrow (Ký quỹ trực tuyến)'
+                        : order.paymentMethod === 'WALLET'
+                          ? 'Ví Escrow (Ký quỹ số dư)'
+                          : 'COD Escrow (Thu hộ & Ký quỹ sàn)'}
                     </span>
                   </div>
                 </div>

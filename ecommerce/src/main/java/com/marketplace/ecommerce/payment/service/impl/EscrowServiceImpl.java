@@ -258,8 +258,21 @@ public class EscrowServiceImpl implements EscrowService {
 
         if (escrowWallet == null)
             throw new CustomException("Escrow wallet missing");
-        if (sellerWallet == null)
-            throw new CustomException("Seller wallet missing");
+        if (sellerWallet == null) {
+            sellerWallet = walletRepository.findByUserIdForUpdate(order.getShop().getUser().getId())
+                    .orElseGet(() -> {
+                        Wallet w = Wallet.builder()
+                                .user(order.getShop().getUser())
+                                .currency("VND")
+                                .availableBalance(BigDecimal.ZERO)
+                                .lockedBalance(BigDecimal.ZERO)
+                                .walletType(WalletType.USER)
+                                .createdAt(LocalDateTime.now())
+                                .build();
+                        return walletRepository.save(w);
+                    });
+            escrow.setSellerWallet(sellerWallet);
+        }
 
         BigDecimal amount = escrow.getAmount();
         if (amount == null || amount.signum() <= 0) {

@@ -198,9 +198,15 @@ export default function ShopOrderDetail() {
               'px-3 py-1 rounded-full text-xs font-bold border',
               order.paymentMethod === 'VNPAY'
                 ? 'border-blue-500/30 bg-blue-500/10 text-blue-500'
-                : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                : order.paymentMethod === 'WALLET'
+                  ? 'border-purple-500/30 bg-purple-500/10 text-purple-600 dark:text-purple-400'
+                  : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
             )}>
-              {order.paymentMethod === 'VNPAY' ? 'VNPAY (Trực tuyến)' : 'COD (Tiền mặt khi nhận)'}
+              {order.paymentMethod === 'VNPAY'
+                ? 'VNPAY (Trực tuyến)'
+                : order.paymentMethod === 'WALLET'
+                  ? 'Ví sàn (Ký quỹ)'
+                  : 'COD (Tiền mặt khi nhận)'}
             </span>
             <OrderStatusBadge status={order.status} className="px-3 py-1 text-xs" />
           </div>

@@ -36,6 +36,8 @@ import com.marketplace.ecommerce.request.repository.ReportRepository;
 import com.marketplace.ecommerce.request.service.OrderDisputeService;
 import com.marketplace.ecommerce.shop.entity.Shop;
 import com.marketplace.ecommerce.shop.repository.ShopRepository;
+import com.marketplace.ecommerce.wallet.service.WalletService;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -75,6 +77,7 @@ public class OrderServiceImpl implements OrderService {
     private final com.marketplace.ecommerce.voucher.service.VoucherService voucherService;
     private final InventoryHistoryService inventoryHistoryService;
     private final OrderDisputeService orderDisputeService;
+    private final WalletService walletService;
 
     @Override
     @Transactional
@@ -234,6 +237,9 @@ public class OrderServiceImpl implements OrderService {
 
             if (order.getPaymentMethod() == PaymentMethod.COD) {
                 escrowService.cancelCodEscrow(order);
+            } else if (order.getPaymentMethod() == PaymentMethod.WALLET
+                    || (order.getPaymentMethod() == PaymentMethod.VNPAY && currentStatus == OrderStatus.CONFIRMED)) {
+                escrowService.refundByOrder(order.getId(), "Hủy đơn hàng " + order.getOrderNumber());
             }
 
             voucherService.rollbackVoucherUsage(order);
@@ -363,7 +369,7 @@ public class OrderServiceImpl implements OrderService {
         order.setUser(user);
         order.setShop(shop);
         order.setPaymentMethod(paymentMethod);
-        if (paymentMethod == PaymentMethod.COD) {
+        if (paymentMethod == PaymentMethod.COD || paymentMethod == PaymentMethod.WALLET) {
             order.setStatus(OrderStatus.CONFIRMED);
         } else {
             order.setStatus(OrderStatus.PENDING_PAYMENT);
@@ -461,6 +467,10 @@ public class OrderServiceImpl implements OrderService {
 
         if (paymentMethod == PaymentMethod.COD) {
             escrowService.recordCodEscrow(order);
+            tryCreateGHNOrder(order);
+            order = orderRepository.save(order);
+        } else if (paymentMethod == PaymentMethod.WALLET) {
+            walletService.payOrderWithWallet(order);
             tryCreateGHNOrder(order);
             order = orderRepository.save(order);
         }

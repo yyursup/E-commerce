@@ -182,9 +182,15 @@ export default function OrderDetail() {
                     "text-xs px-2.5 py-0.5 rounded-full font-medium inline-flex items-center gap-1",
                     order.paymentMethod === 'VNPAY'
                       ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
-                      : "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+                      : order.paymentMethod === 'WALLET'
+                        ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+                        : "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 border border-amber-200 dark:border-amber-800"
                   )}>
-                    {order.paymentMethod === 'VNPAY' ? 'VNPay (Ký quỹ sàn)' : 'COD (Thu hộ khi nhận)'}
+                    {order.paymentMethod === 'VNPAY'
+                      ? 'VNPay (Ký quỹ sàn)'
+                      : order.paymentMethod === 'WALLET'
+                        ? 'Ví số dư (Ký quỹ sàn)'
+                        : 'COD (Thu hộ khi nhận)'}
                   </span>
                 </div>
                 <p className={cn('text-xs sm:text-sm mt-1', isDark ? 'text-slate-400' : 'text-stone-500')}>

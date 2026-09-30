@@ -77,6 +77,9 @@ class OrderDisputeFlowTest {
     @Mock
     private OrderDisputeService orderDisputeService;
 
+    @Mock
+    private com.marketplace.ecommerce.wallet.service.WalletService walletService;
+
     @InjectMocks
     private OrderServiceImpl orderService;
 

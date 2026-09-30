@@ -606,32 +606,42 @@ export default function ShopProfile() {
           <div className="flex flex-wrap items-center gap-3">
             {shopVouchers.map((v) => {
               const isSaved = savedVouchers[v.code]
+              const isExhausted = v.isEligible === false && v.userRemainingUsage !== undefined && v.userRemainingUsage <= 0
+              const hasMultipleUsage = v.userUsageLimit && v.userUsageLimit > 1
               const titleText = v.title || (v.discountType === 'PERCENTAGE' ? `Giảm ${v.discountValue}%` : `Giảm ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(v.discountValue || 0)}`)
-              const minText = v.minOrderAmount ? `Đơn từ ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(v.minOrderAmount)}` : 'Mọi đơn hàng'
+              const minText = v.minOrderAmount || v.minOrderValue ? `Đơn từ ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(v.minOrderAmount || v.minOrderValue)}` : 'Mọi đơn hàng'
 
               return (
                 <div
                   key={v.id || v.code}
                   className={cn(
                     'flex items-center gap-3 rounded-xl border border-dashed px-3 py-2 text-xs transition-all',
-                    isDark ? 'border-amber-500/40 bg-amber-500/5' : 'border-amber-500/50 bg-amber-50/60'
+                    isDark ? 'border-amber-500/40 bg-amber-500/5' : 'border-amber-500/50 bg-amber-50/60',
+                    isExhausted && 'opacity-60'
                   )}
                 >
                   <div>
                     <div className="font-bold text-amber-600 dark:text-amber-400">{titleText}</div>
                     <div className="text-[10px] text-stone-400 dark:text-slate-500">{minText}</div>
+                    {hasMultipleUsage && (
+                      <div className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400">
+                        {isExhausted ? 'Hết lượt cá nhân' : `Còn ${v.userRemainingUsage ?? v.userUsageLimit}/${v.userUsageLimit} lượt`}
+                      </div>
+                    )}
                   </div>
                   <button
-                    onClick={() => handleSaveVoucher(v)}
-                    disabled={isSaved}
+                    onClick={() => !isExhausted && handleSaveVoucher(v)}
+                    disabled={isSaved || isExhausted}
                     className={cn(
                       'rounded-lg px-2.5 py-1 font-bold text-[11px] transition-colors',
-                      isSaved
+                      isExhausted
                         ? 'bg-stone-200 dark:bg-slate-800 text-stone-400 cursor-not-allowed'
-                        : 'bg-amber-500 text-white hover:bg-amber-600'
+                        : isSaved
+                          ? 'bg-stone-200 dark:bg-slate-800 text-stone-400 cursor-not-allowed'
+                          : 'bg-amber-500 text-white hover:bg-amber-600'
                     )}
                   >
-                    {isSaved ? 'Đã lưu' : 'Lưu'}
+                    {isExhausted ? 'Hết lượt' : isSaved ? 'Đã lưu' : 'Lưu'}
                   </button>
                 </div>
               )

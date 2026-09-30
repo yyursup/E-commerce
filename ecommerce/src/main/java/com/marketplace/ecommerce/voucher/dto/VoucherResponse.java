@@ -31,6 +31,14 @@ public class VoucherResponse {
     private Integer usageLimit;
     private Integer usedCount;
     private Integer userUsageLimit;
+    private Integer userUsedCount;
+    private Integer userRemainingUsage;
+
+    @JsonProperty("isEligible")
+    private Boolean isEligible;
+
+    private String ineligibleReason;
+
     private LocalDateTime startDate;
     private LocalDateTime endDate;
     private VoucherStatus status;
@@ -55,6 +63,7 @@ public class VoucherResponse {
 
     public static VoucherResponse from(Voucher v) {
         if (v == null) return null;
+        int maxLimit = v.getUserUsageLimit() != null ? v.getUserUsageLimit() : 1;
         return VoucherResponse.builder()
                 .id(v.getId())
                 .code(v.getCode())
@@ -66,7 +75,11 @@ public class VoucherResponse {
                 .minOrderValue(v.getMinOrderValue())
                 .usageLimit(v.getUsageLimit())
                 .usedCount(v.getUsedCount())
-                .userUsageLimit(v.getUserUsageLimit())
+                .userUsageLimit(maxLimit)
+                .userUsedCount(0)
+                .userRemainingUsage(maxLimit)
+                .isEligible(v.isCurrentlyActive())
+                .ineligibleReason(v.isCurrentlyActive() ? null : "Voucher hiện không khả dụng hoặc đã hết lượt dùng")
                 .startDate(v.getStartDate())
                 .endDate(v.getEndDate())
                 .status(v.getStatus())

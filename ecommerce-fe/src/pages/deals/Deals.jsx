@@ -127,6 +127,10 @@ export default function Deals() {
                 : 'border-amber-500 bg-amber-500/10 text-amber-600 dark:text-amber-400',
               expiry: v.endDate || v.validTo ? `HSD: ${new Date(v.endDate || v.validTo).toLocaleDateString('vi-VN')}` : 'Còn hạn',
               isClaimed: isUserClaimed,
+              isEligible: v.isEligible,
+              userRemainingUsage: v.userRemainingUsage,
+              userUsageLimit: v.userUsageLimit,
+              ineligibleReason: v.ineligibleReason,
             }
           })
           setVouchers(mapped)

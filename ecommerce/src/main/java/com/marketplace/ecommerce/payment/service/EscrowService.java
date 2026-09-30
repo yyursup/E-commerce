@@ -18,4 +18,7 @@ public interface EscrowService {
     void refundByOrder(UUID orderId, String reason);
 
     Page<EscrowAdminResponse> adminList(EscrowStatus status, Pageable pageable);
+
+    void autoRefundExpiredDisputedOrders();
 }
+

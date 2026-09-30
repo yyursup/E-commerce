@@ -19,7 +19,8 @@ import { cn } from '../../lib/cn'
 import toast from 'react-hot-toast'
 import orderService from '../../services/order'
 import ReviewModal from '../../components/ReviewModal'
-import { HiOutlineStar } from 'react-icons/hi'
+import OrderReportModal from '../../components/OrderReportModal'
+import { HiOutlineStar, HiOutlineExclamationCircle } from 'react-icons/hi'
 
 const getStatusBadge = (status) => {
   const statusMap = {
@@ -60,6 +61,9 @@ export default function OrderDetail() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [reviewModal, setReviewModal] = useState({ open: false, productId: null, productName: '' })
+  const [showReportModal, setShowReportModal] = useState(false)
+
+
 
   useEffect(() => {
     if (!isAuthenticated || !orderId) return
@@ -166,53 +170,151 @@ export default function OrderDetail() {
           className={cn('rounded-xl border', isDark ? 'border-slate-700 bg-slate-900' : 'border-stone-200 bg-white')}
         >
           {/* Header */}
-          <div className="border-b p-6">
-            <div className="flex items-center justify-between">
+          <div className="border-b p-5 sm:p-6 space-y-4">
+            {/* Top row: Order Number, Meta & Status Badge */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <h1 className={cn('text-2xl font-bold', isDark ? 'text-white' : 'text-stone-900')}>
-                  Đơn hàng {order.orderNumber}
-                </h1>
-                <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-                  <p className={cn('text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
-                    Đặt ngày {formatDate(order.createdAt)}
-                  </p>
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <h1 className={cn('text-xl sm:text-2xl font-bold tracking-tight font-mono', isDark ? 'text-white' : 'text-stone-900')}>
+                    #{order.orderNumber}
+                  </h1>
                   <span className={cn(
                     "text-xs px-2.5 py-0.5 rounded-full font-medium inline-flex items-center gap-1",
                     order.paymentMethod === 'VNPAY'
                       ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
-                      : "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+                      : order.paymentMethod === 'WALLET'
+                        ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+                        : "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 border border-amber-200 dark:border-amber-800"
                   )}>
-                    {order.paymentMethod === 'VNPAY' ? 'VNPAY (Trực tuyến)' : 'COD (Thanh toán khi nhận)'}
+                    {order.paymentMethod === 'VNPAY'
+                      ? 'VNPay (Ký quỹ sàn)'
+                      : order.paymentMethod === 'WALLET'
+                        ? 'Ví số dư (Ký quỹ sàn)'
+                        : 'COD (Thu hộ khi nhận)'}
                   </span>
                 </div>
+                <p className={cn('text-xs sm:text-sm mt-1', isDark ? 'text-slate-400' : 'text-stone-500')}>
+                  Đặt ngày {formatDate(order.createdAt)}
+                  {order.shopName && <span className="font-medium text-stone-700 dark:text-slate-300"> • Cửa hàng: {order.shopName}</span>}
+                </p>
               </div>
-              <span
-                className={cn(
-                  'inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium',
-                  statusBadge.color,
-                )}
-              >
-                <StatusIcon className="h-4 w-4" />
-                {getStatusLabel(order.status)}
-              </span>
-              {['DELIVERED'].includes(order.status) && (
+
+              <div className="self-start sm:self-auto shrink-0">
+                <span
+                  className={cn(
+                    'inline-flex items-center gap-2 rounded-2xl px-3.5 py-1.5 text-xs sm:text-sm font-bold shadow-sm border',
+                    statusBadge.color,
+                  )}
+                >
+                  <StatusIcon className="h-4 w-4" />
+                  {getStatusLabel(order.status)}
+                </span>
+              </div>
+            </div>
+
+            {/* Escrow Guidance Banner when DELIVERED and NO dispute */}
+            {['DELIVERED'].includes(order.status) && !order.hasActiveDispute && (
+              <div className={cn(
+                'rounded-2xl p-3.5 sm:p-4 border text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3',
+                isDark ? 'bg-amber-500/10 border-amber-500/25 text-amber-300' : 'bg-amber-50 border-amber-200 text-amber-900'
+              )}>
+                <div className="flex items-start gap-2.5">
+                  <HiOutlineShieldCheck className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-bold">Đơn hàng đã được giao đến bạn</p>
+                    <p className="text-[11px] opacity-90 mt-0.5 leading-relaxed">
+                      Vui lòng kiểm tra kỹ sản phẩm. Tiền đang được <strong>Sàn ký quỹ giữ an toàn</strong>. Nếu có vấn đề về sản phẩm, hãy bấm <strong>Khiếu nại</strong> để tạm giữ tiền giải ngân cho Shop.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Dispute Status Banner when order has active dispute */}
+            {order.hasActiveDispute && (
+              <div className={cn(
+                'rounded-2xl p-4 border text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm',
+                order.disputeStatus === 'REPORT_PENDING'
+                  ? (isDark ? 'bg-amber-500/10 border-amber-500/30 text-amber-300' : 'bg-amber-50 border-amber-300 text-amber-900')
+                  : (isDark ? 'bg-rose-500/10 border-rose-500/30 text-rose-300' : 'bg-rose-50 border-rose-300 text-rose-900')
+              )}>
+                <div className="flex items-start gap-3">
+                  <div className={cn(
+                    'p-2 rounded-xl text-white shrink-0 mt-0.5 shadow-sm',
+                    order.disputeStatus === 'REPORT_PENDING' ? 'bg-amber-500' : 'bg-rose-500'
+                  )}>
+                    {order.disputeStatus === 'REPORT_PENDING' ? (
+                      <HiOutlineExclamationCircle className="h-5 w-5" />
+                    ) : (
+                      <HiOutlineShieldCheck className="h-5 w-5" />
+                    )}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-bold text-sm">
+                        {order.disputeStatus === 'REPORT_PENDING' && 'Đang giải quyết khiếu nại đơn hàng'}
+                        {order.disputeStatus === 'REPORT_APPROVED' && 'Khiếu nại của bạn đã được chấp thuận'}
+                        {order.disputeStatus === 'APPEAL_PENDING' && 'Shop đang gửi đơn kháng cáo'}
+                      </p>
+                      <span className={cn(
+                        'px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border tracking-wider',
+                        order.disputeStatus === 'REPORT_PENDING'
+                          ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/30'
+                          : 'bg-rose-500/20 text-rose-600 dark:text-rose-400 border-rose-500/30'
+                      )}>
+                        {order.disputeStatus === 'REPORT_PENDING' && 'Chờ BQT duyệt'}
+                        {order.disputeStatus === 'REPORT_APPROVED' && 'Tạm khóa Escrow'}
+                        {order.disputeStatus === 'APPEAL_PENDING' && 'Chờ đối soát kháng cáo'}
+                      </span>
+                    </div>
+                    <p className="text-[11px] opacity-90 mt-1 leading-relaxed">
+                      {order.disputeStatus === 'REPORT_PENDING' &&
+                        'Hồ sơ khiếu nại của bạn đang được Ban Quản Trị xem xét và đối soát. Tiền đơn hàng đang được tạm khóa trong Ký quỹ sàn (Escrow), nút xác nhận nhận hàng tạm khóa để bảo vệ quyền lợi.'}
+                      {order.disputeStatus === 'REPORT_APPROVED' &&
+                        'Ban Quản Trị đã xác nhận khiếu nại của bạn là hợp lệ. Tiền vẫn đang được giữ an toàn trong Ký quỹ sàn. Shop có thời hạn tối đa 72 giờ để gửi phản hồi / kháng cáo trước khi hệ thống tự động hoàn tiền.'}
+                      {order.disputeStatus === 'APPEAL_PENDING' &&
+                        'Shop đã nộp đơn kháng cáo kèm bằng chứng. Ban Quản Trị đang tiến hành phân xử công bằng để đưa ra phán quyết giải ngân hoặc hoàn tiền cuối cùng.'}
+                    </p>
+                    {order.disputeReason && (
+                      <p className="text-[11px] font-mono mt-1.5 opacity-80 line-clamp-2">
+                        Lý do: {order.disputeReason}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Quick Action Bar for Order state transitions - Only when NO active dispute */}
+            {['DELIVERED'].includes(order.status) && !order.hasActiveDispute && (
+              <div className="flex flex-wrap items-center gap-2.5 pt-2">
                 <button
+                  type="button"
                   onClick={async () => {
-                    if (!window.confirm("Bạn xác nhận đã nhận được hàng?")) return;
+                    if (!window.confirm("Bạn xác nhận đã nhận đầy đủ sản phẩm và hài lòng với đơn hàng? Thao tác này sẽ chuyển tiền cho Người bán.")) return;
                     try {
                       await orderService.markOrderReceived(order.id);
-                      toast.success("Đã xác nhận nhận hàng!");
+                      toast.success("Đã xác nhận nhận hàng thành công!");
                       fetchOrder();
                     } catch (e) {
-                      toast.error("Có lỗi xảy ra");
+                      toast.error(e?.message || "Có lỗi xảy ra khi xác nhận");
                     }
                   }}
-                  className="ml-4 rounded-lg bg-amber-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-amber-600"
+                  className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition-all duration-150 active:scale-[0.98]"
                 >
+                  <HiOutlineCheckCircle className="h-4 w-4" />
                   Đã nhận được hàng
                 </button>
-              )}
-            </div>
+                <button
+                  type="button"
+                  onClick={() => setShowReportModal(true)}
+                  className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-2.5 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 transition-all duration-150 active:scale-[0.98]"
+                >
+                  <HiOutlineExclamationCircle className="h-4 w-4 text-rose-500" />
+                  Khiếu nại / Báo sự cố
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Shipping Address */}
@@ -469,6 +571,14 @@ export default function OrderDetail() {
           productId={reviewModal.productId}
           productName={reviewModal.productName}
           onPageRefresh={fetchOrder}
+        />
+
+        {/* Order Report / Dispute Modal */}
+        <OrderReportModal
+          isOpen={showReportModal}
+          onClose={() => setShowReportModal(false)}
+          order={order}
+          onSuccess={fetchOrder}
         />
       </div>
     </div>

@@ -26,6 +26,10 @@ import com.marketplace.ecommerce.request.valueObjects.TargetType;
 import com.marketplace.ecommerce.review.entity.Review;
 import com.marketplace.ecommerce.review.repository.ReviewRepository;
 import com.marketplace.ecommerce.review.valueObjects.ReviewStatus;
+import com.marketplace.ecommerce.order.entity.Order;
+import com.marketplace.ecommerce.order.repository.OrderRepository;
+import com.marketplace.ecommerce.payment.repository.EscrowRepository;
+import com.marketplace.ecommerce.payment.valueObjects.EscrowStatus;
 import com.marketplace.ecommerce.shop.entity.Shop;
 import com.marketplace.ecommerce.shop.repository.ShopRepository;
 import com.marketplace.ecommerce.shop.valueObjects.ShopStatus;
@@ -48,6 +52,8 @@ public class ReportServiceImpl implements ReportService {
     private final ReviewRepository reviewRepository;
     private final ShopRepository shopRepository;
     private final ProductRepository productRepository;
+    private final OrderRepository orderRepository;
+    private final EscrowRepository escrowRepository;
 
     @Override
     @Transactional
@@ -71,7 +77,7 @@ public class ReportServiceImpl implements ReportService {
         LocalDateTime now = LocalDateTime.now();
 
         if (req.getDecision() == ReportDecision.REJECT) {
-            rejectRequest(r, admin, now, req.getNote());
+            rejectRequest(r, admin, now, req.getNote(), report);
             return;
         }
 
@@ -83,18 +89,30 @@ public class ReportServiceImpl implements ReportService {
             case SHOP -> handleReportShop(targetId, now);
             case PRODUCT -> handleReportProduct(targetId, now);
             case REVIEW -> handleReportReview(targetId, now);
+            case ORDER -> handleReportOrder(targetId, now);
             default -> throw new CustomException("Unsupported target type: " + type);
         }
 
         approveRequest(r, admin, now, req.getNote(), report);
     }
 
-    private void rejectRequest(Request r, Account admin, LocalDateTime now, String note) {
+    private void rejectRequest(Request r, Account admin, LocalDateTime now, String note, Report report) {
         r.setStatus(RequestStatus.REJECTED);
         r.setReviewedBy(admin);
         r.setReviewedAt(now);
         r.setResponse(note);
         requestRepository.save(r);
+
+        // Nếu báo cáo đơn hàng bị từ chối, phục hồi trạng thái Escrow về HELD nếu đang DISPUTED
+        if (report != null && report.getTargetType() == TargetType.ORDER && report.getTargetId() != null) {
+            escrowRepository.findByOrderIdForUpdate(report.getTargetId()).ifPresent(escrow -> {
+                if (escrow.getStatus() == EscrowStatus.DISPUTED) {
+                    escrow.setStatus(EscrowStatus.HELD);
+                    escrow.setUpdatedAt(now);
+                    escrowRepository.save(escrow);
+                }
+            });
+        }
     }
 
     private void approveRequest(Request r, Account admin, LocalDateTime now, String note, Report report) {
@@ -108,6 +126,7 @@ public class ReportServiceImpl implements ReportService {
     }
 
     @Override
+    @Transactional
     public CreateRequestResponse createReport(UUID accountId, CreateReportRequest request) {
 
         Account acc = accountRepository.findById(accountId)
@@ -117,13 +136,26 @@ public class ReportServiceImpl implements ReportService {
             throw new CustomException("You can not create report because you got suspended or banned");
         }
 
+        TargetType targetType = requestValidation.resolve(request.getTargetId());
+
+        // Kiểm tra điều kiện khiếu nại cho đơn hàng
+        if (targetType == TargetType.ORDER) {
+            requestValidation.validateOrderReport(accountId, request.getTargetId());
+            // Tạm khóa Escrow sang DISPUTED để ngăn việc tự động giải ngân cho Seller khi đang khiếu nại
+            escrowRepository.findByOrderIdForUpdate(request.getTargetId()).ifPresent(escrow -> {
+                if (escrow.getStatus() == EscrowStatus.HELD) {
+                    escrow.setStatus(EscrowStatus.DISPUTED);
+                    escrow.setUpdatedAt(LocalDateTime.now());
+                    escrowRepository.save(escrow);
+                }
+            });
+        }
+
         Request r = requestService.createRequest(acc, CreateSendRequest.builder()
                 .requestType(RequestType.REPORT)
                 .coverImage(request.getCoverImageUrl())
                 .description(request.getDescription())
                 .build());
-
-        TargetType targetType = requestValidation.resolve(request.getTargetId());
 
         Report re = Report.builder()
                 .request(r)
@@ -136,6 +168,45 @@ public class ReportServiceImpl implements ReportService {
 
         return CreateRequestResponse.from(r);
     }
+
+    private void handleReportOrder(UUID orderId, LocalDateTime now) {
+        Order order = orderRepository.findByIdForUpdate(orderId)
+                .orElseThrow(() -> new CustomException("Không tìm thấy đơn hàng: " + orderId));
+
+        UUID ownerAccountId = requestPolicy.resolveTargetAccountId(TargetType.ORDER, orderId);
+        if (ownerAccountId == null) {
+            throw new CustomException("Không tìm thấy tài khoản chủ gian hàng của đơn hàng: " + orderId);
+        }
+
+        // Phạt tài khoản chủ Shop
+        DisciplineLevel level = punishAccount(ownerAccountId, now);
+
+        if (order.getShop() != null) {
+            Shop shop = order.getShop();
+            if (level == DisciplineLevel.WARNED) {
+                if (shop.getStatus() == ShopStatus.ACTIVE) {
+                    shop.setStatus(ShopStatus.WARNED);
+                }
+            } else if (level == DisciplineLevel.SUSPENDED) {
+                shop.setStatus(ShopStatus.SUSPENDED);
+                productRepository.updateStatusByShopId(shop.getId(), ProductStatus.INACTIVE);
+            } else if (level == DisciplineLevel.BANNED) {
+                shop.setStatus(ShopStatus.BANNED);
+                productRepository.updateStatusByShopId(shop.getId(), ProductStatus.DELETED);
+            }
+            shopRepository.save(shop);
+        }
+
+        // Đảm bảo Escrow ở trạng thái DISPUTED
+        escrowRepository.findByOrderIdForUpdate(orderId).ifPresent(escrow -> {
+            if (escrow.getStatus() == EscrowStatus.HELD) {
+                escrow.setStatus(EscrowStatus.DISPUTED);
+                escrow.setUpdatedAt(now);
+                escrowRepository.save(escrow);
+            }
+        });
+    }
+
 
     private void handleReportUser(UUID targetId, LocalDateTime now) {
         UUID accountId = requestPolicy.resolveTargetAccountId(TargetType.USER, targetId);

@@ -3,6 +3,8 @@ import {
   HiOutlineExternalLink,
   HiOutlineTrash,
   HiOutlineUpload,
+  HiX,
+  HiOutlineShieldCheck,
 } from 'react-icons/hi'
 import { cn } from '../../../../lib/cn'
 
@@ -26,25 +28,52 @@ export default function AppealModal({
   return (
     <AnimatePresence>
       {showAppealModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-stone-950/70 backdrop-blur-md overflow-y-auto">
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
+            initial={{ opacity: 0, scale: 0.96, y: 16 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.96, y: 16 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 350 }}
             className={cn(
-              'w-full max-w-lg rounded-3xl border p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto',
-              isDark ? 'border-slate-800 bg-slate-900 text-white' : 'border-stone-200 bg-white text-stone-900'
+              'w-full max-w-lg rounded-[28px] border shadow-2xl relative max-h-[92vh] overflow-hidden flex flex-col',
+              isDark ? 'border-slate-800 bg-slate-900 text-white shadow-amber-950/20' : 'border-stone-200 bg-white text-stone-900 shadow-stone-400/20'
             )}
           >
-            <h2 className="text-lg font-bold mb-1">Gửi Đơn Kháng Cáo Phục Hồi Điểm Uy Tín</h2>
-            <p className={cn('text-xs mb-4', isDark ? 'text-slate-400' : 'text-stone-500')}>
-              Cung cấp đầy đủ lý do giải trình và tải lên tài liệu/hình ảnh chứng từ để Ban Quản Trị thẩm định và khôi phục điểm uy tín
-            </p>
+            {/* Header Modal */}
+            <div className={cn(
+              'flex items-center justify-between px-5 sm:px-6 py-4.5 border-b shrink-0',
+              isDark ? 'border-slate-800 bg-slate-900/60' : 'border-stone-100 bg-stone-50/50'
+            )}>
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-500 border border-amber-500/20 shadow-sm">
+                  <HiOutlineShieldCheck className="h-5 w-5" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold tracking-tight">Gửi Đơn Kháng Cáo Vi Phạm</h2>
+                  <p className={cn('text-xs mt-0.5', isDark ? 'text-slate-400' : 'text-stone-500')}>
+                    Giải trình và đính kèm bằng chứng để khôi phục điểm uy tín
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAppealModal(false)}
+                className={cn(
+                  'rounded-xl p-2 transition-all',
+                  isDark ? 'hover:bg-slate-800 text-slate-400 hover:text-white' : 'hover:bg-stone-100 text-stone-400 hover:text-stone-800'
+                )}
+                aria-label="Đóng modal"
+              >
+                <HiX className="h-5 w-5" />
+              </button>
+            </div>
 
-            <form onSubmit={handleSubmitAppeal} className="space-y-4">
+            <form onSubmit={handleSubmitAppeal} className="p-5 sm:p-6 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
               {/* Chọn vi phạm cần kháng cáo */}
               <div>
-                <label className="block text-xs font-bold mb-1">Chọn vi phạm cần kháng cáo *</label>
+                <label className="block text-xs font-bold mb-1.5 uppercase tracking-wider text-stone-500 dark:text-slate-400">
+                  Chọn vi phạm cần kháng cáo <span className="text-rose-500">*</span>
+                </label>
                 {appealableViolations.length > 0 ? (
                   <select
                     value={selectedViolation?.reportId || ''}
@@ -53,13 +82,13 @@ export default function AppealModal({
                       setSelectedViolation(found || null)
                     }}
                     className={cn(
-                      'w-full rounded-2xl px-3.5 py-2.5 text-xs border outline-none font-medium',
+                      'w-full rounded-2xl px-3.5 py-2.5 text-xs border outline-none font-medium transition focus:ring-2 focus:ring-amber-500/20',
                       isDark ? 'border-slate-800 bg-slate-800 text-white' : 'border-stone-200 bg-white text-stone-900'
                     )}
                   >
                     {appealableViolations.map((v) => (
                       <option key={v.reportId} value={v.reportId}>
-                        [{v.targetType === 'SHOP' ? 'Gian hàng' : 'Sản phẩm'}] {v.targetName} - {v.reason || 'Báo cáo'} ({v.createdAt ? new Date(v.createdAt).toLocaleDateString('vi-VN') : 'Gần đây'})
+                        [{v.targetType === 'SHOP' ? 'Gian hàng' : v.targetType === 'ORDER' ? 'Đơn hàng' : 'Sản phẩm'}] {v.targetName} - {v.reason || 'Báo cáo'} ({v.createdAt ? new Date(v.createdAt).toLocaleDateString('vi-VN') : 'Gần đây'})
                       </option>
                     ))}
                   </select>
@@ -70,7 +99,7 @@ export default function AppealModal({
                 )}
               </div>
 
-              {/* Thông tin đối tượng được hiển thị trực quan (KHÔNG HIỆN MÃ SHOP ID UUID) */}
+              {/* Thông tin đối tượng được hiển thị trực quan */}
               {selectedViolation && (
                 <div className={cn(
                   'p-3.5 rounded-2xl border text-xs space-y-1.5',
@@ -88,16 +117,24 @@ export default function AppealModal({
               )}
 
               <div>
-                <label className="block text-xs font-bold mb-1">Nội dung giải trình *</label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-slate-400">
+                    Nội dung giải trình <span className="text-rose-500">*</span>
+                  </label>
+                  <span className="text-[11px] font-mono text-stone-400">
+                    {description.length}/500
+                  </span>
+                </div>
                 <textarea
                   rows={4}
+                  maxLength={500}
                   placeholder="Trình bày chi tiết lý do bạn cho rằng phán quyết là nhầm lẫn hoặc nguyên nhân khách quan..."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   required
                   className={cn(
-                    'w-full rounded-2xl px-3.5 py-2.5 text-xs border outline-none',
-                    isDark ? 'border-slate-800 bg-slate-800 text-white' : 'border-stone-200 bg-white text-stone-900'
+                    'w-full rounded-2xl p-3.5 text-xs border outline-none resize-none leading-relaxed transition focus:ring-2 focus:ring-amber-500/20',
+                    isDark ? 'border-slate-800 bg-slate-800 text-white placeholder-slate-500' : 'border-stone-200 bg-white text-stone-900 placeholder-stone-400'
                   )}
                 />
               </div>

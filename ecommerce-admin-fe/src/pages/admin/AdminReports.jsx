@@ -9,6 +9,7 @@ import {
   HiOutlineTag,
   HiOutlineUser,
   HiOutlineStar,
+  HiOutlineTruck,
 } from 'react-icons/hi'
 import { cn } from '../../lib/cn'
 import { useThemeStore } from '../../store/useThemeStore'
@@ -187,6 +188,8 @@ export default function AdminReports() {
         return <HiOutlineUser className="h-5 w-5 text-sky-500" />
       case 'REVIEW':
         return <HiOutlineStar className="h-5 w-5 text-yellow-500" />
+      case 'ORDER':
+        return <HiOutlineTruck className="h-5 w-5 text-emerald-500" />
       default:
         return <HiOutlineExclamationCircle className="h-5 w-5 text-stone-400" />
     }
@@ -202,6 +205,8 @@ export default function AdminReports() {
         return 'Tài khoản người dùng (User)'
       case 'REVIEW':
         return 'Đánh giá / Nhận xét (Review)'
+      case 'ORDER':
+        return 'Đơn hàng (Order)'
       default:
         return 'Đối tượng chưa xác định'
     }

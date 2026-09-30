@@ -9,12 +9,15 @@ import {
   HiOutlineXCircle,
   HiOutlineCreditCard,
   HiOutlineStar,
+  HiOutlineExclamationCircle,
+  HiOutlineChevronRight,
 } from 'react-icons/hi'
 import { useThemeStore } from '../../store/useThemeStore'
 import { useAuthStore } from '../../store/useAuthStore'
 import { cn } from '../../lib/cn'
 import toast from 'react-hot-toast'
 import orderService from '../../services/order'
+import OrderReportModal from '../../components/OrderReportModal'
 
 const ORDER_STATUSES = [
   { value: '', label: 'Tất cả' },
@@ -69,6 +72,16 @@ export default function MyOrders() {
   const [error, setError] = useState(null)
   const [walletBalance, setWalletBalance] = useState(0)
   const [escrowHeld, setEscrowHeld] = useState(0)
+  const [reportingOrder, setReportingOrder] = useState(null)
+
+  const isDelayedShipping = (order) => {
+    if (!order) return false
+    if (!['SHIPPED', 'SHIPPING'].includes(order.status)) return false
+    const shipDate = order.shippedAt || order.updatedAt || order.createdAt
+    if (!shipDate) return false
+    const diffDays = (new Date() - new Date(shipDate)) / (1000 * 60 * 60 * 24)
+    return diffDays >= 3
+  }
 
   // Statuses where buyer money is held in system escrow
   const ESCROW_HELD_STATUSES = ['CONFIRMED', 'PROCESSING', 'SHIPPING', 'SHIPPED', 'DELIVERED']
@@ -147,7 +160,7 @@ export default function MyOrders() {
     )
   }
 
-  const canMarkReceived = (status) => ['DELIVERED'].includes(status);
+  const canMarkReceived = (order) => ['DELIVERED'].includes(order.status) && !order.hasActiveDispute;
 
   return (
     <div className={cn('min-h-screen px-4 py-8 sm:px-6 lg:px-8', isDark ? 'bg-slate-950' : 'bg-stone-50')}>
@@ -164,17 +177,17 @@ export default function MyOrders() {
 
           {/* Escrow Held Card */}
           <div className={cn(
-            "flex items-center gap-4 px-6 py-4 rounded-xl shadow-sm border",
-            isDark ? "bg-slate-900 border-slate-700" : "bg-white border-stone-200"
+            "flex items-center gap-4 px-5 py-4 rounded-2xl shadow-sm border",
+            isDark ? "bg-slate-900 border-slate-800" : "bg-white border-stone-200"
           )}>
-            <div className="p-3 rounded-full bg-amber-500/10 text-amber-500">
+            <div className="p-3 rounded-2xl bg-amber-500/10 text-amber-500 border border-amber-500/20">
               <HiOutlineCreditCard className="w-6 h-6" />
             </div>
             <div>
-              <p className={cn("text-xs font-medium uppercase tracking-wider", isDark ? "text-slate-400" : "text-stone-500")}>
-                Đang trong Escrow
+              <p className={cn("text-[11px] font-bold uppercase tracking-wider", isDark ? "text-slate-400" : "text-stone-500")}>
+                Ký Quỹ Đang Bảo Vệ (Escrow)
               </p>
-              <p className={cn("text-xl font-bold", isDark ? "text-white" : "text-stone-900")}>
+              <p className={cn("text-xl font-bold font-mono text-amber-600 dark:text-amber-400", isDark ? "text-amber-400" : "text-amber-600")}>
                 {formatCurrency(statusFilter === '' ? escrowHeld : walletBalance)}
               </p>
             </div>
@@ -182,19 +195,19 @@ export default function MyOrders() {
         </div>
 
         {/* Filter */}
-        <div className="mb-6 overflow-x-auto pb-2">
+        <div className="mb-6 overflow-x-auto pb-2 custom-scrollbar">
           <div className="flex gap-2 min-w-max">
             {ORDER_STATUSES.map((status) => (
               <button
                 key={status.value}
                 onClick={() => setStatusFilter(status.value)}
                 className={cn(
-                  'rounded-full px-4 py-2 text-sm font-medium transition-colors border',
+                  'rounded-full px-4 py-2 text-xs font-bold transition-all duration-150 border',
                   statusFilter === status.value
-                    ? 'bg-amber-500 text-white border-amber-500'
+                    ? 'bg-amber-500 text-white border-amber-500 shadow-sm'
                     : isDark
-                      ? 'border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700'
-                      : 'border-stone-200 bg-white text-stone-600 hover:bg-stone-50'
+                      ? 'border-slate-800 bg-slate-800/60 text-slate-300 hover:bg-slate-800 hover:border-slate-700'
+                      : 'border-stone-200 bg-white text-stone-600 hover:bg-stone-50 hover:border-stone-300'
                 )}
               >
                 {status.label}
@@ -204,25 +217,25 @@ export default function MyOrders() {
         </div>
 
         {loading && (
-          <div className="flex items-center justify-center py-12">
+          <div className="flex items-center justify-center py-16">
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent"></div>
           </div>
         )}
 
         {error && !loading && (
-          <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-center dark:border-red-800 dark:bg-red-900/20">
-            <p className={cn('text-sm', isDark ? 'text-red-400' : 'text-red-600')}>{error}</p>
+          <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center dark:border-red-900/40 dark:bg-red-950/20">
+            <p className={cn('text-sm font-medium', isDark ? 'text-red-400' : 'text-red-600')}>{error}</p>
           </div>
         )}
 
         {!loading && !error && orders.length === 0 && (
           <div className={cn(
-            'rounded-xl border p-12 text-center',
-            isDark ? 'border-slate-700 bg-slate-900' : 'border-stone-200 bg-white'
+            'rounded-3xl border p-12 text-center',
+            isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
           )}>
-            <HiOutlineShoppingBag className={cn('mx-auto h-12 w-12', isDark ? 'text-slate-600' : 'text-stone-400')} />
-            <p className={cn('mt-4 text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
-              Bạn chưa có đơn hàng nào
+            <HiOutlineShoppingBag className={cn('mx-auto h-12 w-12', isDark ? 'text-slate-600' : 'text-stone-300')} />
+            <p className={cn('mt-4 text-sm font-semibold', isDark ? 'text-slate-400' : 'text-stone-600')}>
+              Bạn chưa có đơn hàng nào trong mục này
             </p>
           </div>
         )}
@@ -237,106 +250,162 @@ export default function MyOrders() {
               return (
                 <motion.div
                   key={order.id}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
                   className={cn(
-                    'rounded-xl border p-6 transition-shadow hover:shadow-lg',
-                    isDark ? 'border-slate-700 bg-slate-900' : 'border-stone-200 bg-white',
+                    'rounded-2xl border transition-all duration-200 hover:shadow-md overflow-hidden flex flex-col',
+                    isDark ? 'border-slate-800 bg-slate-900/90' : 'border-stone-200 bg-white',
                   )}
                 >
-                  <Link to={`/orders/${order.id}`}>
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="flex gap-4">
-                        {thumbnailImage && (
-                          <img
-                            src={thumbnailImage}
-                            alt={order.items[0]?.productName}
-                            className="h-20 w-20 rounded-lg object-cover bg-stone-100 dark:bg-slate-800"
-                            onError={(e) => { e.target.src = '/product-placeholder.svg' }}
-                          />
-                        )}
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <h3 className={cn('font-semibold', isDark ? 'text-white' : 'text-stone-900')}>
-                              {order.orderNumber}
-                            </h3>
-                            <span
-                              className={cn(
-                                'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
-                                statusBadge.color,
-                              )}
-                            >
-                              <StatusIcon className="h-3 w-3" />
-                              {getStatusLabel(order.status)}
-                            </span>
-                            <span className={cn(
-                              "text-[10px] px-2 py-0.5 rounded font-medium",
-                              order.paymentMethod === 'VNPAY'
-                                ? "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
-                                : "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
-                            )}>
-                              {order.paymentMethod === 'VNPAY' ? 'VNPAY' : 'COD'}
-                            </span>
-                          </div>
-                          <p className={cn('mt-1 text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
-                            {order.shopName}
-                          </p>
-                          {order.items?.[0] && (order.items[0].variantColor || order.items[0].variantSize) && (
-                            <p className="text-xs text-stone-500 dark:text-slate-400 mt-0.5">
-                              Phân loại: {[order.items[0].variantColor, order.items[0].variantSize].filter(Boolean).join(' - ')}
-                              {order.items.length > 1 ? ` (+${order.items.length - 1} sp)` : ''}
-                            </p>
-                          )}
-                          <p className={cn('mt-1 text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
-                            {order.items?.length || 0} sản phẩm
-                          </p>
-                          <p className={cn('mt-1 text-xs', isDark ? 'text-slate-500' : 'text-stone-500')}>
-                            {formatDate(order.createdAt)}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        {Number(order.shippingFee) > 0 && (
-                          <p className="text-xs text-stone-500 dark:text-slate-400 mb-0.5">
-                            Phí giao hàng: {formatCurrency(order.shippingFee)}
-                          </p>
-                        )}
-                        <p className={cn('text-lg font-bold', isDark ? 'text-white' : 'text-stone-900')}>
-                          {formatCurrency(order.total)}
-                        </p>
+                  {/* Card Header: Shop info & status badge */}
+                  <div className={cn(
+                    'px-5 py-3 border-b flex items-center justify-between gap-3 text-xs flex-wrap',
+                    isDark ? 'border-slate-800 bg-slate-900/50' : 'border-stone-100 bg-stone-50/50'
+                  )}>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-bold text-stone-800 dark:text-slate-200">
+                        {order.shopName || 'Marketplace Store'}
+                      </span>
+                      <span className={cn(
+                        "text-[10px] px-2 py-0.5 rounded-full font-bold uppercase",
+                        order.paymentMethod === 'VNPAY'
+                          ? "bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
+                          : order.paymentMethod === 'WALLET'
+                            ? "bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-300 border border-purple-200 dark:border-purple-800"
+                            : "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+                      )}>
+                        {order.paymentMethod === 'VNPAY' ? 'VNPay' : order.paymentMethod === 'WALLET' ? 'Ví sàn' : 'COD'}
+                      </span>
+                    </div>
 
-                        <div className="flex flex-col items-end gap-2 mt-2">
-                          {canMarkReceived(order.status) && (
-                            <button
-                              onClick={(e) => {
-                                e.preventDefault(); // Prevent Link navigation
-                                handleMarkReceived(order.id);
-                              }}
-                              className="inline-block rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-600"
-                            >
-                              Đã nhận được hàng
-                            </button>
-                          )}
-                          {['DELIVERED', 'COMPLETED'].includes(order.status) && (
-                            <Link
-                              to={`/orders/${order.id}`}
-                              onClick={(e) => e.stopPropagation()}
-                              className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-500 transition hover:bg-amber-500/20"
-                            >
-                              <HiOutlineStar className="h-3.5 w-3.5" />
-                              Viết đánh giá
-                            </Link>
-                          )}
-                        </div>
-                      </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {order.hasActiveDispute && (
+                        <span className={cn(
+                          'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold border uppercase tracking-wider',
+                          order.disputeStatus === 'REPORT_PENDING'
+                            ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30'
+                            : 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30'
+                        )}>
+                          <HiOutlineExclamationCircle className="h-3.5 w-3.5" />
+                          {order.disputeStatus === 'REPORT_PENDING' && 'Đang khiếu nại'}
+                          {order.disputeStatus === 'REPORT_APPROVED' && 'Khiếu nại được duyệt'}
+                          {order.disputeStatus === 'APPEAL_PENDING' && 'Shop đang kháng cáo'}
+                        </span>
+                      )}
+                      <span
+                        className={cn(
+                          'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold border',
+                          statusBadge.color,
+                        )}
+                      >
+                        <StatusIcon className="h-3.5 w-3.5" />
+                        {getStatusLabel(order.status)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Card Body: Clickable to view details */}
+                  <Link
+                    to={`/orders/${order.id}`}
+                    className="p-5 flex gap-4 transition-colors hover:bg-stone-50/40 dark:hover:bg-slate-800/30"
+                  >
+                    <div className="relative shrink-0">
+                      <img
+                        src={thumbnailImage || '/product-placeholder.svg'}
+                        alt={order.items?.[0]?.productName || 'Product'}
+                        className="h-20 w-20 sm:h-22 sm:w-22 rounded-xl object-cover bg-stone-100 dark:bg-slate-800 border dark:border-slate-800 border-stone-100 shadow-sm"
+                        onError={(e) => { e.target.src = '/product-placeholder.svg' }}
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className={cn('text-sm font-bold line-clamp-1 group-hover:text-amber-500 transition-colors', isDark ? 'text-white' : 'text-stone-900')}>
+                        {order.items?.[0]?.productName || `Đơn hàng #${order.orderNumber}`}
+                      </h4>
+                      {order.items?.[0] && (order.items[0].variantColor || order.items[0].variantSize) && (
+                        <p className="text-xs text-stone-500 dark:text-slate-400 mt-1">
+                          Phân loại: {[order.items[0].variantColor, order.items[0].variantSize].filter(Boolean).join(' - ')}
+                        </p>
+                      )}
+                      <p className={cn('mt-1 text-xs', isDark ? 'text-slate-400' : 'text-stone-500')}>
+                        {order.items?.length || 0} sản phẩm • Đặt ngày {formatDate(order.createdAt)}
+                      </p>
+                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-500 dark:text-amber-400 mt-2 hover:underline">
+                        Xem chi tiết kiện hàng <HiOutlineChevronRight className="h-3 w-3" />
+                      </span>
                     </div>
                   </Link>
+
+                  {/* Card Footer: Total price on left, Action buttons on right (NO LINK CLASH) */}
+                  <div className={cn(
+                    'px-5 py-3.5 border-t flex flex-col sm:flex-row sm:items-center justify-between gap-3',
+                    isDark ? 'border-slate-800 bg-slate-900/60' : 'border-stone-100 bg-white'
+                  )}>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-xs text-stone-400 dark:text-slate-500">Tổng thanh toán:</span>
+                      <span className={cn('text-base font-bold font-mono text-rose-500 dark:text-rose-400')}>
+                        {formatCurrency(order.total)}
+                      </span>
+                    </div>
+
+                    {/* Action buttons row */}
+                    <div className="flex items-center gap-2 flex-wrap self-end sm:self-auto">
+                      {canMarkReceived(order) && (
+                        <button
+                          type="button"
+                          onClick={() => handleMarkReceived(order.id)}
+                          className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 px-3.5 py-2 text-xs font-bold text-white shadow-sm transition-all duration-150 active:scale-95"
+                        >
+                          <HiOutlineCheckCircle className="h-4 w-4" />
+                          Đã nhận được hàng
+                        </button>
+                      )}
+
+                      {['DELIVERED'].includes(order.status) && !order.hasActiveDispute && (
+                        <button
+                          type="button"
+                          onClick={() => setReportingOrder(order)}
+                          className="inline-flex items-center gap-1.5 rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 transition-all duration-150 active:scale-95"
+                        >
+                          <HiOutlineExclamationCircle className="h-3.5 w-3.5 text-rose-500" />
+                          Khiếu nại
+                        </button>
+                      )}
+
+                      {order.hasActiveDispute && (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25">
+                          <HiOutlineExclamationCircle className="h-4 w-4 text-amber-500" />
+                          {order.disputeStatus === 'REPORT_PENDING' && 'Đang đối soát khiếu nại'}
+                          {order.disputeStatus === 'REPORT_APPROVED' && 'Khiếu nại được chấp thuận'}
+                          {order.disputeStatus === 'APPEAL_PENDING' && 'Shop đang kháng cáo'}
+                        </span>
+                      )}
+
+                      {['DELIVERED', 'COMPLETED'].includes(order.status) && (
+                        <Link
+                          to={`/orders/${order.id}`}
+                          className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 dark:border-slate-700 bg-stone-50 dark:bg-slate-800 px-3 py-2 text-xs font-bold text-stone-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500 transition-all duration-150"
+                        >
+                          <HiOutlineStar className="h-3.5 w-3.5 text-amber-500" />
+                          Đánh giá
+                        </Link>
+                      )}
+                    </div>
+                  </div>
                 </motion.div>
               )
             })}
           </div>
         )}
+
+        {/* Order Report / Dispute Modal */}
+        <OrderReportModal
+          isOpen={reportingOrder !== null}
+          onClose={() => setReportingOrder(null)}
+          order={reportingOrder}
+          onSuccess={fetchData}
+        />
       </div>
     </div>
   )
 }
+

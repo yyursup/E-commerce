@@ -9,6 +9,7 @@ import com.marketplace.ecommerce.order.entity.Order;
 import com.marketplace.ecommerce.order.repository.OrderRepository;
 import com.marketplace.ecommerce.order.service.QueryOrderService;
 import com.marketplace.ecommerce.order.valueObjects.OrderStatus;
+import com.marketplace.ecommerce.request.service.OrderDisputeService;
 import com.marketplace.ecommerce.shop.entity.Shop;
 import com.marketplace.ecommerce.shop.repository.ShopRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,7 @@ public class QueryOrderServiceImpl implements QueryOrderService {
     private final OrderRepository orderRepository;
     private final ShopRepository shopRepository;
     private final UserRepository userRepository;
+    private final OrderDisputeService orderDisputeService;
 
     @Override
     @Transactional(readOnly = true)
@@ -44,11 +46,9 @@ public class QueryOrderServiceImpl implements QueryOrderService {
                 OrderStatus.SHIPPING,
                 OrderStatus.DELIVERED,
                 OrderStatus.PENDING_PAYMENT,
-                OrderStatus.PENDING
-        );
+                OrderStatus.PENDING);
 
-        BigDecimal estimatedRevenue =
-                orderRepository.getEstimatedRevenueByShop(shop.getId(), estimatedStatuses);
+        BigDecimal estimatedRevenue = orderRepository.getEstimatedRevenueByShop(shop.getId(), estimatedStatuses);
 
         return RevenueSummaryResponse.builder()
                 .revenue(revenue)
@@ -63,7 +63,7 @@ public class QueryOrderServiceImpl implements QueryOrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new CustomException("Order not found."));
 
-        return OrderResponse.from(order);
+        return OrderResponse.from(order, orderDisputeService.getDisputeInfo(order.getId()));
     }
 
     @Override
@@ -74,9 +74,10 @@ public class QueryOrderServiceImpl implements QueryOrderService {
                 ? orderRepository.findAllByOrderByCreatedAtDesc()
                 : orderRepository.findByStatusOrderByCreatedAtDesc(statusOpt);
 
-        return orders.stream().map(OrderResponse::from).toList();
+        List<UUID> ids = orders.stream().map(Order::getId).toList();
+        var disputeMap = orderDisputeService.getDisputeInfoBatch(ids);
+        return orders.stream().map(o -> OrderResponse.from(o, disputeMap.get(o.getId()))).toList();
     }
-
 
     @Override
     public OrderResponse getOrderForUser(UUID orderId, UUID accountId) {
@@ -89,7 +90,7 @@ public class QueryOrderServiceImpl implements QueryOrderService {
             throw new CustomException("Forbidden");
         }
 
-        return OrderResponse.from(order);
+        return OrderResponse.from(order, orderDisputeService.getDisputeInfo(order.getId()));
     }
 
     @Override
@@ -104,7 +105,7 @@ public class QueryOrderServiceImpl implements QueryOrderService {
             throw new CustomException("Order not found.");
         }
 
-        return OrderResponse.from(order);
+        return OrderResponse.from(order, orderDisputeService.getDisputeInfo(order.getId()));
     }
 
     @Override
@@ -115,7 +116,9 @@ public class QueryOrderServiceImpl implements QueryOrderService {
                 ? orderRepository.findByUserIdOrderByCreatedAtDesc(user.getId())
                 : orderRepository.findByUserIdAndStatusOrderByCreatedAtDesc(user.getId(), status);
 
-        return orders.stream().map(OrderResponse::from).toList();
+        List<UUID> ids = orders.stream().map(Order::getId).toList();
+        var disputeMap = orderDisputeService.getDisputeInfoBatch(ids);
+        return orders.stream().map(o -> OrderResponse.from(o, disputeMap.get(o.getId()))).toList();
     }
 
     @Override
@@ -127,7 +130,9 @@ public class QueryOrderServiceImpl implements QueryOrderService {
                 ? orderRepository.findByShopIdOrderByCreatedAtDesc(shop.getId())
                 : orderRepository.findByShopIdAndStatusOrderByCreatedAtDesc(shop.getId(), status);
 
-        return orders.stream().map(OrderResponse::from).toList();
+        List<UUID> ids = orders.stream().map(Order::getId).toList();
+        var disputeMap = orderDisputeService.getDisputeInfoBatch(ids);
+        return orders.stream().map(o -> OrderResponse.from(o, disputeMap.get(o.getId()))).toList();
     }
 
     private User requireUserByAccountId(UUID accountId) {

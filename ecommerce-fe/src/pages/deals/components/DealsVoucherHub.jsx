@@ -160,13 +160,16 @@ export default function DealsVoucherHub({
             )}
           >
             {filteredVouchers.map((voucher) => {
+              const isExhausted = voucher.isEligible === false && voucher.userRemainingUsage !== undefined && voucher.userRemainingUsage <= 0
               const isCollected = collectedVouchers.has(voucher.code)
+              const hasMultipleUsage = voucher.userUsageLimit && voucher.userUsageLimit > 1
               return (
                 <div
                   key={voucher.id || voucher.code}
                   className={cn(
                     'w-[285px] sm:w-[310px] shrink-0 relative rounded-2xl border p-5 flex flex-col justify-between shadow-sm transition-all duration-300 hover:shadow-md hover:border-amber-500/40',
-                    isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
+                    isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white',
+                    isExhausted && 'opacity-60'
                   )}
                 >
                   <div>
@@ -186,6 +189,12 @@ export default function DealsVoucherHub({
                     <p className="mt-1 text-xs text-stone-500 dark:text-slate-400 leading-relaxed line-clamp-2">
                       {voucher.description}
                     </p>
+
+                    {hasMultipleUsage && (
+                      <span className="inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                        {isExhausted ? 'Đã hết lượt cá nhân' : `Còn ${voucher.userRemainingUsage ?? voucher.userUsageLimit}/${voucher.userUsageLimit} lượt dùng`}
+                      </span>
+                    )}
                   </div>
 
                   <div className="mt-4 pt-3 border-t border-dashed border-stone-200 dark:border-slate-800 flex items-center justify-between">
@@ -193,16 +202,20 @@ export default function DealsVoucherHub({
                       {voucher.code}
                     </span>
                     <button
-                      onClick={() => onCollectVoucher(voucher)}
-                      disabled={isCollected}
+                      onClick={() => !isExhausted && onCollectVoucher(voucher)}
+                      disabled={isCollected || isExhausted}
                       className={cn(
                         'rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all shadow-sm flex items-center gap-1.5',
-                        isCollected
-                          ? 'bg-emerald-500 text-white cursor-default shadow-emerald-500/20'
-                          : 'bg-amber-500 text-white hover:bg-amber-600 active:scale-95 shadow-amber-500/20'
+                        isExhausted
+                          ? 'bg-stone-200 dark:bg-slate-800 text-stone-400 dark:text-slate-500 cursor-not-allowed shadow-none'
+                          : isCollected
+                            ? 'bg-emerald-500 text-white cursor-default shadow-emerald-500/20'
+                            : 'bg-amber-500 text-white hover:bg-amber-600 active:scale-95 shadow-amber-500/20'
                       )}
                     >
-                      {isCollected ? (
+                      {isExhausted ? (
+                        'Hết lượt'
+                      ) : isCollected ? (
                         <>
                           <HiOutlineCheck className="h-4 w-4 stroke-[2.5]" />
                           Đã lưu
@@ -221,13 +234,16 @@ export default function DealsVoucherHub({
         /* Grid Layout for <= 4 Vouchers */
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {filteredVouchers.map((voucher) => {
+            const isExhausted = voucher.isEligible === false && voucher.userRemainingUsage !== undefined && voucher.userRemainingUsage <= 0
             const isCollected = collectedVouchers.has(voucher.code)
+            const hasMultipleUsage = voucher.userUsageLimit && voucher.userUsageLimit > 1
             return (
               <div
                 key={voucher.id || voucher.code}
                 className={cn(
                   'relative rounded-2xl border p-5 flex flex-col justify-between shadow-sm transition-all duration-300 hover:shadow-md hover:border-amber-500/40',
-                  isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
+                  isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white',
+                  isExhausted && 'opacity-60'
                 )}
               >
                 <div>
@@ -247,6 +263,12 @@ export default function DealsVoucherHub({
                   <p className="mt-1 text-xs text-stone-500 dark:text-slate-400 leading-relaxed line-clamp-2">
                     {voucher.description}
                   </p>
+
+                  {hasMultipleUsage && (
+                    <span className="inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                      {isExhausted ? 'Đã hết lượt cá nhân' : `Còn ${voucher.userRemainingUsage ?? voucher.userUsageLimit}/${voucher.userUsageLimit} lượt dùng`}
+                    </span>
+                  )}
                 </div>
 
                 <div className="mt-4 pt-3 border-t border-dashed border-stone-200 dark:border-slate-800 flex items-center justify-between">
@@ -254,16 +276,20 @@ export default function DealsVoucherHub({
                     {voucher.code}
                   </span>
                   <button
-                    onClick={() => onCollectVoucher(voucher)}
-                    disabled={isCollected}
+                    onClick={() => !isExhausted && onCollectVoucher(voucher)}
+                    disabled={isCollected || isExhausted}
                     className={cn(
                       'rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all shadow-sm flex items-center gap-1.5',
-                      isCollected
-                        ? 'bg-emerald-500 text-white cursor-default shadow-emerald-500/20'
-                        : 'bg-amber-500 text-white hover:bg-amber-600 active:scale-95 shadow-amber-500/20'
+                      isExhausted
+                        ? 'bg-stone-200 dark:bg-slate-800 text-stone-400 dark:text-slate-500 cursor-not-allowed shadow-none'
+                        : isCollected
+                          ? 'bg-emerald-500 text-white cursor-default shadow-emerald-500/20'
+                          : 'bg-amber-500 text-white hover:bg-amber-600 active:scale-95 shadow-amber-500/20'
                     )}
                   >
-                    {isCollected ? (
+                    {isExhausted ? (
+                      'Hết lượt'
+                    ) : isCollected ? (
                       <>
                         <HiOutlineCheck className="h-4 w-4 stroke-[2.5]" />
                         Đã lưu

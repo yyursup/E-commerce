@@ -32,8 +32,11 @@ import com.marketplace.ecommerce.shipping.usecase.GHNClient;
 import com.marketplace.ecommerce.order.valueObjects.OrderStatus;
 import com.marketplace.ecommerce.product.service.InventoryHistoryService;
 import com.marketplace.ecommerce.product.valueObjects.InventoryActionType;
+import com.marketplace.ecommerce.request.service.OrderDisputeService;
 import com.marketplace.ecommerce.shop.entity.Shop;
 import com.marketplace.ecommerce.shop.repository.ShopRepository;
+import com.marketplace.ecommerce.wallet.service.WalletService;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -49,6 +52,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -71,6 +75,8 @@ public class OrderServiceImpl implements OrderService {
     private final CommissionService commissionService;
     private final com.marketplace.ecommerce.voucher.service.VoucherService voucherService;
     private final InventoryHistoryService inventoryHistoryService;
+    private final OrderDisputeService orderDisputeService;
+    private final WalletService walletService;
 
     @Override
     @Transactional
@@ -132,6 +138,12 @@ public class OrderServiceImpl implements OrderService {
             return;
         }
 
+        // Bỏ qua giải ngân nếu đơn hàng đang có khiếu nại / tranh chấp đang xử lý
+        if (orderDisputeService.hasActiveDispute(orderId)) {
+            log.info("Skipping auto release for order {} because of active dispute", order.getOrderNumber());
+            return;
+        }
+
         order.setReceivedByBuyer(true);
         order.setReceivedAt(LocalDateTime.now());
         orderRepository.save(order);
@@ -166,7 +178,7 @@ public class OrderServiceImpl implements OrderService {
         User user = userRepository.findByAccountId(accountId)
                 .orElseThrow(() -> new CustomException("User not found"));
 
-        Order order = orderRepository.findByIdAndUserId(orderId, user.getId())
+        Order order = orderRepository.findByIdForUpdate(orderId)
                 .orElseThrow(() -> new CustomException("Order not found"));
 
         if (!user.getId().equals(order.getUser().getId())) {
@@ -174,11 +186,16 @@ public class OrderServiceImpl implements OrderService {
         }
 
         if (order.getStatus() != OrderStatus.DELIVERED) {
-            throw new CustomException("Make receive when the order were delivered");
+            throw new CustomException("Chỉ có thể xác nhận khi đơn hàng ở trạng thái đã giao (DELIVERED)");
         }
 
-        if (order.isReceivedByBuyer()) {
-            throw new CustomException("Order is already received");
+        if (order.isReceivedByBuyer() || order.getStatus() == OrderStatus.COMPLETED) {
+            throw new CustomException("Đơn hàng đã được xác nhận hoàn tất trước đó");
+        }
+
+        if (orderDisputeService.hasActiveDispute(orderId)) {
+            throw new CustomException(
+                    "Đơn hàng đang trong quá trình khiếu nại hoặc tranh chấp, không thể xác nhận nhận hàng");
         }
 
         order.setReceivedByBuyer(true);
@@ -219,6 +236,9 @@ public class OrderServiceImpl implements OrderService {
 
             if (order.getPaymentMethod() == PaymentMethod.COD) {
                 escrowService.cancelCodEscrow(order);
+            } else if (order.getPaymentMethod() == PaymentMethod.WALLET
+                    || (order.getPaymentMethod() == PaymentMethod.VNPAY && currentStatus == OrderStatus.CONFIRMED)) {
+                escrowService.refundByOrder(order.getId(), "Hủy đơn hàng " + order.getOrderNumber());
             }
 
             voucherService.rollbackVoucherUsage(order);
@@ -231,17 +251,22 @@ public class OrderServiceImpl implements OrderService {
                             int oldQ = p.getQuantity();
                             p.setQuantity(p.getQuantity() + item.getQuantity());
                             productRepository.save(p);
-                            inventoryHistoryService.logInventoryChange(order.getShop(), p, null, oldQ, p.getQuantity(), InventoryActionType.ORDER_CANCELLED, order.getOrderNumber(), "Hủy đơn hàng: " + order.getOrderNumber());
+                            inventoryHistoryService.logInventoryChange(order.getShop(), p, null, oldQ, p.getQuantity(),
+                                    InventoryActionType.ORDER_CANCELLED, order.getOrderNumber(),
+                                    "Hủy đơn hàng: " + order.getOrderNumber());
                         }
                     }
                     if (item.getVariantId() != null) {
-                        java.util.Optional<com.marketplace.ecommerce.product.entity.ProductVariant> optVariant = productVariantRepository.findById(item.getVariantId());
+                        Optional<ProductVariant> optVariant = productVariantRepository
+                                .findById(item.getVariantId());
                         if (optVariant.isPresent()) {
-                            com.marketplace.ecommerce.product.entity.ProductVariant variant = optVariant.get();
+                            ProductVariant variant = optVariant.get();
                             int currentStock = variant.getStock() != null ? variant.getStock() : 0;
                             variant.setStock(currentStock + item.getQuantity());
                             productVariantRepository.save(variant);
-                            inventoryHistoryService.logInventoryChange(order.getShop(), item.getProduct(), variant, currentStock, variant.getStock(), InventoryActionType.ORDER_CANCELLED, order.getOrderNumber(), "Hủy đơn hàng: " + order.getOrderNumber());
+                            inventoryHistoryService.logInventoryChange(order.getShop(), item.getProduct(), variant,
+                                    currentStock, variant.getStock(), InventoryActionType.ORDER_CANCELLED,
+                                    order.getOrderNumber(), "Hủy đơn hàng: " + order.getOrderNumber());
                         }
                     }
                 }
@@ -343,7 +368,7 @@ public class OrderServiceImpl implements OrderService {
         order.setUser(user);
         order.setShop(shop);
         order.setPaymentMethod(paymentMethod);
-        if (paymentMethod == PaymentMethod.COD) {
+        if (paymentMethod == PaymentMethod.COD || paymentMethod == PaymentMethod.WALLET) {
             order.setStatus(OrderStatus.CONFIRMED);
         } else {
             order.setStatus(OrderStatus.PENDING_PAYMENT);
@@ -394,7 +419,8 @@ public class OrderServiceImpl implements OrderService {
             if (cartItem.getVariantId() != null) {
                 ProductVariant variant = productVariantRepository.findById(cartItem.getVariantId())
                         .filter(v -> !Boolean.TRUE.equals(v.getDeleted()))
-                        .orElseThrow(() -> new CustomException("Biến thể sản phẩm không tồn tại: " + product.getName()));
+                        .orElseThrow(
+                                () -> new CustomException("Biến thể sản phẩm không tồn tại: " + product.getName()));
                 if (variant.getStock() != null && variant.getStock() < cartItem.getQuantity()) {
                     throw new CustomException("Biến thể (" + (variant.getColor() != null ? variant.getColor() : "")
                             + (variant.getSize() != null ? " " + variant.getSize() : "") + ") không đủ số lượng.");
@@ -403,7 +429,8 @@ public class OrderServiceImpl implements OrderService {
                 variant.setStock(variant.getStock() - cartItem.getQuantity());
                 variant.setSold((variant.getSold() != null ? variant.getSold() : 0) + cartItem.getQuantity());
                 productVariantRepository.save(variant);
-                inventoryHistoryService.logInventoryChange(shop, product, variant, oldVStock, variant.getStock(), InventoryActionType.ORDER_PLACED, orderNumber, "Khách đặt đơn hàng: " + orderNumber);
+                inventoryHistoryService.logInventoryChange(shop, product, variant, oldVStock, variant.getStock(),
+                        InventoryActionType.ORDER_PLACED, orderNumber, "Khách đặt đơn hàng: " + orderNumber);
 
                 orderItem.setVariantId(variant.getId());
                 orderItem.setVariantColor(variant.getColor());
@@ -416,7 +443,8 @@ public class OrderServiceImpl implements OrderService {
             if (product.getQuantity() != null) {
                 int oldPStock = product.getQuantity();
                 product.setQuantity(Math.max(0, product.getQuantity() - cartItem.getQuantity()));
-                inventoryHistoryService.logInventoryChange(shop, product, null, oldPStock, product.getQuantity(), InventoryActionType.ORDER_PLACED, orderNumber, "Khách đặt đơn hàng: " + orderNumber);
+                inventoryHistoryService.logInventoryChange(shop, product, null, oldPStock, product.getQuantity(),
+                        InventoryActionType.ORDER_PLACED, orderNumber, "Khách đặt đơn hàng: " + orderNumber);
             }
             product.setSold((product.getSold() != null ? product.getSold() : 0) + cartItem.getQuantity());
             productRepository.save(product);
@@ -440,6 +468,10 @@ public class OrderServiceImpl implements OrderService {
             escrowService.recordCodEscrow(order);
             tryCreateGHNOrder(order);
             order = orderRepository.save(order);
+        } else if (paymentMethod == PaymentMethod.WALLET) {
+            walletService.payOrderWithWallet(order);
+            tryCreateGHNOrder(order);
+            order = orderRepository.save(order);
         }
 
         return OrderResponse.from(order);
@@ -455,7 +487,8 @@ public class OrderServiceImpl implements OrderService {
             if (cartItem.getVariantId() != null) {
                 ProductVariant variant = productVariantRepository.findById(cartItem.getVariantId())
                         .filter(v -> !Boolean.TRUE.equals(v.getDeleted()))
-                        .orElseThrow(() -> new CustomException("Biến thể sản phẩm không tồn tại: " + product.getName()));
+                        .orElseThrow(
+                                () -> new CustomException("Biến thể sản phẩm không tồn tại: " + product.getName()));
                 if (variant.getStock() != null && variant.getStock() < cartItem.getQuantity()) {
                     throw new CustomException("Biến thể (" + (variant.getColor() != null ? variant.getColor() : "")
                             + (variant.getSize() != null ? " " + variant.getSize() : "") + ") của sản phẩm "
@@ -470,7 +503,8 @@ public class OrderServiceImpl implements OrderService {
                                     + " không đủ số lượng. Còn lại: " + product.getQuantity());
                 }
 
-                BigDecimal unitPrice = cartItem.getUnitPrice() != null ? cartItem.getUnitPrice() : product.getBasePrice();
+                BigDecimal unitPrice = cartItem.getUnitPrice() != null ? cartItem.getUnitPrice()
+                        : product.getBasePrice();
                 subtotal = subtotal.add(unitPrice.multiply(BigDecimal.valueOf(cartItem.getQuantity())));
             }
         }

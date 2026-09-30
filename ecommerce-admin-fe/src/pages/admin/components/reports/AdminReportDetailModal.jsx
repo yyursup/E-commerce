@@ -7,6 +7,81 @@ import {
 } from 'react-icons/hi'
 import { cn } from '../../../../lib/cn'
 
+const renderTargetInfo = (targetInfo, isDark) => {
+  if (!targetInfo) return null;
+
+  // Nếu targetInfo chứa các trường phân cách bởi '|' (ví dụ Đơn hàng: Gian hàng | Người mua | Tổng tiền...)
+  if (targetInfo.includes('|')) {
+    const parts = targetInfo.split('|').map((p) => p.trim()).filter(Boolean);
+    return (
+      <div className="flex flex-wrap gap-2 pt-1">
+        {parts.map((part, index) => {
+          const colonIndex = part.indexOf(':');
+          if (colonIndex === -1) {
+            return (
+              <span
+                key={index}
+                className={cn(
+                  'px-2.5 py-1 rounded-xl text-xs font-medium border',
+                  isDark ? 'bg-slate-800/80 border-slate-700 text-slate-300' : 'bg-stone-100 border-stone-200 text-stone-700'
+                )}
+              >
+                {part}
+              </span>
+            );
+          }
+
+          const label = part.substring(0, colonIndex).trim();
+          let value = part.substring(colonIndex + 1).trim();
+
+          // Format lại trường tiền tệ (ví dụ 16400500.00 đ -> 16.400.500 đ)
+          const isPrice = label.toLowerCase().includes('tiền') || value.endsWith('đ') || value.endsWith('₫');
+          if (isPrice) {
+            const numericPart = value.replace(/đ|₫|VND/gi, '').trim();
+            const parsed = parseFloat(numericPart);
+            if (!isNaN(parsed)) {
+              value = new Intl.NumberFormat('vi-VN').format(parsed) + ' đ';
+            }
+          }
+
+          const isStatus = label.toLowerCase().includes('trạng thái');
+          const isPayment = label.toLowerCase().includes('pttt') || label.toLowerCase().includes('thanh toán');
+
+          return (
+            <div
+              key={index}
+              className={cn(
+                'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs border shadow-sm transition-all',
+                isPrice
+                  ? (isDark ? 'bg-rose-500/10 border-rose-500/30 text-rose-300 font-bold' : 'bg-rose-50 border-rose-200 text-rose-700 font-bold')
+                  : isStatus
+                    ? (isDark ? 'bg-amber-500/10 border-amber-500/30 text-amber-300 font-bold' : 'bg-amber-50 border-amber-200 text-amber-700 font-bold')
+                    : isPayment
+                      ? (isDark ? 'bg-blue-500/10 border-blue-500/30 text-blue-300 font-semibold' : 'bg-blue-50 border-blue-200 text-blue-700 font-semibold')
+                      : (isDark ? 'bg-slate-800/80 border-slate-700/80 text-slate-300' : 'bg-stone-50 border-stone-200 text-stone-700')
+              )}
+            >
+              <span className="text-stone-400 dark:text-slate-400 font-normal">{label}:</span>
+              <span className={cn('font-semibold', isPrice && 'font-mono text-sm tracking-tight')}>{value}</span>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  const formattedText = targetInfo.replace(/(\d+(?:\.\d+)?)\s*(?:đ|₫)/g, (match, p1) => {
+    const parsed = parseFloat(p1);
+    return isNaN(parsed) ? match : new Intl.NumberFormat('vi-VN').format(parsed) + ' đ';
+  });
+
+  return (
+    <span className="text-xs font-medium text-stone-700 dark:text-slate-300">
+      {formattedText}
+    </span>
+  );
+};
+
 export default function AdminReportDetailModal({
   detailModal,
   setDetailModal,
@@ -132,13 +207,13 @@ export default function AdminReportDetailModal({
                         </div>
 
                         {detailModal.data.detail.targetInfo && (
-                          <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-2">
-                            <span className="text-xs font-semibold text-stone-500 dark:text-slate-400 min-w-[100px]">
+                          <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-2 pt-0.5">
+                            <span className="text-xs font-semibold text-stone-500 dark:text-slate-400 min-w-[100px] shrink-0 pt-1">
                               Thông tin bổ sung:
                             </span>
-                            <span className="text-xs font-medium text-stone-700 dark:text-slate-300">
-                              {detailModal.data.detail.targetInfo}
-                            </span>
+                            <div className="flex-1">
+                              {renderTargetInfo(detailModal.data.detail.targetInfo, isDark)}
+                            </div>
                           </div>
                         )}
                       </div>

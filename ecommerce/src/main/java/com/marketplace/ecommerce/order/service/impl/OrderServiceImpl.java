@@ -33,6 +33,7 @@ import com.marketplace.ecommerce.order.valueObjects.OrderStatus;
 import com.marketplace.ecommerce.product.service.InventoryHistoryService;
 import com.marketplace.ecommerce.product.valueObjects.InventoryActionType;
 import com.marketplace.ecommerce.request.repository.ReportRepository;
+import com.marketplace.ecommerce.request.service.OrderDisputeService;
 import com.marketplace.ecommerce.shop.entity.Shop;
 import com.marketplace.ecommerce.shop.repository.ShopRepository;
 import lombok.RequiredArgsConstructor;
@@ -73,7 +74,7 @@ public class OrderServiceImpl implements OrderService {
     private final CommissionService commissionService;
     private final com.marketplace.ecommerce.voucher.service.VoucherService voucherService;
     private final InventoryHistoryService inventoryHistoryService;
-    private final ReportRepository reportRepository;
+    private final OrderDisputeService orderDisputeService;
 
     @Override
     @Transactional
@@ -135,9 +136,9 @@ public class OrderServiceImpl implements OrderService {
             return;
         }
 
-        // Bỏ qua giải ngân nếu đơn hàng đang có khiếu nại chờ xử lý
-        if (reportRepository.existsPendingReportByOrderId(orderId)) {
-            log.info("Skipping auto release for order {} because of pending dispute report", order.getOrderNumber());
+        // Bỏ qua giải ngân nếu đơn hàng đang có khiếu nại / tranh chấp đang xử lý
+        if (orderDisputeService.hasActiveDispute(orderId)) {
+            log.info("Skipping auto release for order {} because of active dispute", order.getOrderNumber());
             return;
         }
 
@@ -175,7 +176,7 @@ public class OrderServiceImpl implements OrderService {
         User user = userRepository.findByAccountId(accountId)
                 .orElseThrow(() -> new CustomException("User not found"));
 
-        Order order = orderRepository.findByIdAndUserId(orderId, user.getId())
+        Order order = orderRepository.findByIdForUpdate(orderId)
                 .orElseThrow(() -> new CustomException("Order not found"));
 
         if (!user.getId().equals(order.getUser().getId())) {
@@ -183,15 +184,16 @@ public class OrderServiceImpl implements OrderService {
         }
 
         if (order.getStatus() != OrderStatus.DELIVERED) {
-            throw new CustomException("Make receive when the order were delivered");
+            throw new CustomException("Chỉ có thể xác nhận khi đơn hàng ở trạng thái đã giao (DELIVERED)");
         }
 
-        if (order.isReceivedByBuyer()) {
-            throw new CustomException("Order is already received");
+        if (order.isReceivedByBuyer() || order.getStatus() == OrderStatus.COMPLETED) {
+            throw new CustomException("Đơn hàng đã được xác nhận hoàn tất trước đó");
         }
 
-        if (reportRepository.existsPendingReportByOrderId(orderId)) {
-            throw new CustomException("Đơn hàng đang có khiếu nại chờ xử lý, không thể xác nhận nhận hàng");
+        if (orderDisputeService.hasActiveDispute(orderId)) {
+            throw new CustomException(
+                    "Đơn hàng đang trong quá trình khiếu nại hoặc tranh chấp, không thể xác nhận nhận hàng");
         }
 
         order.setReceivedByBuyer(true);

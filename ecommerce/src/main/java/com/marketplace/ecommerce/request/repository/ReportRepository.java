@@ -1,6 +1,7 @@
 package com.marketplace.ecommerce.request.repository;
 
 import com.marketplace.ecommerce.request.entity.Report;
+import com.marketplace.ecommerce.request.valueObjects.TargetType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -172,5 +173,23 @@ public interface ReportRepository extends JpaRepository<Report, UUID> {
           and req.reviewedAt <= :threshold
     """)
     List<Report> findApprovedOrderReportsReviewedBefore(@Param("threshold") java.time.LocalDateTime threshold);
+
+    @Query("""
+        select r from Report r
+        join fetch r.request req
+        where r.targetType = :targetType
+          and r.targetId = :targetId
+        order by req.createdAt desc
+    """)
+    List<Report> findReportsByTargetTypeAndTargetId(@Param("targetType") TargetType targetType, @Param("targetId") UUID targetId);
+
+    @Query("""
+        select r from Report r
+        join fetch r.request req
+        where r.targetType = :targetType
+          and r.targetId in :targetIds
+        order by req.createdAt desc
+    """)
+    List<Report> findReportsByTargetTypeAndTargetIdIn(@Param("targetType") TargetType targetType, @Param("targetIds") List<UUID> targetIds);
 }
 

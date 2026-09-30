@@ -35,6 +35,7 @@ import com.marketplace.ecommerce.shop.service.ShopService;
 import com.marketplace.ecommerce.shop.valueObjects.ShopStatus;
 import com.marketplace.ecommerce.order.entity.Order;
 import com.marketplace.ecommerce.order.repository.OrderRepository;
+import com.marketplace.ecommerce.order.valueObjects.OrderStatus;
 import com.marketplace.ecommerce.payment.repository.EscrowRepository;
 import com.marketplace.ecommerce.payment.service.EscrowService;
 import com.marketplace.ecommerce.payment.valueObjects.EscrowStatus;
@@ -192,14 +193,20 @@ public class RequestServiceImpl implements RequestService {
                             shopRepository.save(order.getShop());
                         }
 
-                        // Kháng cáo đơn hàng thành công -> Chuyển lại trạng thái Escrow về HELD nếu
-                        // đang DISPUTED
+                        // Kháng cáo đơn hàng thành công -> Shop thắng dispute!
+                        // Phục hồi Escrow về HELD rồi giải ngân trực tiếp cho Shop và hoàn tất đơn hàng
                         escrowRepository.findByOrderIdForUpdate(targetId).ifPresent(escrow -> {
                             if (escrow.getStatus() == EscrowStatus.DISPUTED) {
                                 escrow.setStatus(EscrowStatus.HELD);
                                 escrowRepository.save(escrow);
                             }
                         });
+
+                        order.setReceivedByBuyer(true);
+                        order.setReceivedAt(LocalDateTime.now());
+                        escrowService.releaseByOrder(order.getId());
+                        order.setStatus(OrderStatus.COMPLETED);
+                        orderRepository.save(order);
                     }
                 }
             }

@@ -160,7 +160,7 @@ export default function MyOrders() {
     )
   }
 
-  const canMarkReceived = (status) => ['DELIVERED'].includes(status);
+  const canMarkReceived = (order) => ['DELIVERED'].includes(order.status) && !order.hasActiveDispute;
 
   return (
     <div className={cn('min-h-screen px-4 py-8 sm:px-6 lg:px-8', isDark ? 'bg-slate-950' : 'bg-stone-50')}>
@@ -276,7 +276,20 @@ export default function MyOrders() {
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {order.hasActiveDispute && (
+                        <span className={cn(
+                          'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold border uppercase tracking-wider',
+                          order.disputeStatus === 'REPORT_PENDING'
+                            ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30'
+                            : 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30'
+                        )}>
+                          <HiOutlineExclamationCircle className="h-3.5 w-3.5" />
+                          {order.disputeStatus === 'REPORT_PENDING' && 'Đang khiếu nại'}
+                          {order.disputeStatus === 'REPORT_APPROVED' && 'Khiếu nại được duyệt'}
+                          {order.disputeStatus === 'APPEAL_PENDING' && 'Shop đang kháng cáo'}
+                        </span>
+                      )}
                       <span
                         className={cn(
                           'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold border',
@@ -334,7 +347,7 @@ export default function MyOrders() {
 
                     {/* Action buttons row */}
                     <div className="flex items-center gap-2 flex-wrap self-end sm:self-auto">
-                      {canMarkReceived(order.status) && (
+                      {canMarkReceived(order) && (
                         <button
                           type="button"
                           onClick={() => handleMarkReceived(order.id)}
@@ -345,7 +358,7 @@ export default function MyOrders() {
                         </button>
                       )}
 
-                      {['DELIVERED'].includes(order.status) && (
+                      {['DELIVERED'].includes(order.status) && !order.hasActiveDispute && (
                         <button
                           type="button"
                           onClick={() => setReportingOrder(order)}
@@ -354,6 +367,15 @@ export default function MyOrders() {
                           <HiOutlineExclamationCircle className="h-3.5 w-3.5 text-rose-500" />
                           Khiếu nại
                         </button>
+                      )}
+
+                      {order.hasActiveDispute && (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25">
+                          <HiOutlineExclamationCircle className="h-4 w-4 text-amber-500" />
+                          {order.disputeStatus === 'REPORT_PENDING' && 'Đang đối soát khiếu nại'}
+                          {order.disputeStatus === 'REPORT_APPROVED' && 'Khiếu nại được chấp thuận'}
+                          {order.disputeStatus === 'APPEAL_PENDING' && 'Shop đang kháng cáo'}
+                        </span>
                       )}
 
                       {['DELIVERED', 'COMPLETED'].includes(order.status) && (

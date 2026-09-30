@@ -8,7 +8,6 @@ import com.marketplace.ecommerce.cart.repository.CartRepository;
 import com.marketplace.ecommerce.common.exception.CustomException;
 import com.marketplace.ecommerce.order.entity.Order;
 import com.marketplace.ecommerce.order.repository.OrderRepository;
-import com.marketplace.ecommerce.order.valueObjects.OrderStatus;
 import com.marketplace.ecommerce.product.entity.ProductCategory;
 import com.marketplace.ecommerce.product.repository.ProductCategoryRepository;
 import com.marketplace.ecommerce.shop.entity.Shop;

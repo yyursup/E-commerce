@@ -44,9 +44,6 @@ class WalletPaymentFlowTest {
         private TransactionRepository txRepo;
 
         @Mock
-        private UserRepository userRepository;
-
-        @Mock
         private PaymentRepository paymentRepository;
 
         @InjectMocks

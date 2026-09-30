@@ -14,8 +14,6 @@ import java.util.UUID;
 @Repository
 public interface UserVoucherRepository extends JpaRepository<UserVoucher, UUID> {
 
-    List<UserVoucher> findByUserIdOrderByCreatedAtDesc(UUID userId);
-
     List<UserVoucher> findByUserIdAndStatusOrderByCreatedAtDesc(UUID userId, UserVoucherStatus status);
 
     Optional<UserVoucher> findByUserIdAndVoucherIdAndStatus(UUID userId, UUID voucherId, UserVoucherStatus status);

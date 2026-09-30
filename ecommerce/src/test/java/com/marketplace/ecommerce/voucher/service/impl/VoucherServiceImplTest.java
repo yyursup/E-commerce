@@ -47,19 +47,7 @@ class VoucherServiceImplTest {
     private UserRepository userRepository;
 
     @Mock
-    private ShopRepository shopRepository;
-
-    @Mock
     private OrderRepository orderRepository;
-
-    @Mock
-    private ProductCategoryRepository productCategoryRepository;
-
-    @Mock
-    private CartRepository cartRepository;
-
-    @Mock
-    private com.marketplace.ecommerce.notification.service.NotificationService notificationService;
 
     @InjectMocks
     private VoucherServiceImpl voucherService;

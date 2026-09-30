@@ -21,10 +21,15 @@ import com.marketplace.ecommerce.payment.valueObjects.TransactionType;
 import com.marketplace.ecommerce.wallet.entity.Wallet;
 import com.marketplace.ecommerce.wallet.repository.WalletRepository;
 import com.marketplace.ecommerce.wallet.valueObjects.WalletType;
+import com.marketplace.ecommerce.request.entity.Report;
+import com.marketplace.ecommerce.request.repository.ReportRepository;
+import com.marketplace.ecommerce.request.valueObjects.RequestStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
@@ -41,6 +46,10 @@ public class EscrowServiceImpl implements EscrowService {
     private final WalletRepository walletRepository;
     private final TransactionRepository transactionRepository;
     private final PaymentRepository paymentRepository;
+    private final ReportRepository reportRepository;
+
+    @Value("${marketplace.dispute.appeal-window-hours}")
+    private long appealWindowHours;
 
     @Override
     @Transactional(readOnly = true)
@@ -69,7 +78,8 @@ public class EscrowServiceImpl implements EscrowService {
                         .method(PaymentMethod.COD)
                         .status(PaymentStatus.PENDING)
                         .amount(amount)
-                        .txnRef("COD-" + order.getOrderNumber() + "-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase())
+                        .txnRef("COD-" + order.getOrderNumber() + "-"
+                                + UUID.randomUUID().toString().substring(0, 8).toUpperCase())
                         .createdAt(LocalDateTime.now())
                         .build());
 
@@ -382,7 +392,8 @@ public class EscrowServiceImpl implements EscrowService {
                     .referenceId(escrow.getId())
                     .createdAt(LocalDateTime.now())
                     .dedupeKey(refundDedupe)
-                    .note(reason != null ? reason : "Hoàn tiền ký quỹ về ví người mua cho đơn " + order.getOrderNumber())
+                    .note(reason != null ? reason
+                            : "Hoàn tiền ký quỹ về ví người mua cho đơn " + order.getOrderNumber())
                     .build();
             transactionRepository.save(txRefund);
         }
@@ -393,5 +404,41 @@ public class EscrowServiceImpl implements EscrowService {
 
         order.setStatus(OrderStatus.REFUNDED);
         orderRepository.save(order);
+    }
+
+    @Override
+    @Transactional
+    @Scheduled(cron = "0 0 * * * *") // Chạy định kỳ mỗi giờ để tự động hoàn tiền nếu quá hạn kháng cáo
+    public void autoRefundExpiredDisputedOrders() {
+        LocalDateTime threshold = LocalDateTime.now().minusHours(appealWindowHours);
+        List<Report> expiredReports = reportRepository.findApprovedOrderReportsReviewedBefore(threshold);
+
+        for (Report report : expiredReports) {
+            UUID orderId = report.getTargetId();
+            if (orderId == null)
+                continue;
+
+            try {
+                // Kiểm tra xem Shop đã gửi đơn kháng cáo chưa
+                List<Report> appeals = reportRepository.findAppealsByViolationReportId(report.getId());
+                boolean hasPendingOrApprovedAppeal = appeals.stream().anyMatch(a -> a.getRequest() != null &&
+                        (a.getRequest().getStatus() == RequestStatus.PENDING ||
+                                a.getRequest().getStatus() == RequestStatus.APPROVED));
+
+                if (!hasPendingOrApprovedAppeal) {
+                    // Nếu không có kháng cáo hợp lệ đang chờ hoặc đã duyệt, và Escrow vẫn đang
+                    // DISPUTED -> Hoàn tiền tự động cho người mua
+                    var escrowOpt = escrowRepository.findByOrderIdForUpdate(orderId);
+                    if (escrowOpt.isPresent() && escrowOpt.get().getStatus() == EscrowStatus.DISPUTED) {
+                        log.info("Auto refunding disputed order {} due to appeal window expiration ({} hours)", orderId,
+                                appealWindowHours);
+                        refundByOrder(orderId, "Tự động hoàn tiền do Shop không gửi kháng cáo trong thời hạn quy định ("
+                                + appealWindowHours + " giờ)");
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("Auto refund failed for disputed orderId={}", orderId, e);
+            }
+        }
     }
 }

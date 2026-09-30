@@ -80,6 +80,8 @@ public interface ReportRepository extends JpaRepository<Report, UUID> {
                 SELECT 'PRODUCT' AS type WHERE EXISTS (SELECT 1 FROM products p WHERE p.id = :id)
                 UNION ALL
                 SELECT 'REVIEW' AS type WHERE EXISTS (SELECT 1 FROM reviews r WHERE r.id = :id)
+                UNION ALL
+                SELECT 'ORDER' AS type WHERE EXISTS (SELECT 1 FROM orders o WHERE o.id = :id)
               ) t
             """, nativeQuery = true)
     List<String> resolveTargetTypes(@Param("id") UUID id);
@@ -129,5 +131,46 @@ public interface ReportRepository extends JpaRepository<Report, UUID> {
         """, nativeQuery = true)
     UUID resolveReviewOwnerAccountId(@Param("targetId") UUID targetId);
 
+    @Query(value = """
+        select a.id
+        from orders o
+        join shops s on s.id = o.shop_id
+        join users u on u.id = s.user_id
+        join accounts a on a.id = u.account_id
+        where o.id = :targetId
+        """, nativeQuery = true)
+    UUID resolveOrderShopOwnerAccountId(@Param("targetId") UUID targetId);
 
+    @Query("""
+        select r from Report r
+        join fetch r.request req
+        join Order o on o.id = r.targetId
+        where req.type = 'REPORT'
+          and req.status = 'APPROVED'
+          and r.targetType = 'ORDER'
+          and o.shop.id = :shopId
+        order by req.createdAt desc
+    """)
+    List<Report> findApprovedReportsByShopIdForOrders(@Param("shopId") UUID shopId);
+
+    @Query("""
+        select case when count(r) > 0 then true else false end
+        from Report r join r.request req
+        where r.targetType = 'ORDER'
+          and r.targetId = :orderId
+          and req.type = 'REPORT'
+          and req.status = 'PENDING'
+    """)
+    boolean existsPendingReportByOrderId(@Param("orderId") UUID orderId);
+
+    @Query("""
+        select r from Report r
+        join fetch r.request req
+        where req.type = 'REPORT'
+          and req.status = 'APPROVED'
+          and r.targetType = 'ORDER'
+          and req.reviewedAt <= :threshold
+    """)
+    List<Report> findApprovedOrderReportsReviewedBefore(@Param("threshold") java.time.LocalDateTime threshold);
 }
+

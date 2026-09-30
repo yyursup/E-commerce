@@ -31,6 +31,7 @@ import com.marketplace.ecommerce.request.valueObjects.TargetType;
 import com.marketplace.ecommerce.shop.dto.response.ShopViolationResponse;
 import com.marketplace.ecommerce.product.entity.Product;
 
+import com.marketplace.ecommerce.order.repository.OrderRepository;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -46,6 +47,7 @@ public class ShopServiceImpl implements ShopService {
     private final ChatThreadRepository chatThreadRepository;
     private final UserRepository userRepository;
     private final ReportRepository reportRepository;
+    private final OrderRepository orderRepository;
 
     @Override
     public Shop createShop(User ownerUser, String shopName, Request req, Seller sellerDetail) {
@@ -161,6 +163,7 @@ public class ShopServiceImpl implements ShopService {
         if (!productIds.isEmpty()) {
             reports.addAll(reportRepository.findApprovedReportsByProductIds(productIds));
         }
+        reports.addAll(reportRepository.findApprovedReportsByShopIdForOrders(shop.getId()));
 
         // Lấy danh sách appeal do account này gửi
         List<Report> appeals = reportRepository.findAllAppealsByAccountId(accountId);
@@ -178,9 +181,16 @@ public class ShopServiceImpl implements ShopService {
 
         List<ShopViolationResponse> results = new java.util.ArrayList<>();
         for (Report rep : reports) {
-            String targetName = rep.getTargetType() == TargetType.SHOP
-                    ? shop.getName()
-                    : productNameMap.getOrDefault(rep.getTargetId(), "Sản phẩm vi phạm");
+            String targetName;
+            if (rep.getTargetType() == TargetType.SHOP) {
+                targetName = shop.getName();
+            } else if (rep.getTargetType() == TargetType.ORDER) {
+                targetName = orderRepository.findById(rep.getTargetId())
+                        .map(o -> "Đơn hàng " + o.getOrderNumber())
+                        .orElse("Đơn hàng vi phạm");
+            } else {
+                targetName = productNameMap.getOrDefault(rep.getTargetId(), "Sản phẩm vi phạm");
+            }
 
             String appealStatus = "NONE";
             UUID appealRequestId = null;

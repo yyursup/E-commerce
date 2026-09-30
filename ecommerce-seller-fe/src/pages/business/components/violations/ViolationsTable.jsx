@@ -95,9 +95,11 @@ export default function ViolationsTable({
                             'inline-block w-max px-2 py-0.5 rounded-full text-[10px] font-black uppercase',
                             v.targetType === 'SHOP'
                               ? 'bg-purple-500/15 text-purple-400 border border-purple-500/20'
-                              : 'bg-blue-500/15 text-blue-400 border border-blue-500/20'
+                              : v.targetType === 'ORDER'
+                                ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20'
+                                : 'bg-blue-500/15 text-blue-400 border border-blue-500/20'
                           )}>
-                            {v.targetType === 'SHOP' ? 'Gian hàng' : 'Sản phẩm'}
+                            {v.targetType === 'SHOP' ? 'Gian hàng' : v.targetType === 'ORDER' ? 'Đơn hàng' : 'Sản phẩm'}
                           </span>
                           {isCleared && (
                             <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-1.5 py-0.2 rounded border border-emerald-500/20">

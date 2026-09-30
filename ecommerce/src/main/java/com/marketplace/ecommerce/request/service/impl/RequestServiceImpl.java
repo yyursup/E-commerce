@@ -33,6 +33,11 @@ import com.marketplace.ecommerce.shop.entity.Shop;
 import com.marketplace.ecommerce.shop.repository.ShopRepository;
 import com.marketplace.ecommerce.shop.service.ShopService;
 import com.marketplace.ecommerce.shop.valueObjects.ShopStatus;
+import com.marketplace.ecommerce.order.entity.Order;
+import com.marketplace.ecommerce.order.repository.OrderRepository;
+import com.marketplace.ecommerce.payment.repository.EscrowRepository;
+import com.marketplace.ecommerce.payment.service.EscrowService;
+import com.marketplace.ecommerce.payment.valueObjects.EscrowStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Page;
@@ -59,6 +64,9 @@ public class RequestServiceImpl implements RequestService {
     private final ProductRepository productRepository;
     private final ShopRepository shopRepository;
     private final ReviewRepository reviewRepository;
+    private final OrderRepository orderRepository;
+    private final EscrowRepository escrowRepository;
+    private final EscrowService escrowService;
 
     @Transactional
     public RequestResponse approveSellerRegistration(UUID requestId, UUID adminAccountId, String response) {
@@ -159,6 +167,39 @@ public class RequestServiceImpl implements RequestService {
                         userAcc.setViolationCount(0);
                         userAcc.setBannedUntil(null);
                         accountRepository.save(userAcc);
+                    }
+                    case ORDER -> {
+                        Order order = orderRepository.findById(targetId)
+                                .orElseThrow(() -> new CustomException("Order not found: " + targetId));
+                        if (order.getShop() != null && order.getShop().getUser() != null
+                                && order.getShop().getUser().getAccount() != null) {
+                            Account owner = order.getShop().getUser().getAccount();
+                            int newViolationCount = Math.max(0, owner.getViolationCount() - 1);
+                            owner.setViolationCount(newViolationCount);
+
+                            if (newViolationCount < 5) {
+                                order.getShop()
+                                        .setStatus(newViolationCount >= 3 ? ShopStatus.WARNED : ShopStatus.ACTIVE);
+                                productRepository.updateStatusByShopId(order.getShop().getId(),
+                                        ProductStatus.PUBLISHED);
+                                owner.setStatus(AccountStatus.ACTIVE);
+                                owner.setIsActive(true);
+                                owner.setBannedUntil(null);
+                                owner.setDisciplineLevel(
+                                        newViolationCount >= 3 ? DisciplineLevel.WARNED : DisciplineLevel.NONE);
+                            }
+                            accountRepository.save(owner);
+                            shopRepository.save(order.getShop());
+                        }
+
+                        // Kháng cáo đơn hàng thành công -> Chuyển lại trạng thái Escrow về HELD nếu
+                        // đang DISPUTED
+                        escrowRepository.findByOrderIdForUpdate(targetId).ifPresent(escrow -> {
+                            if (escrow.getStatus() == EscrowStatus.DISPUTED) {
+                                escrow.setStatus(EscrowStatus.HELD);
+                                escrowRepository.save(escrow);
+                            }
+                        });
                     }
                 }
             }
@@ -265,6 +306,11 @@ public class RequestServiceImpl implements RequestService {
                     p.setDeleted(true);
                     productRepository.save(p);
                 });
+            } else if (report != null && report.getTargetType() == TargetType.ORDER && report.getTargetId() != null) {
+                // Nếu bác đơn kháng cáo đơn hàng vi phạm của Shop -> Hoàn tiền ngay 100% Escrow
+                // cho người mua!
+                escrowService.refundByOrder(report.getTargetId(),
+                        "Admin bác bỏ đơn kháng cáo của Shop, hoàn trả 100% tiền về ví người mua");
             }
         }
 
@@ -330,6 +376,18 @@ public class RequestServiceImpl implements RequestService {
                                 var rv = revOpt.get();
                                 targetName = "Đánh giá " + rv.getRating() + " sao";
                                 targetInfo = "Nội dung: " + (rv.getComment() != null ? rv.getComment() : "");
+                            }
+                        }
+                        case ORDER -> {
+                            var orderOpt = orderRepository.findById(rep.getTargetId());
+                            if (orderOpt.isPresent()) {
+                                var o = orderOpt.get();
+                                targetName = "Đơn hàng " + o.getOrderNumber();
+                                targetInfo = "Gian hàng: " + (o.getShop() != null ? o.getShop().getName() : "N/A")
+                                        + " | Người mua: " + (o.getUser() != null ? o.getUser().getFullName() : "N/A")
+                                        + " | Tổng tiền: " + (o.getTotal() != null ? o.getTotal() + " đ" : "")
+                                        + " | Trạng thái: " + o.getStatus()
+                                        + " | PTTT: " + o.getPaymentMethod();
                             }
                         }
                     }

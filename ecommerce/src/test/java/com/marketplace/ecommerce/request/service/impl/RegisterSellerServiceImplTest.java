@@ -1,19 +1,23 @@
 package com.marketplace.ecommerce.request.service.impl;
 
 import com.marketplace.ecommerce.auth.entity.Account;
+import com.marketplace.ecommerce.auth.entity.User;
 import com.marketplace.ecommerce.auth.repository.AccountRepository;
+import com.marketplace.ecommerce.auth.repository.UserRepository;
 import com.marketplace.ecommerce.common.exception.CustomException;
 import com.marketplace.ecommerce.request.dto.request.CreateSendRequest;
 import com.marketplace.ecommerce.request.dto.request.RegisterSellerRequest;
 import com.marketplace.ecommerce.request.dto.response.CreateRequestResponse;
 import com.marketplace.ecommerce.request.entity.Request;
 import com.marketplace.ecommerce.request.entity.Seller;
+import com.marketplace.ecommerce.request.repository.RequestRepository;
 import com.marketplace.ecommerce.request.repository.SellerRepository;
 import com.marketplace.ecommerce.request.service.RequestService;
 import com.marketplace.ecommerce.request.valueObjects.BusinessType;
 import com.marketplace.ecommerce.request.valueObjects.RequestStatus;
 import com.marketplace.ecommerce.request.valueObjects.RequestType;
 import com.marketplace.ecommerce.request.valueObjects.SellerType;
+import com.marketplace.ecommerce.shop.repository.ShopRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -44,11 +48,21 @@ class RegisterSellerServiceImplTest {
     @Mock
     private AccountRepository accountRepository;
 
+    @Mock
+    private UserRepository userRepository;
+
+    @Mock
+    private RequestRepository requestRepository;
+
+    @Mock
+    private ShopRepository shopRepository;
+
     @InjectMocks
     private RegisterSellerServiceImpl registerSellerService;
 
     private UUID accountId;
     private Account verifiedAccount;
+    private User mockUser;
     private Request mockRequest;
 
     @BeforeEach
@@ -60,6 +74,13 @@ class RegisterSellerServiceImplTest {
                 .email("seller@example.com")
                 .accountVerified(true)
                 .isActive(true)
+                .build();
+
+        mockUser = User.builder()
+                .id(UUID.randomUUID())
+                .account(verifiedAccount)
+                .fullName("Nguyen Van A")
+                .phoneNumber("0912345678")
                 .build();
 
         mockRequest = Request.builder()
@@ -92,6 +113,9 @@ class RegisterSellerServiceImplTest {
                 .build();
 
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(verifiedAccount));
+        when(userRepository.findByAccountId(accountId)).thenReturn(Optional.of(mockUser));
+        when(shopRepository.existsByUserId(mockUser.getId())).thenReturn(false);
+        when(requestRepository.existsByAccountIdAndTypeAndStatus(accountId, RequestType.SELLER_REGISTRATION, RequestStatus.PENDING)).thenReturn(false);
         when(requestService.createRequest(eq(verifiedAccount), any(CreateSendRequest.class))).thenReturn(mockRequest);
 
         // When
@@ -138,6 +162,9 @@ class RegisterSellerServiceImplTest {
                 .build();
 
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(verifiedAccount));
+        when(userRepository.findByAccountId(accountId)).thenReturn(Optional.of(mockUser));
+        when(shopRepository.existsByUserId(mockUser.getId())).thenReturn(false);
+        when(requestRepository.existsByAccountIdAndTypeAndStatus(accountId, RequestType.SELLER_REGISTRATION, RequestStatus.PENDING)).thenReturn(false);
         when(requestService.createRequest(eq(verifiedAccount), any(CreateSendRequest.class))).thenReturn(mockRequest);
 
         // When
@@ -182,7 +209,7 @@ class RegisterSellerServiceImplTest {
         CustomException exception = assertThrows(CustomException.class, () ->
                 registerSellerService.createSellerRegistration(accountId, request)
         );
-        assertTrue(exception.getMessage().contains("verified"));
+        assertTrue(exception.getMessage().contains("KYC"));
         verify(sellerRepository, never()).save(any());
     }
 
@@ -207,6 +234,9 @@ class RegisterSellerServiceImplTest {
                 .build();
 
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(verifiedAccount));
+        when(userRepository.findByAccountId(accountId)).thenReturn(Optional.of(mockUser));
+        when(shopRepository.existsByUserId(mockUser.getId())).thenReturn(false);
+        when(requestRepository.existsByAccountIdAndTypeAndStatus(accountId, RequestType.SELLER_REGISTRATION, RequestStatus.PENDING)).thenReturn(false);
 
         // When & Then
         CustomException exception = assertThrows(CustomException.class, () ->
@@ -233,6 +263,9 @@ class RegisterSellerServiceImplTest {
                 .build();
 
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(verifiedAccount));
+        when(userRepository.findByAccountId(accountId)).thenReturn(Optional.of(mockUser));
+        when(shopRepository.existsByUserId(mockUser.getId())).thenReturn(false);
+        when(requestRepository.existsByAccountIdAndTypeAndStatus(accountId, RequestType.SELLER_REGISTRATION, RequestStatus.PENDING)).thenReturn(false);
 
         // When & Then
         CustomException exception = assertThrows(CustomException.class, () ->

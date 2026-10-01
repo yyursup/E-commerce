@@ -29,11 +29,27 @@ export default function AdminEscrowTab({
     <div className="divide-y divide-stone-100 dark:divide-slate-800">
       {escrows.map((item) => {
         const returnStatus = item.orderReturn?.status || item.returnStatus
-        const isReturnActiveNotDisputed =
-          returnStatus &&
-          returnStatus !== 'DISPUTED' &&
-          returnStatus !== 'COMPLETED' &&
-          returnStatus !== 'CANCELLED'
+        const isReturnDisputed = returnStatus === 'DISPUTED'
+        // Admin CHỈ ĐƯỢC QUYỀN can thiệp xử lý ký quỹ khi đơn có khiếu nại kiện hàng hoàn ở trạng thái DISPUTED
+        const canAdminSettle = (item.status === 'HELD' || item.status === 'DISPUTED') && isReturnDisputed
+
+        // Xác định thông điệp lý do khi chưa được quyền can thiệp
+        let settleBlockedReason = ''
+        if (!canAdminSettle && (item.status === 'HELD' || item.status === 'DISPUTED')) {
+          if (!returnStatus) {
+            if (item.status === 'DISPUTED') {
+              settleBlockedReason = 'Đơn hàng đang trong quy trình Báo cáo / Kháng cáo. Vui lòng xử lý phán quyết tại tab Báo cáo hoặc Kháng cáo để hệ thống tự động xử lý tiền ký quỹ theo đúng quy trình.'
+            } else {
+              settleBlockedReason = 'Đơn hàng đang trong quy trình ký quỹ thông thường (tự động giải ngân sau 3 ngày giao hàng thành công). Admin chỉ can thiệp khi có tranh chấp kiện hoàn (DISPUTED).'
+            }
+          } else if (returnStatus === 'RETURNED') {
+            settleBlockedReason = 'Kiện hàng hoàn đã giao tới Người bán (đang trong 72h kiểm hàng). Admin chỉ can thiệp khi Shop khiếu nại (DISPUTED).'
+          } else if (returnStatus === 'WAITING_FOR_SHIPMENT' || returnStatus === 'SHIPPED') {
+            settleBlockedReason = 'Kiện hàng hoàn đang xử lý vận chuyển. Admin chỉ can thiệp khi Shop khiếu nại (DISPUTED).'
+          } else if (returnStatus === 'COMPLETED' || returnStatus === 'CANCELLED') {
+            settleBlockedReason = 'Yêu cầu trả hàng đã kết thúc.'
+          }
+        }
 
         return (
           <div
@@ -125,18 +141,22 @@ export default function AdminEscrowTab({
 
               {/* Hàng 3: Mô tả ngữ cảnh ngắn gọn */}
               <p className="text-[11px] text-stone-400 line-clamp-1">
-                {isReturnActiveNotDisputed ? (
-                  returnStatus === 'RETURNED' ? (
-                    <span className="text-purple-400 font-medium">
-                      ⚠️ Kiện hàng hoàn đã giao tới Người bán (đang trong 72h kiểm hàng). Admin chỉ can thiệp khi Shop khiếu nại (DISPUTED).
-                    </span>
-                  ) : (
-                    <span className="text-amber-400 font-medium">
-                      ⚠️ Kiện hàng hoàn đang trên đường vận chuyển. Chờ giao tới Người bán và phát sinh tranh chấp.
-                    </span>
-                  )
+                {returnStatus === 'DISPUTED' ? (
+                  <span className="text-rose-400 font-medium">
+                    ⚖️ Kiện hàng hoàn đang tranh chấp từ Người bán. Admin có thẩm quyền can thiệp phân xử ký quỹ.
+                  </span>
+                ) : returnStatus === 'RETURNED' ? (
+                  <span className="text-purple-400 font-medium">
+                    ⚠️ Kiện hàng hoàn đã giao tới Người bán (đang trong 72h kiểm hàng). Admin chỉ can thiệp khi Shop khiếu nại (DISPUTED).
+                  </span>
+                ) : (returnStatus === 'WAITING_FOR_SHIPMENT' || returnStatus === 'SHIPPED') ? (
+                  <span className="text-amber-400 font-medium">
+                    ⚠️ Kiện hàng hoàn đang trên đường vận chuyển. Chờ giao tới Người bán và phát sinh tranh chấp.
+                  </span>
                 ) : item.status === 'DISPUTED' ? (
-                  'Đơn hàng hoặc kiện hàng hoàn có tranh chấp từ Shop / Khách hàng. Cần đối soát và phân xử.'
+                  <span className="text-amber-400 font-medium">
+                    ⏳ Đơn hàng có báo cáo vi phạm. Xử lý tại tab Báo cáo / Kháng cáo (hệ thống tự động chuyển tiền).
+                  </span>
                 ) : item.status === 'RELEASED' ? (
                   'Doanh thu đơn hàng đã giải ngân về Ví Người bán (sau khi khấu trừ phí hoa hồng sàn).'
                 ) : item.status === 'REFUNDED' ? (
@@ -168,10 +188,10 @@ export default function AdminEscrowTab({
                   {/* Nút Phân chia hoàn tiền (%) */}
                   <button
                     type="button"
-                    disabled={isReturnActiveNotDisputed}
+                    disabled={!canAdminSettle}
                     onClick={(e) => {
                       e.stopPropagation()
-                      if (isReturnActiveNotDisputed) return
+                      if (!canAdminSettle) return
                       setActionModal({
                         isOpen: true,
                         type: 'ESCROW_SPLIT',
@@ -180,16 +200,10 @@ export default function AdminEscrowTab({
                         note: '',
                       })
                     }}
-                    title={
-                      isReturnActiveNotDisputed
-                        ? (returnStatus === 'RETURNED'
-                            ? 'Người bán đang trong 72h kiểm hàng. Chỉ can thiệp khi có tranh chấp (DISPUTED)'
-                            : 'Chờ kiện hàng hoàn tới tay Người bán')
-                        : 'Phân chia hoàn tiền theo tỷ lệ %'
-                    }
+                    title={!canAdminSettle ? settleBlockedReason : 'Phân chia hoàn tiền theo tỷ lệ %'}
                     className={cn(
                       'flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-bold text-white transition-all shadow-sm',
-                      isReturnActiveNotDisputed
+                      !canAdminSettle
                         ? 'bg-slate-500/40 text-slate-400 cursor-not-allowed shadow-none'
                         : 'bg-indigo-600 hover:bg-indigo-700 active:scale-95 shadow-indigo-600/20',
                     )}
@@ -201,22 +215,16 @@ export default function AdminEscrowTab({
                   {/* Nút Giải ngân cho Shop */}
                   <button
                     type="button"
-                    disabled={isReturnActiveNotDisputed}
+                    disabled={!canAdminSettle}
                     onClick={(e) => {
                       e.stopPropagation()
-                      if (isReturnActiveNotDisputed) return
+                      if (!canAdminSettle) return
                       setActionModal({ isOpen: true, type: 'ESCROW_RELEASE', item, note: '' })
                     }}
-                    title={
-                      isReturnActiveNotDisputed
-                        ? (returnStatus === 'RETURNED'
-                            ? 'Người bán đang trong 72h kiểm hàng. Chỉ can thiệp khi có tranh chấp (DISPUTED)'
-                            : 'Chờ kiện hàng hoàn tới tay Người bán')
-                        : 'Giải ngân 100% cho Shop'
-                    }
+                    title={!canAdminSettle ? settleBlockedReason : 'Giải ngân 100% cho Shop'}
                     className={cn(
                       'flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-bold text-white transition-all shadow-sm',
-                      isReturnActiveNotDisputed
+                      !canAdminSettle
                         ? 'bg-slate-500/40 text-slate-400 cursor-not-allowed shadow-none'
                         : 'bg-emerald-600 hover:bg-emerald-700 active:scale-95 shadow-emerald-600/20',
                     )}
@@ -228,22 +236,16 @@ export default function AdminEscrowTab({
                   {/* Nút Hoàn tiền cho Người mua */}
                   <button
                     type="button"
-                    disabled={isReturnActiveNotDisputed}
+                    disabled={!canAdminSettle}
                     onClick={(e) => {
                       e.stopPropagation()
-                      if (isReturnActiveNotDisputed) return
+                      if (!canAdminSettle) return
                       setActionModal({ isOpen: true, type: 'ESCROW_REFUND', item, note: '' })
                     }}
-                    title={
-                      isReturnActiveNotDisputed
-                        ? (returnStatus === 'RETURNED'
-                            ? 'Người bán đang trong 72h kiểm hàng. Chỉ can thiệp khi có tranh chấp (DISPUTED)'
-                            : 'Chờ kiện hàng hoàn tới tay Người bán')
-                        : 'Hoàn tiền 100% cho Người mua'
-                    }
+                    title={!canAdminSettle ? settleBlockedReason : 'Hoàn tiền 100% cho Người mua'}
                     className={cn(
                       'flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-bold text-white transition-all shadow-sm',
-                      isReturnActiveNotDisputed
+                      !canAdminSettle
                         ? 'bg-slate-500/40 text-slate-400 cursor-not-allowed shadow-none'
                         : 'bg-blue-600 hover:bg-blue-700 active:scale-95 shadow-blue-600/20',
                     )}

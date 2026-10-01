@@ -12,6 +12,17 @@ const returnService = {
     }
   },
 
+  getReturnInfoBatch: async (orderIds) => {
+    if (!orderIds || orderIds.length === 0) return {}
+    try {
+      const response = await axiosClient.post(`${RETURN_BASE}/batch`, orderIds)
+      return response.data || {}
+    } catch (error) {
+      console.error('Error fetching return batch:', error)
+      return {}
+    }
+  },
+
   getReturnDetails: async (returnId) => {
     try {
       const response = await axiosClient.get(`${RETURN_BASE}/${returnId}`)

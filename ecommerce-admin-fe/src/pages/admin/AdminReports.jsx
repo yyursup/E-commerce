@@ -113,19 +113,27 @@ export default function AdminReports() {
       setReports(reportList)
       setAppeals(appealList)
 
-      // Lấy thông tin hoàn hàng cho danh sách escrow để hiển thị badge và kiểm tra quyền can thiệp của Admin
-      const enrichedEscrows = await Promise.all(
-        rawEscrows.map(async (item) => {
-          const orderId = item.orderId || item.order?.id
-          if (!orderId) return item
-          try {
-            const ret = await returnService.getReturnByOrderId(orderId)
-            return { ...item, orderReturn: ret || null }
-          } catch {
-            return { ...item, orderReturn: null }
-          }
-        })
-      )
+      // Lấy thông tin hoàn hàng batch cho danh sách escrow chỉ với 1 API duy nhất
+      const orderIds = rawEscrows
+        .map((item) => item.orderId || item.order?.id)
+        .filter(Boolean)
+
+      let returnBatchMap = {}
+      if (orderIds.length > 0) {
+        try {
+          returnBatchMap = await returnService.getReturnInfoBatch(orderIds)
+        } catch (err) {
+          console.error('Lỗi tải batch return info:', err)
+        }
+      }
+
+      const enrichedEscrows = rawEscrows.map((item) => {
+        const orderId = item.orderId || item.order?.id
+        return {
+          ...item,
+          orderReturn: (orderId && returnBatchMap[orderId]) ? returnBatchMap[orderId] : null,
+        }
+      })
       setEscrows(enrichedEscrows)
     } catch (err) {
       console.error('Lỗi tải dữ liệu kiểm duyệt:', err)

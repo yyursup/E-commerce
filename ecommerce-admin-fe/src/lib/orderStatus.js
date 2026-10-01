@@ -76,10 +76,9 @@ export const ORDER_STATUS_BADGE_MAP = {
 export const RETURN_STATUS_LABEL_MAP = {
   WAITING_FOR_SHIPMENT: 'Chờ người mua gửi hàng',
   SHIPPED: 'Đang giao hàng hoàn',
-  DELIVERED: 'Đã giao hàng hoàn (Shop kiểm hàng 72h)',
-  RETURNED: 'Đã giao hàng hoàn (Shop kiểm hàng 72h)',
-  DISPUTED: 'Tranh chấp hàng hoàn (Shop khiếu nại)',
-  COMPLETED: 'Đã hoàn tất đổi trả & Hoàn tiền',
+  RETURNED: 'Đã giao hàng hoàn',
+  DISPUTED: 'Tranh chấp hàng hoàn',
+  COMPLETED: 'Đã hoàn tất đổi trả',
   CANCELLED: 'Đã hủy đổi trả',
 }
 

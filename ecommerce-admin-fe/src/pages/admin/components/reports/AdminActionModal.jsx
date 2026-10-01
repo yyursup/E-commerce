@@ -248,6 +248,9 @@ export default function AdminActionModal({
                       {formatVND(netAmount)}
                     </span>
                   </div>
+                  <p className="text-[10px] text-stone-400 dark:text-slate-400 italic leading-relaxed pt-1">
+                    ℹ️ Quy tắc Sàn: Phí hoa hồng sàn được bảo lưu bù đắp chi phí vận hành & đối soát tranh chấp; số tiền còn lại (95%) được phân bổ chính xác theo tỷ lệ % giữa hai bên.
+                  </p>
                 </div>
 
                 {/* Slider & Nhập % */}

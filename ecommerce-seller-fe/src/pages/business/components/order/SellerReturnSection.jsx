@@ -30,11 +30,6 @@ const RETURN_STATUS_MAP = {
     color: 'bg-blue-500/10 text-blue-500 border-blue-500/30',
     icon: HiOutlineTruck,
   },
-  DELIVERED: {
-    label: 'Đã giao hàng hoàn trả',
-    color: 'bg-purple-500/10 text-purple-500 border-purple-500/30',
-    icon: HiOutlineCheckCircle,
-  },
   RETURNED: {
     label: 'Đã giao hàng hoàn trả',
     color: 'bg-purple-500/10 text-purple-500 border-purple-500/30',

@@ -52,23 +52,13 @@ public class WalletServiceImpl implements WalletService {
 
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public WalletResponse getWallet(UUID accountId) {
         User user = userRepository.findByAccountId(accountId)
                 .orElseThrow(() -> new CustomException("User not found"));
 
         Wallet w = walletRepo.findByUserId(user.getId())
-                .orElseGet(() -> {
-                    Wallet newWallet = Wallet.builder()
-                            .user(user)
-                            .currency("VND")
-                            .availableBalance(BigDecimal.ZERO)
-                            .lockedBalance(BigDecimal.ZERO)
-                            .walletType(WalletType.USER)
-                            .createdAt(LocalDateTime.now())
-                            .build();
-                    return walletRepo.save(newWallet);
-                });
+                .orElseThrow(() -> new CustomException("Wallet not found for userId=" + user.getId()));
 
         return WalletResponse.from(w);
     }

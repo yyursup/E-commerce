@@ -96,23 +96,41 @@ class EscrowPolicyTest {
     }
 
     @Test
-    @DisplayName("POLICY: Cho phép xử lý ký quỹ khi kiện hoàn đã hoàn tất (COMPLETED)")
-    void validateSettlementPreconditions_AllowedWhenCompleted() {
+    @DisplayName("POLICY: Chặn xử lý ký quỹ khi kiện hoàn đã hoàn tất (COMPLETED)")
+    void validateSettlementPreconditions_BlockedWhenCompleted() {
         when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
         OrderReturnResponse returnDto = OrderReturnResponse.builder()
                 .status(ReturnStatus.COMPLETED)
                 .build();
         when(orderReturnService.getReturnByOrderId(orderId)).thenReturn(returnDto);
 
-        assertDoesNotThrow(() -> escrowPolicy.validateSettlementPreconditions(orderId));
+        CustomException ex = assertThrows(CustomException.class,
+                () -> escrowPolicy.validateSettlementPreconditions(orderId));
+        assertTrue(ex.getMessage().contains("Yêu cầu trả hàng đã kết thúc"));
     }
 
     @Test
-    @DisplayName("POLICY: Cho phép xử lý ký quỹ khi đơn hàng không có kiện hàng hoàn")
-    void validateSettlementPreconditions_AllowedWhenNoReturnExists() {
+    @DisplayName("POLICY: Chặn xử lý ký quỹ khi kiện hoàn đã bị hủy (CANCELLED)")
+    void validateSettlementPreconditions_BlockedWhenCancelled() {
+        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+        OrderReturnResponse returnDto = OrderReturnResponse.builder()
+                .status(ReturnStatus.CANCELLED)
+                .build();
+        when(orderReturnService.getReturnByOrderId(orderId)).thenReturn(returnDto);
+
+        CustomException ex = assertThrows(CustomException.class,
+                () -> escrowPolicy.validateSettlementPreconditions(orderId));
+        assertTrue(ex.getMessage().contains("Yêu cầu trả hàng đã kết thúc"));
+    }
+
+    @Test
+    @DisplayName("POLICY: Chặn xử lý ký quỹ thủ công khi đơn hàng không có khiếu nại kiện hoàn (phải theo luồng Báo cáo/Kháng cáo)")
+    void validateSettlementPreconditions_BlockedWhenNoReturnExists() {
         when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
         when(orderReturnService.getReturnByOrderId(orderId)).thenReturn(null);
 
-        assertDoesNotThrow(() -> escrowPolicy.validateSettlementPreconditions(orderId));
+        CustomException ex = assertThrows(CustomException.class,
+                () -> escrowPolicy.validateSettlementPreconditions(orderId));
+        assertTrue(ex.getMessage().contains("không có khiếu nại kiện hàng hoàn"));
     }
 }

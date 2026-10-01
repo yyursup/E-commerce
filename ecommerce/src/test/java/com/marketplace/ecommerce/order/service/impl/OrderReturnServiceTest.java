@@ -206,6 +206,7 @@ public class OrderReturnServiceTest {
     void confirmDelivered_FromShipped_DirectlyTransitionsToReturnedAndSets72hDeadline() {
         orderReturn.setStatus(ReturnStatus.SHIPPED);
         when(orderReturnRepository.findByIdForUpdate(returnId)).thenReturn(Optional.of(orderReturn));
+        when(userRepository.findByAccountId(buyerAccountId)).thenReturn(Optional.of(buyer));
         when(orderReturnRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
         // Confirm Delivered chuyển thẳng sang RETURNED (Đã giao hàng hoàn)
@@ -239,7 +240,8 @@ public class OrderReturnServiceTest {
 
         when(orderReturnRepository.findByIdForUpdate(returnId)).thenReturn(Optional.of(orderReturn));
         when(userRepository.findByAccountId(sellerAccountId)).thenReturn(Optional.of(seller));
-        when(productVariantRepository.findById(variant.getId())).thenReturn(Optional.of(variant));
+        when(productRepository.findByIdForUpdate(product.getId())).thenReturn(Optional.of(product));
+        when(productVariantRepository.findByIdForUpdate(variant.getId())).thenReturn(Optional.of(variant));
 
         OrderReturnResponse res = orderReturnService.completeReturn(sellerAccountId, returnId, req);
 

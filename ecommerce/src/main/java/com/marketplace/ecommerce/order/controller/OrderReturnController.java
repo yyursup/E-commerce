@@ -14,6 +14,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -26,6 +28,11 @@ public class OrderReturnController {
     @GetMapping("/order/{orderId}")
     public ResponseEntity<OrderReturnResponse> getReturnByOrderId(@PathVariable UUID orderId) {
         return ResponseEntity.ok(orderReturnService.getReturnByOrderId(orderId));
+    }
+
+    @PostMapping("/batch")
+    public ResponseEntity<Map<UUID, OrderReturnResponse>> getReturnInfoBatch(@RequestBody List<UUID> orderIds) {
+        return ResponseEntity.ok(orderReturnService.getReturnInfoBatch(orderIds));
     }
 
     @GetMapping("/{returnId}")

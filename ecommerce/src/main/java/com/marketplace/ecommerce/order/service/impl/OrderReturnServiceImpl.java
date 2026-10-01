@@ -36,9 +36,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -159,6 +162,21 @@ public class OrderReturnServiceImpl implements OrderReturnService {
         OrderReturn returnObj = orderReturnRepository.findByIdForUpdate(returnId)
                 .orElseThrow(() -> new CustomException("Không tìm thấy thông tin hoàn hàng: " + returnId));
 
+        User user = userRepository.findByAccountId(accountId)
+                .orElseThrow(() -> new CustomException("User not found for account: " + accountId));
+
+        Order order = returnObj.getOrder();
+        boolean isBuyer = order.getUser() != null && order.getUser().getId().equals(user.getId());
+        boolean isShopOwner = order.getShop() != null && order.getShop().getUser() != null
+                && order.getShop().getUser().getId().equals(user.getId());
+        boolean isAdmin = user.getAccount() != null && user.getAccount().getRole() != null
+                && ("ROLE_ADMIN".equalsIgnoreCase(user.getAccount().getRole().getRoleName())
+                        || "ADMIN".equalsIgnoreCase(user.getAccount().getRole().getRoleName()));
+
+        if (!isBuyer && !isShopOwner && !isAdmin) {
+            throw new CustomException("Bạn không có quyền xác nhận giao kiện hàng hoàn này");
+        }
+
         if (returnObj.getStatus() != ReturnStatus.SHIPPED) {
             throw new CustomException(
                     "Chỉ có thể xác nhận đã giao khi hàng ở trạng thái SHIPPED: " + returnObj.getStatus());
@@ -169,7 +187,7 @@ public class OrderReturnServiceImpl implements OrderReturnService {
         returnObj.setSellerInspectionDeadline(LocalDateTime.now().plusHours(72));
 
         OrderReturn saved = orderReturnRepository.save(returnObj);
-        log.info("Return marked as RETURNED (Đã hoàn hàng) for returnId={}", returnId);
+        log.info("Return marked as RETURNED (Đã hoàn hàng) for returnId={} by accountId={}", returnId, accountId);
         return OrderReturnResponse.from(saved);
     }
 
@@ -341,6 +359,21 @@ public class OrderReturnServiceImpl implements OrderReturnService {
 
     @Override
     @Transactional(readOnly = true)
+    public Map<UUID, OrderReturnResponse> getReturnInfoBatch(List<UUID> orderIds) {
+        if (orderIds == null || orderIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        return orderReturnRepository.findByOrderIdIn(orderIds).stream()
+                .filter(r -> r.getOrder() != null && r.getOrder().getId() != null)
+                .collect(Collectors.toMap(
+                        r -> r.getOrder().getId(),
+                        OrderReturnResponse::from,
+                        (existing, replacement) -> existing
+                ));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public OrderReturnResponse getReturnDetails(UUID returnId) {
         return orderReturnRepository.findById(returnId)
                 .map(OrderReturnResponse::from)
@@ -442,22 +475,21 @@ public class OrderReturnServiceImpl implements OrderReturnService {
         }
 
         for (OrderItem item : order.getItems()) {
-            if (item.getProduct() != null) {
-                Product p = item.getProduct();
-                if (p.getQuantity() != null) {
-                    int oldQ = p.getQuantity();
-                    p.setQuantity(oldQ + item.getQuantity());
-                    productRepository.save(p);
-                    inventoryHistoryService.logInventoryChange(
-                            order.getShop(), p, null, oldQ, p.getQuantity(),
-                            InventoryActionType.REFUND_RESTORE, order.getOrderNumber(),
-                            "Nhập lại kho hàng hoàn: " + order.getOrderNumber());
-                }
+            if (item.getProduct() != null && item.getProduct().getId() != null) {
+                productRepository.findByIdForUpdate(item.getProduct().getId()).ifPresent(p -> {
+                    if (p.getQuantity() != null) {
+                        int oldQ = p.getQuantity();
+                        p.setQuantity(oldQ + item.getQuantity());
+                        productRepository.save(p);
+                        inventoryHistoryService.logInventoryChange(
+                                order.getShop(), p, null, oldQ, p.getQuantity(),
+                                InventoryActionType.REFUND_RESTORE, order.getOrderNumber(),
+                                "Nhập lại kho hàng hoàn: " + order.getOrderNumber());
+                    }
+                });
             }
             if (item.getVariantId() != null) {
-                Optional<ProductVariant> optVariant = productVariantRepository.findById(item.getVariantId());
-                if (optVariant.isPresent()) {
-                    ProductVariant variant = optVariant.get();
+                productVariantRepository.findByIdForUpdate(item.getVariantId()).ifPresent(variant -> {
                     int currentStock = variant.getStock() != null ? variant.getStock() : 0;
                     variant.setStock(currentStock + item.getQuantity());
                     productVariantRepository.save(variant);
@@ -465,7 +497,7 @@ public class OrderReturnServiceImpl implements OrderReturnService {
                             order.getShop(), item.getProduct(), variant, currentStock, variant.getStock(),
                             InventoryActionType.REFUND_RESTORE, order.getOrderNumber(),
                             "Nhập lại kho hàng hoàn biến thể: " + order.getOrderNumber());
-                }
+                });
             }
         }
     }

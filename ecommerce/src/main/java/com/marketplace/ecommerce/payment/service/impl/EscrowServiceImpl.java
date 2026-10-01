@@ -416,6 +416,17 @@ public class EscrowServiceImpl implements EscrowService {
 
     }
 
+    /**
+     * Phân chia ký quỹ theo tỷ lệ phần trăm giữa Người mua và Người bán (Escrow Split Settlement).
+     * 
+     * QUY TẮC NGHIỆP VỤ BẢN QUYỀN CỦA SÀN (BUSINESS RULE):
+     * Khi tranh chấp đơn hàng leo thang đến mức Ban Quản Trị phải can thiệp phân xử và phân chia tỷ lệ (Split),
+     * Sàn luôn bảo lưu 5% phí hoa hồng sàn (order.getPlatformCommission()) để bù đắp chi phí vận hành, đối soát
+     * và thẩm định tranh chấp.
+     * Số tiền thực tế được phân bổ cho hai bên (netAmount = totalAmount - commission) được chia chính xác theo tỷ lệ %
+     * do Admin phán quyết.
+     * Lưu ý: Nếu Admin quyết định hoàn trả 100% không thu phí sàn (ví dụ gian hàng lừa đảo), Admin sử dụng endpoint refundByOrder.
+     */
     @Override
     @Transactional
     public void splitSettleByOrder(UUID orderId, Integer buyerPercentage, Integer sellerPercentage, String note) {

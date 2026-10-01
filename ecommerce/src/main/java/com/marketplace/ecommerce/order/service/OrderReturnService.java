@@ -8,6 +8,8 @@ import com.marketplace.ecommerce.order.dto.response.OrderReturnResponse;
 
 import com.marketplace.ecommerce.order.valueObjects.ReturnStatus;
 
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public interface OrderReturnService {
@@ -27,6 +29,8 @@ public interface OrderReturnService {
     OrderReturnResponse resolveDispute(UUID adminAccountId, UUID returnId, AdminResolveReturnDisputeRequest request);
 
     OrderReturnResponse getReturnByOrderId(UUID orderId);
+
+    Map<UUID, OrderReturnResponse> getReturnInfoBatch(List<UUID> orderIds);
 
     OrderReturnResponse getReturnDetails(UUID returnId);
 

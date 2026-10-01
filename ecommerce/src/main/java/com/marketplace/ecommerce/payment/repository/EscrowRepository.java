@@ -31,5 +31,4 @@ public interface EscrowRepository extends JpaRepository<Escrow, UUID> {
             """)
     Page<Escrow> adminList(@Param("status") EscrowStatus status, Pageable pageable);
 
-    List<Escrow> findByOrderIdIn(List<UUID> orderIds);
 }

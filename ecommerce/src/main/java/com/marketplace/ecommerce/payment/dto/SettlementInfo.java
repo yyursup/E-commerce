@@ -64,9 +64,8 @@ public class SettlementInfo {
                     if (tx.getNote() != null)
                         releaseNote = tx.getNote();
                 }
-                case COMMISSION -> {
-                    commissionTotal = commissionTotal.add(tx.getAmount() != null ? tx.getAmount() : BigDecimal.ZERO);
-                }
+                case COMMISSION -> commissionTotal = commissionTotal.add(tx.getAmount() != null ? tx.getAmount() : BigDecimal.ZERO);
+
                 default -> {
                     /* HOLD and other types are not settlement transactions */ }
             }
@@ -109,7 +108,7 @@ public class SettlementInfo {
         }
 
         // Compose note from transaction notes
-        String note = null;
+        String note;
         if (type == SettlementType.PARTIAL_SPLIT) {
             // Ưu tiên note từ REFUND vì nó thường chứa "Admin phân chia..."
             note = refundNote;

@@ -20,8 +20,6 @@ public interface RequestService {
 
     Page<CreateRequestResponse> getRequests(UUID accountId, Pageable pageable);
 
-    Page<CreateRequestResponse> getAllRequests(RequestStatus status, Pageable pageable);
-
     Page<CreateRequestResponse> getAllRequests(RequestType type, RequestStatus status, Pageable pageable);
 
     RequestDetailsResponse getDetails(UUID requestId);

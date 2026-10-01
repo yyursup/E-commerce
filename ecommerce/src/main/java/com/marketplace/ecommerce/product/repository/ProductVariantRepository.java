@@ -14,8 +14,6 @@ import java.util.UUID;
 
 @Repository
 public interface ProductVariantRepository extends JpaRepository<ProductVariant, UUID> {
-    List<ProductVariant> findByProductIdAndDeletedFalse(UUID productId);
-
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT pv FROM ProductVariant pv WHERE pv.id = :id")
     Optional<ProductVariant> findByIdForUpdate(@Param("id") UUID id);

@@ -17,5 +17,4 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
 
     List<Transaction> findByReferenceTypeAndReferenceId(ReferenceType referenceType, UUID referenceId);
 
-    List<Transaction> findByReferenceTypeAndReferenceIdIn(ReferenceType referenceType, List<UUID> referenceIds);
 }

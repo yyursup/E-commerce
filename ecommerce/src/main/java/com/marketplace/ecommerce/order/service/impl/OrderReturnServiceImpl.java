@@ -20,8 +20,6 @@ import com.marketplace.ecommerce.order.valueObjects.ReturnStatus;
 import com.marketplace.ecommerce.payment.repository.EscrowRepository;
 import com.marketplace.ecommerce.payment.service.EscrowService;
 import com.marketplace.ecommerce.payment.valueObjects.EscrowStatus;
-import com.marketplace.ecommerce.product.entity.Product;
-import com.marketplace.ecommerce.product.entity.ProductVariant;
 import com.marketplace.ecommerce.product.repository.ProductRepository;
 import com.marketplace.ecommerce.product.repository.ProductVariantRepository;
 import com.marketplace.ecommerce.product.service.InventoryHistoryService;

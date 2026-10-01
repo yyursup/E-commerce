@@ -115,7 +115,7 @@ export default function ShopOrderCard({ order, isDark, onQuickStatusUpdate, acti
             {order.paymentMethod === 'VNPAY' ? 'VNPAY' : order.paymentMethod === 'WALLET' ? 'Ví sàn' : 'COD'}
           </span>
 
-          <OrderStatusBadge status={order.status} />
+          <OrderStatusBadge status={order.status} returnInfo={order.returnInfo} />
         </div>
       </div>
 

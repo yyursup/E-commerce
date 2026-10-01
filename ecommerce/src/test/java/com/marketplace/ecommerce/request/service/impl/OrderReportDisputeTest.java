@@ -7,11 +7,14 @@ import com.marketplace.ecommerce.auth.valueObjects.DisciplineLevel;
 import com.marketplace.ecommerce.order.entity.Order;
 import com.marketplace.ecommerce.order.repository.OrderRepository;
 import com.marketplace.ecommerce.order.valueObjects.OrderStatus;
+import com.marketplace.ecommerce.order.entity.OrderReturn;
+import com.marketplace.ecommerce.order.repository.OrderReturnRepository;
+import com.marketplace.ecommerce.order.valueObjects.ReturnStatus;
 import com.marketplace.ecommerce.payment.entity.Escrow;
 import com.marketplace.ecommerce.payment.repository.EscrowRepository;
-import com.marketplace.ecommerce.payment.service.impl.EscrowServiceImpl;
+import com.marketplace.ecommerce.payment.service.EscrowService;
+import com.marketplace.ecommerce.order.service.OrderReturnService;
 import com.marketplace.ecommerce.payment.valueObjects.EscrowStatus;
-import com.marketplace.ecommerce.payment.valueObjects.PaymentMethod;
 import com.marketplace.ecommerce.request.dto.request.CreateReportRequest;
 import com.marketplace.ecommerce.request.dto.request.HandleReportRequest;
 import com.marketplace.ecommerce.request.dto.response.CreateRequestResponse;
@@ -24,6 +27,7 @@ import com.marketplace.ecommerce.request.service.RequestService;
 import com.marketplace.ecommerce.request.valueObjects.ReportDecision;
 import com.marketplace.ecommerce.request.valueObjects.RequestStatus;
 import com.marketplace.ecommerce.request.valueObjects.RequestType;
+import com.marketplace.ecommerce.request.valueObjects.ResolutionType;
 import com.marketplace.ecommerce.request.valueObjects.TargetType;
 import com.marketplace.ecommerce.shop.entity.Shop;
 import org.junit.jupiter.api.BeforeEach;
@@ -70,6 +74,15 @@ class OrderReportDisputeTest {
 
     @Mock
     private EscrowRepository escrowRepository;
+
+    @Mock
+    private EscrowService escrowService;
+
+    @Mock
+    private OrderReturnService orderReturnService;
+
+    @Mock
+    private OrderReturnRepository orderReturnRepository;
 
     @InjectMocks
     private ReportServiceImpl reportService;
@@ -209,16 +222,14 @@ class OrderReportDisputeTest {
     }
 
     @Test
-    @DisplayName("Tự động quét hoàn tiền Escrow khi quá hạn 72h Shop không kháng cáo")
+    @DisplayName("Tự động quét hoàn tiền Escrow khi quá hạn 72h Shop không kháng cáo (REFUND_ONLY)")
     void autoRefundExpiredDisputedOrders_ExecutesRefund() {
         // Given
-        EscrowServiceImpl escrowService = new EscrowServiceImpl(
-                escrowRepository, orderRepository, null, null, null, reportRepository
+        RequestServiceImpl requestServiceImpl = new RequestServiceImpl(
+                requestRepository, reportRepository, null, accountRepository, null,
+                requestValidation, null, null, null, null, orderRepository, escrowRepository, escrowService, orderReturnService
         );
-        ReflectionTestUtils.setField(escrowService, "appealWindowHours", 72);
-
-        // Tạo một EscrowServiceImpl spy để mock hàm refundByOrder
-        EscrowServiceImpl spyEscrowService = spy(escrowService);
+        ReflectionTestUtils.setField(requestServiceImpl, "appealWindowHours", 72);
 
         Request expiredRequest = Request.builder()
                 .id(UUID.randomUUID())
@@ -231,6 +242,7 @@ class OrderReportDisputeTest {
                 .targetType(TargetType.ORDER)
                 .targetId(orderId)
                 .request(expiredRequest)
+                .resolutionType(ResolutionType.REFUND_ONLY)
                 .build();
 
         when(reportRepository.findApprovedOrderReportsReviewedBefore(any(LocalDateTime.class)))
@@ -241,12 +253,137 @@ class OrderReportDisputeTest {
                 .thenReturn(Optional.of(heldEscrow));
         heldEscrow.setStatus(EscrowStatus.DISPUTED);
 
-        doNothing().when(spyEscrowService).refundByOrder(eq(orderId), anyString());
-
         // When
-        spyEscrowService.autoRefundExpiredDisputedOrders();
+        requestServiceImpl.autoRefundExpiredDisputedOrders();
 
         // Then
-        verify(spyEscrowService, times(1)).refundByOrder(eq(orderId), anyString());
+        verify(escrowService, times(1)).refundByOrder(eq(orderId), anyString());
+        verify(orderReturnService, never()).createReturn(any(), any());
+    }
+
+    @Test
+    @DisplayName("Tự động khởi tạo Return khi quá hạn 72h Shop không kháng cáo (RETURN_AND_REFUND)")
+    void autoRefundExpiredDisputedOrders_InitiatesReturn_WhenReturnAndRefund() {
+        // Given
+        RequestServiceImpl requestServiceImpl = new RequestServiceImpl(
+                requestRepository, reportRepository, null, accountRepository, null,
+                requestValidation, null, null, null, null, orderRepository, escrowRepository, escrowService, orderReturnService
+        );
+        ReflectionTestUtils.setField(requestServiceImpl, "appealWindowHours", 72);
+
+        Request expiredRequest = Request.builder()
+                .id(UUID.randomUUID())
+                .status(RequestStatus.APPROVED)
+                .reviewedAt(LocalDateTime.now().minusHours(73))
+                .build();
+
+        Report expiredReport = Report.builder()
+                .id(UUID.randomUUID())
+                .targetType(TargetType.ORDER)
+                .targetId(orderId)
+                .request(expiredRequest)
+                .resolutionType(ResolutionType.RETURN_AND_REFUND)
+                .build();
+
+        when(reportRepository.findApprovedOrderReportsReviewedBefore(any(LocalDateTime.class)))
+                .thenReturn(List.of(expiredReport));
+        when(reportRepository.findAppealsByViolationReportId(expiredReport.getId()))
+                .thenReturn(Collections.emptyList());
+        when(escrowRepository.findByOrderIdForUpdate(orderId))
+                .thenReturn(Optional.of(heldEscrow));
+        heldEscrow.setStatus(EscrowStatus.DISPUTED);
+
+        // When
+        requestServiceImpl.autoRefundExpiredDisputedOrders();
+
+        // Then
+        verify(orderReturnService, times(1)).createReturn(eq(orderId), eq(expiredReport.getId()));
+        verify(escrowService, never()).refundByOrder(any(), any());
+    }
+
+    @Test
+    @DisplayName("Admin duyệt khiếu nại kiện hoàn của Shop (APPROVE) -> Release cho Shop, hủy kiện hoàn, không phạt Shop")
+    void handleReport_SellerReturnDispute_Approve_ReleasesToShop() {
+        Request disputeReq = Request.builder()
+                .id(reportRequestId)
+                .type(RequestType.REPORT)
+                .status(RequestStatus.PENDING)
+                .description("[Shop khiếu nại kiện hàng hoàn - DAMAGED] Hàng bị tráo")
+                .build();
+
+        Report disputeReport = Report.builder()
+                .id(reportRequestId)
+                .request(disputeReq)
+                .targetType(TargetType.ORDER)
+                .targetId(orderId)
+                .violationReportId(UUID.randomUUID())
+                .build();
+
+        OrderReturn orderReturn = OrderReturn.builder()
+                .id(UUID.randomUUID())
+                .order(deliveredOrder)
+                .status(ReturnStatus.DISPUTED)
+                .build();
+
+        when(accountRepository.findById(adminAccountId)).thenReturn(Optional.of(adminAccount));
+        when(reportRepository.findByRequestId(reportRequestId)).thenReturn(disputeReport);
+        when(orderRepository.findByIdForUpdate(orderId)).thenReturn(Optional.of(deliveredOrder));
+        when(orderReturnRepository.findByOrderIdForUpdate(orderId)).thenReturn(Optional.of(orderReturn));
+        when(escrowRepository.findByOrderIdForUpdate(orderId)).thenReturn(Optional.of(heldEscrow));
+        heldEscrow.setStatus(EscrowStatus.DISPUTED);
+
+        HandleReportRequest req = HandleReportRequest.builder()
+                .decision(ReportDecision.APPROVE)
+                .note("Xác nhận khách tráo hàng, duyệt cho Shop")
+                .build();
+
+        reportService.handleReport(adminAccountId, reportRequestId, req);
+
+        assertEquals(RequestStatus.APPROVED, disputeReq.getStatus());
+        assertEquals(ReturnStatus.CANCELLED, orderReturn.getStatus());
+        verify(escrowService).releaseByOrder(orderId);
+        verify(escrowService, never()).refundByOrder(any(), any());
+    }
+
+    @Test
+    @DisplayName("Admin bác bỏ khiếu nại kiện hoàn của Shop (REJECT) -> Hoàn tiền Buyer, hoàn tất kiện hoàn")
+    void handleReport_SellerReturnDispute_Reject_RefundsBuyer() {
+        Request disputeReq = Request.builder()
+                .id(reportRequestId)
+                .type(RequestType.REPORT)
+                .status(RequestStatus.PENDING)
+                .description("[Shop khiếu nại kiện hàng hoàn - DAMAGED] Hàng bị tráo")
+                .build();
+
+        Report disputeReport = Report.builder()
+                .id(reportRequestId)
+                .request(disputeReq)
+                .targetType(TargetType.ORDER)
+                .targetId(orderId)
+                .violationReportId(UUID.randomUUID())
+                .build();
+
+        OrderReturn orderReturn = OrderReturn.builder()
+                .id(UUID.randomUUID())
+                .order(deliveredOrder)
+                .status(ReturnStatus.DISPUTED)
+                .build();
+
+        when(accountRepository.findById(adminAccountId)).thenReturn(Optional.of(adminAccount));
+        when(reportRepository.findByRequestId(reportRequestId)).thenReturn(disputeReport);
+        when(orderRepository.findByIdForUpdate(orderId)).thenReturn(Optional.of(deliveredOrder));
+        when(orderReturnRepository.findByOrderIdForUpdate(orderId)).thenReturn(Optional.of(orderReturn));
+
+        HandleReportRequest req = HandleReportRequest.builder()
+                .decision(ReportDecision.REJECT)
+                .note("Bằng chứng của Shop không đủ cơ sở")
+                .build();
+
+        reportService.handleReport(adminAccountId, reportRequestId, req);
+
+        assertEquals(RequestStatus.REJECTED, disputeReq.getStatus());
+        assertEquals(ReturnStatus.COMPLETED, orderReturn.getStatus());
+        verify(escrowService).refundByOrder(eq(orderId), anyString());
+        verify(escrowService, never()).releaseByOrder(any());
     }
 }

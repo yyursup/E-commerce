@@ -36,14 +36,19 @@ import com.marketplace.ecommerce.shop.valueObjects.ShopStatus;
 import com.marketplace.ecommerce.order.entity.Order;
 import com.marketplace.ecommerce.order.repository.OrderRepository;
 import com.marketplace.ecommerce.order.valueObjects.OrderStatus;
+import com.marketplace.ecommerce.order.service.OrderReturnService;
 import com.marketplace.ecommerce.payment.repository.EscrowRepository;
 import com.marketplace.ecommerce.payment.service.EscrowService;
 import com.marketplace.ecommerce.payment.valueObjects.EscrowStatus;
+import com.marketplace.ecommerce.request.valueObjects.ResolutionType;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -51,6 +56,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class RequestServiceImpl implements RequestService {
@@ -68,6 +74,10 @@ public class RequestServiceImpl implements RequestService {
     private final OrderRepository orderRepository;
     private final EscrowRepository escrowRepository;
     private final EscrowService escrowService;
+    private final OrderReturnService orderReturnService;
+
+    @Value("${marketplace.dispute.appeal-window-hours}")
+    private long appealWindowHours;
 
     @Transactional
     public RequestResponse approveSellerRegistration(UUID requestId, UUID adminAccountId, String response) {
@@ -314,9 +324,12 @@ public class RequestServiceImpl implements RequestService {
                     productRepository.save(p);
                 });
             } else if (report != null && report.getTargetType() == TargetType.ORDER && report.getTargetId() != null) {
-                // Nếu bác đơn kháng cáo đơn hàng vi phạm của Shop -> Hoàn tiền ngay 100% Escrow
-                // cho người mua!
-                escrowService.refundByOrder(report.getTargetId(),
+                // Nếu bác đơn kháng cáo đơn hàng vi phạm của Shop -> Đọc ResolutionType từ report gốc để rẽ nhánh
+                Report originalReport = report;
+                if (report.getViolationReportId() != null) {
+                    originalReport = reportRepository.findById(report.getViolationReportId()).orElse(report);
+                }
+                orchestrateCustomerWon(report.getTargetId(), originalReport.getId(), originalReport.getResolutionType(),
                         "Admin bác bỏ đơn kháng cáo của Shop, hoàn trả 100% tiền về ví người mua");
             }
         }
@@ -395,6 +408,12 @@ public class RequestServiceImpl implements RequestService {
                                         + " | Tổng tiền: " + (o.getTotal() != null ? o.getTotal() + " đ" : "")
                                         + " | Trạng thái: " + o.getStatus()
                                         + " | PTTT: " + o.getPaymentMethod();
+
+                                var ret = orderReturnService.getReturnByOrderId(o.getId());
+                                if (ret != null) {
+                                    targetInfo += " | Kiện hoàn: " + ret.getStatus()
+                                            + (ret.getConditionStatus() != null ? " (" + ret.getConditionStatus() + ")" : "");
+                                }
                             }
                         }
                     }
@@ -473,5 +492,50 @@ public class RequestServiceImpl implements RequestService {
                 .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build();
 
         return requestRepository.save(re);
+    }
+
+    private void orchestrateCustomerWon(UUID orderId, UUID reportId, ResolutionType resolutionType, String refundReason) {
+        if (resolutionType == ResolutionType.RETURN_AND_REFUND) {
+            log.info("Coordinator initiating RETURN_AND_REFUND for disputed orderId={}, reportId={}", orderId, reportId);
+            orderReturnService.createReturn(orderId, reportId);
+        } else {
+            log.info("Coordinator initiating REFUND_ONLY for disputed orderId={}", orderId);
+            escrowService.refundByOrder(orderId, refundReason);
+        }
+    }
+
+    @Override
+    @Transactional
+    @Scheduled(cron = "0 0 * * * *") // Chạy định kỳ mỗi giờ để tự động hoàn tiền/tạo return nếu quá hạn kháng cáo
+    public void autoRefundExpiredDisputedOrders() {
+        LocalDateTime threshold = LocalDateTime.now().minusHours(appealWindowHours);
+        List<Report> expiredReports = reportRepository.findApprovedOrderReportsReviewedBefore(threshold);
+
+        for (Report report : expiredReports) {
+            UUID orderId = report.getTargetId();
+            if (orderId == null)
+                continue;
+
+            try {
+                // Kiểm tra xem Shop đã gửi đơn kháng cáo chưa
+                List<Report> appeals = reportRepository.findAppealsByViolationReportId(report.getId());
+                boolean hasPendingOrApprovedAppeal = appeals.stream().anyMatch(a -> a.getRequest() != null &&
+                        (a.getRequest().getStatus() == RequestStatus.PENDING ||
+                                a.getRequest().getStatus() == RequestStatus.APPROVED));
+
+                if (!hasPendingOrApprovedAppeal) {
+                    // Nếu không có kháng cáo hợp lệ đang chờ hoặc đã duyệt, và Escrow vẫn đang
+                    // DISPUTED -> Xử lý theo ResolutionType đã lưu từ lúc duyệt Report
+                    var escrowOpt = escrowRepository.findByOrderIdForUpdate(orderId);
+                    if (escrowOpt.isPresent() && escrowOpt.get().getStatus() == EscrowStatus.DISPUTED) {
+                        orchestrateCustomerWon(orderId, report.getId(), report.getResolutionType(),
+                                "Tự động hoàn tiền do Shop không gửi kháng cáo trong thời hạn quy định ("
+                                        + appealWindowHours + " giờ)");
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("Auto handle expired disputed order failed for orderId={}", orderId, e);
+            }
+        }
     }
 }

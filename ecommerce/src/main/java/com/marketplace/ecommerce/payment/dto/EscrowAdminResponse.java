@@ -27,7 +27,14 @@ public class EscrowAdminResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    // Settlement breakdown (populated from Transaction records, null if not yet settled)
+    private SettlementInfo settlement;
+
     public static EscrowAdminResponse from(Escrow e) {
+        return from(e, null);
+    }
+
+    public static EscrowAdminResponse from(Escrow e, SettlementInfo settlement) {
         return EscrowAdminResponse.builder()
                 .escrowId(e.getId())
                 .status(e.getStatus())
@@ -40,7 +47,9 @@ public class EscrowAdminResponse {
                 .escrowWalletId(e.getEscrowWallet() != null ? e.getEscrowWallet().getId() : null)
                 .createdAt(e.getCreatedAt())
                 .updatedAt(e.getUpdatedAt())
+                .settlement(settlement)
                 .build();
     }
 
 }
+

@@ -177,7 +177,7 @@ class OrderDisputeFlowTest {
         // Given
         RequestServiceImpl requestService = new RequestServiceImpl(
                 requestRepository, reportRepository, null, accountRepository, null,
-                null, null, productRepository, shopRepository, null, orderRepository, escrowRepository, escrowService
+                null, null, productRepository, shopRepository, null, orderRepository, escrowRepository, escrowService, null
         );
 
         UUID requestId = UUID.randomUUID();
@@ -227,7 +227,7 @@ class OrderDisputeFlowTest {
         // Given
         RequestServiceImpl requestService = new RequestServiceImpl(
                 requestRepository, reportRepository, null, accountRepository, null,
-                null, null, null, shopRepository, null, orderRepository, escrowRepository, escrowService
+                null, null, null, shopRepository, null, orderRepository, escrowRepository, escrowService, null
         );
 
         UUID requestId = UUID.randomUUID();

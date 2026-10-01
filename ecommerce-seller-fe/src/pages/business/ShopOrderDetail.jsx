@@ -15,8 +15,11 @@ import { useAuthStore } from '../../store/useAuthStore'
 import { cn } from '../../lib/cn'
 import toast from 'react-hot-toast'
 import orderService from '../../services/order'
+import returnService from '../../services/returnService'
+import escrowService from '../../services/escrow'
 import OrderStatusBadge from './components/order/OrderStatusBadge'
 import SellerOrderActions from './components/order/SellerOrderActions'
+import SellerReturnSection from './components/order/SellerReturnSection'
 import OrderAddressSection from './components/order/OrderAddressSection'
 import OrderItemsSection from './components/order/OrderItemsSection'
 import OrderSummarySection from './components/order/OrderSummarySection'
@@ -28,10 +31,11 @@ export default function ShopOrderDetail() {
   const { isAuthenticated } = useAuthStore()
 
   const [order, setOrder] = useState(null)
+  const [returnInfo, setReturnInfo] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
   const [actionLoading, setActionLoading] = useState(false)
   const [ghnOrderCodeInput, setGhnOrderCodeInput] = useState('')
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     if (!isAuthenticated || !orderId) return
@@ -45,6 +49,25 @@ export default function ShopOrderDetail() {
       const orderData = await orderService.getShopOrderById(orderId)
       setOrder(orderData)
       setGhnOrderCodeInput(orderData?.ghnOrderCode || '')
+      let retInfo = orderData?.returnInfo || null
+      if (!retInfo) {
+        try {
+          retInfo = await returnService.getReturnByOrderId(orderId)
+        } catch {
+          retInfo = null
+        }
+      }
+      if (retInfo && !retInfo.settlement) {
+        try {
+          const settlement = await escrowService.getSettlementByOrderId(orderId)
+          if (settlement) {
+            retInfo = { ...retInfo, settlement }
+          }
+        } catch {
+          // Bỏ qua nếu chưa settlement
+        }
+      }
+      setReturnInfo(retInfo)
     } catch (err) {
       console.error('Error fetching order:', err)
       const msg = err?.response?.data?.message || err?.message || 'Không thể tải thông tin đơn hàng'
@@ -208,7 +231,11 @@ export default function ShopOrderDetail() {
                   ? 'Ví sàn (Ký quỹ)'
                   : 'COD (Tiền mặt khi nhận)'}
             </span>
-            <OrderStatusBadge status={order.status} className="px-3 py-1 text-xs" />
+            <OrderStatusBadge
+              status={order.status}
+              returnInfo={returnInfo || order.returnInfo}
+              className="px-3 py-1 text-xs"
+            />
           </div>
           <p className={cn('mt-1 text-xs sm:text-sm', isDark ? 'text-slate-400' : 'text-stone-500')}>
             Đặt lúc: <strong>{formatDate(order.createdAt)}</strong> • Khách hàng: <strong>{order.userName || order.shippingName || '-'}</strong>
@@ -312,6 +339,15 @@ export default function ShopOrderDetail() {
           onRetryCreateGhn={handleRetryCreateGhn}
           onSetManualGhnCode={handleSetManualGhnCode}
         />
+
+        {/* 1.5 Return & Refund Section (If active return exists) */}
+        {(returnInfo || order?.returnInfo) && (
+          <SellerReturnSection
+            returnInfo={returnInfo || order?.returnInfo}
+            isDark={isDark}
+            onRefresh={fetchOrder}
+          />
+        )}
 
         {/* 2. Customer & Address Details */}
         <OrderAddressSection order={order} isDark={isDark} />

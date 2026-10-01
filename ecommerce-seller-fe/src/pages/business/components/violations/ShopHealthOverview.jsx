@@ -38,7 +38,7 @@ export default function ShopHealthOverview({
     }
     if (reputationScore === 100) {
       return {
-        label: 'Uy tín tuyệt đối (100đ)',
+        label: 'Uy tín tuyệt đối',
         color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
       }
     }

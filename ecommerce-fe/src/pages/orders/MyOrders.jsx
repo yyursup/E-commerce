@@ -63,6 +63,42 @@ const getStatusLabel = (status) => {
   return statusMap[status] || status
 }
 
+const getReturnStatusDisplay = (returnStatus) => {
+  const map = {
+    WAITING_FOR_SHIPMENT: {
+      label: 'Đang trả hàng (Chờ gửi hàng)',
+      color: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 border border-amber-300 dark:border-amber-700',
+      icon: HiOutlineClock,
+    },
+    SHIPPED: {
+      label: 'Đang giao hàng hoàn',
+      color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 border border-blue-300 dark:border-blue-700',
+      icon: HiOutlineTruck,
+    },
+    RETURNED: {
+      label: 'Đã giao hàng hoàn',
+      color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400 border border-purple-300 dark:border-purple-700',
+      icon: HiOutlineCheckCircle,
+    },
+    DISPUTED: {
+      label: 'Tranh chấp hàng hoàn',
+      color: 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400 border border-rose-300 dark:border-rose-700',
+      icon: HiOutlineExclamationCircle,
+    },
+    COMPLETED: {
+      label: 'Đã hoàn hàng & Hoàn tiền',
+      color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-700',
+      icon: HiOutlineCheckCircle,
+    },
+    CANCELLED: {
+      label: 'Đã hủy trả hàng',
+      color: 'bg-stone-100 text-stone-700 dark:bg-slate-800 dark:text-slate-300 border border-stone-300 dark:border-slate-700',
+      icon: HiOutlineXCircle,
+    },
+  }
+  return map[returnStatus] || null
+}
+
 export default function MyOrders() {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
   const { isAuthenticated } = useAuthStore()
@@ -160,7 +196,7 @@ export default function MyOrders() {
     )
   }
 
-  const canMarkReceived = (order) => ['DELIVERED'].includes(order.status) && !order.hasActiveDispute;
+  const canMarkReceived = (order) => ['DELIVERED'].includes(order.status) && !order.hasActiveDispute && (!order.returnInfo || order.returnInfo.status === 'CANCELLED');
 
   return (
     <div className={cn('min-h-screen px-4 py-8 sm:px-6 lg:px-8', isDark ? 'bg-slate-950' : 'bg-stone-50')}>
@@ -292,15 +328,25 @@ export default function MyOrders() {
                           {order.disputeStatus === 'APPEAL_PENDING' && 'Shop đang kháng cáo'}
                         </span>
                       )}
-                      <span
-                        className={cn(
-                          'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold border',
-                          statusBadge.color,
-                        )}
-                      >
-                        <StatusIcon className="h-3.5 w-3.5" />
-                        {getStatusLabel(order.status)}
-                      </span>
+                      {(() => {
+                        const returnDisplay = order.returnInfo
+                          ? getReturnStatusDisplay(order.returnInfo.status)
+                          : null
+                        const badgeObj = returnDisplay || statusBadge
+                        const BadgeIcon = badgeObj.icon
+                        const labelText = returnDisplay ? returnDisplay.label : getStatusLabel(order.status)
+                        return (
+                          <span
+                            className={cn(
+                              'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold border',
+                              badgeObj.color,
+                            )}
+                          >
+                            <BadgeIcon className="h-3.5 w-3.5" />
+                            {labelText}
+                          </span>
+                        )
+                      })()}
                     </div>
                   </div>
 
@@ -360,7 +406,7 @@ export default function MyOrders() {
                         </button>
                       )}
 
-                      {['DELIVERED'].includes(order.status) && !order.hasActiveDispute && (
+                      {['DELIVERED'].includes(order.status) && !order.hasActiveDispute && (!order.returnInfo || order.returnInfo.status === 'CANCELLED') && (
                         <button
                           type="button"
                           onClick={() => setReportingOrder(order)}
@@ -371,7 +417,16 @@ export default function MyOrders() {
                         </button>
                       )}
 
-                      {order.hasActiveDispute && (
+                      {/* Chỉ hiển thị badge 'Đang xử lý trả hàng' khi tiến trình hoàn hàng thực sự đang diễn ra (chưa COMPLETED và chưa CANCELLED) */}
+                      {order.returnInfo && order.returnInfo.status !== 'COMPLETED' && order.returnInfo.status !== 'CANCELLED' && (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/25">
+                          <HiOutlineTruck className="h-4 w-4 text-indigo-500" />
+                          Đang xử lý trả hàng
+                        </span>
+                      )}
+
+
+                      {order.hasActiveDispute && !order.returnInfo && (
                         <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25">
                           <HiOutlineExclamationCircle className="h-4 w-4 text-amber-500" />
                           {order.disputeStatus === 'REPORT_PENDING' && 'Đang đối soát khiếu nại'}

@@ -14,11 +14,12 @@ const reportService = {
     }
   },
 
-  handleReport: async (requestId, decision, note = null) => {
+  handleReport: async (requestId, decision, note = null, resolutionType = null) => {
     try {
       const response = await axiosClient.put(`${REPORT_BASE}/${requestId}/handle`, {
         decision,
         note,
+        resolutionType,
       })
       return response.data
     } catch (error) {

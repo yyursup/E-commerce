@@ -9,7 +9,7 @@ import {
 } from './orderHelpers'
 
 export default function AdminOrderListCard({ order, isDark }) {
-  const statusBadge = getAdminOrderStatusBadge(order.status)
+  const statusBadge = getAdminOrderStatusBadge(order)
   const StatusIcon = statusBadge.icon
   const thumbnailImage = order.items?.[0]?.productImageUrl
 
@@ -45,7 +45,7 @@ export default function AdminOrderListCard({ order, isDark }) {
                   )}
                 >
                   <StatusIcon className="h-3 w-3" />
-                  {getAdminOrderStatusLabel(order.status)}
+                  {getAdminOrderStatusLabel(order)}
                 </span>
                 <span
                   className={cn(

@@ -6,6 +6,7 @@ import com.marketplace.ecommerce.payment.valueObjects.TransactionType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.UUID;
 
 @Repository
@@ -13,4 +14,8 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
     boolean existsByDedupeKey(String dedupeKey);
 
     boolean existsByReferenceTypeAndReferenceIdAndType(ReferenceType refType, UUID refId, TransactionType type);
+
+    List<Transaction> findByReferenceTypeAndReferenceId(ReferenceType referenceType, UUID referenceId);
+
+    List<Transaction> findByReferenceTypeAndReferenceIdIn(ReferenceType referenceType, List<UUID> referenceIds);
 }

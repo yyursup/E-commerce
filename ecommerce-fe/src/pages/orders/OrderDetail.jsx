@@ -18,8 +18,11 @@ import { useAuthStore } from '../../store/useAuthStore'
 import { cn } from '../../lib/cn'
 import toast from 'react-hot-toast'
 import orderService from '../../services/order'
+import returnService from '../../services/returnService'
+import escrowService from '../../services/escrow'
 import ReviewModal from '../../components/ReviewModal'
 import OrderReportModal from '../../components/OrderReportModal'
+import CustomerReturnCard from './components/CustomerReturnCard'
 import { HiOutlineStar, HiOutlineExclamationCircle } from 'react-icons/hi'
 
 const getStatusBadge = (status) => {
@@ -53,6 +56,42 @@ const getStatusLabel = (status) => {
   return statusMap[status] || status
 }
 
+const getReturnStatusDisplay = (returnStatus) => {
+  const map = {
+    WAITING_FOR_SHIPMENT: {
+      label: 'Đang trả hàng (Chờ gửi hàng)',
+      color: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 border border-amber-300 dark:border-amber-700',
+      icon: HiOutlineClock,
+    },
+    SHIPPED: {
+      label: 'Đang giao hàng hoàn',
+      color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 border border-blue-300 dark:border-blue-700',
+      icon: HiOutlineTruck,
+    },
+    RETURNED: {
+      label: 'Đã giao hàng hoàn trả',
+      color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400 border border-purple-300 dark:border-purple-700',
+      icon: HiOutlineCheckCircle,
+    },
+    DISPUTED: {
+      label: 'Shop khiếu nại đơn hoàn',
+      color: 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400 border border-rose-300 dark:border-rose-700',
+      icon: HiOutlineExclamationCircle,
+    },
+    COMPLETED: {
+      label: 'Đã hoàn tiền',
+      color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-700',
+      icon: HiOutlineCheckCircle,
+    },
+    CANCELLED: {
+      label: 'Đã hủy trả hàng',
+      color: 'bg-stone-100 text-stone-700 dark:bg-slate-800 dark:text-slate-300 border border-stone-300 dark:border-slate-700',
+      icon: HiOutlineXCircle,
+    },
+  }
+  return map[returnStatus] || null
+}
+
 export default function OrderDetail() {
   const { orderId } = useParams()
   const isDark = useThemeStore((s) => s.theme) === 'dark'
@@ -62,8 +101,7 @@ export default function OrderDetail() {
   const [error, setError] = useState(null)
   const [reviewModal, setReviewModal] = useState({ open: false, productId: null, productName: '' })
   const [showReportModal, setShowReportModal] = useState(false)
-
-
+  const [returnInfo, setReturnInfo] = useState(null)
 
   useEffect(() => {
     if (!isAuthenticated || !orderId) return
@@ -76,6 +114,25 @@ export default function OrderDetail() {
       setError(null)
       const orderData = await orderService.getMyOrderById(orderId)
       setOrder(orderData)
+      let retInfo = orderData?.returnInfo || null
+      if (!retInfo) {
+        try {
+          retInfo = await returnService.getReturnByOrderId(orderId)
+        } catch {
+          retInfo = null
+        }
+      }
+      if (retInfo && !retInfo.settlement) {
+        try {
+          const settlement = await escrowService.getSettlementByOrderId(orderId)
+          if (settlement) {
+            retInfo = { ...retInfo, settlement }
+          }
+        } catch {
+          // Bỏ qua nếu chưa settlement
+        }
+      }
+      setReturnInfo(retInfo)
     } catch (err) {
       console.error('Error fetching order:', err)
       setError(err?.response?.data?.message || err?.message || 'Không thể tải thông tin đơn hàng')
@@ -147,8 +204,14 @@ export default function OrderDetail() {
     )
   }
 
-  const statusBadge = getStatusBadge(order.status)
+  const activeReturn = returnInfo || order.returnInfo
+  const returnDisplay = activeReturn
+    ? getReturnStatusDisplay(activeReturn.status)
+    : null
+
+  const statusBadge = returnDisplay || getStatusBadge(order.status)
   const StatusIcon = statusBadge.icon
+  const statusLabel = returnDisplay ? returnDisplay.label : getStatusLabel(order.status)
 
   return (
     <div className={cn('min-h-screen px-4 py-8 sm:px-6 lg:px-8', isDark ? 'bg-slate-950' : 'bg-stone-50')}>
@@ -207,13 +270,13 @@ export default function OrderDetail() {
                   )}
                 >
                   <StatusIcon className="h-4 w-4" />
-                  {getStatusLabel(order.status)}
+                  {statusLabel}
                 </span>
               </div>
             </div>
 
-            {/* Escrow Guidance Banner when DELIVERED and NO dispute */}
-            {['DELIVERED'].includes(order.status) && !order.hasActiveDispute && (
+            {/* Escrow Guidance Banner when DELIVERED and NO dispute and NO return */}
+            {['DELIVERED'].includes(order.status) && !order.hasActiveDispute && !returnInfo && !order.returnInfo && (
               <div className={cn(
                 'rounded-2xl p-3.5 sm:p-4 border text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3',
                 isDark ? 'bg-amber-500/10 border-amber-500/25 text-amber-300' : 'bg-amber-50 border-amber-200 text-amber-900'
@@ -285,8 +348,8 @@ export default function OrderDetail() {
               </div>
             )}
 
-            {/* Quick Action Bar for Order state transitions - Only when NO active dispute */}
-            {['DELIVERED'].includes(order.status) && !order.hasActiveDispute && (
+            {/* Quick Action Bar for Order state transitions - Only when NO active dispute and NO return in progress */}
+            {['DELIVERED'].includes(order.status) && !order.hasActiveDispute && !returnInfo && !order.returnInfo && (
               <div className="flex flex-wrap items-center gap-2.5 pt-2">
                 <button
                   type="button"
@@ -316,6 +379,17 @@ export default function OrderDetail() {
               </div>
             )}
           </div>
+
+          {/* Return & Refund Process Section */}
+          {(returnInfo || order.returnInfo) && (
+            <div className="border-b p-5 sm:p-6">
+              <CustomerReturnCard
+                returnInfo={returnInfo || order.returnInfo}
+                isDark={isDark}
+                onRefresh={fetchOrder}
+              />
+            </div>
+          )}
 
           {/* Shipping Address */}
           <div className="border-b p-6">

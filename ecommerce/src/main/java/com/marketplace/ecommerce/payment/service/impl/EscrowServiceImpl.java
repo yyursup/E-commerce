@@ -5,6 +5,7 @@ import com.marketplace.ecommerce.order.entity.Order;
 import com.marketplace.ecommerce.order.repository.OrderRepository;
 import com.marketplace.ecommerce.order.valueObjects.OrderStatus;
 import com.marketplace.ecommerce.payment.dto.EscrowAdminResponse;
+import com.marketplace.ecommerce.payment.dto.SettlementInfo;
 import com.marketplace.ecommerce.payment.entity.Escrow;
 import com.marketplace.ecommerce.payment.entity.Payment;
 import com.marketplace.ecommerce.payment.entity.Transaction;
@@ -21,20 +22,17 @@ import com.marketplace.ecommerce.payment.valueObjects.TransactionType;
 import com.marketplace.ecommerce.wallet.entity.Wallet;
 import com.marketplace.ecommerce.wallet.repository.WalletRepository;
 import com.marketplace.ecommerce.wallet.valueObjects.WalletType;
-import com.marketplace.ecommerce.request.entity.Report;
-import com.marketplace.ecommerce.request.repository.ReportRepository;
-import com.marketplace.ecommerce.request.valueObjects.RequestStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -46,10 +44,6 @@ public class EscrowServiceImpl implements EscrowService {
     private final WalletRepository walletRepository;
     private final TransactionRepository transactionRepository;
     private final PaymentRepository paymentRepository;
-    private final ReportRepository reportRepository;
-
-    @Value("${marketplace.dispute.appeal-window-hours}")
-    private long appealWindowHours;
 
     @Override
     @Transactional(readOnly = true)
@@ -211,7 +205,7 @@ public class EscrowServiceImpl implements EscrowService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new CustomException("Order not found"));
 
-        if (order.getStatus() != OrderStatus.DELIVERED) {
+        if (order.getStatus() != OrderStatus.DELIVERED && order.getStatus() != OrderStatus.COMPLETED) {
             throw new CustomException("Order chưa đủ điều kiện release: " + order.getStatus());
         }
 
@@ -232,7 +226,7 @@ public class EscrowServiceImpl implements EscrowService {
         if (escrow.getStatus() == EscrowStatus.RELEASED) {
             return;
         }
-        if (escrow.getStatus() != EscrowStatus.HELD) {
+        if (escrow.getStatus() != EscrowStatus.HELD && escrow.getStatus() != EscrowStatus.DISPUTED) {
             throw new CustomException("Escrow status không hợp lệ: " + escrow.getStatus());
         }
 
@@ -246,7 +240,7 @@ public class EscrowServiceImpl implements EscrowService {
             escrow.setStatus(EscrowStatus.RELEASED);
             escrowRepository.save(escrow);
 
-            if (order.getStatus() == OrderStatus.DELIVERED) {
+            if (order.getStatus() != OrderStatus.COMPLETED) {
                 order.setStatus(OrderStatus.COMPLETED);
                 orderRepository.save(order);
             }
@@ -352,11 +346,13 @@ public class EscrowServiceImpl implements EscrowService {
 
         order.setStatus(OrderStatus.COMPLETED);
         orderRepository.save(order);
+
     }
 
     @Override
     @Transactional
     public void refundByOrder(UUID orderId, String reason) {
+
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new CustomException("Order not found: " + orderId));
 
@@ -417,41 +413,185 @@ public class EscrowServiceImpl implements EscrowService {
 
         order.setStatus(OrderStatus.REFUNDED);
         orderRepository.save(order);
+
     }
 
     @Override
     @Transactional
-    @Scheduled(cron = "0 0 * * * *") // Chạy định kỳ mỗi giờ để tự động hoàn tiền nếu quá hạn kháng cáo
-    public void autoRefundExpiredDisputedOrders() {
-        LocalDateTime threshold = LocalDateTime.now().minusHours(appealWindowHours);
-        List<Report> expiredReports = reportRepository.findApprovedOrderReportsReviewedBefore(threshold);
+    public void splitSettleByOrder(UUID orderId, Integer buyerPercentage, Integer sellerPercentage, String note) {
+        if (buyerPercentage == null || sellerPercentage == null) {
+            throw new CustomException("Tỷ lệ phân chia không được để trống");
+        }
+        if (buyerPercentage < 0 || sellerPercentage < 0 || (buyerPercentage + sellerPercentage != 100)) {
+            throw new CustomException("Tổng tỷ lệ phân chia giữa Người mua và Người bán phải chính xác bằng 100%");
+        }
 
-        for (Report report : expiredReports) {
-            UUID orderId = report.getTargetId();
-            if (orderId == null)
-                continue;
 
-            try {
-                // Kiểm tra xem Shop đã gửi đơn kháng cáo chưa
-                List<Report> appeals = reportRepository.findAppealsByViolationReportId(report.getId());
-                boolean hasPendingOrApprovedAppeal = appeals.stream().anyMatch(a -> a.getRequest() != null &&
-                        (a.getRequest().getStatus() == RequestStatus.PENDING ||
-                                a.getRequest().getStatus() == RequestStatus.APPROVED));
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new CustomException("Order not found: " + orderId));
 
-                if (!hasPendingOrApprovedAppeal) {
-                    // Nếu không có kháng cáo hợp lệ đang chờ hoặc đã duyệt, và Escrow vẫn đang
-                    // DISPUTED -> Hoàn tiền tự động cho người mua
-                    var escrowOpt = escrowRepository.findByOrderIdForUpdate(orderId);
-                    if (escrowOpt.isPresent() && escrowOpt.get().getStatus() == EscrowStatus.DISPUTED) {
-                        log.info("Auto refunding disputed order {} due to appeal window expiration ({} hours)", orderId,
-                                appealWindowHours);
-                        refundByOrder(orderId, "Tự động hoàn tiền do Shop không gửi kháng cáo trong thời hạn quy định ("
-                                + appealWindowHours + " giờ)");
-                    }
-                }
-            } catch (Exception e) {
-                log.warn("Auto refund failed for disputed orderId={}", orderId, e);
+        Escrow escrow = escrowRepository.findByOrderIdForUpdate(orderId)
+                .orElseThrow(() -> new CustomException("Escrow not found for order: " + orderId));
+
+        if (escrow.getStatus() == EscrowStatus.RELEASED || escrow.getStatus() == EscrowStatus.REFUNDED) {
+            throw new CustomException("Ký quỹ đơn hàng đã được xử lý hoàn tất trước đó: " + escrow.getStatus());
+        }
+
+        if (escrow.getStatus() != EscrowStatus.HELD && escrow.getStatus() != EscrowStatus.DISPUTED) {
+            throw new CustomException("Trạng thái Escrow không hợp lệ để phân chia: " + escrow.getStatus());
+        }
+
+        Wallet escrowWallet = escrow.getEscrowWallet();
+        Wallet buyerWallet = escrow.getBuyerWallet();
+        Wallet sellerWallet = escrow.getSellerWallet();
+
+        if (escrowWallet == null) {
+            throw new CustomException("Escrow wallet missing");
+        }
+        if (buyerWallet == null) {
+            throw new CustomException("Buyer wallet missing");
+        }
+        if (sellerWallet == null) {
+            sellerWallet = walletRepository.findByUserIdForUpdate(order.getShop().getUser().getId())
+                    .orElseGet(() -> {
+                        Wallet w = Wallet.builder()
+                                .user(order.getShop().getUser())
+                                .currency("VND")
+                                .availableBalance(BigDecimal.ZERO)
+                                .lockedBalance(BigDecimal.ZERO)
+                                .walletType(WalletType.USER)
+                                .createdAt(LocalDateTime.now())
+                                .build();
+                        return walletRepository.save(w);
+                    });
+            escrow.setSellerWallet(sellerWallet);
+        }
+
+        BigDecimal totalAmount = escrow.getAmount();
+        if (totalAmount == null || totalAmount.signum() <= 0) {
+            throw new CustomException("Escrow amount invalid");
+        }
+
+        BigDecimal commission = order.getPlatformCommission() != null ? order.getPlatformCommission() : BigDecimal.ZERO;
+        BigDecimal netAmount = totalAmount.subtract(commission);
+        if (netAmount.signum() < 0) {
+            throw new CustomException("Phí hoa hồng sàn lớn hơn tổng số tiền ký quỹ");
+        }
+
+        // Số tiền chia cho từng bên từ netAmount (đã trừ phí hoa hồng sàn)
+        BigDecimal buyerShare = netAmount.multiply(BigDecimal.valueOf(buyerPercentage))
+                .divide(BigDecimal.valueOf(100), 0, RoundingMode.HALF_UP);
+        BigDecimal sellerShare = netAmount.subtract(buyerShare); // Đảm bảo khớp từng đồng, không lệch do làm tròn
+
+        if (escrowWallet.getLockedBalance().compareTo(totalAmount) < 0) {
+            escrowWallet.setLockedBalance(totalAmount);
+        }
+
+        escrowWallet.subLocked(totalAmount);
+
+        if (commission.signum() > 0) {
+            escrowWallet.addAvailable(commission);
+        }
+        if (buyerShare.signum() > 0) {
+            buyerWallet.addAvailable(buyerShare);
+        }
+        if (sellerShare.signum() > 0) {
+            sellerWallet.addAvailable(sellerShare);
+        }
+
+        walletRepository.saveAll(List.of(escrowWallet, buyerWallet, sellerWallet));
+
+        // Hạch toán Transaction
+        if (commission.signum() > 0) {
+            String commissionDedupe = "COMMISSION:" + order.getId();
+            if (!transactionRepository.existsByDedupeKey(commissionDedupe)) {
+                Transaction tFee = Transaction.builder()
+                        .fromWallet(escrowWallet)
+                        .toWallet(escrowWallet)
+                        .amount(commission)
+                        .type(TransactionType.COMMISSION)
+                        .status(TransactionStatus.SUCCESS)
+                        .referenceType(ReferenceType.ESCROW)
+                        .createdAt(LocalDateTime.now())
+                        .referenceId(escrow.getId())
+                        .dedupeKey(commissionDedupe)
+                        .note("Khấu trừ hoa hồng sàn cho đơn " + order.getOrderNumber())
+                        .build();
+                transactionRepository.save(tFee);
             }
         }
+
+        if (buyerShare.signum() > 0) {
+            String buyerDedupe = "ESCROW_SPLIT_BUYER:" + order.getId();
+            if (!transactionRepository.existsByDedupeKey(buyerDedupe)) {
+                Transaction txBuyer = Transaction.builder()
+                        .fromWallet(escrowWallet)
+                        .toWallet(buyerWallet)
+                        .amount(buyerShare)
+                        .type(TransactionType.REFUND)
+                        .status(TransactionStatus.SUCCESS)
+                        .referenceType(ReferenceType.ESCROW)
+                        .referenceId(escrow.getId())
+                        .createdAt(LocalDateTime.now())
+                        .dedupeKey(buyerDedupe)
+                        .note(String.format("Phân xử hoàn tiền %d%% cho Người mua: %s", buyerPercentage,
+                                (note != null ? note : "")))
+                        .build();
+                transactionRepository.save(txBuyer);
+            }
+        }
+
+        if (sellerShare.signum() > 0) {
+            String sellerDedupe = "ESCROW_SPLIT_SELLER:" + order.getId();
+            if (!transactionRepository.existsByDedupeKey(sellerDedupe)) {
+                Transaction txSeller = Transaction.builder()
+                        .fromWallet(escrowWallet)
+                        .toWallet(sellerWallet)
+                        .amount(sellerShare)
+                        .type(TransactionType.RELEASE)
+                        .status(TransactionStatus.SUCCESS)
+                        .referenceType(ReferenceType.ESCROW)
+                        .referenceId(escrow.getId())
+                        .createdAt(LocalDateTime.now())
+                        .dedupeKey(sellerDedupe)
+                        .note(String.format("Phân xử giải ngân %d%% cho Người bán: %s", sellerPercentage,
+                                (note != null ? note : "")))
+                        .build();
+                transactionRepository.save(txSeller);
+            }
+        }
+
+        escrow.setStatus(buyerPercentage == 100 ? EscrowStatus.REFUNDED : EscrowStatus.RELEASED);
+        escrow.setUpdatedAt(LocalDateTime.now());
+        escrowRepository.save(escrow);
+
+        if (order.getPaymentMethod() == PaymentMethod.COD) {
+            paymentRepository.findByOrderId(order.getId()).ifPresent(payment -> {
+                if (payment.getStatus() != PaymentStatus.SUCCESS) {
+                    payment.setStatus(PaymentStatus.SUCCESS);
+                    payment.setUpdatedAt(LocalDateTime.now());
+                    paymentRepository.save(payment);
+                }
+            });
+        }
+
+        order.setStatus(buyerShare.signum() > 0 ? OrderStatus.REFUNDED : OrderStatus.COMPLETED);
+        orderRepository.save(order);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public SettlementInfo getSettlementByOrderId(UUID orderId) {
+        if (orderId == null) {
+            return null;
+        }
+        Escrow escrow = escrowRepository.findByOrderId(orderId).orElse(null);
+        if (escrow == null) {
+            return null;
+        }
+        List<Transaction> transactions = transactionRepository
+                .findByReferenceTypeAndReferenceId(ReferenceType.ESCROW, escrow.getId());
+        return SettlementInfo.fromTransactions(transactions, escrow.getAmount());
     }
 }
+

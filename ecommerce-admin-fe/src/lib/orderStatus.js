@@ -4,6 +4,7 @@ import {
   HiOutlineTruck,
   HiOutlineShoppingBag,
   HiOutlineXCircle,
+  HiOutlineExclamationCircle,
 } from 'react-icons/hi'
 
 export const ORDER_STATUS_LABEL_MAP = {
@@ -17,6 +18,8 @@ export const ORDER_STATUS_LABEL_MAP = {
   COMPLETED: 'Hoàn thành',
   CANCELLED: 'Đã hủy',
   REFUNDED: 'Đã hoàn tiền',
+  DISPUTED: 'Đang tranh chấp',
+  RETURNED: 'Đã trả hàng',
 }
 
 export const ORDER_STATUS_BADGE_MAP = {
@@ -60,6 +63,55 @@ export const ORDER_STATUS_BADGE_MAP = {
     color: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400',
     icon: HiOutlineXCircle,
   },
+  DISPUTED: {
+    color: 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400',
+    icon: HiOutlineExclamationCircle,
+  },
+  RETURNED: {
+    color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
+    icon: HiOutlineCheckCircle,
+  },
+}
+
+export const RETURN_STATUS_LABEL_MAP = {
+  WAITING_FOR_SHIPMENT: 'Chờ người mua gửi hàng',
+  SHIPPED: 'Đang giao hàng hoàn',
+  DELIVERED: 'Đã giao hàng hoàn (Shop kiểm hàng 72h)',
+  RETURNED: 'Đã giao hàng hoàn (Shop kiểm hàng 72h)',
+  DISPUTED: 'Tranh chấp hàng hoàn (Shop khiếu nại)',
+  COMPLETED: 'Đã hoàn tất đổi trả & Hoàn tiền',
+  CANCELLED: 'Đã hủy đổi trả',
+}
+
+export const RETURN_STATUS_BADGE_MAP = {
+  WAITING_FOR_SHIPMENT: {
+    color: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
+    icon: HiOutlineClock,
+  },
+  SHIPPED: {
+    color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+    icon: HiOutlineTruck,
+  },
+  DELIVERED: {
+    color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
+    icon: HiOutlineCheckCircle,
+  },
+  RETURNED: {
+    color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
+    icon: HiOutlineCheckCircle,
+  },
+  DISPUTED: {
+    color: 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400',
+    icon: HiOutlineExclamationCircle,
+  },
+  COMPLETED: {
+    color: 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-400',
+    icon: HiOutlineCheckCircle,
+  },
+  CANCELLED: {
+    color: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400',
+    icon: HiOutlineXCircle,
+  },
 }
 
 export const ORDER_STATUSES = [
@@ -74,17 +126,48 @@ export const ORDER_STATUSES = [
   { value: 'COMPLETED', label: ORDER_STATUS_LABEL_MAP.COMPLETED },
   { value: 'CANCELLED', label: ORDER_STATUS_LABEL_MAP.CANCELLED },
   { value: 'REFUNDED', label: ORDER_STATUS_LABEL_MAP.REFUNDED },
+  { value: 'DISPUTED', label: ORDER_STATUS_LABEL_MAP.DISPUTED },
+  { value: 'RETURNED', label: ORDER_STATUS_LABEL_MAP.RETURNED },
 ]
 
 export const ADMIN_ORDER_STATUSES = ORDER_STATUSES.filter((status) => status.value !== 'PENDING_PAYMENT')
 
-export const getOrderStatusBadge = (status) =>
-  ORDER_STATUS_BADGE_MAP[status] || {
-    color: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400',
-    icon: HiOutlineClock,
+export const getOrderStatusBadge = (target) => {
+  if (target && typeof target === 'object') {
+    const activeReturn = target.returnInfo
+    if (activeReturn && activeReturn.status && activeReturn.status !== 'CANCELLED') {
+      return RETURN_STATUS_BADGE_MAP[activeReturn.status] || {
+        color: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
+        icon: HiOutlineClock,
+      }
+    }
+    const status = target.status
+    return ORDER_STATUS_BADGE_MAP[status] || {
+      color: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400',
+      icon: HiOutlineClock,
+    }
   }
 
-export const getOrderStatusLabel = (status) => ORDER_STATUS_LABEL_MAP[status] || status
+  const status = target
+  return (
+    RETURN_STATUS_BADGE_MAP[status] ||
+    ORDER_STATUS_BADGE_MAP[status] || {
+      color: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400',
+      icon: HiOutlineClock,
+    }
+  )
+}
+
+export const getOrderStatusLabel = (target) => {
+  if (target && typeof target === 'object') {
+    const activeReturn = target.returnInfo
+    if (activeReturn && activeReturn.status && activeReturn.status !== 'CANCELLED') {
+      return RETURN_STATUS_LABEL_MAP[activeReturn.status] || activeReturn.status
+    }
+    return ORDER_STATUS_LABEL_MAP[target.status] || target.status
+  }
+  return RETURN_STATUS_LABEL_MAP[target] || ORDER_STATUS_LABEL_MAP[target] || target
+}
 
 export const formatOrderCurrency = (amount) =>
   new Intl.NumberFormat('vi-VN', {

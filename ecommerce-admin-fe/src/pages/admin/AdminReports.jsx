@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import {
   HiOutlineExclamationCircle,
   HiOutlineShieldCheck,
@@ -22,7 +23,10 @@ import AdminReportsTab from './components/reports/AdminReportsTab'
 import AdminAppealsTab from './components/reports/AdminAppealsTab'
 import AdminEscrowTab from './components/reports/AdminEscrowTab'
 import AdminReportDetailModal from './components/reports/AdminReportDetailModal'
+import AdminEscrowDetailModal from './components/reports/AdminEscrowDetailModal'
 import AdminActionModal from './components/reports/AdminActionModal'
+import orderService from '../../services/order'
+import returnService from '../../services/returnService'
 
 // Helper tách và gom tất cả link ảnh từ các nguồn (hỗ trợ nhiều ảnh phân cách bằng dấu phẩy)
 export const parseImages = (...sources) => {
@@ -40,10 +44,26 @@ export const parseImages = (...sources) => {
   return urls
 }
 
+const VALID_TABS = ['REPORTS', 'APPEALS', 'ESCROW']
+
 export default function AdminReports() {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
-  const [activeTab, setActiveTab] = useState('REPORTS') // 'REPORTS' | 'APPEALS' | 'ESCROW'
+  const [searchParams, setSearchParams] = useSearchParams()
+  const tabParam = searchParams.get('tab')?.toUpperCase()
+  const [activeTab, setActiveTab] = useState(VALID_TABS.includes(tabParam) ? tabParam : 'REPORTS')
   const [loading, setLoading] = useState(true)
+
+  // Đồng bộ activeTab khi query param trên URL thay đổi (Back / Forward)
+  useEffect(() => {
+    if (tabParam && VALID_TABS.includes(tabParam) && tabParam !== activeTab) {
+      setActiveTab(tabParam)
+    }
+  }, [tabParam, activeTab])
+
+  const handleTabChange = (key) => {
+    setActiveTab(key)
+    setSearchParams({ tab: key.toLowerCase() }, { replace: true })
+  }
 
   // Data states
   const [reports, setReports] = useState([])
@@ -67,30 +87,53 @@ export default function AdminReports() {
     rawItem: null,
   })
 
+  // Modal xem chi tiết Ký quỹ Escrow
+  const [escrowDetailModal, setEscrowDetailModal] = useState({
+    isOpen: false,
+    loading: false,
+    item: null,
+    order: null,
+    returnDetails: null,
+  })
+
   const fetchData = useCallback(async () => {
     try {
       setLoading(true)
-      if (activeTab === 'REPORTS' || activeTab === 'APPEALS') {
-        const [reportRes, appealRes] = await Promise.all([
-          requestService.getAdminRequests({ type: 'REPORT' }),
-          requestService.getAdminRequests({ type: 'APPEAL' }),
-        ])
-        const reportList = reportRes?.content || (Array.isArray(reportRes) ? reportRes : [])
-        const appealList = appealRes?.content || (Array.isArray(appealRes) ? appealRes : [])
-        setReports(reportList)
-        setAppeals(appealList)
-      } else if (activeTab === 'ESCROW') {
-        const res = await escrowService.getAdminEscrows()
-        const list = res?.content || (Array.isArray(res) ? res : [])
-        setEscrows(list)
-      }
+      // Gọi đồng thời cả 3 nguồn: Báo cáo, Kháng cáo, Ký quỹ Escrow
+      // đảm bảo khi reload trang ở bất kỳ tab nào dữ liệu và badge số lượng đều đồng bộ ngay lập tức
+      const [reportRes, appealRes, escrowRes] = await Promise.all([
+        requestService.getAdminRequests({ type: 'REPORT' }),
+        requestService.getAdminRequests({ type: 'APPEAL' }),
+        escrowService.getAdminEscrows(),
+      ])
+      const reportList = reportRes?.content || (Array.isArray(reportRes) ? reportRes : [])
+      const appealList = appealRes?.content || (Array.isArray(appealRes) ? appealRes : [])
+      const rawEscrows = escrowRes?.content || (Array.isArray(escrowRes) ? escrowRes : [])
+
+      setReports(reportList)
+      setAppeals(appealList)
+
+      // Lấy thông tin hoàn hàng cho danh sách escrow để hiển thị badge và kiểm tra quyền can thiệp của Admin
+      const enrichedEscrows = await Promise.all(
+        rawEscrows.map(async (item) => {
+          const orderId = item.orderId || item.order?.id
+          if (!orderId) return item
+          try {
+            const ret = await returnService.getReturnByOrderId(orderId)
+            return { ...item, orderReturn: ret || null }
+          } catch {
+            return { ...item, orderReturn: null }
+          }
+        })
+      )
+      setEscrows(enrichedEscrows)
     } catch (err) {
       console.error('Lỗi tải dữ liệu kiểm duyệt:', err)
       toast.error('Không thể tải danh sách dữ liệu kiểm duyệt.')
     } finally {
       setLoading(false)
     }
-  }, [activeTab])
+  }, [])
 
   useEffect(() => {
     fetchData()
@@ -119,6 +162,49 @@ export default function AdminReports() {
     }
   }
 
+  const handleOpenEscrowDetail = async (item) => {
+    const orderId = item.orderId || item.order?.id
+    setEscrowDetailModal({
+      isOpen: true,
+      loading: true,
+      item,
+      order: null,
+      returnDetails: null,
+    })
+    try {
+      let order = null
+      let returnDetails = null
+      let currentItem = item
+      if (orderId) {
+        const [orderRes, returnRes, settlementRes] = await Promise.allSettled([
+          orderService.getOrderById(orderId),
+          returnService.getReturnByOrderId(orderId),
+          escrowService.getSettlementByOrderId(orderId),
+        ])
+        if (orderRes.status === 'fulfilled') {
+          order = orderRes.value
+        }
+        if (returnRes.status === 'fulfilled') {
+          returnDetails = returnRes.value
+        }
+        if (settlementRes.status === 'fulfilled' && settlementRes.value) {
+          currentItem = { ...item, settlement: settlementRes.value }
+        }
+      }
+      setEscrowDetailModal({
+        isOpen: true,
+        loading: false,
+        item: currentItem,
+        order,
+        returnDetails,
+      })
+    } catch (err) {
+      console.error('Lỗi tải chi tiết ký quỹ:', err)
+      toast.error('Không thể tải chi tiết ký quỹ.')
+      setEscrowDetailModal((prev) => ({ ...prev, loading: false }))
+    }
+  }
+
   const handleActionConfirm = async () => {
     const { type, item, note } = actionModal
     if (!item) return
@@ -136,8 +222,9 @@ export default function AdminReports() {
       const requestId = item.requestId || item.id
 
       if (type === 'REPORT_APPROVE') {
-        await reportService.handleReport(requestId, 'APPROVE', trimmedNote)
-        toast.success('Đã xác nhận vi phạm! Hệ thống đã tự động áp dụng chế tài & tính chu kỳ hoàn lương 30 ngày.')
+        const resolution = actionModal.resolutionType || 'REFUND_ONLY'
+        await reportService.handleReport(requestId, 'APPROVE', trimmedNote, resolution)
+        toast.success('Đã xác nhận vi phạm! Hệ thống đã ghi nhận phương án giải quyết và mở thời hạn kháng cáo 72h cho Shop.')
       } else if (type === 'REPORT_REJECT') {
         await reportService.handleReport(requestId, 'REJECT', trimmedNote)
         toast.success('Đã bác bỏ báo cáo vi phạm.')
@@ -153,8 +240,18 @@ export default function AdminReports() {
         toast.success('Đã kích hoạt hoàn tiền ký quỹ Escrow về Ví người mua thành công!')
       } else if (type === 'ESCROW_RELEASE') {
         const orderId = item.orderId || item.order?.id
-        await escrowService.releaseByOrder(orderId)
+        await escrowService.releaseByOrder(orderId, trimmedNote || 'Ban Quản Trị giải ngân ký quỹ cho Shop')
         toast.success('Đã giải ngân tiền ký quỹ về Ví người bán!')
+      } else if (type === 'ESCROW_SPLIT') {
+        const orderId = item.orderId || item.order?.id
+        const buyerPercentage = actionModal.buyerPercentage != null ? Number(actionModal.buyerPercentage) : 50
+        const sellerPercentage = 100 - buyerPercentage
+        await escrowService.splitSettleByOrder(orderId, {
+          buyerPercentage,
+          sellerPercentage,
+          note: trimmedNote || `Admin phân chia ký quỹ: Người mua ${buyerPercentage}%, Người bán ${sellerPercentage}%`,
+        })
+        toast.success(`Đã phân chia ký quỹ thành công: Người mua ${buyerPercentage}%, Người bán ${sellerPercentage}%!`)
       }
 
       setActionModal({ isOpen: false, type: '', item: null, note: '' })
@@ -267,7 +364,7 @@ export default function AdminReports() {
           return (
             <button
               key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
+              onClick={() => handleTabChange(tab.key)}
               className={cn(
                 'flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all',
                 isActive
@@ -318,6 +415,7 @@ export default function AdminReports() {
             isDark={isDark}
             formatVND={formatVND}
             setActionModal={setActionModal}
+            handleOpenEscrowDetail={handleOpenEscrowDetail}
           />
         )}
       </div>
@@ -339,8 +437,19 @@ export default function AdminReports() {
         actionModal={actionModal}
         setActionModal={setActionModal}
         isDark={isDark}
+        formatVND={formatVND}
         submitting={submitting}
         handleActionConfirm={handleActionConfirm}
+      />
+
+      {/* Escrow Detail Modal (Xem Chi Tiết Ký Quỹ & Đơn Hàng) */}
+      <AdminEscrowDetailModal
+        escrowDetailModal={escrowDetailModal}
+        setEscrowDetailModal={setEscrowDetailModal}
+        isDark={isDark}
+        formatVND={formatVND}
+        copyToClipboard={copyToClipboard}
+        setActionModal={setActionModal}
       />
     </div>
   )

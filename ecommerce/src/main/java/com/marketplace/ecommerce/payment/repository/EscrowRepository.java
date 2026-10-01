@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -29,4 +30,6 @@ public interface EscrowRepository extends JpaRepository<Escrow, UUID> {
                 order by e.createdAt desc
             """)
     Page<Escrow> adminList(@Param("status") EscrowStatus status, Pageable pageable);
+
+    List<Escrow> findByOrderIdIn(List<UUID> orderIds);
 }

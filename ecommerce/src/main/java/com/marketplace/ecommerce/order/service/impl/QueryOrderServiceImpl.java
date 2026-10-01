@@ -9,16 +9,21 @@ import com.marketplace.ecommerce.order.entity.Order;
 import com.marketplace.ecommerce.order.repository.OrderRepository;
 import com.marketplace.ecommerce.order.service.QueryOrderService;
 import com.marketplace.ecommerce.order.valueObjects.OrderStatus;
+import com.marketplace.ecommerce.order.entity.OrderReturn;
 import com.marketplace.ecommerce.request.service.OrderDisputeService;
 import com.marketplace.ecommerce.shop.entity.Shop;
 import com.marketplace.ecommerce.shop.repository.ShopRepository;
+import com.marketplace.ecommerce.order.repository.OrderReturnRepository;
+import com.marketplace.ecommerce.order.dto.response.OrderReturnResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +33,7 @@ public class QueryOrderServiceImpl implements QueryOrderService {
     private final ShopRepository shopRepository;
     private final UserRepository userRepository;
     private final OrderDisputeService orderDisputeService;
+    private final OrderReturnRepository orderReturnRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -63,7 +69,8 @@ public class QueryOrderServiceImpl implements QueryOrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new CustomException("Order not found."));
 
-        return OrderResponse.from(order, orderDisputeService.getDisputeInfo(order.getId()));
+        return OrderResponse.from(order, orderDisputeService.getDisputeInfo(order.getId()),
+                getReturnInfo(order.getId()));
     }
 
     @Override
@@ -76,7 +83,9 @@ public class QueryOrderServiceImpl implements QueryOrderService {
 
         List<UUID> ids = orders.stream().map(Order::getId).toList();
         var disputeMap = orderDisputeService.getDisputeInfoBatch(ids);
-        return orders.stream().map(o -> OrderResponse.from(o, disputeMap.get(o.getId()))).toList();
+        var returnMap = getReturnInfoBatch(ids);
+        return orders.stream().map(o -> OrderResponse.from(o, disputeMap.get(o.getId()), returnMap.get(o.getId())))
+                .toList();
     }
 
     @Override
@@ -90,7 +99,8 @@ public class QueryOrderServiceImpl implements QueryOrderService {
             throw new CustomException("Forbidden");
         }
 
-        return OrderResponse.from(order, orderDisputeService.getDisputeInfo(order.getId()));
+        return OrderResponse.from(order, orderDisputeService.getDisputeInfo(order.getId()),
+                getReturnInfo(order.getId()));
     }
 
     @Override
@@ -105,7 +115,8 @@ public class QueryOrderServiceImpl implements QueryOrderService {
             throw new CustomException("Order not found.");
         }
 
-        return OrderResponse.from(order, orderDisputeService.getDisputeInfo(order.getId()));
+        return OrderResponse.from(order, orderDisputeService.getDisputeInfo(order.getId()),
+                getReturnInfo(order.getId()));
     }
 
     @Override
@@ -118,7 +129,9 @@ public class QueryOrderServiceImpl implements QueryOrderService {
 
         List<UUID> ids = orders.stream().map(Order::getId).toList();
         var disputeMap = orderDisputeService.getDisputeInfoBatch(ids);
-        return orders.stream().map(o -> OrderResponse.from(o, disputeMap.get(o.getId()))).toList();
+        var returnMap = getReturnInfoBatch(ids);
+        return orders.stream().map(o -> OrderResponse.from(o, disputeMap.get(o.getId()), returnMap.get(o.getId())))
+                .toList();
     }
 
     @Override
@@ -132,7 +145,27 @@ public class QueryOrderServiceImpl implements QueryOrderService {
 
         List<UUID> ids = orders.stream().map(Order::getId).toList();
         var disputeMap = orderDisputeService.getDisputeInfoBatch(ids);
-        return orders.stream().map(o -> OrderResponse.from(o, disputeMap.get(o.getId()))).toList();
+        var returnMap = getReturnInfoBatch(ids);
+        return orders.stream().map(o -> OrderResponse.from(o, disputeMap.get(o.getId()), returnMap.get(o.getId())))
+                .toList();
+    }
+
+    private Map<UUID, OrderReturnResponse> getReturnInfoBatch(List<UUID> orderIds) {
+        if (orderIds == null || orderIds.isEmpty()) {
+            return Map.of();
+        }
+        return orderReturnRepository.findByOrderIdIn(orderIds).stream()
+                .filter(r -> r.getOrder() != null && r.getOrder().getId() != null)
+                .collect(Collectors.toMap(
+                        r -> r.getOrder().getId(),
+                        OrderReturnResponse::from,
+                        (a, b) -> a));
+    }
+
+    private OrderReturnResponse getReturnInfo(UUID orderId) {
+        return orderReturnRepository.findByOrderId(orderId)
+                .map(OrderReturnResponse::from)
+                .orElse(null);
     }
 
     private User requireUserByAccountId(UUID accountId) {

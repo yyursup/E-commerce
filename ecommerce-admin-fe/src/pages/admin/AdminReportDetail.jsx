@@ -17,6 +17,7 @@ export default function AdminReportDetail() {
   const [loading, setLoading] = useState(false)
   const [actionLoading, setActionLoading] = useState(false)
   const [responseText, setResponseText] = useState('')
+  const [resolutionType, setResolutionType] = useState('REFUND_ONLY')
 
   const fetchDetail = useCallback(async () => {
     if (!reportId) return
@@ -47,7 +48,7 @@ export default function AdminReportDetail() {
   const handleApprove = async () => {
     try {
       setActionLoading(true)
-      await reportService.handleReport(reportId, 'APPROVE', responseText.trim() || null)
+      await reportService.handleReport(reportId, 'APPROVE', responseText.trim() || null, resolutionType)
       toast.success('Đã xác nhận vi phạm và áp dụng hình phạt thành công!')
       setResponseText('')
       fetchDetail()
@@ -106,6 +107,8 @@ export default function AdminReportDetail() {
               isDark={isDark}
               responseText={responseText}
               setResponseText={setResponseText}
+              resolutionType={resolutionType}
+              setResolutionType={setResolutionType}
               requestType={requestType}
               isPending={isPending}
               actionLoading={actionLoading}

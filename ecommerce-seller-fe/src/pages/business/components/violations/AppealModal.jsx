@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   HiOutlineExternalLink,
@@ -5,8 +6,30 @@ import {
   HiOutlineUpload,
   HiX,
   HiOutlineShieldCheck,
+  HiOutlineClock,
+  HiOutlineExclamationCircle,
+  HiCheck,
 } from 'react-icons/hi'
 import { cn } from '../../../../lib/cn'
+
+function parseViolationReason(reasonStr) {
+  if (!reasonStr) return { tag: null, text: 'Vi phạm tiêu chuẩn cộng đồng' }
+  const match = reasonStr.match(/^\[(?:Khiếu nại đơn hàng\s+[\w-]+|\w+)?\s*-?\s*([^\]]+)\]:\s*(.*)$/)
+  if (match) {
+    return {
+      tag: match[1].trim(),
+      text: match[2].trim() || 'Người mua khiếu nại vi phạm',
+    }
+  }
+  const matchSimple = reasonStr.match(/^\[([^\]]+)\]:\s*(.*)$/)
+  if (matchSimple) {
+    return {
+      tag: matchSimple[1].trim(),
+      text: matchSimple[2].trim(),
+    }
+  }
+  return { tag: null, text: reasonStr }
+}
 
 export default function AppealModal({
   showAppealModal,
@@ -25,6 +48,12 @@ export default function AppealModal({
   handleImageUpload,
   submitting,
 }) {
+  useEffect(() => {
+    if (showAppealModal && !selectedViolation && appealableViolations.length > 0) {
+      setSelectedViolation(appealableViolations[0])
+    }
+  }, [showAppealModal, selectedViolation, appealableViolations, setSelectedViolation])
+
   return (
     <AnimatePresence>
       {showAppealModal && (
@@ -35,7 +64,7 @@ export default function AppealModal({
             exit={{ opacity: 0, scale: 0.96, y: 16 }}
             transition={{ type: 'spring', damping: 25, stiffness: 350 }}
             className={cn(
-              'w-full max-w-lg rounded-[28px] border shadow-2xl relative max-h-[92vh] overflow-hidden flex flex-col',
+              'w-full max-w-xl rounded-[28px] border shadow-2xl relative max-h-[92vh] overflow-hidden flex flex-col',
               isDark ? 'border-slate-800 bg-slate-900 text-white shadow-amber-950/20' : 'border-stone-200 bg-white text-stone-900 shadow-stone-400/20'
             )}
           >
@@ -71,50 +100,127 @@ export default function AppealModal({
             <form onSubmit={handleSubmitAppeal} className="p-5 sm:p-6 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
               {/* Chọn vi phạm cần kháng cáo */}
               <div>
-                <label className="block text-xs font-bold mb-1.5 uppercase tracking-wider text-stone-500 dark:text-slate-400">
-                  Chọn vi phạm cần kháng cáo <span className="text-rose-500">*</span>
-                </label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-slate-400">
+                    Sự vụ vi phạm cần kháng cáo <span className="text-rose-500">*</span>
+                  </label>
+                  {appealableViolations.length > 1 && (
+                    <span className="text-[11px] font-semibold text-amber-500 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/20">
+                      {appealableViolations.length} vi phạm
+                    </span>
+                  )}
+                </div>
+
                 {appealableViolations.length > 0 ? (
-                  <select
-                    value={selectedViolation?.reportId || ''}
-                    onChange={(e) => {
-                      const found = appealableViolations.find((v) => String(v.reportId) === e.target.value)
-                      setSelectedViolation(found || null)
-                    }}
-                    className={cn(
-                      'w-full rounded-2xl px-3.5 py-2.5 text-xs border outline-none font-medium transition focus:ring-2 focus:ring-amber-500/20',
-                      isDark ? 'border-slate-800 bg-slate-800 text-white' : 'border-stone-200 bg-white text-stone-900'
-                    )}
-                  >
-                    {appealableViolations.map((v) => (
-                      <option key={v.reportId} value={v.reportId}>
-                        [{v.targetType === 'SHOP' ? 'Gian hàng' : v.targetType === 'ORDER' ? 'Đơn hàng' : 'Sản phẩm'}] {v.targetName} - {v.reason || 'Báo cáo'} ({v.createdAt ? new Date(v.createdAt).toLocaleDateString('vi-VN') : 'Gần đây'})
-                      </option>
-                    ))}
-                  </select>
+                  <div className="space-y-2 max-h-56 overflow-y-auto custom-scrollbar pr-0.5">
+                    {appealableViolations.map((v) => {
+                      const isSelected = selectedViolation && String(selectedViolation.reportId) === String(v.reportId)
+                      const { tag, text } = parseViolationReason(v.reason)
+                      const formattedDate = v.createdAt
+                        ? new Date(v.createdAt).toLocaleDateString('vi-VN', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                          })
+                        : null
+
+                      return (
+                        <div
+                          key={v.reportId}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => setSelectedViolation(v)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault()
+                              setSelectedViolation(v)
+                            }
+                          }}
+                          className={cn(
+                            'w-full text-left p-3.5 rounded-2xl border transition-all cursor-pointer relative flex items-start gap-3 select-none',
+                            isSelected
+                              ? 'border-amber-500 bg-amber-500/10 shadow-sm ring-1 ring-amber-500/30'
+                              : isDark
+                                ? 'border-slate-800 bg-slate-800/40 hover:border-slate-700 hover:bg-slate-800/70'
+                                : 'border-stone-200 bg-stone-50/70 hover:border-stone-300 hover:bg-stone-100/70'
+                          )}
+                        >
+                          {/* Radio indicator */}
+                          <div className="pt-0.5 shrink-0">
+                            <div
+                              className={cn(
+                                'h-4 w-4 rounded-full border flex items-center justify-center transition-all',
+                                isSelected
+                                  ? 'border-amber-500 bg-amber-500 text-stone-950'
+                                  : isDark
+                                    ? 'border-slate-600 bg-slate-800'
+                                    : 'border-stone-300 bg-white'
+                              )}
+                            >
+                              {isSelected && <HiCheck className="h-2.5 w-2.5 stroke-[3]" />}
+                            </div>
+                          </div>
+
+                          {/* Content */}
+                          <div className="flex-1 min-w-0 space-y-1.5">
+                            <div className="flex items-center justify-between gap-2 flex-wrap">
+                              <div className="flex items-center gap-2 flex-wrap min-w-0">
+                                <span
+                                  className={cn(
+                                    'px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider shrink-0',
+                                    v.targetType === 'SHOP'
+                                      ? 'bg-purple-500/15 text-purple-400 border border-purple-500/20'
+                                      : v.targetType === 'ORDER'
+                                        ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20'
+                                        : 'bg-blue-500/15 text-blue-400 border border-blue-500/20'
+                                  )}
+                                >
+                                  {v.targetType === 'SHOP'
+                                    ? 'Gian hàng'
+                                    : v.targetType === 'ORDER'
+                                      ? 'Đơn hàng'
+                                      : 'Sản phẩm'}
+                                </span>
+                                <span
+                                  className={cn(
+                                    'text-xs font-bold break-all',
+                                    isDark ? 'text-white' : 'text-stone-900'
+                                  )}
+                                >
+                                  {v.targetName}
+                                </span>
+                              </div>
+
+                              {formattedDate && (
+                                <div className="flex items-center gap-1 text-[11px] text-stone-400 shrink-0">
+                                  <HiOutlineClock className="h-3 w-3" />
+                                  <span>{formattedDate}</span>
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="text-xs leading-relaxed break-words">
+                              {tag && (
+                                <span className="inline-block px-2 py-0.5 rounded-md text-[10px] font-semibold bg-rose-500/15 text-rose-400 border border-rose-500/20 mr-1.5 mb-1">
+                                  {tag}
+                                </span>
+                              )}
+                              <span className={isDark ? 'text-slate-300' : 'text-stone-600'}>
+                                {text}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
                 ) : (
-                  <p className="text-xs text-rose-500">
-                    Không có vi phạm nào đủ điều kiện kháng cáo vào lúc này.
-                  </p>
+                  <div className="p-3.5 rounded-2xl border border-rose-500/20 bg-rose-500/10 text-rose-500 text-xs flex items-center gap-2">
+                    <HiOutlineExclamationCircle className="h-4 w-4 shrink-0" />
+                    <span>Không có vi phạm nào đủ điều kiện kháng cáo vào lúc này.</span>
+                  </div>
                 )}
               </div>
-
-              {/* Thông tin đối tượng được hiển thị trực quan */}
-              {selectedViolation && (
-                <div className={cn(
-                  'p-3.5 rounded-2xl border text-xs space-y-1.5',
-                  isDark ? 'border-slate-800 bg-slate-800/40 text-slate-300' : 'border-amber-200 bg-amber-50/60 text-stone-800'
-                )}>
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-amber-600 dark:text-amber-400">Đối tượng:</span>
-                    <span className="font-bold">{selectedViolation.targetName}</span>
-                  </div>
-                  <div>
-                    <span className="text-stone-400">Nội dung ghi nhận vi phạm: </span>
-                    <span>{selectedViolation.reason || 'Vi phạm tiêu chuẩn cộng đồng'}</span>
-                  </div>
-                </div>
-              )}
 
               <div>
                 <div className="flex items-center justify-between mb-1.5">

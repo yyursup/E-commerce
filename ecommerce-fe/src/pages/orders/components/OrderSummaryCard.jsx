@@ -106,7 +106,26 @@ export default function OrderSummaryCard({
         </div>
 
         {/* Payment Status / Escrow Protection Section */}
-        {!['PENDING_PAYMENT', 'CANCELLED', 'REFUNDED'].includes(order.status) && (
+        {(order.status === 'REFUNDED' || order.returnInfo?.status === 'COMPLETED') ? (
+          <div className="border-t pt-4 mt-4">
+            <h3 className={cn('text-sm font-semibold mb-3', isDark ? 'text-slate-300' : 'text-stone-700')}>
+              Trạng thái hoàn tiền
+            </h3>
+            <div className="flex items-center gap-3 rounded-xl p-4 bg-blue-500/10 border border-blue-500/25">
+              <div className="p-2 rounded-full bg-blue-500/15 shrink-0 text-blue-500">
+                <HiOutlineShieldCheck className="h-4 w-4" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">
+                  Đã hoàn tiền về ví số dư tài khoản
+                </p>
+                <p className={cn('mt-0.5 text-xs', isDark ? 'text-slate-400' : 'text-stone-500')}>
+                  Số tiền hoàn: <strong className="text-blue-600 dark:text-blue-400">{formatCurrency(order.total)}</strong>
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : !['PENDING_PAYMENT', 'CANCELLED'].includes(order.status) && (
           <div className="border-t pt-4 mt-4">
             <h3 className={cn('text-sm font-semibold mb-3', isDark ? 'text-slate-300' : 'text-stone-700')}>
               {order.paymentMethod === 'COD' ? 'Phương thức & Thanh toán' : 'Trạng thái thanh toán (Ký quỹ Escrow)'}
@@ -126,7 +145,7 @@ export default function OrderSummaryCard({
                   <p className={cn('text-sm font-semibold', isDark ? 'text-emerald-400' : 'text-emerald-700')}>
                     {order.status === 'COMPLETED'
                       ? 'Đã thanh toán tiền mặt khi nhận hàng'
-                      : 'Thanh toán khi nhận hàng (COD)'}
+                      : 'Thanh toán khi nhận hàng'}
                   </p>
                   <p className={cn('mt-1 text-xs', isDark ? 'text-slate-400' : 'text-stone-500')}>
                     {order.status === 'COMPLETED'

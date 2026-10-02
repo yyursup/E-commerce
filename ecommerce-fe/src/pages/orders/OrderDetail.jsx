@@ -189,10 +189,10 @@ export default function OrderDetail() {
                     )}
                   >
                     {order.paymentMethod === 'VNPAY'
-                      ? 'VNPay (Ký quỹ sàn)'
+                      ? 'VNPay'
                       : order.paymentMethod === 'WALLET'
-                        ? 'Ví số dư (Ký quỹ sàn)'
-                        : 'COD (Thu hộ khi nhận)'}
+                        ? 'Ví sàn'
+                        : 'COD'}
                   </span>
                 </div>
                 <p className={cn('text-xs sm:text-sm mt-1', isDark ? 'text-slate-400' : 'text-stone-500')}>

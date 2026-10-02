@@ -38,6 +38,11 @@ export default function AdminOrderDetailCard({ order, isDark }) {
               >
                 {order.paymentMethod === 'VNPAY' ? 'VNPAY' : order.paymentMethod === 'WALLET' ? 'Ví sàn' : 'COD'}
               </span>
+              {order.status === 'REFUNDED' && (
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold border border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                  Hoàn về Ví số dư người mua
+                </span>
+              )}
             </div>
             <p className={cn('mt-1 text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
               Đặt ngày {formatAdminOrderDate(order.createdAt)}
@@ -147,20 +152,27 @@ export default function AdminOrderDetailCard({ order, isDark }) {
             <span className={isDark ? 'text-slate-400' : 'text-stone-600'}>
               Phương thức thanh toán
             </span>
-            <span className={cn(
-              'px-2 py-0.5 rounded text-xs font-bold border',
-              order.paymentMethod === 'VNPAY'
-                ? 'border-blue-500/30 bg-blue-500/10 text-blue-500'
-                : order.paymentMethod === 'WALLET'
-                  ? 'border-purple-500/30 bg-purple-500/10 text-purple-600 dark:text-purple-400'
-                  : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-            )}>
-              {order.paymentMethod === 'VNPAY'
-                ? 'VNPAY (Trực tuyến)'
-                : order.paymentMethod === 'WALLET'
-                  ? 'Ví sàn (Ký quỹ)'
-                  : 'COD (Tiền mặt khi nhận)'}
-            </span>
+            <div className="text-right space-y-0.5">
+              <span className={cn(
+                'px-2 py-0.5 rounded text-xs font-bold border',
+                order.paymentMethod === 'VNPAY'
+                  ? 'border-blue-500/30 bg-blue-500/10 text-blue-500'
+                  : order.paymentMethod === 'WALLET'
+                    ? 'border-purple-500/30 bg-purple-500/10 text-purple-600 dark:text-purple-400'
+                    : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+              )}>
+                {order.paymentMethod === 'VNPAY'
+                  ? 'VNPAY'
+                  : order.paymentMethod === 'WALLET'
+                    ? 'Ví sàn'
+                    : 'COD'}
+              </span>
+              {order.status === 'REFUNDED' && (
+                <span className="block text-[11px] font-semibold text-blue-600 dark:text-blue-400">
+                  ↳ Đã hoàn tiền vào Ví người mua
+                </span>
+              )}
+            </div>
           </div>
           {Number(order.shopDiscountAmount) > 0 && (
             <div className="flex justify-between text-rose-600 dark:text-rose-400">
@@ -226,18 +238,32 @@ export default function AdminOrderDetailCard({ order, isDark }) {
               </span>
             </div>
             <div className="flex justify-between text-xs text-stone-500 dark:text-slate-400">
-              <span>Thực nhận của Shop (sau hoa hồng & voucher shop):</span>
-              <span className="font-bold text-amber-600 dark:text-amber-400">
-                {formatAdminOrderCurrency(
-                  Math.max(
-                    0,
-                    Number(order.subtotal || 0) -
+              <span>{order.status === 'REFUNDED' ? 'Thực nhận của Shop (Đã hoàn tiền):' : 'Thực nhận của Shop (sau hoa hồng & voucher shop):'}</span>
+              <span className={cn('font-bold', order.status === 'REFUNDED' ? 'text-stone-400 line-through' : 'text-amber-600 dark:text-amber-400')}>
+                {order.status === 'REFUNDED'
+                  ? formatAdminOrderCurrency(0)
+                  : formatAdminOrderCurrency(
+                    Math.max(
+                      0,
+                      Number(order.subtotal || 0) -
                       Number(order.shopDiscountAmount || 0) -
                       Number(order.platformCommission || 0)
-                  )
-                )}
+                    )
+                  )}
               </span>
             </div>
+            {order.status === 'REFUNDED' && (
+              <div className="rounded-xl p-3 bg-blue-500/10 border border-blue-500/20 text-xs mt-3">
+                <p className="font-bold text-blue-600 dark:text-blue-400">
+                  Thông tin hoàn tiền Ký quỹ Escrow:
+                </p>
+                <p className={cn('mt-0.5', isDark ? 'text-slate-300' : 'text-stone-600')}>
+                  {order.paymentMethod === 'COD'
+                    ? 'Đơn hàng ban đầu thanh toán bằng COD. Hệ thống Ký quỹ Escrow đã hoàn trả 100% số tiền vào Ví số dư tài khoản của Người mua.'
+                    : 'Toàn bộ số tiền đã được hoàn trả thành công từ Ký quỹ Escrow về Ví số dư của Người mua.'}
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>

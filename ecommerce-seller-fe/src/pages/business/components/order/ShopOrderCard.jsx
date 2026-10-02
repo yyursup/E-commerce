@@ -70,53 +70,6 @@ export default function ShopOrderCard({ order, isDark, onQuickStatusUpdate, acti
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
-          {order.ghnOrderCode ? (
-            <button
-              type="button"
-              onClick={handleCopyGhn}
-              title="Nhấp để sao chép mã vận đơn GHN"
-              className={cn(
-                'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-semibold border transition-all',
-                isDark
-                  ? 'border-indigo-500/30 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20'
-                  : 'border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
-              )}
-            >
-              <HiOutlineTruck className="h-3.5 w-3.5" />
-              <span>GHN: {order.ghnOrderCode}</span>
-              {copiedGhn ? (
-                <HiOutlineCheck className="h-3.5 w-3.5 text-emerald-500" />
-              ) : (
-                <HiOutlineClipboardCopy className="h-3.5 w-3.5 opacity-60" />
-              )}
-            </button>
-          ) : (
-            <span
-              className={cn(
-                'px-2 py-0.5 rounded text-[11px] font-medium',
-                isDark ? 'bg-slate-800 text-slate-400' : 'bg-stone-100 text-stone-500'
-              )}
-            >
-              Chưa có mã GHN
-            </span>
-          )}
-
-          <span
-            className={cn(
-              'px-2 py-0.5 rounded text-[11px] font-bold border',
-              order.paymentMethod === 'VNPAY'
-                ? 'border-blue-500/30 bg-blue-500/10 text-blue-500'
-                : order.paymentMethod === 'WALLET'
-                  ? 'border-purple-500/30 bg-purple-500/10 text-purple-600 dark:text-purple-400'
-                  : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-            )}
-          >
-            {order.paymentMethod === 'VNPAY' ? 'VNPAY' : order.paymentMethod === 'WALLET' ? 'Ví sàn' : 'COD'}
-          </span>
-
-          <OrderStatusBadge status={order.status} returnInfo={order.returnInfo} />
-        </div>
       </div>
 
       {/* 2. Card Content: Product Previews & Customer Address */}

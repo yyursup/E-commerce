@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import {
   HiOutlineTruck,
   HiOutlineClock,
@@ -8,49 +8,20 @@ import {
   HiOutlineXCircle,
   HiOutlineShieldCheck,
   HiOutlinePhotograph,
-  HiOutlineArchive,
-  HiOutlineUpload,
-  HiOutlineTrash,
-  HiOutlineExternalLink,
 } from 'react-icons/hi'
 import toast from 'react-hot-toast'
 import { cn } from '../../../../lib/cn'
 import returnService from '../../../../services/returnService'
 import { useThemeStore } from '../../../../store/useThemeStore'
 import fileService from '../../../../services/fileService'
-
-const RETURN_STATUS_MAP = {
-  WAITING_FOR_SHIPMENT: {
-    label: 'Khách đang chuẩn bị gửi hàng (Hạn 3 ngày)',
-    color: 'bg-amber-500/10 text-amber-500 border-amber-500/30',
-    icon: HiOutlineClock,
-  },
-  SHIPPED: {
-    label: 'Đang giao hàng hoàn',
-    color: 'bg-blue-500/10 text-blue-500 border-blue-500/30',
-    icon: HiOutlineTruck,
-  },
-  RETURNED: {
-    label: 'Đã giao hàng hoàn trả',
-    color: 'bg-purple-500/10 text-purple-500 border-purple-500/30',
-    icon: HiOutlineCheckCircle,
-  },
-  COMPLETED: {
-    label: 'Đã hoàn tiền',
-    color: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30',
-    icon: HiOutlineCheckCircle,
-  },
-  DISPUTED: {
-    label: 'Shop đang khiếu nại kiện hàng',
-    color: 'bg-rose-500/10 text-rose-500 border-rose-500/30',
-    icon: HiOutlineExclamation,
-  },
-  CANCELLED: {
-    label: 'Đã hủy trả hàng (Khách không gửi)',
-    color: 'bg-stone-500/10 text-stone-500 border-stone-500/30',
-    icon: HiOutlineXCircle,
-  },
-}
+import {
+  getReturnStatusBadge,
+  getReturnStatusLabel,
+  formatOrderDate,
+  formatOrderCurrency,
+} from '../../../../lib/orderStatus'
+import SellerReturnCompleteModal from './SellerReturnCompleteModal'
+import SellerReturnDisputeModal from './SellerReturnDisputeModal'
 
 export default function SellerReturnSection({ returnInfo, isDark: isDarkProp, onRefresh }) {
   const storeTheme = useThemeStore((s) => s.theme)
@@ -72,23 +43,9 @@ export default function SellerReturnSection({ returnInfo, isDark: isDarkProp, on
 
   if (!returnInfo) return null
 
-  const statusConfig = RETURN_STATUS_MAP[returnInfo.status] || {
-    label: returnInfo.status,
-    color: 'bg-stone-500/10 text-stone-500 border-stone-500/30',
-    icon: HiOutlineClock,
-  }
-  const StatusIcon = statusConfig.icon
-
-  const formatDateTime = (dateStr) => {
-    if (!dateStr) return '-'
-    return new Date(dateStr).toLocaleString('vi-VN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
-  }
+  const statusBadge = getReturnStatusBadge(returnInfo.status)
+  const StatusIcon = statusBadge.icon
+  const statusLabel = getReturnStatusLabel(returnInfo.status)
 
   const isVideoFile = (file) => {
     return file.type?.startsWith('video/') || /\.(mp4|webm|mov|mkv)$/i.test(file.name)
@@ -162,73 +119,74 @@ export default function SellerReturnSection({ returnInfo, isDark: isDarkProp, on
     }
   }
 
-  const handleCompleteReturn = async (e) => {
-    e.preventDefault()
+  const handleSubmitComplete = async () => {
     try {
       setSubmitting(true)
       await returnService.completeReturn(returnInfo.id, {
         conditionStatus: 'INTACT',
-        conditionNote: conditionNote.trim() || 'Hàng hoàn nguyên vẹn',
+        conditionNote: conditionNote.trim() || undefined,
         isRestocked,
       })
-      toast.success(
-        isRestocked
-          ? 'Đã duyệt nhận hàng hoàn, hoàn tiền cho khách & cộng lại tồn kho!'
-          : 'Đã duyệt nhận hàng hoàn & hoàn tiền cho khách!'
-      )
+      toast.success('Đã xác nhận kiểm tra đạt và hoàn tất thủ tục trả hàng!')
       setShowCompleteModal(false)
       if (onRefresh) onRefresh()
     } catch (err) {
-      toast.error(err?.message || 'Thao tác hoàn tất thất bại')
+      console.error('Complete return error:', err)
+      toast.error(err?.response?.data?.message || err?.message || 'Không thể xác nhận hoàn tiền')
     } finally {
       setSubmitting(false)
     }
   }
 
-  const handleDisputeReturn = async (e) => {
-    e.preventDefault()
+  const handleSubmitDispute = async () => {
     if (!disputeNote.trim()) {
-      toast.error('Vui lòng nhập chi tiết sự cố kiện hàng hoàn')
+      toast.error('Vui lòng nhập mô tả chi tiết lý do khiếu nại kiện hàng!')
       return
     }
+    if (!evidenceUrls.length) {
+      toast.error('Vui lòng tải lên ít nhất 1 ảnh/video bằng chứng rõ nét!')
+      return
+    }
+
     try {
       setSubmitting(true)
       await returnService.disputeReturn(returnInfo.id, {
         conditionStatus: disputeCondition,
         conditionNote: disputeNote.trim(),
-        sellerEvidenceUrls: evidenceUrls.length > 0 ? evidenceUrls.join(',') : null,
+        sellerEvidenceUrls: evidenceUrls.join(','),
       })
-      toast.success('Đã gửi khiếu nại kiện hàng hoàn lên Ban Quản Trị!')
+      toast.success('Đã nộp khiếu nại kiện hàng thành công! BQT sẽ sớm phân xử.')
       setShowDisputeModal(false)
-      setDisputeNote('')
-      setEvidenceUrls([])
       if (onRefresh) onRefresh()
     } catch (err) {
-      toast.error(err?.message || 'Gửi khiếu nại thất bại')
+      console.error('Dispute return error:', err)
+      toast.error(err?.message || 'Không thể gửi khiếu nại')
     } finally {
       setSubmitting(false)
     }
   }
 
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
       className={cn(
-        'border-b p-6 space-y-4',
-        isDark ? 'border-slate-800 bg-slate-900/60' : 'border-stone-200 bg-stone-50/50'
+        'rounded-2xl border p-5 shadow-sm space-y-4',
+        isDark ? 'border-amber-500/30 bg-slate-900/90' : 'border-amber-200 bg-amber-50/40',
       )}
     >
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-xl bg-purple-600 text-white shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-stone-200 dark:border-slate-800">
+        <div className="flex items-center gap-2">
+          <div className="p-2 rounded-xl bg-amber-500 text-white shadow-sm">
             <HiOutlineTruck className="h-5 w-5" />
           </div>
           <div>
             <h3 className={cn('text-sm sm:text-base font-bold', isDark ? 'text-white' : 'text-stone-900')}>
-              Quy Trình Hoàn Hàng Của Khách (Return Management)
+              Xử Lý Yêu Cầu Trả Hàng & Hoàn Tiền (Return Processing)
             </h3>
-            <p className={cn('text-xs', isDark ? 'text-slate-400' : 'text-stone-500')}>
-              Mã yêu cầu hoàn: <span className="font-mono font-bold">{returnInfo.id}</span>
+            <p className={cn('text-[11px]', isDark ? 'text-slate-400' : 'text-stone-500')}>
+              Mã yêu cầu: <span className="font-mono font-semibold">{returnInfo.id?.substring(0, 8)}...</span>
             </p>
           </div>
         </div>
@@ -236,150 +194,184 @@ export default function SellerReturnSection({ returnInfo, isDark: isDarkProp, on
         <span
           className={cn(
             'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border shadow-sm',
-            statusConfig.color
+            statusBadge.color,
           )}
         >
           <StatusIcon className="h-4 w-4" />
-          {statusConfig.label}
+          {statusLabel}
         </span>
       </div>
 
-      {/* Info Boxes */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-        {/* Vận đơn khách gửi */}
-        <div className={cn('p-3.5 rounded-2xl border space-y-2', isDark ? 'border-slate-800 bg-slate-800/60 text-slate-200' : 'border-stone-200 bg-white text-stone-800')}>
-          <span className="font-bold text-amber-500 uppercase tracking-wider text-[11px] block">
-            Thông tin vận chuyển hoàn:
-          </span>
-          <p className={isDark ? 'text-slate-300' : 'text-stone-600'}>
-            Đơn vị vận chuyển:{' '}
-            <strong className={cn('font-semibold', isDark ? 'text-white' : 'text-stone-900')}>
-              {returnInfo.carrierName || 'Chưa cập nhật'}
-            </strong>
-          </p>
-          <p className={isDark ? 'text-slate-300' : 'text-stone-600'}>
-            Mã vận đơn:{' '}
-            <strong className={cn(
-              'font-mono font-bold px-2 py-0.5 rounded border text-xs inline-block',
-              isDark
-                ? 'text-amber-300 bg-amber-500/15 border-amber-500/30'
-                : 'text-amber-800 bg-amber-50 border-amber-300'
-            )}>
-              {returnInfo.returnTrackingCode || 'Chờ khách nộp mã...'}
-            </strong>
-          </p>
-          {returnInfo.buyerShippedAt && (
-            <p className={cn('text-[11px]', isDark ? 'text-slate-400' : 'text-stone-500')}>
-              Khách gửi lúc:{' '}
-              <strong className={cn('font-medium', isDark ? 'text-slate-200' : 'text-stone-700')}>
-                {formatDateTime(returnInfo.buyerShippedAt)}
-              </strong>
+      {/* Khi CANCELLED: Khách hàng không gửi hàng quá 3 ngày hoặc đã hủy */}
+      {returnInfo.status === 'CANCELLED' && (
+        <div className="p-4 rounded-2xl border border-stone-300 dark:border-slate-700 bg-stone-100/70 dark:bg-slate-800/40 text-xs space-y-2">
+          <div className="flex items-center gap-2">
+            <HiOutlineXCircle className="h-5 w-5 text-stone-500" />
+            <p className="font-bold text-sm text-stone-700 dark:text-slate-300">
+              Yêu cầu trả hàng đã bị hủy bỏ
             </p>
-          )}
-        </div>
-
-        {/* Hạn chót kiểm tra 72h */}
-        <div className={cn('p-3.5 rounded-2xl border space-y-1.5', isDark ? 'border-slate-800 bg-slate-800/40 text-slate-300' : 'border-stone-200 bg-white text-stone-700')}>
-          <span className="font-bold text-purple-500 uppercase tracking-wider text-[11px] block">
-            Thời hạn kiểm tra hàng (72 Giờ):
-          </span>
-          <p>Hạn chót Shop kiểm hàng: <strong>{formatDateTime(returnInfo.sellerInspectionDeadline)}</strong></p>
-          <p className="text-[11px] text-stone-400 leading-relaxed">
-            * Sau 72h kể từ khi nhận hàng hoàn, nếu Shop không phản hồi, hệ thống sẽ tự động hoàn tiền cho Khách (không tự động hoàn kho).
+          </div>
+          <p className="text-[11px] text-stone-600 dark:text-slate-400 leading-relaxed pl-7">
+            Khách hàng không thực hiện gửi hàng hoàn trong thời hạn 3 ngày theo quy định sàn hoặc yêu cầu đã được Ban Quản Trị hủy. Doanh thu đơn hàng đã được giải ngân an toàn về ví gian hàng của bạn.
           </p>
-        </div>
-      </div>
-
-      {/* Action buttons khi RETURNED */}
-      {returnInfo.status === 'RETURNED' && (
-        <div className="flex flex-wrap items-center gap-3 pt-2">
-          <button
-            type="button"
-            disabled={submitting}
-            onClick={() => setShowCompleteModal(true)}
-            className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-5 py-2.5 text-xs sm:text-sm font-bold text-white shadow-md shadow-emerald-500/20 transition-all active:scale-95 disabled:opacity-50"
-          >
-            <HiOutlineCheckCircle className="h-4 w-4" />
-            <span>Xác Nhận Hàng Nguyên Vẹn & Hoàn Tiền (Hoàn Kho)</span>
-          </button>
-
-          <button
-            type="button"
-            disabled={submitting}
-            onClick={() => setShowDisputeModal(true)}
-            className="inline-flex items-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 px-5 py-2.5 text-xs sm:text-sm font-bold text-rose-600 dark:text-rose-400 transition-all active:scale-95 disabled:opacity-50"
-          >
-            <HiOutlineExclamation className="h-4 w-4" />
-            <span>Khiếu Nại Kiện Hàng Hoàn (Hàng hỏng / Tráo hàng)</span>
-          </button>
         </div>
       )}
 
-      {/* DISPUTED Info */}
-      {returnInfo.status === 'DISPUTED' && (
-        <div className="p-3.5 rounded-2xl border border-rose-500/30 bg-rose-500/10 text-xs space-y-2">
-          <p className="font-bold text-rose-600 dark:text-rose-400">
-            ⚠️ Shop đã khiếu nại kiện hàng hoàn
-          </p>
-          <p className="text-stone-600 dark:text-slate-300">
-            Tình trạng: <strong>{returnInfo.conditionStatus}</strong> • Ghi chú: <em>{returnInfo.conditionNote}</em>
-          </p>
-          {returnInfo.sellerEvidenceUrls && (
-            <div className="pt-1 space-y-1">
-              <span className="text-[11px] font-semibold text-stone-500 dark:text-slate-400">Ảnh chứng từ đã nộp:</span>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {returnInfo.sellerEvidenceUrls.split(',').filter(Boolean).map((url, i) => (
-                  <a
-                    key={i}
-                    href={url.trim()}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="relative rounded-xl border border-rose-300 dark:border-rose-900/50 overflow-hidden h-20 bg-stone-900/10 block group"
-                  >
-                    <img src={url.trim()} alt={`Bằng chứng ${i + 1}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                  </a>
-                ))}
+      {/* Hạn chót & Thông tin vận chuyển */}
+      {returnInfo.status !== 'CANCELLED' && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+          {returnInfo.buyerShipmentDeadline && returnInfo.status === 'WAITING_FOR_SHIPMENT' && (
+            <div
+              className={cn(
+                'p-3 rounded-xl border flex items-center gap-2.5',
+                isDark ? 'border-slate-800 bg-slate-800/40 text-slate-300' : 'border-stone-200 bg-white text-stone-700',
+              )}
+            >
+              <HiOutlineClock className="h-4 w-4 text-amber-500 shrink-0" />
+              <div>
+                <p className="text-[11px] text-stone-400 dark:text-slate-400">Hạn chót người mua gửi hàng:</p>
+                <p className="font-bold">{formatOrderDate(returnInfo.buyerShipmentDeadline)}</p>
               </div>
             </div>
           )}
-          <p className="text-[11px] text-stone-500 dark:text-slate-400">
-            Hồ sơ đang được Ban Quản Trị xem xét và phân xử giải ngân hoặc bồi thường theo quy định sàn.
-          </p>
+
+          {returnInfo.sellerInspectionDeadline && returnInfo.status === 'RETURNED' && (
+            <div
+              className={cn(
+                'p-3 rounded-xl border flex items-center gap-2.5 sm:col-span-2',
+                isDark ? 'border-purple-500/30 bg-purple-500/10 text-purple-300' : 'border-purple-200 bg-purple-50 text-purple-900',
+              )}
+            >
+              <HiOutlineShieldCheck className="h-5 w-5 text-purple-500 shrink-0" />
+              <div>
+                <p className="font-bold text-xs">Hạn chót Shop kiểm tra hàng (72 giờ):</p>
+                <p className="text-[11px] opacity-90 mt-0.5">
+                  Bạn có thời hạn đến <strong>{formatOrderDate(returnInfo.sellerInspectionDeadline)}</strong> để kiểm tra bưu kiện. Sau thời gian này nếu Shop không phản hồi, hệ thống sẽ tự động hoàn 100% tiền cho Khách hàng.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {returnInfo.returnTrackingCode && (
+            <div
+              className={cn(
+                'p-3 rounded-xl border flex items-center gap-2.5',
+                isDark ? 'border-slate-800 bg-slate-800/40 text-slate-300' : 'border-stone-200 bg-white text-stone-700',
+              )}
+            >
+              <HiOutlineTruck className="h-4 w-4 text-blue-500 shrink-0" />
+              <div>
+                <p className="text-[11px] text-stone-400 dark:text-slate-400">Vận đơn hoàn (GHN):</p>
+                <p className="font-mono font-bold text-amber-600 dark:text-amber-400">
+                  {returnInfo.returnTrackingCode}
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
-      {/* COMPLETED Settlement Info */}
+      {/* Hành động kiểm tra kiện hàng hoàn khi RETURNED */}
+      {returnInfo.status === 'RETURNED' && (
+        <div className="p-4 rounded-2xl border border-purple-500/30 bg-purple-500/5 space-y-3">
+          <div>
+            <p className="font-bold text-xs sm:text-sm text-purple-700 dark:text-purple-300">
+              Kiện hàng hoàn đã giao tới Shop — Vui lòng tiến hành kiểm tra
+            </p>
+            <p className="text-[11px] text-stone-500 dark:text-slate-400 mt-0.5 leading-relaxed">
+              Hãy quay video khi mở kiện hàng. Nếu sản phẩm đạt chuẩn, bấm <strong>Xác nhận hoàn tiền</strong> để giải phóng Escrow cho khách. Nếu sản phẩm bị trầy xước, vỡ nát hoặc sai hàng, bấm <strong>Khiếu nại kiện hàng</strong>.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2.5 pt-1">
+            <button
+              type="button"
+              onClick={() => setShowCompleteModal(true)}
+              className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:scale-95 transition shadow-sm inline-flex items-center justify-center gap-1.5"
+            >
+              <HiOutlineCheckCircle className="h-4 w-4" />
+              Xác nhận nhận hàng đạt & Hoàn tiền
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowDisputeModal(true)}
+              className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 active:scale-95 transition shadow-sm inline-flex items-center justify-center gap-1.5"
+            >
+              <HiOutlineExclamation className="h-4 w-4" />
+              Khiếu nại kiện hàng (Hỏng / Sai hàng)
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Khi DISPUTED: Đang chờ BQT phân xử */}
+      {returnInfo.status === 'DISPUTED' && (
+        <div className="p-4 rounded-2xl border border-rose-500/30 bg-rose-500/5 space-y-2.5 text-xs">
+          <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 font-bold">
+            <HiOutlineExclamation className="h-4 w-4" />
+            <span>Hồ sơ khiếu nại đang được Ban Quản Trị xem xét phân xử</span>
+          </div>
+          <p className="text-[11px] text-stone-600 dark:text-slate-400 leading-relaxed">
+            Tình trạng báo cáo: <strong>{returnInfo.conditionStatus}</strong>.
+            Ghi chú của Shop: <em>&ldquo;{returnInfo.conditionNote}&rdquo;</em>.
+            Tiền ký quỹ tạm thời bị giữ an toàn (HELD / DISPUTED) cho đến khi có phán quyết cuối cùng từ BQT.
+          </p>
+
+          {returnInfo.sellerEvidenceUrls && (
+            <div className="pt-1 space-y-1">
+              <span className="text-[11px] font-semibold text-rose-500">Bằng chứng Shop đã cung cấp:</span>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {returnInfo.sellerEvidenceUrls.split(',').filter(Boolean).map((url, i) => {
+                  const isVid = isVideoUrl(url.trim())
+                  return (
+                    <a
+                      key={i}
+                      href={url.trim()}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="relative rounded-xl border border-rose-300 dark:border-rose-900/50 overflow-hidden h-20 bg-stone-900/10 block group"
+                    >
+                      {isVid ? (
+                        <video src={url.trim()} className="w-full h-full object-cover group-hover:scale-105 transition-transform" muted />
+                      ) : (
+                        <img src={url.trim()} alt={`Bằng chứng ${i + 1}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                      )}
+                    </a>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Khi COMPLETED: Hiển thị phán quyết kết quả hoàn tiền / giải ngân */}
       {returnInfo.status === 'COMPLETED' && (() => {
         const s = returnInfo.settlement
-        const formatVND = (v) => Number(v || 0).toLocaleString('vi-VN') + ' đ'
         if (s && s.settlementType) {
           if (s.settlementType === 'PARTIAL_SPLIT') {
             return (
-              <div className="p-3.5 rounded-2xl border border-amber-500/30 bg-amber-500/5 text-xs space-y-2">
+              <div className="p-3.5 rounded-xl border border-amber-500/30 bg-amber-500/5 text-xs space-y-2">
                 <p className="font-bold text-amber-600 dark:text-amber-400">
-                  Phân xử chia tiền: Khách {s.buyerPercentage}% — Shop {s.sellerPercentage}%
+                  Phán quyết chia tiền: Khách {s.buyerPercentage}% — Shop {s.sellerPercentage}%
                 </p>
-                <div className="grid grid-cols-2 gap-2.5">
-                  {Number(s.sellerReleaseAmount) > 0 && (
-                    <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
-                      <p className="text-[11px] text-emerald-500 font-medium">Shop nhận ({s.sellerPercentage}%)</p>
-                      <p className="font-mono font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
-                        {formatVND(s.sellerReleaseAmount)}
-                      </p>
-                    </div>
-                  )}
-                  {Number(s.buyerRefundAmount) > 0 && (
-                    <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20">
-                      <p className="text-[11px] text-blue-500 font-medium">Hoàn cho Khách ({s.buyerPercentage}%)</p>
-                      <p className="font-mono font-bold text-blue-600 dark:text-blue-400 mt-0.5">
-                        {formatVND(s.buyerRefundAmount)}
-                      </p>
-                    </div>
-                  )}
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                    <p className="text-[11px] text-emerald-500 font-medium">Shop nhận ({s.sellerPercentage}%)</p>
+                    <p className="font-mono font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                      {formatOrderCurrency(s.sellerReleaseAmount)}
+                    </p>
+                  </div>
+                  <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                    <p className="text-[11px] text-blue-500 font-medium">Hoàn khách ({s.buyerPercentage}%)</p>
+                    <p className="font-mono font-bold text-blue-600 dark:text-blue-400 mt-0.5">
+                      {formatOrderCurrency(s.buyerRefundAmount)}
+                    </p>
+                  </div>
                 </div>
                 {s.settlementNote && (
                   <p className="text-[11px] text-stone-500 dark:text-slate-400 italic">
-                    &ldquo;{s.settlementNote}&rdquo;
+                    Ghi chú BQT: &ldquo;{s.settlementNote}&rdquo;
                   </p>
                 )}
               </div>
@@ -387,284 +379,67 @@ export default function SellerReturnSection({ returnInfo, isDark: isDarkProp, on
           }
           if (s.settlementType === 'FULL_RELEASE') {
             return (
-              <div className="p-3.5 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 text-xs space-y-1">
-                <p className="font-bold text-emerald-600 dark:text-emerald-400">Giải ngân thành công</p>
-                <p className="text-stone-600 dark:text-slate-300">
-                  Số tiền <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">{formatVND(s.sellerReleaseAmount)}</span> (sau phí hoa hồng sàn) đã được cộng vào ví Shop.
+              <div className="p-3.5 rounded-xl border border-emerald-500/30 bg-emerald-500/5 text-xs space-y-1">
+                <p className="font-bold text-emerald-600 dark:text-emerald-400">
+                  Phán quyết BQT: Giải ngân toàn bộ cho Shop
+                </p>
+                <p className="text-[11px] text-stone-500 dark:text-slate-400 leading-relaxed">
+                  Toàn bộ số tiền <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">{formatOrderCurrency(s.sellerReleaseAmount)}</span> đã được giải ngân vào ví người bán của bạn.
                 </p>
               </div>
             )
           }
-          // FULL_REFUND
           return (
-            <div className="p-3.5 rounded-2xl border border-blue-500/30 bg-blue-500/5 text-xs space-y-1">
-              <p className="font-bold text-blue-600 dark:text-blue-400">Đã hoàn tiền cho Khách</p>
-              <p className="text-stone-600 dark:text-slate-300">
-                Toàn bộ tiền đơn hàng đã được hoàn trả cho Người mua theo phán quyết của Ban Quản Trị.
+            <div className="p-3.5 rounded-xl border border-stone-300 dark:border-slate-700 bg-stone-50 dark:bg-slate-800/40 text-xs space-y-1">
+              <p className="font-bold text-stone-700 dark:text-slate-300">
+                Phán quyết BQT: Hoàn tiền toàn bộ cho Khách hàng
+              </p>
+              <p className="text-[11px] text-stone-500 dark:text-slate-400 leading-relaxed">
+                Sau khi xem xét bằng chứng, Ban Quản Trị đã hoàn 100% tiền đơn hàng cho Khách.
               </p>
             </div>
           )
         }
         return (
-          <div className="p-3.5 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 text-xs">
-            <p className="font-bold text-emerald-600 dark:text-emerald-400">Hoàn tất</p>
-            <p className="text-stone-600 dark:text-slate-300 mt-0.5">Quy trình hoàn hàng đã kết thúc.</p>
+          <div className="p-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5 text-xs space-y-1">
+            <p className="font-bold text-emerald-600 dark:text-emerald-400">Đã hoàn tiền</p>
+            <p className="text-[11px] text-stone-500 dark:text-slate-400 leading-relaxed">
+              Quy trình trả hàng và hoàn tiền đã kết thúc thành công.
+            </p>
           </div>
         )
       })()}
 
-      {/* MODAL 1: COMPLETE RETURN */}
-      <AnimatePresence>
-        {showCompleteModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className={cn(
-                'w-full max-w-lg rounded-3xl border p-6 shadow-2xl space-y-4',
-                isDark ? 'border-slate-800 bg-slate-900 text-white' : 'border-stone-200 bg-white text-stone-900'
-              )}
-            >
-              <div className="flex items-center gap-2.5 pb-2 border-b border-stone-200 dark:border-slate-800">
-                <HiOutlineCheckCircle className="h-6 w-6 text-emerald-500" />
-                <h3 className="text-base font-bold">Xác Nhận Hàng Hoàn Hợp Lệ</h3>
-              </div>
+      {/* Modal Hoàn Tất Nhận Hàng */}
+      <SellerReturnCompleteModal
+        isOpen={showCompleteModal}
+        onClose={() => setShowCompleteModal(false)}
+        isDark={isDark}
+        submitting={submitting}
+        conditionNote={conditionNote}
+        setConditionNote={setConditionNote}
+        isRestocked={isRestocked}
+        setIsRestocked={setIsRestocked}
+        onSubmit={handleSubmitComplete}
+      />
 
-              <form onSubmit={handleCompleteReturn} className="space-y-4 text-xs">
-                <div className="p-3 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                  Xác nhận kiện hàng hoàn đã về kho nguyên vẹn. Hệ thống sẽ giải ngân hoàn tiền 100% về ví của người mua.
-                </div>
-
-                <div>
-                  <label className="block font-medium mb-1">Ghi chú kiểm tra hàng:</label>
-                  <textarea
-                    rows={2}
-                    value={conditionNote}
-                    onChange={(e) => setConditionNote(e.target.value)}
-                    placeholder="VD: Hàng còn nguyên tem mác, phụ kiện đầy đủ..."
-                    className={cn(
-                      'w-full rounded-xl border p-2.5 outline-none',
-                      isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-300 bg-white'
-                    )}
-                  />
-                </div>
-
-                {/* Checkbox Restock */}
-                <label className="flex items-start gap-2.5 p-3 rounded-2xl border border-amber-500/30 bg-amber-500/5 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={isRestocked}
-                    onChange={(e) => setIsRestocked(e.target.checked)}
-                    className="mt-0.5 rounded text-amber-500"
-                  />
-                  <div>
-                    <span className="font-bold flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
-                      <HiOutlineArchive className="h-4 w-4" /> Tự động hoàn lại số lượng tồn kho (Restock)
-                    </span>
-                    <p className="text-[11px] text-stone-500 dark:text-slate-400 mt-0.5">
-                      Nếu chọn, hệ thống sẽ cộng lại số lượng các sản phẩm trong đơn vào kho và lưu nhật ký kiểm toán kho hàng (REFUND_RESTORE).
-                    </p>
-                  </div>
-                </label>
-
-                <div className="flex items-center justify-end gap-2.5 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowCompleteModal(false)}
-                    className="px-4 py-2 rounded-xl text-stone-400 hover:bg-stone-100 dark:hover:bg-slate-800 font-bold"
-                  >
-                    Hủy
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="px-5 py-2.5 rounded-xl font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:scale-95 disabled:opacity-50"
-                  >
-                    {submitting ? 'Đang xử lý...' : 'Xác Nhận & Hoàn Tiền'}
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* MODAL 2: DISPUTE RETURN */}
-      <AnimatePresence>
-        {showDisputeModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className={cn(
-                'w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl border p-6 shadow-2xl space-y-4',
-                isDark ? 'border-slate-800 bg-slate-900 text-white' : 'border-stone-200 bg-white text-stone-900'
-              )}
-            >
-              <div className="flex items-center gap-2.5 pb-2 border-b border-stone-200 dark:border-slate-800">
-                <HiOutlineExclamation className="h-6 w-6 text-rose-500" />
-                <h3 className="text-base font-bold">Khiếu Nại Kiện Hàng Hoàn</h3>
-              </div>
-
-              <form onSubmit={handleDisputeReturn} className="space-y-4 text-xs">
-                <div>
-                  <label className="block font-medium mb-1">Tình trạng thực tế kiện hàng:</label>
-                  <select
-                    value={disputeCondition}
-                    onChange={(e) => setDisputeCondition(e.target.value)}
-                    className={cn(
-                      'w-full rounded-xl border p-2.5 outline-none font-bold',
-                      isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-300 bg-white'
-                    )}
-                  >
-                    <option value="DAMAGED">Hàng bị vỡ / hỏng hóc nghiêm trọng (DAMAGED)</option>
-                    <option value="WRONG_ITEM">Bị tráo hàng / Sai sản phẩm (WRONG_ITEM)</option>
-                    <option value="EMPTY_BOX">Hộp rỗng / Thiếu linh kiện (EMPTY_BOX)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block font-medium mb-1">Mô tả chi tiết bằng chứng (*):</label>
-                  <textarea
-                    rows={3}
-                    value={disputeNote}
-                    onChange={(e) => setDisputeNote(e.target.value)}
-                    placeholder="Mô tả hiện trạng kiện hàng khi mở hộp, dấu vết mở gói..."
-                    className={cn(
-                      'w-full rounded-xl border p-2.5 outline-none',
-                      isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-300 bg-white'
-                    )}
-                  />
-                </div>
-
-                {/* Upload hình ảnh và video chứng từ mở hộp (Tối đa 4 tệp) */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="block text-xs font-bold">
-                      Ảnh & Video bằng chứng mở hộp ({evidenceUrls.length}/4)
-                    </label>
-                    <span className="text-[11px] text-stone-400">Tối đa 4 tệp (Ảnh ≤ 10MB, Video ≤ 50MB)</span>
-                  </div>
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    accept="image/*,video/*"
-                    multiple
-                    onChange={handleImageUpload}
-                    className="hidden"
-                  />
-
-                  {evidenceUrls.length > 0 && (
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
-                      {evidenceUrls.map((url, idx) => (
-                        <div
-                          key={idx}
-                          className="relative rounded-2xl border border-stone-200 dark:border-slate-800 overflow-hidden group h-24 sm:h-28 bg-stone-900/10"
-                        >
-                          {isVideoUrl(url) ? (
-                            <video
-                              src={url}
-                              controls
-                              className="w-full h-full object-cover rounded-2xl"
-                            />
-                          ) : (
-                            <img
-                              src={url}
-                              alt={`Bằng chứng ${idx + 1}`}
-                              className="w-full h-full object-cover rounded-2xl"
-                            />
-                          )}
-                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 pointer-events-none group-hover:pointer-events-auto">
-                            <a
-                              href={url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="p-1.5 rounded-xl bg-white text-stone-900 hover:bg-stone-100 text-xs font-bold shadow"
-                              title={isVideoUrl(url) ? 'Mở video' : 'Xem ảnh gốc'}
-                            >
-                              <HiOutlineExternalLink className="h-4 w-4" />
-                            </a>
-                            <button
-                              type="button"
-                              onClick={() => setEvidenceUrls((prev) => prev.filter((_, i) => i !== idx))}
-                              className="p-1.5 rounded-xl bg-rose-600 text-white hover:bg-rose-700 text-xs font-bold shadow"
-                              title="Gỡ tệp"
-                            >
-                              <HiOutlineTrash className="h-4 w-4" />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {evidenceUrls.length >= 4 ? (
-                    <div
-                      className={cn(
-                        'w-full border border-dashed rounded-2xl p-3 text-center transition-colors',
-                        isDark ? 'border-slate-800 bg-slate-900/40 text-slate-400' : 'border-stone-200 bg-stone-50 text-stone-500'
-                      )}
-                    >
-                      <span className="text-xs font-medium">Đã đạt giới hạn tối đa 4/4 ảnh chứng từ</span>
-                    </div>
-                  ) : (
-                    <div
-                      onClick={() => fileInputRef.current?.click()}
-                      className={cn(
-                        'w-full border-2 border-dashed rounded-2xl p-4 text-center cursor-pointer transition-colors',
-                        uploadingImage ? 'opacity-50 pointer-events-none' : '',
-                        isDark
-                          ? 'border-slate-700 hover:border-amber-500 bg-slate-800/50'
-                          : 'border-stone-300 hover:border-amber-500 bg-stone-50'
-                      )}
-                    >
-                      {uploadingImage ? (
-                        <div className="flex flex-col items-center justify-center gap-2 py-1">
-                          <div className="h-5 w-5 animate-spin rounded-full border-2 border-amber-500 border-r-transparent" />
-                          <span className="text-xs font-semibold text-amber-500">Đang tải ảnh lên máy chủ...</span>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col items-center justify-center gap-1.5 py-1">
-                          <div className="p-2 rounded-full bg-amber-500/10 text-amber-500">
-                            <HiOutlineUpload className="h-5 w-5" />
-                          </div>
-                          <span className="text-xs font-bold">
-                            {evidenceUrls.length > 0 ? '+ Thêm ảnh chứng từ khác' : 'Bấm để tải ảnh chứng từ mở hộp'}
-                          </span>
-                          <span className="text-[11px] text-stone-400">Hỗ trợ JPG, PNG, WEBP (Tối đa 4 ảnh, 10MB / ảnh)</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex items-center justify-end gap-2.5 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowDisputeModal(false)
-                      setDisputeNote('')
-                      setEvidenceUrls([])
-                    }}
-                    className="px-4 py-2 rounded-xl text-stone-400 hover:bg-stone-100 dark:hover:bg-slate-800 font-bold"
-                  >
-                    Hủy
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={submitting || uploadingImage}
-                    className="px-5 py-2.5 rounded-xl font-bold text-white bg-rose-600 hover:bg-rose-700 active:scale-95 disabled:opacity-50"
-                  >
-                    {submitting ? 'Đang gửi...' : 'Nộp Đơn Khiếu Nại BQT'}
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-    </div>
+      {/* Modal Khiếu Nại Kiện Hàng */}
+      <SellerReturnDisputeModal
+        isOpen={showDisputeModal}
+        onClose={() => setShowDisputeModal(false)}
+        isDark={isDark}
+        submitting={submitting}
+        disputeCondition={disputeCondition}
+        setDisputeCondition={setDisputeCondition}
+        disputeNote={disputeNote}
+        setDisputeNote={setDisputeNote}
+        evidenceUrls={evidenceUrls}
+        setEvidenceUrls={setEvidenceUrls}
+        uploadingImage={uploadingImage}
+        fileInputRef={fileInputRef}
+        onImageUpload={handleImageUpload}
+        onSubmit={handleSubmitDispute}
+      />
+    </motion.div>
   )
 }

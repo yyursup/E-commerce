@@ -5,10 +5,6 @@ import {
   HiOutlineArrowLeft,
   HiOutlineRefresh,
   HiOutlineCheckCircle,
-  HiOutlineClock,
-  HiOutlineTruck,
-  HiOutlineShieldCheck,
-  HiOutlineXCircle,
 } from 'react-icons/hi'
 import { useThemeStore } from '../../store/useThemeStore'
 import { useAuthStore } from '../../store/useAuthStore'
@@ -226,11 +222,16 @@ export default function ShopOrderDetail() {
                   : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
             )}>
               {order.paymentMethod === 'VNPAY'
-                ? 'VNPAY (Trực tuyến)'
+                ? 'VNPAY'
                 : order.paymentMethod === 'WALLET'
-                  ? 'Ví sàn (Ký quỹ)'
-                  : 'COD (Tiền mặt khi nhận)'}
+                  ? 'Ví sàn'
+                  : 'COD'}
             </span>
+            {(order.status === 'REFUNDED' || (returnInfo || order.returnInfo)?.status === 'COMPLETED') && (
+              <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/25">
+                ↳ Hoàn về Ví số dư khách hàng
+              </span>
+            )}
             <OrderStatusBadge
               status={order.status}
               returnInfo={returnInfo || order.returnInfo}
@@ -289,12 +290,12 @@ export default function ShopOrderDetail() {
                       isCancelled
                         ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20'
                         : isDone
-                        ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/25'
-                        : isCurr
-                        ? 'bg-amber-500 text-white shadow-md shadow-amber-500/25 ring-4 ring-amber-500/20'
-                        : isDark
-                        ? 'bg-slate-800 text-slate-500 border border-slate-700'
-                        : 'bg-stone-200 text-stone-500'
+                          ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/25'
+                          : isCurr
+                            ? 'bg-amber-500 text-white shadow-md shadow-amber-500/25 ring-4 ring-amber-500/20'
+                            : isDark
+                              ? 'bg-slate-800 text-slate-500 border border-slate-700'
+                              : 'bg-stone-200 text-stone-500'
                     )}
                   >
                     {isDone ? (
@@ -310,10 +311,10 @@ export default function ShopOrderDetail() {
                         isCurr
                           ? 'text-amber-500'
                           : isDone
-                          ? isDark
-                            ? 'text-white'
-                            : 'text-stone-900'
-                          : 'text-stone-400'
+                            ? isDark
+                              ? 'text-white'
+                              : 'text-stone-900'
+                            : 'text-stone-400'
                       )}
                     >
                       {step.title}

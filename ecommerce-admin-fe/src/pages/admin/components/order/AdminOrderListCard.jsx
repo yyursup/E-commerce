@@ -59,6 +59,11 @@ export default function AdminOrderListCard({ order, isDark }) {
                 >
                   {order.paymentMethod === 'VNPAY' ? 'VNPAY' : order.paymentMethod === 'WALLET' ? 'Ví sàn' : 'COD'}
                 </span>
+                {order.status === 'REFUNDED' && (
+                  <span className="px-2 py-0.5 rounded text-[11px] font-bold border border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                    Hoàn Ví
+                  </span>
+                )}
               </div>
               <p className={cn('mt-1 text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
                 Shop: {order.shopName} | Khách hàng: {order.userName}

@@ -3,15 +3,10 @@ import { useParams, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   HiOutlineArrowLeft,
-  HiOutlineClock,
   HiOutlineCheckCircle,
-  HiOutlineTruck,
-  HiOutlineXCircle,
   HiOutlineLocationMarker,
   HiOutlinePhone,
-  HiOutlineLockClosed,
-  HiOutlineShieldCheck,
-  HiOutlineTag,
+  HiOutlineExclamationCircle,
 } from 'react-icons/hi'
 import { useThemeStore } from '../../store/useThemeStore'
 import { useAuthStore } from '../../store/useAuthStore'
@@ -23,74 +18,14 @@ import escrowService from '../../services/escrow'
 import ReviewModal from '../../components/ReviewModal'
 import OrderReportModal from '../../components/OrderReportModal'
 import CustomerReturnCard from './components/CustomerReturnCard'
-import { HiOutlineStar, HiOutlineExclamationCircle } from 'react-icons/hi'
-
-const getStatusBadge = (status) => {
-  const statusMap = {
-    PENDING: { color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400', icon: HiOutlineClock },
-    CONFIRMED: { color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400', icon: HiOutlineCheckCircle },
-    PROCESSING: { color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400', icon: HiOutlineTruck },
-    SHIPPING: { color: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400', icon: HiOutlineTruck },
-    SHIPPED: { color: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400', icon: HiOutlineTruck },
-    DELIVERED: { color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400', icon: HiOutlineCheckCircle },
-    COMPLETED: { color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400', icon: HiOutlineCheckCircle },
-    CANCELLED: { color: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400', icon: HiOutlineXCircle },
-    REFUNDED: { color: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400', icon: HiOutlineXCircle },
-  }
-  return statusMap[status] || { color: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400', icon: HiOutlineClock }
-}
-
-const getStatusLabel = (status) => {
-  const statusMap = {
-    PENDING: 'Chờ xử lý',
-    CONFIRMED: 'Đã xác nhận',
-    PROCESSING: 'Đang xử lý',
-    SHIPPING: 'Đang giao hàng',
-    SHIPPED: 'Đã giao hàng',
-    DELIVERED: 'Đã giao hàng thành công',
-    COMPLETED: 'Đã nhận được hàng',
-    CANCELLED: 'Đã hủy',
-    REFUNDED: 'Đã hoàn tiền',
-    PENDING_PAYMENT: 'Chờ thanh toán',
-  }
-  return statusMap[status] || status
-}
-
-const getReturnStatusDisplay = (returnStatus) => {
-  const map = {
-    WAITING_FOR_SHIPMENT: {
-      label: 'Đang trả hàng (Chờ gửi hàng)',
-      color: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 border border-amber-300 dark:border-amber-700',
-      icon: HiOutlineClock,
-    },
-    SHIPPED: {
-      label: 'Đang giao hàng hoàn',
-      color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 border border-blue-300 dark:border-blue-700',
-      icon: HiOutlineTruck,
-    },
-    RETURNED: {
-      label: 'Đã giao hàng hoàn trả',
-      color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400 border border-purple-300 dark:border-purple-700',
-      icon: HiOutlineCheckCircle,
-    },
-    DISPUTED: {
-      label: 'Shop khiếu nại đơn hoàn',
-      color: 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400 border border-rose-300 dark:border-rose-700',
-      icon: HiOutlineExclamationCircle,
-    },
-    COMPLETED: {
-      label: 'Đã hoàn tiền',
-      color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-700',
-      icon: HiOutlineCheckCircle,
-    },
-    CANCELLED: {
-      label: 'Đã hủy trả hàng',
-      color: 'bg-stone-100 text-stone-700 dark:bg-slate-800 dark:text-slate-300 border border-stone-300 dark:border-slate-700',
-      icon: HiOutlineXCircle,
-    },
-  }
-  return map[returnStatus] || null
-}
+import OrderDisputeBanner from './components/OrderDisputeBanner'
+import OrderItemsList from './components/OrderItemsList'
+import OrderSummaryCard from './components/OrderSummaryCard'
+import {
+  getOrderEffectiveStatus,
+  formatOrderCurrency,
+  formatOrderDate,
+} from '../../lib/orderStatus'
 
 export default function OrderDetail() {
   const { orderId } = useParams()
@@ -142,32 +77,36 @@ export default function OrderDetail() {
     }
   }
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-    }).format(amount)
+  const handleMarkReceived = async () => {
+    if (!window.confirm('Bạn xác nhận đã nhận đầy đủ sản phẩm và hài lòng với đơn hàng? Thao tác này sẽ chuyển tiền cho Người bán.')) return
+    try {
+      await orderService.markOrderReceived(order.id)
+      toast.success('Đã xác nhận nhận hàng thành công!')
+      fetchOrder()
+    } catch (e) {
+      toast.error(e?.message || 'Có lỗi xảy ra khi xác nhận')
+    }
   }
 
-  const formatDate = (dateString) => {
-    if (!dateString) return ''
-    return new Date(dateString).toLocaleDateString('vi-VN', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
+  const handlePayNow = async () => {
+    try {
+      const res = await orderService.createPayment(order.id)
+      if (res?.paymentUrl) {
+        window.location.href = res.paymentUrl
+      } else {
+        toast.error('Không thể tạo link thanh toán')
+      }
+    } catch (e) {
+      toast.error(e?.message || 'Lỗi khi tạo thanh toán')
+    }
   }
 
   if (!isAuthenticated) {
     return (
       <div className={cn('min-h-screen flex items-center justify-center', isDark ? 'bg-slate-950' : 'bg-stone-50')}>
-        <div className="text-center">
-          <p className={cn('text-lg', isDark ? 'text-slate-400' : 'text-stone-600')}>
-            Vui lòng đăng nhập để xem đơn hàng
-          </p>
-        </div>
+        <p className={cn('text-lg', isDark ? 'text-slate-400' : 'text-stone-600')}>
+          Vui lòng đăng nhập để xem đơn hàng
+        </p>
       </div>
     )
   }
@@ -175,7 +114,7 @@ export default function OrderDetail() {
   if (loading) {
     return (
       <div className={cn('min-h-screen flex items-center justify-center', isDark ? 'bg-slate-950' : 'bg-stone-50')}>
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent"></div>
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
       </div>
     )
   }
@@ -204,14 +143,13 @@ export default function OrderDetail() {
     )
   }
 
+  const effectiveStatus = getOrderEffectiveStatus(order, returnInfo)
+  const StatusIcon = effectiveStatus.icon
   const activeReturn = returnInfo || order.returnInfo
-  const returnDisplay = activeReturn
-    ? getReturnStatusDisplay(activeReturn.status)
-    : null
-
-  const statusBadge = returnDisplay || getStatusBadge(order.status)
-  const StatusIcon = statusBadge.icon
-  const statusLabel = returnDisplay ? returnDisplay.label : getStatusLabel(order.status)
+  const canConfirmOrDispute =
+    order.status === 'DELIVERED' &&
+    !order.hasActiveDispute &&
+    (!activeReturn || activeReturn.status === 'CANCELLED')
 
   return (
     <div className={cn('min-h-screen px-4 py-8 sm:px-6 lg:px-8', isDark ? 'bg-slate-950' : 'bg-stone-50')}>
@@ -230,25 +168,26 @@ export default function OrderDetail() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className={cn('rounded-xl border', isDark ? 'border-slate-700 bg-slate-900' : 'border-stone-200 bg-white')}
+          className={cn('rounded-xl border overflow-hidden', isDark ? 'border-slate-700 bg-slate-900' : 'border-stone-200 bg-white')}
         >
           {/* Header */}
           <div className="border-b p-5 sm:p-6 space-y-4">
-            {/* Top row: Order Number, Meta & Status Badge */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2.5 flex-wrap">
                   <h1 className={cn('text-xl sm:text-2xl font-bold tracking-tight font-mono', isDark ? 'text-white' : 'text-stone-900')}>
                     #{order.orderNumber}
                   </h1>
-                  <span className={cn(
-                    "text-xs px-2.5 py-0.5 rounded-full font-medium inline-flex items-center gap-1",
-                    order.paymentMethod === 'VNPAY'
-                      ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
-                      : order.paymentMethod === 'WALLET'
-                        ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
-                        : "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 border border-amber-200 dark:border-amber-800"
-                  )}>
+                  <span
+                    className={cn(
+                      'text-xs px-2.5 py-0.5 rounded-full font-medium inline-flex items-center gap-1',
+                      order.paymentMethod === 'VNPAY'
+                        ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
+                        : order.paymentMethod === 'WALLET'
+                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                          : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 border border-amber-200 dark:border-amber-800',
+                    )}
+                  >
                     {order.paymentMethod === 'VNPAY'
                       ? 'VNPay (Ký quỹ sàn)'
                       : order.paymentMethod === 'WALLET'
@@ -257,8 +196,10 @@ export default function OrderDetail() {
                   </span>
                 </div>
                 <p className={cn('text-xs sm:text-sm mt-1', isDark ? 'text-slate-400' : 'text-stone-500')}>
-                  Đặt ngày {formatDate(order.createdAt)}
-                  {order.shopName && <span className="font-medium text-stone-700 dark:text-slate-300"> • Cửa hàng: {order.shopName}</span>}
+                  Đặt ngày {formatOrderDate(order.createdAt)}
+                  {order.shopName && (
+                    <span className="font-medium text-stone-700 dark:text-slate-300"> • Cửa hàng: {order.shopName}</span>
+                  )}
                 </p>
               </div>
 
@@ -266,103 +207,28 @@ export default function OrderDetail() {
                 <span
                   className={cn(
                     'inline-flex items-center gap-2 rounded-2xl px-3.5 py-1.5 text-xs sm:text-sm font-bold shadow-sm border',
-                    statusBadge.color,
+                    effectiveStatus.color,
                   )}
                 >
                   <StatusIcon className="h-4 w-4" />
-                  {statusLabel}
+                  {effectiveStatus.label}
                 </span>
               </div>
             </div>
 
-            {/* Escrow Guidance Banner when DELIVERED and NO dispute and NO return */}
-            {['DELIVERED'].includes(order.status) && !order.hasActiveDispute && !returnInfo && !order.returnInfo && (
-              <div className={cn(
-                'rounded-2xl p-3.5 sm:p-4 border text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3',
-                isDark ? 'bg-amber-500/10 border-amber-500/25 text-amber-300' : 'bg-amber-50 border-amber-200 text-amber-900'
-              )}>
-                <div className="flex items-start gap-2.5">
-                  <HiOutlineShieldCheck className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-bold">Đơn hàng đã được giao đến bạn</p>
-                    <p className="text-[11px] opacity-90 mt-0.5 leading-relaxed">
-                      Vui lòng kiểm tra kỹ sản phẩm. Tiền đang được <strong>Sàn ký quỹ giữ an toàn</strong>. Nếu có vấn đề về sản phẩm, hãy bấm <strong>Khiếu nại</strong> để tạm giữ tiền giải ngân cho Shop.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
+            {/* Banners for Escrow Guidance & Disputes */}
+            <OrderDisputeBanner
+              order={order}
+              returnInfo={activeReturn}
+              isDark={isDark}
+            />
 
-            {/* Dispute Status Banner when order has active dispute */}
-            {order.hasActiveDispute && (
-              <div className={cn(
-                'rounded-2xl p-4 border text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm',
-                order.disputeStatus === 'REPORT_PENDING'
-                  ? (isDark ? 'bg-amber-500/10 border-amber-500/30 text-amber-300' : 'bg-amber-50 border-amber-300 text-amber-900')
-                  : (isDark ? 'bg-rose-500/10 border-rose-500/30 text-rose-300' : 'bg-rose-50 border-rose-300 text-rose-900')
-              )}>
-                <div className="flex items-start gap-3">
-                  <div className={cn(
-                    'p-2 rounded-xl text-white shrink-0 mt-0.5 shadow-sm',
-                    order.disputeStatus === 'REPORT_PENDING' ? 'bg-amber-500' : 'bg-rose-500'
-                  )}>
-                    {order.disputeStatus === 'REPORT_PENDING' ? (
-                      <HiOutlineExclamationCircle className="h-5 w-5" />
-                    ) : (
-                      <HiOutlineShieldCheck className="h-5 w-5" />
-                    )}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-bold text-sm">
-                        {order.disputeStatus === 'REPORT_PENDING' && 'Đang giải quyết khiếu nại đơn hàng'}
-                        {order.disputeStatus === 'REPORT_APPROVED' && 'Khiếu nại của bạn đã được chấp thuận'}
-                        {order.disputeStatus === 'APPEAL_PENDING' && 'Shop đang gửi đơn kháng cáo'}
-                      </p>
-                      <span className={cn(
-                        'px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border tracking-wider',
-                        order.disputeStatus === 'REPORT_PENDING'
-                          ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/30'
-                          : 'bg-rose-500/20 text-rose-600 dark:text-rose-400 border-rose-500/30'
-                      )}>
-                        {order.disputeStatus === 'REPORT_PENDING' && 'Chờ BQT duyệt'}
-                        {order.disputeStatus === 'REPORT_APPROVED' && 'Tạm khóa Escrow'}
-                        {order.disputeStatus === 'APPEAL_PENDING' && 'Chờ đối soát kháng cáo'}
-                      </span>
-                    </div>
-                    <p className="text-[11px] opacity-90 mt-1 leading-relaxed">
-                      {order.disputeStatus === 'REPORT_PENDING' &&
-                        'Hồ sơ khiếu nại của bạn đang được Ban Quản Trị xem xét và đối soát. Tiền đơn hàng đang được tạm khóa trong Ký quỹ sàn (Escrow), nút xác nhận nhận hàng tạm khóa để bảo vệ quyền lợi.'}
-                      {order.disputeStatus === 'REPORT_APPROVED' &&
-                        'Ban Quản Trị đã xác nhận khiếu nại của bạn là hợp lệ. Tiền vẫn đang được giữ an toàn trong Ký quỹ sàn. Shop có thời hạn tối đa 72 giờ để gửi phản hồi / kháng cáo trước khi hệ thống tự động hoàn tiền.'}
-                      {order.disputeStatus === 'APPEAL_PENDING' &&
-                        'Shop đã nộp đơn kháng cáo kèm bằng chứng. Ban Quản Trị đang tiến hành phân xử công bằng để đưa ra phán quyết giải ngân hoặc hoàn tiền cuối cùng.'}
-                    </p>
-                    {order.disputeReason && (
-                      <p className="text-[11px] font-mono mt-1.5 opacity-80 line-clamp-2">
-                        Lý do: {order.disputeReason}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Quick Action Bar for Order state transitions - Only when NO active dispute and NO return in progress */}
-            {['DELIVERED'].includes(order.status) && !order.hasActiveDispute && !returnInfo && !order.returnInfo && (
+            {/* Quick Action Bar for DELIVERED */}
+            {canConfirmOrDispute && (
               <div className="flex flex-wrap items-center gap-2.5 pt-2">
                 <button
                   type="button"
-                  onClick={async () => {
-                    if (!window.confirm("Bạn xác nhận đã nhận đầy đủ sản phẩm và hài lòng với đơn hàng? Thao tác này sẽ chuyển tiền cho Người bán.")) return;
-                    try {
-                      await orderService.markOrderReceived(order.id);
-                      toast.success("Đã xác nhận nhận hàng thành công!");
-                      fetchOrder();
-                    } catch (e) {
-                      toast.error(e?.message || "Có lỗi xảy ra khi xác nhận");
-                    }
-                  }}
+                  onClick={handleMarkReceived}
                   className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition-all duration-150 active:scale-[0.98]"
                 >
                   <HiOutlineCheckCircle className="h-4 w-4" />
@@ -381,10 +247,10 @@ export default function OrderDetail() {
           </div>
 
           {/* Return & Refund Process Section */}
-          {(returnInfo || order.returnInfo) && (
+          {activeReturn && (
             <div className="border-b p-5 sm:p-6">
               <CustomerReturnCard
-                returnInfo={returnInfo || order.returnInfo}
+                returnInfo={activeReturn}
                 isDark={isDark}
                 onRefresh={fetchOrder}
               />
@@ -413,7 +279,7 @@ export default function OrderDetail() {
               </div>
               <div className="flex items-center gap-2">
                 <HiOutlinePhone className={cn('h-5 w-5', isDark ? 'text-slate-400' : 'text-stone-500')} />
-                <p className={cn('text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
+                <p className={cn('text-sm font-mono', isDark ? 'text-slate-400' : 'text-stone-600')}>
                   {order.shippingPhone}
                 </p>
               </div>
@@ -421,220 +287,27 @@ export default function OrderDetail() {
           </div>
 
           {/* Order Items */}
-          <div className="border-b p-6">
-            <h2 className={cn('mb-4 font-semibold', isDark ? 'text-white' : 'text-stone-900')}>
-              Sản phẩm
-            </h2>
-            <div className="space-y-4">
-              {order.items?.map((item) => (
-                <div key={item.id} className="flex gap-4">
-                  <img
-                    src={item.productImageUrl || '/product-placeholder.svg'}
-                    alt={item.productName}
-                    className="h-20 w-20 rounded-lg object-cover bg-stone-100 dark:bg-slate-800"
-                    onError={(e) => {
-                      e.target.src = '/product-placeholder.svg'
-                    }}
-                  />
-                  <div className="flex-1">
-                    <Link
-                      to={`/products/${item.productId}`}
-                      className={cn('font-medium hover:underline', isDark ? 'text-white' : 'text-stone-900')}
-                    >
-                      {item.productName}
-                    </Link>
-                    {(item.variantColor || item.variantSize) && (
-                      <p className="mt-0.5 text-xs text-stone-500 dark:text-slate-400">
-                        Phân loại: <span className="font-medium text-stone-700 dark:text-slate-300">{[item.variantColor, item.variantSize].filter(Boolean).join(' - ')}</span>
-                      </p>
-                    )}
-                    <p className={cn('mt-1 text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
-                      Số lượng: {item.quantity}
-                    </p>
-                    <p className={cn('mt-1 text-sm font-medium', isDark ? 'text-white' : 'text-stone-900')}>
-                      {formatCurrency(item.totalPrice)}
-                    </p>
-                    {order.status === 'COMPLETED' && (
-                      <button
-                        onClick={() => setReviewModal({
-                          open: true,
-                          productId: item.productId,
-                          productName: item.productName,
-                        })}
-                        className="mt-2 flex items-center gap-1.5 rounded-lg bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-500 transition hover:bg-amber-500/20"
-                      >
-                        <HiOutlineStar className="h-4 w-4" />
-                        Viết đánh giá
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          <OrderItemsList
+            items={order.items}
+            orderStatus={order.status}
+            isDark={isDark}
+            formatCurrency={formatOrderCurrency}
+            onOpenReview={(reviewTarget) =>
+              setReviewModal({
+                open: true,
+                productId: reviewTarget.productId,
+                productName: reviewTarget.productName,
+              })
+            }
+          />
 
-          {/* Order Summary */}
-          <div className="p-6">
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className={cn('text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
-                  Tạm tính
-                </span>
-                <span className={cn('text-sm font-medium', isDark ? 'text-white' : 'text-stone-900')}>
-                  {formatCurrency(order.subtotal)}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className={cn('text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
-                  Phí vận chuyển
-                </span>
-                <span className={cn('text-sm font-medium', isDark ? 'text-white' : 'text-stone-900')}>
-                  {formatCurrency(order.shippingFee || 0)}
-                </span>
-              </div>
-              {Number(order.shopDiscountAmount) > 0 && (
-                <div className="flex justify-between text-rose-600 dark:text-rose-400">
-                  <span className="text-sm flex items-center gap-1 font-medium">
-                    <HiOutlineTag className="h-4 w-4" />
-                    Voucher Shop {order.shopVoucherCode ? `(${order.shopVoucherCode})` : ''}
-                  </span>
-                  <span className="text-sm font-bold">
-                    -{formatCurrency(order.shopDiscountAmount)}
-                  </span>
-                </div>
-              )}
-              {Number(order.platformDiscountAmount) > 0 && (
-                <div className="flex justify-between text-blue-600 dark:text-blue-400">
-                  <span className="text-sm flex items-center gap-1 font-medium">
-                    <HiOutlineTag className="h-4 w-4" />
-                    Voucher Sàn {order.platformVoucherCode ? `(${order.platformVoucherCode})` : ''}
-                  </span>
-                  <span className="text-sm font-bold">
-                    -{formatCurrency(order.platformDiscountAmount)}
-                  </span>
-                </div>
-              )}
-              {Number(order.discountAmount) > 0 && !Number(order.shopDiscountAmount) && !Number(order.platformDiscountAmount) && (
-                <div className="flex justify-between text-emerald-600 dark:text-emerald-400">
-                  <span className="text-sm flex items-center gap-1 font-medium">
-                    <HiOutlineTag className="h-4 w-4" />
-                    Giảm giá voucher {order.voucherCode ? `(${order.voucherCode})` : ''}
-                  </span>
-                  <span className="text-sm font-bold">
-                    -{formatCurrency(order.discountAmount)}
-                  </span>
-                </div>
-              )}
-              {order.ghnOrderCode && (
-                <div className="flex justify-between">
-                  <span className={cn('text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
-                    Mã vận đơn GHN
-                  </span>
-                  <span className={cn('text-sm font-medium', isDark ? 'text-white' : 'text-stone-900')}>
-                    {order.ghnOrderCode}
-                  </span>
-                </div>
-              )}
-              <div className="border-t pt-3">
-                <div className="flex justify-between">
-                  <span className={cn('text-lg font-semibold', isDark ? 'text-white' : 'text-stone-900')}>
-                    Tổng cộng
-                  </span>
-                  <span className={cn('text-lg font-bold', isDark ? 'text-white' : 'text-stone-900')}>
-                    {formatCurrency(order.total)}
-                  </span>
-                </div>
-              </div>
-
-              {/* Payment Status / Escrow */}
-              {!['PENDING_PAYMENT', 'CANCELLED', 'REFUNDED'].includes(order.status) && (
-                <div className="border-t pt-4 mt-4">
-                  <h3 className={cn('text-sm font-semibold mb-3', isDark ? 'text-slate-300' : 'text-stone-700')}>
-                    {order.paymentMethod === 'COD' ? 'Phương thức & Thanh toán' : 'Trạng thái thanh toán (Escrow)'}
-                  </h3>
-                  {order.paymentMethod === 'COD' ? (
-                    <div className={cn('flex items-start gap-3 rounded-xl p-4', isDark ? 'bg-slate-800/60 border border-slate-700' : 'bg-stone-50 border border-stone-200')}>
-                      <div className="mt-0.5 p-2 rounded-full bg-emerald-500/10 shrink-0">
-                        <HiOutlineTruck className="h-4 w-4 text-emerald-500" />
-                      </div>
-                      <div>
-                        <p className={cn('text-sm font-semibold', isDark ? 'text-emerald-400' : 'text-emerald-700')}>
-                          {order.status === 'COMPLETED' ? 'Đã thanh toán tiền mặt khi nhận hàng' : 'Thanh toán khi nhận hàng (COD)'}
-                        </p>
-                        <p className={cn('mt-1 text-xs', isDark ? 'text-slate-400' : 'text-stone-500')}>
-                          {order.status === 'COMPLETED'
-                            ? `Bạn đã thanh toán ${formatCurrency(order.total)} cho nhân viên giao hàng khi nhận kiện hàng.`
-                            : `Vui lòng chuẩn bị sẵn số tiền mặt ${formatCurrency(order.total)} để thanh toán trực tiếp cho nhân viên giao hàng khi nhận hàng.`}
-                        </p>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      {['CONFIRMED', 'PROCESSING', 'SHIPPING', 'SHIPPED', 'DELIVERED'].includes(order.status) && (
-                        <div className={cn('flex items-start gap-3 rounded-xl p-4', isDark ? 'bg-amber-900/20 border border-amber-800/30' : 'bg-amber-50 border border-amber-100')}>
-                          <div className="mt-0.5 p-2 rounded-full bg-amber-500/10 shrink-0">
-                            <HiOutlineLockClosed className="h-4 w-4 text-amber-500" />
-                          </div>
-                          <div>
-                            <p className={cn('text-sm font-semibold', isDark ? 'text-amber-400' : 'text-amber-700')}>
-                              Tiền đang được giữ an toàn (Escrow)
-                            </p>
-                            <p className={cn('mt-1 text-xs', isDark ? 'text-slate-400' : 'text-stone-500')}>
-                              Số tiền <span className="font-semibold">{formatCurrency(order.subtotal || order.total)}</span> đang được giữ bởi hệ thống escrow.
-                              Tiền sẽ được chuyển cho người bán sau khi bạn xác nhận đã nhận hàng.
-                            </p>
-                            {order.status === 'DELIVERED' && (
-                              <p className={cn('mt-2 text-xs font-medium', isDark ? 'text-amber-300' : 'text-amber-600')}>
-                                ⏱ Nếu bạn không xác nhận trong 3 ngày, hệ thống sẽ tự động giải phóng escrow.
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  )}
-                  {order.status === 'COMPLETED' && (
-                    <div className={cn('flex items-start gap-3 rounded-xl p-4', isDark ? 'bg-emerald-900/20 border border-emerald-800/30' : 'bg-emerald-50 border border-emerald-100')}>
-                      <div className="mt-0.5 p-2 rounded-full bg-emerald-500/10 shrink-0">
-                        <HiOutlineShieldCheck className="h-4 w-4 text-emerald-500" />
-                      </div>
-                      <div>
-                        <p className={cn('text-sm font-semibold', isDark ? 'text-emerald-400' : 'text-emerald-700')}>
-                          Giao dịch hoàn tất – Escrow đã giải phóng
-                        </p>
-                        <p className={cn('mt-1 text-xs', isDark ? 'text-slate-400' : 'text-stone-500')}>
-                          Tiền đã được chuyển cho người bán. Cảm ơn bạn đã mua hàng!
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Payment Button for PENDING_PAYMENT */}
-              {order.status === 'PENDING_PAYMENT' && (
-                <div className="border-t pt-4 mt-4">
-                  <button
-                    onClick={async () => {
-                      try {
-                        const res = await orderService.createPayment(order.id);
-                        if (res.paymentUrl) {
-                          window.location.href = res.paymentUrl;
-                        } else {
-                          toast.error("Không thể tạo link thanh toán");
-                        }
-                      } catch (e) {
-                        toast.error(e.message || "Lỗi khi tạo thanh toán");
-                      }
-                    }}
-                    className="w-full rounded-xl bg-amber-500 py-3 font-bold text-white shadow-lg shadow-amber-500/25 transition-all hover:bg-amber-600 hover:shadow-xl hover:shadow-amber-500/30 active:scale-95"
-                  >
-                    Thanh toán ngay ({formatCurrency(order.total)})
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
+          {/* Order Summary & Escrow */}
+          <OrderSummaryCard
+            order={order}
+            isDark={isDark}
+            formatCurrency={formatOrderCurrency}
+            onPayNow={handlePayNow}
+          />
         </motion.div>
 
         {/* Review Modal */}

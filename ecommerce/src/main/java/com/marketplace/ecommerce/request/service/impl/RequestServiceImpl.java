@@ -324,7 +324,8 @@ public class RequestServiceImpl implements RequestService {
                     productRepository.save(p);
                 });
             } else if (report != null && report.getTargetType() == TargetType.ORDER && report.getTargetId() != null) {
-                // Nếu bác đơn kháng cáo đơn hàng vi phạm của Shop -> Đọc ResolutionType từ report gốc để rẽ nhánh
+                // Nếu bác đơn kháng cáo đơn hàng vi phạm của Shop -> Đọc ResolutionType từ
+                // report gốc để rẽ nhánh
                 Report originalReport = report;
                 if (report.getViolationReportId() != null) {
                     originalReport = reportRepository.findById(report.getViolationReportId()).orElse(report);
@@ -412,7 +413,8 @@ public class RequestServiceImpl implements RequestService {
                                 var ret = orderReturnService.getReturnByOrderId(o.getId());
                                 if (ret != null) {
                                     targetInfo += " | Kiện hoàn: " + ret.getStatus()
-                                            + (ret.getConditionStatus() != null ? " (" + ret.getConditionStatus() + ")" : "");
+                                            + (ret.getConditionStatus() != null ? " (" + ret.getConditionStatus() + ")"
+                                                    : "");
                                 }
                             }
                         }
@@ -446,12 +448,6 @@ public class RequestServiceImpl implements RequestService {
     @Override
     public Page<CreateRequestResponse> getRequests(UUID accountId, Pageable pageable) {
         return requestRepository.findAllRequestByAccountId(accountId, pageable).map(CreateRequestResponse::from);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Page<CreateRequestResponse> getAllRequests(RequestStatus status, Pageable pageable) {
-        return getAllRequests(null, status, pageable);
     }
 
     @Override
@@ -494,9 +490,11 @@ public class RequestServiceImpl implements RequestService {
         return requestRepository.save(re);
     }
 
-    private void orchestrateCustomerWon(UUID orderId, UUID reportId, ResolutionType resolutionType, String refundReason) {
+    private void orchestrateCustomerWon(UUID orderId, UUID reportId, ResolutionType resolutionType,
+            String refundReason) {
         if (resolutionType == ResolutionType.RETURN_AND_REFUND) {
-            log.info("Coordinator initiating RETURN_AND_REFUND for disputed orderId={}, reportId={}", orderId, reportId);
+            log.info("Coordinator initiating RETURN_AND_REFUND for disputed orderId={}, reportId={}", orderId,
+                    reportId);
             orderReturnService.createReturn(orderId, reportId);
         } else {
             log.info("Coordinator initiating REFUND_ONLY for disputed orderId={}", orderId);

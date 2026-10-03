@@ -5,7 +5,6 @@ networks:
 volumes:
   postgres_data:
   minio_data:
-  ollama_data:
   redis_data:
 
 services:
@@ -56,25 +55,6 @@ services:
     entrypoint: ["/bin/sh", "/minio-init.sh"]
     restart: "no"
 
-  # Ollama - LLM local cho AI recommend / chatbot (chạy CPU, optional GPU)
-  ollama:
-    image: ollama/ollama:latest
-    container_name: app-ollama
-    ports:
-      - "${OLLAMA_PORT:-11434}:11434"
-    volumes:
-      - ollama_data:/root/.ollama
-    networks:
-      - backend
-    restart: unless-stopped
-    # Nếu có NVIDIA GPU, bỏ comment 2 dòng dưới và cài NVIDIA Container Toolkit
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: 1
-    #           capabilities: [gpu]
 
   # Redis - High speed cache & real-time counter cho Livestream (Online viewers, Like count)
   redis:

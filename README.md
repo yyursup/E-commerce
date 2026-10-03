@@ -7,7 +7,7 @@ Dự án gồm:
 
 ## Cấu trúc thư mục
 
-- `ecommerce/`: API server + websocket + tích hợp (MinIO, Mail, GHN, VNPAY, VNPT eKYC, Ollama-embedding optional)
+- `ecommerce/`: API server + websocket + tích hợp (MinIO, Mail, GHN, VNPAY, VNPT eKYC)
 - `ecommerce-fe/`: UI web (mặc định gọi API `http://localhost:8080`)
 
 ## Yêu cầu môi trường
@@ -15,7 +15,7 @@ Dự án gồm:
 - **Java**: 21
 - **Maven**: dùng `./mvnw` (Windows: `mvnw.cmd`)
 - **Node.js**: khuyến nghị Node 18+ (hoặc mới hơn)
-- **Docker Desktop** (khuyến nghị): để chạy PostgreSQL/MinIO/Ollama bằng Compose
+- **Docker Desktop** (khuyến nghị): để chạy PostgreSQL/MinIO/Redis bằng Compose
 
 ## Biến môi trường / cấu hình
 
@@ -49,7 +49,6 @@ Các biến **tích hợp** (có thể để trống nếu bạn chưa dùng tí
 - **GHN**: `GHN_URL`, `GHN_TOKEN`, `GHN_SHOP_ID`
 - **VNPAY**: `VNPAY_TMN_CODE`, `VNPAY_HASH_SECRET`, `VNPAY_URL`, `VNPAY_RETURN_URL`
 - **VNPT eKYC**: `VNPT_EKYC_BASE_URL`, `VNPT_EKYC_ACCESS_TOKEN`, `VNPT_EKYC_TOKEN_ID`, `VNPT_EKYC_TOKEN_KEY`
-- **Ollama (optional)**: `OLLAMA_PORT` (default `11434`)
 
 ### `.env` cho Docker Compose
 
@@ -95,7 +94,7 @@ VITE_API_BASE_URL=http://localhost:8080
 
 ## Chạy nhanh bằng Docker Compose (khuyến nghị)
 
-Chạy các service phụ trợ (Postgres + MinIO + Ollama):
+Chạy các service phụ trợ (Postgres + MinIO + Redis):
 
 ```bash
 cd ecommerce
@@ -107,14 +106,7 @@ Sau khi lên xong, bạn có:
 - **PostgreSQL**: `localhost:${POSTGRES_PORT}`
 - **MinIO API**: `http://localhost:${MINIO_API_PORT}` (default `9000`)
 - **MinIO Console**: `http://localhost:${MINIO_CONSOLE_PORT}` (default `9001`)
-- **Ollama** (optional): `http://localhost:${OLLAMA_PORT:-11434}`
-
-Gợi ý kiểm tra/pull model embedding cho Ollama (Windows PowerShell):
-
-```powershell
-cd ecommerce
-.\scripts\ollama-check.ps1
-```
+- **Redis**: `localhost:${REDIS_PORT:-6379}`
 
 ## Chạy backend (Spring Boot)
 

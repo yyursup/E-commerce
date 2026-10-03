@@ -22,6 +22,7 @@ import { useThemeStore } from '../store/useThemeStore';
 import reportService from '../services/report';
 import fileService from '../services/fileService';
 import toast from 'react-hot-toast';
+import { getConditionBadge, getWarrantyBadge } from '../lib/techBadges';
 
 const ORDER_REPORT_REASONS = [
   {
@@ -288,6 +289,64 @@ export default function OrderReportModal({ isOpen, onClose, order, onSuccess }) 
                   </span>
                 </div>
               </div>
+
+              {/* Items List in Dispute */}
+              {order.items && order.items.length > 0 && (
+                <div className={cn(
+                  'p-3 rounded-2xl border text-xs space-y-2',
+                  isDark ? 'bg-slate-800/30 border-slate-800' : 'bg-stone-50/50 border-stone-200/70'
+                )}>
+                  <span className="text-[11px] font-semibold text-stone-500 dark:text-slate-400">
+                    Sản phẩm trong kiện hàng ({order.items.length}):
+                  </span>
+                  <div className="space-y-2 max-h-36 overflow-y-auto">
+                    {order.items.map((item, idx) => (
+                      <div key={item.id || idx} className="flex items-center gap-2.5">
+                        <img
+                          src={item.productImageUrl || '/product-placeholder.svg'}
+                          alt={item.productName}
+                          className="h-10 w-10 rounded-lg object-cover bg-stone-100 dark:bg-slate-800 shrink-0 border"
+                          onError={(e) => { e.target.src = '/product-placeholder.svg'; }}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-xs truncate">{item.productName}</p>
+                          <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                            {item.conditionGrade && (
+                              <span className={cn("text-[10px] font-semibold px-1.5 py-0.5 rounded border", getConditionBadge(item.conditionGrade)?.cls)}>
+                                {getConditionBadge(item.conditionGrade)?.label}
+                              </span>
+                            )}
+                            {item.warrantyType && (
+                              <span className={cn("text-[10px] font-medium px-1.5 py-0.5 rounded border", getWarrantyBadge(item.warrantyType, item.warrantyMonths)?.cls)}>
+                                {getWarrantyBadge(item.warrantyType, item.warrantyMonths)?.label}
+                              </span>
+                            )}
+                            <span className="text-[10px] text-stone-400">x{item.quantity}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* AS-IS Items Alert */}
+              {order.items?.some((item) => item.conditionGrade === 'GRADE_AS_IS') && (
+                <div className={cn(
+                  'p-3.5 rounded-2xl border text-xs flex items-start gap-3',
+                  isDark ? 'bg-amber-950/30 border-amber-800/50 text-amber-200' : 'bg-amber-50 border-amber-200 text-amber-900'
+                )}>
+                  <HiOutlineExclamationCircle className="h-5 w-5 shrink-0 text-amber-500 mt-0.5" />
+                  <div className="space-y-1">
+                    <p className="font-bold text-amber-600 dark:text-amber-400">
+                      Chính sách đối soát Hàng Xác Máy / Linh Kiện Rã Xác:
+                    </p>
+                    <p className="text-[11px] leading-relaxed opacity-90">
+                      Đơn hàng có mặt hàng diện <strong>Xác máy / Thanh lý không bảo hành</strong>. Theo quy chế sàn công nghệ, khiếu nại chỉ được chấp thuận nếu Người bán giao sai dòng máy hoặc thiếu phụ kiện đã mô tả. Các lỗi phần cứng, không lên nguồn hay hao mòn tự nhiên không được hoàn tiền.
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* Reason Selection Cards Grid */}
               <div className="space-y-2.5">

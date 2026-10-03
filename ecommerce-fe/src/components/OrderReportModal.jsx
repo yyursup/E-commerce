@@ -25,30 +25,44 @@ import toast from 'react-hot-toast';
 
 const ORDER_REPORT_REASONS = [
   {
+    value: 'HARDWARE_FAULT',
+    title: 'Lỗi phần cứng / Không khởi động',
+    desc: 'Thiết bị không lên nguồn, lỗi sạc, sọc màn hình, liệt cảm ứng hoặc lỗi chức năng chính',
+    icon: HiOutlineExclamationCircle,
+    color: 'text-amber-500 bg-amber-500/10 border-amber-500/20',
+  },
+  {
+    value: 'NOT_AS_DESCRIBED',
+    title: 'Tình trạng không đúng mô tả',
+    desc: 'Pin chai nặng hơn cam kết, trầy xước cấn móp nghiêm trọng, dính iCloud/MDM hoặc khóa mạng',
+    icon: HiOutlineShieldExclamation,
+    color: 'text-rose-500 bg-rose-500/10 border-rose-500/20',
+  },
+  {
     value: 'WRONG_ITEM',
-    title: 'Giao sai sản phẩm / Phân loại',
-    desc: 'Nhận nhầm mặt hàng, sai kích cỡ (size), sai màu sắc hoặc khác mẫu đặt',
+    title: 'Giao sai sản phẩm / Cấu hình',
+    desc: 'Nhận nhầm máy, sai thông số kỹ thuật (RAM, ROM, Chip) hoặc khác phiên bản đã đặt',
     icon: HiOutlineRefresh,
     color: 'text-indigo-500 bg-indigo-500/10 border-indigo-500/20',
   },
   {
     value: 'MISSING_ITEM',
-    title: 'Giao thiếu số lượng / Phụ kiện',
-    desc: 'Kiện hàng thiếu số lượng sản phẩm, thiếu quà tặng kèm hoặc phụ kiện',
+    title: 'Giao thiếu phụ kiện / Quà tặng',
+    desc: 'Kiện hàng thiếu củ sạc, dây cáp zin, bút cảm ứng hoặc linh kiện cam kết đi kèm',
     icon: HiOutlineClipboardList,
     color: 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20',
   },
   {
     value: 'COUNTERFEIT',
-    title: 'Hàng giả / Nghi vấn gian lận',
-    desc: 'Sản phẩm có dấu hiệu giả mạo nhãn hiệu, không đúng mô tả cam kết',
-    icon: HiOutlineShieldExclamation,
-    color: 'text-rose-500 bg-rose-500/10 border-rose-500/20',
+    title: 'Nghi vấn hàng dựng / Thay linh kiện',
+    desc: 'Thiết bị có dấu hiệu bị thay màn lô, ép kính, đã qua sửa chữa phần cứng không báo trước',
+    icon: HiOutlineShieldCheck,
+    color: 'text-purple-500 bg-purple-500/10 border-purple-500/20',
   },
   {
     value: 'OTHER',
     title: 'Lý do khiếu nại khác',
-    desc: 'Các phát sinh khác cần đối soát và phân xử từ Ban Quản Trị sàn',
+    desc: 'Các phát sinh kỹ thuật khác cần đối soát và phân xử từ Ban Quản Trị sàn',
     icon: HiOutlineChatAlt2,
     color: 'text-slate-500 bg-slate-500/10 border-slate-500/20',
   },
@@ -61,7 +75,7 @@ export default function OrderReportModal({ isOpen, onClose, order, onSuccess }) 
   const fileInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
-    reason: 'WRONG_ITEM',
+    reason: 'HARDWARE_FAULT',
     description: '',
     evidenceUrls: [],
   });

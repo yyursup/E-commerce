@@ -3,6 +3,7 @@ package com.marketplace.ecommerce.request.controller;
 import com.marketplace.ecommerce.common.CurrentUserInfo;
 import com.marketplace.ecommerce.config.CurrentUser;
 import com.marketplace.ecommerce.request.dto.request.CreateAppealRequest;
+import com.marketplace.ecommerce.request.dto.request.CreatePublicAppealRequest;
 import com.marketplace.ecommerce.request.dto.request.RegisterSellerRequest;
 import com.marketplace.ecommerce.request.dto.response.CreateRequestResponse;
 import com.marketplace.ecommerce.request.dto.response.RequestResponse;
@@ -10,6 +11,9 @@ import com.marketplace.ecommerce.request.dto.response.RequestDetailsResponse;
 import com.marketplace.ecommerce.request.service.RegisterSellerService;
 import com.marketplace.ecommerce.request.service.RequestService;
 import com.marketplace.ecommerce.request.valueObjects.RequestStatus;
+import com.marketplace.ecommerce.request.valueObjects.TargetType;
+import com.marketplace.ecommerce.auth.service.TokenService;
+import com.marketplace.ecommerce.auth.entity.Account;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -29,6 +33,8 @@ public class RequestController {
     private final RequestService requestService;
 
     private final RegisterSellerService registerSellerService;
+    
+    private final TokenService tokenService;
 
     @PostMapping("regis-seller")
     public CreateRequestResponse register(
@@ -42,6 +48,26 @@ public class RequestController {
             @CurrentUser CurrentUserInfo u,
             @Valid @RequestBody CreateAppealRequest request) {
         return requestService.createAppeal(u.getAccountId(), request);
+    }
+
+    @PostMapping("/appeal/public")
+    public CreateRequestResponse createAppealPublic(
+            @RequestHeader("Authorization") String authHeader,
+            @Valid @RequestBody CreatePublicAppealRequest request) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new com.marketplace.ecommerce.common.exception.CustomException("Missing or invalid authorization header");
+        }
+        String token = authHeader.substring(7);
+        Account account = tokenService.getAccountFromAppealToken(token);
+        
+        CreateAppealRequest fullRequest = CreateAppealRequest.builder()
+                .targetId(account.getId())
+                .targetType(TargetType.USER)
+                .description(request.getDescription())
+                .evidenceUrl(request.getEvidenceUrl())
+                .build();
+                
+        return requestService.createAppeal(account.getId(), fullRequest);
     }
 
 

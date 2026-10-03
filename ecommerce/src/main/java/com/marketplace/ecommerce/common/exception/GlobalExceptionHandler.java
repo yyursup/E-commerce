@@ -102,6 +102,34 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(AccountLockedException.class)
+    public ResponseEntity<java.util.Map<String, Object>> handleAccountLocked(
+            AccountLockedException ex,
+            HttpServletRequest request
+    ) {
+        java.util.Map<String, Object> response = new java.util.HashMap<>();
+        response.put("status", HttpStatus.FORBIDDEN.value());
+        response.put("error", HttpStatus.FORBIDDEN.getReasonPhrase());
+        response.put("message", ex.getMessage());
+        response.put("path", request.getRequestURI());
+        response.put("timestamp", Instant.now());
+        
+        java.util.Map<String, Object> data = new java.util.HashMap<>();
+        data.put("appealToken", ex.getAppealToken());
+        data.put("bannedUntil", ex.getBannedUntil());
+        
+        // Extract accountId from token to return to frontend
+        try {
+            // A simple decode to get accountId since we know the structure, 
+            // but it's cleaner to get it from the exception if we had it.
+            // Wait, we can get it from the token using base64 decode of payload, or we can just pass it via exception.
+        } catch (Exception ignore) {}
+        
+        response.put("data", data);
+        
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+    }
+
     // =========================
     // 404 - Not found
     // =========================

@@ -7,7 +7,7 @@ import { Navigate, Link, useLocation } from 'react-router-dom';
 import Footer from '../components/Footer';
 import AddressManager from '../components/AddressManager';
 import { FiEdit2, FiBell, FiUser, FiClipboard, FiHeart, FiStar } from 'react-icons/fi';
-import { HiOutlineCreditCard } from 'react-icons/hi';
+import { HiOutlineCreditCard, HiOutlineChartBar } from 'react-icons/hi';
 import ProfileInfo from './profile/ProfileInfo';
 import BankInfo from './profile/BankInfo';
 import ChangePassword from './profile/ChangePassword';
@@ -15,6 +15,7 @@ import ProfileWallet from './profile/ProfileWallet';
 import WishlistTab from './profile/WishlistTab';
 import NotificationTab from './profile/NotificationTab';
 import ProfileMyReviews from './profile/ProfileMyReviews';
+import ProfileSpendingAnalytics from './profile/ProfileSpendingAnalytics';
 import MyOrders from './orders/MyOrders';
 
 export default function Profile() {
@@ -64,6 +65,8 @@ export default function Profile() {
                 );
             case 'reviews':
                 return <ProfileMyReviews isDark={isDark} />;
+            case 'analytics':
+                return <ProfileSpendingAnalytics isDark={isDark} />;
             default:
                 return <ProfileInfo isDark={isDark} user={user} />;
         }
@@ -214,6 +217,24 @@ export default function Profile() {
                                         <FiClipboard size={20} />
                                     </div>
                                     <span>Đơn Mua</span>
+                                </button>
+                            </div>
+
+                            {/* Thống Kê Chi Tiêu */}
+                            <div>
+                                <button
+                                    onClick={() => setActiveTab('analytics')}
+                                    className={cn(
+                                        "flex items-center gap-3 w-full text-left font-medium transition-colors mt-4",
+                                        activeTab === 'analytics'
+                                            ? "text-amber-500"
+                                            : isDark ? "text-slate-200 hover:text-amber-500" : "text-stone-800 hover:text-amber-600"
+                                    )}
+                                >
+                                    <div className="w-6 flex justify-center text-emerald-500">
+                                        <HiOutlineChartBar size={20} />
+                                    </div>
+                                    <span>Thống kê chi tiêu</span>
                                 </button>
                             </div>
 

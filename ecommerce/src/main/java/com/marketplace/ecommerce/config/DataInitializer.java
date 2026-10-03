@@ -140,50 +140,50 @@ public class DataInitializer implements CommandLineRunner {
                                 "987654321012");
 
                 User seller2 = initializeUser(
-                                initializeAccount("seller2", "trendy.fashion@gmail.com", "0987654322", "seller123@",
+                                initializeAccount("seller2", "samsung.official@gmail.com", "0987654322", "seller123@",
                                                 businessRole),
-                                "Trần Thị Mai (Trendy Fashion)",
-                                "trendy.fashion@gmail.com",
+                                "Trần Quang Huy (Samsung Experience)",
+                                "samsung.official@gmail.com",
                                 "0987654322",
-                                LocalDate.of(1992, 8, 20),
-                                GenderType.FEMALE,
+                                LocalDate.of(1990, 8, 20),
+                                GenderType.MALE,
                                 "987654321013");
 
                 User seller3 = initializeUser(
-                                initializeAccount("seller3", "nhanam.books@gmail.com", "0987654323", "seller123@",
+                                initializeAccount("seller3", "gearvn.hub@gmail.com", "0987654323", "seller123@",
                                                 businessRole),
-                                "Lê Tri Thức (Nhã Nam Books)",
-                                "nhanam.books@gmail.com",
+                                "Lê Minh Tuấn (GearVN Gaming)",
+                                "gearvn.hub@gmail.com",
                                 "0987654323",
-                                LocalDate.of(1985, 11, 12),
+                                LocalDate.of(1989, 11, 12),
                                 GenderType.MALE,
                                 "987654321014");
 
                 User seller4 = initializeUser(
-                                initializeAccount("seller4", "sunhouse.appliances@gmail.com", "0987654324",
+                                initializeAccount("seller4", "sony.flagship@gmail.com", "0987654324",
                                                 "seller123@", businessRole),
-                                "Phạm Hoàng Gia (Sunhouse Official)",
-                                "sunhouse.appliances@gmail.com",
+                                "Phạm Gia Long (Sony Official)",
+                                "sony.flagship@gmail.com",
                                 "0987654324",
                                 LocalDate.of(1987, 4, 18),
                                 GenderType.MALE,
                                 "987654321015");
 
                 User seller5 = initializeUser(
-                                initializeAccount("seller5", "innisfree.beauty@gmail.com", "0987654325", "seller123@",
+                                initializeAccount("seller5", "anker.baseus.vn@gmail.com", "0987654325", "seller123@",
                                                 businessRole),
-                                "Hoàng Thảo My (Beauty Hub)",
-                                "innisfree.beauty@gmail.com",
+                                "Ngô Hoàng Bách (Anker & Baseus)",
+                                "anker.baseus.vn@gmail.com",
                                 "0987654325",
                                 LocalDate.of(1994, 9, 25),
-                                GenderType.FEMALE,
+                                GenderType.MALE,
                                 "987654321016");
 
                 User seller6 = initializeUser(
-                                initializeAccount("seller6", "decathlon.sports@gmail.com", "0987654326", "seller123@",
+                                initializeAccount("seller6", "xiaomi.ecosystem@gmail.com", "0987654326", "seller123@",
                                                 businessRole),
-                                "Vũ Quốc Dũng (Decathlon Sports)",
-                                "decathlon.sports@gmail.com",
+                                "Vũ Đình Nam (Xiaomi Official)",
+                                "xiaomi.ecosystem@gmail.com",
                                 "0987654326",
                                 LocalDate.of(1991, 2, 10),
                                 GenderType.MALE,
@@ -267,56 +267,57 @@ public class DataInitializer implements CommandLineRunner {
                 // 7. Platform settings
                 initializePlatformSetting(PlatformConstant.KEY_COMMISSION_RATE, "10");
 
-                // 8. Comprehensive Category Hierarchy (8 Major Categories + Subcategories)
-                // Group 1: Điện Tử & Công Nghệ
-                ProductCategory electronics = initializeCategory(null, "Điện Tử & Công Nghệ");
-                ProductCategory smartphone = initializeCategory(electronics, "Điện Thoại & Tablet");
-                ProductCategory laptop = initializeCategory(electronics, "Laptop & Máy Tính");
-                ProductCategory audio = initializeCategory(electronics, "Thiết Bị Âm Thanh");
-                ProductCategory accessories = initializeCategory(electronics, "Phụ Kiện Điện Tử");
+                // 8. Comprehensive Electronics & Tech Category Hierarchy (8 Major Categories + Subcategories)
+                // Group 1: Điện Thoại & Máy Tính Bảng
+                ProductCategory phonesAndTablets = initializeCategory(null, "Điện Thoại & Máy Tính Bảng");
+                ProductCategory smartphones = initializeCategory(phonesAndTablets, "Điện Thoại Thông Minh");
+                ProductCategory tablets = initializeCategory(phonesAndTablets, "Máy Tính Bảng");
+                ProductCategory ereaders = initializeCategory(phonesAndTablets, "Máy Đọc Sách & Phụ Kiện");
 
-                // Group 2: Thời Trang & Phụ Kiện
-                ProductCategory fashion = initializeCategory(null, "Thời Trang & Phụ Kiện");
-                ProductCategory menFashion = initializeCategory(fashion, "Thời Trang Nam");
-                ProductCategory womenFashion = initializeCategory(fashion, "Thời Trang Nữ");
-                ProductCategory shoesBags = initializeCategory(fashion, "Giày Dép & Túi Ví");
-                ProductCategory watches = initializeCategory(fashion, "Đồng Hồ & Trang Sức");
+                // Group 2: Laptop & Máy Tính Để Bàn
+                ProductCategory computers = initializeCategory(null, "Laptop & Máy Tính Để Bàn");
+                ProductCategory gamingLaptops = initializeCategory(computers, "Laptop Gaming & Đồ Họa");
+                ProductCategory ultrabooks = initializeCategory(computers, "Laptop Văn Phòng & Mỏng Nhẹ");
+                ProductCategory pcWorkstations = initializeCategory(computers, "PC Đồng Bộ & Máy Trạm");
 
-                // Group 3: Sách & Văn Phòng Phẩm
-                ProductCategory books = initializeCategory(null, "Sách & Văn Phòng Phẩm");
-                ProductCategory literature = initializeCategory(books, "Văn Học & Tiểu Thuyết");
-                ProductCategory businessBooks = initializeCategory(books, "Kinh Tế & Kỹ Năng Sống");
-                ProductCategory stationery = initializeCategory(books, "Dụng Cụ Học Tập & Văn Phòng");
+                // Group 3: Linh Kiện Máy Tính & PC Build
+                ProductCategory components = initializeCategory(null, "Linh Kiện Máy Tính & PC Build");
+                ProductCategory cpuGpu = initializeCategory(components, "CPU & Card Đồ Họa (VGA)");
+                ProductCategory ramSsd = initializeCategory(components, "RAM, Ổ Cứng SSD & HDD");
+                ProductCategory motherboardPsu = initializeCategory(components, "Bo Mạch Chủ & Nguồn Máy Tính");
+                ProductCategory casesCooling = initializeCategory(components, "Vỏ Case & Tản Nhiệt PC");
 
-                // Group 4: Điện Gia Dụng & Đời Sống
-                ProductCategory homeLiving = initializeCategory(null, "Nhà Cửa & Đời Sống");
-                ProductCategory kitchenware = initializeCategory(homeLiving, "Dụng Cụ Nhà Bếp");
-                ProductCategory appliances = initializeCategory(homeLiving, "Thiết Bị Gia Dụng");
-                ProductCategory homeDecor = initializeCategory(homeLiving, "Nội Thất & Trang Trí");
+                // Group 4: Thiết Bị Âm Thanh
+                ProductCategory audio = initializeCategory(null, "Thiết Bị Âm Thanh");
+                ProductCategory headphones = initializeCategory(audio, "Tai Nghe True Wireless & Chụp Tai");
+                ProductCategory speakers = initializeCategory(audio, "Loa Bluetooth & Soundbar");
+                ProductCategory audioStudio = initializeCategory(audio, "Microphone & Soundcard Thu Âm");
 
-                // Group 5: Sức Khỏe & Sắc Đẹp
-                ProductCategory beauty = initializeCategory(null, "Sức Khỏe & Sắc Đẹp");
-                ProductCategory skincare = initializeCategory(beauty, "Chăm Sóc Da");
-                ProductCategory makeup = initializeCategory(beauty, "Trang Điểm & Son Môi");
-                ProductCategory personalCare = initializeCategory(beauty, "Chăm Sóc Cá Nhân");
+                // Group 5: Phụ Kiện Điện Tử & Gaming Gear
+                ProductCategory accessories = initializeCategory(null, "Phụ Kiện Điện Tử & Gaming Gear");
+                ProductCategory chargingPacks = initializeCategory(accessories, "Củ Cáp Sạc & Sạc Dự Phòng");
+                ProductCategory gearPeripherals = initializeCategory(accessories, "Bàn Phím Cơ & Chuột Gaming");
+                ProductCategory hubsCables = initializeCategory(accessories, "Cáp Chuyển Đổi & Hub Type-C");
 
-                // Group 6: Thể Thao & Dã Ngoại
-                ProductCategory sports = initializeCategory(null, "Thể Thao & Dã Ngoại");
-                ProductCategory sportswear = initializeCategory(sports, "Quần Áo Thể Thao");
-                ProductCategory gymYoga = initializeCategory(sports, "Dụng Cụ Gym & Yoga");
-                ProductCategory outdoorCamping = initializeCategory(sports, "Dã Ngoại & Cắm Trại");
+                // Group 6: Thiết Bị Đeo & Đồng Hồ Thông Minh
+                ProductCategory wearables = initializeCategory(null, "Thiết Bị Đeo & Đồng Hồ Thông Minh");
+                ProductCategory smartwatches = initializeCategory(wearables, "Đồng Hồ Thông Minh (Smartwatch)");
+                ProductCategory smartbands = initializeCategory(wearables, "Vòng Đeo Tay Thể Thao (Smartband)");
+                ProductCategory wearableAccessories = initializeCategory(wearables, "Dây Đeo & Phụ Kiện Smartwatch");
 
-                // Group 7: Mẹ & Bé
-                ProductCategory momBaby = initializeCategory(null, "Mẹ & Bé");
-                initializeCategory(momBaby, "Sữa & Dinh Dưỡng Cho Bé");
-                initializeCategory(momBaby, "Đồ Chơi & Giáo Dục");
+                // Group 7: Thiết Bị Nhà Thông Minh & IoT
+                ProductCategory smartHome = initializeCategory(null, "Thiết Bị Nhà Thông Minh & IoT");
+                ProductCategory securityCameras = initializeCategory(smartHome, "Camera An Ninh & Giám Sát");
+                ProductCategory robotVacuums = initializeCategory(smartHome, "Robot Hút Bụi & Lau Nhà");
+                ProductCategory smartLightingControls = initializeCategory(smartHome, "Khóa Cửa & Đèn Thông Minh");
 
-                // Group 8: Bách Hóa Online
-                ProductCategory grocery = initializeCategory(null, "Bách Hóa Online");
-                initializeCategory(grocery, "Bánh Kẹo & Đồ Ăn Vặt");
-                initializeCategory(grocery, "Trà, Cà Phê & Đồ Uống");
+                // Group 8: Máy Ảnh & Thiết Bị Quay Phim
+                ProductCategory cameras = initializeCategory(null, "Máy Ảnh & Thiết Bị Quay Phim");
+                ProductCategory dslrMirrorless = initializeCategory(cameras, "Máy Ảnh Mirrorless & DSLR");
+                ProductCategory dronesActionCam = initializeCategory(cameras, "Flycam Drone & Action Cam");
+                ProductCategory lensesGimbals = initializeCategory(cameras, "Ống Kính (Lens) & Gimbal Chống Rung");
 
-                // 9. Multi-vendor Shops with Verified eKYC and Real Addresses (HN, HCM, DN)
+                // 9. Multi-vendor Electronics Shops with Verified eKYC and Real Addresses (HN, HCM, DN)
                 Shop shop1 = initializeShop(
                                 seller1,
                                 "Apple Authorised Reseller",
@@ -344,35 +345,35 @@ public class DataInitializer implements CommandLineRunner {
 
                 Shop shop2 = initializeShop(
                                 seller2,
-                                "Trendy Fashion Studio",
-                                "Thương hiệu thời trang giới trẻ phong cách streetwear hiện đại, tối giản và thời thượng. Cam kết chất vải cao cấp.",
-                                "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&h=300&fit=crop",
-                                "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&h=400&fit=crop",
+                                "Samsung Experience Store",
+                                "Gian hàng chính hãng Samsung Flagship phân phối dòng Galaxy S, Galaxy Z Fold/Flip, Galaxy Tab, Galaxy Watch và hệ sinh thái Galaxy AI.",
+                                "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=300&h=300&fit=crop",
+                                "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1200&h=400&fit=crop",
                                 "0987654322",
                                 "245 Cầu Giấy, Phường Dịch Vọng, Quận Cầu Giấy",
                                 1542, // Cầu Giấy, Hà Nội
                                 "1B1507",
                                 ShopStatus.ACTIVE,
-                                4.8f,
-                                SellerType.INDIVIDUAL,
-                                null,
-                                null,
-                                null,
-                                null,
-                                "8012345678",
-                                "trendy.fashion@gmail.com",
+                                4.9f,
+                                SellerType.BUSINESS,
+                                BusinessType.ENTERPRISE,
+                                "Công Ty TNHH Điện Tử Samsung Vina",
+                                "245 Cầu Giấy, Phường Dịch Vọng, Quận Cầu Giấy, Hà Nội",
+                                "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c",
+                                "0301119988",
+                                "support.samsung@samsung-vina.com.vn",
                                 "Techcombank",
                                 "19034567890011",
-                                "TRAN THI MAI",
+                                "CONG TY TNHH DIEN TU SAMSUNG VINA",
                                 "245 Cầu Giấy, Phường Dịch Vọng, Quận Cầu Giấy, Hà Nội",
-                                "245 Cầu Giấy, Phường Dịch Vọng, Quận Cầu Giấy, Hà Nội");
+                                "Tổng kho Samsung Logistics, KCN Yên Phong, Bắc Ninh");
 
                 Shop shop3 = initializeShop(
                                 seller3,
-                                "Nhã Nam Books & Stationery",
-                                "Nhà sách phát hành các tác phẩm văn học, kinh tế, tâm lý học và dụng cụ văn phòng phẩm nhập khẩu cao cấp.",
-                                "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=300&h=300&fit=crop",
-                                "https://images.unsplash.com/photo-1507842229451-7f01be837453?w=1200&h=400&fit=crop",
+                                "GearVN PC & Gaming Hub",
+                                "Chuyên cung cấp laptop gaming cao cấp, linh kiện PC build chuyên nghiệp (RTX, Core i9, Ryzen), bàn phím cơ và gear thể thao điện tử.",
+                                "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=300&h=300&fit=crop",
+                                "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1200&h=400&fit=crop",
                                 "0987654323",
                                 "59 Đỗ Quang, Phường Trung Hòa, Quận Cầu Giấy",
                                 1542, // Cầu Giấy, Hà Nội
@@ -380,103 +381,103 @@ public class DataInitializer implements CommandLineRunner {
                                 ShopStatus.ACTIVE,
                                 4.9f,
                                 SellerType.BUSINESS,
-                                BusinessType.HOUSEHOLD,
-                                "Hộ Kinh Doanh Nhà Sách Nhã Nam",
+                                BusinessType.ENTERPRISE,
+                                "Công Ty Cổ Phần Công Nghệ GearVN",
                                 "59 Đỗ Quang, Phường Trung Hòa, Quận Cầu Giấy, Hà Nội",
                                 "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c",
-                                "0108998877",
-                                "nhanam.books@gmail.com",
+                                "0314889966",
+                                "cskh@gearvn.com",
                                 "MB Bank",
                                 "0888999888",
-                                "LE TRI THUC",
+                                "CONG TY CO PHAN CONG NGHE GEARVN",
                                 "59 Đỗ Quang, Phường Trung Hòa, Quận Cầu Giấy, Hà Nội",
-                                "59 Đỗ Quang, Phường Trung Hòa, Quận Cầu Giấy, Hà Nội");
+                                "Kho GearVN Hub, 78 Hoàng Hoa Thám, Phường 12, Tân Bình, TP.HCM");
 
                 Shop shop4 = initializeShop(
                                 seller4,
-                                "Sunhouse Home Official",
-                                "Thiết bị gia dụng và đồ dùng nhà bếp thông minh hàng đầu Việt Nam. Nồi chiên, máy xay, chảo chống dính chuẩn chất lượng.",
-                                "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=300&h=300&fit=crop",
-                                "https://images.unsplash.com/photo-1556912172-45b7abe8b7e1?w=1200&h=400&fit=crop",
+                                "Sony Electronics Flagship",
+                                "Nhà phân phối chính thức thiết bị âm thanh đỉnh cao (WH-1000XM5, Soundbar), máy ảnh Sony Alpha và phụ kiện quay chụp chuyên nghiệp.",
+                                "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=300&h=300&fit=crop",
+                                "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=1200&h=400&fit=crop",
                                 "0987654324",
                                 "182 Bạch Đằng, Phường Hải Châu 1, Quận Hải Châu",
                                 1530, // Hải Châu, Đà Nẵng
                                 "40101",
                                 ShopStatus.ACTIVE,
-                                4.7f,
+                                4.9f,
                                 SellerType.BUSINESS,
                                 BusinessType.ENTERPRISE,
-                                "Công Ty Cổ Phần Tập Đoàn Sunhouse",
+                                "Công Ty TNHH Sony Electronics Việt Nam",
                                 "182 Bạch Đằng, Phường Hải Châu 1, Quận Hải Châu, Đà Nẵng",
                                 "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c",
                                 "0401889977",
-                                "sunhouse.appliances@gmail.com",
+                                "sony.vietnam@sony.com.vn",
                                 "BIDV",
                                 "6868686868",
-                                "CONG TY CP TAP DOAN SUNHOUSE",
+                                "CONG TY TNHH SONY ELECTRONICS VIET NAM",
                                 "182 Bạch Đằng, Phường Hải Châu 1, Quận Hải Châu, Đà Nẵng",
-                                "Tổng kho Sunhouse Miền Trung, KCN Hòa Cầm, Đà Nẵng");
+                                "Kho Sony miền Trung, KCN Hòa Cầm, Cẩm Lệ, Đà Nẵng");
 
                 Shop shop5 = initializeShop(
                                 seller5,
-                                "Beauty Garden Cosmetics",
-                                "Thiên đường mỹ phẩm và chăm sóc sắc đẹp chính hãng Hàn Quốc, Nhật Bản, Âu Mỹ. 100% hóa đơn chứng từ xác thực eKYC.",
-                                "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=300&h=300&fit=crop",
-                                "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=1200&h=400&fit=crop",
+                                "Anker & Baseus Flagship Store",
+                                "Thương hiệu phụ kiện sạc nhanh GaN, pin sạc dự phòng, dock hub USB-C và cáp kết nối công nghệ cao tiêu chuẩn quốc tế.",
+                                "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=300&h=300&fit=crop",
+                                "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=1200&h=400&fit=crop",
                                 "0987654325",
                                 "68 Phan Đăng Lưu, Phường 5, Quận Phú Nhuận",
                                 1448, // Phú Nhuận, TP.HCM
                                 "21015",
                                 ShopStatus.ACTIVE,
                                 4.8f,
-                                SellerType.INDIVIDUAL,
-                                null,
-                                null,
-                                null,
-                                null,
-                                "8234567890",
-                                "innisfree.beauty@gmail.com",
+                                SellerType.BUSINESS,
+                                BusinessType.ENTERPRISE,
+                                "Công Ty TNHH Phụ Kiện Công Nghệ Anker Baseus VN",
+                                "68 Phan Đăng Lưu, Phường 5, Quận Phú Nhuận, TP.HCM",
+                                "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c",
+                                "0317894561",
+                                "contact@anker-baseus.vn",
                                 "ACB",
                                 "2345678901",
-                                "HOANG THAO MY",
+                                "CONG TY TNHH PHU KIEN CONG NGHE ANKER BASEUS VN",
                                 "68 Phan Đăng Lưu, Phường 5, Quận Phú Nhuận, TP.HCM",
-                                "68 Phan Đăng Lưu, Phường 5, Quận Phú Nhuận, TP.HCM");
+                                "Kho Anker Logistics, 55 Song Hành, An Phú, TP Thủ Đức, TP.HCM");
 
                 Shop shop6 = initializeShop(
                                 seller6,
-                                "Decathlon Sports Hub",
-                                "Cửa hàng thể thao đa năng: Trang phục thể thao, thiết bị tập gym, yoga, dã ngoại và leo núi chuyên nghiệp.",
-                                "https://images.unsplash.com/photo-1517649763962-0c623266ddc0?w=300&h=300&fit=crop",
-                                "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=1200&h=400&fit=crop",
+                                "Xiaomi Smart Ecosystem VN",
+                                "Hệ sinh thái nhà thông minh và IoT Xiaomi chính hãng: Robot hút bụi, Camera an ninh, Máy lọc không khí, Smartband và thiết bị gia dụng thông minh.",
+                                "https://images.unsplash.com/photo-1558002038-1055907df827?w=300&h=300&fit=crop",
+                                "https://images.unsplash.com/photo-1518770660439-4636190af475?w=1200&h=400&fit=crop",
                                 "0987654326",
                                 "72A Nguyễn Trãi, Phường Thượng Đình, Quận Thanh Xuân",
                                 1493, // Thanh Xuân, Hà Nội
                                 "1A0711",
                                 ShopStatus.ACTIVE,
-                                4.8f,
+                                4.9f,
                                 SellerType.BUSINESS,
                                 BusinessType.ENTERPRISE,
-                                "Công Ty TNHH Decathlon Việt Nam",
+                                "Công Ty TNHH Phân Phối Xiaomi Việt Nam",
                                 "72A Nguyễn Trãi, Phường Thượng Đình, Quận Thanh Xuân, Hà Nội",
                                 "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c",
                                 "0107654321",
-                                "decathlon.sports@gmail.com",
+                                "xiaomi.official@dgw.com.vn",
                                 "Vietcombank",
                                 "0011009876543",
-                                "CONG TY TNHH DECATHLON VIET NAM",
+                                "CONG TY TNHH PHAN PHOI XIAOMI VIET NAM",
                                 "72A Nguyễn Trãi, Phường Thượng Đình, Quận Thanh Xuân, Hà Nội",
-                                "Kho Decathlon Hà Nội, KCN Đài Tư, Long Biên, Hà Nội");
+                                "Kho Digiworld - Xiaomi, KCN Tân Bình, Tây Thạnh, Tân Phú, TP.HCM");
 
                 // 10. Seed Realistic Products for Each Shop and Category
-                seedShopProducts(shop1, List.of(smartphone, laptop, audio, accessories), "TECH");
-                seedShopProducts(shop2, List.of(menFashion, womenFashion, shoesBags, watches), "FASHION");
-                seedShopProducts(shop3, List.of(literature, businessBooks, stationery), "BOOK");
-                seedShopProducts(shop4, List.of(appliances, kitchenware, homeDecor), "HOME");
-                seedShopProducts(shop5, List.of(skincare, makeup, personalCare), "BEAUTY");
-                seedShopProducts(shop6, List.of(sportswear, gymYoga, outdoorCamping), "SPORT");
+                seedShopProducts(shop1, List.of(smartphones, tablets, ultrabooks, headphones, smartwatches, chargingPacks), "APPLE");
+                seedShopProducts(shop2, List.of(smartphones, tablets, smartwatches, headphones, chargingPacks), "SAMSUNG");
+                seedShopProducts(shop3, List.of(gamingLaptops, pcWorkstations, cpuGpu, ramSsd, motherboardPsu, casesCooling, gearPeripherals), "GEARVN");
+                seedShopProducts(shop4, List.of(headphones, speakers, audioStudio, dslrMirrorless, lensesGimbals), "SONY");
+                seedShopProducts(shop5, List.of(chargingPacks, hubsCables, gearPeripherals, headphones), "ANKER");
+                seedShopProducts(shop6, List.of(securityCameras, robotVacuums, smartLightingControls, smartbands), "XIAOMI");
 
                 // 11. Seed Realistic Vouchers (Platform Vouchers + Shop Vouchers)
-                initializeVouchers(shop1, shop2, shop3, shop4, electronics, fashion, books, homeLiving);
+                initializeVouchers(shop1, shop2, shop3, shop4, phonesAndTablets, computers, components, audio);
 
                 // 11. Realistic Addresses for Customers
                 initializeUserAddress(customer1, "Lê Văn Mua Hàng", "0901234567",
@@ -514,6 +515,24 @@ public class DataInitializer implements CommandLineRunner {
         }
 
         private void seedShopProducts(Shop shop, List<ProductCategory> categories, String domain) {
+                // Soft-delete legacy non-tech products for this shop if they exist from earlier runs
+                productRepository.findAll().stream()
+                                .filter(p -> p.getShop() != null
+                                                && p.getShop().getId().equals(shop.getId())
+                                                && !Boolean.TRUE.equals(p.getDeleted()))
+                                .filter(p -> p.getSku() != null && (
+                                                p.getSku().startsWith("FASHION-")
+                                                || p.getSku().startsWith("BOOK-")
+                                                || p.getSku().startsWith("HOME-")
+                                                || p.getSku().startsWith("BEAUTY-")
+                                                || p.getSku().startsWith("SPORT-")
+                                ))
+                                .forEach(p -> {
+                                        p.setDeleted(true);
+                                        productRepository.save(p);
+                                        log.info("Soft-deleted legacy non-tech product: {} for shop: {}", p.getName(), shop.getName());
+                                });
+
                 long existingProducts = productRepository.findAll().stream()
                                 .filter(p -> p.getShop() != null
                                                 && p.getShop().getId().equals(shop.getId())
@@ -588,277 +607,324 @@ public class DataInitializer implements CommandLineRunner {
         private List<ProductCatalogItem> getCatalogTemplate(String domain) {
                 List<ProductCatalogItem> list = new ArrayList<>();
                 switch (domain) {
-                        case "TECH" -> {
-                                list.add(new ProductCatalogItem("iPhone 15 Pro Max 256GB Chính Hãng VN/A", "Điện Thoại",
+                        case "APPLE", "TECH" -> {
+                                list.add(new ProductCatalogItem("iPhone 15 Pro Max 256GB Titan Tự Nhiên VN/A", "Điện Thoại",
                                                 29490000L, 450,
-                                                "Thiết kế Titan bền nhẹ, chip A17 Pro mạnh mẽ, camera tiềm vọng 5x đỉnh cao. Bảo hành 12 tháng tại các trung tâm bảo hành ủy quyền Apple toàn quốc.",
+                                                "Thiết kế khung viền Titan chuẩn hàng không vũ trụ, chip Apple A17 Pro tiến trình 3nm cân mọi tựa game, camera telephoto 5x zoom quang học sắc nét. Bảo hành chính hãng 12 tháng tại các trung tâm Apple AASP toàn quốc.",
                                                 "https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=800&h=800&fit=crop",
                                                 "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("MacBook Air M3 13.6 inch (16GB / 256GB SSD)", "Laptop",
+                                list.add(new ProductCatalogItem("MacBook Air M3 13.6 inch (16GB RAM / 256GB SSD)", "Laptop",
                                                 27990000L, 1600,
-                                                "Hiệu năng đột phá từ vi xử lý Apple M3, thiết kế mỏng nhẹ sang trọng, pin lên đến 18 giờ liên tục, màn hình Liquid Retina sắc nét.",
+                                                "Trang bị vi xử lý Apple M3 thế hệ mới hỗ trợ Ray Tracing, thời lượng pin ấn tượng lên đến 18 tiếng, màn hình Liquid Retina 500 nits sống động cùng thiết kế nhôm nguyên khối siêu mỏng 11.3mm.",
                                                 "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800&h=800&fit=crop",
                                                 "https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Tai nghe Apple AirPods Pro (Gen 2) cổng Type-C",
-                                                "Âm Thanh", 5690000L, 250,
-                                                "Khử tiếng ồn chủ động (ANC) tốt gấp 2 lần, Adaptive Audio thông minh, cổng sạc Type-C tiện lợi, chuẩn kháng nước bụi IP54.",
-                                                "https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?w=800&h=800&fit=crop",
-                                                "https://images.unsplash.com/photo-1588423771073-b8903fbb85b5?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Apple Watch Series 9 GPS 41mm Viền Nhôm", "Phụ Kiện",
-                                                8990000L, 200,
-                                                "Màn hình sáng gấp đôi, thao tác chạm đúp Double Tap ma thuật, đo nồng độ oxy trong máu và điện tâm đồ chuẩn xác.",
-                                                "https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=800&h=800&fit=crop",
-                                                "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("iPad Air 6 M2 11 inch Wi-Fi 128GB", "Điện Thoại",
-                                                16490000L, 750,
-                                                "Thiết kế siêu mỏng, chip Apple M2 hỗ trợ AI tiên tiến, hỗ trợ Apple Pencil Pro và Magic Keyboard chuyên nghiệp.",
+                                list.add(new ProductCatalogItem("iPad Pro 11 inch M4 Wi-Fi 256GB Space Black", "Tablet",
+                                                27990000L, 780,
+                                                "Màn hình Ultra Retina XDR công nghệ Tandem OLED đột phá, chip Apple M4 xử lý AI vượt trội, độ mỏng kinh ngạc chỉ 5.3mm. Hỗ trợ Apple Pencil Pro và Magic Keyboard chuyên nghiệp.",
                                                 "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=800&h=800&fit=crop",
                                                 "https://images.unsplash.com/photo-1561154464-82e9adf32764?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Củ Sạc Nhanh Apple 20W USB-C Power Adapter",
-                                                "Phụ Kiện", 520000L, 100,
-                                                "Củ sạc chính hãng Apple hỗ trợ sạc nhanh Power Delivery chuẩn cho iPhone, iPad và AirPods an toàn tuyệt đối.",
-                                                "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=800&h=800&fit=crop",
-                                                "https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Chuột Không Dây Apple Magic Mouse 2 Black", "Phụ Kiện",
-                                                2190000L, 250,
-                                                "Bề mặt cảm ứng Multi-Touch hỗ trợ vuốt chạm chuyển trang siêu mượt mà, cổng sạc pin sạc lại dùng cả tháng.",
-                                                "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=800&h=800&fit=crop",
-                                                "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Bàn Phím Không Dây Apple Magic Keyboard Touch ID",
-                                                "Phụ Kiện", 3490000L, 400,
-                                                "Tích hợp cảm biến vân tay Touch ID đăng nhập bảo mật nhanh chóng, trải nghiệm gõ êm ái, pin bền bỉ.",
-                                                "https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=800&h=800&fit=crop",
-                                                "https://images.unsplash.com/photo-1511467687858-23d96c32e4ae?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Tai nghe Chụp Tai Apple AirPods Max Wireless",
-                                                "Âm Thanh", 12990000L, 600,
-                                                "Âm thanh Hi-Fi độ chi tiết đỉnh cao, chống ồn chủ động xuất sắc, đệm tai dạng lưới thoáng khí êm ái.",
+                                list.add(new ProductCatalogItem("iPad Air 6 M2 11 inch Wi-Fi 128GB Starlight", "Tablet",
+                                                16490000L, 750,
+                                                "Hiệu năng đột phá với chip Apple M2, màn hình Liquid Retina chống chói, camera trước Ultra Wide đặt ở cạnh ngang tối ưu cho gọi video và học tập trực tuyến.",
+                                                "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1561154464-82e9adf32764?w=800&h=800&fit=crop"));
+                                list.add(new ProductCatalogItem("Tai nghe Apple AirPods Pro (Gen 2) Type-C MagSafe", "Âm Thanh",
+                                                5690000L, 250,
+                                                "Chip H2 mang đến khả năng chống ồn chủ động (ANC) gấp 2 lần, tính năng Adaptive Audio tự động điều chỉnh theo môi trường, cổng sạc Type-C hiện đại và khả năng kháng bụi nước IP54.",
+                                                "https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1588423771073-b8903fbb85b5?w=800&h=800&fit=crop"));
+                                list.add(new ProductCatalogItem("Tai nghe Chụp Tai Apple AirPods Max Wireless ANC", "Âm Thanh",
+                                                12990000L, 600,
+                                                "Chất lượng âm thanh trung thực Hi-Fi độ méo cực thấp, đệm tai dạng lưới thoáng khí bằng vải dệt kỹ thuật số, núm xoay Digital Crown điều khiển âm lượng và bài hát mượt mà.",
                                                 "https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=800&h=800&fit=crop",
                                                 "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Dây Cáp Sạc Bện Dù Apple USB-C to USB-C (1m)",
-                                                "Phụ Kiện", 490000L, 80,
-                                                "Chất liệu bện dù chống đứt gãy, hỗ trợ sạc nhanh công suất cao và truyền tải dữ liệu ổn định.",
+                                list.add(new ProductCatalogItem("Apple Watch Series 9 GPS 41mm Viền Nhôm Dây Thể Thao", "Smartwatch",
+                                                8990000L, 200,
+                                                "Vi xử lý S9 SiP với thao tác chạm hai ngón tay Double Tap độc đáo, màn hình sáng 2000 nits, theo dõi nồng độ oxy SpO2 và điện tâm đồ ECG chính xác.",
+                                                "https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&h=800&fit=crop"));
+                                list.add(new ProductCatalogItem("Củ Sạc Nhanh Apple 20W USB-C Power Adapter", "Sạc",
+                                                520000L, 100,
+                                                "Củ sạc chính hãng Apple chuẩn kết nối Type-C hỗ trợ sạc nhanh Power Delivery an toàn tuyệt đối cho iPhone, iPad và Apple Watch.",
+                                                "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=800&h=800&fit=crop"));
+                                list.add(new ProductCatalogItem("Bàn Phím Apple Magic Keyboard Touch ID Kèm Phím Số", "Bàn Phím",
+                                                3490000L, 450,
+                                                "Tích hợp cảm biến vân tay Touch ID đăng nhập xác thực bảo mật một chạm, bố cục đầy đủ phím số thuận tiện kế toán và lập trình, pin dùng liên tục hàng tháng.",
+                                                "https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1511467687858-23d96c32e4ae?w=800&h=800&fit=crop"));
+                                list.add(new ProductCatalogItem("Chuột Không Dây Apple Magic Mouse 2 Black", "Chuột",
+                                                2190000L, 250,
+                                                "Bề mặt cảm ứng Multi-Touch phẳng liền mạch cho phép cuộn trang, chuyển đổi màn hình máy Mac siêu tiện lợi, thiết kế chân đế tối ưu trơn tru trên mọi mặt bàn.",
+                                                "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=800&h=800&fit=crop"));
+                        }
+                        case "SAMSUNG" -> {
+                                list.add(new ProductCatalogItem("Samsung Galaxy S24 Ultra 5G 12GB/256GB Titan Xám", "Điện Thoại",
+                                                28990000L, 480,
+                                                "Tích hợp quyền năng Galaxy AI dịch thuật trực tiếp cuộc gọi, khoanh vùng tìm kiếm đa năng, khung viền Titanium bền bỉ, màn hình Dynamic AMOLED 2X 2600 nits kèm bút S-Pen tích hợp.",
+                                                "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800&h=800&fit=crop"));
+                                list.add(new ProductCatalogItem("Samsung Galaxy Z Fold5 5G 12GB/512GB Phantom Black", "Điện Thoại",
+                                                34990000L, 520,
+                                                "Điện thoại gập đỉnh cao mở ra không gian 7.6 inch như máy tính bảng, bản lề Flex gập không khe hở, vi xử lý Snapdragon 8 Gen 2 for Galaxy đa nhiệm mượt mà cùng lúc 3 ứng dụng.",
+                                                "https://images.unsplash.com/photo-1580910051074-3eb694886505?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=800&h=800&fit=crop"));
+                                list.add(new ProductCatalogItem("Samsung Galaxy Z Flip5 5G 8GB/256GB Mint Xanh", "Điện Thoại",
+                                                17990000L, 380,
+                                                "Màn hình ngoài Flex Window 3.4 inch hiển thị thông báo và widget tiện dụng không cần mở máy, thiết kế gập nhỏ gọn bỏ túi thời trang, chụp ảnh rảnh tay FlexCam sắc nét.",
+                                                "https://images.unsplash.com/photo-1580910051074-3eb694886505?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&h=800&fit=crop"));
+                                list.add(new ProductCatalogItem("Máy Tính Bảng Samsung Galaxy Tab S9 Ultra 14.6 inch 12GB/256GB", "Tablet",
+                                                25990000L, 1100,
+                                                "Màn hình khổng lồ Dynamic AMOLED 2X 120Hz chuẩn rạp chiếu phim, chuẩn chống bụi nước IP68 đầu tiên trên tablet cao cấp, kèm bút S-Pen có độ trễ siêu thấp 2.8ms.",
+                                                "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1561154464-82e9adf32764?w=800&h=800&fit=crop"));
+                                list.add(new ProductCatalogItem("Đồng Hồ Thông Minh Samsung Galaxy Watch6 Classic 47mm LTE", "Smartwatch",
+                                                7490000L, 250,
+                                                "Viền bezel xoay vật lý trứ danh, mặt kính Sapphire nguyên khối sang trọng, đo huyết áp, điện tâm đồ ECG và phân tích thành phần cơ thể BIA chuyên sâu.",
+                                                "https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&h=800&fit=crop"));
+                                list.add(new ProductCatalogItem("Tai Nghe Samsung Galaxy Buds2 Pro Âm Thanh 24bit Hi-Fi", "Âm Thanh",
+                                                3290000L, 200,
+                                                "Âm thanh vòm 360 độ chuẩn phòng thu, công nghệ khử tiếng ồn thông minh ANC 3 micro độ nhạy cao, thiết kế công thái học ôm khít vành tai không cấn đau.",
+                                                "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?w=800&h=800&fit=crop"));
+                                list.add(new ProductCatalogItem("Củ Sạc Nhanh Siêu Tốc Samsung 45W Type-C Kèm Cáp 5A", "Sạc",
+                                                690000L, 160,
+                                                "Công nghệ Super Fast Charging 2.0 chuẩn PD 3.0 PPS sạc đầy Galaxy S24 Ultra từ 0 lên 70% chỉ trong 30 phút, mạch bảo vệ quá áp quá nhiệt chứng nhận an toàn quốc tế.",
+                                                "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=800&h=800&fit=crop"));
+                                list.add(new ProductCatalogItem("Đế Sạc Đôi Không Dây Samsung Wireless Charger Duo 15W", "Sạc",
+                                                1190000L, 280,
+                                                "Hỗ trợ sạc đồng thời 2 thiết bị cùng lúc (Điện thoại Galaxy + Đồng hồ Galaxy Watch hoặc Tai nghe Buds), quạt tản nhiệt tích hợp giữ pin luôn mát mẻ.",
+                                                "https://images.unsplash.com/photo-1622445262464-84b1456045b6?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=800&h=800&fit=crop"));
+                                list.add(new ProductCatalogItem("Samsung Galaxy S23 FE 5G 8GB/128GB Xanh Mint", "Điện Thoại",
+                                                11490000L, 420,
+                                                "Flagship cho Fan với cụm camera 50MP chuyên nghiệp chụp đêm Nightography, màn hình Dynamic AMOLED 2X 120Hz mượt mà, khung viền kim loại cứng cáp.",
+                                                "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=800&h=800&fit=crop"));
+                                list.add(new ProductCatalogItem("Bút Cảm Ứng Samsung S-Pen Creator Edition Chuyên Dụng", "Tablet",
+                                                1490000L, 90,
+                                                "Thiết kế thân bút dày cầm chắc tay, nhận diện 4096 mức cảm ứng lực và độ nghiêng bút hoàn hảo cho đồ họa kỹ thuật số và vẽ sketch chuyên nghiệp.",
+                                                "https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=800&h=800&fit=crop"));
+                        }
+                        case "GEARVN" -> {
+                                list.add(new ProductCatalogItem("Laptop Gaming ASUS ROG Strix G16 G614JVR (i9-14900HX / RTX 4080)", "Laptop",
+                                                54990000L, 4200,
+                                                "Quái thú gaming cấu hình khủng: Intel Core i9-14900HX, NVIDIA GeForce RTX 4080 12GB GDDR6, 32GB DDR5 5600MHz, màn hình ROG Nebula 2.5K 240Hz 100% DCI-P3 chuẩn màu đồ họa.",
+                                                "https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=800&h=800&fit=crop"));
+                                list.add(new ProductCatalogItem("Card Màn Hình ASUS TUF Gaming GeForce RTX 4080 Super 16GB", "CPU & Card",
+                                                29990000L, 2500,
+                                                "Kiến trúc Ada Lovelace với nhân Ray Tracing thế hệ 3, DLSS 3.5 AI Frame Generation mượt mà ở độ phân giải 4K, 3 quạt tản nhiệt vòng bi kép Axial-tech siêu mát và bền bỉ.",
+                                                "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800&h=800&fit=crop"));
+                                list.add(new ProductCatalogItem("Bộ Vi Xử Lý CPU Intel Core i9-14900K Box Chính Hãng", "CPU & Card",
+                                                14490000L, 350,
+                                                "24 nhân 32 luồng (8 P-Core + 16 E-Core), xung nhịp tối đa lên tới 6.0 GHz nhờ công nghệ Intel Thermal Velocity Boost, đáp ứng hoàn hảo render 3D và stream game đỉnh cao.",
+                                                "https://images.unsplash.com/photo-1555680202-c86f0e12f086?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&h=800&fit=crop"));
+                                list.add(new ProductCatalogItem("RAM Corsair Vengeance RGB 32GB (2x16GB) DDR5 6000MHz", "RAM",
+                                                3290000L, 200,
+                                                "Tản nhiệt nhôm nguyên khối anodized, dải LED RGB 10 vùng siêu sáng tương thích phần mềm iCUE, hỗ trợ Intel XMP 3.0 ép xung ổn định bằng một cú click chuột.",
+                                                "https://images.unsplash.com/photo-1562976540-1502c2145186?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800&h=800&fit=crop"));
+                                list.add(new ProductCatalogItem("Ổ Cứng SSD Samsung 990 Pro 2TB PCIe Gen 4.0 x4 NVMe M.2", "RAM",
+                                                4690000L, 150,
+                                                "Tốc độ đọc/ghi tuần tự đỉnh cao lên tới 7.450 / 6.900 MB/s, bộ điều khiển phủ niken kiểm soát nhiệt độ thông minh tránh sụt giảm hiệu năng khi tải nặng kéo dài.",
+                                                "https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800&h=800&fit=crop"));
+                                list.add(new ProductCatalogItem("Bàn Phím Cơ Không Dây AKKO 5075B Plus RGB Gasket Mount", "Bàn Phím",
+                                                1890000L, 1200,
+                                                "Cấu trúc Gasket Mount êm ái, switch AKKO V3 Cream Yellow Pro gõ cực mượt, 3 chế độ kết nối (Bluetooth 5.0, Wireless 2.4Ghz, Type-C) và keycap PBT Doubleshot bền bỉ.",
+                                                "https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1511467687858-23d96c32e4ae?w=800&h=800&fit=crop"));
+                                list.add(new ProductCatalogItem("Chuột Gaming Không Dây Siêu Nhẹ Razer DeathAdder V3 Pro", "Bàn Phím",
+                                                3290000L, 300,
+                                                "Trọng lượng siêu nhẹ chỉ 63g, cảm biến quang học Focus Pro 30K DPI chính xác 99.8%, switch quang học Gen-3 phản hồi 0.2ms không lo bị double click.",
+                                                "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=800&h=800&fit=crop"));
+                                list.add(new ProductCatalogItem("Nguồn Máy Tính Corsair RM850e 850W 80 Plus Gold ATX 3.0", "Bo Mạch",
+                                                3190000L, 2800,
+                                                "Đạt chứng nhận 80 Plus Gold và chuẩn ATX 3.0 kèm cáp nguồn PCIe 5.0 12VHPWR cho card đồ họa RTX series, tụ điện Nhật Bản 105 độ C vận hành êm ái không tiếng ồn.",
+                                                "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800&h=800&fit=crop"));
+                                list.add(new ProductCatalogItem("Tản Nhiệt Nước AIO DeepCool LT720 ARGB 360mm", "Vỏ Case",
+                                                3150000L, 2500,
+                                                "Bơm thế hệ thứ 4 với động cơ 3 pha 3100 RPM, mặt pump khối vô cực đa chiều hiệu ứng gương 3D huyền ảo, 3 quạt FK120 PWM áp suất gió cao làm mát CPU tối đa.",
+                                                "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&h=800&fit=crop"));
+                                list.add(new ProductCatalogItem("Màn Hình Gaming LG UltraGear 27GR95QE-B 27 inch 2K OLED 240Hz", "Laptop",
+                                                19900000L, 7500,
+                                                "Tấm nền OLED đỉnh cao với độ tương phản vô cực, tần số quét 240Hz thời gian phản hồi thần tốc 0.03ms (GtG), hỗ trợ NVIDIA G-SYNC Compatible và AMD FreeSync Premium.",
+                                                "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&h=800&fit=crop"));
+                        }
+                        case "SONY" -> {
+                                list.add(new ProductCatalogItem("Tai Nghe Chống Ồn Flagship Sony WH-1000XM5 Hi-Res", "Tai Nghe",
+                                                7990000L, 700,
+                                                "Bộ xử lý tích hợp V1 kết hợp bộ xử lý chống ồn chuyên dụng HD QN1, màng loa 30mm gia cố bằng sợi carbon nhẹ cứng, hỗ trợ codec âm thanh độ phân giải cao LDAC và thời lượng pin 30 giờ.",
+                                                "https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&h=800&fit=crop"));
+                                list.add(new ProductCatalogItem("Tai Nghe True Wireless Chống Ồn Sony WF-1000XM5", "Tai Nghe",
+                                                5490000L, 250,
+                                                "Màng loa Dynamic Driver X tái tạo âm trầm sâu lắng và giọng hát chi tiết, 3 micro trên mỗi tai nghe lọc gió khử ồn vượt bậc, sạc không dây chuẩn Qi và kháng nước IPX4.",
+                                                "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?w=800&h=800&fit=crop"));
+                                list.add(new ProductCatalogItem("Loa Di Động Sony SRS-XG300 Extra Bass Chống Nước IP67", "Loa",
+                                                5990000L, 3500,
+                                                "Công nghệ củ loa X-Balanced tái tạo áp suất âm thanh mạnh mẽ hạn chế méo tiếng, pin 25 giờ kèm sạc nhanh 10 phút dùng 70 phút, dải đèn LED phát sáng theo điệu nhạc.",
+                                                "https://images.unsplash.com/photo-1545454675-3531b543be5d?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=800&h=800&fit=crop"));
+                                list.add(new ProductCatalogItem("Loa Soundbar Sony HT-A5000 5.1.2 Kênh Dolby Atmos 450W", "Loa",
+                                                17990000L, 9000,
+                                                "Công nghệ âm thanh vòm 360 Spatial Sound Mapping định vị âm thanh theo từng góc phòng, củ loa đánh trần hướng lên và loa tweeter chùm tái hiện âm thanh phim chiếu rạp chân thực.",
+                                                "https://images.unsplash.com/photo-1545454675-3531b543be5d?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=800&h=800&fit=crop"));
+                                list.add(new ProductCatalogItem("Máy Ảnh Mirrorless Full-frame Sony Alpha A7 Mark IV (ILCE-7M4)", "Máy Ảnh",
+                                                49990000L, 1200,
+                                                "Cảm biến Exmor R CMOS 33.0 megapixel chiếu sáng sau, bộ xử lý hình ảnh BIONZ XR tốc độ xử lý gấp 8 lần, quay video 4K 60p 10-bit 4:2:2 All-Intra và hệ thống lấy nét AI 759 điểm.",
+                                                "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1502920917128-1aa500764cbd?w=800&h=800&fit=crop"));
+                                list.add(new ProductCatalogItem("Ống Kính Sony FE 24-70mm F2.8 GM II (SEL2470GM2)", "Ống Kính",
+                                                48990000L, 1100,
+                                                "Ống kính zoom tiêu chuẩn ngàm E-mount dòng G-Master khẩu độ không đổi F2.8 toàn dải, nhẹ hơn 22% so với thế hệ trước, 4 mô-tơ tuyến tính XD lấy nét siêu êm và chính xác.",
+                                                "https://images.unsplash.com/photo-1617005082133-548c4dd27f35?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1502920917128-1aa500764cbd?w=800&h=800&fit=crop"));
+                                list.add(new ProductCatalogItem("Máy Ảnh Vlog Sony ZV-E10 Kèm Lens Kit 16-50mm", "Máy Ảnh",
+                                                14990000L, 800,
+                                                "Màn hình LCD xoay lật đa góc hỗ trợ selfie, tính năng Product Showcase lấy nét tự động chuyển vật thể siêu mượt, micro 3 đầu thu định hướng kèm đầu lọc gió khử tạp âm ngoài trời.",
+                                                "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1502920917128-1aa500764cbd?w=800&h=800&fit=crop"));
+                                list.add(new ProductCatalogItem("Microphone Không Dây Kép Sony ECM-W2BT Thu Âm Studio", "Microphone",
+                                                4990000L, 350,
+                                                "Kết nối kỹ thuật số qua ngàm MI Shoe không suy giảm tín hiệu âm thanh, khoảng cách truyền tải ổn định lên tới 200m, hỗ trợ 3 chế độ thu âm MIC, MIX và RCVR linh hoạt.",
+                                                "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&h=800&fit=crop"));
+                                list.add(new ProductCatalogItem("Loa Tiệc Tùng Di Động Sony SRS-XV800 Đèn Led Party Pin 25H", "Loa",
+                                                11990000L, 19500,
+                                                "Âm thanh tiệc đa hướng Omni-directional Party Sound lan tỏa khắp không gian, bánh xe và tay kéo di chuyển linh hoạt, hỗ trợ cổng cắm micro karaoke và guitar biểu diễn sống động.",
+                                                "https://images.unsplash.com/photo-1545454675-3531b543be5d?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=800&h=800&fit=crop"));
+                                list.add(new ProductCatalogItem("Tai Nghe Chơi Game Không Dây Sony INZONE H9 Chống Ồn ANC", "Tai Nghe",
+                                                5990000L, 650,
+                                                "Công nghệ 360 Spatial Sound for Gaming xác định chính xác vị trí bước chân đối thủ, khử tiếng ồn chủ động kép, micro cần gạt tắt tiếng tiện lợi và kết nối 2.4GHz không độ trễ.",
+                                                "https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&h=800&fit=crop"));
+                        }
+                        case "ANKER" -> {
+                                list.add(new ProductCatalogItem("Trạm Sạc Để Bàn Anker Prime 6 Trong 1 GaN 200W USB-C", "Củ Cáp Sạc",
+                                                2390000L, 550,
+                                                "Tổng công suất 200W với 4 cổng Type-C và 2 cổng USB-A, hỗ trợ sạc nhanh cùng lúc 2 laptop công suất 100W mỗi cổng, chip GaN thế hệ mới bảo vệ quá nhiệt ActiveShield 2.0.",
+                                                "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=800&h=800&fit=crop"));
+                                list.add(new ProductCatalogItem("Pin Sạc Dự Phòng Anker 737 Power Bank (PowerCore 24K) 140W", "Củ Cáp Sạc",
+                                                2890000L, 750,
+                                                "Dung lượng 24.000mAh chuẩn sạc PD 3.1 140W nạp pin siêu tốc cho MacBook Pro 16 inch, màn hình màu thông minh hiển thị chi tiết công suất sạc theo thời gian thực.",
+                                                "https://images.unsplash.com/photo-1609592426815-f55a16d80d29?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=800&h=800&fit=crop"));
+                                list.add(new ProductCatalogItem("Củ Sạc Nhanh Baseus GaN5 Pro Fast Charger 65W 3 Cổng", "Củ Cáp Sạc",
+                                                490000L, 180,
+                                                "Kích thước nhỏ hơn 55% so với củ sạc thông thường, trang bị 2 cổng Type-C và 1 cổng USB-A sạc đồng thời điện thoại, máy tính bảng và tai nghe tiện lợi khi du lịch.",
+                                                "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=800&h=800&fit=crop"));
+                                list.add(new ProductCatalogItem("Hub Chuyển Đổi Baseus Metal Gleam Series 9-in-1 Type-C 4K 60Hz", "Hub Chuyển Đổi",
+                                                890000L, 250,
+                                                "Vỏ hợp kim nhôm tản nhiệt nhanh, trang bị cổng HDMI 4K 60Hz sắc nét, cổng mạng LAN Gigabit RJ45 1000Mbps, khe thẻ nhớ SD/TF và hỗ trợ sạc xuyên qua PD 100W.",
+                                                "https://images.unsplash.com/photo-1625842268584-8f3296236761?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=800&h=800&fit=crop"));
+                                list.add(new ProductCatalogItem("Cáp Sạc Baseus Tungsten Gold Type-C to Type-C 100W 1.5m Bện Dù", "Củ Cáp Sạc",
+                                                159000L, 80,
+                                                "Đầu cắm phủ hợp kim kẽm đen bóng chống oxy hóa gỉ sét, dây bện dù nylon mật độ cao chống gập gãy trên 10.000 lần uốn cong, hỗ trợ dòng điện tối đa 5A chuẩn E-Marker.",
                                                 "https://images.unsplash.com/photo-1609081219090-a6d8173087ec?w=800&h=800&fit=crop",
                                                 "https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=800&h=800&fit=crop"));
-                        }
-                        case "FASHION" -> {
-                                list.add(new ProductCatalogItem("Áo Thun Nam Cotton 100% Co Giãn 4 Chiều Basic",
-                                                "Thời Trang Nam", 189000L, 200,
-                                                "Chất liệu cotton tự nhiên mềm mại, thoáng mát thấm hút mồ hôi tối đa, form dáng regular-fit trẻ trung dễ phối đồ.",
-                                                "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&h=800&fit=crop",
-                                                "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Quần Jean Nam Ống Suông Slimfit Cao Cấp",
-                                                "Thời Trang Nam", 399000L, 500,
-                                                "Vải denim cao cấp bền màu, độ co giãn nhẹ tạo cảm giác thoải mái khi vận động cả ngày dài.",
-                                                "https://images.unsplash.com/photo-1542272604-787c3835535d?w=800&h=800&fit=crop",
-                                                "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Đầm Nữ Dáng Xòe Voan Hoa Nhí Vintage", "Thời Trang Nữ",
-                                                320000L, 300,
-                                                "Họa tiết hoa nhí nữ tính nhẹ nhàng, chất voan tơ 2 lớp mềm mại, phù hợp đi làm, đi chơi và dự tiệc.",
-                                                "https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?w=800&h=800&fit=crop",
-                                                "https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Áo Khoác Bomber Unisex Phong Cách Hàn Quốc",
-                                                "Thời Trang Nam", 450000L, 450,
-                                                "Vải dù gió 2 lớp cản gió chống thấm nước nhẹ, lót dù êm ái, bo thun cổ và cổ tay năng động.",
-                                                "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=800&h=800&fit=crop",
-                                                "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Giày Sneaker Cổ Thấp Canvas Màu Trắng Classic",
-                                                "Giày Dép", 280000L, 700,
-                                                "Đế cao su lưu hóa đúc nguyên khối êm chân, vải canvas bền bỉ thoáng khí, thiết kế basic bất hủ.",
-                                                "https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?w=800&h=800&fit=crop",
-                                                "https://images.unsplash.com/photo-1560769629-975ec94e6a86?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Túi Xách Nữ Đeo Chéo Da PU Trơn Khóa Bấm", "Giày Dép",
-                                                249000L, 350,
-                                                "Chất da PU mềm mịn chống thấm nước, form dáng hộp hiện đại, đường may tỉ mỉ, nhiều ngăn chứa tiện lợi.",
-                                                "https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=800&h=800&fit=crop",
-                                                "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Đồng Hồ Nam Dây Da Tối Giản Chống Nước 3ATM",
-                                                "Đồng Hồ", 590000L, 150,
-                                                "Mặt kính khoáng cường lực chống trầy xước, bộ máy Quartz Nhật Bản vận hành chuẩn xác từng giây.",
-                                                "https://images.unsplash.com/photo-1524805444758-089113d48a6d?w=800&h=800&fit=crop",
-                                                "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Áo Polo Nam Vải Pique Mắt Chim Cao Cấp",
-                                                "Thời Trang Nam", 239000L, 250,
-                                                "Công nghệ dệt mắt chim thoáng khí, bo cổ dệt cao cấp không bai nhão qua nhiều lần giặt.",
-                                                "https://images.unsplash.com/photo-1625910513413-7d1c68e1c64a?w=800&h=800&fit=crop",
-                                                "https://images.unsplash.com/photo-1586363104862-3a5e2ab60d99?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Chân Váy Chữ A Công Sở Dáng Dài Tôn Dáng",
-                                                "Thời Trang Nữ", 269000L, 280,
-                                                "Vải tuyết mưa đứng form cao cấp, cạp cao giấu bụng hoàn hảo, đường may chuẩn chỉnh từng đường kim.",
-                                                "https://images.unsplash.com/photo-1583496661160-fb5886a0aaaa?w=800&h=800&fit=crop",
-                                                "https://images.unsplash.com/photo-1509631179647-0177331693ae?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Ví Nam Da Bò Thật Dáng Ngang Nhỏ Gọn", "Giày Dép",
-                                                199000L, 120,
-                                                "100% da bò lớp đầu tiên thật mềm mại càng dùng càng bóng đẹp, kích thước nhỏ gọn vừa vặn túi quần.",
-                                                "https://images.unsplash.com/photo-1627123424574-724758594e93?w=800&h=800&fit=crop",
-                                                "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=800&h=800&fit=crop"));
-                        }
-                        case "BOOK" -> {
-                                list.add(new ProductCatalogItem("Sách Đắc Nhân Tâm (Khổ Lớn Tái Bản Mới)", "Văn Học",
-                                                98000L, 350,
-                                                "Tác phẩm kinh điển dạy nghệ thuật ứng xử và thấu hiểu lòng người của Dale Carnegie, cuốn sách bán chạy nhất mọi thời đại.",
-                                                "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=800&h=800&fit=crop",
-                                                "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Sách Nhà Giả Kim - Paulo Coelho", "Văn Học", 79000L,
-                                                250,
-                                                "Câu chuyện hành trình đi tìm kho báu và sứ mệnh cuộc đời chạm đến trái tim hàng triệu độc giả khắp thế giới.",
-                                                "https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=800&h=800&fit=crop",
-                                                "https://images.unsplash.com/photo-1495640388908-05fa85288e61?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Sách Tâm Lý Học Tội Phạm - Phác Họa Chân Dung",
-                                                "Kinh Tế", 145000L, 400,
-                                                "Những cuộc giải mã tâm lý học tội phạm ly kỳ và khoa học hành vi chân thực từ các chuyên gia điều tra hàng đầu.",
-                                                "https://images.unsplash.com/photo-1532012164546-f432f2e3777a?w=800&h=800&fit=crop",
-                                                "https://images.unsplash.com/photo-1506880018603-83d5b814b5a6?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Sách Nghĩ Giàu Làm Giàu (Think and Grow Rich)",
-                                                "Kinh Tế", 110000L, 380,
-                                                "Bí quyết xây dựng tư duy thịnh vượng tài chính và tự do cá nhân được đúc kết từ 500 nhân vật kiệt xuất nhất nước Mỹ.",
-                                                "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?w=800&h=800&fit=crop",
-                                                "https://images.unsplash.com/photo-1476275466078-4007374efbbe?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Sách Tuổi Trẻ Đáng Giá Bao Nhiêu - Rosie Nguyễn",
-                                                "Kinh Tế", 85000L, 280,
-                                                "Cuốn sách truyền cảm hứng sống đẹp, học tập, trải nghiệm và rèn luyện bản lĩnh cho các bạn trẻ Việt Nam.",
-                                                "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=800&h=800&fit=crop",
-                                                "https://images.unsplash.com/photo-1457369804613-52c61a468e7d?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Hộp 12 Bút Gel Mực Đen Ngòi 0.5mm Chống Tắc Mực",
-                                                "Dụng Cụ", 45000L, 150,
-                                                "Ngòi kim 0.5mm mực trơn êm đều màu, không lem khi gặp nước, cầm êm tay không mỏi suốt nhiều giờ viết.",
-                                                "https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?w=800&h=800&fit=crop",
-                                                "https://images.unsplash.com/photo-1585336261026-7782b5424df9?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Sổ Tay Bìa Da PU Cao Cấp Ruột Kẻ Ngang A5", "Dụng Cụ",
-                                                89000L, 300,
-                                                "Giấy dầy định lượng 100gsm chống thấm mực sang trang sau, bìa da may viền chỉ sắc sảo, dập chìm sang trọng.",
-                                                "https://images.unsplash.com/photo-1531346878377-a5be20888e57?w=800&h=800&fit=crop",
-                                                "https://images.unsplash.com/photo-1517842645767-c639042777db?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Bộ Bút Màu Nước 24 Cây Vẽ Minh Họa Cao Cấp", "Dụng Cụ",
-                                                125000L, 250,
-                                                "Đầu cọ 2 chiều linh hoạt, màu sắc tươi sáng chuyển màu mượt mà, an toàn tuyệt đối cho người sử dụng.",
-                                                "https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=800&h=800&fit=crop",
-                                                "https://images.unsplash.com/photo-1502691876148-a84978e59af8?w=800&h=800&fit=crop"));
-                        }
-                        case "HOME" -> {
-                                list.add(new ProductCatalogItem("Nồi Chiên Không Dầu Điện Tử Sunhouse 6.0L", "Thiết Bị",
-                                                1490000L, 5500,
-                                                "Công nghệ Rapid Air giảm 85% chất béo, bảng điều khiển cảm ứng điện tử 8 chế độ tự động, lòng nồi chống dính kép.",
-                                                "https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=800&h=800&fit=crop",
-                                                "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Máy Xay Sinh Tố Đa Năng 3 Cối Thủy Tinh Cao Cấp",
-                                                "Thiết Bị", 690000L, 3200,
-                                                "Lưỡi dao thép không gỉ 6 cánh xay nhuyễn đá trong tích tắc, cối thủy tinh chịu lực an toàn vệ sinh thực phẩm.",
-                                                "https://images.unsplash.com/photo-1570222094114-d054a817e56b?w=800&h=800&fit=crop",
-                                                "https://images.unsplash.com/photo-1589733955941-5eeaf752f6dd?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Bộ 3 Chảo Chống Dính Vân Đá Đáy Từ Bếp Từ", "Dụng Cụ",
-                                                480000L, 2100,
-                                                "Lớp chống dính phủ đá hoa cương siêu bền, bắt từ cực nhạy tiết kiệm điện, tay cầm cách nhiệt êm ái.",
-                                                "https://images.unsplash.com/photo-1584990347449-389369d72728?w=800&h=800&fit=crop",
-                                                "https://images.unsplash.com/photo-1590794056226-79ef3a8147e1?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Nồi Cơm Điện Tử Lòng Niêu Sunhouse 1.8L", "Thiết Bị",
-                                                920000L, 4000,
-                                                "Lòng nồi niêu bo tròn tạo dòng sôi tuần hoàn nấu cơm chín đều thơm dẻo, giữ ấm tự động đến 24 giờ.",
-                                                "https://images.unsplash.com/photo-1544233726-9f1d2b27be8b?w=800&h=800&fit=crop",
-                                                "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Ấm Siêu Tốc Thủy Tinh 1.8L Đèn LED Tự Ngắt",
-                                                "Thiết Bị", 270000L, 1200,
-                                                "Thân thủy tinh Borosilicate chịu sốc nhiệt, đèn LED xanh dịu mắt khi đun, tự ngắt điện an toàn khi sôi cạn nước.",
-                                                "https://images.unsplash.com/photo-1594213114663-dd95639f727c?w=800&h=800&fit=crop",
+                                list.add(new ProductCatalogItem("Sạc Dự Phòng MagSafe Baseus Magnetic 10000mAh 20W LED", "Củ Cáp Sạc",
+                                                590000L, 280,
+                                                "Lực hít nam châm từ tính mạnh mẽ chuẩn MagSafe cho iPhone 12/13/14/15 series không rơi rớt, sạc không dây 15W kết hợp sạc có dây Type-C 20W tiện lợi.",
+                                                "https://images.unsplash.com/photo-1609592426815-f55a16d80d29?w=800&h=800&fit=crop",
                                                 "https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Đèn Bàn LED Chống Cận Thị 3 Cấp Độ Sáng", "Nội Thất",
-                                                199000L, 800,
-                                                "Ánh sáng liên tục không nhấp nháy bảo vệ mắt tối ưu, tích hợp pin sạc dự phòng dùng được khi mất điện.",
+                                list.add(new ProductCatalogItem("Chuột Công Thái Học Không Dây Anker Ergonomic 2.4GHz", "Bàn Phím",
+                                                490000L, 200,
+                                                "Thiết kế dạng đứng công thái học tự nhiên giữ cổ tay và cánh tay ở tư thế trung tính, hạn chế tối đa hội chứng ống cổ tay khi làm việc văn phòng máy tính suốt ngày dài.",
+                                                "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=800&h=800&fit=crop"));
+                                list.add(new ProductCatalogItem("Bàn Phím Không Dây Baseus K01B Tri-Mode Bluetooth 5.0 + 2.4G", "Bàn Phím",
+                                                390000L, 450,
+                                                "Bố cục phím bấm dạng cắt kéo Scissor êm ái phản hồi nhanh, kết nối chuyển đổi mượt mà giữa 3 thiết bị cùng lúc tương thích hoàn hảo Windows, macOS, iOS và Android.",
+                                                "https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1511467687858-23d96c32e4ae?w=800&h=800&fit=crop"));
+                                list.add(new ProductCatalogItem("Giá Đỡ Điện Thoại Baseus Halo Tự Kẹp Kiêm Sạc Không Dây 15W", "Củ Cáp Sạc",
+                                                450000L, 320,
+                                                "Cảm biến hồng ngoại nhận diện điện thoại tự động kẹp giữ chắc chắn, sạc nhanh không dây chuẩn Qi 15W tản nhiệt quạt mini giúp điện thoại không nóng khi chạy bản đồ định vị GPS.",
+                                                "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=800&h=800&fit=crop"));
+                                list.add(new ProductCatalogItem("Tai Nghe Chống Ồn Soundcore Space One by Anker Adaptive ANC", "Tai Nghe",
+                                                1990000L, 400,
+                                                "Khử tiếng ồn thích ứng loại bỏ 98% tiếng ồn xung quanh, driver âm thanh 40mm hỗ trợ Hi-Res Wireless qua codec LDAC, thời gian nghe nhạc liên tục lên tới 55 giờ.",
+                                                "https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&h=800&fit=crop"));
+                        }
+                        case "XIAOMI" -> {
+                                list.add(new ProductCatalogItem("Robot Hút Bụi Lau Nhà Xiaomi Dreame L10s Ultra Giặt Giẻ Tự Động", "Robot Hút Bụi",
+                                                14990000L, 13500,
+                                                "Trạm sạc All-in-one tự động đổ rác, tự giặt và sấy khô giẻ lau bằng khí nóng, lực hút siêu mạnh 5300Pa, hệ thống định vị camera AI Action tránh chướng ngại vật thông minh.",
+                                                "https://images.unsplash.com/photo-1558002038-1055907df827?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&h=800&fit=crop"));
+                                list.add(new ProductCatalogItem("Camera An Ninh 360 Độ Xiaomi Smart Camera C400 2.5K AI", "Camera An Ninh",
+                                                890000L, 400,
+                                                "Góc quay toàn cảnh 360 độ độ phân giải siêu nét 2.5K (2560x1440), đàm thoại 2 chiều lọc tiếng ồn, đèn hồng ngoại ban đêm rõ nét và trí tuệ nhân tạo nhận diện chuyển động người chính xác.",
+                                                "https://images.unsplash.com/photo-1557597774-9d273605dfa9?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&h=800&fit=crop"));
+                                list.add(new ProductCatalogItem("Máy Lọc Không Khí Xiaomi Smart Air Purifier 4 Pro Lõi Lọc HEPA", "Khóa Cửa & Đèn",
+                                                4490000L, 7800,
+                                                "Hiệu suất lọc bụi CADR hạt lên tới 500m3/h thích hợp phòng 60m2, loại bỏ 99.97% bụi mịn PM2.5, phấn hoa và khói thuốc, cảm biến laser kép đo chất lượng không khí thời gian thực.",
+                                                "https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&h=800&fit=crop"));
+                                list.add(new ProductCatalogItem("Khóa Cửa Thông Minh Vân Tay Bán Dẫn Xiaomi Smart Door Lock E10", "Khóa Cửa & Đèn",
+                                                2890000L, 3500,
+                                                "Hỗ trợ 6 phương thức mở khóa (vân tay sinh trắc học, mật mã, NFC, Bluetooth, chìa cơ, mật khẩu tạm thời), chuông cửa thông minh tích hợp và cảnh báo phá khóa về điện thoại.",
+                                                "https://images.unsplash.com/photo-1558002038-1055907df827?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&h=800&fit=crop"));
+                                list.add(new ProductCatalogItem("Vòng Đeo Tay Thông Minh Xiaomi Smart Band 8 Màn Hình AMOLED 60Hz", "Vòng Đeo Tay",
+                                                790000L, 120,
+                                                "Màn hình AMOLED 1.62 inch tần số quét 60Hz mượt mà tự động chỉnh độ sáng, hơn 150 chế độ thể thao, theo dõi giấc ngủ và nhịp tim liên tục 24/7, thời lượng pin 16 ngày.",
+                                                "https://images.unsplash.com/photo-1575311373937-040b8e1fd5b6?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?w=800&h=800&fit=crop"));
+                                list.add(new ProductCatalogItem("Đèn Bàn LED Thông Minh Chống Cận Xiaomi Mi Smart Desk Lamp 1S", "Khóa Cửa & Đèn",
+                                                720000L, 1100,
+                                                "Đạt tiêu chuẩn chiếu sáng cấp A của quốc gia không gây lóa mắt, chỉ số hoàn màu Ra90 chân thực, điều khiển nhiệt độ màu và độ sáng mượt mà qua núm xoay hoặc app Mi Home.",
                                                 "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=800&h=800&fit=crop",
-                                                "https://images.unsplash.com/photo-1534349762230-e0cadf78f5da?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Bình Giữ Nhiệt Inox 304 Dung Tích 800ml", "Dụng Cụ",
-                                                175000L, 450,
-                                                "Cách nhiệt chân không 2 lớp giữ nóng 12h giữ lạnh 24h, nắp đậy roong silicone kín chống tràn tuyệt đối.",
-                                                "https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=800&h=800&fit=crop",
-                                                "https://images.unsplash.com/photo-1577937927133-66ef06acdf18?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Bộ Dao Bếp Nhật Bản Thép Nguyên Khối 6 Món", "Dụng Cụ",
-                                                389000L, 1500,
-                                                "Lưỡi dao tôi nhiệt sắc bén lâu cùn, phủ lớp chống bám dính kháng khuẩn, đế cắm dao sang trọng cho gian bếp.",
-                                                "https://images.unsplash.com/photo-1593618998160-e34014e67546?w=800&h=800&fit=crop",
-                                                "https://images.unsplash.com/photo-1589733955941-5eeaf752f6dd?w=800&h=800&fit=crop"));
+                                                "https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&h=800&fit=crop"));
+                                list.add(new ProductCatalogItem("Cân Sức Khỏe Đo 25 Chỉ Số Cơ Thể Xiaomi Body Composition Scale S400", "Khóa Cửa & Đèn",
+                                                420000L, 1600,
+                                                "Sử dụng công nghệ đo trở kháng điện sinh học tần số kép đo chính xác lượng mỡ, khối lượng cơ, lượng nước cơ thể và mỡ nội tạng, đồng bộ dữ liệu biểu đồ qua Mi Fitness.",
+                                                "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&h=800&fit=crop"));
+                                list.add(new ProductCatalogItem("Nồi Chiên Không Dầu Thông Minh Xiaomi Smart Air Fryer Pro 4L Wi-Fi", "Robot Hút Bụi",
+                                                1490000L, 4800,
+                                                "Cửa sổ quan sát cách nhiệt 3 lớp trực quan nhìn rõ thức ăn chín, dải nhiệt độ rộng 40-200 độ C vừa nướng giòn vừa làm sữa chua sấy hoa quả, điều khiển giọng nói qua Google Assistant.",
+                                                "https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&h=800&fit=crop"));
+                                list.add(new ProductCatalogItem("Máy Tạo Độ Ẩm Siêu Âm Kháng Khuẩn Xiaomi Humidifier 2 Lite 4L", "Khóa Cửa & Đèn",
+                                                490000L, 1700,
+                                                "Dung tích bình chứa nước lớn 4L cấp ẩm liên tục đến 30 giờ, công nghệ ion bạc kháng khuẩn 99.9%, vòi phun xoay 360 độ tỏa sương mịn màng không đọng nước lên đồ đạc.",
+                                                "https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&h=800&fit=crop"));
+                                list.add(new ProductCatalogItem("Quạt Tháp Thông Minh Không Cánh Xiaomi Smart Tower Fan Cực Êm", "Khóa Cửa & Đèn",
+                                                1890000L, 5200,
+                                                "Luồng gió tự nhiên dịu mát êm ái góc quay siêu rộng 150 độ, động cơ biến tần DC tiết kiệm điện độ ồn chỉ 34.6dB, lồng bảo vệ khe hẹp 6.9mm an toàn tuyệt đối cho trẻ nhỏ.",
+                                                "https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&h=800&fit=crop"));
                         }
-                        case "BEAUTY" -> {
-                                list.add(new ProductCatalogItem("Serum Cấp Ẩm Phục Hồi Da Hyaluronic B5 30ml",
-                                                "Chăm Sóc Da", 289000L, 120,
-                                                "Công thức phân tử HA đa tầng thẩm thấu sâu hạ bì, kết hợp Vitamin B5 làm dịu mát kích ứng, phục hồi hàng rào ẩm.",
-                                                "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=800&h=800&fit=crop",
-                                                "https://images.unsplash.com/photo-1608248597359-5f21e5364177?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Kem Chống Nắng Nâng Tông Tự Nhiên SPF50+ PA++++",
-                                                "Chăm Sóc Da", 245000L, 150,
-                                                "Màng lọc chống nắng quang phổ rộng bảo vệ da toàn diện trước tia UVA/UVB, nâng tông trắng hồng rạng rỡ kiềm dầu.",
-                                                "https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?w=800&h=800&fit=crop",
-                                                "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Son Kem Lì Lâu Trôi Mịn Môi Velvet Tint", "Trang Điểm",
-                                                179000L, 80,
-                                                "Chất son xốp mịn lướt nhẹ trên môi, chuẩn sắc ngay từ lần quẹt đầu tiên, bền màu suốt 8 tiếng không khô môi.",
-                                                "https://images.unsplash.com/photo-1586495777744-4413f21062fa?w=800&h=800&fit=crop",
-                                                "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Nước Tẩy Trang Dịu Nhẹ Micellar Water 400ml",
-                                                "Chăm Sóc Da", 165000L, 450,
-                                                "Công nghệ hạt Micelle hút sạch bụi mịn và lớp trang điểm chống trôi mà không cần chà xát mạnh, không cồn hương liệu.",
-                                                "https://images.unsplash.com/photo-1556228722-d0b71941d6dc?w=800&h=800&fit=crop",
-                                                "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Sữa Rửa Mặt Tạo Bọt Chiết Xuất Trà Xanh 150ml",
-                                                "Chăm Sóc Da", 135000L, 200,
-                                                "Chiết xuất lá trà xanh nguyên chất giàu chất chống oxy hóa, làm sạch sâu lỗ chân lông ngăn ngừa mụn hiệu quả.",
-                                                "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=800&h=800&fit=crop",
-                                                "https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Nước Hoa Nữ Mini Eau De Parfum Lưu Hương 12H 20ml",
-                                                "Chăm Sóc", 320000L, 100,
-                                                "Hương hoa cỏ ngọt ngào thanh lịch, 3 tầng hương quyến rũ tinh tế, thiết kế nhỏ gọn tiện lợi mang theo túi xách.",
-                                                "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=800&h=800&fit=crop",
-                                                "https://images.unsplash.com/photo-1547887537-6158d64c35b3?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Kem Dưỡng Ẩm Trắng Da Ban Đêm Collagen 50g",
-                                                "Chăm Sóc Da", 299000L, 180,
-                                                "Bổ sung Collagen thủy phân và Niacinamide dưỡng da căng mọng, mờ thâm nám và ngừa lão hóa sớm sau 4 tuần.",
-                                                "https://images.unsplash.com/photo-1535585209827-a15fcdbc4c2d?w=800&h=800&fit=crop",
-                                                "https://images.unsplash.com/photo-1608248597359-5f21e5364177?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Bảng Phấn Mắt 9 Ô Tone Cam Đào Nhũ Lấp Lánh",
-                                                "Trang Điểm", 159000L, 120,
-                                                "Hạt phấn nhuyễn mịn bám màu tốt không rơi bụi, phối sẵn các tone màu matte và nhũ kim tuyến bắt sáng cuốn hút.",
-                                                "https://images.unsplash.com/photo-1512496015851-a90fb38ba796?w=800&h=800&fit=crop",
-                                                "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=800&h=800&fit=crop"));
-                        }
-                        case "SPORT" -> {
-                                list.add(new ProductCatalogItem("Thảm Tập Yoga Định Tuyến Chống Trượt TPE 8mm",
-                                                "Dụng Cụ", 260000L, 1100,
-                                                "Chất liệu TPE sinh thái đàn hồi êm ái bảo vệ khớp xương gối, kẻ sẵn đường định tuyến hỗ trợ tư thế chuẩn xác.",
-                                                "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800&h=800&fit=crop",
-                                                "https://images.unsplash.com/photo-1518611012118-696072aa579a?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Bộ 2 Tạ Tay Bọc Cao Su Cao Cấp 5kg Mỗi Bên", "Dụng Cụ",
-                                                340000L, 10500,
-                                                "Lõi gang đúc bọc cao su dày chống va đập vỡ sàn, tay cầm vân kim cương chống trượt an toàn khi nâng tạ nặng.",
-                                                "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=800&h=800&fit=crop",
-                                                "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Lều Cắm Trại Dã Ngoại Tự Bung Chống Mưa 4 Người",
-                                                "Dã Ngoại", 780000L, 3800,
-                                                "Cơ chế lò xo tự bung mở lều trong 3 giây, vải Oxford 210D phủ bạc chống nắng UV50+ và chống mưa to 3000mm.",
-                                                "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=800&h=800&fit=crop",
-                                                "https://images.unsplash.com/photo-1510312305653-8ed496efae75?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Bình Nước Thể Thao Dung Tích 1500ml Kèm Ống Hút",
-                                                "Dụng Cụ", 139000L, 300,
-                                                "Nhựa Tritan không chứa BPA an toàn sức khỏe, nắp mở một chạm có khóa an toàn chống bật đổ nước khi chạy bộ.",
-                                                "https://images.unsplash.com/photo-1523362628745-0c100150b504?w=800&h=800&fit=crop",
-                                                "https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Áo Thể Thao Nam Thun Lạnh Co Giãn Chạy Bộ", "Quần Áo",
-                                                149000L, 180,
-                                                "Vải thun mè thể thao siêu nhẹ, công nghệ Dry-fit thoát mồ hôi siêu tốc giữ cơ thể luôn khô ráo thoáng mát.",
-                                                "https://images.unsplash.com/photo-1581655353564-df123a1eb820?w=800&h=800&fit=crop",
-                                                "https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Bộ Dây Kháng Lực Đàn Hồi Tập Mông Đùi 5 Cấp Độ",
-                                                "Dụng Cụ", 119000L, 200,
-                                                "Dây cao su tự nhiên độ đàn hồi cao không dão, hỗ trợ tập luyện squat, yoga, phục hồi chức năng toàn diện.",
-                                                "https://images.unsplash.com/photo-1598289431512-b97b0917affc?w=800&h=800&fit=crop",
-                                                "https://images.unsplash.com/photo-1518611012118-696072aa579a?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Túi Trống Thể Thao Tập Gym Có Ngăn Để Giày Riêng",
-                                                "Dã Ngoại", 199000L, 450,
-                                                "Vải Polyester chống thấm nước, quai đeo đệm vai êm ái, ngăn để giày thông thoáng có lỗ thoát khí riêng biệt.",
-                                                "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=800&h=800&fit=crop",
-                                                "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Ghế Xếp Dã Ngoại Khung Nhôm Gấp Gọn Siêu Nhẹ",
-                                                "Dã Ngoại", 299000L, 1200,
-                                                "Khung hợp kim nhôm hàng không chịu tải 150kg, vải lưới thoáng lưng, gấp gọn bỏ túi tiện lợi khi đi cắm trại câu cá.",
-                                                "https://images.unsplash.com/photo-1470246973918-29a93221c455?w=800&h=800&fit=crop",
-                                                "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=800&h=800&fit=crop"));
+                        default -> {
+                                list.add(new ProductCatalogItem("Cáp Sạc Đa Năng 3 Trong 1 Type-C Micro Lightning 100W", "Phụ Kiện",
+                                                120000L, 80,
+                                                "Dây bện dù chống rối gãy gập, hỗ trợ sạc nhanh cho mọi thiết bị di động, chiều dài 1.2m tiện dụng.",
+                                                "https://images.unsplash.com/photo-1609081219090-a6d8173087ec?w=800&h=800&fit=crop",
+                                                "https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=800&h=800&fit=crop"));
                         }
                 }
                 return list;
@@ -1086,45 +1152,40 @@ public class DataInitializer implements CommandLineRunner {
 
                 List<String> options = new ArrayList<>();
                 if (sName.contains("apple") || pName.contains("iphone") || pName.contains("macbook") || pName.contains("airpods") || pName.contains("ipad")) {
-                        options.add("Máy mới 100% nguyên seal VN/A, kích hoạt bảo hành chuẩn chỉ. Đóng gói rất cẩn thận nhiều lớp chống sốc, giao hàng siêu nhanh. 5 sao cho shop!");
+                        options.add("Máy mới 100% nguyên seal VN/A, kích hoạt bảo hành điện tử chính hãng chuẩn chỉ. Đóng gói rất cẩn thận nhiều lớp chống sốc, giao hàng siêu nhanh. 5 sao cho shop!");
                         options.add("Sản phẩm chính hãng Apple dùng cực kỳ mượt mà, pin trâu, màn hình sắc nét không một vết xước. Shop tư vấn rất có tâm.");
                         options.add("Hàng chuẩn xịn Apple, nguyên đai nguyên kiện, phụ kiện theo máy đầy đủ. Dùng rất sướng, xứng đáng từng đồng.");
                         options.add("Giao hàng siêu tốc trong ngày, đóng gói cẩn thận có tem niêm phong. Mua hàng của E-Mall rất yên tâm về nguồn gốc.");
                         options.add("Tai nghe / máy dùng âm thanh đỉnh cao, kết nối iPhone tích tắc. Rất hài lòng với chất lượng dịch vụ của cửa hàng.");
-                } else if (sName.contains("fashion") || sName.contains("thời trang") || pName.contains("áo") || pName.contains("quần")) {
-                        options.add("Chất vải mềm mịn, dày dặn, đường may tỉ mỉ không hề có một sợi chỉ thừa. Form dáng lên người chuẩn đẹp y như mẫu!");
-                        options.add("Áo mặc rất tôn dáng, thoáng mát, màu sắc bên ngoài đẹp hơn cả trên ảnh chụp. Đóng gói hộp rất sang trọng.");
-                        options.add("Giao hàng nhanh bất ngờ, vải giặt máy không bị xù lông hay phai màu. Shop hỗ trợ đổi size rất nhiệt tình.");
-                        options.add("Thiết kế hiện đại, phong cách trẻ trung tối giản. Rất ưng ý với chất vải và form áo của shop!");
-                        options.add("Vải mát mẻ, lên đồ chụp ảnh cực kỳ ăn hình. Giá hợp lý so với chất lượng cao cấp, sẽ ủng hộ shop tiếp.");
-                } else if (sName.contains("nam") || sName.contains("sách") || sName.contains("book") || pName.contains("sách")) {
-                        options.add("Sách mới tinh 100%, góc bìa phẳng phiu không bị móp méo chút nào. Đóng hộp carton bọc xốp chống sốc rất có tâm. Sách hay và sâu sắc!");
-                        options.add("Chất lượng in ấn sắc nét, thơm mùi giấy mới. Nhà sách giao hàng nhanh, bọc sách cẩn thận còn tặng kèm bookmark xinh xắn.");
-                        options.add("Sách chuẩn bản quyền Nhã Nam, nội dung phong phú và dịch rất mượt. Đóng gói chu đáo, chấm 5 sao chất lượng!");
-                        options.add("Cuốn sách rất đáng đọc, bìa thiết kế đẹp, giấy ngà chống lóa mắt. Dịch vụ đóng gói và giao hàng 10/10.");
-                        options.add("Sách đóng gói đẹp, giao nhanh hơn mong đợi. Nội dung sâu sắc mở mang nhiều kiến thức hay. Rất thích cách phục vụ của Nhã Nam.");
-                } else if (sName.contains("sunhouse") || sName.contains("gia dụng") || pName.contains("nồi") || pName.contains("chảo") || pName.contains("máy")) {
-                        options.add("Thiết bị dùng rất êm, gia nhiệt đều và tiết kiệm điện. Đồ gia dụng Sunhouse chính hãng xài bền bỉ, an tâm tuyệt đối.");
-                        options.add("Chảo / nồi chống dính dày dặn, chiên xào không bị dính đáy, dễ dàng vệ sinh chùi rửa. Giao hàng nhanh có phiếu bảo hành đầy đủ.");
-                        options.add("Sản phẩm chất lượng cao chuẩn thương hiệu lớn. Nấu nướng nhanh và tiện lợi, gia đình mình ai cũng thích.");
-                        options.add("Đóng gói nhiều lớp xốp bảo vệ rất chắc chắn, máy hoạt động mượt mà không ồn. Đánh giá 5 sao cho sản phẩm!");
-                        options.add("Gia dụng Sunhouse dùng rất tiện lợi, tiết kiệm thời gian nấu nướng mỗi ngày. Rất đáng mua!");
-                } else if (sName.contains("beauty") || sName.contains("cosmetic") || sName.contains("mỹ phẩm") || pName.contains("kem") || pName.contains("serum") || pName.contains("son")) {
-                        options.add("Mỹ phẩm chính hãng 100%, quét mã vạch chuẩn auth, date xa tận 2027. Dùng lên da rất dịu nhẹ, cấp ẩm tốt và không hề kích ứng.");
-                        options.add("Shop đóng gói siêu cẩn thận với nhiều lớp bọc bóng khí. Mùi hương nhẹ nhàng, dùng một tuần thấy da mềm mịn và sáng hơn rõ.");
-                        options.add("Giao hàng hỏa tốc, sản phẩm date mới toanh, shop còn hào phóng tặng kèm quà tặng xinh xắn. Sẽ ủng hộ shop dài lâu!");
-                        options.add("Chất kem mịn màng thấm nhanh không nhờn rít, hàng auth chuẩn xịn. Mua ở shop lần thứ 3 rồi vẫn rất hài lòng.");
-                        options.add("Da mình nhạy cảm nhưng dùng sản phẩm của shop rất êm, nâng tông tự nhiên và không bết dính. Cho shop 5 sao!");
-                } else if (sName.contains("decathlon") || sName.contains("thể thao") || pName.contains("giày") || pName.contains("vợt") || pName.contains("thể thao")) {
-                        options.add("Đồ thể thao chất vải co giãn 4 chiều cực tốt, thấm hút mồ hôi nhanh khô, mặc tập gym hay chạy bộ đều rất thoải mái.");
-                        options.add("Dụng cụ hoàn thiện chắc chắn, độ chịu lực cao đúng chuẩn Decathlon châu Âu. Rất bền và tiện lợi khi tập luyện.");
-                        options.add("Sản phẩm đúng mô tả, đường may chắc nịch, size vừa vặn. Giao hàng nhanh chỉ trong 2 ngày, cực kỳ hài lòng!");
-                        options.add("Chất liệu thể thao cao cấp, bền đẹp theo thời gian. Mua đồ của Decathlon chưa bao giờ làm mình thất vọng.");
-                        options.add("Trang phục thoáng mát, nhẹ và bền. Đóng gói cẩn thận, nhân viên tư vấn chọn size rất chuẩn.");
+                } else if (sName.contains("samsung") || pName.contains("galaxy") || pName.contains("fold") || pName.contains("flip")) {
+                        options.add("Samsung Galaxy chính hãng mới 100% nguyên seal, màn hình Dynamic AMOLED 2X hiển thị ngoài trời nắng cực nét. Galaxy AI dùng rất tiện lợi!");
+                        options.add("Máy chụp ảnh sắc nét từng chi tiết, zoom 100x đỉnh cao. Đóng gói hộp chắc chắn, kích hoạt bảo hành điện tử Samsung Care+ thành công ngay.");
+                        options.add("Hàng chính hãng phân phối Samsung Vina, bút S-Pen viết vẽ cực êm không có độ trễ. Giao hàng hỏa tốc trong 24h.");
+                        options.add("Đồng hồ / điện thoại Galaxy thiết kế sang trọng, pin dùng thoải mái cả ngày. Shop hỗ trợ kỹ thuật cài đặt rất nhiệt tình.");
+                } else if (sName.contains("gearvn") || pName.contains("rtx") || pName.contains("intel") || pName.contains("rog") || pName.contains("gaming")) {
+                        options.add("Linh kiện PC đóng gói bóng khí chống sốc 5 lớp rất an tâm, tem bảo hành chính hãng đầy đủ. Test benchmark hiệu năng cực cao và mát mẻ!");
+                        options.add("Laptop gaming Asus ROG chiến mượt mà mọi tựa game AAA ở thiết lập đồ họa Ultra, màn hình 240Hz siêu nhạy không bóng mờ.");
+                        options.add("Card đồ họa chạy cực êm không bị coil whine, nhiệt độ mát mẻ dưới 65 độ C khi render video. GearVN uy tín số 1!");
+                        options.add("Bàn phím cơ gõ âm đầm chắc, switch mượt mà, layout đẹp xuất sắc. Rất hài lòng về thời gian giao hàng và chất lượng dịch vụ.");
+                } else if (sName.contains("sony") || pName.contains("wh-1000") || pName.contains("wf-1000") || pName.contains("alpha") || pName.contains("lens")) {
+                        options.add("Khả năng chống ồn chủ động ANC đỉnh chóp của Sony, cách ly tiếng ồn đường phố hoàn hảo. Âm bass sâu chắc, dải mid trong trẻo chuẩn Hi-Res.");
+                        options.add("Máy ảnh Sony Alpha lấy nét theo mắt người và động vật siêu nhanh, quay video 4K 10-bit màu sắc chân thực. Hàng chính hãng Sony VN bảo hành 2 năm.");
+                        options.add("Loa Bluetooth âm lượng to khủng, chống nước chuẩn IP67 mang đi du lịch dã ngoại cực đã. Pin trâu dùng cả ngày không hết.");
+                        options.add("Micro không dây bắt sóng cực xa và ổn định, lọc gió ngoài trời rất tốt, cắm vào máy ảnh nhận ngay không cần cài đặt rườm rà.");
+                } else if (sName.contains("anker") || sName.contains("baseus") || pName.contains("sạc") || pName.contains("cáp") || pName.contains("hub")) {
+                        options.add("Củ sạc GaN công suất cao sạc cùng lúc cả MacBook và iPhone không hề bị nóng, kích thước nhỏ gọn tiện lợi bỏ balo.");
+                        options.add("Pin sạc dự phòng sạc siêu nhanh chuẩn PD, màn hình hiển thị công suất chính xác từng watt. Dung lượng chuẩn không ảo.");
+                        options.add("Dây cáp bện dù siêu bền chống gập gãy, đầu cắm mạ kim loại chắc chắn cắm khít cổng sạc. Truyền dữ liệu tốc độ cao mượt mà.");
+                        options.add("Hub Type-C xuất màn hình ngoài 4K 60Hz không giật lag hay chập chờn, cổng mạng LAN cắm nhận luôn mạng dây tốc độ gigabit.");
+                } else if (sName.contains("xiaomi") || pName.contains("robot") || pName.contains("camera") || pName.contains("purifier") || pName.contains("smart")) {
+                        options.add("Robot hút bụi lau nhà tự động lập bản đồ phòng rất thông minh, tự giặt và sấy khô giẻ lau sạch sẽ giúp tiết kiệm bao nhiêu thời gian.");
+                        options.add("Camera an ninh hình ảnh 2.5K rõ nét cả ban đêm có màu, đàm thoại 2 chiều to rõ, kết nối ứng dụng Mi Home quản lý từ xa rất mượt.");
+                        options.add("Máy lọc không khí hoạt động êm ái ban đêm không nghe tiếng động, đo bụi mịn PM2.5 nhạy, không khí phòng ngủ thoáng mát hơn hẳn.");
+                        options.add("Smartband đo bước chân và nhịp tim liên tục chuẩn xác, pin trâu dùng gần 2 tuần mới phải sạc lại. Rất đáng đồng tiền bát gạo!");
                 } else {
-                        options.add("Sản phẩm đúng như mô tả, chất lượng tuyệt vời. Shop đóng gói cẩn thận và giao hàng rất nhanh chóng!");
-                        options.add("Hàng chuẩn chính hãng, dùng rất ưng ý. Dịch vụ chăm sóc khách hàng nhiệt tình, chu đáo. Cho shop 5 sao!");
-                        options.add("Chất lượng vượt xa mong đợi trong tầm giá. Đóng gói kỹ càng, giao hàng đúng hẹn. Sẽ tiếp tục ủng hộ!");
+                        options.add("Sản phẩm điện tử chính hãng chuẩn xịn, tem bảo hành đầy đủ, đóng gói chống sốc nhiều lớp. Shop giao hàng cực nhanh!");
+                        options.add("Hàng chuẩn mô tả 100%, kết nối nhanh chóng mượt mà, đầy đủ phụ kiện theo hộp. Đánh giá 5 sao cho chất lượng dịch vụ!");
+                        options.add("Thiết bị công nghệ hoạt động ổn định, giá cả hợp lý so với các trung tâm điện máy. Sẽ tiếp tục ủng hộ shop các đơn sau!");
                 }
 
                 if (rating == 4) {
@@ -1159,16 +1220,19 @@ public class DataInitializer implements CommandLineRunner {
                                         customerAccount1,
                                         RequestType.SELLER_REGISTRATION,
                                         RequestStatus.REJECTED,
-                                        "Đăng ký mở gian hàng thời trang & phụ kiện thiết kế chính hãng",
+                                        "Đăng ký mở gian hàng linh kiện PC & Gaming Gear nhập khẩu",
                                         adminAccount,
                                         LocalDateTime.now().minusDays(5),
-                                        "Từ chối: Ảnh chụp CCCD và thông tin định danh không khớp. Vui lòng cập nhật lại thông tin.");
-                        initializeSellerDetail(req1, customerAccount1, SellerType.INDIVIDUAL, null, null, null, null,
-                                        "Trendy Fashion Studio", "0901234567", "customer1@gmail.com",
+                                        "Từ chối: Giấy phép kinh doanh thiết bị CNTT chưa chứng thực và thông tin MST doanh nghiệp không khớp trên cổng Thuế.");
+                        initializeSellerDetail(req1, customerAccount1, SellerType.BUSINESS, BusinessType.ENTERPRISE,
+                                        "Công Ty TNHH Công Nghệ GearTech Việt Nam",
+                                        "123 Đường Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP.HCM",
+                                        "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c",
+                                        "GearTech PC Official", "0901234567", "customer1@gmail.com",
                                         "123 Đường Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP.HCM",
                                         "123 Đường Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP.HCM",
-                                        "8011223344", "customer1@gmail.com",
-                                        "Vietcombank", "0071008899001", "LE VAN MUA HANG");
+                                        "0319881122", "geartech.corp@gmail.com",
+                                        "Vietcombank", "0071008899001", "CONG TY TNHH CONG NGHE GEARTECH");
                 }
 
                 if (customerAccount2 != null) {
@@ -1176,18 +1240,18 @@ public class DataInitializer implements CommandLineRunner {
                                         customerAccount2,
                                         RequestType.SELLER_REGISTRATION,
                                         RequestStatus.PENDING,
-                                        "Đăng ký mở gian hàng thiết bị nhà bếp thông minh và đồ gia dụng",
+                                        "Đăng ký mở gian hàng thiết bị âm thanh Hi-Res & Studio Audio chính hãng",
                                         null,
                                         null,
                                         null);
                         initializeSellerDetail(req2, customerAccount2, SellerType.BUSINESS, BusinessType.HOUSEHOLD,
-                                        "Hộ Kinh Doanh Bếp Xanh Smart",
+                                        "Hộ Kinh Doanh Âm Thanh Số AudioTech",
                                         "456 Đường Lê Lợi, Phường Bến Thành, Quận 1, TP.HCM",
                                         "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c",
-                                        "Bếp Xanh Smart Official", "0909876543", "customer2@gmail.com",
+                                        "AudioTech Sound Studio", "0909876543", "customer2@gmail.com",
                                         "456 Đường Lê Lợi, Phường Bến Thành, Quận 1, TP.HCM",
                                         "456 Đường Lê Lợi, Phường Bến Thành, Quận 1, TP.HCM",
-                                        "0319887766", "bepxanh@gmail.com",
+                                        "0319887766", "audiotech@gmail.com",
                                         "Techcombank", "190333222111", "PHAM THI MUA SAM");
                 }
 
@@ -1196,12 +1260,12 @@ public class DataInitializer implements CommandLineRunner {
                                         customerAccount3,
                                         RequestType.SELLER_REGISTRATION,
                                         RequestStatus.REJECTED,
-                                        "Đăng ký kinh doanh thực phẩm chức năng xách tay",
+                                        "Đăng ký kinh doanh thiết bị bay không người lái (Flycam/Drone) và thiết bị thu phát vô tuyến",
                                         adminAccount,
                                         LocalDateTime.now().minusDays(10),
-                                        "Từ chối: Mặt hàng yêu cầu giấy phép công bố sản phẩm và an toàn vệ sinh thực phẩm.");
+                                        "Từ chối: Mặt hàng thiết bị bay flycam và phát sóng vô tuyến yêu cầu chứng nhận hợp quy ICT/CR của Cục Viễn Thông (Bộ TT&TT) và giấy phép kiểm soát bay theo quy định an ninh hàng không.");
                         initializeSellerDetail(req3, customerAccount3, SellerType.INDIVIDUAL, null, null, null, null,
-                                        "An Japan Healthy Store", "0905555555", "customer3@gmail.com",
+                                        "Flycam Drone Pro Store", "0905555555", "customer3@gmail.com",
                                         "789 Đường Điện Biên Phủ, Phường 15, Bình Thạnh, TP.HCM",
                                         "789 Đường Điện Biên Phủ, Phường 15, Bình Thạnh, TP.HCM",
                                         "8999888777", "customer3@gmail.com",
@@ -1361,6 +1425,34 @@ public class DataInitializer implements CommandLineRunner {
                         String bankName, String bankAccountNumber, String bankAccountName,
                         String pickupAddress, String returnAddress) {
                 return shopRepository.findByUserId(user.getId())
+                                .map(existing -> {
+                                        existing.setName(name);
+                                        existing.setDescription(description);
+                                        existing.setLogoUrl(logoUrl);
+                                        existing.setCoverImageUrl(coverImageUrl);
+                                        existing.setPhoneNumber(phoneNumber);
+                                        existing.setAddress(address);
+                                        existing.setDistrictId(districtId);
+                                        existing.setWardCode(wardCode);
+                                        existing.setStatus(status);
+                                        if (rating != null) {
+                                                existing.setAverageRating(rating);
+                                        }
+                                        existing.setSellerType(sellerType);
+                                        existing.setBusinessType(businessType);
+                                        existing.setBusinessName(businessName);
+                                        existing.setBusinessAddress(businessAddress);
+                                        existing.setBusinessLicenseUrl(businessLicenseUrl);
+                                        existing.setTaxCode(taxCode);
+                                        existing.setInvoiceEmail(invoiceEmail);
+                                        existing.setBankName(bankName);
+                                        existing.setBankAccountNumber(bankAccountNumber);
+                                        existing.setBankAccountName(bankAccountName);
+                                        existing.setPickupAddress(pickupAddress);
+                                        existing.setReturnAddress(returnAddress);
+                                        existing.setUpdatedAt(LocalDateTime.now());
+                                        return shopRepository.save(existing);
+                                })
                                 .orElseGet(() -> {
                                         LocalDateTime now = LocalDateTime.now();
                                         Shop shop = Shop.builder()
@@ -1739,15 +1831,23 @@ public class DataInitializer implements CommandLineRunner {
 
         private void initializeVouchers(
                         Shop shop1, Shop shop2, Shop shop3, Shop shop4,
-                        ProductCategory electronics, ProductCategory fashion, ProductCategory books,
-                        ProductCategory homeLiving) {
-                log.info("Initializing system & shop vouchers...");
+                        ProductCategory phonesAndTablets, ProductCategory computers,
+                        ProductCategory components, ProductCategory audio) {
+                log.info("Initializing specialized electronics system & shop vouchers...");
+
+                // Expire legacy non-tech vouchers if they exist from earlier runs
+                List.of("FASHION30", "TRENDY10", "NHANAM20K", "SUNHOUSE50K").forEach(code -> {
+                        voucherRepository.findByCodeIgnoreCase(code).ifPresent(v -> {
+                                v.setStatus(VoucherStatus.EXPIRED);
+                                voucherRepository.save(v);
+                        });
+                });
 
                 // 1. FREESHIP50 (Platform)
                 initializeOrUpdateVoucher(
                                 "FREESHIP50",
                                 "Miễn Phí Vận Chuyển GHN 50K",
-                                "Giảm tối đa 50.000đ cước giao hàng GHN cho đơn hàng từ 250.000đ áp dụng toàn sàn",
+                                "Giảm tối đa 50.000đ cước giao hàng GHN cho đơn hàng công nghệ từ 250.000đ áp dụng toàn sàn",
                                 VoucherType.FREE_SHIPPING,
                                 BigDecimal.valueOf(50000),
                                 null,
@@ -1763,12 +1863,12 @@ public class DataInitializer implements CommandLineRunner {
                 // 2. ECOMNEW15 (Platform - First order only)
                 initializeOrUpdateVoucher(
                                 "ECOMNEW15",
-                                "Giảm 15% Đơn Hàng Đầu Tiên",
-                                "Giảm 15% tối đa 100.000đ cho đơn hàng từ 100.000đ (Chỉ áp dụng cho tài khoản chưa có đơn hàng hoàn thành nào)",
+                                "Giảm 15% Thiết Bị Đầu Tiên",
+                                "Giảm 15% tối đa 150.000đ cho đơn hàng thiết bị điện tử từ 200.000đ (Chỉ áp dụng cho tài khoản đăng ký mới)",
                                 VoucherType.PERCENTAGE,
                                 BigDecimal.valueOf(15),
-                                BigDecimal.valueOf(100000),
-                                BigDecimal.valueOf(100000),
+                                BigDecimal.valueOf(150000),
+                                BigDecimal.valueOf(200000),
                                 500,
                                 1,
                                 VoucherScope.PLATFORM,
@@ -1777,50 +1877,84 @@ public class DataInitializer implements CommandLineRunner {
                                 true
                 );
 
-                // 3. TECH500 (Platform - Category: electronics)
+                // 3. TECHMEGA1M (Platform - Category: Điện Thoại & Máy Tính Bảng)
                 initializeOrUpdateVoucher(
-                                "TECH500",
-                                "Giảm 500K Ngành Điện Tử & Công Nghệ",
-                                "Giảm ngay 500.000đ cho đơn hàng từ 2.000.000đ có sản phẩm thuộc ngành Điện Tử & Công Nghệ (Điện Thoại, Tablet, Laptop, Âm Thanh, Phụ Kiện...)",
+                                "TECHMEGA1M",
+                                "Mega Voucher 1 Triệu - Điện Thoại & Tablet",
+                                "Giảm ngay 1.000.000đ cho đơn hàng từ 15.000.000đ áp dụng cho Điện Thoại & Máy Tính Bảng chính hãng",
+                                VoucherType.FIXED_AMOUNT,
+                                BigDecimal.valueOf(1000000),
+                                null,
+                                BigDecimal.valueOf(15000000),
+                                100,
+                                1,
+                                VoucherScope.PLATFORM,
+                                null,
+                                phonesAndTablets,
+                                false
+                );
+
+                // 4. LAPTOP500K (Platform - Category: Laptop & Máy Tính)
+                initializeOrUpdateVoucher(
+                                "LAPTOP500K",
+                                "Giảm 500K Laptop & Máy Tính Để Bàn",
+                                "Giảm ngay 500.000đ cho đơn hàng từ 10.000.000đ thuộc ngành Laptop Gaming, Văn Phòng & Máy Trạm",
                                 VoucherType.FIXED_AMOUNT,
                                 BigDecimal.valueOf(500000),
                                 null,
-                                BigDecimal.valueOf(2000000),
+                                BigDecimal.valueOf(10000000),
                                 200,
                                 1,
                                 VoucherScope.PLATFORM,
                                 null,
-                                electronics,
+                                computers,
                                 false
                 );
 
-                // 4. FASHION30 (Platform - Category: fashion)
+                // 5. AUDIO150K (Platform - Category: Thiết Bị Âm Thanh)
                 initializeOrUpdateVoucher(
-                                "FASHION30",
-                                "Giảm 30K Ngành Thời Trang & Phụ Kiện",
-                                "Giảm ngay 30.000đ cho đơn hàng từ 150.000đ có sản phẩm thuộc ngành Thời Trang & Phụ Kiện (Quần Áo, Giày Dép, Túi Ví, Đồng Hồ...)",
+                                "AUDIO150K",
+                                "Giảm 150K Thiết Bị Âm Thanh & Studio",
+                                "Giảm ngay 150.000đ cho đơn hàng từ 1.500.000đ mua Tai Nghe, Loa Bluetooth hoặc Soundcard thu âm",
                                 VoucherType.FIXED_AMOUNT,
-                                BigDecimal.valueOf(30000),
-                                null,
                                 BigDecimal.valueOf(150000),
+                                null,
+                                BigDecimal.valueOf(1500000),
                                 300,
                                 1,
                                 VoucherScope.PLATFORM,
                                 null,
-                                fashion,
+                                audio,
                                 false
                 );
 
-                // 5. APPLE100K (Shop 1 - Apple Authorised Reseller)
+                // 6. BUILDPC200K (Platform - Category: Linh Kiện Máy Tính & PC Build)
+                initializeOrUpdateVoucher(
+                                "BUILDPC200K",
+                                "Giảm 200K Linh Kiện PC & Build Máy",
+                                "Giảm ngay 200.000đ cho đơn hàng từ 2.500.000đ mua CPU, VGA, RAM, SSD, Nguồn hoặc Bo Mạch Chủ",
+                                VoucherType.FIXED_AMOUNT,
+                                BigDecimal.valueOf(200000),
+                                null,
+                                BigDecimal.valueOf(2500000),
+                                250,
+                                1,
+                                VoucherScope.PLATFORM,
+                                null,
+                                components,
+                                false
+                );
+
+                // 7. APPLE500K (Shop 1 - Apple Authorised Reseller)
                 if (shop1 != null) {
                         initializeOrUpdateVoucher(
-                                        "APPLE100K",
-                                        "Giảm 100K Shop Apple Authorised Reseller",
-                                        "Giảm ngay 100.000đ cho đơn hàng từ 1.000.000đ mua tại gian hàng Apple Authorised Reseller (Áp dụng cho mọi sản phẩm của Apple Reseller)",
+                                        "APPLE500K",
+                                        "Giảm 500K Gian Hàng Apple Authorised Reseller",
+                                        "Giảm ngay 500.000đ cho đơn hàng từ 10.000.000đ mua iPhone, iPad, MacBook tại gian hàng Apple Reseller",
                                         VoucherType.FIXED_AMOUNT,
-                                        BigDecimal.valueOf(100000),
+                                        BigDecimal.valueOf(500000),
                                         null,
-                                        BigDecimal.valueOf(1000000),
+                                        BigDecimal.valueOf(10000000),
                                         100,
                                         1,
                                         VoucherScope.SHOP,
@@ -1830,17 +1964,17 @@ public class DataInitializer implements CommandLineRunner {
                         );
                 }
 
-                // 6. TRENDY10 (Shop 2 - Trendy Fashion Studio)
+                // 8. SAM300K (Shop 2 - Samsung Experience Store)
                 if (shop2 != null) {
                         initializeOrUpdateVoucher(
-                                        "TRENDY10",
-                                        "Giảm 10% Shop Trendy Fashion Studio",
-                                        "Giảm 10% tối đa 50.000đ cho đơn hàng từ 200.000đ mua tại gian hàng Trendy Fashion Studio",
-                                        VoucherType.PERCENTAGE,
-                                        BigDecimal.valueOf(10),
-                                        BigDecimal.valueOf(50000),
-                                        BigDecimal.valueOf(200000),
-                                        100,
+                                        "SAM300K",
+                                        "Giảm 300K Gian Hàng Samsung Official",
+                                        "Giảm ngay 300.000đ cho hóa đơn từ 6.000.000đ mua Galaxy S, Z Fold, Tab S tại Samsung Experience Store",
+                                        VoucherType.FIXED_AMOUNT,
+                                        BigDecimal.valueOf(300000),
+                                        null,
+                                        BigDecimal.valueOf(6000000),
+                                        120,
                                         1,
                                         VoucherScope.SHOP,
                                         shop2,
@@ -1849,16 +1983,16 @@ public class DataInitializer implements CommandLineRunner {
                         );
                 }
 
-                // 7. NHANAM20K (Shop 3 - Nhã Nam Books & Stationery)
+                // 9. GEARVN200K (Shop 3 - GearVN Gaming Hub)
                 if (shop3 != null) {
                         initializeOrUpdateVoucher(
-                                        "NHANAM20K",
-                                        "Giảm 20K Shop Nhã Nam Books",
-                                        "Giảm 20.000đ cho đơn hàng từ 100.000đ mua tại gian hàng Nhã Nam Books & Stationery",
+                                        "GEARVN200K",
+                                        "Giảm 200K Gian Hàng GearVN Gaming Hub",
+                                        "Giảm 200.000đ cho đơn hàng từ 3.000.000đ mua Laptop Gaming, Bàn Phím Cơ, VGA tại GearVN",
                                         VoucherType.FIXED_AMOUNT,
-                                        BigDecimal.valueOf(20000),
+                                        BigDecimal.valueOf(200000),
                                         null,
-                                        BigDecimal.valueOf(100000),
+                                        BigDecimal.valueOf(3000000),
                                         150,
                                         1,
                                         VoucherScope.SHOP,
@@ -1868,17 +2002,17 @@ public class DataInitializer implements CommandLineRunner {
                         );
                 }
 
-                // 8. SUNHOUSE50K (Shop 4 - Sunhouse Home Official)
+                // 10. SONY150K (Shop 4 - Sony Official Store VN)
                 if (shop4 != null) {
                         initializeOrUpdateVoucher(
-                                        "SUNHOUSE50K",
-                                        "Giảm 50K Shop Sunhouse Home Official",
-                                        "Giảm 50.000đ cho đơn hàng từ 300.000đ mua tại gian hàng chính hãng Sunhouse Home Official",
+                                        "SONY150K",
+                                        "Giảm 150K Gian Hàng Sony Official Store",
+                                        "Giảm 150.000đ cho đơn hàng từ 2.000.000đ mua Tai Nghe Chống Ồn, Loa hoặc Máy Ảnh Sony Alpha",
                                         VoucherType.FIXED_AMOUNT,
-                                        BigDecimal.valueOf(50000),
+                                        BigDecimal.valueOf(150000),
                                         null,
-                                        BigDecimal.valueOf(300000),
-                                        80,
+                                        BigDecimal.valueOf(2000000),
+                                        100,
                                         1,
                                         VoucherScope.SHOP,
                                         shop4,

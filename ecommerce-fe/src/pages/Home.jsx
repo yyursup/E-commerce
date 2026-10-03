@@ -14,6 +14,7 @@ import { useAuthStore } from '../store/useAuthStore'
 import { useCartStore } from '../store/useCartStore'
 import { cn } from '../lib/cn'
 import productService from '../services/product'
+import recommendationService from '../services/recommendation'
 import cartService from '../services/cart'
 import voucherService from '../services/voucher'
 import { Link, useNavigate } from 'react-router-dom'
@@ -81,12 +82,12 @@ export default function Home() {
     fetchProducts()
   }, [])
 
-  // Gợi ý cho bạn (AI vector embedding recommendations)
+  // Gợi ý cá nhân hóa đa tầng (Shopee-inspired Hybrid RecSys)
   useEffect(() => {
     const fetchRecommendations = async () => {
       try {
         setRecLoading(true)
-        const list = await productService.getRecommendations(8)
+        const list = await recommendationService.getPersonalized(8)
         const mapped = (list || []).map((product) => {
           const thumbnailImage = product.images?.find((img) => img.isThumbnail) || product.images?.[0]
           const imageUrl = thumbnailImage?.imageUrl || '/product-placeholder.svg'
@@ -96,12 +97,16 @@ export default function Home() {
             name: product.name,
             price,
             image: imageUrl,
-            badge: 'AI Gợi Ý',
-            rating: 4.9,
+            badge: 'Dành Cho Bạn',
+            rating: product.rating != null ? Number(product.rating) : 5.0,
+            reviewCount: product.reviewCount != null ? Number(product.reviewCount) : 0,
             description: product.description,
             basePrice: product.basePrice,
             shopName: product.shopName,
             categoryName: product.categoryName,
+            conditionGrade: product.conditionGrade,
+            warrantyType: product.warrantyType,
+            warrantyMonths: product.warrantyMonths,
             originalProduct: product,
           }
         })
@@ -258,22 +263,27 @@ export default function Home() {
       {recommendations.length > 0 && (
         <section id="recommendations" className="py-8">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
               <div className="flex items-center gap-2.5">
                 <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/25">
                   <HiOutlineSparkles className="h-5 w-5" />
                 </span>
                 <div>
-                  <h2
-                    className={cn(
-                      'text-xl sm:text-2xl font-bold tracking-tight',
-                      isDark ? 'text-white' : 'text-stone-900'
-                    )}
-                  >
-                    Gợi Ý Riêng Cho Bạn (AI Powered)
-                  </h2>
-                  <p className="text-xs sm:text-sm text-stone-500 dark:text-slate-400">
-                    Phân tích thói quen tìm kiếm và gợi ý bằng Vector Embedding
+                  <div className="flex items-center gap-2">
+                    <h2
+                      className={cn(
+                        'text-xl sm:text-2xl font-bold tracking-tight',
+                        isDark ? 'text-white' : 'text-stone-900'
+                      )}
+                    >
+                      GỢI Ý RIÊNG CHO BẠN
+                    </h2>
+                    <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20 uppercase tracking-wider">
+                      Cá nhân hóa
+                    </span>
+                  </div>
+                  <p className="text-xs sm:text-sm text-stone-500 dark:text-slate-400 mt-0.5">
+                    Hệ thống đề xuất dựa trên sở thích danh mục & mức giá thiết bị bạn quan tâm
                   </p>
                 </div>
               </div>

@@ -3,6 +3,8 @@ package com.marketplace.ecommerce.voucher.repository;
 import com.marketplace.ecommerce.voucher.entity.Voucher;
 import com.marketplace.ecommerce.voucher.valueObjects.VoucherScope;
 import com.marketplace.ecommerce.voucher.valueObjects.VoucherStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -24,17 +26,22 @@ public interface VoucherRepository extends JpaRepository<Voucher, UUID> {
             "AND (v.startDate IS NULL OR v.startDate <= :now) " +
             "AND (v.endDate IS NULL OR v.endDate >= :now) " +
             "AND (v.usageLimit IS NULL OR v.usedCount < v.usageLimit)")
-    List<Voucher> findAllCurrentlyActive(@Param("status") VoucherStatus status, @Param("now") LocalDateTime now);
+    Page<Voucher> findAllCurrentlyActive(
+            @Param("status") VoucherStatus status,
+            @Param("now") LocalDateTime now,
+            Pageable pageable
+    );
 
     @Query("SELECT v FROM Voucher v WHERE v.status = :status " +
             "AND v.scope = :scope " +
             "AND (v.startDate IS NULL OR v.startDate <= :now) " +
             "AND (v.endDate IS NULL OR v.endDate >= :now) " +
             "AND (v.usageLimit IS NULL OR v.usedCount < v.usageLimit)")
-    List<Voucher> findActiveByScope(
+    Page<Voucher> findActiveByScope(
             @Param("status") VoucherStatus status,
             @Param("scope") VoucherScope scope,
-            @Param("now") LocalDateTime now
+            @Param("now") LocalDateTime now,
+            Pageable pageable
     );
 
     @Query("SELECT v FROM Voucher v WHERE v.status = :status " +
@@ -42,7 +49,19 @@ public interface VoucherRepository extends JpaRepository<Voucher, UUID> {
             "AND (v.startDate IS NULL OR v.startDate <= :now) " +
             "AND (v.endDate IS NULL OR v.endDate >= :now) " +
             "AND (v.usageLimit IS NULL OR v.usedCount < v.usageLimit)")
-    List<Voucher> findActiveByShopId(
+    Page<Voucher> findActiveByShopId(
+            @Param("status") VoucherStatus status,
+            @Param("shopId") UUID shopId,
+            @Param("now") LocalDateTime now,
+            Pageable pageable
+    );
+
+    @Query("SELECT v FROM Voucher v WHERE v.status = :status " +
+            "AND v.shop.id = :shopId " +
+            "AND (v.startDate IS NULL OR v.startDate <= :now) " +
+            "AND (v.endDate IS NULL OR v.endDate >= :now) " +
+            "AND (v.usageLimit IS NULL OR v.usedCount < v.usageLimit)")
+    List<Voucher> findActiveByShopIdList(
             @Param("status") VoucherStatus status,
             @Param("shopId") UUID shopId,
             @Param("now") LocalDateTime now
@@ -53,10 +72,11 @@ public interface VoucherRepository extends JpaRepository<Voucher, UUID> {
             "AND (v.startDate IS NULL OR v.startDate <= :now) " +
             "AND (v.endDate IS NULL OR v.endDate >= :now) " +
             "AND (v.usageLimit IS NULL OR v.usedCount < v.usageLimit)")
-    List<Voucher> findActiveForCheckout(
+    Page<Voucher> findActiveForCheckout(
             @Param("status") VoucherStatus status,
             @Param("shopId") UUID shopId,
-            @Param("now") LocalDateTime now
+            @Param("now") LocalDateTime now,
+            Pageable pageable
     );
 
     List<Voucher> findByShopIdOrderByCreatedAtDesc(UUID shopId);

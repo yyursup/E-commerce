@@ -34,4 +34,6 @@ public interface EscrowRepository extends JpaRepository<Escrow, UUID> {
     @Query("SELECT COALESCE(SUM(e.amount), 0) FROM Escrow e WHERE e.status = :status")
     java.math.BigDecimal sumAmountByStatus(@Param("status") EscrowStatus status);
 
+    long countByStatus(EscrowStatus status);
+
 }

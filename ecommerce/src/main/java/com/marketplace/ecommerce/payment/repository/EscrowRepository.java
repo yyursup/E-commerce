@@ -31,4 +31,7 @@ public interface EscrowRepository extends JpaRepository<Escrow, UUID> {
             """)
     Page<Escrow> adminList(@Param("status") EscrowStatus status, Pageable pageable);
 
+    @Query("SELECT COALESCE(SUM(e.amount), 0) FROM Escrow e WHERE e.status = :status")
+    java.math.BigDecimal sumAmountByStatus(@Param("status") EscrowStatus status);
+
 }

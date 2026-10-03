@@ -222,5 +222,34 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
         order by p.createdAt desc
     """)
     List<Product> findPotentialAccessories(@Param("excludeId") UUID excludeId, Pageable pageable);
+
+    @Query("""
+        SELECT p
+        FROM Product p
+        LEFT JOIN FETCH p.images i
+        WHERE p.shop.id = :shopId
+          AND p.deleted = false
+          AND p.quantity <= :threshold
+        ORDER BY p.quantity ASC
+    """)
+    List<Product> findLowStockProductsByShop(@Param("shopId") UUID shopId, @Param("threshold") Integer threshold, Pageable pageable);
+
+    @Query("""
+        SELECT p.conditionGrade, COUNT(p)
+        FROM Product p
+        WHERE p.deleted = false AND p.status = 'PUBLISHED'
+        GROUP BY p.conditionGrade
+    """)
+    List<Object[]> countPublishedProductsByConditionGrade();
+
+    @Query("""
+        SELECT c.id, c.name, COUNT(p)
+        FROM Product p
+        JOIN p.productCategory c
+        WHERE p.deleted = false AND p.status = 'PUBLISHED'
+        GROUP BY c.id, c.name
+        ORDER BY COUNT(p) DESC
+    """)
+    List<Object[]> getTopCategoriesByProductCount(Pageable pageable);
 }
 

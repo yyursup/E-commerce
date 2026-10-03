@@ -1,10 +1,13 @@
-package com.marketplace.ecommerce.platform.service.impl;
-
 import com.marketplace.ecommerce.platform.dto.CommissionRateBreakdown;
+import com.marketplace.ecommerce.platform.entity.SeniorityPolicyConfig;
+import com.marketplace.ecommerce.platform.repository.SeniorityPolicyConfigRepository;
 import com.marketplace.ecommerce.platform.service.CommissionCalculationService;
 import com.marketplace.ecommerce.product.entity.ProductCategory;
 import com.marketplace.ecommerce.product.valueObjects.ConditionGrade;
 import com.marketplace.ecommerce.shop.entity.Shop;
+import com.marketplace.ecommerce.shop.entity.TrustLevelConfig;
+import com.marketplace.ecommerce.shop.repository.ShopEscrowFundRepository;
+import com.marketplace.ecommerce.shop.repository.TrustLevelConfigRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -13,6 +16,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -20,6 +24,10 @@ import java.time.temporal.ChronoUnit;
 public class CommissionCalculationServiceImpl implements CommissionCalculationService {
 
     public static final BigDecimal FLOOR_RATE = new BigDecimal("1.50"); // Tỷ lệ sàn tối thiểu 1.5%
+
+    private final TrustLevelConfigRepository trustLevelConfigRepository;
+    private final SeniorityPolicyConfigRepository seniorityPolicyConfigRepository;
+    private final ShopEscrowFundRepository shopEscrowFundRepository;
 
     @Override
     public CommissionRateBreakdown calculateRateBreakdown(Shop shop, ProductCategory category, ConditionGrade conditionGrade) {
@@ -118,6 +126,12 @@ public class CommissionCalculationServiceImpl implements CommissionCalculationSe
         if (shop.getEscrowFund() != null && shop.getEscrowFund().getBalance() != null) {
             return shop.getEscrowFund().getBalance();
         }
+        if (shop.getId() != null) {
+            var fundOpt = shopEscrowFundRepository.findByShopId(shop.getId());
+            if (fundOpt.isPresent() && fundOpt.get().getBalance() != null) {
+                return fundOpt.get().getBalance();
+            }
+        }
         if (shop.getDepositBalance() != null) {
             return shop.getDepositBalance();
         }
@@ -125,16 +139,31 @@ public class CommissionCalculationServiceImpl implements CommissionCalculationSe
     }
 
     private BigDecimal determineDepositDiscount(BigDecimal deposit) {
-        if (deposit == null) return BigDecimal.ZERO;
-        // >= 50 triệu -> giảm 1.5%
+        if (deposit == null || deposit.compareTo(BigDecimal.ZERO) <= 0) {
+            return BigDecimal.ZERO;
+        }
+
+        // 1. Ưu tiên đọc cấu hình động theo Bậc sao Ký quỹ từ Database
+        List<TrustLevelConfig> configs = trustLevelConfigRepository.findAllByIsActiveTrueOrderByStarLevelAsc();
+        if (configs != null && !configs.isEmpty()) {
+            BigDecimal resolvedDiscount = BigDecimal.ZERO;
+            for (TrustLevelConfig config : configs) {
+                if (config.getMinDeposit() != null && deposit.compareTo(config.getMinDeposit()) >= 0) {
+                    if (config.getCommissionDiscount() != null) {
+                        resolvedDiscount = config.getCommissionDiscount();
+                    }
+                }
+            }
+            return resolvedDiscount;
+        }
+
+        // 2. Fallback nếu DB cấu hình chưa sẵn sàng
         if (deposit.compareTo(new BigDecimal("50000000")) >= 0) {
             return new BigDecimal("1.50");
         }
-        // >= 30 triệu -> giảm 1.0%
         if (deposit.compareTo(new BigDecimal("30000000")) >= 0) {
             return new BigDecimal("1.00");
         }
-        // >= 10 triệu -> giảm 0.5%
         if (deposit.compareTo(new BigDecimal("10000000")) >= 0) {
             return new BigDecimal("0.50");
         }
@@ -158,15 +187,24 @@ public class CommissionCalculationServiceImpl implements CommissionCalculationSe
             return BigDecimal.ZERO;
         }
 
-        // >= 12 tháng -> giảm 1.0%
+        // 1. Ưu tiên đọc cấu hình động theo Mốc Thâm Niên từ Database
+        List<SeniorityPolicyConfig> policies = seniorityPolicyConfigRepository.findAllByIsActiveTrueOrderByMinMonthsDesc();
+        if (policies != null && !policies.isEmpty()) {
+            for (SeniorityPolicyConfig policy : policies) {
+                if (policy.getMinMonths() != null && activeMonths >= policy.getMinMonths()) {
+                    return policy.getDiscountRate() != null ? policy.getDiscountRate() : BigDecimal.ZERO;
+                }
+            }
+            return BigDecimal.ZERO;
+        }
+
+        // 2. Fallback nếu DB cấu hình chưa sẵn sàng
         if (activeMonths >= 12) {
             return new BigDecimal("1.00");
         }
-        // >= 6 tháng -> giảm 0.5%
         if (activeMonths >= 6) {
             return new BigDecimal("0.50");
         }
-        // >= 3 tháng -> giảm 0.2%
         if (activeMonths >= 3) {
             return new BigDecimal("0.20");
         }

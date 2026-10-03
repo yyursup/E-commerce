@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { cn } from '../../../../lib/cn'
+import { getConditionBadge, getWarrantyBadge } from '../../../../lib/techBadges'
 import {
   formatAdminOrderCurrency,
   formatAdminOrderDate,
@@ -68,11 +69,29 @@ export default function AdminOrderListCard({ order, isDark }) {
               <p className={cn('mt-1 text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
                 Shop: {order.shopName} | Khách hàng: {order.userName}
               </p>
-              {order.items?.[0] && (order.items[0].variantColor || order.items[0].variantSize) && (
-                <p className="mt-0.5 text-xs text-stone-500 dark:text-slate-400">
-                  Phân loại: {[order.items[0].variantColor, order.items[0].variantSize].filter(Boolean).join(' - ')}
-                  {order.items.length > 1 ? ` (+${order.items.length - 1} sp)` : ''}
-                </p>
+              {order.items?.[0] && (
+                <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+                  {order.items[0].conditionGrade && (
+                    <span className={cn("text-[10px] font-semibold px-2 py-0.5 rounded-full border", getConditionBadge(order.items[0].conditionGrade)?.cls)}>
+                      {getConditionBadge(order.items[0].conditionGrade)?.label}
+                    </span>
+                  )}
+                  {order.items[0].warrantyType && (
+                    <span className={cn("text-[10px] font-medium px-2 py-0.5 rounded-full border", getWarrantyBadge(order.items[0].warrantyType, order.items[0].warrantyMonths)?.cls)}>
+                      {getWarrantyBadge(order.items[0].warrantyType, order.items[0].warrantyMonths)?.label}
+                    </span>
+                  )}
+                  {(order.items[0].variantColor || order.items[0].variantSize) && (
+                    <span className="text-[10px] text-stone-500 dark:text-slate-400 font-medium bg-stone-100 dark:bg-slate-800 px-2 py-0.5 rounded">
+                      Phân loại: {[order.items[0].variantColor, order.items[0].variantSize].filter(Boolean).join(' - ')}
+                    </span>
+                  )}
+                  {order.items.length > 1 && (
+                    <span className="text-[10px] text-stone-400">
+                      (+{order.items.length - 1} sp)
+                    </span>
+                  )}
+                </div>
               )}
               <p className={cn('mt-1 text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
                 {order.items?.length || 0} sản phẩm

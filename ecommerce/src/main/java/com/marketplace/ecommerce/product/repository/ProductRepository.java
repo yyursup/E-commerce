@@ -33,6 +33,8 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
 
     long countByShopIdAndDeletedFalse(UUID shopId);
 
+    List<Product> findByStatusAndDeletedFalseOrderByCreatedAtDesc(ProductStatus status);
+
 
     @Modifying
     @Query("update Product p set p.status = :status where p.shop.id = :shopId")

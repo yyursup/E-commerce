@@ -11,6 +11,7 @@ import {
   HiOutlineCheckCircle,
   HiOutlineClipboardCheck,
   HiOutlineSearch,
+  HiOutlineCube,
 } from 'react-icons/hi'
 import { useThemeStore } from '../../store/useThemeStore'
 import { useAuthStore } from '../../store/useAuthStore'
@@ -20,6 +21,7 @@ import authService from '../../services/auth'
 import platformService from '../../services/platform'
 import orderService from '../../services/order'
 import requestService from '../../services/request'
+import productService from '../../services/product'
 import { HiOutlineCog } from 'react-icons/hi'
 
 export default function AdminDashboard() {
@@ -31,6 +33,7 @@ export default function AdminDashboard() {
     totalOrders: 0,
     totalRevenue: 0,
     pendingRequests: 0,
+    pendingProducts: 0,
   })
   const [loading, setLoading] = useState(true)
   const [users, setUsers] = useState([])
@@ -44,10 +47,11 @@ export default function AdminDashboard() {
       try {
         setLoading(true)
         setError(null)
-        const [usersData, ordersData, pendingRequestsData] = await Promise.all([
+        const [usersData, ordersData, pendingRequestsData, pendingProductsData] = await Promise.all([
           authService.getAllUsers(),
           orderService.getAllOrders(),
           requestService.getAdminRequests({ status: 'PENDING', page: 0, size: 1 }),
+          productService.getPendingProducts().catch(() => []),
         ])
         const userList = Array.isArray(usersData) ? usersData : []
         const orderList = Array.isArray(ordersData) ? ordersData : []
@@ -70,6 +74,7 @@ export default function AdminDashboard() {
         const totalOrders = orderList.length
         const totalRevenue = orderList.reduce((sum, order) => sum + Number(order?.total || 0), 0)
         const pendingRequests = Number(pendingRequestsData?.totalElements || 0)
+        const pendingProducts = Array.isArray(pendingProductsData) ? pendingProductsData.length : 0
 
         setStats({
           totalUsers,
@@ -77,6 +82,7 @@ export default function AdminDashboard() {
           totalOrders,
           totalRevenue,
           pendingRequests,
+          pendingProducts,
         })
       } catch (err) {
         console.error('Error fetching users:', err)
@@ -159,11 +165,18 @@ export default function AdminDashboard() {
       bgColor: 'bg-amber-500/10',
     },
     {
-      title: 'Yêu cầu chờ duyệt',
+      title: 'Yêu cầu mở Shop',
       value: stats.pendingRequests,
       icon: HiOutlineShieldCheck,
       color: 'bg-red-500',
       bgColor: 'bg-red-500/10',
+    },
+    {
+      title: 'SP chờ kiểm duyệt',
+      value: stats.pendingProducts || 0,
+      icon: HiOutlineCube,
+      color: 'bg-amber-500',
+      bgColor: 'bg-amber-500/10',
     },
   ]
 

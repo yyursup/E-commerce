@@ -20,12 +20,21 @@ export default function ProductFormModal({ product = null, onClose, onSuccess })
     stockQuantity: product?.stockQuantity ?? product?.quantity ?? product?.stock ?? 0,
     categoryId: product?.categoryId || product?.category?.id || '',
     status: product?.status || 'PUBLISHED',
+    conditionGrade: product?.conditionGrade || 'GRADE_NEW',
+    warrantyType: product?.warrantyType || 'OFFICIAL',
+    warrantyMonths: product?.warrantyMonths ?? 12,
+    batteryHealth: product?.batteryHealth || '',
+    isRepaired: product?.isRepaired || false,
+    repairDetails: product?.repairDetails || '',
+    specifications: product?.specifications || '',
   })
   const [submitting, setSubmitting] = useState(false)
   const [categories, setCategories] = useState([])
   const [loadingCategories, setLoadingCategories] = useState(true)
   const [imageUrls, setImageUrls] = useState([])
   const [variants, setVariants] = useState([])
+  const [commissionPreview, setCommissionPreview] = useState(null)
+  const [loadingCommission, setLoadingCommission] = useState(false)
 
   // Quick bulk apply state
   const [showBulkApply, setShowBulkApply] = useState(false)
@@ -45,6 +54,13 @@ export default function ProductFormModal({ product = null, onClose, onSuccess })
         stockQuantity: product.stockQuantity ?? product.quantity ?? product.stock ?? 0,
         categoryId: product.categoryId || product.category?.id || '',
         status: product.status || 'PUBLISHED',
+        conditionGrade: product.conditionGrade || 'GRADE_NEW',
+        warrantyType: product.warrantyType || 'OFFICIAL',
+        warrantyMonths: product.warrantyMonths ?? 12,
+        batteryHealth: product.batteryHealth || '',
+        isRepaired: product.isRepaired || false,
+        repairDetails: product.repairDetails || '',
+        specifications: product.specifications || '',
       })
     } else {
       setFormData({
@@ -55,9 +71,40 @@ export default function ProductFormModal({ product = null, onClose, onSuccess })
         stockQuantity: 0,
         categoryId: '',
         status: 'PUBLISHED',
+        conditionGrade: 'GRADE_NEW',
+        warrantyType: 'OFFICIAL',
+        warrantyMonths: 12,
+        batteryHealth: '',
+        isRepaired: false,
+        repairDetails: '',
+        specifications: '',
       })
     }
   }, [product])
+
+  // Fetch commission preview when categoryId or conditionGrade changes
+  useEffect(() => {
+    if (!formData.categoryId) {
+      setCommissionPreview(null)
+      return
+    }
+    let isMounted = true
+    const fetchCommission = async () => {
+      try {
+        setLoadingCommission(true)
+        const data = await sellerService.calculateCommissionPreview(formData.categoryId, formData.conditionGrade)
+        if (isMounted) {
+          setCommissionPreview(data)
+        }
+      } catch (err) {
+        console.warn('Failed to preview commission:', err)
+      } finally {
+        if (isMounted) setLoadingCommission(false)
+      }
+    }
+    fetchCommission()
+    return () => { isMounted = false }
+  }, [formData.categoryId, formData.conditionGrade])
 
   // Calculate prices & stock from variants
   const prices = variants.map((v) => parseFloat(v.price) || 0).filter((p) => p > 0)
@@ -190,6 +237,13 @@ export default function ProductFormModal({ product = null, onClose, onSuccess })
         basePrice: parseFloat(formData.basePrice) || 0,
         stockQuantity: parseInt(formData.stockQuantity, 10) || 0,
         categoryId: formData.categoryId,
+        conditionGrade: formData.conditionGrade,
+        warrantyType: formData.warrantyType,
+        warrantyMonths: Number(formData.warrantyMonths) || 12,
+        batteryHealth: formData.batteryHealth ? Number(formData.batteryHealth) : null,
+        isRepaired: Boolean(formData.isRepaired),
+        repairDetails: formData.repairDetails?.trim() || null,
+        specifications: formData.specifications?.trim() || null,
         variants: variants.map((v) => ({
           id: v.id || null,
           color: v.color?.trim() || '',
@@ -211,8 +265,12 @@ export default function ProductFormModal({ product = null, onClose, onSuccess })
         toast.success('Cập nhật sản phẩm thành công!')
       } else {
         // Create product
-        await sellerService.createProduct(productData)
-        toast.success('Tạo sản phẩm mới thành công!')
+        const res = await sellerService.createProduct(productData)
+        if (res?.status === 'PENDING_APPROVAL') {
+          toast.success('Sản phẩm đã gửi và đang chờ Admin phê duyệt!', { duration: 5000 })
+        } else {
+          toast.success('Tạo sản phẩm mới và đăng bán thành công!')
+        }
       }
 
       onSuccess && onSuccess()
@@ -485,6 +543,189 @@ export default function ProductFormModal({ product = null, onClose, onSuccess })
                 ))}
               </select>
             </div>
+          </div>
+
+          {/* CHUYÊN MỤC ĐIỆN TỬ: TÌNH TRẠNG & BẢO HÀNH */}
+          <div className={cn('p-4 sm:p-5 rounded-2xl border space-y-4', isDark ? 'border-slate-800 bg-slate-800/40' : 'border-amber-200/60 bg-amber-50/30')}>
+            <div className="flex items-center justify-between border-b pb-2.5 dark:border-slate-700">
+              <span className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+                <HiOutlineLightningBolt className="h-4 w-4" />
+                Tiêu chuẩn hàng điện tử & Công nghệ
+              </span>
+              <span className="text-[11px] text-stone-500 dark:text-slate-400">
+                Phân loại tình trạng máy & chế độ bảo hành
+              </span>
+            </div>
+
+            {/* Tình trạng hàng (Condition Grade) */}
+            <div>
+              <label className={cn('mb-2 block text-xs font-bold uppercase tracking-wider', isDark ? 'text-slate-300' : 'text-stone-700')}>
+                Tình trạng thiết bị <span className="text-rose-500">*</span>
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                {[
+                  { id: 'GRADE_NEW', label: 'Mới 100%', sub: 'Nguyên Seal' },
+                  { id: 'GRADE_OPEN_BOX', label: 'Trưng Bày', sub: 'Open Box 99%' },
+                  { id: 'GRADE_LIKE_NEW', label: 'Like New', sub: 'Đã qua sử dụng 99%' },
+                  { id: 'GRADE_FAIR', label: 'Cũ Dùng Tốt', sub: '90 - 95%' },
+                  { id: 'GRADE_AS_IS', label: 'Xác / Linh Kiện', sub: 'Bán đứt miễn đổi' },
+                ].map((g) => (
+                  <button
+                    key={g.id}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, conditionGrade: g.id })}
+                    className={cn(
+                      'p-2.5 rounded-xl border text-center transition-all flex flex-col items-center justify-center',
+                      formData.conditionGrade === g.id
+                        ? 'border-amber-500 bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold shadow-sm'
+                        : isDark
+                        ? 'border-slate-700 bg-slate-800 text-slate-300 hover:border-slate-600'
+                        : 'border-stone-200 bg-white text-stone-700 hover:border-stone-300'
+                    )}
+                  >
+                    <span className="text-xs">{g.label}</span>
+                    <span className="text-[10px] opacity-75 font-normal">{g.sub}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Nếu là hàng cũ: Pin và Sửa chữa */}
+            {formData.conditionGrade !== 'GRADE_NEW' && (
+              <div className="p-3 rounded-xl border border-dashed border-amber-300 dark:border-slate-700 bg-amber-500/5 space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className={cn('mb-1 block text-xs font-bold uppercase', isDark ? 'text-slate-300' : 'text-stone-700')}>
+                      Dung lượng Pin thực tế (% Battery Health)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      placeholder="VD: 92 (nếu có pin)"
+                      value={formData.batteryHealth}
+                      onChange={(e) => setFormData({ ...formData, batteryHealth: e.target.value })}
+                      className={cn(
+                        'w-full rounded-xl border px-3 py-1.5 text-xs outline-none focus:ring-1 focus:ring-amber-500',
+                        isDark ? 'border-slate-700 bg-slate-900 text-white' : 'border-stone-300 bg-white text-stone-900'
+                      )}
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-5">
+                    <input
+                      type="checkbox"
+                      id="isRepaired"
+                      checked={formData.isRepaired}
+                      onChange={(e) => setFormData({ ...formData, isRepaired: e.target.checked })}
+                      className="rounded border-stone-300 text-amber-500 focus:ring-amber-400 h-4 w-4"
+                    />
+                    <label htmlFor="isRepaired" className="text-xs font-medium cursor-pointer">
+                      Thiết bị đã từng qua sửa chữa / thay thế linh kiện
+                    </label>
+                  </div>
+                </div>
+
+                {formData.isRepaired && (
+                  <div>
+                    <label className={cn('mb-1 block text-xs font-bold uppercase', isDark ? 'text-slate-300' : 'text-stone-700')}>
+                      Chi tiết bộ phận đã thay thế
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="VD: Đã thay màn hình OLED chính hãng, thay pin mới..."
+                      value={formData.repairDetails}
+                      onChange={(e) => setFormData({ ...formData, repairDetails: e.target.value })}
+                      className={cn(
+                        'w-full rounded-xl border px-3 py-1.5 text-xs outline-none focus:ring-1 focus:ring-amber-500',
+                        isDark ? 'border-slate-700 bg-slate-900 text-white' : 'border-stone-300 bg-white text-stone-900'
+                      )}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Chế độ Bảo hành & Thời hạn */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className={cn('mb-1.5 block text-xs font-bold uppercase tracking-wider', isDark ? 'text-slate-300' : 'text-stone-700')}>
+                  Loại bảo hành
+                </label>
+                <select
+                  value={formData.warrantyType}
+                  onChange={(e) => setFormData({ ...formData, warrantyType: e.target.value })}
+                  className={cn(
+                    'w-full rounded-xl border px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-amber-500/30',
+                    isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-300 bg-white text-stone-900'
+                  )}
+                >
+                  <option value="OFFICIAL">Bảo hành chính hãng (Apple, Samsung, Sony, DGW...)</option>
+                  <option value="SHOP">Bảo hành tại cửa hàng (Shop Warranty)</option>
+                  <option value="NONE">Không bảo hành (Bao test tại chỗ / Hàng xác)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className={cn('mb-1.5 block text-xs font-bold uppercase tracking-wider', isDark ? 'text-slate-300' : 'text-stone-700')}>
+                  Thời hạn bảo hành (Tháng)
+                </label>
+                <select
+                  value={formData.warrantyMonths}
+                  onChange={(e) => setFormData({ ...formData, warrantyMonths: Number(e.target.value) })}
+                  className={cn(
+                    'w-full rounded-xl border px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-amber-500/30',
+                    isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-300 bg-white text-stone-900'
+                  )}
+                >
+                  <option value={0}>0 tháng (Không bảo hành)</option>
+                  <option value={1}>1 tháng (Bao test 30 ngày)</option>
+                  <option value={3}>3 tháng</option>
+                  <option value={6}>6 tháng</option>
+                  <option value={12}>12 tháng (Tiêu chuẩn 1 năm)</option>
+                  <option value={24}>24 tháng (2 năm)</option>
+                  <option value={36}>36 tháng (Linh kiện PC 3 năm)</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Thông số kỹ thuật nhanh */}
+            <div>
+              <label className={cn('mb-1.5 block text-xs font-bold uppercase tracking-wider', isDark ? 'text-slate-300' : 'text-stone-700')}>
+                Thông số kỹ thuật chính (Tech Specs)
+              </label>
+              <textarea
+                value={formData.specifications}
+                onChange={(e) => setFormData({ ...formData, specifications: e.target.value })}
+                rows={2}
+                placeholder="VD: Chip M3 Pro 12-core, RAM 18GB, SSD 512GB, Màn hình Liquid Retina XDR 14.2 inch 120Hz..."
+                className={cn(
+                  'w-full rounded-xl border px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-amber-500/30',
+                  isDark ? 'border-slate-700 bg-slate-800 text-white placeholder-slate-500' : 'border-stone-300 bg-white text-stone-900 placeholder-stone-400'
+                )}
+              />
+            </div>
+
+            {/* WIDGET DỰ TOÁN HOA HỒNG SÀN (COMMISSION PREVIEW) */}
+            {commissionPreview && (
+              <div className={cn('p-3.5 rounded-xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs', isDark ? 'border-emerald-900/60 bg-emerald-950/20 text-emerald-300' : 'border-emerald-200 bg-emerald-50 text-emerald-900')}>
+                <div>
+                  <div className="flex items-center gap-1.5 font-bold">
+                    <HiOutlineInformationCircle className="h-4 w-4 text-emerald-500 shrink-0" />
+                    <span>Dự toán hoa hồng sàn cho sản phẩm này:</span>
+                    <span className="px-2 py-0.5 rounded-md bg-emerald-500 text-white font-mono font-bold text-xs">
+                      {commissionPreview.finalRate}%
+                    </span>
+                  </div>
+                  <p className="text-[11px] opacity-80 mt-1">
+                    {commissionPreview.formulaExplanation}
+                  </p>
+                </div>
+                <div className="text-[10px] text-right font-mono opacity-75 shrink-0">
+                  <span>Sàn áp dụng Floor Rate: {commissionPreview.floorRate}%</span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Variants section */}

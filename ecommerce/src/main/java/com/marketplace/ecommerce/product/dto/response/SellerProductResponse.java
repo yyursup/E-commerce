@@ -40,6 +40,15 @@ public class SellerProductResponse {
     private boolean flagged;
     private LocalDateTime lastReportedAt;
 
+    private String conditionGrade;
+    private String warrantyType;
+    private Integer warrantyMonths;
+    private Integer batteryHealth;
+    private Boolean isRepaired;
+    private String repairDetails;
+    private String specifications;
+    private String rejectionReason;
+
     public static SellerProductResponse from(Product product) {
         return SellerProductResponse.builder()
                 .id(product.getId())
@@ -62,6 +71,14 @@ public class SellerProductResponse {
                 .reportCount(product.getReportCount())
                 .flagged(product.isFlagged())
                 .lastReportedAt(product.getLastReportedAt())
+                .conditionGrade(product.getConditionGrade() != null ? product.getConditionGrade().name() : null)
+                .warrantyType(product.getWarrantyType() != null ? product.getWarrantyType().name() : null)
+                .warrantyMonths(product.getWarrantyMonths())
+                .batteryHealth(product.getBatteryHealth())
+                .isRepaired(product.getIsRepaired())
+                .repairDetails(product.getRepairDetails())
+                .specifications(product.getSpecifications())
+                .rejectionReason(product.getRejectionReason())
                 .build();
     }
 

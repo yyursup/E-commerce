@@ -136,7 +136,7 @@ export default function ShopProducts() {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amt || 0)
   }
 
-  // Khớp 100% với ProductStatus enum Backend: PUBLISHED, DRAFT, INACTIVE, ARCHIVED, DELETED
+  // Khớp 100% với ProductStatus enum Backend: PUBLISHED, PENDING_APPROVAL, REJECTED, DRAFT, INACTIVE, ARCHIVED, DELETED
   const getStatusBadge = (status) => {
     const st = status?.toUpperCase() || 'PUBLISHED'
     if (st === 'PUBLISHED') {
@@ -145,10 +145,22 @@ export default function ShopProducts() {
         color: 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30',
       }
     }
+    if (st === 'PENDING_APPROVAL') {
+      return {
+        label: 'Chờ duyệt kiểm định',
+        color: 'bg-amber-500/20 text-amber-500 border border-amber-500/40 font-bold',
+      }
+    }
+    if (st === 'REJECTED') {
+      return {
+        label: 'Bị từ chối duyệt',
+        color: 'bg-rose-500/20 text-rose-500 border border-rose-500/40 font-bold',
+      }
+    }
     if (st === 'DRAFT') {
       return {
         label: 'Bản nháp',
-        color: 'bg-amber-500/15 text-amber-400 border border-amber-500/30',
+        color: 'bg-stone-500/15 text-stone-400 border border-stone-500/30',
       }
     }
     if (st === 'INACTIVE') {
@@ -166,6 +178,23 @@ export default function ShopProducts() {
     return {
       label: 'Đã lưu trữ',
       color: 'bg-slate-500/15 text-slate-400 border border-slate-500/30',
+    }
+  }
+
+  const getConditionBadge = (grade) => {
+    switch (grade) {
+      case 'GRADE_NEW':
+        return { label: 'Mới 100%', color: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-500' }
+      case 'GRADE_OPEN_BOX':
+        return { label: 'Trưng bày 99%', color: 'border-sky-500/30 bg-sky-500/10 text-sky-500' }
+      case 'GRADE_LIKE_NEW':
+        return { label: 'Like New 99%', color: 'border-amber-500/30 bg-amber-500/10 text-amber-500' }
+      case 'GRADE_FAIR':
+        return { label: 'Cũ 90-95%', color: 'border-orange-500/30 bg-orange-500/10 text-orange-500' }
+      case 'GRADE_AS_IS':
+        return { label: 'Xác / Bán đứt', color: 'border-rose-500/30 bg-rose-500/10 text-rose-500' }
+      default:
+        return null
     }
   }
 
@@ -265,6 +294,8 @@ export default function ShopProducts() {
           {[
             { key: 'ALL', label: 'Tất cả' },
             { key: 'PUBLISHED', label: 'Đang bán' },
+            { key: 'PENDING_APPROVAL', label: 'Chờ duyệt' },
+            { key: 'REJECTED', label: 'Bị từ chối' },
             { key: 'DRAFT', label: 'Bản nháp' },
             { key: 'INACTIVE', label: 'Tạm ngưng' },
             { key: 'ARCHIVED', label: 'Đã lưu trữ' },
@@ -395,6 +426,28 @@ export default function ShopProducts() {
                       )}>
                         {prod.categoryName || 'Mặc định'}
                       </span>
+                      {/* Tình trạng máy */}
+                      {prod.conditionGrade && (
+                        (() => {
+                          const c = getConditionBadge(prod.conditionGrade)
+                          return c ? (
+                            <span className={cn('text-[11px] font-bold px-2 py-0.5 rounded-lg border shrink-0', c.color)}>
+                              {c.label}
+                            </span>
+                          ) : null
+                        })()
+                      )}
+                      {/* Chế độ bảo hành */}
+                      {prod.warrantyType && prod.warrantyType !== 'NONE' && (
+                        <span className={cn(
+                          'text-[11px] font-bold px-2 py-0.5 rounded-lg border shrink-0',
+                          prod.warrantyType === 'OFFICIAL'
+                            ? 'border-blue-500/30 bg-blue-500/10 text-blue-500'
+                            : 'border-purple-500/30 bg-purple-500/10 text-purple-500'
+                        )}>
+                          BH {prod.warrantyMonths ? `${prod.warrantyMonths}T ` : ''}{prod.warrantyType === 'OFFICIAL' ? 'Chính hãng' : 'Cửa hàng'}
+                        </span>
+                      )}
                       {prod.sold >= 50 && (
                         <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/10 px-2 py-0.5 text-[11px] font-bold text-rose-500 border border-rose-500/20 shrink-0">
                           <HiOutlineFire className="h-3.5 w-3.5" /> Bán chạy
@@ -434,6 +487,18 @@ export default function ShopProducts() {
                     )}>
                       {prod.name}
                     </h3>
+
+                    {/* Rejection / Moderation notification */}
+                    {prod.status === 'REJECTED' && prod.rejectionReason && (
+                      <div className="rounded-xl border border-rose-500/40 bg-rose-500/10 p-2.5 text-xs text-rose-500">
+                        <span className="font-bold">Lý do từ chối kiểm duyệt:</span> {prod.rejectionReason}
+                      </div>
+                    )}
+                    {prod.status === 'PENDING_APPROVAL' && (
+                      <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-2 text-xs text-amber-500 font-medium">
+                        Đang chờ Admin duyệt sản phẩm công nghệ (kiểm tra ngoại quan / thông số).
+                      </div>
+                    )}
 
                     {/* Stock & Quick Stats */}
                     <div className="flex items-center gap-3 text-xs">

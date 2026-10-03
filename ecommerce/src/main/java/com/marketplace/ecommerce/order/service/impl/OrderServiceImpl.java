@@ -19,12 +19,15 @@ import com.marketplace.ecommerce.order.repository.OrderRepository;
 import com.marketplace.ecommerce.order.service.OrderService;
 import com.marketplace.ecommerce.payment.service.EscrowService;
 import com.marketplace.ecommerce.payment.valueObjects.PaymentMethod;
+import com.marketplace.ecommerce.platform.service.CommissionCalculationService;
 import com.marketplace.ecommerce.platform.service.CommissionService;
 import com.marketplace.ecommerce.platform.service.PlatformSettingService;
 import com.marketplace.ecommerce.product.entity.Product;
+import com.marketplace.ecommerce.product.entity.ProductCategory;
 import com.marketplace.ecommerce.product.entity.ProductVariant;
 import com.marketplace.ecommerce.product.repository.ProductRepository;
 import com.marketplace.ecommerce.product.repository.ProductVariantRepository;
+import com.marketplace.ecommerce.product.valueObjects.ConditionGrade;
 import com.marketplace.ecommerce.shipping.dto.request.GHNCreateOrderRequest;
 import com.marketplace.ecommerce.shipping.dto.response.GHNCreateOrderResponse;
 import com.marketplace.ecommerce.shipping.service.ShippingService;
@@ -71,6 +74,7 @@ public class OrderServiceImpl implements OrderService {
     private final UserAddressRepository userAddressRepository;
     private final ShippingService shippingService;
     private final PlatformSettingService platformSettingService;
+    private final CommissionCalculationService commissionCalculationService;
     private final EscrowService escrowService;
     private final CommissionService commissionService;
     private final com.marketplace.ecommerce.voucher.service.VoucherService voucherService;
@@ -386,7 +390,14 @@ public class OrderServiceImpl implements OrderService {
         order.setNotes(request.getNotes());
         order.setSubtotal(subtotal);
         order.setShippingFee(shippingFee);
-        BigDecimal commissionRate = platformSettingService.getCommissionRate();
+        ProductCategory primaryCategory = (cartItems != null && !cartItems.isEmpty() && cartItems.get(0).getProduct() != null)
+                ? cartItems.get(0).getProduct().getProductCategory()
+                : null;
+        ConditionGrade primaryCondition = (cartItems != null && !cartItems.isEmpty() && cartItems.get(0).getProduct() != null)
+                ? cartItems.get(0).getProduct().getConditionGrade()
+                : ConditionGrade.GRADE_NEW;
+
+        BigDecimal commissionRate = commissionCalculationService.calculateFinalRate(shop, primaryCategory, primaryCondition);
         BigDecimal platformCommission = subtotal.multiply(commissionRate).divide(BigDecimal.valueOf(100), 2,
                 RoundingMode.HALF_UP);
         order.setPlatformCommission(platformCommission);

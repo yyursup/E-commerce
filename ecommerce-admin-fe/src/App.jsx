@@ -18,6 +18,7 @@ import AdminLiveChat from './pages/admin/AdminLiveChat'
 import AdminVouchers from './pages/admin/AdminVouchers'
 import AdminTrustConfig from './pages/admin/AdminTrustConfig'
 import AdminEscrowFundSupervision from './pages/admin/AdminEscrowFundSupervision'
+import AdminProductModeration from './pages/admin/AdminProductModeration'
 
 export default function App() {
   return (
@@ -35,6 +36,7 @@ export default function App() {
       >
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<AdminDashboard />} />
+        <Route path="/moderation" element={<AdminProductModeration />} />
         <Route path="/requests" element={<AdminRequests />} />
         <Route path="/requests/:requestId" element={<AdminRequestDetail />} />
         <Route path="/orders" element={<AdminOrders />} />

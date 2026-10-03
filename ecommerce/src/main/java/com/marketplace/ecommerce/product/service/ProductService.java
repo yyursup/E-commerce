@@ -16,4 +16,9 @@ public interface ProductService {
 
     SellerProductResponse toggleFeatured(UUID accountId, UUID productId);
 
+    java.util.List<SellerProductResponse> getPendingProducts();
+
+    SellerProductResponse approveProduct(UUID adminAccountId, UUID productId);
+
+    SellerProductResponse rejectProduct(UUID adminAccountId, UUID productId, String reason);
 }

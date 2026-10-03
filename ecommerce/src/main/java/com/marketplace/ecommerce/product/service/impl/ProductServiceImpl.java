@@ -17,7 +17,10 @@ import com.marketplace.ecommerce.product.repository.ProductRepository;
 import com.marketplace.ecommerce.product.service.ProductImageService;
 import com.marketplace.ecommerce.product.service.ProductService;
 import com.marketplace.ecommerce.product.validate.ProductValidation;
+import com.marketplace.ecommerce.product.valueObjects.ConditionGrade;
 import com.marketplace.ecommerce.product.valueObjects.ProductStatus;
+import com.marketplace.ecommerce.product.valueObjects.WarrantyType;
+import com.marketplace.ecommerce.request.valueObjects.SellerType;
 import com.marketplace.ecommerce.shop.entity.Shop;
 import com.marketplace.ecommerce.shop.repository.ShopRepository;
 import com.marketplace.ecommerce.shop.valueObjects.ShopStatus;
@@ -25,7 +28,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 import com.marketplace.ecommerce.product.service.InventoryHistoryService;
 import com.marketplace.ecommerce.product.valueObjects.InventoryActionType;
@@ -65,6 +70,8 @@ public class ProductServiceImpl implements ProductService {
         ProductCategory category = productCategoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new CustomException("Category not found"));
 
+        ProductStatus initialStatus = determineInitialProductStatus(shop, category, request);
+
         Product product = Product.builder()
                 .shop(shop)
                 .name(request.getName())
@@ -72,8 +79,15 @@ public class ProductServiceImpl implements ProductService {
                 .basePrice(request.getBasePrice())
                 .sku(request.getSku())
                 .quantity(request.getStockQuantity())
-                .status(ProductStatus.PUBLISHED)
+                .status(initialStatus)
                 .productCategory(category)
+                .conditionGrade(request.getConditionGrade() != null ? request.getConditionGrade() : ConditionGrade.GRADE_NEW)
+                .warrantyType(request.getWarrantyType() != null ? request.getWarrantyType() : WarrantyType.OFFICIAL)
+                .warrantyMonths(request.getWarrantyMonths() != null ? request.getWarrantyMonths() : 12)
+                .batteryHealth(request.getBatteryHealth())
+                .isRepaired(request.getIsRepaired() != null ? request.getIsRepaired() : false)
+                .repairDetails(request.getRepairDetails())
+                .specifications(request.getSpecifications())
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .deleted(false)
@@ -179,6 +193,27 @@ public class ProductServiceImpl implements ProductService {
         }
         if (req.getStockQuantity() != null) {
             product.setQuantity(req.getStockQuantity());
+        }
+        if (req.getConditionGrade() != null) {
+            product.setConditionGrade(req.getConditionGrade());
+        }
+        if (req.getWarrantyType() != null) {
+            product.setWarrantyType(req.getWarrantyType());
+        }
+        if (req.getWarrantyMonths() != null) {
+            product.setWarrantyMonths(req.getWarrantyMonths());
+        }
+        if (req.getBatteryHealth() != null) {
+            product.setBatteryHealth(req.getBatteryHealth());
+        }
+        if (req.getIsRepaired() != null) {
+            product.setIsRepaired(req.getIsRepaired());
+        }
+        if (req.getRepairDetails() != null) {
+            product.setRepairDetails(req.getRepairDetails());
+        }
+        if (req.getSpecifications() != null) {
+            product.setSpecifications(req.getSpecifications());
         }
         product.setUpdatedAt(LocalDateTime.now());
     }
@@ -307,6 +342,88 @@ public class ProductServiceImpl implements ProductService {
         product.setFeatured(!product.isFeatured());
         product.setUpdatedAt(java.time.LocalDateTime.now());
         return SellerProductResponse.from(productRepository.save(product));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<SellerProductResponse> getPendingProducts() {
+        return productRepository.findByStatusAndDeletedFalseOrderByCreatedAtDesc(ProductStatus.PENDING_APPROVAL)
+                .stream()
+                .map(SellerProductResponse::from)
+                .toList();
+    }
+
+    @Override
+    @Transactional
+    public SellerProductResponse approveProduct(UUID adminAccountId, UUID productId) {
+        Product product = productRepository.findByIdAndDeletedFalse(productId)
+                .orElseThrow(() -> new CustomException("Sản phẩm không tồn tại"));
+
+        if (product.getStatus() != ProductStatus.PENDING_APPROVAL) {
+            throw new CustomException("Chỉ sản phẩm đang chờ duyệt mới có thể phê duyệt");
+        }
+
+        product.setStatus(ProductStatus.PUBLISHED);
+        product.setReviewedAt(LocalDateTime.now());
+        product.setReviewedBy(adminAccountId);
+        product.setRejectionReason(null);
+        product.setUpdatedAt(LocalDateTime.now());
+
+        return SellerProductResponse.from(productRepository.save(product));
+    }
+
+    @Override
+    @Transactional
+    public SellerProductResponse rejectProduct(UUID adminAccountId, UUID productId, String reason) {
+        Product product = productRepository.findByIdAndDeletedFalse(productId)
+                .orElseThrow(() -> new CustomException("Sản phẩm không tồn tại"));
+
+        if (product.getStatus() != ProductStatus.PENDING_APPROVAL) {
+            throw new CustomException("Chỉ sản phẩm đang chờ duyệt mới có thể từ chối");
+        }
+
+        product.setStatus(ProductStatus.REJECTED);
+        product.setRejectionReason(reason != null && !reason.isBlank() ? reason.trim() : "Không đạt tiêu chuẩn kiểm duyệt của sàn");
+        product.setReviewedAt(LocalDateTime.now());
+        product.setReviewedBy(adminAccountId);
+        product.setUpdatedAt(LocalDateTime.now());
+
+        return SellerProductResponse.from(productRepository.save(product));
+    }
+
+    private ProductStatus determineInitialProductStatus(Shop shop, ProductCategory category, CreateProductRequest request) {
+        // 1. Kiểm tra từ khóa cấm / nhái / vi phạm (AI / Regex filter)
+        String combinedText = (request.getName() + " " + (request.getDescription() != null ? request.getDescription() : "")).toLowerCase();
+        List<String> bannedKeywords = List.of("hàng nhái", "hàng fake", "replica", "dựng 1:1", "bypass icloud", "icloud ẩn", "máy phá sóng", "kích điện");
+        for (String keyword : bannedKeywords) {
+            if (combinedText.contains(keyword)) {
+                return ProductStatus.PENDING_APPROVAL;
+            }
+        }
+
+        // 2. Danh mục nhạy cảm (Flycam / Drone, Thiết bị phát sóng) -> bắt buộc Admin kiểm tra giấy phép bay
+        String catName = category.getName() != null ? category.getName().toLowerCase() : "";
+        if (catName.contains("flycam") || catName.contains("drone") || catName.contains("vô tuyến")) {
+            return ProductStatus.PENDING_APPROVAL;
+        }
+
+        // 3. Hàng cũ (Like New 99%, Cũ dùng tốt, Xác linh kiện) -> Cần kiểm tra ảnh thực tế 6 góc
+        if (request.getConditionGrade() != null && request.getConditionGrade() != ConditionGrade.GRADE_NEW) {
+            return ProductStatus.PENDING_APPROVAL;
+        }
+
+        // 4. Shop doanh nghiệp uy tín (Official Mall / AAR / có ký quỹ / violation = 0) đăng hàng Mới 100%
+        boolean isTrustedShop = (shop.getSellerType() == SellerType.BUSINESS)
+                || (shop.getTrustLevel() != null && shop.getTrustLevel() >= 2)
+                || (shop.getEscrowFund() != null && shop.getEscrowFund().getBalance() != null
+                    && shop.getEscrowFund().getBalance().compareTo(new BigDecimal("10000000")) >= 0);
+
+        if (isTrustedShop) {
+            return ProductStatus.PUBLISHED; // Auto-publish ngay lập tức
+        }
+
+        // 5. Mặc định đối với seller cá nhân mới chưa có ký quỹ -> PENDING_APPROVAL
+        return ProductStatus.PENDING_APPROVAL;
     }
 
 }

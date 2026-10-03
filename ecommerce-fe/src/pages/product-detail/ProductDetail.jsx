@@ -38,6 +38,23 @@ import cartService from '../../services/cart'
 import shopService, { FALLBACK_SHOPS } from '../../services/shop'
 import wishlistService from '../../services/wishlist'
 
+const getConditionDetail = (grade) => {
+  switch (grade) {
+    case 'GRADE_NEW':
+      return { label: 'Mới 100% Nguyên Seal', color: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' }
+    case 'GRADE_OPEN_BOX':
+      return { label: 'Hàng Trưng Bày / Mở Hộp (99%)', color: 'bg-sky-500/15 text-sky-600 dark:text-sky-400 border-sky-500/30' }
+    case 'GRADE_LIKE_NEW':
+      return { label: 'Like New 99% - Như Mới', color: 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30' }
+    case 'GRADE_FAIR':
+      return { label: 'Đã Qua Sử Dụng (90-95%)', color: 'bg-orange-500/15 text-orange-600 dark:text-orange-400 border-orange-500/30' }
+    case 'GRADE_AS_IS':
+      return { label: 'Thanh Lý / Xác Máy (As-is)', color: 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30' }
+    default:
+      return null
+  }
+}
+
 export default function ProductDetail() {
   const { productId } = useParams()
   const navigate = useNavigate()
@@ -456,6 +473,32 @@ export default function ProductDetail() {
             <div className="lg:col-span-7 space-y-5">
               {/* Product Title & Badges */}
               <div>
+                {/* Tech & Condition Badges */}
+                <div className="flex flex-wrap items-center gap-2 mb-2.5">
+                  {product.conditionGrade && (
+                    (() => {
+                      const c = getConditionDetail(product.conditionGrade)
+                      return c ? (
+                        <span className={cn('px-2.5 py-0.5 rounded-lg text-xs font-bold border', c.color)}>
+                          {c.label}
+                        </span>
+                      ) : null
+                    })()
+                  )}
+
+                  {product.warrantyType && product.warrantyType !== 'NONE' && (
+                    <span className="px-2.5 py-0.5 rounded-lg text-xs font-bold border border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                      BH {product.warrantyMonths ? `${product.warrantyMonths} Tháng ` : ''}{product.warrantyType === 'OFFICIAL' ? 'Chính Hãng' : 'Tại Cửa Hàng'}
+                    </span>
+                  )}
+
+                  {product.batteryHealth && (
+                    <span className="px-2.5 py-0.5 rounded-lg text-xs font-bold border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                      Pin Zin: {product.batteryHealth}%
+                    </span>
+                  )}
+                </div>
+
                 <div className="flex items-start gap-2.5">
                   <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-stone-900 dark:text-white leading-snug">
                     {product.name}
@@ -541,6 +584,23 @@ export default function ProductDetail() {
                 <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 font-medium">
                   <HiOutlineShieldCheck className="h-5 w-5 shrink-0" />
                   <span>Ký Quỹ Escrow An Toàn 100% (Đổi trả 7 ngày / Hoàn tiền nếu hàng lỗi)</span>
+                </div>
+              </div>
+
+              {/* Tech Hardware Inspection Row */}
+              <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4 text-xs border-t pt-3 border-stone-100 dark:border-slate-800">
+                <span className="w-28 shrink-0 text-stone-500 dark:text-slate-400 font-semibold mt-0.5">
+                  Kiểm Định Máy
+                </span>
+                <div className="space-y-1.5 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className={cn('font-semibold', product.isRepaired ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400')}>
+                      {product.isRepaired ? `⚠️ Đã thay thế linh kiện: ${product.repairDetails || 'Có can thiệp phần cứng'}` : '✓ Thiết bị nguyên bản (Zin 100% chưa qua can thiệp linh kiện)'}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-stone-500 dark:text-slate-400">
+                    Sản phẩm điện tử được kiểm tra thẩm định trước khi mở bán. Bao test 3 ngày cùng cơ chế Escrow giữ tiền an toàn.
+                  </p>
                 </div>
               </div>
 
@@ -861,36 +921,88 @@ export default function ProductDetail() {
           {/* Specifications Table */}
           <div>
             <h2 className="text-sm font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 mb-4 pb-2 border-b border-stone-100 dark:border-slate-800">
-              CHI TIẾT SẢN PHẨM
+              CHI TIẾT SẢN PHẨM & TÌNH TRẠNG THIẾT BỊ
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-8 text-xs">
               <div className="flex justify-between border-b pb-2 border-stone-100 dark:border-slate-800/80">
-                <span className="text-stone-500 dark:text-slate-400 w-32 shrink-0">Danh Mục:</span>
+                <span className="text-stone-500 dark:text-slate-400 w-36 shrink-0">Danh Mục:</span>
                 <span className="font-medium text-stone-900 dark:text-white text-right truncate">
-                  {product.categoryName || 'Sản phẩm đa ngành'}
+                  {product.categoryName || 'Thiết bị điện tử'}
                 </span>
               </div>
               <div className="flex justify-between border-b pb-2 border-stone-100 dark:border-slate-800/80">
-                <span className="text-stone-500 dark:text-slate-400 w-32 shrink-0">Thương Hiệu:</span>
+                <span className="text-stone-500 dark:text-slate-400 w-36 shrink-0">Thương Hiệu:</span>
                 <span className="font-medium text-stone-900 dark:text-white text-right">{product.brand || 'Chính Hãng Phân Phối'}</span>
               </div>
               <div className="flex justify-between border-b pb-2 border-stone-100 dark:border-slate-800/80">
-                <span className="text-stone-500 dark:text-slate-400 w-32 shrink-0">Mã SKU:</span>
+                <span className="text-stone-500 dark:text-slate-400 w-36 shrink-0">Tình Trạng Máy:</span>
+                <span className="font-bold text-amber-600 dark:text-amber-400 text-right">
+                  {getConditionDetail(product.conditionGrade)?.label || 'Tiêu chuẩn'}
+                </span>
+              </div>
+              <div className="flex justify-between border-b pb-2 border-stone-100 dark:border-slate-800/80">
+                <span className="text-stone-500 dark:text-slate-400 w-36 shrink-0">Pin (Battery Health):</span>
+                <span className="font-bold text-emerald-600 dark:text-emerald-400 text-right">
+                  {product.batteryHealth ? `${product.batteryHealth}%` : 'Không áp dụng / Chưa đo'}
+                </span>
+              </div>
+              <div className="flex justify-between border-b pb-2 border-stone-100 dark:border-slate-800/80">
+                <span className="text-stone-500 dark:text-slate-400 w-36 shrink-0">Chế Độ Bảo Hành:</span>
+                <span className="font-medium text-stone-900 dark:text-white text-right">
+                  {product.warrantyType === 'OFFICIAL' ? 'Chính hãng toàn quốc' : product.warrantyType === 'SHOP' ? 'Tại gian hàng' : 'Hết BH / Bao test 7 ngày'}
+                  {product.warrantyMonths ? ` (${product.warrantyMonths} tháng)` : ''}
+                </span>
+              </div>
+              <div className="flex justify-between border-b pb-2 border-stone-100 dark:border-slate-800/80">
+                <span className="text-stone-500 dark:text-slate-400 w-36 shrink-0">Linh Kiện & Sửa Chữa:</span>
+                <span className={cn('font-semibold text-right', product.isRepaired ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400')}>
+                  {product.isRepaired ? `Đã thay: ${product.repairDetails || 'Có can thiệp'}` : 'Zin 100% nguyên bản'}
+                </span>
+              </div>
+              <div className="flex justify-between border-b pb-2 border-stone-100 dark:border-slate-800/80">
+                <span className="text-stone-500 dark:text-slate-400 w-36 shrink-0">Mã SKU:</span>
                 <span className="font-medium text-stone-900 dark:text-white text-right">{product.sku || (product.id ? `SKU-${String(product.id).slice(0, 8).toUpperCase()}` : 'SKU-STANDARD')}</span>
               </div>
               <div className="flex justify-between border-b pb-2 border-stone-100 dark:border-slate-800/80">
-                <span className="text-stone-500 dark:text-slate-400 w-32 shrink-0">Kho Hàng:</span>
+                <span className="text-stone-500 dark:text-slate-400 w-36 shrink-0">Kho Hàng:</span>
                 <span className="font-medium text-stone-900 dark:text-white text-right">{displayStock}</span>
               </div>
               <div className="flex justify-between border-b pb-2 border-stone-100 dark:border-slate-800/80">
-                <span className="text-stone-500 dark:text-slate-400 w-32 shrink-0">Bảo Hành:</span>
-                <span className="font-medium text-stone-900 dark:text-white text-right">Bảo hành theo quy chuẩn sàn</span>
-              </div>
-              <div className="flex justify-between border-b pb-2 border-stone-100 dark:border-slate-800/80">
-                <span className="text-stone-500 dark:text-slate-400 w-32 shrink-0">Gửi Từ:</span>
+                <span className="text-stone-500 dark:text-slate-400 w-36 shrink-0">Gửi Từ:</span>
                 <span className="font-medium text-stone-900 dark:text-white text-right truncate">{shopData?.address || shopData?.location || shopData?.city || 'Việt Nam'}</span>
               </div>
             </div>
+
+            {/* Dynamic Technical Specifications Table */}
+            {(() => {
+              let specsObj = null
+              try {
+                if (product.specifications) {
+                  specsObj = typeof product.specifications === 'string' ? JSON.parse(product.specifications) : product.specifications
+                }
+              } catch (e) {
+                specsObj = null
+              }
+
+              if (specsObj && typeof specsObj === 'object' && Object.keys(specsObj).length > 0) {
+                return (
+                  <div className="mt-6">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-slate-400 mb-3">
+                      THÔNG SỐ KỸ THUẬT PHẦN CỨNG
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2.5 gap-x-8 text-xs bg-stone-50 dark:bg-slate-800/40 p-4 rounded-2xl border border-stone-200/80 dark:border-slate-800">
+                      {Object.entries(specsObj).map(([key, val], idx) => (
+                        <div key={idx} className="flex justify-between border-b border-stone-200/60 dark:border-slate-700/60 pb-2">
+                          <span className="text-stone-500 dark:text-slate-400 font-medium">{key}:</span>
+                          <span className="font-bold text-stone-900 dark:text-white text-right">{String(val)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              }
+              return null
+            })()}
           </div>
 
           {/* Description Content */}

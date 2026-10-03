@@ -53,6 +53,12 @@ export default function ProductDetailModal({
     if (st === 'PUBLISHED') {
       return { label: 'Đang mở bán', color: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' }
     }
+    if (st === 'PENDING_APPROVAL') {
+      return { label: 'Chờ duyệt kiểm định', color: 'bg-amber-500/20 text-amber-500 border border-amber-500/40 font-bold' }
+    }
+    if (st === 'REJECTED') {
+      return { label: 'Bị từ chối duyệt', color: 'bg-rose-500/20 text-rose-500 border border-rose-500/40 font-bold' }
+    }
     if (st === 'DRAFT') {
       return { label: 'Bản nháp', color: 'bg-amber-500/15 text-amber-400 border-amber-500/30' }
     }
@@ -60,6 +66,17 @@ export default function ProductDetailModal({
       return { label: 'Tạm ngưng', color: 'bg-sky-500/15 text-sky-400 border-sky-500/30' }
     }
     return { label: 'Đã lưu trữ', color: 'bg-slate-500/15 text-slate-400 border-slate-500/30' }
+  }
+
+  const getConditionLabel = (grade) => {
+    switch (grade) {
+      case 'GRADE_NEW': return 'Mới 100% Nguyên Seal'
+      case 'GRADE_OPEN_BOX': return 'Đã mở hộp / Trưng bày (99%)'
+      case 'GRADE_LIKE_NEW': return 'Đã qua sử dụng - Như mới (Like New 99%)'
+      case 'GRADE_FAIR': return 'Đã qua sử dụng - Có xước nhẹ (90-95%)'
+      case 'GRADE_AS_IS': return 'Thanh lý / Xác máy (As-is)'
+      default: return null
+    }
   }
 
   const statusBadge = getStatusBadge(product.status)
@@ -126,6 +143,31 @@ export default function ProductDetailModal({
 
         {/* Modal Body */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* Moderation Status Banner */}
+          {product.status === 'REJECTED' && (
+            <div className="rounded-2xl border border-rose-500/40 bg-rose-500/10 p-4 text-xs sm:text-sm text-rose-500">
+              <div className="font-bold flex items-center gap-1.5 mb-1 text-sm">
+                <span>⚠️ Sản phẩm bị từ chối phê duyệt kiểm định</span>
+              </div>
+              <p className="font-medium text-rose-600 dark:text-rose-400">
+                <strong>Lý do:</strong> {product.rejectionReason || 'Sản phẩm vi phạm quy định tiêu chuẩn hoặc mô tả không chính xác.'}
+              </p>
+              <p className="text-[11px] text-stone-500 dark:text-slate-400 mt-1">
+                Vui lòng bấm &ldquo;Chỉnh sửa sản phẩm&rdquo; để cập nhật lại thông tin/hình ảnh chính xác và gửi duyệt lại.
+              </p>
+            </div>
+          )}
+          {product.status === 'PENDING_APPROVAL' && (
+            <div className="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 text-xs sm:text-sm text-amber-600 dark:text-amber-400">
+              <div className="font-bold flex items-center gap-1.5 mb-1 text-sm">
+                <span>⏳ Đang chờ xét duyệt kiểm định công nghệ</span>
+              </div>
+              <p className="font-medium">
+                Sản phẩm của bạn thuộc phân loại đồ cũ/đồ công nghệ cao cấp hoặc gian hàng cần xét duyệt trước khi niêm yết lên sàn. Đội ngũ kiểm duyệt viên sẽ xử lý trong vòng 24 giờ làm việc.
+              </p>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Left: Gallery (5 cols) */}
             <div className="lg:col-span-5 space-y-3">
@@ -331,6 +373,79 @@ export default function ProductDetailModal({
               </div>
             </div>
           )}
+
+          {/* Thông số kỹ thuật & Kiểm định đồ điện tử */}
+          <div className="space-y-3 border-t pt-4 dark:border-slate-800 border-stone-200">
+            <h4 className={cn('text-xs font-bold uppercase tracking-wider', isDark ? 'text-slate-300' : 'text-stone-700')}>
+              Thông số kỹ thuật & Tình trạng thiết bị
+            </h4>
+            <div className={cn(
+              'rounded-2xl p-4 border grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs',
+              isDark ? 'border-slate-800 bg-slate-800/40' : 'border-stone-200 bg-stone-50'
+            )}>
+              {/* Tình trạng ngoại quan */}
+              <div>
+                <span className={cn('block text-[11px] mb-1', isDark ? 'text-slate-400' : 'text-stone-500')}>Phân loại ngoại quan</span>
+                <span className="font-bold text-amber-500">
+                  {getConditionLabel(product.conditionGrade) || 'Chưa cập nhật'}
+                </span>
+              </div>
+
+              {/* Pin */}
+              <div>
+                <span className={cn('block text-[11px] mb-1', isDark ? 'text-slate-400' : 'text-stone-500')}>Dung lượng pin (Health)</span>
+                <span className="font-bold">
+                  {product.batteryHealth ? `${product.batteryHealth}%` : 'Không áp dụng / Chưa đo'}
+                </span>
+              </div>
+
+              {/* Bảo hành */}
+              <div>
+                <span className={cn('block text-[11px] mb-1', isDark ? 'text-slate-400' : 'text-stone-500')}>Chế độ bảo hành</span>
+                <span className="font-bold">
+                  {product.warrantyType === 'OFFICIAL' ? 'Chính hãng' : product.warrantyType === 'SHOP' ? 'Tại gian hàng' : 'Hết bảo hành / Bao test'}
+                  {product.warrantyMonths ? ` (${product.warrantyMonths} tháng)` : ''}
+                </span>
+              </div>
+
+              {/* Sửa chữa / Thay thế */}
+              <div className="sm:col-span-2 lg:col-span-3">
+                <span className={cn('block text-[11px] mb-1', isDark ? 'text-slate-400' : 'text-stone-500')}>Lịch sử linh kiện & Sửa chữa</span>
+                <span className={cn('font-semibold', product.isRepaired ? 'text-rose-400' : 'text-emerald-500')}>
+                  {product.isRepaired
+                    ? `Đã từng thay thế / sửa chữa: ${product.repairDetails || 'Có can thiệp phần cứng'}`
+                    : 'Thiết bị nguyên bản (Zin 100% chưa qua can thiệp phần cứng)'}
+                </span>
+              </div>
+            </div>
+
+            {/* Specifications Map */}
+            {(() => {
+              let parsedSpecs = null
+              try {
+                if (product.specifications) {
+                  parsedSpecs = typeof product.specifications === 'string' ? JSON.parse(product.specifications) : product.specifications
+                }
+              } catch (e) { parsedSpecs = null }
+
+              if (parsedSpecs && typeof parsedSpecs === 'object' && Object.keys(parsedSpecs).length > 0) {
+                return (
+                  <div className={cn(
+                    'rounded-2xl border overflow-hidden text-xs divide-y',
+                    isDark ? 'border-slate-800 divide-slate-800 bg-slate-900/50' : 'border-stone-200 divide-stone-100 bg-white'
+                  )}>
+                    {Object.entries(parsedSpecs).map(([key, val], idx) => (
+                      <div key={idx} className="flex items-center justify-between p-2.5 px-4">
+                        <span className={cn('font-medium', isDark ? 'text-slate-400' : 'text-stone-500')}>{key}</span>
+                        <span className="font-bold text-right">{String(val)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )
+              }
+              return null
+            })()}
+          </div>
 
           {/* Description Box */}
           <div className="space-y-2 border-t pt-4 dark:border-slate-800 border-stone-200">

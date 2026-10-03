@@ -10,6 +10,7 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -112,6 +113,14 @@ public class Shop {
     @Column(name = "trust_level")
     @Builder.Default
     private Integer trustLevel = 1;
+
+    @Column(name = "deposit_balance", precision = 19, scale = 2)
+    @Builder.Default
+    private BigDecimal depositBalance = BigDecimal.ZERO;
+
+    @Column(name = "violation_count")
+    @Builder.Default
+    private Integer violationCount = 0;
 
     @OneToOne(mappedBy = "shop", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private ShopEscrowFund escrowFund;

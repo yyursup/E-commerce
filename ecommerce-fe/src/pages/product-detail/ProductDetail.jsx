@@ -34,6 +34,7 @@ import { useChatStore } from '../../store/useChatStore'
 import { useWishlistStore } from '../../store/useWishlistStore'
 import { cn } from '../../lib/cn'
 import productService from '../../services/product'
+import recommendationService from '../../services/recommendation'
 import cartService from '../../services/cart'
 import shopService, { FALLBACK_SHOPS } from '../../services/shop'
 import wishlistService from '../../services/wishlist'
@@ -72,6 +73,9 @@ export default function ProductDetail() {
   const [shopProducts, setShopProducts] = useState([])
   const [similarProducts, setSimilarProducts] = useState([])
   const [similarLoading, setSimilarLoading] = useState(true)
+  const [accessories, setAccessories] = useState([])
+  const [accessoriesLoading, setAccessoriesLoading] = useState(true)
+  const [recTab, setRecTab] = useState('similar')
   const [savedVoucher, setSavedVoucher] = useState({})
 
   const { isAuthenticated, user } = useAuthStore()
@@ -88,6 +92,7 @@ export default function ProductDetail() {
         setError(null)
         const data = await productService.getProductById(productId)
         setProduct(data)
+        recommendationService.trackView(productId)
 
         // Fetch Shop info
         if (data?.shopId) {
@@ -158,14 +163,16 @@ export default function ProductDetail() {
     }
   }, [productId])
 
-  // 2. Fetch Similar Products
+  // 2. Fetch Similar Products & Compatible Accessories
   useEffect(() => {
-    const fetchSimilar = async () => {
+    const fetchRecommendations = async () => {
       if (!productId) return
+      const currentId = productId.toLowerCase()
+
+      // Fetch Similar
       try {
         setSimilarLoading(true)
-        const list = await productService.getSimilarProducts(productId, 6)
-        const currentId = productId.toLowerCase()
+        const list = await recommendationService.getSimilarProducts(productId, 6)
         const mapped = (list || [])
           .filter((p) => p.id && String(p.id).toLowerCase() !== currentId)
           .map((p) => {
@@ -175,13 +182,16 @@ export default function ProductDetail() {
               name: p.name,
               price: p.basePrice ? Number(p.basePrice) : 0,
               image: thumb?.imageUrl || '/product-placeholder.svg',
-              badge: p.status === 'PUBLISHED' ? 'Gợi ý AI' : null,
-              rating: p.rating != null ? Number(p.rating) : null,
+              badge: 'Tương đương',
+              rating: p.rating != null ? Number(p.rating) : 5.0,
               reviewCount: p.reviewCount != null ? Number(p.reviewCount) : 0,
               description: p.description,
               basePrice: p.basePrice,
               shopName: p.shopName,
               categoryName: p.categoryName,
+              conditionGrade: p.conditionGrade,
+              warrantyType: p.warrantyType,
+              warrantyMonths: p.warrantyMonths,
               originalProduct: p,
             }
           })
@@ -192,8 +202,42 @@ export default function ProductDetail() {
       } finally {
         setSimilarLoading(false)
       }
+
+      // Fetch Accessories
+      try {
+        setAccessoriesLoading(true)
+        const accList = await recommendationService.getCompatibleAccessories(productId, 6)
+        const mappedAcc = (accList || [])
+          .filter((p) => p.id && String(p.id).toLowerCase() !== currentId)
+          .map((p) => {
+            const thumb = p.images?.find((img) => img.isThumbnail) || p.images?.[0]
+            return {
+              id: p.id,
+              name: p.name,
+              price: p.basePrice ? Number(p.basePrice) : 0,
+              image: thumb?.imageUrl || '/product-placeholder.svg',
+              badge: 'Phụ kiện',
+              rating: p.rating != null ? Number(p.rating) : 5.0,
+              reviewCount: p.reviewCount != null ? Number(p.reviewCount) : 0,
+              description: p.description,
+              basePrice: p.basePrice,
+              shopName: p.shopName,
+              categoryName: p.categoryName,
+              conditionGrade: p.conditionGrade,
+              warrantyType: p.warrantyType,
+              warrantyMonths: p.warrantyMonths,
+              originalProduct: p,
+            }
+          })
+        setAccessories(mappedAcc)
+      } catch (err) {
+        console.error('Error fetching accessories:', err)
+        setAccessories([])
+      } finally {
+        setAccessoriesLoading(false)
+      }
     }
-    fetchSimilar()
+    fetchRecommendations()
   }, [productId])
 
   const handleAddToCart = async () => {
@@ -1058,23 +1102,76 @@ export default function ProductDetail() {
           </section>
         )}
 
-        {/* 7. SẢN PHẨM TƯƠNG TỰ (AI Recommendation) */}
-        {(similarLoading || similarProducts.length > 0) && (
+        {/* 7. GỢI Ý CÔNG NGHỆ THÔNG MINH (Smart Tech Recommendations & Cross-selling) */}
+        {(similarProducts.length > 0 || accessories.length > 0 || similarLoading || accessoriesLoading) && (
           <section className="space-y-4 pt-4">
-            <h3 className="text-lg font-bold text-stone-900 dark:text-white">
-              Gợi Ý Sản Phẩm Tương Tự
-            </h3>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-200 dark:border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                  <HiOutlineShoppingBag className="h-4 w-4" />
+                </span>
+                <h3 className="text-lg font-bold text-stone-900 dark:text-white">
+                  Gợi Ý Công Nghệ Dành Cho Bạn
+                </h3>
+              </div>
 
-            {similarLoading ? (
-              <div className="flex justify-center py-8">
-                <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-r-transparent" />
+              {/* Tabs Switcher */}
+              <div className="flex items-center gap-1.5 p-1 rounded-xl bg-stone-100 dark:bg-slate-800/80 self-start sm:self-auto text-xs font-semibold">
+                <button
+                  type="button"
+                  onClick={() => setRecTab('similar')}
+                  className={cn(
+                    'px-3 py-1.5 rounded-lg transition-all',
+                    recTab === 'similar'
+                      ? 'bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 shadow-sm font-bold'
+                      : 'text-stone-500 dark:text-slate-400 hover:text-stone-800 dark:hover:text-white'
+                  )}
+                >
+                  Sản phẩm tương đương ({similarProducts.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRecTab('accessories')}
+                  className={cn(
+                    'px-3 py-1.5 rounded-lg transition-all',
+                    recTab === 'accessories'
+                      ? 'bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 shadow-sm font-bold'
+                      : 'text-stone-500 dark:text-slate-400 hover:text-stone-800 dark:hover:text-white'
+                  )}
+                >
+                  Phụ kiện mua kèm ({accessories.length})
+                </button>
               </div>
+            </div>
+
+            {recTab === 'similar' ? (
+              similarLoading ? (
+                <div className="flex justify-center py-8">
+                  <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-r-transparent" />
+                </div>
+              ) : similarProducts.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
+                  {similarProducts.map((item) => (
+                    <ProductCard key={item.id} product={item} />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-stone-400 py-4 italic">Chưa có sản phẩm tương đương cùng tầm giá.</p>
+              )
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
-                {similarProducts.map((item) => (
-                  <ProductCard key={item.id} product={item} />
-                ))}
-              </div>
+              accessoriesLoading ? (
+                <div className="flex justify-center py-8">
+                  <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-r-transparent" />
+                </div>
+              ) : accessories.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
+                  {accessories.map((item) => (
+                    <ProductCard key={item.id} product={item} />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-stone-400 py-4 italic">Chưa có phụ kiện tương thích cho dòng máy này.</p>
+              )
             )}
           </section>
         )}

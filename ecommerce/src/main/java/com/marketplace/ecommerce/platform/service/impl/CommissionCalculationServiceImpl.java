@@ -79,6 +79,18 @@ public class CommissionCalculationServiceImpl implements CommissionCalculationSe
             return new BigDecimal("6.00");
         }
 
+        // 1. Ưu tiên đọc cấu hình động trực tiếp từ Danh mục trong Database
+        if (category != null) {
+            if (category.getCommissionRate() != null && category.getCommissionRate().compareTo(BigDecimal.ZERO) > 0) {
+                return category.getCommissionRate();
+            }
+            // Nếu là Danh mục con (Subcategory), kế thừa từ Danh mục cha nếu có
+            if (category.getParent() != null && category.getParent().getCommissionRate() != null
+                    && category.getParent().getCommissionRate().compareTo(BigDecimal.ZERO) > 0) {
+                return category.getParent().getCommissionRate();
+            }
+        }
+
         if (category == null || category.getName() == null) {
             return new BigDecimal("5.00");
         }

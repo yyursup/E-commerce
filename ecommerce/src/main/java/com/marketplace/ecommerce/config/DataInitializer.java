@@ -24,6 +24,7 @@ import com.marketplace.ecommerce.platform.entity.CommissionItem;
 import com.marketplace.ecommerce.platform.entity.PlatformSetting;
 import com.marketplace.ecommerce.platform.repository.CommissionRepository;
 import com.marketplace.ecommerce.platform.repository.PlatformSettingRepository;
+import com.marketplace.ecommerce.platform.service.CommissionCalculationService;
 import com.marketplace.ecommerce.product.entity.Product;
 import com.marketplace.ecommerce.product.entity.ProductCategory;
 import com.marketplace.ecommerce.product.entity.ProductImage;
@@ -100,6 +101,7 @@ public class DataInitializer implements CommandLineRunner {
         private final RequestRepository requestRepository;
         private final SellerRepository sellerRepository;
         private final CommissionRepository commissionRepository;
+        private final CommissionCalculationService commissionCalculationService;
         private final VoucherRepository voucherRepository;
         private final ReviewRepository reviewRepository;
         private final ReplyRepository replyRepository;
@@ -264,55 +266,55 @@ public class DataInitializer implements CommandLineRunner {
                 initializeCart(customer5);
                 initializeCart(seller1);
 
-                // 7. Platform settings
-                initializePlatformSetting(PlatformConstant.KEY_COMMISSION_RATE, "10");
+                // 7. Platform settings (Tỷ lệ cơ sở dự phòng nền tảng: 5.0% thay vì 10%)
+                initializePlatformSetting(PlatformConstant.KEY_COMMISSION_RATE, "5.0");
 
-                // 8. Comprehensive Electronics & Tech Category Hierarchy (8 Major Categories + Subcategories)
-                // Group 1: Điện Thoại & Máy Tính Bảng
-                ProductCategory phonesAndTablets = initializeCategory(null, "Điện Thoại & Máy Tính Bảng");
+                // 8. Comprehensive Electronics & Tech Category Hierarchy with Category-based Commission Rates
+                // Group 1: Điện Thoại & Máy Tính Bảng (Biên lợi nhuận mỏng: 3.5%)
+                ProductCategory phonesAndTablets = initializeCategory(null, "Điện Thoại & Máy Tính Bảng", new BigDecimal("3.50"));
                 ProductCategory smartphones = initializeCategory(phonesAndTablets, "Điện Thoại Thông Minh");
                 ProductCategory tablets = initializeCategory(phonesAndTablets, "Máy Tính Bảng");
                 ProductCategory ereaders = initializeCategory(phonesAndTablets, "Máy Đọc Sách & Phụ Kiện");
 
-                // Group 2: Laptop & Máy Tính Để Bàn
-                ProductCategory computers = initializeCategory(null, "Laptop & Máy Tính Để Bàn");
+                // Group 2: Laptop & Máy Tính Để Bàn (4.0%)
+                ProductCategory computers = initializeCategory(null, "Laptop & Máy Tính Để Bàn", new BigDecimal("4.00"));
                 ProductCategory gamingLaptops = initializeCategory(computers, "Laptop Gaming & Đồ Họa");
                 ProductCategory ultrabooks = initializeCategory(computers, "Laptop Văn Phòng & Mỏng Nhẹ");
                 ProductCategory pcWorkstations = initializeCategory(computers, "PC Đồng Bộ & Máy Trạm");
 
-                // Group 3: Linh Kiện Máy Tính & PC Build
-                ProductCategory components = initializeCategory(null, "Linh Kiện Máy Tính & PC Build");
+                // Group 3: Linh Kiện Máy Tính & PC Build (4.5%)
+                ProductCategory components = initializeCategory(null, "Linh Kiện Máy Tính & PC Build", new BigDecimal("4.50"));
                 ProductCategory cpuGpu = initializeCategory(components, "CPU & Card Đồ Họa (VGA)");
                 ProductCategory ramSsd = initializeCategory(components, "RAM, Ổ Cứng SSD & HDD");
                 ProductCategory motherboardPsu = initializeCategory(components, "Bo Mạch Chủ & Nguồn Máy Tính");
                 ProductCategory casesCooling = initializeCategory(components, "Vỏ Case & Tản Nhiệt PC");
 
-                // Group 4: Thiết Bị Âm Thanh
-                ProductCategory audio = initializeCategory(null, "Thiết Bị Âm Thanh");
+                // Group 4: Thiết Bị Âm Thanh (6.0%)
+                ProductCategory audio = initializeCategory(null, "Thiết Bị Âm Thanh", new BigDecimal("6.00"));
                 ProductCategory headphones = initializeCategory(audio, "Tai Nghe True Wireless & Chụp Tai");
                 ProductCategory speakers = initializeCategory(audio, "Loa Bluetooth & Soundbar");
                 ProductCategory audioStudio = initializeCategory(audio, "Microphone & Soundcard Thu Âm");
 
-                // Group 5: Phụ Kiện Điện Tử & Gaming Gear
-                ProductCategory accessories = initializeCategory(null, "Phụ Kiện Điện Tử & Gaming Gear");
+                // Group 5: Phụ Kiện Điện Tử & Gaming Gear (Biên lợi nhuận cao: 8.5%)
+                ProductCategory accessories = initializeCategory(null, "Phụ Kiện Điện Tử & Gaming Gear", new BigDecimal("8.50"));
                 ProductCategory chargingPacks = initializeCategory(accessories, "Củ Cáp Sạc & Sạc Dự Phòng");
                 ProductCategory gearPeripherals = initializeCategory(accessories, "Bàn Phím Cơ & Chuột Gaming");
                 ProductCategory hubsCables = initializeCategory(accessories, "Cáp Chuyển Đổi & Hub Type-C");
 
-                // Group 6: Thiết Bị Đeo & Đồng Hồ Thông Minh
-                ProductCategory wearables = initializeCategory(null, "Thiết Bị Đeo & Đồng Hồ Thông Minh");
+                // Group 6: Thiết Bị Đeo & Đồng Hồ Thông Minh (6.5%)
+                ProductCategory wearables = initializeCategory(null, "Thiết Bị Đeo & Đồng Hồ Thông Minh", new BigDecimal("6.50"));
                 ProductCategory smartwatches = initializeCategory(wearables, "Đồng Hồ Thông Minh (Smartwatch)");
                 ProductCategory smartbands = initializeCategory(wearables, "Vòng Đeo Tay Thể Thao (Smartband)");
                 ProductCategory wearableAccessories = initializeCategory(wearables, "Dây Đeo & Phụ Kiện Smartwatch");
 
-                // Group 7: Thiết Bị Nhà Thông Minh & IoT
-                ProductCategory smartHome = initializeCategory(null, "Thiết Bị Nhà Thông Minh & IoT");
+                // Group 7: Thiết Bị Nhà Thông Minh & IoT (5.5%)
+                ProductCategory smartHome = initializeCategory(null, "Thiết Bị Nhà Thông Minh & IoT", new BigDecimal("5.50"));
                 ProductCategory securityCameras = initializeCategory(smartHome, "Camera An Ninh & Giám Sát");
                 ProductCategory robotVacuums = initializeCategory(smartHome, "Robot Hút Bụi & Lau Nhà");
                 ProductCategory smartLightingControls = initializeCategory(smartHome, "Khóa Cửa & Đèn Thông Minh");
 
-                // Group 8: Máy Ảnh & Thiết Bị Quay Phim
-                ProductCategory cameras = initializeCategory(null, "Máy Ảnh & Thiết Bị Quay Phim");
+                // Group 8: Máy Ảnh & Thiết Bị Quay Phim (5.0%)
+                ProductCategory cameras = initializeCategory(null, "Máy Ảnh & Thiết Bị Quay Phim", new BigDecimal("5.00"));
                 ProductCategory dslrMirrorless = initializeCategory(cameras, "Máy Ảnh Mirrorless & DSLR");
                 ProductCategory dronesActionCam = initializeCategory(cameras, "Flycam Drone & Action Cam");
                 ProductCategory lensesGimbals = initializeCategory(cameras, "Ống Kính (Lens) & Gimbal Chống Rung");
@@ -1489,6 +1491,10 @@ public class DataInitializer implements CommandLineRunner {
         }
 
         private ProductCategory initializeCategory(ProductCategory parent, String name) {
+                return initializeCategory(parent, name, null);
+        }
+
+        private ProductCategory initializeCategory(ProductCategory parent, String name, BigDecimal commissionRate) {
                 return productCategoryRepository.findAll().stream()
                                 .filter(cat -> cat.getName().equals(name)
                                                 && (parent == null
@@ -1496,13 +1502,21 @@ public class DataInitializer implements CommandLineRunner {
                                                                 : cat.getParent() != null && cat.getParent().getId()
                                                                                 .equals(parent.getId())))
                                 .findFirst()
+                                .map(existingCat -> {
+                                        if (commissionRate != null && existingCat.getCommissionRate() == null) {
+                                                existingCat.setCommissionRate(commissionRate);
+                                                return productCategoryRepository.save(existingCat);
+                                        }
+                                        return existingCat;
+                                })
                                 .orElseGet(() -> {
                                         ProductCategory category = new ProductCategory();
                                         category.setParent(parent);
                                         category.setName(name);
+                                        category.setCommissionRate(commissionRate);
                                         ProductCategory saved = productCategoryRepository.save(category);
-                                        log.info("Created category: {} (parent: {})", name,
-                                                        parent != null ? parent.getName() : "none");
+                                        log.info("Created category: {} with commissionRate: {}% (parent: {})",
+                                                        name, commissionRate, parent != null ? parent.getName() : "none");
                                         return saved;
                                 });
         }
@@ -1773,13 +1787,6 @@ public class DataInitializer implements CommandLineRunner {
                                                                 + order.getOrderNumber());
                                         }
 
-                                        BigDecimal commissionRate = platformSettingRepository
-                                                        .findByKey(PlatformConstant.KEY_COMMISSION_RATE)
-                                                        .map(s -> new BigDecimal(
-                                                                        s.getValue() != null ? s.getValue().trim()
-                                                                                        : "10"))
-                                                        .orElse(new BigDecimal("10"));
-
                                         BigDecimal orderAmount = order.getSubtotal() == null ? BigDecimal.ZERO
                                                         : order.getSubtotal();
 
@@ -1792,6 +1799,7 @@ public class DataInitializer implements CommandLineRunner {
                                                         .build();
 
                                         BigDecimal totalCommission = BigDecimal.ZERO;
+                                        BigDecimal lastEffectiveRate = BigDecimal.valueOf(5.0);
 
                                         for (OrderItem orderItem : order.getItems()) {
                                                 BigDecimal unitPrice = orderItem.getUnitPrice() == null
@@ -1802,8 +1810,20 @@ public class DataInitializer implements CommandLineRunner {
 
                                                 BigDecimal lineAmount = unitPrice
                                                                 .multiply(BigDecimal.valueOf(quantity));
+
+                                                ProductCategory itemCategory = orderItem.getProduct() != null
+                                                                ? orderItem.getProduct().getProductCategory()
+                                                                : null;
+                                                com.marketplace.ecommerce.product.valueObjects.ConditionGrade itemCondition = orderItem.getProduct() != null
+                                                                ? orderItem.getProduct().getConditionGrade()
+                                                                : com.marketplace.ecommerce.product.valueObjects.ConditionGrade.GRADE_NEW;
+
+                                                BigDecimal itemCommissionRate = commissionCalculationService.calculateFinalRate(
+                                                                order.getShop(), itemCategory, itemCondition);
+                                                lastEffectiveRate = itemCommissionRate;
+
                                                 BigDecimal commissionAmount = lineAmount
-                                                                .multiply(commissionRate)
+                                                                .multiply(itemCommissionRate)
                                                                 .divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
 
                                                 CommissionItem commissionItem = CommissionItem.builder()
@@ -1812,7 +1832,7 @@ public class DataInitializer implements CommandLineRunner {
                                                                 .productName(orderItem.getProductName())
                                                                 .unitPrice(unitPrice)
                                                                 .quantity(quantity)
-                                                                .commissionRate(commissionRate)
+                                                                .commissionRate(itemCommissionRate)
                                                                 .commissionAmount(commissionAmount)
                                                                 .build();
 
@@ -1821,10 +1841,12 @@ public class DataInitializer implements CommandLineRunner {
                                         }
 
                                         commission.setTotalCommission(totalCommission);
+                                        order.setPlatformCommission(totalCommission);
+                                        order.setCommissionRate(lastEffectiveRate.doubleValue());
 
                                         Commission saved = commissionRepository.save(commission);
-                                        log.info("Created commission for order: {} with totalCommission={}",
-                                                        order.getOrderNumber(), totalCommission);
+                                        log.info("Created dynamic commission for order: {} with totalCommission={}, effectiveRate={}%",
+                                                        order.getOrderNumber(), totalCommission, lastEffectiveRate);
                                         return saved;
                                 });
         }

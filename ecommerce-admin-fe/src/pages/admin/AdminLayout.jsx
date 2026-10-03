@@ -25,7 +25,7 @@ const navItems = [
   { to: '/moderation', label: 'Kiểm duyệt sản phẩm', icon: HiOutlineShieldCheck },
   { to: '/orders', label: 'Quản lý Đơn hàng', icon: HiOutlineShoppingBag },
   { to: '/vouchers', label: 'Voucher Toàn Sàn', icon: HiOutlineTicket },
-  { to: '/trust-config', label: 'Cấu hình Ngưỡng Ký Quỹ', icon: HiOutlineShieldCheck },
+  { to: '/trust-config', label: 'Cấu hình Ký Quỹ & Thâm Niên', icon: HiOutlineShieldCheck },
   { to: '/escrow-fund-supervision', label: 'Giám sát Quỹ Ký Quỹ', icon: HiOutlineCash },
   { to: '/escrows', label: 'Escrow Đơn hàng', icon: HiOutlineCurrencyDollar },
   { to: '/wallets', label: 'Tra cứu Ví tiền', icon: HiOutlineSearch },

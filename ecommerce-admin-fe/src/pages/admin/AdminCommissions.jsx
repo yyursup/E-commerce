@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
     HiOutlineCurrencyDollar,
@@ -10,6 +11,9 @@ import {
     HiOutlineRefresh,
     HiOutlineStar,
     HiOutlineViewGrid,
+    HiOutlineInformationCircle,
+    HiOutlineShieldCheck,
+    HiOutlineArrowRight,
 } from 'react-icons/hi'
 import { useThemeStore } from '../../store/useThemeStore'
 import { cn } from '../../lib/cn'
@@ -319,6 +323,65 @@ export default function AdminCommissions() {
                     ))}
                 </div>
             )}
+
+            {/* Dynamic Commission Formula & Policy Direct Links */}
+            <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.16 }}
+                className={cn(
+                    'rounded-2xl border p-5',
+                    isDark ? 'border-amber-500/20 bg-amber-500/5' : 'border-amber-200 bg-amber-50/50'
+                )}
+            >
+                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                    <div className="flex items-start gap-3">
+                        <div className="mt-0.5 rounded-lg bg-amber-500/10 p-2 text-amber-500">
+                            <HiOutlineInformationCircle className="h-5 w-5" />
+                        </div>
+                        <div>
+                            <h3 className="text-sm font-bold text-amber-600 dark:text-amber-400">
+                                Cơ Chế Tính Phí Hoa Hồng Động (3 Tầng Chính Sách)
+                            </h3>
+                            <p className={cn('mt-1 text-xs leading-relaxed', isDark ? 'text-slate-300' : 'text-stone-600')}>
+                                Tỷ lệ hoa hồng thực thu được xác định theo công thức:&nbsp;
+                                <code className="rounded bg-black/10 dark:bg-black/30 px-1.5 py-0.5 font-mono text-[11px] font-semibold text-amber-600 dark:text-amber-300">
+                                    FinalRate = Math.max(BaseRate - DepositDiscount - SeniorityDiscount, 1.5%)
+                                </code>
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                        <Link
+                            to="/dashboard"
+                            className={cn(
+                                'inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition',
+                                isDark
+                                    ? 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700'
+                                    : 'border-stone-200 bg-white text-stone-700 hover:bg-stone-50'
+                            )}
+                        >
+                            <HiOutlineViewGrid className="h-4 w-4 text-emerald-500" />
+                            Biểu phí Ngành Hàng
+                            <HiOutlineArrowRight className="h-3.5 w-3.5" />
+                        </Link>
+                        <Link
+                            to="/trust-config"
+                            className={cn(
+                                'inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition',
+                                isDark
+                                    ? 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700'
+                                    : 'border-stone-200 bg-white text-stone-700 hover:bg-stone-50'
+                            )}
+                        >
+                            <HiOutlineShieldCheck className="h-4 w-4 text-amber-500" />
+                            Cấu hình Ký Quỹ & Thâm Niên
+                            <HiOutlineArrowRight className="h-3.5 w-3.5" />
+                        </Link>
+                    </div>
+                </div>
+            </motion.div>
 
             {/* Monthly Chart + Top Sellers Row */}
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">

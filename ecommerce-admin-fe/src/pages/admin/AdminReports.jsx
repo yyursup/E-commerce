@@ -161,13 +161,42 @@ export default function AdminReports() {
         isOpen: true,
         loading: false,
         data: details,
-        rawItem: item,
+        rawItem: {
+          ...item,
+          targetType: details?.detail?.targetType,
+          targetName: details?.detail?.targetName,
+          detail: details?.detail,
+        },
       })
     } catch (err) {
       console.error('Lỗi tải chi tiết yêu cầu:', err)
       toast.error('Không thể tải chi tiết. Vui lòng thử lại.')
       setDetailModal((prev) => ({ ...prev, loading: false }))
     }
+  }
+
+  const handleOpenActionModal = async (type, item) => {
+    let resolvedItem = item
+    if (!resolvedItem.targetType && !resolvedItem.detail?.targetType) {
+      try {
+        const requestId = item.requestId || item.id
+        const details = await requestService.getRequestDetails(requestId)
+        resolvedItem = {
+          ...item,
+          targetType: details?.detail?.targetType,
+          targetName: details?.detail?.targetName,
+          detail: details?.detail,
+        }
+      } catch (e) {
+        console.warn('Could not prefetch details for action modal:', e)
+      }
+    }
+    setActionModal({
+      isOpen: true,
+      type,
+      item: resolvedItem,
+      note: '',
+    })
   }
 
   const handleOpenEscrowDetail = async (item) => {
@@ -228,11 +257,22 @@ export default function AdminReports() {
     try {
       setSubmitting(true)
       const requestId = item.requestId || item.id
+      const targetType = item.targetType || item.detail?.targetType
 
       if (type === 'REPORT_APPROVE') {
-        const resolution = actionModal.resolutionType || 'REFUND_ONLY'
+        const resolution = targetType === 'ORDER' ? (actionModal.resolutionType || 'REFUND_ONLY') : null
         await reportService.handleReport(requestId, 'APPROVE', trimmedNote, resolution)
-        toast.success('Đã xác nhận vi phạm! Hệ thống đã ghi nhận phương án giải quyết và mở thời hạn kháng cáo 72h cho Shop.')
+        if (targetType === 'ORDER') {
+          toast.success('Đã xác nhận vi phạm! Hệ thống đã ghi nhận phương án giải quyết và mở thời hạn kháng cáo 72h cho Shop.')
+        } else if (targetType === 'USER') {
+          toast.success('Đã xác nhận vi phạm! Hệ thống đã áp dụng chế tài kỷ luật cộng gậy cho tài khoản người dùng.')
+        } else if (targetType === 'REVIEW') {
+          toast.success('Đã xác nhận vi phạm! Đánh giá đã bị xử lý và áp dụng chế tài kỷ luật lên tác giả.')
+        } else if (targetType === 'PRODUCT') {
+          toast.success('Đã xác nhận vi phạm! Sản phẩm vi phạm đã được cập nhật trạng thái theo quy định.')
+        } else {
+          toast.success('Đã xác nhận vi phạm và áp dụng chế tài thành công!')
+        }
       } else if (type === 'REPORT_REJECT') {
         await reportService.handleReport(requestId, 'REJECT', trimmedNote)
         toast.success('Đã bác bỏ báo cáo vi phạm.')
@@ -407,6 +447,7 @@ export default function AdminReports() {
             isDark={isDark}
             handleOpenDetail={handleOpenDetail}
             setActionModal={setActionModal}
+            handleOpenActionModal={handleOpenActionModal}
             parseImages={parseImages}
           />
         ) : activeTab === 'APPEALS' ? (
@@ -415,6 +456,7 @@ export default function AdminReports() {
             isDark={isDark}
             handleOpenDetail={handleOpenDetail}
             setActionModal={setActionModal}
+            handleOpenActionModal={handleOpenActionModal}
             parseImages={parseImages}
           />
         ) : (

@@ -402,7 +402,12 @@ export default function AdminReportDetailModal({
                           setActionModal({
                             isOpen: true,
                             type: 'REPORT_APPROVE',
-                            item: detailModal.rawItem || detailModal.data,
+                            item: {
+                              ...(detailModal.rawItem || {}),
+                              ...(detailModal.data || {}),
+                              targetType: detailModal.data?.detail?.targetType || detailModal.rawItem?.targetType,
+                              detail: detailModal.data?.detail,
+                            },
                             note: '',
                           })
                         }}
@@ -417,7 +422,12 @@ export default function AdminReportDetailModal({
                           setActionModal({
                             isOpen: true,
                             type: 'REPORT_REJECT',
-                            item: detailModal.rawItem || detailModal.data,
+                            item: {
+                              ...(detailModal.rawItem || {}),
+                              ...(detailModal.data || {}),
+                              targetType: detailModal.data?.detail?.targetType || detailModal.rawItem?.targetType,
+                              detail: detailModal.data?.detail,
+                            },
                             note: '',
                           })
                         }}
@@ -435,7 +445,12 @@ export default function AdminReportDetailModal({
                           setActionModal({
                             isOpen: true,
                             type: 'APPEAL_APPROVE',
-                            item: detailModal.rawItem || detailModal.data,
+                            item: {
+                              ...(detailModal.rawItem || {}),
+                              ...(detailModal.data || {}),
+                              targetType: detailModal.data?.detail?.targetType || detailModal.rawItem?.targetType,
+                              detail: detailModal.data?.detail,
+                            },
                             note: '',
                           })
                         }}
@@ -450,7 +465,12 @@ export default function AdminReportDetailModal({
                           setActionModal({
                             isOpen: true,
                             type: 'APPEAL_REJECT',
-                            item: detailModal.rawItem || detailModal.data,
+                            item: {
+                              ...(detailModal.rawItem || {}),
+                              ...(detailModal.data || {}),
+                              targetType: detailModal.data?.detail?.targetType || detailModal.rawItem?.targetType,
+                              detail: detailModal.data?.detail,
+                            },
                             note: '',
                           })
                         }}

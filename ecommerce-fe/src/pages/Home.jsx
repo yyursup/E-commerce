@@ -160,7 +160,6 @@ export default function Home() {
         // ignore storage error
       }
       toast('Vui lòng đăng nhập để lưu mã voucher vào ví!', {
-        icon: '🔐',
         id: 'voucher-login-required',
       })
       setWelcomeModalOpen(false)
@@ -205,7 +204,7 @@ export default function Home() {
 
       await voucherService.claimVoucher(targetVoucher.id)
       setWelcomeVoucher({ ...targetVoucher, isClaimed: true })
-      toast.success(`Đã lưu mã ${targetVoucher.code} vào ví voucher của bạn! 🎉`, {
+      toast.success(`Đã lưu mã ${targetVoucher.code} vào ví voucher của bạn!`, {
         id: 'voucher-claimed-success',
       })
       setWelcomeModalOpen(false)
@@ -378,7 +377,7 @@ export default function Home() {
       <Modal
         open={welcomeModalOpen}
         onClose={() => setWelcomeModalOpen(false)}
-        title="Chào mừng bạn đến E-commerce 🎉"
+        title="Chào mừng bạn đến E-commerce"
         size="md"
       >
         <PromoModalContent

@@ -7,6 +7,7 @@ import {
   HiOutlinePhoneMissedCall,
   HiOutlineEye,
   HiOutlineHeart,
+  HiHeart,
   HiOutlineShoppingBag,
   HiOutlineChat,
   HiOutlinePaperAirplane,
@@ -293,7 +294,7 @@ export default function SellerLiveStudio() {
     e.preventDefault();
     if (!inputMessage.trim() || !room) return;
 
-    const hostName = user?.shopName || '👑 Chủ Shop (Host)';
+    const hostName = user?.shopName || 'Chủ Shop (Host)';
     const msgId = `msg_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
     const msgObj = {
@@ -424,7 +425,7 @@ export default function SellerLiveStudio() {
               style={{ left: `${h.x}%` }}
               className="absolute bottom-20 text-rose-500 animate-bounce duration-1000 transition-all scale-150"
             >
-              ❤️
+              <HiHeart className="w-6 h-6 fill-current text-rose-500" />
             </div>
           ))}
         </div>

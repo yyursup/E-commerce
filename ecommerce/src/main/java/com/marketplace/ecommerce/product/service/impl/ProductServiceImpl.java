@@ -20,6 +20,7 @@ import com.marketplace.ecommerce.product.validate.ProductValidation;
 import com.marketplace.ecommerce.product.valueObjects.ProductStatus;
 import com.marketplace.ecommerce.shop.entity.Shop;
 import com.marketplace.ecommerce.shop.repository.ShopRepository;
+import com.marketplace.ecommerce.shop.valueObjects.ShopStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -149,8 +150,15 @@ public class ProductServiceImpl implements ProductService {
                     "You do not have permission to manage products because your account is suspended or banned.");
         }
 
-        return shopRepository.findByUserId(user.getId())
+        Shop shop = shopRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new CustomException("Shop not found"));
+
+        if (shop.getStatus() == ShopStatus.PENDING_DEPOSIT) {
+            throw new CustomException(
+                    "Gian hàng của bạn chưa được kích hoạt do chưa hoàn tất nạp tiền ký quỹ cam kết. Vui lòng nạp đủ tiền ký quỹ để mở khóa tính năng đăng bán sản phẩm.");
+        }
+
+        return shop;
     }
 
     private void assertOwner(Shop shop, Product product) {

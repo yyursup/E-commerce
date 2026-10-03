@@ -109,6 +109,13 @@ public class Shop {
     @Column(name = "average_rating")
     private Float averageRating = 0.0f;
 
+    @Column(name = "trust_level")
+    @Builder.Default
+    private Integer trustLevel = 1;
+
+    @OneToOne(mappedBy = "shop", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private ShopEscrowFund escrowFund;
+
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

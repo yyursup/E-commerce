@@ -136,9 +136,9 @@ export default function LiveManagement() {
       <div className="flex items-center gap-2 border-b border-zinc-200 dark:border-zinc-800 pb-3">
         {[
           { key: 'ALL', label: 'Tất cả' },
-          { key: 'LIVE', label: '🔴 Đang phát' },
-          { key: 'SCHEDULED', label: '📅 Đã lên lịch' },
-          { key: 'ENDED', label: '⏹ Đã kết thúc' },
+          { key: 'LIVE', label: 'Đang phát' },
+          { key: 'SCHEDULED', label: 'Đã lên lịch' },
+          { key: 'ENDED', label: 'Đã kết thúc' },
         ].map((tab) => (
           <button
             key={tab.key}

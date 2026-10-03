@@ -14,6 +14,9 @@ import {
   HiOutlineClipboardList,
   HiOutlineVideoCamera,
   HiOutlineShieldCheck,
+  HiOutlineCash,
+  HiOutlineClock,
+  HiOutlineExclamation,
 } from 'react-icons/hi'
 import { useAuthStore } from '../store/useAuthStore'
 import { useThemeStore } from '../store/useThemeStore'
@@ -35,6 +38,7 @@ const navItems = [
   { to: '/products', label: 'Quản lý Sản phẩm', icon: HiOutlineArchive },
   { to: '/inventory-history', label: 'Lịch sử Kho hàng', icon: HiOutlineClipboardList },
   { to: '/vouchers', label: 'Mã Giảm Giá Shop', icon: HiOutlineTicket },
+  { to: '/escrow-fund', label: 'Quỹ Ký Quỹ & Uy Tín', icon: HiOutlineCash },
   { to: '/violations', label: 'Điểm uy tín Shop', icon: HiOutlineShieldCheck },
   { to: '/chat', label: 'Tin nhắn (Chat CSKH)', icon: HiOutlineChat, isChat: true },
   { to: '/settings', label: 'Cài đặt Kho & Gian hàng', icon: HiOutlineCog },
@@ -227,15 +231,27 @@ export default function SellerLayout() {
 
           {/* Main Workspace */}
           <main className="lg:col-span-3">
+            {/* Banner yêu cầu nạp ký quỹ để kích hoạt gian hàng */}
+            {user?.shopStatus === 'PENDING_DEPOSIT' && (
+              <div className="mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-2xl border border-amber-500/40 bg-gradient-to-r from-amber-500/15 via-amber-500/10 to-amber-500/5 px-4 py-3.5 text-xs text-amber-800 dark:text-amber-200 shadow-sm">
+                <span>
+                  Hồ sơ gian hàng đã được duyệt! Vui lòng <strong>nạp đủ số tiền ký quỹ cam kết</strong> để kích hoạt gian hàng và mở khóa tính năng đăng bán sản phẩm.
+                </span>
+                <NavLink
+                  to="/escrow-fund"
+                  className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-sm transition shrink-0 self-end sm:self-auto"
+                >
+                  Nạp ký quỹ kích hoạt &rarr;
+                </NavLink>
+              </div>
+            )}
+
             {/* Top Banner cảnh báo vi phạm tinh gọn chuẩn Responsive */}
             {Boolean(user?.shopStatus === 'WARNED' || user?.shopStatus === 'SUSPENDED' || (Number(user?.violationCount || 0) >= 3)) && (
               <div className="mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 rounded-2xl border border-amber-500/35 bg-amber-500/10 px-4 py-3 text-xs text-amber-600 dark:text-amber-400">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm shrink-0">⚠️</span>
-                  <span>
-                    Gian hàng đang ở trạng thái <strong>{user?.shopStatus === 'SUSPENDED' ? 'Tạm ngưng hoạt động' : 'Cảnh báo vi phạm'}</strong> ({user?.violationCount || 3}/7 vi phạm). Sản phẩm có thể bị tạm ẩn và tiền ký quỹ Escrow được tạm giữ để đảm bảo an toàn.
-                  </span>
-                </div>
+                <span>
+                  Gian hàng đang ở trạng thái <strong>{user?.shopStatus === 'SUSPENDED' ? 'Tạm ngưng hoạt động' : 'Cảnh báo vi phạm'}</strong> ({user?.violationCount || 3}/7 vi phạm). Sản phẩm có thể bị tạm ẩn và tiền ký quỹ Escrow được tạm giữ để đảm bảo an toàn.
+                </span>
                 <NavLink to="/violations" className="font-bold underline hover:text-amber-500 shrink-0 self-end sm:self-auto">
                   Xem chi tiết & Kháng cáo &rarr;
                 </NavLink>

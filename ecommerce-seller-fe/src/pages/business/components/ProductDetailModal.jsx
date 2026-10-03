@@ -12,6 +12,7 @@ import {
   HiOutlinePhotograph,
   HiOutlineCalendar,
   HiOutlineInformationCircle,
+  HiOutlineFire,
 } from 'react-icons/hi'
 import { useThemeStore } from '../../../store/useThemeStore'
 import { cn } from '../../../lib/cn'
@@ -175,7 +176,7 @@ export default function ProductDetailModal({
                   {product.name}
                   {product.sold >= 50 && (
                     <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-rose-500/10 px-2.5 py-0.5 text-xs font-bold text-rose-500 border border-rose-500/20 align-middle">
-                      🔥 Bán chạy
+                      <HiOutlineFire className="h-3.5 w-3.5" /> Bán chạy
                     </span>
                   )}
                 </h3>

@@ -565,6 +565,10 @@ public class VoucherServiceImpl implements VoucherService {
                 shop = shopRepository.findByUserId(user.getId())
                         .orElseThrow(() -> new CustomException("Tài khoản chưa đăng ký Shop"));
             }
+
+            if (shop.getStatus() == com.marketplace.ecommerce.shop.valueObjects.ShopStatus.PENDING_DEPOSIT) {
+                throw new CustomException("Gian hàng của bạn chưa được kích hoạt do chưa hoàn tất nạp tiền ký quỹ cam kết. Vui lòng nạp đủ tiền ký quỹ để mở khóa tính năng tạo Voucher.");
+            }
         }
 
         ProductCategory category = null;

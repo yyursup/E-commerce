@@ -16,6 +16,8 @@ import {
   HiOutlineCheckCircle,
   HiOutlineX,
   HiOutlineLockClosed,
+  HiOutlineShieldCheck,
+  HiStar,
 } from 'react-icons/hi'
 import { useThemeStore } from '../store/useThemeStore'
 import { useAuthStore } from '../store/useAuthStore'
@@ -23,6 +25,7 @@ import { cn } from '../lib/cn'
 import authService from '../services/auth'
 import requestService from '../services/request'
 import kycService from '../services/kyc'
+import escrowFundService from '../services/escrowFund'
 import CameraCapture from '../components/CameraCapture'
 import BusinessLicenseUpload from '../components/BusinessLicenseUpload'
 import ShopCoverImageUpload from '../components/ShopCoverImageUpload'
@@ -54,6 +57,44 @@ export default function SellerRegister() {
   const [sellerType, setSellerType] = useState('INDIVIDUAL') // 'INDIVIDUAL' or 'BUSINESS'
   const [sameAsPickup, setSameAsPickup] = useState(false)
   const [sameAsBusiness, setSameAsBusiness] = useState(false)
+
+  // Quỹ Ký Quỹ Bảo Chứng (Escrow Capital Deposit)
+  const [isEscrowChecked, setIsEscrowChecked] = useState(false)
+  const [selectedDepositAmount, setSelectedDepositAmount] = useState('5000000')
+  const [trustLevels, setTrustLevels] = useState([])
+
+  useEffect(() => {
+    const fetchLevels = async () => {
+      try {
+        const res = await escrowFundService.getTrustLevels()
+        if (Array.isArray(res) && res.length > 0) {
+          setTrustLevels(res)
+        }
+      } catch (err) {
+        console.warn('Lỗi tải cấu hình bậc sao ký quỹ:', err)
+      }
+    }
+    fetchLevels()
+  }, [])
+
+  const calculatePreviewStar = (amount) => {
+    const num = Number(amount || 0)
+    if (!num || num < 1000000) return 1
+    if (trustLevels.length > 0) {
+      let star = 1
+      for (const tier of trustLevels) {
+        if (num >= Number(tier.minDeposit)) {
+          star = tier.starLevel
+        }
+      }
+      return star
+    }
+    if (num >= 50000000) return 5
+    if (num >= 20000000) return 4
+    if (num >= 5000000) return 3
+    if (num >= 1000000) return 2
+    return 1
+  }
 
   const {
     register,
@@ -307,6 +348,8 @@ export default function SellerRegister() {
       bankName: data.bankName?.trim(),
       bankAccountName: data.bankAccountName?.trim()?.toUpperCase(),
       bankAccountNumber: data.bankAccountNumber?.trim(),
+      isEscrowParticipated: Boolean(isEscrowChecked),
+      initialDepositAmount: isEscrowChecked ? Number(selectedDepositAmount || 0) : 0,
     }
 
     try {
@@ -869,10 +912,9 @@ export default function SellerRegister() {
 
               {/* Account Registration Notice Banner */}
               <div className={cn(
-                'mb-6 rounded-2xl p-4 border text-left flex items-start gap-3 transition-colors',
+                'mb-6 rounded-2xl p-4 border text-left transition-colors',
                 isDark ? 'bg-amber-500/10 border-amber-500/20 text-amber-300' : 'bg-amber-50 border-amber-200 text-amber-900'
               )}>
-                <span className="text-xl shrink-0">📝</span>
                 <div className="text-xs space-y-1">
                   <p className="font-bold">
                     Tài khoản đăng ký: <span className="underline">{user?.username || user?.email || 'Khách hàng'}</span>
@@ -1359,6 +1401,229 @@ export default function SellerRegister() {
                     </div>
                     {errors.bankAccountNumber && <p className="mt-1.5 text-sm text-red-500">{errors.bankAccountNumber.message}</p>}
                   </div>
+                </div>
+
+                {/* 6. KÝ QUỸ BẢO CHỨNG & CẤP ĐỘ UY TÍN */}
+                <div className="space-y-5">
+                  <div className="flex items-center justify-between border-b pb-2">
+                    <h3 className={cn("text-lg font-semibold", isDark ? "text-white" : "text-stone-900")}>
+                      6. Ký quỹ bảo chứng & Cấp độ uy tín
+                    </h3>
+                    <span className="text-xs px-2.5 py-0.5 rounded-full font-medium bg-stone-100 text-stone-600 dark:bg-slate-800 dark:text-slate-400">
+                      Không bắt buộc
+                    </span>
+                  </div>
+
+                  {/* Thông tin giải thích đồng bộ phong cách với banner đầu form */}
+                  <div className={cn(
+                    'rounded-2xl p-4 border text-left transition-colors',
+                    isDark ? 'bg-amber-500/10 border-amber-500/20 text-amber-300' : 'bg-amber-50/70 border-amber-200/80 text-amber-900'
+                  )}>
+                    <div className="text-xs space-y-1">
+                      <p className="font-bold">
+                        Bảo chứng giao dịch an toàn (Escrow Capital Deposit)
+                      </p>
+                      <p className={isDark ? 'text-slate-300' : 'text-stone-600'}>
+                        Tiền ký quỹ có bản chất tương tự &quot;Vốn điều lệ&quot; cam kết trách nhiệm và uy tín của gian hàng trên sàn. Bạn có thể chọn <strong>bán hàng thông thường (1★)</strong> hoặc <strong>ký quỹ bảo chứng để nâng cao độ uy tín (2★ - 5★)</strong>.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Lựa chọn gói 2 thẻ trực quan, đồng bộ hệ thống design */}
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {/* Lựa chọn A: Không ký quỹ */}
+                    <div
+                      onClick={() => setIsEscrowChecked(false)}
+                      className={cn(
+                        'relative cursor-pointer rounded-2xl border p-4 transition-all flex flex-col justify-between',
+                        !isEscrowChecked
+                          ? isDark
+                            ? 'border-amber-500 bg-amber-500/10 ring-1 ring-amber-500'
+                            : 'border-amber-500 bg-amber-50/40 ring-1 ring-amber-500'
+                          : isDark
+                          ? 'border-slate-700 bg-slate-800/40 hover:bg-slate-800/70'
+                          : 'border-stone-200 bg-stone-50/50 hover:bg-stone-50'
+                      )}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-bold text-stone-900 dark:text-white">Bán hàng Tiêu chuẩn</span>
+                            <span className="rounded-md bg-stone-200 dark:bg-slate-700 px-1.5 py-0.5 text-[10px] font-semibold text-stone-700 dark:text-slate-300">
+                              1★ Cơ bản
+                            </span>
+                          </div>
+                          <p className="text-xs text-stone-500 dark:text-slate-400 leading-relaxed">
+                            Không yêu cầu nạp tiền ký quỹ ban đầu. Gian hàng được kích hoạt ngay sau khi Ban quản trị duyệt hồ sơ.
+                          </p>
+                        </div>
+                        <div className={cn(
+                          'h-5 w-5 rounded-full border flex items-center justify-center shrink-0 mt-0.5 transition-colors',
+                          !isEscrowChecked
+                            ? 'border-amber-500 bg-amber-500 text-white'
+                            : 'border-stone-300 dark:border-slate-600'
+                        )}>
+                          {!isEscrowChecked && <div className="h-2 w-2 rounded-full bg-white" />}
+                        </div>
+                      </div>
+                      <div className="mt-3 pt-2.5 border-t border-stone-200/60 dark:border-slate-700/60 text-[11px] text-stone-500 dark:text-slate-400">
+                        Tiền cọc cam kết: <strong className="text-stone-800 dark:text-slate-200">0 ₫</strong>
+                      </div>
+                    </div>
+
+                    {/* Lựa chọn B: Đăng ký Ký quỹ bảo chứng */}
+                    <div
+                      onClick={() => setIsEscrowChecked(true)}
+                      className={cn(
+                        'relative cursor-pointer rounded-2xl border p-4 transition-all flex flex-col justify-between',
+                        isEscrowChecked
+                          ? isDark
+                            ? 'border-amber-500 bg-amber-500/10 ring-1 ring-amber-500'
+                            : 'border-amber-500 bg-amber-50/40 ring-1 ring-amber-500'
+                          : isDark
+                          ? 'border-slate-700 bg-slate-800/40 hover:bg-slate-800/70'
+                          : 'border-stone-200 bg-stone-50/50 hover:bg-stone-50'
+                      )}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-bold text-stone-900 dark:text-white">Ký Quỹ Bảo Chứng</span>
+                            <span className="rounded-md bg-amber-500/15 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 text-[10px] font-semibold border border-amber-500/20">
+                              2★ - 5★ Uy Tín
+                            </span>
+                          </div>
+                          <p className="text-xs text-stone-500 dark:text-slate-400 leading-relaxed">
+                            Cam kết ký quỹ để nhận Huy hiệu Uy tín và ưu tiên hiển thị. Kích hoạt gian hàng sau khi nạp đủ số tiền cọc đã cam kết.
+                          </p>
+                        </div>
+                        <div className={cn(
+                          'h-5 w-5 rounded-full border flex items-center justify-center shrink-0 mt-0.5 transition-colors',
+                          isEscrowChecked
+                            ? 'border-amber-500 bg-amber-500 text-white'
+                            : 'border-stone-300 dark:border-slate-600'
+                        )}>
+                          {isEscrowChecked && <div className="h-2 w-2 rounded-full bg-white" />}
+                        </div>
+                      </div>
+                      <div className="mt-3 pt-2.5 border-t border-stone-200/60 dark:border-slate-700/60 text-[11px] text-amber-600 dark:text-amber-400 font-medium">
+                        Cấp Huy hiệu Bảo chứng sàn & Kích hoạt theo cọc
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Khi chọn ký quỹ: Hiển thị các gói và input nhập với style sạch sẽ */}
+                  {isEscrowChecked && (
+                    <div className="space-y-4 pt-2">
+                      <div>
+                        <label className={cn('block text-xs font-semibold mb-2', isDark ? 'text-slate-300' : 'text-stone-700')}>
+                          Chọn mức tiền ký quỹ cam kết ban đầu:
+                        </label>
+                        <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
+                          {[
+                            { star: 2, amount: '1000000', label: '1.000.000 ₫', tier: 'Tiềm Năng' },
+                            { star: 3, amount: '5000000', label: '5.000.000 ₫', tier: 'Uy Tín Tiêu Chuẩn' },
+                            { star: 4, amount: '20000000', label: '20.000.000 ₫', tier: 'Đối Tác Vàng' },
+                            { star: 5, amount: '50000000', label: '50.000.000 ₫', tier: 'Kim Cương' },
+                          ].map((pkg) => {
+                            const isSelected = selectedDepositAmount === pkg.amount
+                            return (
+                              <button
+                                type="button"
+                                key={pkg.amount}
+                                onClick={() => setSelectedDepositAmount(pkg.amount)}
+                                className={cn(
+                                  'rounded-xl border p-3 text-left transition-all',
+                                  isSelected
+                                    ? 'border-amber-500 bg-amber-500/10 text-amber-600 dark:text-amber-400 ring-1 ring-amber-500 shadow-xs'
+                                    : isDark
+                                    ? 'border-slate-700 bg-slate-800/40 text-slate-300 hover:bg-slate-800'
+                                    : 'border-stone-200 bg-stone-50/60 text-stone-700 hover:bg-stone-100'
+                                )}
+                              >
+                                <div className="flex items-center gap-0.5 text-amber-500 mb-1">
+                                  {Array.from({ length: pkg.star }).map((_, i) => (
+                                    <HiStar key={i} className="h-3.5 w-3.5" />
+                                  ))}
+                                </div>
+                                <div className="text-sm font-bold text-stone-900 dark:text-white">
+                                  {pkg.label}
+                                </div>
+                                <div className="text-[11px] text-stone-500 dark:text-slate-400 mt-0.5">
+                                  {pkg.tier}
+                                </div>
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className={cn('block text-xs font-semibold mb-1.5', isDark ? 'text-slate-300' : 'text-stone-700')}>
+                          Hoặc nhập số tiền ký quỹ tùy ý (VNĐ):
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            min="1000000"
+                            step="1000000"
+                            value={selectedDepositAmount}
+                            onChange={(e) => setSelectedDepositAmount(e.target.value)}
+                            placeholder="VD: 10000000"
+                            className={cn(
+                              'w-full rounded-xl border py-2.5 pl-4 pr-16 text-sm font-semibold outline-none transition',
+                              isDark
+                                ? 'border-slate-600 bg-slate-800/50 text-white placeholder:text-slate-500 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20'
+                                : 'border-stone-300 bg-stone-50/80 text-stone-900 placeholder:text-stone-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20'
+                            )}
+                          />
+                          <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-stone-400 dark:text-slate-500 pointer-events-none">
+                            VNĐ
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Bảng tóm tắt thông tin cam kết */}
+                      <div className={cn(
+                        'rounded-xl border p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3',
+                        isDark
+                          ? 'border-slate-700 bg-slate-800/50'
+                          : 'border-stone-200 bg-stone-50/80'
+                      )}>
+                        <div>
+                          <div className="text-xs text-stone-500 dark:text-slate-400">Độ uy tín dự kiến đạt được:</div>
+                          <div className="flex items-center gap-2 mt-1">
+                            <div className="flex items-center gap-0.5 text-amber-500">
+                              {Array.from({ length: 5 }).map((_, i) => (
+                                <HiStar
+                                  key={i}
+                                  className={cn(
+                                    'h-4 w-4',
+                                    i < calculatePreviewStar(selectedDepositAmount)
+                                      ? 'text-amber-400'
+                                      : isDark ? 'text-slate-700' : 'text-stone-300'
+                                  )}
+                                />
+                              ))}
+                            </div>
+                            <span className="text-sm font-bold text-amber-600 dark:text-amber-400">
+                              {calculatePreviewStar(selectedDepositAmount)} Sao Uy Tín
+                            </span>
+                          </div>
+                        </div>
+                        <div className="sm:text-right">
+                          <div className="text-xs text-stone-500 dark:text-slate-400">Tiền cọc cam kết kích hoạt:</div>
+                          <div className="text-base font-extrabold text-stone-900 dark:text-white mt-0.5">
+                            {Number(selectedDepositAmount || 0).toLocaleString('vi-VN')} ₫
+                          </div>
+                        </div>
+                      </div>
+
+                      <p className="text-[11px] text-stone-500 dark:text-slate-400 italic">
+                        Sau khi Admin phê duyệt hồ sơ, gian hàng sẽ ở trạng thái <strong>Chờ nạp ký quỹ</strong>. Bạn nạp đủ {Number(selectedDepositAmount || 0).toLocaleString('vi-VN')} ₫ tiền ký quỹ đã cam kết để kích hoạt gian hàng và mở khóa tính năng đăng bán sản phẩm.
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="pt-4 border-t dark:border-slate-700 mt-6">

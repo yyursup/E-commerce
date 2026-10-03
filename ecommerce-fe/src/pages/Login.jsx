@@ -137,7 +137,7 @@ export default function Login() {
           )
           if (targetVoucher && !targetVoucher.isClaimed) {
             await voucherService.claimVoucher(targetVoucher.id)
-            toast.success(`Đã tự động lưu mã ưu đãi ${targetVoucher.code} vào ví của bạn! 🎉`, {
+            toast.success(`Đã tự động lưu mã ưu đãi ${targetVoucher.code} vào ví của bạn!`, {
               duration: 4000,
             })
           }

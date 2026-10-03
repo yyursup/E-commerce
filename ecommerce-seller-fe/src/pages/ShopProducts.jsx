@@ -11,9 +11,16 @@ import {
   HiOutlineEye,
   HiStar,
   HiOutlineStar,
+  HiOutlineFire,
+  HiOutlineExclamation,
+  HiOutlineFlag,
+  HiOutlineBan,
+  HiOutlineLockClosed,
 } from 'react-icons/hi'
 import toast from 'react-hot-toast'
+import { useNavigate } from 'react-router-dom'
 import { useThemeStore } from '../store/useThemeStore'
+import { useAuthStore } from '../store/useAuthStore'
 import { cn } from '../lib/cn'
 import sellerService from '../services/seller'
 import ProductFormModal from './business/components/ProductFormModal'
@@ -21,6 +28,9 @@ import ProductDetailModal from './business/components/ProductDetailModal'
 
 export default function ShopProducts() {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
+  const user = useAuthStore((s) => s.user)
+  const navigate = useNavigate()
+  const isPendingDeposit = user?.shopStatus === 'PENDING_DEPOSIT'
 
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
@@ -52,6 +62,11 @@ export default function ShopProducts() {
   }, [statusFilter])
 
   const handleCreateProduct = () => {
+    if (isPendingDeposit) {
+      toast.error('Gian hàng chưa được kích hoạt! Vui lòng nạp đủ tiền ký quỹ cam kết để bắt đầu đăng bán sản phẩm.')
+      navigate('/escrow-fund')
+      return
+    }
     setEditingProduct(null)
     setShowProductModal(true)
   }
@@ -94,9 +109,9 @@ export default function ShopProducts() {
       const updated = await sellerService.toggleFeatured(product.id)
       setProducts((prev) => prev.map((p) => p.id === product.id ? { ...p, featured: updated.featured } : p))
       if (updated.featured) {
-        toast.success(`⭐ Đã đẩy nổi bật "${product.name}"`)
+        toast.success(`Đã đẩy nổi bật "${product.name}"`)
       } else {
-        toast('Đã bỏ đẩy nổi bật sản phẩm này', { icon: '🔕' })
+        toast('Đã bỏ đẩy nổi bật sản phẩm này')
       }
     } catch (err) {
       const msg = err?.message || err?.error || 'Không thể thay đổi trạng thái nổi bật'
@@ -202,6 +217,26 @@ export default function ShopProducts() {
           </button>
         </div>
       </div>
+
+      {/* Cảnh báo chưa kích hoạt gian hàng */}
+      {isPendingDeposit && (
+        <div className="rounded-2xl border border-amber-500/40 bg-gradient-to-r from-amber-500/15 via-amber-500/10 to-transparent p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+          <div>
+            <p className="font-bold text-amber-700 dark:text-amber-300">
+              Tính năng đăng bán sản phẩm đang tạm khóa
+            </p>
+            <p className={cn('mt-0.5', isDark ? 'text-slate-300' : 'text-stone-600')}>
+              Gian hàng của bạn đang ở trạng thái <strong>Chờ nạp ký quỹ</strong>. Vui lòng nạp đủ tiền ký quỹ đã cam kết để kích hoạt gian hàng và mở khóa tính năng đăng bán sản phẩm.
+            </p>
+          </div>
+          <button
+            onClick={() => navigate('/escrow-fund')}
+            className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow transition shrink-0"
+          >
+            Nạp ký quỹ kích hoạt &rarr;
+          </button>
+        </div>
+      )}
 
       {/* Filter Bar & Search */}
       <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
@@ -362,12 +397,12 @@ export default function ShopProducts() {
                       </span>
                       {prod.sold >= 50 && (
                         <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/10 px-2 py-0.5 text-[11px] font-bold text-rose-500 border border-rose-500/20 shrink-0">
-                          🔥 Bán chạy
+                          <HiOutlineFire className="h-3.5 w-3.5" /> Bán chạy
                         </span>
                       )}
                       {prod.flagged && (
                         <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-bold text-amber-500 border border-amber-500/30 shrink-0">
-                          ⚠️ Bị cảnh báo ({prod.reportCount || 0} tố cáo)
+                          <HiOutlineExclamation className="h-3.5 w-3.5" /> Bị cảnh báo ({prod.reportCount || 0} tố cáo)
                         </span>
                       )}
                       {isFeatured && (
@@ -380,7 +415,7 @@ export default function ShopProducts() {
                           className="inline-flex items-center gap-1 rounded-full bg-rose-500/15 px-2 py-0.5 text-[11px] font-bold text-rose-500 border border-rose-500/30 shrink-0"
                           title={prod.lastReportedAt ? `Bị report gần nhất lúc: ${new Date(prod.lastReportedAt).toLocaleString('vi-VN')}` : 'Sản phẩm đang bị cảnh báo khóa'}
                         >
-                          🚩 Bị cắm cờ (Lỗi: {prod.reportCount || 0}/5)
+                          <HiOutlineFlag className="h-3.5 w-3.5" /> Bị cắm cờ (Lỗi: {prod.reportCount || 0}/5)
                         </span>
                       )}
                       {!prod.flagged && prod.reportCount > 0 && (
@@ -388,7 +423,7 @@ export default function ShopProducts() {
                           className="inline-flex items-center gap-1 rounded-full bg-orange-500/15 px-2 py-0.5 text-[11px] font-bold text-orange-500 border border-orange-500/30 shrink-0"
                           title={prod.lastReportedAt ? `Bị report gần nhất lúc: ${new Date(prod.lastReportedAt).toLocaleString('vi-VN')}` : 'Sản phẩm bị khách hàng report'}
                         >
-                          ⚠️ Bị báo cáo ({prod.reportCount}/5)
+                          <HiOutlineExclamation className="h-3.5 w-3.5" /> Bị báo cáo ({prod.reportCount}/5)
                         </span>
                       )}
                     </div>
@@ -442,7 +477,7 @@ export default function ShopProducts() {
                   <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                     {prod.status === 'DELETED' ? (
                       <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-500 font-bold text-xs tracking-wide">
-                        🚫 Bị sàn cấm (Chỉ xem)
+                        <HiOutlineBan className="h-3.5 w-3.5" /> Bị sàn cấm (Chỉ xem)
                       </span>
                     ) : (
                       <>

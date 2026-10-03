@@ -103,7 +103,7 @@ export default function Verify() {
           login(res.token, userPayload)
 
           toast.success(
-            '🎉 Xác thực tài khoản thành công! Hãy hoàn tất hồ sơ để mở gian hàng của bạn.',
+            'Xác thực tài khoản thành công! Hãy hoàn tất hồ sơ để mở gian hàng của bạn.',
             { duration: 5000 }
           )
           navigate('/seller-register')

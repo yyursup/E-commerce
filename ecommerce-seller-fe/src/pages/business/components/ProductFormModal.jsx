@@ -547,8 +547,9 @@ export default function ProductFormModal({ product = null, onClose, onSuccess })
                   isDark ? 'border-amber-500/30 bg-amber-500/5' : 'border-amber-300 bg-amber-50/70'
                 )}
               >
-                <span className="text-xs font-bold text-amber-600 dark:text-amber-400 shrink-0">
-                  ⚡ Điền nhanh cho tất cả {variants.length} biến thể:
+                <span className="text-xs font-bold text-amber-600 dark:text-amber-400 shrink-0 flex items-center gap-1">
+                  <HiOutlineLightningBolt className="h-4 w-4" />
+                  <span>Điền nhanh cho tất cả {variants.length} biến thể:</span>
                 </span>
                 <input
                   type="number"

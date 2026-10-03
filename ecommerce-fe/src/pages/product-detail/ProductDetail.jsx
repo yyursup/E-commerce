@@ -193,9 +193,7 @@ export default function ProductDetail() {
 
     const currentVariants = product.variants || []
     if (currentVariants.length > 0 && !selectedVariant) {
-      toast.error('Vui lòng chọn phân loại hàng (màu sắc / kích cỡ...) trước khi thêm vào giỏ hàng!', {
-        icon: '⚠️',
-      })
+      toast.error('Vui lòng chọn phân loại hàng (màu sắc / kích cỡ...) trước khi thêm vào giỏ hàng!')
       return
     }
 
@@ -238,9 +236,7 @@ export default function ProductDetail() {
 
     const currentVariants = product.variants || []
     if (currentVariants.length > 0 && !selectedVariant) {
-      toast.error('Vui lòng chọn phân loại hàng (màu sắc / kích cỡ...) trước khi đặt mua!', {
-        icon: '⚠️',
-      })
+      toast.error('Vui lòng chọn phân loại hàng (màu sắc / kích cỡ...) trước khi đặt mua!')
       return
     }
 
@@ -710,13 +706,30 @@ export default function ProductDetail() {
               </Link>
 
               <div className="flex-1 min-w-0">
-                <Link
-                  to={`/shop/${currentShopId}`}
-                  className="text-base font-bold text-stone-900 dark:text-white hover:text-amber-500 transition-colors flex items-center gap-1.5 truncate"
-                >
-                  <span className="truncate">{product.shopName || shopData?.name}</span>
-                  <HiOutlineBadgeCheck className="h-4 w-4 text-emerald-500 shrink-0" />
-                </Link>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Link
+                    to={`/shop/${currentShopId}`}
+                    className="text-base font-bold text-stone-900 dark:text-white hover:text-amber-500 transition-colors flex items-center gap-1.5 truncate"
+                  >
+                    <span className="truncate">{product.shopName || shopData?.name}</span>
+                    <HiOutlineBadgeCheck className="h-4 w-4 text-emerald-500 shrink-0" />
+                  </Link>
+
+                  <span
+                    className={cn(
+                      'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold border shrink-0',
+                      (shopData?.trustLevel || 1) >= 4
+                        ? 'bg-amber-500/20 text-amber-500 border-amber-500/40'
+                        : (shopData?.trustLevel || 1) >= 2
+                        ? 'bg-blue-500/15 text-blue-500 border-blue-500/30'
+                        : 'bg-stone-500/10 text-stone-500 border-stone-300 dark:border-slate-700'
+                    )}
+                    title="Gian hàng có cam kết Quỹ Ký Quỹ Bảo Chứng trách nhiệm trên sàn"
+                  >
+                    <HiOutlineShieldCheck className="h-3 w-3 text-amber-500" />
+                    {shopData?.trustLevel || 1}★ Ký Quỹ
+                  </span>
+                </div>
                 <div className="text-xs text-stone-400 dark:text-slate-400 mt-1 flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
                   <span className="truncate">{shopData?.address || shopData?.location || shopData?.city || 'Việt Nam'}</span>

@@ -378,8 +378,8 @@ export default function OrderReportModal({ isOpen, onClose, order, onSuccess }) 
                     )}
                   />
                 </div>
-                <p className="text-[11px] text-stone-400 dark:text-slate-500 flex items-center gap-1">
-                  <span>💡</span> Mô tả càng chi tiết kèm mốc thời gian sẽ giúp yêu cầu được giải quyết nhanh hơn.
+                <p className="text-[11px] text-stone-400 dark:text-slate-500">
+                  Mô tả càng chi tiết kèm mốc thời gian sẽ giúp yêu cầu được giải quyết nhanh hơn.
                 </p>
               </div>
 

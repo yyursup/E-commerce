@@ -52,7 +52,7 @@ export default function Login() {
         navigate('/pending')
       } else {
         // Customer who hasn't registered shop yet
-        toast('Tài khoản của bạn chưa có gian hàng. Vui lòng hoàn tất hồ sơ đăng ký.', { icon: '📝' })
+        toast('Tài khoản của bạn chưa có gian hàng. Vui lòng hoàn tất hồ sơ đăng ký.')
         navigate('/seller-register')
       }
     } catch (error) {

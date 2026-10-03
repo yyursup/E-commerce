@@ -180,5 +180,47 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
     List<Product> findAllViolatedProductsByShopId(@Param("shopId") UUID shopId);
 
     long countByShopIdAndFeaturedTrueAndDeletedFalse(UUID shopId);
+
+    @Query("""
+        select p
+        from Product p
+        join fetch p.shop s
+        join fetch p.productCategory c
+        left join fetch p.images i
+        where p.status = 'PUBLISHED'
+          and p.shop.status in ('ACTIVE', 'WARNED')
+          and p.shop.user.account.isActive = true
+          and p.deleted = false
+        order by p.featured desc, p.createdAt desc
+    """)
+    List<Product> findTopPublishedForRecommendation(Pageable pageable);
+
+    @Query("""
+        select p
+        from Product p
+        join fetch p.shop s
+        join fetch p.productCategory c
+        left join fetch p.images i
+        where p.status = 'PUBLISHED'
+          and p.shop.status in ('ACTIVE', 'WARNED')
+          and p.shop.user.account.isActive = true
+          and p.deleted = false
+          and p.id <> :excludeId
+          and (
+               lower(c.name) like '%phụ kiện%'
+            or lower(c.name) like '%sạc%'
+            or lower(c.name) like '%cáp%'
+            or lower(c.name) like '%tai nghe%'
+            or lower(c.name) like '%chuột%'
+            or lower(c.name) like '%bàn phím%'
+            or lower(c.name) like '%loa%'
+            or lower(c.name) like '%pin%'
+            or lower(p.name) like '%sạc%'
+            or lower(p.name) like '%tai nghe%'
+            or lower(p.name) like '%cáp%'
+          )
+        order by p.createdAt desc
+    """)
+    List<Product> findPotentialAccessories(@Param("excludeId") UUID excludeId, Pageable pageable);
 }
 

@@ -92,6 +92,8 @@ public class QueryProductServiceImpl implements QueryProductService {
         Page<Product> products = productRepository.findPublishedProductsWithFilters(
                 req.getCategoryId(),
                 req.getShopId(),
+                req.getConditionGrade(),
+                req.getWarrantyType(),
                 req.getMinPrice(),
                 req.getMaxPrice(),
                 search,

@@ -1,7 +1,9 @@
 package com.marketplace.ecommerce.product.repository;
 
 import com.marketplace.ecommerce.product.entity.Product;
+import com.marketplace.ecommerce.product.valueObjects.ConditionGrade;
 import com.marketplace.ecommerce.product.valueObjects.ProductStatus;
+import com.marketplace.ecommerce.product.valueObjects.WarrantyType;
 import com.marketplace.ecommerce.review.entity.Review;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
@@ -94,6 +96,8 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
                   and p.deleted = false
                   and (:categoryId is null or p.productCategory.id = :categoryId)
                   and (:shopId is null or p.shop.id = :shopId)
+                  and (:conditionGrade is null or p.conditionGrade = :conditionGrade)
+                  and (:warrantyType is null or p.warrantyType = :warrantyType)
                   and (:minPrice is null or p.basePrice >= :minPrice)
                   and (:maxPrice is null or p.basePrice <= :maxPrice)
                   and (
@@ -106,6 +110,8 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
     Page<Product> findPublishedProductsWithFilters(
             @Param("categoryId") UUID categoryId,
             @Param("shopId") UUID shopId,
+            @Param("conditionGrade") ConditionGrade conditionGrade,
+            @Param("warrantyType") WarrantyType warrantyType,
             @Param("minPrice") BigDecimal minPrice,
             @Param("maxPrice") BigDecimal maxPrice,
             @Param("search") String search,

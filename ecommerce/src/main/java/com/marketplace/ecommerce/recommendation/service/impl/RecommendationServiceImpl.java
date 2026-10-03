@@ -5,6 +5,8 @@ import com.marketplace.ecommerce.product.dto.response.ProductResponse;
 import com.marketplace.ecommerce.product.entity.Product;
 import com.marketplace.ecommerce.product.repository.ProductRepository;
 import com.marketplace.ecommerce.product.service.QueryProductService;
+import com.marketplace.ecommerce.product.valueObjects.ConditionGrade;
+import com.marketplace.ecommerce.product.valueObjects.WarrantyType;
 import com.marketplace.ecommerce.recommendation.entity.ProductEmbedding;
 import com.marketplace.ecommerce.recommendation.entity.ProductView;
 import com.marketplace.ecommerce.recommendation.entity.SearchHistory;
@@ -84,11 +86,19 @@ public class RecommendationServiceImpl implements RecommendationService {
     @Override
     @Transactional(readOnly = true)
     public List<ProductResponse> getRecommendationsForUser(String sessionId, UUID userId, int limit) {
+        return getRecommendationsForUser(sessionId, userId, List.of(), limit);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ProductResponse> getRecommendationsForUser(String sessionId, UUID userId, List<UUID> guestRecentIds, int limit) {
         if (limit <= 0) limit = 8;
         Set<UUID> seen = new LinkedHashSet<>();
         List<ProductResponse> out = new ArrayList<>();
 
         String sid = sessionId != null ? sessionId : "";
+
+        // 1. Thu thập từ lịch sử tìm kiếm gần nhất
         Pageable searchPage = PageRequest.of(0, RECENT_SEARCH_LIMIT);
         List<SearchHistory> recentSearches = searchHistoryRepository.findRecentBySessionOrUser(sid, userId, searchPage);
 
@@ -112,14 +122,51 @@ public class RecommendationServiceImpl implements RecommendationService {
             }
         }
 
+        // 2. Thu thập từ lượt xem sản phẩm gần nhất (kết hợp DB views và Client LocalStorage ids)
         Pageable viewPage = PageRequest.of(0, RECENT_VIEW_LIMIT);
         List<ProductView> recentViews = productViewRepository.findRecentBySessionOrUser(sid, userId, viewPage);
+
+        List<UUID> candidateProductIds = new ArrayList<>();
         for (ProductView v : recentViews) {
-            List<ProductResponse> similar = getSimilarProducts(v.getProductId(), 3);
+            if (v.getProductId() != null && !candidateProductIds.contains(v.getProductId())) {
+                candidateProductIds.add(v.getProductId());
+            }
+        }
+        if (guestRecentIds != null) {
+            for (UUID gid : guestRecentIds) {
+                if (gid != null && !candidateProductIds.contains(gid)) {
+                    candidateProductIds.add(gid);
+                }
+            }
+        }
+
+        for (UUID prodId : candidateProductIds) {
+            List<ProductResponse> similar = getSimilarProducts(prodId, 4);
             for (ProductResponse p : similar) {
                 if (seen.add(p.getId())) {
                     out.add(p);
                     if (out.size() >= limit) return out;
+                }
+            }
+        }
+
+        // 3. Cold Start Fallback: Nếu user chưa có lịch sử tương tác nào, trả về top sản phẩm hot / featured của sàn
+        if (out.size() < limit) {
+            List<Product> topProducts = productRepository.findTopPublishedForRecommendation(PageRequest.of(0, limit * 2));
+            List<UUID> topIds = topProducts.stream()
+                    .map(Product::getId)
+                    .filter(seen::add)
+                    .limit(limit - out.size())
+                    .toList();
+
+            if (!topIds.isEmpty()) {
+                List<ProductResponse> topResponses = queryProductService.getPublishedProductsByIds(topIds);
+                Map<UUID, ProductResponse> map = topResponses.stream()
+                        .collect(Collectors.toMap(ProductResponse::getId, p -> p, (a, b) -> a));
+                for (UUID id : topIds) {
+                    if (map.containsKey(id)) {
+                        out.add(map.get(id));
+                    }
                 }
             }
         }
@@ -134,42 +181,124 @@ public class RecommendationServiceImpl implements RecommendationService {
         Optional<Product> opt = productRepository.findPublishedByIdWithDetails(productId);
         if (opt.isEmpty()) return List.of();
 
-        Product product = opt.get();
-        UUID categoryId = product.getProductCategory() != null ? product.getProductCategory().getId() : null;
+        Product sourceProduct = opt.get();
+        UUID categoryId = sourceProduct.getProductCategory() != null ? sourceProduct.getProductCategory().getId() : null;
 
-        float[] sourceVec = productEmbeddingService.getOrComputeEmbedding(product);
         Pageable pageable = PageRequest.of(0, SIMILAR_CANDIDATES_PAGE_SIZE);
         List<Product> candidates = productRepository.findPublishedByCategoryExcludingId(productId, categoryId, pageable).getContent();
 
+        // Nếu category không có đủ ứng viên, mở rộng tìm thêm các sản phẩm đang bán
+        if (candidates.isEmpty()) {
+            candidates = productRepository.findTopPublishedForRecommendation(pageable).stream()
+                    .filter(p -> !p.getId().equals(productId))
+                    .toList();
+        }
+
         if (candidates.isEmpty()) return List.of();
 
-        if (sourceVec == null) return List.of();
+        // Thử lấy Vector Embedding từ Ollama
+        float[] sourceVec = productEmbeddingService.getOrComputeEmbedding(sourceProduct);
 
-        List<ProductEmbedding> embeddings = productEmbeddingRepository.findByProductIdIn(
-                candidates.stream().map(Product::getId).toList());
-        Map<UUID, float[]> vecMap = new HashMap<>();
-        for (ProductEmbedding pe : embeddings) {
-            float[] v = productEmbeddingService.getStoredEmbedding(pe.getProductId());
-            if (v != null) vecMap.put(pe.getProductId(), v);
+        List<UUID> sortedIds;
+
+        if (sourceVec != null) {
+            // TẦNG 2A: RANKING BẰNG VECTOR SIMILARITY (NẾU CÓ EMBEDDING)
+            List<ProductEmbedding> embeddings = productEmbeddingRepository.findByProductIdIn(
+                    candidates.stream().map(Product::getId).toList());
+            Map<UUID, float[]> vecMap = new HashMap<>();
+            for (ProductEmbedding pe : embeddings) {
+                float[] v = productEmbeddingService.getStoredEmbedding(pe.getProductId());
+                if (v != null) vecMap.put(pe.getProductId(), v);
+            }
+            for (Product p : candidates) {
+                if (vecMap.containsKey(p.getId())) continue;
+                float[] v = productEmbeddingService.getOrComputeEmbedding(p);
+                if (v != null) vecMap.put(p.getId(), v);
+            }
+
+            sortedIds = candidates.stream()
+                    .map(Product::getId)
+                    .filter(vecMap::containsKey)
+                    .sorted(Comparator.comparingDouble(id -> -cosineSimilarity(sourceVec, vecMap.get(id))))
+                    .limit(limit)
+                    .toList();
+        } else {
+            // TẦNG 2B: RANKING BẰNG THUẬT TOÁN LAI SHOPEE (CONTENT & TECH ATTRIBUTE MATCHING)
+            // Khắc phục triệt để khi Ollama không bật
+            sortedIds = candidates.stream()
+                    .sorted(Comparator.comparingDouble(p -> -calculateTechSimilarityScore(sourceProduct, p)))
+                    .map(Product::getId)
+                    .limit(limit)
+                    .toList();
         }
-        for (Product p : candidates) {
-            if (vecMap.containsKey(p.getId())) continue;
-            float[] v = productEmbeddingService.getOrComputeEmbedding(p);
-            if (v != null) vecMap.put(p.getId(), v);
+
+        if (sortedIds.isEmpty()) return List.of();
+
+        List<ProductResponse> byIds = queryProductService.getPublishedProductsByIds(sortedIds);
+        Map<UUID, ProductResponse> byIdMap = byIds.stream().collect(Collectors.toMap(ProductResponse::getId, p -> p, (a, b) -> a));
+        return sortedIds.stream().map(byIdMap::get).filter(Objects::nonNull).toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ProductResponse> getCompatibleAccessories(UUID productId, int limit) {
+        if (limit <= 0) limit = 8;
+        List<Product> accessories = productRepository.findPotentialAccessories(productId, PageRequest.of(0, limit));
+        if (accessories.isEmpty()) return List.of();
+
+        List<UUID> ids = accessories.stream().map(Product::getId).toList();
+        List<ProductResponse> responses = queryProductService.getPublishedProductsByIds(ids);
+        Map<UUID, ProductResponse> map = responses.stream().collect(Collectors.toMap(ProductResponse::getId, p -> p, (a, b) -> a));
+        return ids.stream().map(map::get).filter(Objects::nonNull).toList();
+    }
+
+    /**
+     * Thuật toán chấm điểm tương quan đặc tính kỹ thuật (Tech Similarity Scoring):
+     * Cùng Category (40đ) + Tương đồng mức giá (30đ) + Tương đồng tình trạng máy (15đ) + Tương đồng bảo hành (10đ) + Featured (5đ)
+     */
+    private double calculateTechSimilarityScore(Product source, Product target) {
+        double score = 0.0;
+
+        // 1. Cùng danh mục sản phẩm (Category match)
+        if (source.getProductCategory() != null && target.getProductCategory() != null) {
+            if (source.getProductCategory().getId().equals(target.getProductCategory().getId())) {
+                score += 40.0;
+            }
         }
 
-        List<UUID> sorted = candidates.stream()
-                .map(Product::getId)
-                .filter(vecMap::containsKey)
-                .sorted(Comparator.comparingDouble(id -> -cosineSimilarity(sourceVec, vecMap.get(id))))
-                .limit(limit)
-                .toList();
+        // 2. Độ tương đồng mức giá (Price proximity)
+        if (source.getBasePrice() != null && target.getBasePrice() != null) {
+            double p1 = source.getBasePrice().doubleValue();
+            double p2 = target.getBasePrice().doubleValue();
+            double maxP = Math.max(p1, p2);
+            if (maxP > 0) {
+                double priceDiffRatio = Math.abs(p1 - p2) / maxP;
+                score += Math.max(0.0, 1.0 - priceDiffRatio) * 30.0;
+            }
+        }
 
-        if (sorted.isEmpty()) return List.of();
+        // 3. Tương đồng tình trạng máy (Condition Grade match)
+        if (source.getConditionGrade() != null && target.getConditionGrade() != null) {
+            if (source.getConditionGrade() == target.getConditionGrade()) {
+                score += 15.0;
+            } else if (source.getConditionGrade() != ConditionGrade.GRADE_NEW && target.getConditionGrade() != ConditionGrade.GRADE_NEW) {
+                score += 8.0; // Đều là đồ đã qua sử dụng (Like New, 90-95%)
+            }
+        }
 
-        List<ProductResponse> byIds = queryProductService.getPublishedProductsByIds(sorted);
-        Map<UUID, ProductResponse> byIdMap = byIds.stream().collect(Collectors.toMap(ProductResponse::getId, p -> p));
-        return sorted.stream().map(byIdMap::get).filter(Objects::nonNull).toList();
+        // 4. Tương đồng hình thức bảo hành (Warranty Type match)
+        if (source.getWarrantyType() != null && target.getWarrantyType() != null) {
+            if (source.getWarrantyType() == target.getWarrantyType()) {
+                score += 10.0;
+            }
+        }
+
+        // 5. Uy tín & Nổi bật (Shop Trust & Featured Boost)
+        if (target.isFeatured()) {
+            score += 5.0;
+        }
+
+        return score;
     }
 
     private static double cosineSimilarity(float[] a, float[] b) {

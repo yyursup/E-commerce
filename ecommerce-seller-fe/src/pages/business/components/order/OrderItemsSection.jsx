@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { cn } from '../../../../lib/cn'
+import { getConditionBadge, getWarrantyBadge } from '../../../../lib/techBadges'
 import { formatCurrency } from './orderHelpers'
 
 export default function OrderItemsSection({ items, isDark }) {
@@ -50,16 +51,26 @@ export default function OrderItemsSection({ items, isDark }) {
                   </p>
                 )}
 
-                {(item.variantColor || item.variantSize) && (
-                  <div className="flex items-center gap-1.5 flex-wrap">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {item.conditionGrade && (
+                    <span className={cn("text-[11px] font-semibold px-2 py-0.5 rounded-full border", getConditionBadge(item.conditionGrade)?.cls)}>
+                      {getConditionBadge(item.conditionGrade)?.label}
+                    </span>
+                  )}
+                  {item.warrantyType && (
+                    <span className={cn("text-[11px] font-medium px-2 py-0.5 rounded-full border", getWarrantyBadge(item.warrantyType, item.warrantyMonths)?.cls)}>
+                      {getWarrantyBadge(item.warrantyType, item.warrantyMonths)?.label}
+                    </span>
+                  )}
+                  {(item.variantColor || item.variantSize) && (
                     <span className={cn(
-                      'inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold',
-                      isDark ? 'bg-amber-950/40 text-amber-400 border border-amber-800/40' : 'bg-amber-50 text-amber-700 border border-amber-200'
+                      'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium',
+                      isDark ? 'bg-slate-800 text-slate-300 border border-slate-700' : 'bg-stone-100 text-stone-700 border border-stone-200'
                     )}>
                       Phân loại: {[item.variantColor, item.variantSize].filter(Boolean).join(' - ')}
                     </span>
-                  </div>
-                )}
+                  )}
+                </div>
 
                 <div className="flex items-center gap-2 text-xs text-stone-500 dark:text-slate-400">
                   <span>Đơn giá: {formatCurrency(item.unitPrice || item.price || 0)}</span>

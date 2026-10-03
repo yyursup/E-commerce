@@ -52,6 +52,10 @@ public class ShopServiceImpl implements ShopService {
     @Override
     public Shop createShop(User ownerUser, String shopName, Request req, Seller sellerDetail) {
 
+        boolean requiresDeposit = Boolean.TRUE.equals(sellerDetail.getIsEscrowParticipated())
+                && sellerDetail.getInitialDepositAmount() != null
+                && sellerDetail.getInitialDepositAmount().compareTo(java.math.BigDecimal.ZERO) > 0;
+
         Shop shop = Shop.builder()
                 .user(ownerUser)
                 .name(shopName)
@@ -72,7 +76,8 @@ public class ShopServiceImpl implements ShopService {
                 .businessName(sellerDetail.getBusinessName())
                 .businessAddress(sellerDetail.getBusinessAddress())
                 .businessLicenseUrl(sellerDetail.getBusinessLicenseUrl())
-                .status(ShopStatus.ACTIVE)
+                .status(requiresDeposit ? ShopStatus.PENDING_DEPOSIT : ShopStatus.ACTIVE)
+                .trustLevel(1)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();

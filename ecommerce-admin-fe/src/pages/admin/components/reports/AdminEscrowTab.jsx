@@ -4,6 +4,8 @@ import {
   HiOutlineCheck,
   HiOutlineReceiptRefund,
   HiOutlineScale,
+  HiOutlineExclamation,
+  HiOutlineClock,
 } from 'react-icons/hi'
 import { cn } from '../../../../lib/cn'
 
@@ -142,20 +144,24 @@ export default function AdminEscrowTab({
               {/* Hàng 3: Mô tả ngữ cảnh ngắn gọn */}
               <p className="text-[11px] text-stone-400 line-clamp-1">
                 {returnStatus === 'DISPUTED' ? (
-                  <span className="text-rose-400 font-medium">
-                    ⚖️ Kiện hàng hoàn đang tranh chấp từ Người bán. Admin có thẩm quyền can thiệp phân xử ký quỹ.
+                  <span className="text-rose-400 font-medium inline-flex items-center gap-1">
+                    <HiOutlineScale className="h-3.5 w-3.5 shrink-0" />
+                    <span>Kiện hàng hoàn đang tranh chấp từ Người bán. Admin có thẩm quyền can thiệp phân xử ký quỹ.</span>
                   </span>
                 ) : returnStatus === 'RETURNED' ? (
-                  <span className="text-purple-400 font-medium">
-                    ⚠️ Kiện hàng hoàn đã giao tới Người bán (đang trong 72h kiểm hàng). Admin chỉ can thiệp khi Shop khiếu nại (DISPUTED).
+                  <span className="text-purple-400 font-medium inline-flex items-center gap-1">
+                    <HiOutlineExclamation className="h-3.5 w-3.5 shrink-0" />
+                    <span>Kiện hàng hoàn đã giao tới Người bán (đang trong 72h kiểm hàng). Admin chỉ can thiệp khi Shop khiếu nại (DISPUTED).</span>
                   </span>
                 ) : (returnStatus === 'WAITING_FOR_SHIPMENT' || returnStatus === 'SHIPPED') ? (
-                  <span className="text-amber-400 font-medium">
-                    ⚠️ Kiện hàng hoàn đang trên đường vận chuyển. Chờ giao tới Người bán và phát sinh tranh chấp.
+                  <span className="text-amber-400 font-medium inline-flex items-center gap-1">
+                    <HiOutlineExclamation className="h-3.5 w-3.5 shrink-0" />
+                    <span>Kiện hàng hoàn đang trên đường vận chuyển. Chờ giao tới Người bán và phát sinh tranh chấp.</span>
                   </span>
                 ) : item.status === 'DISPUTED' ? (
-                  <span className="text-amber-400 font-medium">
-                    ⏳ Đơn hàng có báo cáo vi phạm. Xử lý tại tab Báo cáo / Kháng cáo (hệ thống tự động chuyển tiền).
+                  <span className="text-amber-400 font-medium inline-flex items-center gap-1">
+                    <HiOutlineClock className="h-3.5 w-3.5 shrink-0" />
+                    <span>Đơn hàng có báo cáo vi phạm. Xử lý tại tab Báo cáo / Kháng cáo (hệ thống tự động chuyển tiền).</span>
                   </span>
                 ) : item.status === 'RELEASED' ? (
                   'Doanh thu đơn hàng đã giải ngân về Ví Người bán (sau khi khấu trừ phí hoa hồng sàn).'

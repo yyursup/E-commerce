@@ -45,7 +45,6 @@ export default function PendingApproval() {
       setStatus(updatedStatus)
 
       if (isApproved) {
-        toast.success('Chúc mừng! Hồ sơ gian hàng của bạn đã được phê duyệt!')
         const approvedUser = {
           ...user,
           role: 'BUSINESS',
@@ -53,10 +52,18 @@ export default function PendingApproval() {
           shopId: profile?.shopId || user?.shopId,
           shopName: profile?.shopName || user?.shopName,
           sellerStatus: 'APPROVED',
+          shopStatus: profile?.shopStatus || user?.shopStatus,
         }
         updateUser(approvedUser)
         login(token, approvedUser)
-        navigate('/dashboard', { replace: true })
+
+        if (profile?.shopStatus === 'PENDING_DEPOSIT') {
+          toast.success('Hồ sơ đã được duyệt! Vui lòng nạp tiền ký quỹ cam kết để kích hoạt gian hàng.')
+          navigate('/escrow-fund', { replace: true })
+        } else {
+          toast.success('Chúc mừng! Hồ sơ gian hàng của bạn đã được phê duyệt!')
+          navigate('/dashboard', { replace: true })
+        }
       } else if (updatedStatus === 'REJECTED') {
         updateUser({ sellerStatus: 'REJECTED' })
         if (!isSilent) {
@@ -65,7 +72,7 @@ export default function PendingApproval() {
       } else if (updatedStatus === 'PENDING') {
         updateUser({ sellerStatus: 'PENDING' })
         if (!isSilent) {
-          toast('Hồ sơ vẫn đang trong quá trình xét duyệt. Vui lòng kiên nhẫn đợi thêm.', { icon: '⏳' })
+          toast('Hồ sơ vẫn đang trong quá trình xét duyệt. Vui lòng kiên nhẫn đợi thêm.')
         }
       } else if (updatedStatus === 'NONE') {
         updateUser({ sellerStatus: 'NONE' })
@@ -132,8 +139,8 @@ export default function PendingApproval() {
           {/* Details / Stepper */}
           {isRejected ? (
             <div className="rounded-2xl bg-stone-50 dark:bg-slate-800/60 p-4 border border-stone-200/80 dark:border-slate-700/80 text-left">
-              <h4 className="text-xs font-bold text-stone-900 dark:text-white mb-1.5 flex items-center gap-1.5">
-                💡 Hướng dẫn nộp lại hồ sơ:
+              <h4 className="text-xs font-bold text-stone-900 dark:text-white mb-1.5">
+                Hướng dẫn nộp lại hồ sơ:
               </h4>
               <ul className="list-disc list-inside text-xs text-stone-600 dark:text-slate-300 space-y-1">
                 <li>Đảm bảo ảnh CCCD chụp rõ 2 mặt, không bị lóa sáng hay mất góc.</li>

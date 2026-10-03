@@ -49,6 +49,10 @@ public class LiveStreamServiceImpl implements LiveStreamService {
         Shop shop = shopRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new CustomException("Chỉ người bán có gian hàng mới có thể tạo livestream"));
 
+        if (shop.getStatus() == com.marketplace.ecommerce.shop.valueObjects.ShopStatus.PENDING_DEPOSIT) {
+            throw new CustomException("Gian hàng của bạn chưa được kích hoạt do chưa hoàn tất nạp tiền ký quỹ cam kết. Vui lòng nạp đủ tiền ký quỹ để mở khóa tính năng Live Stream.");
+        }
+
         // Generate a unique clean room name
         String roomName = "room_" + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
 

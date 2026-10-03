@@ -99,9 +99,9 @@ export function useChatNotification() {
         senderRole: msg.senderRole,
         content:
           msg.messageType === 'IMAGE'
-            ? '📷 Đã gửi một hình ảnh'
+            ? 'Đã gửi một hình ảnh'
             : msg.messageType === 'VIDEO'
-              ? '🎬 Đã gửi một video'
+              ? 'Đã gửi một video'
               : msg.content || '',
         createdAt: msg.createdAt,
       }

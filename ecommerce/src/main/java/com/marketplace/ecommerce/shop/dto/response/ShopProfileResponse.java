@@ -34,6 +34,8 @@ public class ShopProfileResponse {
     private BusinessType businessType;
     private String businessName;
     private Float averageRating;
+    private Integer trustLevel;
+    private java.math.BigDecimal escrowBalance;
     private Long reviewCount;
     private Long followerCount;
     private String responseRate;
@@ -83,6 +85,8 @@ public class ShopProfileResponse {
                 .businessType(shop.getBusinessType())
                 .businessName(shop.getBusinessName())
                 .averageRating(finalRating)
+                .trustLevel(shop.getTrustLevel() != null ? shop.getTrustLevel() : 1)
+                .escrowBalance(shop.getEscrowFund() != null ? shop.getEscrowFund().getBalance() : java.math.BigDecimal.ZERO)
                 .reviewCount(reviewCount != null ? reviewCount : 0L)
                 .followerCount(followerCount != null ? followerCount : 0L)
                 .responseRate(responseRate != null ? responseRate : "100%")

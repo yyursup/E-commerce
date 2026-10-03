@@ -208,8 +208,8 @@ export default function ShopHealthOverview({
               'mt-4 p-4 rounded-2xl border text-xs space-y-2',
               isDark ? 'border-amber-500/20 bg-amber-500/5 text-slate-300' : 'border-amber-200 bg-amber-50/50 text-stone-700'
             )}>
-              <div className="font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
-                <span>🛡️ Lợi ích khi duy trì điểm uy tín cao:</span>
+              <div className="font-semibold text-amber-600 dark:text-amber-400">
+                Lợi ích khi duy trì điểm uy tín cao:
               </div>
               <p>• <strong>Ưu tiên hiển thị:</strong> Sản phẩm của gian hàng có điểm uy tín cao được ưu tiên đề xuất trên trang chủ và kết quả tìm kiếm.</p>
               <p>• <strong>Khắc phục sai sót:</strong> Giúp các gian hàng có cơ hội sửa đổi và phục hồi toàn diện điểm số theo thời gian mà không bị trừ điểm vĩnh viễn.</p>

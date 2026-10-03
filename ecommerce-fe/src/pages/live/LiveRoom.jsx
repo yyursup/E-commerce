@@ -4,6 +4,8 @@ import { Room, RoomEvent, Track } from 'livekit-client';
 import {
   HiOutlineEye,
   HiOutlineHeart,
+  HiHeart,
+  HiOutlineVideoCamera,
   HiOutlineShoppingBag,
   HiOutlineX,
   HiOutlineVolumeUp,
@@ -172,7 +174,7 @@ export default function LiveRoom() {
           // If Host disconnected, stream ended
           if (participant.identity?.startsWith('host_')) {
             setIsStreamEnded(true);
-            toast('Chủ Shop đã kết thúc phiên Live!', { icon: '📺' });
+            toast('Chủ Shop đã kết thúc phiên Live!');
           }
         });
 
@@ -218,7 +220,7 @@ export default function LiveRoom() {
               spawnHeart();
             } else if (data.type === 'PIN_PRODUCT') {
               setPinnedProduct(data.product);
-              toast.success(`Shop vừa ghim: ${data.product?.name}`, { icon: '📌' });
+              toast.success(`Shop vừa ghim: ${data.product?.name}`);
             } else if (data.type === 'UNPIN_PRODUCT') {
               setPinnedProduct(null);
             }
@@ -359,7 +361,7 @@ export default function LiveRoom() {
       setAddingToCartId(prodId);
       await cartService.addToCart(prodId, 1);
       updateCartCount();
-      toast.success(`Đã thêm "${prod.name}" vào giỏ hàng!`, { icon: '🛍️' });
+      toast.success(`Đã thêm "${prod.name}" vào giỏ hàng!`);
     } catch (err) {
       console.error('Add to cart error:', err);
       toast.error(err?.message || 'Không thể thêm sản phẩm vào giỏ');
@@ -420,8 +422,8 @@ export default function LiveRoom() {
           {/* Stream Ended Overlay */}
           {isStreamEnded && (
             <div className="absolute inset-0 z-40 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-8 text-center animate-fade-in">
-              <div className="w-16 h-16 rounded-3xl bg-zinc-800 text-zinc-400 flex items-center justify-center mb-4 text-2xl">
-                📺
+              <div className="w-16 h-16 rounded-3xl bg-zinc-800 text-zinc-400 flex items-center justify-center mb-4">
+                <HiOutlineVideoCamera className="w-8 h-8" />
               </div>
               <h2 className="text-2xl font-bold">Phiên Livestream Đã Kết Thúc</h2>
               <p className="text-xs text-zinc-400 mt-2 max-w-sm">
@@ -457,7 +459,7 @@ export default function LiveRoom() {
                 }}
                 className="absolute bottom-20 text-3xl animate-floating-heart"
               >
-                ❤️
+                <HiHeart className="w-8 h-8 fill-current" />
               </div>
             ))}
           </div>

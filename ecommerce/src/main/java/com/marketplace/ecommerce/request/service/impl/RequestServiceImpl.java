@@ -41,8 +41,11 @@ import com.marketplace.ecommerce.payment.repository.EscrowRepository;
 import com.marketplace.ecommerce.payment.service.EscrowService;
 import com.marketplace.ecommerce.payment.valueObjects.EscrowStatus;
 import com.marketplace.ecommerce.request.valueObjects.ResolutionType;
+import com.marketplace.ecommerce.shop.service.ShopEscrowFundService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import java.math.BigDecimal;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Page;
@@ -75,6 +78,7 @@ public class RequestServiceImpl implements RequestService {
     private final EscrowRepository escrowRepository;
     private final EscrowService escrowService;
     private final OrderReturnService orderReturnService;
+    private final ShopEscrowFundService shopEscrowFundService;
 
     @Value("${marketplace.dispute.appeal-window-hours}")
     private long appealWindowHours;
@@ -94,6 +98,12 @@ public class RequestServiceImpl implements RequestService {
 
         ctx.sellerDetail().setCreatedShopId(savedShop.getId());
         sellerRepository.save(ctx.sellerDetail());
+
+        // Khởi tạo Quỹ ký quỹ cho gian hàng
+        BigDecimal initialDeposit = Boolean.TRUE.equals(ctx.sellerDetail().getIsEscrowParticipated())
+                ? ctx.sellerDetail().getInitialDepositAmount()
+                : BigDecimal.ZERO;
+        shopEscrowFundService.createInitialFund(savedShop, initialDeposit, "REG-" + req.getDisplayCode());
 
         // Update account role from CUSTOMER to BUSINESS
         Account ownerAccount = req.getAccount();

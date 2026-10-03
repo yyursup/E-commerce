@@ -2,6 +2,7 @@ package com.marketplace.ecommerce.shop.valueObjects;
 
 public enum ShopStatus {
     PENDING("PENDING", "Đang chờ"),
+    PENDING_DEPOSIT("PENDING_DEPOSIT", "Chờ nạp ký quỹ"),
     ACTIVE("ACTIVE", "Hoạt động"),
     INACTIVE("INACTIVE", "Không hoạt động"),
     BANNED("BANNED", "Bị cấm"),

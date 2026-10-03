@@ -164,6 +164,8 @@ public class RegisterSellerServiceImpl implements RegisterSellerService {
                 .bankAccountName(request.getBankAccountName().trim())
                 .bankAccountNumber(request.getBankAccountNumber().trim())
                 .bankName(request.getBankName().trim())
+                .isEscrowParticipated(Boolean.TRUE.equals(request.getIsEscrowParticipated()))
+                .initialDepositAmount(Boolean.TRUE.equals(request.getIsEscrowParticipated()) ? request.getInitialDepositAmount() : null)
                 .build();
 
         sellerRepository.save(s);

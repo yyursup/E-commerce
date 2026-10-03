@@ -227,7 +227,7 @@ class OrderReportDisputeTest {
         // Given
         RequestServiceImpl requestServiceImpl = new RequestServiceImpl(
                 requestRepository, reportRepository, null, accountRepository, null,
-                requestValidation, null, null, null, null, orderRepository, escrowRepository, escrowService, orderReturnService
+                requestValidation, null, null, null, null, orderRepository, escrowRepository, escrowService, orderReturnService, null
         );
         ReflectionTestUtils.setField(requestServiceImpl, "appealWindowHours", 72);
 
@@ -267,7 +267,7 @@ class OrderReportDisputeTest {
         // Given
         RequestServiceImpl requestServiceImpl = new RequestServiceImpl(
                 requestRepository, reportRepository, null, accountRepository, null,
-                requestValidation, null, null, null, null, orderRepository, escrowRepository, escrowService, orderReturnService
+                requestValidation, null, null, null, null, orderRepository, escrowRepository, escrowService, orderReturnService, null
         );
         ReflectionTestUtils.setField(requestServiceImpl, "appealWindowHours", 72);
 

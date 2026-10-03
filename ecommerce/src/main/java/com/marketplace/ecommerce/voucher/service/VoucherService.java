@@ -4,11 +4,16 @@ import com.marketplace.ecommerce.order.entity.Order;
 import com.marketplace.ecommerce.voucher.dto.*;
 import com.marketplace.ecommerce.voucher.valueObjects.VoucherScope;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
 public interface VoucherService {
+
+    Page<VoucherResponse> listActiveVouchers(VoucherScope scope, UUID shopId, UUID accountId, Pageable pageable);
 
     List<VoucherResponse> listActiveVouchers(VoucherScope scope, UUID shopId, UUID accountId);
 

@@ -120,8 +120,9 @@ export default function Home() {
   useEffect(() => {
     const fetchWelcomeVoucher = async () => {
       try {
-        const list = await voucherService.listVouchers({ scope: 'PLATFORM' })
-        if (Array.isArray(list) && list.length > 0) {
+        const res = await voucherService.listVouchers({ scope: 'PLATFORM' })
+        const list = res?.content || (Array.isArray(res) ? res : [])
+        if (list.length > 0) {
           const match =
             list.find((v) => v.code === 'ECOMNEW15') ||
             list.find((v) => v.isFirstOrderOnly) ||
@@ -181,7 +182,8 @@ export default function Home() {
 
       // Fallback nếu welcomeVoucher chưa kịp load vào state
       if (!targetVoucher || !targetVoucher.id) {
-        const list = await voucherService.listVouchers({ scope: 'PLATFORM' })
+        const res = await voucherService.listVouchers({ scope: 'PLATFORM' })
+        const list = res?.content || (Array.isArray(res) ? res : [])
         targetVoucher =
           list?.find((v) => v.code === 'ECOMNEW15') ||
           list?.find((v) => v.isFirstOrderOnly) ||

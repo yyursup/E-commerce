@@ -130,7 +130,8 @@ export default function Login() {
       if (pendingCode) {
         sessionStorage.removeItem('pendingClaimVoucherCode')
         try {
-          const list = await voucherService.listVouchers({ scope: 'PLATFORM' })
+          const res = await voucherService.listVouchers({ scope: 'PLATFORM' })
+          const list = res?.content || (Array.isArray(res) ? res : [])
           const targetVoucher = list?.find(
             (v) => v.code.toUpperCase() === pendingCode.toUpperCase()
           )

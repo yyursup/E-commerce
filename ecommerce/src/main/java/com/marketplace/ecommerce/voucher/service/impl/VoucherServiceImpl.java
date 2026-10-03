@@ -21,6 +21,9 @@ import com.marketplace.ecommerce.voucher.service.VoucherService;
 import com.marketplace.ecommerce.voucher.valueObjects.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,23 +48,31 @@ public class VoucherServiceImpl implements VoucherService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<VoucherResponse> listActiveVouchers(VoucherScope scope, UUID shopId, UUID accountId) {
+    public Page<VoucherResponse> listActiveVouchers(VoucherScope scope, UUID shopId, UUID accountId,
+            Pageable pageable) {
         LocalDateTime now = LocalDateTime.now();
-        List<Voucher> vouchers;
+        Page<Voucher> voucherPage;
 
         if (scope != null) {
             if (scope == VoucherScope.SHOP && shopId != null) {
-                vouchers = voucherRepository.findActiveByShopId(VoucherStatus.ACTIVE, shopId, now);
+                voucherPage = voucherRepository.findActiveByShopId(VoucherStatus.ACTIVE, shopId, now, pageable);
             } else {
-                vouchers = voucherRepository.findActiveByScope(VoucherStatus.ACTIVE, scope, now);
+                voucherPage = voucherRepository.findActiveByScope(VoucherStatus.ACTIVE, scope, now, pageable);
             }
         } else if (shopId != null) {
-            vouchers = voucherRepository.findActiveForCheckout(VoucherStatus.ACTIVE, shopId, now);
+            voucherPage = voucherRepository.findActiveForCheckout(VoucherStatus.ACTIVE, shopId, now, pageable);
         } else {
-            vouchers = voucherRepository.findAllCurrentlyActive(VoucherStatus.ACTIVE, now);
+            voucherPage = voucherRepository.findAllCurrentlyActive(VoucherStatus.ACTIVE, now, pageable);
         }
 
-        return enrichVoucherResponses(vouchers, accountId);
+        List<VoucherResponse> enriched = enrichVoucherResponses(voucherPage.getContent(), accountId);
+        return new PageImpl<>(enriched, pageable, voucherPage.getTotalElements());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<VoucherResponse> listActiveVouchers(VoucherScope scope, UUID shopId, UUID accountId) {
+        return listActiveVouchers(scope, shopId, accountId, Pageable.unpaged()).getContent();
     }
 
     @Override
@@ -71,7 +82,7 @@ public class VoucherServiceImpl implements VoucherService {
             throw new CustomException("Shop ID không được để trống");
         }
         LocalDateTime now = LocalDateTime.now();
-        List<Voucher> vouchers = voucherRepository.findActiveByShopId(VoucherStatus.ACTIVE, shopId, now);
+        List<Voucher> vouchers = voucherRepository.findActiveByShopIdList(VoucherStatus.ACTIVE, shopId, now);
 
         return enrichVoucherResponses(vouchers, accountId);
     }
@@ -86,8 +97,10 @@ public class VoucherServiceImpl implements VoucherService {
         return userVouchers.stream()
                 .filter(uv -> {
                     Voucher v = uv.getVoucher();
-                    if (v == null || !v.isCurrentlyActive()) return false;
-                    long usedCount = userVoucherRepository.countByUserIdAndVoucherIdAndStatus(user.getId(), v.getId(), UserVoucherStatus.USED);
+                    if (v == null || !v.isCurrentlyActive())
+                        return false;
+                    long usedCount = userVoucherRepository.countByUserIdAndVoucherIdAndStatus(user.getId(), v.getId(),
+                            UserVoucherStatus.USED);
                     int maxLimit = v.getUserUsageLimit() != null ? v.getUserUsageLimit() : 1;
                     return usedCount < maxLimit;
                 })
@@ -113,7 +126,8 @@ public class VoucherServiceImpl implements VoucherService {
             throw new CustomException("Bạn đã sử dụng hết số lần cho phép đối với voucher này (" + maxLimit + " lần)!");
         }
 
-        boolean alreadyClaimed = userVoucherRepository.existsByUserIdAndVoucherIdAndStatus(user.getId(), voucher.getId(),
+        boolean alreadyClaimed = userVoucherRepository.existsByUserIdAndVoucherIdAndStatus(user.getId(),
+                voucher.getId(),
                 UserVoucherStatus.UNUSED);
         if (alreadyClaimed) {
             throw new CustomException("Bạn đã thu thập voucher này vào kho rồi!");
@@ -198,7 +212,8 @@ public class VoucherServiceImpl implements VoucherService {
         BigDecimal platformDiscount = BigDecimal.ZERO;
         if (hasPlatformCode) {
             platformVoucher = voucherRepository.findByCodeIgnoreCase(platformVoucherCode.trim())
-                    .orElseThrow(() -> new CustomException("Mã voucher sàn '" + platformVoucherCode + "' không tồn tại"));
+                    .orElseThrow(
+                            () -> new CustomException("Mã voucher sàn '" + platformVoucherCode + "' không tồn tại"));
 
             if (platformVoucher.getScope() != VoucherScope.PLATFORM) {
                 throw new CustomException("Mã '" + platformVoucher.getCode() + "' không phải là Voucher của Sàn");
@@ -226,9 +241,12 @@ public class VoucherServiceImpl implements VoucherService {
             appliedList.add(VoucherResponse.from(platformVoucher));
         }
 
-        String primaryCode = shopVoucher != null ? shopVoucher.getCode() : (platformVoucher != null ? platformVoucher.getCode() : null);
-        String primaryTitle = shopVoucher != null ? shopVoucher.getTitle() : (platformVoucher != null ? platformVoucher.getTitle() : null);
-        UUID primaryId = shopVoucher != null ? shopVoucher.getId() : (platformVoucher != null ? platformVoucher.getId() : null);
+        String primaryCode = shopVoucher != null ? shopVoucher.getCode()
+                : (platformVoucher != null ? platformVoucher.getCode() : null);
+        String primaryTitle = shopVoucher != null ? shopVoucher.getTitle()
+                : (platformVoucher != null ? platformVoucher.getTitle() : null);
+        UUID primaryId = shopVoucher != null ? shopVoucher.getId()
+                : (platformVoucher != null ? platformVoucher.getId() : null);
 
         return VoucherCalculationResponse.builder()
                 .valid(true)
@@ -316,7 +334,8 @@ public class VoucherServiceImpl implements VoucherService {
             int maxLimit = voucher.getUserUsageLimit() != null ? voucher.getUserUsageLimit() : 1;
             if (usedCount >= maxLimit) {
                 throw new CustomException(
-                        "Bạn đã sử dụng hết số lần cho phép đối với voucher '" + voucher.getCode() + "' (" + maxLimit + " lần)");
+                        "Bạn đã sử dụng hết số lần cho phép đối với voucher '" + voucher.getCode() + "' (" + maxLimit
+                                + " lần)");
             }
         }
 
@@ -385,7 +404,8 @@ public class VoucherServiceImpl implements VoucherService {
         BigDecimal platformDiscount = BigDecimal.ZERO;
         if (hasPlatformCode) {
             Voucher platformVoucher = voucherRepository.findByCodeIgnoreCase(platformVoucherCode.trim())
-                    .orElseThrow(() -> new CustomException("Mã voucher sàn '" + platformVoucherCode + "' không tồn tại"));
+                    .orElseThrow(
+                            () -> new CustomException("Mã voucher sàn '" + platformVoucherCode + "' không tồn tại"));
 
             if (platformVoucher.getScope() != VoucherScope.PLATFORM) {
                 throw new CustomException("Voucher '" + platformVoucher.getCode() + "' không phải là Voucher của Sàn");
@@ -422,7 +442,8 @@ public class VoucherServiceImpl implements VoucherService {
             order.setVoucherCode(order.getPlatformVoucherCode());
         }
 
-        log.info("Vouchers applied to order {}: shopVoucher={}, platformVoucher={}, shopDiscount={}, platformDiscount={}, totalDiscount={}",
+        log.info(
+                "Vouchers applied to order {}: shopVoucher={}, platformVoucher={}, shopDiscount={}, platformDiscount={}, totalDiscount={}",
                 order.getOrderNumber(), order.getShopVoucherCode(), order.getPlatformVoucherCode(),
                 shopDiscount, platformDiscount, totalDiscount);
 
@@ -440,13 +461,15 @@ public class VoucherServiceImpl implements VoucherService {
         if (existingUnused.isPresent()) {
             UserVoucher unusedRecord = existingUnused.get();
             if (currentUsedCount + 1 >= maxLimit) {
-                // Đã dùng hết quota cá nhân -> chuyển bản ghi UNUSED trong ví thành USED gắn với order này
+                // Đã dùng hết quota cá nhân -> chuyển bản ghi UNUSED trong ví thành USED gắn
+                // với order này
                 unusedRecord.setStatus(UserVoucherStatus.USED);
                 unusedRecord.setOrder(order);
                 unusedRecord.setUsedAt(LocalDateTime.now());
                 userVoucherRepository.save(unusedRecord);
             } else {
-                // Vẫn còn lượt dùng cho các đơn sau -> giữ nguyên UNUSED trong ví, tạo bản ghi USED mới riêng biệt cho order này
+                // Vẫn còn lượt dùng cho các đơn sau -> giữ nguyên UNUSED trong ví, tạo bản ghi
+                // USED mới riêng biệt cho order này
                 UserVoucher newUsedRecord = UserVoucher.builder()
                         .user(user)
                         .voucher(voucher)
@@ -491,8 +514,10 @@ public class VoucherServiceImpl implements VoucherService {
         }
 
         if (order.getVoucher() != null
-                && (order.getShopVoucher() == null || !order.getShopVoucher().getId().equals(order.getVoucher().getId()))
-                && (order.getPlatformVoucher() == null || !order.getPlatformVoucher().getId().equals(order.getVoucher().getId()))) {
+                && (order.getShopVoucher() == null
+                        || !order.getShopVoucher().getId().equals(order.getVoucher().getId()))
+                && (order.getPlatformVoucher() == null
+                        || !order.getPlatformVoucher().getId().equals(order.getVoucher().getId()))) {
             Voucher v = order.getVoucher();
             if (v.getUsedCount() > 0) {
                 v.setUsedCount(v.getUsedCount() - 1);
@@ -574,7 +599,8 @@ public class VoucherServiceImpl implements VoucherService {
             try {
                 notificationService.notifyFollowersAboutVoucher(shop, voucher);
             } catch (Exception ex) {
-                log.warn("Failed to send voucher notification to followers of shop {}: {}", shop.getId(), ex.getMessage());
+                log.warn("Failed to send voucher notification to followers of shop {}: {}", shop.getId(),
+                        ex.getMessage());
             }
         }
 
@@ -707,7 +733,8 @@ public class VoucherServiceImpl implements VoucherService {
                                 : "Voucher đã hết hạn sử dụng");
                     } else if (remaining <= 0) {
                         resp.setIsEligible(false);
-                        resp.setIneligibleReason("Bạn đã sử dụng hết số lần cho phép đối với voucher này (" + maxLimit + " lần)");
+                        resp.setIneligibleReason(
+                                "Bạn đã sử dụng hết số lần cho phép đối với voucher này (" + maxLimit + " lần)");
                     } else if (isFirstOrder && finalCompletedOrders > 0) {
                         resp.setIsEligible(false);
                         resp.setIneligibleReason("Chỉ áp dụng cho đơn hàng đầu tiên của khách hàng mới");

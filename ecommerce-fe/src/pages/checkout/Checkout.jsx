@@ -150,11 +150,13 @@ export default function Checkout() {
             ])
 
             const list = []
-            if (shopVouchersRes.status === 'fulfilled' && Array.isArray(shopVouchersRes.value)) {
-                list.push(...shopVouchersRes.value)
+            if (shopVouchersRes.status === 'fulfilled') {
+                const sItems = shopVouchersRes.value?.content || (Array.isArray(shopVouchersRes.value) ? shopVouchersRes.value : [])
+                list.push(...sItems)
             }
-            if (platformVouchersRes.status === 'fulfilled' && Array.isArray(platformVouchersRes.value)) {
-                list.push(...platformVouchersRes.value)
+            if (platformVouchersRes.status === 'fulfilled') {
+                const pItems = platformVouchersRes.value?.content || (Array.isArray(platformVouchersRes.value) ? platformVouchersRes.value : [])
+                list.push(...pItems)
             }
             setAvailableVouchers(list)
         } catch (e) {

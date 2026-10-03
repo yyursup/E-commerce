@@ -7,13 +7,10 @@ import com.marketplace.ecommerce.product.repository.ProductRepository;
 import com.marketplace.ecommerce.product.service.QueryProductService;
 import com.marketplace.ecommerce.product.valueObjects.ConditionGrade;
 import com.marketplace.ecommerce.product.valueObjects.WarrantyType;
-import com.marketplace.ecommerce.recommendation.entity.ProductEmbedding;
 import com.marketplace.ecommerce.recommendation.entity.ProductView;
 import com.marketplace.ecommerce.recommendation.entity.SearchHistory;
-import com.marketplace.ecommerce.recommendation.repository.ProductEmbeddingRepository;
 import com.marketplace.ecommerce.recommendation.repository.ProductViewRepository;
 import com.marketplace.ecommerce.recommendation.repository.SearchHistoryRepository;
-import com.marketplace.ecommerce.recommendation.service.ProductEmbeddingService;
 import com.marketplace.ecommerce.recommendation.service.RecommendationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,10 +36,8 @@ public class RecommendationServiceImpl implements RecommendationService {
 
     private final SearchHistoryRepository searchHistoryRepository;
     private final ProductViewRepository productViewRepository;
-    private final ProductEmbeddingRepository productEmbeddingRepository;
     private final ProductRepository productRepository;
     private final QueryProductService queryProductService;
-    private final ProductEmbeddingService productEmbeddingService;
 
     @Override
     @Transactional
@@ -196,41 +191,12 @@ public class RecommendationServiceImpl implements RecommendationService {
 
         if (candidates.isEmpty()) return List.of();
 
-        // Thử lấy Vector Embedding từ Ollama
-        float[] sourceVec = productEmbeddingService.getOrComputeEmbedding(sourceProduct);
-
-        List<UUID> sortedIds;
-
-        if (sourceVec != null) {
-            // TẦNG 2A: RANKING BẰNG VECTOR SIMILARITY (NẾU CÓ EMBEDDING)
-            List<ProductEmbedding> embeddings = productEmbeddingRepository.findByProductIdIn(
-                    candidates.stream().map(Product::getId).toList());
-            Map<UUID, float[]> vecMap = new HashMap<>();
-            for (ProductEmbedding pe : embeddings) {
-                float[] v = productEmbeddingService.getStoredEmbedding(pe.getProductId());
-                if (v != null) vecMap.put(pe.getProductId(), v);
-            }
-            for (Product p : candidates) {
-                if (vecMap.containsKey(p.getId())) continue;
-                float[] v = productEmbeddingService.getOrComputeEmbedding(p);
-                if (v != null) vecMap.put(p.getId(), v);
-            }
-
-            sortedIds = candidates.stream()
-                    .map(Product::getId)
-                    .filter(vecMap::containsKey)
-                    .sorted(Comparator.comparingDouble(id -> -cosineSimilarity(sourceVec, vecMap.get(id))))
-                    .limit(limit)
-                    .toList();
-        } else {
-            // TẦNG 2B: RANKING BẰNG THUẬT TOÁN LAI SHOPEE (CONTENT & TECH ATTRIBUTE MATCHING)
-            // Khắc phục triệt để khi Ollama không bật
-            sortedIds = candidates.stream()
-                    .sorted(Comparator.comparingDouble(p -> -calculateTechSimilarityScore(sourceProduct, p)))
-                    .map(Product::getId)
-                    .limit(limit)
-                    .toList();
-        }
+        // Thuật toán chấm điểm tương quan đặc tính kỹ thuật (Tech Similarity Scoring)
+        List<UUID> sortedIds = candidates.stream()
+                .sorted(Comparator.comparingDouble(p -> -calculateTechSimilarityScore(sourceProduct, p)))
+                .map(Product::getId)
+                .limit(limit)
+                .toList();
 
         if (sortedIds.isEmpty()) return List.of();
 
@@ -299,17 +265,5 @@ public class RecommendationServiceImpl implements RecommendationService {
         }
 
         return score;
-    }
-
-    private static double cosineSimilarity(float[] a, float[] b) {
-        if (a == null || b == null || a.length != b.length) return 0;
-        double dot = 0, na = 0, nb = 0;
-        for (int i = 0; i < a.length; i++) {
-            dot += a[i] * b[i];
-            na += a[i] * a[i];
-            nb += b[i] * b[i];
-        }
-        if (na == 0 || nb == 0) return 0;
-        return dot / (Math.sqrt(na) * Math.sqrt(nb));
     }
 }

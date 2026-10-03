@@ -28,6 +28,7 @@ import com.marketplace.ecommerce.product.entity.ProductVariant;
 import com.marketplace.ecommerce.product.repository.ProductRepository;
 import com.marketplace.ecommerce.product.repository.ProductVariantRepository;
 import com.marketplace.ecommerce.product.valueObjects.ConditionGrade;
+import com.marketplace.ecommerce.product.valueObjects.ProductStatus;
 import com.marketplace.ecommerce.shipping.dto.request.GHNCreateOrderRequest;
 import com.marketplace.ecommerce.shipping.dto.response.GHNCreateOrderResponse;
 import com.marketplace.ecommerce.shipping.service.ShippingService;
@@ -452,8 +453,12 @@ public class OrderServiceImpl implements OrderService {
             }
 
             if (product.getQuantity() != null) {
+                if (product.getQuantity() < cartItem.getQuantity()) {
+                    throw new CustomException("Sản phẩm " + product.getName()
+                            + " không đủ số lượng tồn kho (còn lại: " + product.getQuantity() + ").");
+                }
                 int oldPStock = product.getQuantity();
-                product.setQuantity(Math.max(0, product.getQuantity() - cartItem.getQuantity()));
+                product.setQuantity(product.getQuantity() - cartItem.getQuantity());
                 inventoryHistoryService.logInventoryChange(shop, product, null, oldPStock, product.getQuantity(),
                         InventoryActionType.ORDER_PLACED, orderNumber, "Khách đặt đơn hàng: " + orderNumber);
             }
@@ -523,9 +528,18 @@ public class OrderServiceImpl implements OrderService {
     }
 
     private List<CartItem> findActiveItemByProduct(Cart cart, UUID shopId) {
-        return cart.getActiveCartDetails().stream()
-                .filter(i -> i.getProduct().getShop().getId().equals(shopId))
+        List<CartItem> shopItems = cart.getActiveCartDetails().stream()
+                .filter(i -> i.getProduct() != null && i.getProduct().getShop().getId().equals(shopId))
                 .toList();
+
+        for (CartItem item : shopItems) {
+            Product p = item.getProduct();
+            if (p == null || Boolean.TRUE.equals(p.getDeleted()) || p.getStatus() != ProductStatus.PUBLISHED) {
+                throw new CustomException("Sản phẩm \"" + (p != null ? p.getName() : "Không xác định")
+                        + "\" hiện không khả dụng để thanh toán (chờ duyệt, đã bị khóa hoặc ngừng kinh doanh).");
+            }
+        }
+        return shopItems;
     }
 
     private String generateOrderNumber() {

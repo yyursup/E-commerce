@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
-import { HiOutlineUser, HiOutlineLockClosed, HiOutlineExclamationCircle } from 'react-icons/hi'
+import { HiOutlineUser, HiOutlineLockClosed, HiOutlineExclamationCircle, HiX } from 'react-icons/hi'
 import { useThemeStore } from '../store/useThemeStore'
 import { useAuthStore } from '../store/useAuthStore'
 import { useCartStore } from '../store/useCartStore'
@@ -11,6 +11,7 @@ import { cn } from '../lib/cn'
 import authService from '../services/auth'
 import cartService from '../services/cart'
 import voucherService from '../services/voucher'
+import requestService from '../services/request'
 import { useGoogleLogin } from '@react-oauth/google'
 import FBLogin from '@greatsumini/react-facebook-login'
 const FacebookLogin = FBLogin.default || FBLogin;
@@ -21,6 +22,10 @@ export default function Login() {
   const location = useLocation()
   const login = useAuthStore((s) => s.login)
   const { updateCartCount } = useCartStore()
+
+  const [appealData, setAppealData] = useState(null)
+  const [isAppealing, setIsAppealing] = useState(false)
+  const [appealForm, setAppealForm] = useState({ description: '', evidenceUrl: '' })
 
   const {
     register,
@@ -152,7 +157,37 @@ export default function Login() {
     } catch (error) {
       console.error('Login error:', error)
       const message = error?.message
+      if (error?.data?.appealToken) {
+        setAppealData({
+          message: message,
+          token: error.data.appealToken,
+          bannedUntil: error.data.bannedUntil,
+        })
+        return;
+      }
       toast.error(message, { duration: 6000 })
+    }
+  }
+
+  const handleAppealSubmit = async (e) => {
+    e.preventDefault();
+    if (!appealForm.description.trim()) {
+      toast.error('Vui lòng nhập nội dung giải trình');
+      return;
+    }
+    try {
+      setIsAppealing(true);
+      await requestService.createAppealPublic(appealData.token, {
+        description: appealForm.description,
+        evidenceUrl: appealForm.evidenceUrl,
+      });
+      toast.success('Gửi yêu cầu kháng cáo thành công. Vui lòng chờ Ban quản trị phản hồi.');
+      setAppealData(null);
+      setAppealForm({ description: '', evidenceUrl: '' });
+    } catch (error) {
+      toast.error(error?.message || 'Có lỗi xảy ra khi gửi kháng cáo');
+    } finally {
+      setIsAppealing(false);
     }
   }
 
@@ -369,6 +404,51 @@ export default function Login() {
           </p>
         </div>
       </motion.div>
+
+      {appealData && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className={cn("relative w-full max-w-lg rounded-2xl p-6 shadow-2xl", isDark ? 'bg-slate-900 border border-slate-700 text-white' : 'bg-white text-stone-900')}>
+            <button onClick={() => setAppealData(null)} className="absolute right-4 top-4 p-1 opacity-60 hover:opacity-100 transition-opacity">
+              <HiX className="h-6 w-6" />
+            </button>
+            <div className="flex items-center gap-3 mb-4 text-red-500">
+              <HiOutlineExclamationCircle className="h-8 w-8" />
+              <h2 className="text-xl font-bold">Tài khoản bị khóa</h2>
+            </div>
+            <p className="text-sm font-medium text-red-500/90 bg-red-500/10 p-3 rounded-lg mb-5 border border-red-500/20">{appealData.message}</p>
+            
+            <form onSubmit={handleAppealSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Lý do giải trình (*)</label>
+                <textarea
+                  required
+                  rows={4}
+                  className={cn("w-full rounded-xl border p-3 text-sm outline-none transition focus:ring-2 focus:border-transparent", isDark ? 'border-slate-700 bg-slate-800 focus:ring-amber-500/50' : 'border-stone-300 bg-stone-50 focus:ring-amber-500')}
+                  placeholder="Nhập nội dung giải trình vì sao bạn không vi phạm quy định cộng đồng..."
+                  value={appealForm.description}
+                  onChange={(e) => setAppealForm({ ...appealForm, description: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Link hình ảnh bằng chứng (Tùy chọn)</label>
+                <input
+                  type="text"
+                  className={cn("w-full rounded-xl border p-3 text-sm outline-none transition focus:ring-2 focus:border-transparent", isDark ? 'border-slate-700 bg-slate-800 focus:ring-amber-500/50' : 'border-stone-300 bg-stone-50 focus:ring-amber-500')}
+                  placeholder="https://..."
+                  value={appealForm.evidenceUrl}
+                  onChange={(e) => setAppealForm({ ...appealForm, evidenceUrl: e.target.value })}
+                />
+              </div>
+              <div className="flex gap-3 justify-end pt-2">
+                <button type="button" onClick={() => setAppealData(null)} className={cn("px-4 py-2 text-sm rounded-xl border transition-colors", isDark ? "border-slate-700 hover:bg-slate-800" : "hover:bg-stone-100")}>Hủy</button>
+                <button type="submit" disabled={isAppealing} className="px-5 py-2 text-sm rounded-xl bg-amber-500 text-white font-bold hover:bg-amber-600 disabled:opacity-50 transition-all active:scale-95 shadow-lg shadow-amber-500/25">
+                  {isAppealing ? 'Đang gửi...' : 'Gửi Kháng Cáo'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

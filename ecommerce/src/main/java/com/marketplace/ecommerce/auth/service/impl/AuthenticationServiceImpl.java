@@ -279,9 +279,14 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             if (acc != null && (acc.getStatus() == AccountStatus.BANNED || acc.getDisciplineLevel() == DisciplineLevel.BANNED)) {
                 if (acc.getBannedUntil() != null) {
                     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm 'ngày' dd/MM/yyyy");
-                    throw new CustomException("Tài khoản của bạn đã bị khóa đến " + acc.getBannedUntil().format(formatter) + " do vi phạm quy định cộng đồng.");
+                    String appealToken = tokenService.createAppealToken(acc);
+                    throw new com.marketplace.ecommerce.common.exception.AccountLockedException(
+                            "Tài khoản của bạn đã bị khóa đến " + acc.getBannedUntil().format(formatter) + " do vi phạm quy định cộng đồng.", 
+                            appealToken, 
+                            acc.getBannedUntil()
+                    );
                 }
-                throw new CustomException("Tài khoản của bạn đã bị khóa vĩnh viễn do vi phạm quy định cộng đồng.");
+                throw new CustomException("Tài khoản của bạn đã bị khóa vĩnh viễn do vi phạm quy định cộng đồng. (Không hỗ trợ kháng cáo)");
             }
             throw new CustomException("Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên để được hỗ trợ.");
         } catch (DisabledException e) {

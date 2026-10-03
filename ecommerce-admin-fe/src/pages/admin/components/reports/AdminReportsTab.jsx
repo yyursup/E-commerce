@@ -11,6 +11,7 @@ export default function AdminReportsTab({
   isDark,
   handleOpenDetail,
   setActionModal,
+  handleOpenActionModal,
   parseImages,
 }) {
   if (reports.length === 0) {
@@ -126,14 +127,14 @@ export default function AdminReportsTab({
             {item.status === 'PENDING' && (
               <>
                 <button
-                  onClick={() => setActionModal({ isOpen: true, type: 'REPORT_APPROVE', item, note: '' })}
+                  onClick={() => (handleOpenActionModal ? handleOpenActionModal('REPORT_APPROVE', item) : setActionModal({ isOpen: true, type: 'REPORT_APPROVE', item, note: '' }))}
                   className="flex items-center gap-1 px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 active:scale-95 shadow-sm transition-all"
                 >
                   <HiOutlineCheck className="h-4 w-4" />
                   Xác nhận vi phạm
                 </button>
                 <button
-                  onClick={() => setActionModal({ isOpen: true, type: 'REPORT_REJECT', item, note: '' })}
+                  onClick={() => (handleOpenActionModal ? handleOpenActionModal('REPORT_REJECT', item) : setActionModal({ isOpen: true, type: 'REPORT_REJECT', item, note: '' }))}
                   className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-bold border border-stone-200 dark:border-slate-700 text-stone-600 dark:text-slate-300 hover:bg-stone-100 dark:hover:bg-slate-800 active:scale-95 transition-all"
                 >
                   <HiOutlineX className="h-4 w-4" />

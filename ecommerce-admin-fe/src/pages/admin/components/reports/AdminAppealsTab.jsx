@@ -11,6 +11,7 @@ export default function AdminAppealsTab({
   isDark,
   handleOpenDetail,
   setActionModal,
+  handleOpenActionModal,
   parseImages,
 }) {
   if (appeals.length === 0) {
@@ -106,14 +107,14 @@ export default function AdminAppealsTab({
             {item.status === 'PENDING' && (
               <>
                 <button
-                  onClick={() => setActionModal({ isOpen: true, type: 'APPEAL_APPROVE', item, note: '' })}
+                  onClick={() => (handleOpenActionModal ? handleOpenActionModal('APPEAL_APPROVE', item) : setActionModal({ isOpen: true, type: 'APPEAL_APPROVE', item, note: '' }))}
                   className="flex items-center gap-1 px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:scale-95 shadow-sm transition-all"
                 >
                   <HiOutlineCheck className="h-4 w-4" />
                   Chấp thuận gỡ phạt
                 </button>
                 <button
-                  onClick={() => setActionModal({ isOpen: true, type: 'APPEAL_REJECT', item, note: '' })}
+                  onClick={() => (handleOpenActionModal ? handleOpenActionModal('APPEAL_REJECT', item) : setActionModal({ isOpen: true, type: 'APPEAL_REJECT', item, note: '' }))}
                   className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-bold border border-rose-500/30 text-rose-500 hover:bg-rose-500/10 active:scale-95 transition-all"
                 >
                   <HiOutlineX className="h-4 w-4" />

@@ -9,6 +9,7 @@ import {
 } from 'react-icons/hi'
 import { cn } from '../../../lib/cn'
 import { getOrderEffectiveStatus } from '../../../lib/orderStatus'
+import { getConditionBadge, getWarrantyBadge } from '../../../lib/techBadges'
 
 export default function OrderItemCard({
   order,
@@ -119,10 +120,24 @@ export default function OrderItemCard({
           >
             {firstItem?.productName || `Đơn hàng #${order.orderNumber}`}
           </h4>
-          {firstItem && (firstItem.variantColor || firstItem.variantSize) && (
-            <p className="text-xs text-stone-500 dark:text-slate-400 mt-1">
-              Phân loại: {[firstItem.variantColor, firstItem.variantSize].filter(Boolean).join(' - ')}
-            </p>
+          {firstItem && (
+            <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+              {firstItem.conditionGrade && (
+                <span className={cn("text-[10px] font-semibold px-2 py-0.5 rounded-full border", getConditionBadge(firstItem.conditionGrade)?.cls)}>
+                  {getConditionBadge(firstItem.conditionGrade)?.label}
+                </span>
+              )}
+              {firstItem.warrantyType && (
+                <span className={cn("text-[10px] font-medium px-2 py-0.5 rounded-full border", getWarrantyBadge(firstItem.warrantyType, firstItem.warrantyMonths)?.cls)}>
+                  {getWarrantyBadge(firstItem.warrantyType, firstItem.warrantyMonths)?.label}
+                </span>
+              )}
+              {(firstItem.variantColor || firstItem.variantSize) && (
+                <span className="text-[10px] text-stone-500 dark:text-slate-400 font-medium bg-stone-100 dark:bg-slate-800 px-2 py-0.5 rounded">
+                  Phân loại: {[firstItem.variantColor, firstItem.variantSize].filter(Boolean).join(' - ')}
+                </span>
+              )}
+            </div>
           )}
           <p className={cn('mt-1 text-xs', isDark ? 'text-slate-400' : 'text-stone-500')}>
             {order.items?.length || 0} sản phẩm • Đặt ngày {formatDate(order.createdAt)}

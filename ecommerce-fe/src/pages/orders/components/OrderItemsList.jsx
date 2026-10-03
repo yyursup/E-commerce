@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { HiOutlineStar } from 'react-icons/hi'
 import { cn } from '../../../lib/cn'
+import { getConditionBadge, getWarrantyBadge } from '../../../lib/techBadges'
 
 export default function OrderItemsList({
   items = [],
@@ -34,14 +35,23 @@ export default function OrderItemsList({
               >
                 {item.productName}
               </Link>
-              {(item.variantColor || item.variantSize) && (
-                <p className="mt-0.5 text-xs text-stone-500 dark:text-slate-400">
-                  Phân loại:{' '}
-                  <span className="font-medium text-stone-700 dark:text-slate-300">
-                    {[item.variantColor, item.variantSize].filter(Boolean).join(' - ')}
+              <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+                {item.conditionGrade && (
+                  <span className={cn("text-[11px] font-semibold px-2 py-0.5 rounded-full border", getConditionBadge(item.conditionGrade)?.cls)}>
+                    {getConditionBadge(item.conditionGrade)?.label}
                   </span>
-                </p>
-              )}
+                )}
+                {item.warrantyType && (
+                  <span className={cn("text-[11px] font-medium px-2 py-0.5 rounded-full border", getWarrantyBadge(item.warrantyType, item.warrantyMonths)?.cls)}>
+                    {getWarrantyBadge(item.warrantyType, item.warrantyMonths)?.label}
+                  </span>
+                )}
+                {(item.variantColor || item.variantSize) && (
+                  <span className="text-[11px] text-stone-500 dark:text-slate-400 font-medium bg-stone-100 dark:bg-slate-800 px-2 py-0.5 rounded">
+                    Phân loại: {[item.variantColor, item.variantSize].filter(Boolean).join(' - ')}
+                  </span>
+                )}
+              </div>
               <p className={cn('mt-1 text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
                 Số lượng: {item.quantity}
               </p>

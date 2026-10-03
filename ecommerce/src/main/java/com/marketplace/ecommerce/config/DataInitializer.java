@@ -40,8 +40,15 @@ import com.marketplace.ecommerce.request.valueObjects.BusinessType;
 import com.marketplace.ecommerce.request.valueObjects.RequestStatus;
 import com.marketplace.ecommerce.request.valueObjects.RequestType;
 import com.marketplace.ecommerce.request.valueObjects.SellerType;
+import com.marketplace.ecommerce.platform.entity.SeniorityPolicyConfig;
+import com.marketplace.ecommerce.platform.repository.SeniorityPolicyConfigRepository;
 import com.marketplace.ecommerce.shop.entity.Shop;
+import com.marketplace.ecommerce.shop.entity.ShopEscrowFund;
+import com.marketplace.ecommerce.shop.entity.TrustLevelConfig;
+import com.marketplace.ecommerce.shop.repository.ShopEscrowFundRepository;
 import com.marketplace.ecommerce.shop.repository.ShopRepository;
+import com.marketplace.ecommerce.shop.repository.TrustLevelConfigRepository;
+import com.marketplace.ecommerce.shop.valueObjects.EscrowFundStatus;
 import com.marketplace.ecommerce.shop.valueObjects.ShopStatus;
 import com.marketplace.ecommerce.wallet.entity.Wallet;
 import com.marketplace.ecommerce.wallet.repository.WalletRepository;
@@ -102,6 +109,9 @@ public class DataInitializer implements CommandLineRunner {
         private final SellerRepository sellerRepository;
         private final CommissionRepository commissionRepository;
         private final CommissionCalculationService commissionCalculationService;
+        private final TrustLevelConfigRepository trustLevelConfigRepository;
+        private final SeniorityPolicyConfigRepository seniorityPolicyConfigRepository;
+        private final ShopEscrowFundRepository shopEscrowFundRepository;
         private final VoucherRepository voucherRepository;
         private final ReviewRepository reviewRepository;
         private final ReplyRepository replyRepository;
@@ -266,8 +276,10 @@ public class DataInitializer implements CommandLineRunner {
                 initializeCart(customer5);
                 initializeCart(seller1);
 
-                // 7. Platform settings (Tỷ lệ cơ sở dự phòng nền tảng: 5.0% thay vì 10%)
+                // 7. Platform settings & Dynamic Policy Setup
                 initializePlatformSetting(PlatformConstant.KEY_COMMISSION_RATE, "5.0");
+                initializeTrustLevels();
+                initializeSeniorityPolicies();
 
                 // 8. Comprehensive Electronics & Tech Category Hierarchy with Category-based Commission Rates
                 // Group 1: Điện Thoại & Máy Tính Bảng (Biên lợi nhuận mỏng: 3.5%)
@@ -469,6 +481,14 @@ public class DataInitializer implements CommandLineRunner {
                                 "CONG TY TNHH PHAN PHOI XIAOMI VIET NAM",
                                 "72A Nguyễn Trãi, Phường Thượng Đình, Quận Thanh Xuân, Hà Nội",
                                 "Kho Digiworld - Xiaomi, KCN Tân Bình, Tây Thạnh, Tân Phú, TP.HCM");
+
+                // Initialize Realistic Escrow Deposits & Historical Seniority for Shops
+                initializeShopEscrowAndSeniority(shop1, new BigDecimal("50000000"), 15, 5); // Apple: 50tr, 15 tháng, 5⭐
+                initializeShopEscrowAndSeniority(shop2, new BigDecimal("30000000"), 10, 4); // Samsung: 30tr, 10 tháng, 4⭐
+                initializeShopEscrowAndSeniority(shop3, new BigDecimal("30000000"), 8, 4);  // GearVN: 30tr, 8 tháng, 4⭐
+                initializeShopEscrowAndSeniority(shop4, new BigDecimal("10000000"), 4, 3);  // Sony: 10tr, 4 tháng, 3⭐
+                initializeShopEscrowAndSeniority(shop5, new BigDecimal("5000000"), 2, 2);   // Anker: 5tr, 2 tháng, 2⭐
+                initializeShopEscrowAndSeniority(shop6, BigDecimal.ZERO, 1, 1);             // Xiaomi: 0đ, 1 tháng, 1⭐
 
                 // 10. Seed Realistic Products for Each Shop and Category
                 seedShopProducts(shop1, List.of(smartphones, tablets, ultrabooks, headphones, smartwatches, chargingPacks), "APPLE");
@@ -2083,5 +2103,98 @@ public class DataInitializer implements CommandLineRunner {
                 }
 
                 voucherRepository.save(voucher);
+        }
+
+        private void initializeTrustLevels() {
+                initializeSingleTrustLevel(1, "Cơ bản", BigDecimal.ZERO, new BigDecimal("4999999"), BigDecimal.ZERO,
+                                "Gian hàng mới tham gia, miễn phí duy trì, áp dụng biểu phí hoa hồng tiêu chuẩn.");
+                initializeSingleTrustLevel(2, "Tiềm năng", new BigDecimal("5000000"), new BigDecimal("9999999"), new BigDecimal("0.20"),
+                                "Ký quỹ từ 5 triệu: Ưu tiên hiển thị tìm kiếm, giảm 0.2% hoa hồng sàn.");
+                initializeSingleTrustLevel(3, "Uy tín", new BigDecimal("10000000"), new BigDecimal("29999999"), new BigDecimal("0.50"),
+                                "Ký quỹ từ 10 triệu: Huy hiệu Shop Uy Tín, hỗ trợ flash sale, giảm 0.5% hoa hồng sàn.");
+                initializeSingleTrustLevel(4, "Vàng", new BigDecimal("30000000"), new BigDecimal("49999999"), new BigDecimal("1.00"),
+                                "Ký quỹ từ 30 triệu: Huy hiệu Đối tác Vàng, banner trang chủ, giảm 1.0% hoa hồng sàn.");
+                initializeSingleTrustLevel(5, "Kim Cương", new BigDecimal("50000000"), null, new BigDecimal("1.50"),
+                                "Ký quỹ từ 50 triệu: Đại lý phân phối cấp cao, hỗ trợ 1-1, giảm tối đa 1.5% hoa hồng sàn.");
+        }
+
+        private void initializeSingleTrustLevel(int star, String name, BigDecimal min, BigDecimal max, BigDecimal discount, String desc) {
+                trustLevelConfigRepository.findByStarLevel(star)
+                                .map(existing -> {
+                                        existing.setTierName(name);
+                                        existing.setMinDeposit(min);
+                                        existing.setMaxDeposit(max);
+                                        existing.setCommissionDiscount(discount);
+                                        existing.setBenefitsDescription(desc);
+                                        return trustLevelConfigRepository.save(existing);
+                                })
+                                .orElseGet(() -> {
+                                        TrustLevelConfig config = TrustLevelConfig.builder()
+                                                        .starLevel(star)
+                                                        .tierName(name)
+                                                        .minDeposit(min)
+                                                        .maxDeposit(max)
+                                                        .commissionDiscount(discount)
+                                                        .benefitsDescription(desc)
+                                                        .isActive(true)
+                                                        .build();
+                                        return trustLevelConfigRepository.save(config);
+                                });
+        }
+
+        private void initializeSeniorityPolicies() {
+                initializeSingleSeniorityPolicy(3, new BigDecimal("0.20"), "Đồng hành 3 tháng", "Áp dụng cho shop hoạt động liên tục trên 3 tháng không có vi phạm");
+                initializeSingleSeniorityPolicy(6, new BigDecimal("0.50"), "Đồng hành 6 tháng", "Áp dụng cho shop hoạt động liên tục trên 6 tháng không có vi phạm");
+                initializeSingleSeniorityPolicy(12, new BigDecimal("1.00"), "Thân thiết 1 năm", "Áp dụng cho shop hoạt động liên tục trên 1 năm không có vi phạm");
+        }
+
+        private void initializeSingleSeniorityPolicy(int minMonths, BigDecimal discount, String name, String desc) {
+                seniorityPolicyConfigRepository.findByMinMonths(minMonths)
+                                .map(existing -> {
+                                        existing.setDiscountRate(discount);
+                                        existing.setTierName(name);
+                                        existing.setDescription(desc);
+                                        existing.setIsActive(true);
+                                        return seniorityPolicyConfigRepository.save(existing);
+                                })
+                                .orElseGet(() -> {
+                                        SeniorityPolicyConfig policy = SeniorityPolicyConfig.builder()
+                                                        .minMonths(minMonths)
+                                                        .discountRate(discount)
+                                                        .tierName(name)
+                                                        .description(desc)
+                                                        .isActive(true)
+                                                        .build();
+                                        return seniorityPolicyConfigRepository.save(policy);
+                                });
+        }
+
+        private void initializeShopEscrowAndSeniority(Shop shop, BigDecimal depositAmount, int activeMonthsAgo, int trustStar) {
+                if (shop == null) return;
+                LocalDateTime pastDate = LocalDateTime.now().minusMonths(activeMonthsAgo);
+                shop.setCreatedAt(pastDate);
+                shop.setDepositBalance(depositAmount);
+                shopRepository.save(shop);
+
+                shopEscrowFundRepository.findByShopId(shop.getId())
+                                .map(fund -> {
+                                        fund.setBalance(depositAmount);
+                                        fund.setCurrentTrustLevel(trustStar);
+                                        return shopEscrowFundRepository.save(fund);
+                                })
+                                .orElseGet(() -> {
+                                        ShopEscrowFund fund = ShopEscrowFund.builder()
+                                                        .shop(shop)
+                                                        .balance(depositAmount)
+                                                        .committedAmount(BigDecimal.ZERO)
+                                                        .currentTrustLevel(trustStar)
+                                                        .isDeficit(false)
+                                                        .deficitAmount(BigDecimal.ZERO)
+                                                        .status(EscrowFundStatus.ACTIVE)
+                                                        .build();
+                                        return shopEscrowFundRepository.save(fund);
+                                });
+                log.info("Initialized escrow fund: {} VND, trust level: {} star, active: {} months for shop: {}",
+                                depositAmount, trustStar, activeMonthsAgo, shop.getName());
         }
 }

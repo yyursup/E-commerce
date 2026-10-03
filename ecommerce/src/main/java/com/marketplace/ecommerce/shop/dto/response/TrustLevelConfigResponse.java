@@ -23,6 +23,7 @@ public class TrustLevelConfigResponse {
     private BigDecimal maxDeposit;
     private String badgeIconUrl;
     private String benefitsDescription;
+    private BigDecimal commissionDiscount;
     private Boolean isActive;
     private LocalDateTime updatedAt;
 
@@ -36,6 +37,7 @@ public class TrustLevelConfigResponse {
                 .maxDeposit(config.getMaxDeposit())
                 .badgeIconUrl(config.getBadgeIconUrl())
                 .benefitsDescription(config.getBenefitsDescription())
+                .commissionDiscount(config.getCommissionDiscount())
                 .isActive(config.getIsActive())
                 .updatedAt(config.getUpdatedAt())
                 .build();

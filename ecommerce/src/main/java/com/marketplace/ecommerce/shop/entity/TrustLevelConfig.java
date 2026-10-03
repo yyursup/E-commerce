@@ -44,6 +44,10 @@ public class TrustLevelConfig {
     @Column(name = "benefits_description", columnDefinition = "TEXT")
     private String benefitsDescription;
 
+    @Column(name = "commission_discount", precision = 5, scale = 2)
+    @Builder.Default
+    private BigDecimal commissionDiscount = BigDecimal.ZERO;
+
     @Column(name = "is_active", nullable = false)
     @Builder.Default
     private Boolean isActive = true;

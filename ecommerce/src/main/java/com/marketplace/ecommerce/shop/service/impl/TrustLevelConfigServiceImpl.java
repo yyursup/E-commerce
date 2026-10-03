@@ -68,6 +68,13 @@ public class TrustLevelConfigServiceImpl implements TrustLevelConfigService {
         if (request.getBenefitsDescription() != null) {
             config.setBenefitsDescription(request.getBenefitsDescription());
         }
+        if (request.getCommissionDiscount() != null) {
+            if (request.getCommissionDiscount().compareTo(BigDecimal.ZERO) < 0
+                    || request.getCommissionDiscount().compareTo(BigDecimal.valueOf(100)) > 0) {
+                throw new CustomException("Chiết khấu hoa hồng phải từ 0% đến 100%");
+            }
+            config.setCommissionDiscount(request.getCommissionDiscount());
+        }
         if (request.getIsActive() != null) {
             config.setIsActive(request.getIsActive());
         }

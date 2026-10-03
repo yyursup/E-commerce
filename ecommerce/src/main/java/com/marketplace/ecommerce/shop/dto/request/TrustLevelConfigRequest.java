@@ -27,5 +27,7 @@ public class TrustLevelConfigRequest {
 
     private String benefitsDescription;
 
+    private BigDecimal commissionDiscount;
+
     private Boolean isActive;
 }

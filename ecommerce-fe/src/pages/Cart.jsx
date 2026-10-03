@@ -10,6 +10,32 @@ import { HiOutlineTrash, HiMinus, HiPlus, HiArrowRight, HiOutlineShoppingBag, Hi
 import toast from 'react-hot-toast'
 import Footer from '../components/Footer'
 
+const getConditionBadge = (grade) => {
+    switch (grade) {
+        case 'GRADE_NEW':
+            return { label: 'Mới 100% Seal', cls: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' }
+        case 'GRADE_LIKE_NEW':
+            return { label: 'Like New 99%', cls: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20' }
+        case 'GRADE_FAIR':
+            return { label: 'Cũ 90-95%', cls: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20' }
+        case 'GRADE_AS_IS':
+            return { label: 'Xác máy / Thanh lý', cls: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20' }
+        default:
+            return null
+    }
+}
+
+const getWarrantyBadge = (type, months) => {
+    if (!type || type === 'KHONG_BAO_HANH') {
+        return { label: 'Bao test', cls: 'bg-slate-500/10 text-slate-500 border-slate-500/20' }
+    }
+    const duration = months ? ` ${months}T` : ''
+    if (type === 'CHINH_HANG') {
+        return { label: `BH Hãng${duration}`, cls: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20' }
+    }
+    return { label: `BH Shop${duration}`, cls: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20' }
+}
+
 export default function Cart() {
     const { isAuthenticated } = useAuthStore()
     const { updateCartCount } = useCartStore() // Only use available methods
@@ -247,11 +273,23 @@ export default function Cart() {
                                                                         {item.productName}
                                                                     </Link>
                                                                 </h3>
-                                                                {(item.variantColor || item.variantSize) && (
-                                                                    <div className="mt-1 text-xs text-stone-500 dark:text-slate-400 font-medium bg-stone-100 dark:bg-slate-800 inline-block px-2 py-0.5 rounded">
-                                                                        Phân loại: {[item.variantColor, item.variantSize].filter(Boolean).join(' - ')}
-                                                                    </div>
-                                                                )}
+                                                                <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+                                                                    {item.conditionGrade && (
+                                                                        <span className={cn("text-[11px] font-semibold px-2 py-0.5 rounded-full border", getConditionBadge(item.conditionGrade)?.cls)}>
+                                                                            {getConditionBadge(item.conditionGrade)?.label}
+                                                                        </span>
+                                                                    )}
+                                                                    {item.warrantyType && (
+                                                                        <span className={cn("text-[11px] font-medium px-2 py-0.5 rounded-full border", getWarrantyBadge(item.warrantyType, item.warrantyMonths)?.cls)}>
+                                                                            {getWarrantyBadge(item.warrantyType, item.warrantyMonths)?.label}
+                                                                        </span>
+                                                                    )}
+                                                                    {(item.variantColor || item.variantSize) && (
+                                                                        <span className="text-[11px] text-stone-500 dark:text-slate-400 font-medium bg-stone-100 dark:bg-slate-800 px-2 py-0.5 rounded">
+                                                                            Phân loại: {[item.variantColor, item.variantSize].filter(Boolean).join(' - ')}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
                                                                 <button
                                                                     onClick={() => handleRemoveItem(item.id)}
                                                                     className="p-2 text-stone-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-all dark:hover:bg-red-900/20 absolute top-0 right-0 sm:relative"

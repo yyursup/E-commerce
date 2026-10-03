@@ -3,6 +3,8 @@ package com.marketplace.ecommerce.cart.dto.response;
 import com.marketplace.ecommerce.cart.entity.CartItem;
 import com.marketplace.ecommerce.product.entity.ProductImage;
 import com.marketplace.ecommerce.product.entity.ProductVariant;
+import com.marketplace.ecommerce.product.valueObjects.ConditionGrade;
+import com.marketplace.ecommerce.product.valueObjects.WarrantyType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -31,6 +33,10 @@ public class CartItemResponse {
     private UUID variantId;
     private String variantColor;
     private String variantSize;
+
+    private ConditionGrade conditionGrade;
+    private WarrantyType warrantyType;
+    private Integer warrantyMonths;
 
     private UUID shopId;
     private String shopName;
@@ -74,6 +80,9 @@ public class CartItemResponse {
                 .variantId(cartItem.getVariantId())
                 .variantColor(variant != null ? variant.getColor() : null)
                 .variantSize(variant != null ? variant.getSize() : null)
+                .conditionGrade(cartItem.getProduct() != null ? cartItem.getProduct().getConditionGrade() : null)
+                .warrantyType(cartItem.getProduct() != null ? cartItem.getProduct().getWarrantyType() : null)
+                .warrantyMonths(cartItem.getProduct() != null ? cartItem.getProduct().getWarrantyMonths() : null)
                 .shopId(cartItem.getProduct() != null && cartItem.getProduct().getShop() != null ? cartItem.getProduct().getShop().getId() : null)
                 .shopName(cartItem.getProduct() != null && cartItem.getProduct().getShop() != null ? cartItem.getProduct().getShop().getName() : null)
                 .categoryId(cartItem.getProduct() != null && cartItem.getProduct().getProductCategory() != null ? cartItem.getProduct().getProductCategory().getId() : null)

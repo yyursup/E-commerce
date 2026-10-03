@@ -16,6 +16,9 @@ import {
   HiOutlineExclamationCircle,
   HiOutlineRefresh,
   HiOutlineCog,
+  HiOutlinePencil,
+  HiOutlineCheck,
+  HiOutlineX,
 } from 'react-icons/hi'
 import { useThemeStore } from '../../store/useThemeStore'
 import { useAuthStore } from '../../store/useAuthStore'
@@ -23,6 +26,7 @@ import { cn } from '../../lib/cn'
 import toast from 'react-hot-toast'
 import authService from '../../services/auth'
 import platformService from '../../services/platform'
+import categoryService from '../../services/category'
 import requestService from '../../services/request'
 import productService from '../../services/product'
 import statisticsService from '../../services/statistics'
@@ -41,6 +45,67 @@ export default function AdminDashboard() {
   const [commissionRate, setCommissionRate] = useState('')
   const [isUpdatingCommission, setIsUpdatingCommission] = useState(false)
   const [timelineFilter, setTimelineFilter] = useState('14d')
+
+  // Category Commission Matrix State
+  const [categories, setCategories] = useState([])
+  const [editingCatId, setEditingCatId] = useState(null)
+  const [editRateValue, setEditRateValue] = useState('')
+  const [savingCatId, setSavingCatId] = useState(null)
+
+  const fetchCategories = async () => {
+    try {
+      const data = await categoryService.getAllCategories()
+      setCategories(Array.isArray(data) ? data : [])
+    } catch (err) {
+      console.error('Error fetching categories:', err)
+    }
+  }
+
+  const handleStartEdit = (cat) => {
+    setEditingCatId(cat.id)
+    setEditRateValue(cat.commissionRate != null ? String(cat.commissionRate) : '5.0')
+  }
+
+  const handleCancelEdit = () => {
+    setEditingCatId(null)
+    setEditRateValue('')
+  }
+
+  const handleSaveCategoryRate = async (catId) => {
+    const rate = parseFloat(editRateValue)
+    if (isNaN(rate) || rate < 0 || rate > 100) {
+      toast.error('Tỷ lệ hoa hồng phải từ 0% đến 100%')
+      return
+    }
+
+    try {
+      setSavingCatId(catId)
+      await categoryService.updateCommissionRate(catId, rate)
+      setCategories((prev) =>
+        prev.map((c) => (c.id === catId ? { ...c, commissionRate: rate } : c))
+      )
+      setEditingCatId(null)
+      toast.success('Cập nhật biểu phí ngành hàng thành công!')
+    } catch (err) {
+      console.error('Error updating category commission rate:', err)
+      toast.error(err?.response?.data?.message || 'Không thể cập nhật tỷ lệ hoa hồng ngành hàng')
+    } finally {
+      setSavingCatId(null)
+    }
+  }
+
+  const getCategoryIcon = (name) => {
+    const n = (name || '').toLowerCase()
+    if (n.includes('điện thoại') || n.includes('máy tính bảng')) return '📱'
+    if (n.includes('laptop') || n.includes('máy tính')) return '💻'
+    if (n.includes('linh kiện') || n.includes('pc build')) return '🧩'
+    if (n.includes('âm thanh')) return '🎧'
+    if (n.includes('phụ kiện') || n.includes('gaming gear')) return '🎮'
+    if (n.includes('đeo') || n.includes('đồng hồ')) return '⌚'
+    if (n.includes('nhà thông minh') || n.includes('iot')) return '🏠'
+    if (n.includes('máy ảnh') || n.includes('quay phim')) return '📷'
+    return '📦'
+  }
 
   const fetchDashboardData = async () => {
     try {
@@ -92,6 +157,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     fetchDashboardData()
     fetchPlatformSettings()
+    fetchCategories()
   }, [])
 
   const handleUpdateCommissionRate = async () => {
@@ -482,30 +548,149 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* 5. CÀI ĐẶT NỀN TẢNG & TỶ LỆ HOA HỒNG SÀN */}
+        {/* 5. CẤU HÌNH BIỂU PHÍ HOA HỒNG THEO NGÀNH HÀNG (CATEGORY COMMISSION MATRIX) */}
         <div
           className={cn(
-            'rounded-2xl border p-6 shadow-sm',
+            'rounded-2xl border p-6 shadow-sm space-y-6',
             isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white',
           )}
         >
-          <div className="flex items-center gap-3 mb-4">
-            <div className="rounded-xl bg-amber-500/10 p-2 text-amber-500">
-              <HiOutlineCog className="h-5 w-5" />
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <div className="rounded-xl bg-amber-500/10 p-2 text-amber-500">
+                <HiOutlineCog className="h-6 w-6" />
+              </div>
+              <div>
+                <h2 className={cn('text-lg font-bold', isDark ? 'text-white' : 'text-stone-900')}>
+                  Biểu Phí Hoa Hồng Theo Ngành Hàng (Category Commission Matrix)
+                </h2>
+                <p className={cn('text-xs', isDark ? 'text-slate-400' : 'text-stone-500')}>
+                  Tỷ lệ hoa hồng cơ bản theo từng nhóm thiết bị công nghệ. Hệ thống tự động khấu trừ theo biểu phí này khi quyết toán ví Escrow
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 className={cn('text-lg font-bold', isDark ? 'text-white' : 'text-stone-900')}>
-                Cấu Hình Tỷ Lệ Hoa Hồng Nền Tảng
-              </h2>
-              <p className={cn('text-xs', isDark ? 'text-slate-400' : 'text-stone-500')}>
-                Phí hoa hồng sàn sẽ tự động khấu trừ khi đơn hàng hoàn tất và giải ngân vào ví người bán
-              </p>
+
+            <div className="inline-flex items-center gap-2 rounded-xl bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-600 dark:text-amber-400 border border-amber-500/20">
+              <span>Sàn tối thiểu (Floor Rate): 1.5%</span>
             </div>
           </div>
 
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-            <div className="flex-1 max-w-xs">
-              <div className="relative">
+          {/* Grid các nhóm hàng công nghệ chính */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {categories
+              .filter((c) => !c.parentId)
+              .map((cat) => {
+                const isEditing = editingCatId === cat.id
+                const isSaving = savingCatId === cat.id
+                const currentRate = cat.commissionRate != null ? Number(cat.commissionRate) : 5.0
+
+                return (
+                  <div
+                    key={cat.id}
+                    className={cn(
+                      'relative rounded-xl border p-4 transition-all duration-200 hover:shadow-md flex flex-col justify-between gap-3',
+                      isDark ? 'border-slate-800 bg-slate-950/60' : 'border-stone-200 bg-stone-50/70',
+                    )}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-2xl">{getCategoryIcon(cat.name)}</span>
+                        <div>
+                          <h3 className={cn('text-sm font-bold line-clamp-1', isDark ? 'text-white' : 'text-stone-900')}>
+                            {cat.name}
+                          </h3>
+                          <span className="text-[11px] text-slate-400">Nhóm thiết bị</span>
+                        </div>
+                      </div>
+
+                      {!isEditing && (
+                        <button
+                          onClick={() => handleStartEdit(cat)}
+                          title="Chỉnh sửa tỷ lệ hoa hồng"
+                          className={cn(
+                            'rounded-lg p-1.5 transition text-slate-400 hover:text-amber-500 hover:bg-amber-500/10',
+                            isDark ? 'hover:bg-slate-800' : 'hover:bg-stone-200',
+                          )}
+                        >
+                          <HiOutlinePencil className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-200/50 dark:border-slate-800">
+                      {isEditing ? (
+                        <div className="flex items-center gap-2">
+                          <div className="relative flex-1">
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              step="0.1"
+                              value={editRateValue}
+                              onChange={(e) => setEditRateValue(e.target.value)}
+                              className={cn(
+                                'w-full rounded-lg border px-2.5 py-1.5 text-sm font-bold text-center focus:outline-none focus:ring-2 focus:ring-amber-500',
+                                isDark
+                                  ? 'border-slate-700 bg-slate-900 text-white'
+                                  : 'border-stone-300 bg-white text-stone-900',
+                              )}
+                              autoFocus
+                            />
+                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">%</span>
+                          </div>
+
+                          <button
+                            onClick={() => handleSaveCategoryRate(cat.id)}
+                            disabled={isSaving}
+                            className="rounded-lg bg-emerald-600 p-2 text-white hover:bg-emerald-700 disabled:opacity-50 transition shadow-sm"
+                            title="Lưu thay đổi"
+                          >
+                            <HiOutlineCheck className="h-4 w-4" />
+                          </button>
+
+                          <button
+                            onClick={handleCancelEdit}
+                            disabled={isSaving}
+                            className={cn(
+                              'rounded-lg p-2 transition',
+                              isDark ? 'bg-slate-800 text-slate-400 hover:text-white' : 'bg-stone-200 text-stone-600 hover:text-stone-900',
+                            )}
+                            title="Hủy"
+                          >
+                            <HiOutlineX className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-slate-500 dark:text-slate-400">Tỷ lệ cơ bản:</span>
+                          <span className="inline-flex items-center rounded-lg bg-amber-500/10 px-2.5 py-1 text-sm font-extrabold text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                            {currentRate.toFixed(1)}%
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+          </div>
+
+          {/* Dòng tỷ lệ cơ sở dự phòng và giải thích nghiệp vụ */}
+          <div
+            className={cn(
+              'flex flex-col gap-4 rounded-xl p-4 sm:flex-row sm:items-center sm:justify-between text-xs',
+              isDark ? 'bg-slate-950/40 text-slate-400' : 'bg-stone-100/80 text-stone-600',
+            )}
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-amber-500 font-bold">💡 Quy tắc:</span>
+              <span>
+                Phí cuối cùng = Biểu phí ngành hàng - Ưu đãi ký quỹ (tối đa 1.5%) - Ưu đãi thâm niên (tối đa 1.0%). Ngưỡng sàn bảo vệ tối thiểu 1.5%.
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="font-semibold whitespace-nowrap">Dự phòng toàn sàn:</span>
+              <div className="relative w-20">
                 <input
                   type="number"
                   min="0"
@@ -513,28 +698,21 @@ export default function AdminDashboard() {
                   step="0.5"
                   value={commissionRate}
                   onChange={(e) => setCommissionRate(e.target.value)}
-                  placeholder="Nhập % hoa hồng"
                   className={cn(
-                    'w-full rounded-xl border px-4 py-2.5 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-amber-500',
-                    isDark
-                      ? 'border-slate-800 bg-slate-950 text-white placeholder-slate-500'
-                      : 'border-stone-300 bg-stone-50 text-stone-900 placeholder-stone-400',
+                    'w-full rounded-lg border px-2 py-1 text-xs font-bold text-center focus:outline-none focus:ring-1 focus:ring-amber-500',
+                    isDark ? 'border-slate-800 bg-slate-900 text-white' : 'border-stone-300 bg-white text-stone-900',
                   )}
                 />
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400">%</span>
+                <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-slate-400">%</span>
               </div>
+              <button
+                onClick={handleUpdateCommissionRate}
+                disabled={isUpdatingCommission}
+                className="rounded-lg bg-amber-500 px-3 py-1 font-bold text-white hover:bg-amber-600 disabled:opacity-50 transition"
+              >
+                {isUpdatingCommission ? '...' : 'Lưu'}
+              </button>
             </div>
-
-            <button
-              onClick={handleUpdateCommissionRate}
-              disabled={isUpdatingCommission}
-              className={cn(
-                'rounded-xl px-5 py-2.5 text-sm font-bold transition shadow-sm',
-                'bg-gradient-to-r from-amber-500 to-amber-600 text-white hover:from-amber-600 hover:to-amber-700 disabled:opacity-50',
-              )}
-            >
-              {isUpdatingCommission ? 'Đang lưu...' : 'Lưu Thay Đổi'}
-            </button>
           </div>
         </div>
 

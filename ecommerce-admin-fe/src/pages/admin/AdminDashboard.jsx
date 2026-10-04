@@ -243,7 +243,7 @@ export default function AdminDashboard() {
                 {formatCurrency(analytics?.totalPlatformCommission)}
               </p>
               <div className="mt-1 flex items-center gap-2 text-xs font-medium text-amber-400">
-                <span>Tỷ lệ hoa hồng trung bình: ~{commissionRate || 10}%</span>
+                <span>Tỷ lệ hoa hồng sàn trung bình: ~5.0%</span>
               </div>
             </div>
           </motion.div>
@@ -419,7 +419,7 @@ export default function AdminDashboard() {
                   Xếp hạng theo tổng doanh thu đã quyết toán
                 </p>
               </div>
-              <Link to="/admin/shop-ranking" className="text-xs font-semibold text-amber-500 hover:underline">
+              <Link to="/shop-ranking" className="text-xs font-semibold text-amber-500 hover:underline">
                 Xem tất cả →
               </Link>
             </div>

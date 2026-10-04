@@ -36,7 +36,8 @@ export default function AdminLayout() {
   const navigate = useNavigate()
   const { isAuthenticated, user, logout } = useAuthStore()
   const isDark = useThemeStore((state) => state.theme) === 'dark'
-  const isAdmin = user?.role === 'ADMIN'
+  const normalizedRole = user?.role?.toUpperCase()?.replace(/^ROLE_/, '')
+  const isAdmin = normalizedRole === 'ADMIN'
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />

@@ -25,8 +25,6 @@ import { useAuthStore } from '../../store/useAuthStore'
 import { cn } from '../../lib/cn'
 import toast from 'react-hot-toast'
 import authService from '../../services/auth'
-import platformService from '../../services/platform'
-import categoryService from '../../services/category'
 import requestService from '../../services/request'
 import productService from '../../services/product'
 import statisticsService from '../../services/statistics'
@@ -41,71 +39,7 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState([])
   const [pendingRequests, setPendingRequests] = useState(0)
   const [pendingProducts, setPendingProducts] = useState(0)
-  const [platformSettings, setPlatformSettings] = useState(null)
-  const [commissionRate, setCommissionRate] = useState('')
-  const [isUpdatingCommission, setIsUpdatingCommission] = useState(false)
   const [timelineFilter, setTimelineFilter] = useState('14d')
-
-  // Category Commission Matrix State
-  const [categories, setCategories] = useState([])
-  const [editingCatId, setEditingCatId] = useState(null)
-  const [editRateValue, setEditRateValue] = useState('')
-  const [savingCatId, setSavingCatId] = useState(null)
-
-  const fetchCategories = async () => {
-    try {
-      const data = await categoryService.getAllCategories()
-      setCategories(Array.isArray(data) ? data : [])
-    } catch (err) {
-      console.error('Error fetching categories:', err)
-    }
-  }
-
-  const handleStartEdit = (cat) => {
-    setEditingCatId(cat.id)
-    setEditRateValue(cat.commissionRate != null ? String(cat.commissionRate) : '5.0')
-  }
-
-  const handleCancelEdit = () => {
-    setEditingCatId(null)
-    setEditRateValue('')
-  }
-
-  const handleSaveCategoryRate = async (catId) => {
-    const rate = parseFloat(editRateValue)
-    if (isNaN(rate) || rate < 0 || rate > 100) {
-      toast.error('Tỷ lệ hoa hồng phải từ 0% đến 100%')
-      return
-    }
-
-    try {
-      setSavingCatId(catId)
-      await categoryService.updateCommissionRate(catId, rate)
-      setCategories((prev) =>
-        prev.map((c) => (c.id === catId ? { ...c, commissionRate: rate } : c))
-      )
-      setEditingCatId(null)
-      toast.success('Cập nhật biểu phí ngành hàng thành công!')
-    } catch (err) {
-      console.error('Error updating category commission rate:', err)
-      toast.error(err?.response?.data?.message || 'Không thể cập nhật tỷ lệ hoa hồng ngành hàng')
-    } finally {
-      setSavingCatId(null)
-    }
-  }
-
-  const getCategoryIcon = (name) => {
-    const n = (name || '').toLowerCase()
-    if (n.includes('điện thoại') || n.includes('máy tính bảng')) return '📱'
-    if (n.includes('laptop') || n.includes('máy tính')) return '💻'
-    if (n.includes('linh kiện') || n.includes('pc build')) return '🧩'
-    if (n.includes('âm thanh')) return '🎧'
-    if (n.includes('phụ kiện') || n.includes('gaming gear')) return '🎮'
-    if (n.includes('đeo') || n.includes('đồng hồ')) return '⌚'
-    if (n.includes('nhà thông minh') || n.includes('iot')) return '🏠'
-    if (n.includes('máy ảnh') || n.includes('quay phim')) return '📷'
-    return '📦'
-  }
 
   const fetchDashboardData = async () => {
     try {
@@ -144,41 +78,9 @@ export default function AdminDashboard() {
     }
   }
 
-  const fetchPlatformSettings = async () => {
-    try {
-      const settings = await platformService.getPlatformSettings()
-      setPlatformSettings(settings)
-      setCommissionRate(settings.value || '10')
-    } catch (err) {
-      console.error('Error fetching platform settings:', err)
-    }
-  }
-
   useEffect(() => {
     fetchDashboardData()
-    fetchPlatformSettings()
-    fetchCategories()
   }, [])
-
-  const handleUpdateCommissionRate = async () => {
-    const rate = parseFloat(commissionRate)
-    if (isNaN(rate) || rate < 0 || rate > 100) {
-      toast.error('Tỷ lệ hoa hồng phải từ 0 đến 100')
-      return
-    }
-
-    try {
-      setIsUpdatingCommission(true)
-      const updated = await platformService.updateCommissionRate(rate)
-      setPlatformSettings(updated)
-      toast.success('Cập nhật tỷ lệ hoa hồng thành công')
-    } catch (err) {
-      console.error('Error updating commission rate:', err)
-      toast.error(err?.response?.data?.message || 'Không thể cập nhật tỷ lệ hoa hồng')
-    } finally {
-      setIsUpdatingCommission(false)
-    }
-  }
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -548,172 +450,33 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* 5. CẤU HÌNH BIỂU PHÍ HOA HỒNG THEO NGÀNH HÀNG (CATEGORY COMMISSION MATRIX) */}
+        {/* 5. LIÊN KẾT TRUNG TÂM QUẢN LÝ BIỂU PHÍ & HOA HỒNG */}
         <div
           className={cn(
-            'rounded-2xl border p-6 shadow-sm space-y-6',
-            isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white',
+            'flex flex-col gap-4 rounded-2xl border p-6 sm:flex-row sm:items-center sm:justify-between shadow-sm',
+            isDark ? 'border-amber-500/20 bg-amber-500/5' : 'border-amber-200 bg-amber-50/50',
           )}
         >
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
-              <div className="rounded-xl bg-amber-500/10 p-2 text-amber-500">
-                <HiOutlineCog className="h-6 w-6" />
-              </div>
-              <div>
-                <h2 className={cn('text-lg font-bold', isDark ? 'text-white' : 'text-stone-900')}>
-                  Biểu Phí Hoa Hồng Theo Ngành Hàng (Category Commission Matrix)
-                </h2>
-                <p className={cn('text-xs', isDark ? 'text-slate-400' : 'text-stone-500')}>
-                  Tỷ lệ hoa hồng cơ bản theo từng nhóm thiết bị công nghệ. Hệ thống tự động khấu trừ theo biểu phí này khi quyết toán ví Escrow
-                </p>
-              </div>
+          <div className="flex items-start gap-4">
+            <div className="rounded-xl bg-amber-500/10 p-3 text-amber-500">
+              <HiOutlineCog className="h-6 w-6" />
             </div>
-
-            <div className="inline-flex items-center gap-2 rounded-xl bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-600 dark:text-amber-400 border border-amber-500/20">
-              <span>Sàn tối thiểu (Floor Rate): 1.5%</span>
+            <div>
+              <h2 className={cn('text-base font-bold', isDark ? 'text-white' : 'text-stone-900')}>
+                Biểu Phí Hoa Hồng Theo Ngành Hàng & Chính Sách Giảm Trừ
+              </h2>
+              <p className={cn('text-xs mt-1 leading-relaxed', isDark ? 'text-slate-300' : 'text-stone-600')}>
+                Toàn bộ cấu hình hoa hồng 3 tầng (Biểu phí danh mục, Giảm trừ Ký quỹ 1★-5★, Ưu đãi Thâm niên) đã được tập trung tại Trung Tâm Quản Lý Hoa Hồng.
+              </p>
             </div>
           </div>
 
-          {/* Grid các nhóm hàng công nghệ chính */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {categories
-              .filter((c) => !c.parentId)
-              .map((cat) => {
-                const isEditing = editingCatId === cat.id
-                const isSaving = savingCatId === cat.id
-                const currentRate = cat.commissionRate != null ? Number(cat.commissionRate) : 5.0
-
-                return (
-                  <div
-                    key={cat.id}
-                    className={cn(
-                      'relative rounded-xl border p-4 transition-all duration-200 hover:shadow-md flex flex-col justify-between gap-3',
-                      isDark ? 'border-slate-800 bg-slate-950/60' : 'border-stone-200 bg-stone-50/70',
-                    )}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-2.5">
-                        <span className="text-2xl">{getCategoryIcon(cat.name)}</span>
-                        <div>
-                          <h3 className={cn('text-sm font-bold line-clamp-1', isDark ? 'text-white' : 'text-stone-900')}>
-                            {cat.name}
-                          </h3>
-                          <span className="text-[11px] text-slate-400">Nhóm thiết bị</span>
-                        </div>
-                      </div>
-
-                      {!isEditing && (
-                        <button
-                          onClick={() => handleStartEdit(cat)}
-                          title="Chỉnh sửa tỷ lệ hoa hồng"
-                          className={cn(
-                            'rounded-lg p-1.5 transition text-slate-400 hover:text-amber-500 hover:bg-amber-500/10',
-                            isDark ? 'hover:bg-slate-800' : 'hover:bg-stone-200',
-                          )}
-                        >
-                          <HiOutlinePencil className="h-4 w-4" />
-                        </button>
-                      )}
-                    </div>
-
-                    <div className="pt-2 border-t border-slate-200/50 dark:border-slate-800">
-                      {isEditing ? (
-                        <div className="flex items-center gap-2">
-                          <div className="relative flex-1">
-                            <input
-                              type="number"
-                              min="0"
-                              max="100"
-                              step="0.1"
-                              value={editRateValue}
-                              onChange={(e) => setEditRateValue(e.target.value)}
-                              className={cn(
-                                'w-full rounded-lg border px-2.5 py-1.5 text-sm font-bold text-center focus:outline-none focus:ring-2 focus:ring-amber-500',
-                                isDark
-                                  ? 'border-slate-700 bg-slate-900 text-white'
-                                  : 'border-stone-300 bg-white text-stone-900',
-                              )}
-                              autoFocus
-                            />
-                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">%</span>
-                          </div>
-
-                          <button
-                            onClick={() => handleSaveCategoryRate(cat.id)}
-                            disabled={isSaving}
-                            className="rounded-lg bg-emerald-600 p-2 text-white hover:bg-emerald-700 disabled:opacity-50 transition shadow-sm"
-                            title="Lưu thay đổi"
-                          >
-                            <HiOutlineCheck className="h-4 w-4" />
-                          </button>
-
-                          <button
-                            onClick={handleCancelEdit}
-                            disabled={isSaving}
-                            className={cn(
-                              'rounded-lg p-2 transition',
-                              isDark ? 'bg-slate-800 text-slate-400 hover:text-white' : 'bg-stone-200 text-stone-600 hover:text-stone-900',
-                            )}
-                            title="Hủy"
-                          >
-                            <HiOutlineX className="h-4 w-4" />
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-slate-500 dark:text-slate-400">Tỷ lệ cơ bản:</span>
-                          <span className="inline-flex items-center rounded-lg bg-amber-500/10 px-2.5 py-1 text-sm font-extrabold text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                            {currentRate.toFixed(1)}%
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )
-              })}
-          </div>
-
-          {/* Dòng tỷ lệ cơ sở dự phòng và giải thích nghiệp vụ */}
-          <div
-            className={cn(
-              'flex flex-col gap-4 rounded-xl p-4 sm:flex-row sm:items-center sm:justify-between text-xs',
-              isDark ? 'bg-slate-950/40 text-slate-400' : 'bg-stone-100/80 text-stone-600',
-            )}
+          <Link
+            to="/commissions?tab=categories"
+            className="inline-flex items-center gap-2 whitespace-nowrap rounded-xl bg-amber-500 px-5 py-2.5 text-xs font-bold text-white hover:bg-amber-600 transition shadow-md shadow-amber-500/20"
           >
-            <div className="flex items-center gap-2">
-              <span className="text-amber-500 font-bold">💡 Quy tắc:</span>
-              <span>
-                Phí cuối cùng = Biểu phí ngành hàng - Ưu đãi ký quỹ (tối đa 1.5%) - Ưu đãi thâm niên (tối đa 1.0%). Ngưỡng sàn bảo vệ tối thiểu 1.5%.
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <span className="font-semibold whitespace-nowrap">Dự phòng toàn sàn:</span>
-              <div className="relative w-20">
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.5"
-                  value={commissionRate}
-                  onChange={(e) => setCommissionRate(e.target.value)}
-                  className={cn(
-                    'w-full rounded-lg border px-2 py-1 text-xs font-bold text-center focus:outline-none focus:ring-1 focus:ring-amber-500',
-                    isDark ? 'border-slate-800 bg-slate-900 text-white' : 'border-stone-300 bg-white text-stone-900',
-                  )}
-                />
-                <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-slate-400">%</span>
-              </div>
-              <button
-                onClick={handleUpdateCommissionRate}
-                disabled={isUpdatingCommission}
-                className="rounded-lg bg-amber-500 px-3 py-1 font-bold text-white hover:bg-amber-600 disabled:opacity-50 transition"
-              >
-                {isUpdatingCommission ? '...' : 'Lưu'}
-              </button>
-            </div>
-          </div>
+            Quản lý Biểu Phí Chi Tiết →
+          </Link>
         </div>
 
         {/* 6. BẢNG QUẢN LÝ NGƯỜI DÙNG RÚT GỌN */}

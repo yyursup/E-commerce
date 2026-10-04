@@ -1,3 +1,5 @@
+package com.marketplace.ecommerce.platform.service.impl;
+
 import com.marketplace.ecommerce.platform.dto.CommissionRateBreakdown;
 import com.marketplace.ecommerce.platform.entity.SeniorityPolicyConfig;
 import com.marketplace.ecommerce.platform.repository.SeniorityPolicyConfigRepository;

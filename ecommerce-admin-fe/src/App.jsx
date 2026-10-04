@@ -7,8 +7,6 @@ import AdminRequests from './pages/admin/AdminRequests'
 import AdminRequestDetail from './pages/admin/AdminRequestDetail'
 import AdminOrders from './pages/admin/AdminOrders'
 import AdminOrderDetail from './pages/admin/AdminOrderDetail'
-import AdminEscrows from './pages/admin/AdminEscrows'
-import AdminWalletLookup from './pages/admin/AdminWalletLookup'
 import AdminPlatformWallet from './pages/admin/AdminPlatformWallet'
 import AdminShopRanking from './pages/admin/AdminShopRanking'
 import AdminCommissions from './pages/admin/AdminCommissions'
@@ -17,7 +15,6 @@ import AdminReportDetail from './pages/admin/AdminReportDetail'
 import AdminLiveChat from './pages/admin/AdminLiveChat'
 import AdminVouchers from './pages/admin/AdminVouchers'
 import AdminTrustConfig from './pages/admin/AdminTrustConfig'
-import AdminEscrowFundSupervision from './pages/admin/AdminEscrowFundSupervision'
 import AdminProductModeration from './pages/admin/AdminProductModeration'
 
 export default function App() {
@@ -42,16 +39,25 @@ export default function App() {
         <Route path="/orders" element={<AdminOrders />} />
         <Route path="/orders/:orderId" element={<AdminOrderDetail />} />
         <Route path="/vouchers" element={<AdminVouchers />} />
-        <Route path="/trust-config" element={<AdminTrustConfig />} />
-        <Route path="/escrow-fund-supervision" element={<AdminEscrowFundSupervision />} />
-        <Route path="/escrows" element={<AdminEscrows />} />
-        <Route path="/wallets" element={<AdminWalletLookup />} />
-        <Route path="/platform-wallet" element={<AdminPlatformWallet />} />
-        <Route path="/shop-ranking" element={<AdminShopRanking />} />
+
+        {/* Cụm Quản Lý Hoa Hồng (Hub 3 Tabs) */}
         <Route path="/commissions" element={<AdminCommissions />} />
+
+        {/* Cụm Quỹ Ký Quỹ & Bậc Sao (Hub 2 Tabs) */}
+        <Route path="/trust-config" element={<AdminTrustConfig />} />
+        <Route path="/escrow-fund-supervision" element={<Navigate to="/trust-config?tab=funds" replace />} />
+
+        {/* Cụm Tài Chính & Ví Sàn (Hub 3 Tabs) */}
+        <Route path="/platform-wallet" element={<AdminPlatformWallet />} />
+        <Route path="/escrows" element={<Navigate to="/platform-wallet?tab=escrows" replace />} />
+        <Route path="/wallets" element={<Navigate to="/platform-wallet?tab=lookup" replace />} />
+
+        {/* Xếp Hạng & Báo Cáo */}
+        <Route path="/shop-ranking" element={<AdminShopRanking />} />
         <Route path="/reports" element={<AdminReports />} />
         <Route path="/reports/:reportId" element={<AdminReportDetail />} />
 
+        {/* Live Chat CSKH */}
         <Route path="/live-chat" element={<AdminLiveChat />} />
       </Route>
 

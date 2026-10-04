@@ -20,19 +20,15 @@ import { useThemeStore } from '../../store/useThemeStore'
 import { cn } from '../../lib/cn'
 
 const navItems = [
-  { to: '/dashboard', label: 'Tổng quan (Dashboard)', icon: HiOutlineViewGrid },
-  { to: '/requests', label: 'Duyệt mở Shop', icon: HiOutlineClipboardCheck },
-  { to: '/moderation', label: 'Kiểm duyệt sản phẩm', icon: HiOutlineShieldCheck },
+  { to: '/dashboard', label: 'Tổng quan Sàn', icon: HiOutlineViewGrid },
+  { to: '/requests', label: 'Duyệt mở Gian hàng', icon: HiOutlineClipboardCheck },
+  { to: '/moderation', label: 'Kiểm duyệt Sản phẩm', icon: HiOutlineShieldCheck },
   { to: '/orders', label: 'Quản lý Đơn hàng', icon: HiOutlineShoppingBag },
   { to: '/vouchers', label: 'Voucher Toàn Sàn', icon: HiOutlineTicket },
-  { to: '/trust-config', label: 'Cấu hình Ký Quỹ & Thâm Niên', icon: HiOutlineShieldCheck },
-  { to: '/escrow-fund-supervision', label: 'Giám sát Quỹ Ký Quỹ', icon: HiOutlineCash },
-  { to: '/escrows', label: 'Escrow Đơn hàng', icon: HiOutlineCurrencyDollar },
-  { to: '/wallets', label: 'Tra cứu Ví tiền', icon: HiOutlineSearch },
-  { to: '/platform-wallet', label: 'Ví của sàn', icon: HiOutlineCreditCard },
-  { to: '/shop-ranking', label: 'Xếp hạng shop', icon: HiOutlineTrendingUp },
-  { to: '/commissions', label: 'Hoa hồng sàn', icon: HiOutlineChartBar },
-  { to: '/reports', label: 'Khiếu nại & Vi phạm', icon: HiOutlineClipboardCheck },
+  { to: '/commissions', label: 'Hoa Hồng & Biểu Phí', icon: HiOutlineChartBar },
+  { to: '/trust-config', label: 'Quỹ Ký Quỹ & Bậc Sao', icon: HiOutlineCash },
+  { to: '/platform-wallet', label: 'Tài Chính & Ví Sàn', icon: HiOutlineCreditCard },
+  { to: '/reports', label: 'Khiếu Nại & Vi Phạm', icon: HiOutlineClipboardCheck },
   { to: '/live-chat', label: 'Live Chat CSKH', icon: HiOutlineChat },
 ]
 

@@ -1,8 +1,9 @@
 import { useEffect } from 'react'
+import axios from 'axios'
 import { useAuthStore } from '../store/useAuthStore'
 import { isTokenExpired, getTokenRemainingTime } from '../lib/jwt'
-import { getRefreshToken } from '../lib/auth'
-import axiosClient, { handleCleanLogoutAndRedirect } from '../api/axiosClient'
+import { getAccessToken, getRefreshToken } from '../lib/auth'
+import { handleCleanLogoutAndRedirect } from '../api/axiosClient'
 
 const baseURL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
 
@@ -10,30 +11,37 @@ export function useTokenLifecycle() {
     const { token, isAuthenticated, setTokens } = useAuthStore()
 
     useEffect(() => {
-        if (!isAuthenticated || !token) return
+        if (!isAuthenticated) return
 
         const checkAndRefresh = async () => {
-            const remaining = getTokenRemainingTime(token)
+            const currentToken = getAccessToken() || token
             const refreshToken = getRefreshToken()
 
-            // 1. Nếu token đã hết hạn hoàn toàn
-            if (isTokenExpired(token, 0)) {
-                if (!refreshToken || isTokenExpired(refreshToken, 0)) {
-                    console.warn('[SellerTokenLifecycle] Access token and refresh token expired.')
-                    handleCleanLogoutAndRedirect()
-                    return
-                }
+            // 1. Nếu cả access token và refresh token đều đã hết hạn -> Logout ngay
+            if (isTokenExpired(currentToken, 0) && (!refreshToken || isTokenExpired(refreshToken, 0))) {
+                console.warn('[SellerTokenLifecycle] Both access token and refresh token expired.')
+                handleCleanLogoutAndRedirect()
+                return
             }
 
-            // 2. Nếu token sắp hết hạn trong vòng 2 phút (120s) -> Chủ động refresh chạy ngầm
-            if (remaining > 0 && remaining <= 120 && refreshToken && !isTokenExpired(refreshToken, 0)) {
+            // 2. Nếu access token đã hết hạn HOẶC sắp hết hạn trong 2 phút (<= 120s), và refresh token còn hạn -> Chủ động refresh
+            const remaining = getTokenRemainingTime(currentToken)
+            const shouldRefresh =
+                (isTokenExpired(currentToken, 0) || (remaining > 0 && remaining <= 120)) &&
+                refreshToken &&
+                !isTokenExpired(refreshToken, 0)
+
+            if (shouldRefresh) {
                 try {
-                    const res = await axiosClient.post(`${baseURL}/api/v1/auth/refresh-token`, { refreshToken })
+                    const res = await axios.post(`${baseURL}/api/v1/auth/refresh-token`, { refreshToken })
                     if (res.data?.token) {
                         setTokens(res.data.token, res.data.refreshToken)
                     }
                 } catch (e) {
                     console.warn('[SellerTokenLifecycle] Background auto-refresh failed:', e)
+                    if (e.response && (e.response.status === 400 || e.response.status === 401)) {
+                        handleCleanLogoutAndRedirect()
+                    }
                 }
             }
         }

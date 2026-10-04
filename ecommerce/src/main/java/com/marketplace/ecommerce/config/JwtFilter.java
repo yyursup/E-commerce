@@ -34,6 +34,7 @@ public class JwtFilter extends OncePerRequestFilter {
             "/static/**",
             "/uploads/**",
             "/api/v1/auth/login",
+            "/api/v1/auth/refresh-token",
             "/api/v1/payment/vnpay/**",
             "/payments/vnpay/callback",
             "/api/v1/product",

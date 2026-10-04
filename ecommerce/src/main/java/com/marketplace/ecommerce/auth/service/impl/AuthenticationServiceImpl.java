@@ -532,12 +532,12 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Override
     public LoginResponse refreshToken(String refreshToken) {
         if (refreshToken == null || refreshToken.isBlank()) {
-            throw new CustomException("Refresh token không được để trống.");
+            throw new InvalidCredentialsException("Refresh token không được để trống.");
         }
         try {
             Account account = tokenService.getAccountFromToken(refreshToken);
             if (account == null) {
-                throw new CustomException("Tài khoản không tồn tại.");
+                throw new InvalidCredentialsException("Tài khoản không tồn tại.");
             }
             if (account.getStatus() == AccountStatus.BANNED || !Boolean.TRUE.equals(account.getIsActive())) {
                 throw new CustomException("Tài khoản đã bị khóa hoặc ngừng hoạt động.");
@@ -555,7 +555,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         } catch (CustomException ce) {
             throw ce;
         } catch (Exception e) {
-            throw new CustomException("Refresh token không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại.");
+            throw new InvalidCredentialsException("Refresh token không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại.");
         }
     }
 }

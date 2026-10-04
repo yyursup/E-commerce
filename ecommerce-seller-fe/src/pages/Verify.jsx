@@ -100,7 +100,7 @@ export default function Verify() {
             shopName: res.shopName,
             sellerStatus: res.sellerStatus,
           }
-          login(res.token, userPayload)
+          login(res.token, userPayload, res.refreshToken)
 
           toast.success(
             'Xác thực tài khoản thành công! Hãy hoàn tất hồ sơ để mở gian hàng của bạn.',

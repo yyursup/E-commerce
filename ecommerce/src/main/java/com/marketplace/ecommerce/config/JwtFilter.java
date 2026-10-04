@@ -3,6 +3,7 @@ package com.marketplace.ecommerce.config;
 import com.marketplace.ecommerce.auth.entity.Account;
 import com.marketplace.ecommerce.auth.service.TokenService;
 import com.marketplace.ecommerce.common.CurrentUserInfo;
+import com.marketplace.ecommerce.common.exception.InvalidCredentialsException;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -105,7 +106,7 @@ public class JwtFilter extends OncePerRequestFilter {
                 filterChain.doFilter(request, response);
             } else {
                 resolver.resolveException(request, response, null,
-                        new RuntimeException("Missing Authorization Bearer token"));
+                        new InvalidCredentialsException("Missing Authorization Bearer token"));
             }
             return;
         }
@@ -137,7 +138,7 @@ public class JwtFilter extends OncePerRequestFilter {
                 filterChain.doFilter(request, response);
             } else {
                 resolver.resolveException(request, response, null,
-                        new RuntimeException("Token expired"));
+                        new InvalidCredentialsException("Token expired"));
             }
 
         } catch (Exception ex) {
@@ -145,7 +146,7 @@ public class JwtFilter extends OncePerRequestFilter {
                 filterChain.doFilter(request, response);
             } else {
                 resolver.resolveException(request, response, null,
-                        new RuntimeException("Invalid token"));
+                        new InvalidCredentialsException("Invalid token"));
             }
         }
     }

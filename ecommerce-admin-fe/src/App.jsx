@@ -16,8 +16,11 @@ import AdminLiveChat from './pages/admin/AdminLiveChat'
 import AdminVouchers from './pages/admin/AdminVouchers'
 import AdminTrustConfig from './pages/admin/AdminTrustConfig'
 import AdminProductModeration from './pages/admin/AdminProductModeration'
+import { useTokenLifecycle } from './hooks/useTokenLifecycle'
 
 export default function App() {
+  useTokenLifecycle()
+
   return (
     <Routes>
       {/* Public Login Route for Admin */}

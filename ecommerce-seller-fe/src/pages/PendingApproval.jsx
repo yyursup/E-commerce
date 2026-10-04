@@ -9,6 +9,7 @@ import {
   HiOutlineXCircle,
   HiOutlinePencilAlt,
   HiOutlineShoppingBag,
+  HiOutlineLogout,
 } from 'react-icons/hi'
 import toast from 'react-hot-toast'
 import { useThemeStore } from '../store/useThemeStore'
@@ -18,7 +19,7 @@ import authService from '../services/auth'
 
 export default function PendingApproval() {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
-  const { user, login, token, updateUser } = useAuthStore()
+  const { user, login, token, updateUser, logout } = useAuthStore()
   const navigate = useNavigate()
   const [checking, setChecking] = useState(false)
   const [status, setStatus] = useState(user?.sellerStatus || 'PENDING')
@@ -199,6 +200,20 @@ export default function PendingApproval() {
               <HiOutlineHome className="h-4 w-4" />
               Về sàn mua sắm
             </a>
+
+            <button
+              type="button"
+              onClick={() => {
+                logout()
+                toast.success('Đã đăng xuất tài khoản!')
+                navigate('/login')
+              }}
+              className="flex items-center justify-center gap-1.5 rounded-xl border border-rose-200 dark:border-rose-900/50 py-3 px-4 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"
+              title="Đăng xuất tài khoản"
+            >
+              <HiOutlineLogout className="h-4 w-4" />
+              Đăng xuất
+            </button>
           </div>
 
           <p className="text-[11px] text-stone-400">

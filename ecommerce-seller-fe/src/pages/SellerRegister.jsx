@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { motion, AnimatePresence } from 'framer-motion'
 import toast from 'react-hot-toast'
@@ -17,6 +17,14 @@ import {
   HiOutlineX,
   HiOutlineLockClosed,
   HiOutlineShieldCheck,
+  HiOutlineRefresh,
+  HiOutlineExclamationCircle,
+  HiOutlineShoppingBag,
+  HiOutlineLogout,
+  HiOutlineArrowLeft,
+  HiOutlineHome,
+  HiOutlineSun,
+  HiOutlineMoon,
   HiStar,
 } from 'react-icons/hi'
 import { useThemeStore } from '../store/useThemeStore'
@@ -32,10 +40,52 @@ import ShopCoverImageUpload from '../components/ShopCoverImageUpload'
 import GhnAddressSelector from '../components/GhnAddressSelector'
 import BankSelector from '../components/BankSelector'
 
+const KYC_STORAGE_KEY = 'seller_kyc_session_progress'
+const FORM_DRAFT_KEY = 'seller_registration_form_draft'
+
+const saveKycProgress = (data) => {
+  try {
+    const existing = JSON.parse(localStorage.getItem(KYC_STORAGE_KEY) || '{}')
+    localStorage.setItem(KYC_STORAGE_KEY, JSON.stringify({ ...existing, ...data, updatedAt: Date.now() }))
+  } catch (e) {
+    console.warn('Cannot save KYC progress:', e)
+  }
+}
+
+const loadKycProgress = () => {
+  try {
+    const raw = localStorage.getItem(KYC_STORAGE_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    // 4 hours TTL
+    if (Date.now() - (parsed.updatedAt || 0) > 4 * 60 * 60 * 1000) {
+      localStorage.removeItem(KYC_STORAGE_KEY)
+      return null
+    }
+    return parsed
+  } catch (e) {
+    return null
+  }
+}
+
+const clearKycProgress = () => {
+  try {
+    localStorage.removeItem(KYC_STORAGE_KEY)
+  } catch (e) {}
+}
+
 export default function SellerRegister() {
-  const isDark = useThemeStore((s) => s.theme) === 'dark'
-  const { isAuthenticated, accountVerified, updateAccountVerified, user, updateUser } = useAuthStore()
+  const { theme, toggleTheme } = useThemeStore()
+  const isDark = theme === 'dark'
+  const { isAuthenticated, accountVerified, updateAccountVerified, user, updateUser, logout } = useAuthStore()
   const navigate = useNavigate()
+
+  const handleLogout = () => {
+    logout()
+    clearKycProgress()
+    toast.success('Đã đăng xuất tài khoản!')
+    navigate('/login')
+  }
 
   const [sessionId, setSessionId] = useState('')
   const [sessionStatus, setSessionStatus] = useState('')
@@ -57,6 +107,32 @@ export default function SellerRegister() {
   const [sellerType, setSellerType] = useState('INDIVIDUAL') // 'INDIVIDUAL' or 'BUSINESS'
   const [sameAsPickup, setSameAsPickup] = useState(false)
   const [sameAsBusiness, setSameAsBusiness] = useState(false)
+
+  // Resilience & Recovery States
+  const [kycError, setKycError] = useState(null)
+  const [submitError, setSubmitError] = useState(null)
+  const [isOnline, setIsOnline] = useState(navigator.onLine)
+  const [draftRestored, setDraftRestored] = useState(false)
+  const [draftRestoredTime, setDraftRestoredTime] = useState('')
+  const [restoredKycSession, setRestoredKycSession] = useState(false)
+
+  // Online/Offline detection
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true)
+      toast.success('Đã kết nối lại Internet!', { id: 'network-status' })
+    }
+    const handleOffline = () => {
+      setIsOnline(false)
+      toast.error('Mất kết nối mạng! Dữ liệu của bạn đang được lưu tạm trên thiết bị.', { id: 'network-status', duration: 5000 })
+    }
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
+  }, [])
 
   // Quỹ Ký Quỹ Bảo Chứng (Escrow Capital Deposit)
   const [isEscrowChecked, setIsEscrowChecked] = useState(false)
@@ -155,29 +231,94 @@ export default function SellerRegister() {
       return
     }
 
-    // Check if account is verified
-    if (accountVerified) {
-      setShowSellerForm(true)
-    } else {
-      // Auto-create KYC session if not verified
-      handleAutoStartKYC()
-    }
-  }, [isAuthenticated, accountVerified, navigate])
+    const syncStatusAndInit = async () => {
+      try {
+        const profile = await authService.getMe()
+        if (profile?.role === 'BUSINESS' || profile?.hasShop) {
+          navigate('/dashboard', { replace: true })
+          return
+        }
+        if (profile?.sellerStatus === 'PENDING' || profile?.sellerStatus === 'REJECTED') {
+          navigate('/pending', { replace: true })
+          return
+        }
+        if (profile?.accountVerified === true) {
+          updateAccountVerified(true)
+          setShowSellerForm(true)
+          clearKycProgress()
+          return
+        }
+      } catch (err) {
+        console.warn('Sync profile on seller-register error:', err)
+      }
 
-  const handleAutoStartKYC = async () => {
+      // Check if verified in auth store
+      if (accountVerified) {
+        setShowSellerForm(true)
+        clearKycProgress()
+        return
+      }
+
+      // Check existing KYC session in progress from localStorage
+      const savedKyc = loadKycProgress()
+      if (savedKyc && savedKyc.sessionId) {
+        setSessionId(savedKyc.sessionId)
+        setSessionStatus('IN_PROGRESS')
+        if (savedKyc.currentStep) setCurrentStep(savedKyc.currentStep)
+        if (savedKyc.frontUploaded) setFrontUploaded(true)
+        if (savedKyc.backUploaded) setBackUploaded(true)
+        if (savedKyc.selfieUploaded) setSelfieUploaded(true)
+        setRestoredKycSession(true)
+        toast('Đã khôi phục phiên KYC đang dở dang của bạn.', { id: 'kyc-restored' })
+      } else {
+        // Auto-create KYC session if no active session found
+        handleAutoStartKYC()
+      }
+    }
+
+    syncStatusAndInit()
+  }, [isAuthenticated, accountVerified, navigate, updateAccountVerified])
+
+  const handleAutoStartKYC = async (isRetry = false) => {
     setIsStarting(true)
+    setKycError(null)
     try {
       const res = await kycService.startSession()
-      setSessionId(res?.sessionId || '')
+      const sid = res?.sessionId || ''
+      setSessionId(sid)
       setSessionStatus(res?.status || '')
       setCurrentStep(1)
-      toast.success('Phiên KYC đã được tạo tự động. Vui lòng hoàn tất xác minh danh tính.', { id: 'kyc-session-started' })
+      setFrontUploaded(false)
+      setBackUploaded(false)
+      setSelfieUploaded(false)
+      setFrontFile(null)
+      setBackFile(null)
+      setSelfieFile(null)
+      setFrontPreview(null)
+      setBackPreview(null)
+      setSelfiePreview(null)
+      setRestoredKycSession(false)
+      saveKycProgress({
+        sessionId: sid,
+        currentStep: 1,
+        frontUploaded: false,
+        backUploaded: false,
+        selfieUploaded: false,
+      })
+      toast.success(isRetry ? 'Đã khởi tạo lại phiên KYC mới thành công.' : 'Phiên KYC đã được tạo tự động. Vui lòng hoàn tất xác minh danh tính.', { id: 'kyc-session-started' })
     } catch (error) {
       console.error('Start KYC error:', error)
-      toast.error(error?.message || 'Không thể tạo phiên KYC.', { id: 'kyc-session-start-failed' })
+      const msg = error?.message || 'Không thể tạo phiên KYC do lỗi kết nối mạng. Vui lòng thử lại.'
+      setKycError(msg)
+      toast.error(msg, { id: 'kyc-session-start-failed' })
     } finally {
       setIsStarting(false)
     }
+  }
+
+  const handleResetKycSession = () => {
+    clearKycProgress()
+    handleAutoStartKYC(true)
   }
 
   const handleFileSelect = (file, type) => {
@@ -235,6 +376,7 @@ export default function SellerRegister() {
     }
 
     setIsUploading(true)
+    setKycError(null)
     try {
       const autoTitle = file?.name || `kyc-${type}-${Date.now()}`
       await kycService.uploadWithType({
@@ -248,19 +390,24 @@ export default function SellerRegister() {
       if (type === 'front') {
         setFrontUploaded(true)
         setCurrentStep(2)
+        saveKycProgress({ sessionId, currentStep: 2, frontUploaded: true })
         toast.success('Upload ảnh mặt trước CCCD thành công!')
       } else if (type === 'back') {
         setBackUploaded(true)
         setCurrentStep(3)
+        saveKycProgress({ sessionId, currentStep: 3, backUploaded: true })
         toast.success('Upload ảnh mặt sau CCCD thành công!')
       } else if (type === 'selfie') {
         setSelfieUploaded(true)
         setCurrentStep(4)
+        saveKycProgress({ sessionId, currentStep: 4, selfieUploaded: true })
         toast.success('Upload ảnh khuôn mặt thành công!')
       }
     } catch (error) {
       console.error(`Upload ${type} error:`, error)
-      toast.error(error?.message || `Upload ảnh ${type} thất bại.`)
+      const msg = error?.message || `Upload ảnh ${type} thất bại do lỗi mạng. Vui lòng thử lại.`
+      setKycError(msg)
+      toast.error(msg)
     } finally {
       setIsUploading(false)
     }
@@ -273,6 +420,7 @@ export default function SellerRegister() {
     }
 
     setIsComparing(true)
+    setKycError(null)
     try {
       const compareResult = await kycService.compare(sessionId)
 
@@ -280,12 +428,17 @@ export default function SellerRegister() {
         toast.success('Xác minh danh tính thành công! Bạn có thể tiếp tục đăng ký bán hàng.')
         updateAccountVerified(true)
         setShowSellerForm(true)
+        clearKycProgress()
       } else {
-        toast.error('Xác minh thất bại. Vui lòng thử lại.')
+        const failMsg = 'Xác minh thất bại: Khuôn mặt và giấy tờ không khớp hoặc ảnh bị mờ. Vui lòng chụp lại ảnh khuôn mặt.'
+        setKycError(failMsg)
+        toast.error(failMsg)
       }
     } catch (error) {
       console.error('Compare KYC error:', error)
-      toast.error(error?.message || 'Xác minh thất bại.')
+      const failMsg = error?.message || 'Không thể xác minh danh tính do lỗi kết nối mạng. Vui lòng thử lại.'
+      setKycError(failMsg)
+      toast.error(failMsg)
     } finally {
       setIsComparing(false)
     }
@@ -315,6 +468,79 @@ export default function SellerRegister() {
     } else if (newType === 'BUSINESS') {
       setSameAsBusiness(false)
     }
+  }
+
+  // Khôi phục bản nháp form khi mở form đăng ký
+  useEffect(() => {
+    if (showSellerForm) {
+      try {
+        const raw = localStorage.getItem(FORM_DRAFT_KEY)
+        if (raw) {
+          const draft = JSON.parse(raw)
+          if (draft.sellerType) setSellerType(draft.sellerType)
+          if (draft.sameAsBusiness !== undefined) setSameAsBusiness(draft.sameAsBusiness)
+          if (draft.sameAsPickup !== undefined) setSameAsPickup(draft.sameAsPickup)
+          if (draft.isEscrowChecked !== undefined) setIsEscrowChecked(draft.isEscrowChecked)
+          if (draft.selectedDepositAmount) setSelectedDepositAmount(draft.selectedDepositAmount)
+
+          // Nạp lại các trường vào form
+          reset(draft)
+          setDraftRestored(true)
+          setDraftRestoredTime(draft.savedAt || 'trước đó')
+        }
+      } catch (err) {
+        console.warn('Restore draft error:', err)
+      }
+    }
+  }, [showSellerForm, reset])
+
+  // Tự động lưu bản nháp form (Debounce 600ms)
+  const watchedValues = watch()
+  useEffect(() => {
+    if (!showSellerForm) return
+    const timer = setTimeout(() => {
+      try {
+        const draft = {
+          ...watchedValues,
+          sellerType,
+          sameAsBusiness,
+          sameAsPickup,
+          isEscrowChecked,
+          selectedDepositAmount,
+          savedAt: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+        }
+        localStorage.setItem(FORM_DRAFT_KEY, JSON.stringify(draft))
+      } catch (err) {
+        console.warn('Auto-save draft error:', err)
+      }
+    }, 600)
+    return () => clearTimeout(timer)
+  }, [watchedValues, sellerType, sameAsBusiness, sameAsPickup, isEscrowChecked, selectedDepositAmount, showSellerForm])
+
+  const handleClearDraft = () => {
+    try {
+      localStorage.removeItem(FORM_DRAFT_KEY)
+      setDraftRestored(false)
+      reset({
+        shopPhone: user?.phoneNumber || '',
+        shopEmail: user?.email || '',
+        shopName: '',
+        description: '',
+        coverImageUrl: '',
+        pickupAddress: '',
+        returnAddress: '',
+        businessType: '',
+        businessName: '',
+        businessAddress: '',
+        businessLicenseUrl: '',
+        taxCode: '',
+        invoiceEmail: '',
+        bankName: '',
+        bankAccountName: '',
+        bankAccountNumber: '',
+      })
+      toast.success('Đã xóa dữ liệu bản nháp.')
+    } catch (e) {}
   }
 
   const onSubmit = async (data) => {
@@ -353,17 +579,21 @@ export default function SellerRegister() {
     }
 
     try {
+      setSubmitError(null)
       await requestService.registerSeller(payload)
       toast.success('Gửi yêu cầu đăng ký bán hàng thành công!')
       if (updateUser) {
         updateUser({ sellerStatus: 'PENDING' })
       }
+      localStorage.removeItem(FORM_DRAFT_KEY)
+      clearKycProgress()
       reset()
       navigate('/pending')
     } catch (error) {
       console.error('Register seller error:', error)
       const message =
-        error?.message || 'Đăng ký bán hàng thất bại. Vui lòng thử lại.'
+        error?.message || 'Đăng ký bán hàng thất bại. Vui lòng kiểm tra lại kết nối mạng và thử lại.'
+      setSubmitError(message)
       toast.error(message)
     }
   }
@@ -371,16 +601,103 @@ export default function SellerRegister() {
   return (
     <div
       className={cn(
-        'min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12',
-        isDark ? 'bg-slate-950' : 'bg-stone-50',
+        'min-h-screen flex flex-col font-sans transition-colors',
+        isDark ? 'bg-slate-950 text-slate-100' : 'bg-stone-50 text-stone-900',
       )}
     >
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="w-full max-w-2xl"
+      {/* Top Navbar with Account info & Logout */}
+      <header
+        className={cn(
+          'sticky top-0 z-40 border-b backdrop-blur-md px-4 sm:px-8 py-3.5 flex items-center justify-between transition-colors',
+          isDark ? 'border-slate-800 bg-slate-900/90' : 'border-stone-200 bg-white/90',
+        )}
       >
+        <div className="flex items-center gap-3">
+          <Link to="/" className="flex items-center gap-2.5 group">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/20 group-hover:scale-105 transition-transform">
+              <HiOutlineShoppingBag className="h-6 w-6" />
+            </div>
+            <div>
+              <span className="text-base font-black tracking-tight bg-gradient-to-r from-amber-600 to-orange-500 bg-clip-text text-transparent">
+                Kênh Người Bán
+              </span>
+              <span className="hidden sm:inline-block ml-2 text-[11px] font-semibold text-stone-400 dark:text-slate-400">
+                Đăng ký mở gian hàng
+              </span>
+            </div>
+          </Link>
+        </div>
+
+        <div className="flex items-center gap-2 sm:gap-4">
+          <a
+            href="http://localhost:3000"
+            className="hidden md:inline-flex items-center gap-1.5 text-xs font-semibold text-stone-500 hover:text-amber-600 dark:text-slate-400 dark:hover:text-amber-400 px-2 py-1.5 transition-colors"
+          >
+            <HiOutlineHome className="h-4 w-4" />
+            Về sàn mua sắm
+          </a>
+
+          <button
+            onClick={toggleTheme}
+            className={cn(
+              'p-2 rounded-xl border transition-colors',
+              isDark
+                ? 'border-slate-700 bg-slate-800 text-amber-400 hover:bg-slate-700'
+                : 'border-stone-200 bg-stone-100 text-stone-600 hover:bg-stone-200',
+            )}
+            title="Đổi giao diện"
+          >
+            {isDark ? <HiOutlineSun className="h-4 w-4" /> : <HiOutlineMoon className="h-4 w-4" />}
+          </button>
+
+          {isAuthenticated && (
+            <div className="flex items-center gap-2 sm:gap-3 pl-2 sm:pl-3 border-l border-stone-200 dark:border-slate-800">
+              <div className="hidden sm:flex flex-col text-right">
+                <span className="text-xs font-bold text-stone-900 dark:text-white truncate max-w-[150px]">
+                  {user?.fullName || user?.username || user?.email}
+                </span>
+                <span className="text-[10px] text-stone-400 dark:text-slate-400">
+                  {user?.role === 'BUSINESS' ? 'Chủ shop' : 'Tài khoản người dùng'}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className={cn(
+                  'flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition-all shadow-sm',
+                  isDark
+                    ? 'border-rose-900/60 bg-rose-950/30 text-rose-400 hover:bg-rose-900/50 hover:text-rose-200'
+                    : 'border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-700',
+                )}
+                title="Đăng xuất tài khoản"
+              >
+                <HiOutlineLogout className="h-4 w-4" />
+                <span>Đăng xuất</span>
+              </button>
+            </div>
+          )}
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="flex-1 flex items-center justify-center px-4 py-8 sm:py-12">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="w-full max-w-2xl"
+        >
+        {/* Offline Network Warning */}
+        {!isOnline && (
+          <div className="mb-4 rounded-2xl border border-red-500/30 bg-red-500/10 p-3.5 text-xs text-red-500 flex items-center justify-between shadow-sm">
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-red-500 animate-ping"></span>
+              <span>Mất kết nối mạng! Dữ liệu của bạn đang được lưu tạm trên thiết bị.</span>
+            </div>
+            <span className="font-bold uppercase tracking-wider text-[10px] bg-red-500/20 px-2 py-0.5 rounded">Mất mạng</span>
+          </div>
+        )}
+
         <AnimatePresence mode="wait">
           {!showSellerForm ? (
             // KYC Step
@@ -415,6 +732,75 @@ export default function SellerRegister() {
                   Vui lòng hoàn tất xác minh danh tính trước khi đăng ký bán hàng.
                 </p>
               </div>
+
+              {/* KYC Session Restored Banner */}
+              {restoredKycSession && (
+                <div className={cn(
+                  'mb-6 rounded-2xl p-4 border text-left flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 transition-colors',
+                  isDark ? 'bg-amber-500/10 border-amber-500/20 text-amber-300' : 'bg-amber-50 border-amber-200 text-amber-900'
+                )}>
+                  <div className="text-xs space-y-0.5">
+                    <p className="font-bold flex items-center gap-1.5">
+                      <HiOutlineShieldCheck className="h-4 w-4 text-amber-500" />
+                      Đang khôi phục phiên KYC đang dở dang (Bước {currentStep}/4)
+                    </p>
+                    <p className={isDark ? 'text-slate-300' : 'text-stone-600'}>
+                      Hệ thống tự động ghi nhớ các ảnh bạn đã tải lên trước đó để bạn không cần làm lại từ đầu.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleResetKycSession}
+                    className={cn(
+                      'text-xs font-semibold underline hover:opacity-80 transition whitespace-nowrap',
+                      isDark ? 'text-slate-400 hover:text-white' : 'text-stone-500 hover:text-stone-800'
+                    )}
+                  >
+                    Làm lại phiên mới
+                  </button>
+                </div>
+              )}
+
+              {/* KYC Error & Retry Banner */}
+              {kycError && (
+                <div className="mb-6 rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4 text-xs text-rose-500 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <div className="space-y-0.5">
+                    <p className="font-bold flex items-center gap-1.5">
+                      <HiOutlineExclamationCircle className="h-4 w-4 text-rose-500" />
+                      Sự cố trong quá trình xác minh
+                    </p>
+                    <p className="text-rose-400">{kycError}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {currentStep === 4 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setKycError(null)
+                          setCurrentStep(3)
+                        }}
+                        className="whitespace-nowrap rounded-xl bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-600"
+                      >
+                        Chụp lại selfie (Bước 3)
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setKycError(null)
+                        if (!sessionId) {
+                          handleAutoStartKYC(true)
+                        } else if (currentStep === 4) {
+                          handleReviewAndCompare()
+                        }
+                      }}
+                      className="whitespace-nowrap rounded-xl bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-700"
+                    >
+                      Thử lại kết nối
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Progress Steps */}
               <div className="mb-6">
@@ -865,6 +1251,26 @@ export default function SellerRegister() {
                   </motion.div>
                 )}
               </AnimatePresence>
+
+              {/* KYC Footer Actions: Return & Logout */}
+              <div className="mt-8 pt-4 border-t border-stone-200/80 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-stone-500 dark:text-slate-400">
+                <Link
+                  to="/"
+                  className="hover:text-amber-500 flex items-center gap-1.5 transition-colors font-medium"
+                >
+                  <HiOutlineArrowLeft className="h-4 w-4" /> Về trang giới thiệu
+                </Link>
+                <div className="flex items-center gap-2">
+                  <span>Chưa muốn xác minh lúc này?</span>
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="font-bold text-rose-500 hover:text-rose-600 dark:text-rose-400 hover:underline flex items-center gap-1"
+                  >
+                    <HiOutlineLogout className="h-4 w-4" /> Đăng xuất tài khoản
+                  </button>
+                </div>
+              </div>
             </motion.div>
           ) : null}
 
@@ -924,6 +1330,34 @@ export default function SellerRegister() {
                   </p>
                 </div>
               </div>
+
+              {/* Draft Restored Banner */}
+              {draftRestored && (
+                <div className={cn(
+                  'mb-6 rounded-2xl p-4 border text-left flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 transition-colors',
+                  isDark ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300' : 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                )}>
+                  <div className="text-xs space-y-0.5">
+                    <p className="font-bold flex items-center gap-1.5">
+                      <HiOutlineCheckCircle className="h-4 w-4 text-emerald-500" />
+                      Đã khôi phục dữ liệu bản nháp (lưu lúc {draftRestoredTime})
+                    </p>
+                    <p className={isDark ? 'text-slate-300' : 'text-stone-600'}>
+                      Dữ liệu biểu mẫu bạn đang điền trước khi bị gián đoạn đã được nạp lại tự động.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleClearDraft}
+                    className={cn(
+                      'text-xs font-semibold underline hover:opacity-80 transition whitespace-nowrap',
+                      isDark ? 'text-slate-400 hover:text-white' : 'text-stone-500 hover:text-stone-800'
+                    )}
+                  >
+                    Xóa nháp và điền lại
+                  </button>
+                </div>
+              )}
 
               <div className={cn(
                 'mb-6 flex p-1.5 space-x-1.5 rounded-2xl border transition-colors',
@@ -1626,6 +2060,27 @@ export default function SellerRegister() {
                   )}
                 </div>
 
+                {/* Form Submit Error Banner */}
+                {submitError && (
+                  <div className="mb-4 rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4 text-xs text-rose-500 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div className="space-y-0.5">
+                      <p className="font-bold flex items-center gap-1.5">
+                        <HiOutlineExclamationCircle className="h-4 w-4 text-rose-500" />
+                        Không thể gửi hồ sơ đăng ký
+                      </p>
+                      <p className="text-rose-400">{submitError}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleSubmit(onSubmit)}
+                      disabled={isSubmitting}
+                      className="whitespace-nowrap rounded-xl bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-50"
+                    >
+                      Thử gửi lại
+                    </button>
+                  </div>
+                )}
+
                 <div className="pt-4 border-t dark:border-slate-700 mt-6">
                   <button
                     type="submit"
@@ -1650,10 +2105,26 @@ export default function SellerRegister() {
               >
                 Yêu cầu sẽ được xét duyệt trong thời gian sớm nhất.
               </p>
+
+              {/* Form Footer Actions: Return & Logout */}
+              <div className="mt-6 pt-4 border-t border-stone-200/80 dark:border-slate-800 flex items-center justify-center gap-4 text-xs text-stone-500 dark:text-slate-400">
+                <Link to="/" className="hover:text-amber-500 flex items-center gap-1.5 transition-colors font-medium">
+                  <HiOutlineArrowLeft className="h-4 w-4" /> Về trang giới thiệu
+                </Link>
+                <span>•</span>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="font-semibold text-rose-500 hover:text-rose-600 dark:text-rose-400 hover:underline flex items-center gap-1"
+                >
+                  <HiOutlineLogout className="h-4 w-4" /> Đăng xuất tài khoản
+                </button>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
       </motion.div>
-    </div>
-  )
+    </main>
+  </div>
+)
 }

@@ -11,7 +11,10 @@ import org.springframework.security.authentication.AccountStatusException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.LockedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -46,11 +49,14 @@ public class GlobalExceptionHandler {
     }
 
     // =========================
-    // 401 - Authentication
+    // 401 - Authentication & Token Expiration
     // =========================
     @ExceptionHandler({
             InvalidCredentialsException.class,
-            BadCredentialsException.class
+            BadCredentialsException.class,
+            ExpiredJwtException.class,
+            JwtException.class,
+            AuthenticationException.class
     })
     public ResponseEntity<ErrorResponse> handleBadCredentials(
             Exception ex,

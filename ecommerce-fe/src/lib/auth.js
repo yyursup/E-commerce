@@ -45,10 +45,18 @@ export function setRefreshToken(refreshToken) {
 }
 
 /**
- * Remove stored token(s).
+ * Remove stored token(s) and auth storage to prevent stale login states.
  */
 export function clearAccessToken() {
   localStorage.removeItem(TOKEN_KEY)
   localStorage.removeItem(ACCESS_TOKEN_KEY)
   localStorage.removeItem(REFRESH_TOKEN_KEY)
+  localStorage.removeItem('auth-storage')
+  try {
+    sessionStorage.clear()
+  } catch (e) {}
+}
+
+export function clearAuthStorage() {
+  clearAccessToken()
 }

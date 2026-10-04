@@ -20,8 +20,11 @@ import LiveManagement from './pages/live/LiveManagement'
 import SellerLiveStudio from './pages/live/SellerLiveStudio'
 import ShopViolations from './pages/business/ShopViolations'
 import ShopEscrowFund from './pages/business/ShopEscrowFund'
+import { useTokenLifecycle } from './hooks/useTokenLifecycle'
 
 export default function App() {
+  useTokenLifecycle()
+
   return (
     <>
       <ThemeSync />

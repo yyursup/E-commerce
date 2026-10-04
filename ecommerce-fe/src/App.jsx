@@ -22,8 +22,11 @@ import Deals from './pages/deals/Deals'
 import Checkout from './pages/checkout/Checkout'
 import LiveList from './pages/live/LiveList'
 import LiveRoom from './pages/live/LiveRoom'
+import { useTokenLifecycle } from './hooks/useTokenLifecycle'
 
 export default function App() {
+  useTokenLifecycle()
+
   return (
     <Routes>
       {/* Standalone Fullscreen Live Room */}

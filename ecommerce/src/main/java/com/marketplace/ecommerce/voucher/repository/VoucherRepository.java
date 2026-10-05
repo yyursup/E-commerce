@@ -6,6 +6,7 @@ import com.marketplace.ecommerce.voucher.valueObjects.VoucherStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -80,4 +81,12 @@ public interface VoucherRepository extends JpaRepository<Voucher, UUID> {
     );
 
     List<Voucher> findByShopIdOrderByCreatedAtDesc(UUID shopId);
+
+    @Modifying
+    @Query("UPDATE Voucher v SET v.status = :newStatus, v.updatedAt = CURRENT_TIMESTAMP WHERE v.shop.id = :shopId AND v.status = :targetStatus")
+    int updateStatusByShopId(
+            @Param("shopId") UUID shopId,
+            @Param("targetStatus") VoucherStatus targetStatus,
+            @Param("newStatus") VoucherStatus newStatus
+    );
 }

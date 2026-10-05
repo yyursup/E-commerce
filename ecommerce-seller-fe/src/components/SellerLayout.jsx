@@ -30,6 +30,7 @@ import {
 import { useChatNotification } from '../hooks/useChatNotification'
 import ChatNotificationToast from './ChatNotificationToast'
 import toast from 'react-hot-toast'
+import shopService from '../services/shop'
 
 const navItems = [
   { to: '/dashboard', label: 'Tổng quan (Dashboard)', icon: HiOutlineViewGrid },
@@ -118,6 +119,32 @@ export default function SellerLayout() {
       unregUpdated()
     }
   }, [token, location.pathname, addNotification, isThreadMuted])
+
+  // Tự động đồng bộ trạng thái Shop mới nhất từ Backend (ví dụ khi Admin vừa duyệt đóng shop)
+  useEffect(() => {
+    if (!token) return
+    let isMounted = true
+    const syncShopStatus = async () => {
+      try {
+        const profile = await shopService.getMyShop()
+        if (isMounted && profile?.status && profile.status !== user?.shopStatus) {
+          useAuthStore.getState().updateUser({
+            shopStatus: profile.status,
+            violationCount: profile.violationCount != null ? profile.violationCount : user?.violationCount,
+            shopName: profile.name || user?.shopName,
+          })
+        }
+      } catch (err) {
+        if (isMounted) {
+          console.warn('Không thể đồng bộ trạng thái shop mới nhất:', err)
+        }
+      }
+    }
+    syncShopStatus()
+    return () => {
+      isMounted = false
+    }
+  }, [token, location.pathname])
 
   return (
     <div className={cn('min-h-screen flex flex-col', isDark ? 'bg-slate-950 text-slate-100' : 'bg-stone-50 text-stone-900')}>
@@ -231,6 +258,24 @@ export default function SellerLayout() {
 
           {/* Main Workspace */}
           <main className="lg:col-span-3">
+            {/* Banner thông báo gian hàng đã đóng cửa (CLOSED) */}
+            {user?.shopStatus === 'CLOSED' && (
+              <div className="mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-2xl border border-rose-500/40 bg-gradient-to-r from-rose-500/15 via-rose-500/10 to-rose-500/5 px-4 py-3.5 text-xs text-rose-800 dark:text-rose-200 shadow-sm">
+                <div className="flex items-center gap-2">
+                  <HiOutlineExclamation className="h-5 w-5 text-rose-500 shrink-0" />
+                  <span>
+                    Gian hàng đã hoàn tất thủ tục <strong>Đóng cửa (CLOSED)</strong> và nhận lại toàn bộ tiền ký quỹ. Các tính năng đăng bán, cập nhật sản phẩm và tạo voucher đã bị vô hiệu hóa. Bạn vẫn có thể xem lịch sử đơn hàng, quỹ ký quỹ và thực hiện rút số dư ví khả dụng.
+                  </span>
+                </div>
+                <NavLink
+                  to="/escrow-fund"
+                  className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs shadow-sm transition shrink-0 self-end sm:self-auto"
+                >
+                  Xem quỹ & ví &rarr;
+                </NavLink>
+              </div>
+            )}
+
             {/* Banner yêu cầu nạp ký quỹ để kích hoạt gian hàng */}
             {user?.shopStatus === 'PENDING_DEPOSIT' && (
               <div className="mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-2xl border border-amber-500/40 bg-gradient-to-r from-amber-500/15 via-amber-500/10 to-amber-500/5 px-4 py-3.5 text-xs text-amber-800 dark:text-amber-200 shadow-sm">

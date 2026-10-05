@@ -31,6 +31,7 @@ export default function ShopProducts() {
   const user = useAuthStore((s) => s.user)
   const navigate = useNavigate()
   const isPendingDeposit = user?.shopStatus === 'PENDING_DEPOSIT'
+  const isShopClosed = user?.shopStatus === 'CLOSED'
 
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
@@ -62,6 +63,10 @@ export default function ShopProducts() {
   }, [statusFilter])
 
   const handleCreateProduct = () => {
+    if (isShopClosed) {
+      toast.error('Gian hàng đã đóng cửa (CLOSED). Không thể tạo sản phẩm mới.')
+      return
+    }
     if (isPendingDeposit) {
       toast.error('Gian hàng chưa được kích hoạt! Vui lòng nạp đủ tiền ký quỹ cam kết để bắt đầu đăng bán sản phẩm.')
       navigate('/escrow-fund')
@@ -73,12 +78,20 @@ export default function ShopProducts() {
 
   const handleEditProduct = (product, e) => {
     e?.stopPropagation()
+    if (isShopClosed) {
+      toast.error('Gian hàng đã đóng cửa (CLOSED). Không thể chỉnh sửa sản phẩm.')
+      return
+    }
     setEditingProduct(product)
     setShowProductModal(true)
   }
 
   const handleDeleteProduct = async (productId, productName, e) => {
     e?.stopPropagation()
+    if (isShopClosed) {
+      toast.error('Gian hàng đã đóng cửa (CLOSED). Không thể xóa sản phẩm.')
+      return
+    }
     if (!window.confirm(`Bạn có chắc chắn muốn xóa sản phẩm "${productName || 'này'}" khỏi gian hàng?`)) {
       return
     }
@@ -104,6 +117,10 @@ export default function ShopProducts() {
 
   const handleToggleFeatured = async (product, e) => {
     e?.stopPropagation()
+    if (isShopClosed) {
+      toast.error('Gian hàng đã đóng cửa (CLOSED). Không thể thay đổi trạng thái nổi bật.')
+      return
+    }
     try {
       setTogglingFeaturedId(product.id)
       const updated = await sellerService.toggleFeatured(product.id)
@@ -239,13 +256,40 @@ export default function ShopProducts() {
 
           <button
             onClick={handleCreateProduct}
-            className="flex-1 sm:flex-initial flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 px-5 py-2.5 text-xs font-bold text-white hover:from-amber-600 hover:to-orange-600 active:scale-95 shadow-md shadow-amber-500/25 transition-all"
+            disabled={isPendingDeposit || isShopClosed}
+            className={cn(
+              "flex-1 sm:flex-initial flex items-center justify-center gap-2 rounded-2xl px-5 py-2.5 text-xs font-bold transition-all shadow-md",
+              isShopClosed || isPendingDeposit
+                ? "bg-stone-300 text-stone-500 dark:bg-slate-800 dark:text-slate-500 cursor-not-allowed shadow-none"
+                : "bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 active:scale-95 shadow-amber-500/25"
+            )}
+            title={isShopClosed ? 'Gian hàng đã đóng cửa' : undefined}
           >
             <HiOutlinePlus className="h-4 w-4 stroke-[2.5]" />
             Thêm sản phẩm mới
           </button>
         </div>
       </div>
+
+      {/* Cảnh báo gian hàng đã đóng cửa */}
+      {isShopClosed && (
+        <div className="rounded-2xl border border-rose-500/40 bg-gradient-to-r from-rose-500/15 via-rose-500/10 to-transparent p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+          <div>
+            <p className="font-bold text-rose-700 dark:text-rose-300">
+              Gian hàng đã hoàn tất thủ tục đóng cửa (CLOSED)
+            </p>
+            <p className={cn('mt-0.5', isDark ? 'text-slate-300' : 'text-stone-600')}>
+              Hệ thống đã khóa các thao tác tạo mới, chỉnh sửa, xóa và đẩy nổi bật sản phẩm. Toàn bộ danh mục sản phẩm dưới đây được lưu giữ chỉ nhằm mục đích tra cứu lịch sử.
+            </p>
+          </div>
+          <button
+            onClick={() => navigate('/escrow-fund')}
+            className="px-4 py-2 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs shadow transition shrink-0"
+          >
+            Xem Quỹ & Ví &rarr;
+          </button>
+        </div>
+      )}
 
       {/* Cảnh báo chưa kích hoạt gian hàng */}
       {isPendingDeposit && (

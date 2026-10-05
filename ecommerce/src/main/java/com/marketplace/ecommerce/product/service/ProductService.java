@@ -21,4 +21,12 @@ public interface ProductService {
     SellerProductResponse approveProduct(UUID adminAccountId, UUID productId);
 
     SellerProductResponse rejectProduct(UUID adminAccountId, UUID productId, String reason);
+    
+    /**
+     * Vô hiệu hóa toàn bộ sản phẩm đang bán (PUBLISHED) và chờ duyệt (PENDING_APPROVAL)
+     * của gian hàng sang trạng thái INACTIVE khi gian hàng chính thức đóng cửa (ShopStatus.CLOSED).
+     *
+     * @param shopId Định danh của gian hàng vừa đóng cửa
+     */
+    void deactivateProductsOnShopClose(UUID shopId);
 }

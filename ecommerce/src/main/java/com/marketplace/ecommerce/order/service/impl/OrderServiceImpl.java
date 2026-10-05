@@ -39,6 +39,7 @@ import com.marketplace.ecommerce.product.valueObjects.InventoryActionType;
 import com.marketplace.ecommerce.request.service.OrderDisputeService;
 import com.marketplace.ecommerce.shop.entity.Shop;
 import com.marketplace.ecommerce.shop.repository.ShopRepository;
+import com.marketplace.ecommerce.shop.valueObjects.ShopStatus;
 import com.marketplace.ecommerce.wallet.service.WalletService;
 
 import lombok.RequiredArgsConstructor;
@@ -335,6 +336,10 @@ public class OrderServiceImpl implements OrderService {
     public OrderResponse convertCartToOrder(UUID accountId, CreateOrderRequest request) {
         Shop shop = shopRepository.findById(request.getShopId())
                 .orElseThrow(() -> new CustomException("Shop not found."));
+
+        if (shop.getStatus() == ShopStatus.CLOSED) {
+            throw new CustomException("Gian hàng này đã đóng cửa, không thể thực hiện đặt hàng.");
+        }
 
         User user = userRepository.findByAccountId(accountId)
                 .orElseThrow(() -> new CustomException("User not found."));

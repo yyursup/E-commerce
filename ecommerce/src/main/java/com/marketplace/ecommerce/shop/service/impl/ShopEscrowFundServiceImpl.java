@@ -47,6 +47,8 @@ import com.marketplace.ecommerce.shop.dto.request.AdminDeductCompensationRequest
 import com.marketplace.ecommerce.wallet.entity.Wallet;
 import com.marketplace.ecommerce.wallet.repository.WalletRepository;
 import com.marketplace.ecommerce.wallet.valueObjects.WalletType;
+import com.marketplace.ecommerce.voucher.service.VoucherService;
+import com.marketplace.ecommerce.product.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -82,6 +84,8 @@ public class ShopEscrowFundServiceImpl implements ShopEscrowFundService {
     private final OrderReturnRepository orderReturnRepository;
     private final ReportRepository reportRepository;
     private final RequestRepository requestRepository;
+    private final VoucherService voucherService;
+    private final ProductService productService;
 
     @Override
     @Transactional
@@ -864,6 +868,10 @@ public class ShopEscrowFundServiceImpl implements ShopEscrowFundService {
         shop.setStatus(ShopStatus.CLOSED);
         shopRepository.save(shop);
         ShopEscrowFund savedFund = shopEscrowFundRepository.save(fund);
+
+        // Vô hiệu hóa toàn bộ voucher và sản phẩm của Shop thông qua Domain Service tương ứng
+        voucherService.deactivateVouchersOnShopClose(shop.getId());
+        productService.deactivateProductsOnShopClose(shop.getId());
 
         // 10. Ghi ShopEscrowTransaction (WITHDRAWAL_ON_CLOSE)
         ShopEscrowTransaction shopTx = ShopEscrowTransaction.builder()

@@ -36,4 +36,12 @@ public interface VoucherService {
     VoucherResponse createVoucher(UUID accountId, CreateVoucherRequest request);
 
     List<VoucherResponse> getShopManageVouchers(UUID accountId);
+    
+    /**
+     * Vô hiệu hóa toàn bộ voucher đang hoạt động (ACTIVE) của gian hàng
+     * sang trạng thái INACTIVE khi gian hàng chính thức đóng cửa (ShopStatus.CLOSED).
+     *
+     * @param shopId Định danh của gian hàng vừa đóng cửa
+     */
+    void deactivateVouchersOnShopClose(UUID shopId);
 }

@@ -162,6 +162,8 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
                 join fetch p.productCategory c
                 left join fetch p.images i
                 where s.id = :shopId
+                  and s.status in ('ACTIVE', 'WARNED')
+                  and s.user.account.isActive = true
                   and p.featured = true
                   and p.status = 'PUBLISHED'
                   and p.deleted = false
@@ -251,5 +253,20 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
         ORDER BY COUNT(p) DESC
     """)
     List<Object[]> getTopCategoriesByProductCount(Pageable pageable);
+
+    @Modifying
+    @Query("""
+        UPDATE Product p
+        SET p.status = :newStatus, p.updatedAt = :now
+        WHERE p.shop.id = :shopId
+          AND p.status in :targetStatuses
+          AND p.deleted = false
+    """)
+    int updateStatusByShopId(
+            @Param("shopId") UUID shopId,
+            @Param("targetStatuses") java.util.Collection<ProductStatus> targetStatuses,
+            @Param("newStatus") ProductStatus newStatus,
+            @Param("now") java.time.LocalDateTime now
+    );
 }
 

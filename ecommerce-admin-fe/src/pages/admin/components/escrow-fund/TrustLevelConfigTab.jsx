@@ -472,175 +472,123 @@ export default function TrustLevelConfigTab() {
             isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
           )}
         >
-          <table className="w-full text-left text-sm">
-            <thead
-              className={cn(
-                'text-xs uppercase border-b',
-                isDark ? 'bg-slate-950 text-slate-400 border-slate-800' : 'bg-stone-50 text-stone-600 border-stone-200'
-              )}
-            >
-      {/* Danh sách 5 bậc cấu hình */}
-      <div
-        className={cn(
-          'rounded-2xl border shadow-sm overflow-hidden',
-          isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
-        )}
-      >
-        <div
-          ref={tableContainerRef}
-          className={cn(
-            'overflow-x-auto',
-            isDark ? 'custom-scrollbar-dark' : 'custom-scrollbar-light'
-          )}
-        >
-          <table className="w-full text-left text-sm min-w-[880px]">
-            <thead className={cn('text-xs uppercase', isDark ? 'bg-slate-950 text-slate-400' : 'bg-stone-50 text-stone-600')}>
-              <tr>
-                <th className="px-4 py-3 sm:px-6 sm:py-4">Bậc Uy Tín</th>
-                <th className="px-4 py-3 sm:px-6 sm:py-4">Tên Hạng / Danh Hiệu</th>
-                <th className="px-4 py-3 sm:px-6 sm:py-4">Ngưỡng Tiền Tối Thiểu</th>
-                <th className="px-4 py-3 sm:px-6 sm:py-4">Ngưỡng Tiền Tối Đa</th>
-                <th className="px-4 py-3 sm:px-6 sm:py-4">Giảm Hoa Hồng (%)</th>
-                <th className="px-4 py-3 sm:px-6 sm:py-4">Quyền Lợi & Đặc Quyền</th>
-                <th className="px-4 py-3 sm:px-6 sm:py-4 text-center">Trạng Thái</th>
-                <th className="px-4 py-3 sm:px-6 sm:py-4 text-right">Thao Tác</th>
-                <th className="px-4 py-3.5 w-44">Bậc Sao & Hạng</th>
-                <th className="px-4 py-3.5 w-52">Hạn Mức Ký Quỹ</th>
-                <th className="px-4 py-3.5 w-28 text-center">Giảm Phí</th>
-                <th className="px-4 py-3.5 min-w-[200px]">Quyền Lợi & Đặc Quyền</th>
-                <th className="px-4 py-3.5 w-44 text-right">Thao Tác</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-700/30">
-              {loading ? (
+          <div
+            ref={tableContainerRef}
+            className={cn(
+              'overflow-x-auto',
+              isDark ? 'custom-scrollbar-dark' : 'custom-scrollbar-light'
+            )}
+          >
+            <table className="w-full text-left text-sm min-w-[760px]">
+              <thead
+                className={cn(
+                  'text-xs uppercase border-b',
+                  isDark ? 'bg-slate-950 text-slate-400 border-slate-800' : 'bg-stone-50 text-stone-600 border-stone-200'
+                )}
+              >
                 <tr>
-                  <td colSpan="8" className="px-4 py-10 sm:px-6 sm:py-10 text-center text-slate-400">
-                    <HiOutlineRefresh className="mx-auto h-6 w-6 animate-spin text-amber-500 mb-2" />
-                    Đang tải cấu hình bậc sao...
-                  </td>
+                  <th className="px-4 py-3.5 w-44">Bậc Sao & Hạng</th>
+                  <th className="px-4 py-3.5 w-52">Hạn Mức Ký Quỹ</th>
+                  <th className="px-4 py-3.5 w-28 text-center">Giảm Phí</th>
+                  <th className="px-4 py-3.5 min-w-[200px]">Quyền Lợi & Đặc Quyền</th>
+                  <th className="px-4 py-3.5 w-44 text-right">Thao Tác</th>
                 </tr>
-              ) : (
-                configs.map((cfg) => (
-                  <tr key={cfg.starLevel} className={cn('hover:bg-slate-800/20 transition')}>
-                    <td className="px-4 py-3.5 sm:px-6 sm:py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-1.5">
+              </thead>
+              <tbody className={cn('divide-y', isDark ? 'divide-slate-800' : 'divide-stone-100')}>
+                {configs.map((cfg) => (
+                  <tr
+                    key={cfg.starLevel}
+                    onClick={() => handleOpenEdit(cfg)}
+                    className={cn(
+                      'group transition cursor-pointer',
+                      isDark ? 'hover:bg-slate-800/40' : 'hover:bg-stone-50'
+                    )}
+                    title="Nhấn vào hàng để chỉnh sửa"
+                  >
+                    {/* Col 1: Stars + Tier Name */}
+                    <td className="px-4 py-3.5">
+                      <div className="flex items-center gap-1.5 mb-1">
                         <div className="flex items-center gap-0.5">
-                          {renderStars(cfg.starLevel)}
+                          {renderStars(cfg.starLevel, 'h-3.5 w-3.5')}
                         </div>
-                        <span className="font-bold text-amber-500 text-xs ml-1">
+                        <span className="font-extrabold text-amber-500 text-xs">
                           ({cfg.starLevel}★)
                         </span>
                       </div>
-                    </td>
-                    <td className="px-4 py-3.5 sm:px-6 sm:py-4 whitespace-nowrap font-bold text-amber-500">
-            <tbody className={cn('divide-y', isDark ? 'divide-slate-800' : 'divide-stone-100')}>
-              {configs.map((cfg) => (
-                <tr
-                  key={cfg.starLevel}
-                  onClick={() => handleOpenEdit(cfg)}
-                  className={cn(
-                    'group transition cursor-pointer',
-                    isDark ? 'hover:bg-slate-800/40' : 'hover:bg-stone-50'
-                  )}
-                  title="Nhấn vào hàng để chỉnh sửa"
-                >
-                  {/* Col 1: Stars + Tier Name */}
-                  <td className="px-4 py-3.5">
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <div className="flex items-center gap-0.5">
-                        {renderStars(cfg.starLevel, 'h-3.5 w-3.5')}
+                      <div className="font-bold text-xs text-amber-500">
+                        {cfg.tierName}
                       </div>
-                      <span className="font-extrabold text-amber-500 text-xs">
-                        ({cfg.starLevel}★)
-                      </span>
-                    </div>
-                    <div className="font-bold text-xs text-amber-500">
-                      {cfg.tierName}
                     </td>
-                    <td className="px-4 py-3.5 sm:px-6 sm:py-4 whitespace-nowrap font-semibold">
-                      {formatVND(cfg.minDeposit)}
-                    </td>
-                    <td className="px-4 py-3.5 sm:px-6 sm:py-4 whitespace-nowrap text-slate-400">
-                      {formatVND(cfg.maxDeposit)}
-                    </td>
-                    <td className="px-4 py-3.5 sm:px-6 sm:py-4 whitespace-nowrap font-bold text-emerald-500">
-                    </div>
-                  </td>
 
-                  {/* Col 2: Combined Deposit Range */}
-                  <td className="px-4 py-3.5">
-                    <div className={cn('text-xs font-bold', isDark ? 'text-white' : 'text-stone-900')}>
-                      {formatRange(cfg.minDeposit, cfg.maxDeposit)}
-                    </div>
-                    <div className={cn('text-[11px]', isDark ? 'text-slate-500' : 'text-stone-400')}>
-                      Tối thiểu: {formatVND(cfg.minDeposit)}
-                    </div>
-                  </td>
-
-                  {/* Col 3: Commission Discount */}
-                  <td className="px-4 py-3.5 text-center">
-                    <span
-                      className={cn(
-                        'inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-bold',
-                        cfg.commissionDiscount > 0
-                          ? 'bg-emerald-500/15 text-emerald-500 border border-emerald-500/20'
-                          : isDark
-                          ? 'text-slate-500'
-                          : 'text-stone-400'
-                      )}
-                    >
-                      {cfg.commissionDiscount ? `-${Number(cfg.commissionDiscount)}%` : '0%'}
+                    {/* Col 2: Combined Deposit Range */}
+                    <td className="px-4 py-3.5">
+                      <div className={cn('text-xs font-bold', isDark ? 'text-white' : 'text-stone-900')}>
+                        {formatRange(cfg.minDeposit, cfg.maxDeposit)}
+                      </div>
+                      <div className={cn('text-[11px]', isDark ? 'text-slate-500' : 'text-stone-400')}>
+                        Tối thiểu: {formatVND(cfg.minDeposit)}
+                      </div>
                     </td>
-                    <td className="px-4 py-3.5 sm:px-6 sm:py-4 text-xs max-w-xs text-slate-300">
-                    </span>
-                  </td>
 
-                  {/* Col 4: Benefits Description */}
-                  <td className="px-4 py-3.5">
-                    <p
-                      className={cn(
-                        'text-xs leading-relaxed line-clamp-2',
-                        isDark ? 'text-slate-300' : 'text-stone-600'
-                      )}
-                    >
-                      {cfg.benefitsDescription || '-'}
-                    </td>
-                    <td className="px-4 py-3.5 sm:px-6 sm:py-4 text-center whitespace-nowrap">
-                    </p>
-                  </td>
-
-                  {/* Col 5: Status & Prominent Edit Button */}
-                  <td className="px-4 py-3.5 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                    <div className="flex items-center justify-end gap-2.5">
-                      {cfg.isActive !== false ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-500">
-                          <HiOutlineCheckCircle className="h-3.5 w-3.5" /> Kích hoạt
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-500">
-                          <HiOutlineXCircle className="h-3.5 w-3.5" /> Tạm dừng
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3.5 sm:px-6 sm:py-4 text-right whitespace-nowrap">
-
-                      <button
-                        onClick={() => handleOpenEdit(cfg)}
+                    {/* Col 3: Commission Discount */}
+                    <td className="px-4 py-3.5 text-center">
+                      <span
                         className={cn(
-                          'inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition shadow-sm',
-                          'bg-amber-500 text-white hover:bg-amber-600 active:scale-95'
+                          'inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-bold',
+                          cfg.commissionDiscount > 0
+                            ? 'bg-emerald-500/15 text-emerald-500 border border-emerald-500/20'
+                            : isDark
+                            ? 'text-slate-500'
+                            : 'text-stone-400'
                         )}
-                        title="Chỉnh sửa cấu hình bậc sao này"
                       >
-                        <HiOutlinePencilAlt className="h-3.5 w-3.5" />
-                        <span>Chỉnh sửa</span>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                        {cfg.commissionDiscount ? `-${Number(cfg.commissionDiscount)}%` : '0%'}
+                      </span>
+                    </td>
+
+                    {/* Col 4: Benefits Description */}
+                    <td className="px-4 py-3.5">
+                      <p
+                        className={cn(
+                          'text-xs leading-relaxed line-clamp-2',
+                          isDark ? 'text-slate-300' : 'text-stone-600'
+                        )}
+                      >
+                        {cfg.benefitsDescription || '-'}
+                      </p>
+                    </td>
+
+                    {/* Col 5: Status & Prominent Edit Button */}
+                    <td className="px-4 py-3.5 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center justify-end gap-2.5">
+                        {cfg.isActive !== false ? (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-500">
+                            <HiOutlineCheckCircle className="h-3.5 w-3.5" /> Kích hoạt
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-500">
+                            <HiOutlineXCircle className="h-3.5 w-3.5" /> Tạm dừng
+                          </span>
+                        )}
+
+                        <button
+                          onClick={() => handleOpenEdit(cfg)}
+                          className={cn(
+                            'inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition shadow-sm',
+                            'bg-amber-500 text-white hover:bg-amber-600 active:scale-95'
+                          )}
+                          title="Chỉnh sửa cấu hình bậc sao này"
+                        >
+                          <HiOutlinePencilAlt className="h-3.5 w-3.5" />
+                          <span>Chỉnh sửa</span>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 

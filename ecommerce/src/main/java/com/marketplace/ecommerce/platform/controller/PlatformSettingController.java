@@ -39,6 +39,19 @@ public class PlatformSettingController {
         return ResponseEntity.ok(platformSettingService.setCommissionRate(updateCommissionRateRequest.getCommissionRate()));
     }
 
+    @GetMapping("/all")
+    public ResponseEntity<java.util.List<PlatformSettingResponse>> getAllPlatformSettings() {
+        return ResponseEntity.ok(platformSettingService.getAllSettings());
+    }
+
+    @PutMapping("/setting")
+    public ResponseEntity<PlatformSettingResponse> updateSetting(
+            @RequestParam String key,
+            @RequestParam String value
+    ) {
+        return ResponseEntity.ok(platformSettingService.updateSetting(key, value));
+    }
+
     @GetMapping("/commission/calculate-preview")
     public ResponseEntity<CommissionRateBreakdown> calculateCommissionPreview(
             @RequestParam(required = false) UUID shopId,

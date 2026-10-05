@@ -278,6 +278,8 @@ public class DataInitializer implements CommandLineRunner {
 
                 // 7. Platform settings & Dynamic Policy Setup
                 initializePlatformSetting(PlatformConstant.KEY_COMMISSION_RATE, "5.0");
+                initializePlatformSetting(PlatformConstant.KEY_COMMISSION_FLOOR_RATE, "1.50");
+                initializePlatformSetting(PlatformConstant.KEY_COMMISSION_USED_GOODS_RATE, "6.00");
                 initializeTrustLevels();
                 initializeSeniorityPolicies();
 

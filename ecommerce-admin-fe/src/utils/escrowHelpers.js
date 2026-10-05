@@ -11,7 +11,7 @@ export function getSplitSettlementInfo({ item, returnDetails, order } = {}) {
     const commission =
       item.platformCommission != null
         ? Number(item.platformCommission)
-        : (order?.platformCommission != null ? Number(order.platformCommission) : totalAmount * 0.1)
+        : (order?.platformCommission != null ? Number(order.platformCommission) : 0)
     const netAmount = Math.max(0, totalAmount - commission)
     const buyerAmount =
       item.buyerAmount != null ? Number(item.buyerAmount) : Math.round((netAmount * buyerPct) / 100)
@@ -41,7 +41,7 @@ export function getSplitSettlementInfo({ item, returnDetails, order } = {}) {
     const commission =
       item?.platformCommission != null
         ? Number(item.platformCommission)
-        : (order?.platformCommission != null ? Number(order.platformCommission) : totalAmount * 0.1)
+        : (order?.platformCommission != null ? Number(order.platformCommission) : 0)
     const netAmount = Math.max(0, totalAmount - commission)
     const buyerAmount =
       returnDetails.buyerRefundAmount != null
@@ -77,7 +77,7 @@ export function getSplitSettlementInfo({ item, returnDetails, order } = {}) {
       const commission =
         item?.platformCommission != null
           ? Number(item.platformCommission)
-          : (order?.platformCommission != null ? Number(order.platformCommission) : totalAmount * 0.1)
+          : (order?.platformCommission != null ? Number(order.platformCommission) : 0)
       const netAmount = Math.max(0, totalAmount - commission)
       const buyerAmount = Math.round((netAmount * buyerPct) / 100)
       const sellerAmount = Math.max(0, netAmount - buyerAmount)

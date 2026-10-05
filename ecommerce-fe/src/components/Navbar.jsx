@@ -170,12 +170,12 @@ export default function Navbar() {
         {/* Desktop nav links moved to secondary bar below */}
 
         {/* Right: theme + dropdown + mobile menu */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {/* Notification Button */}
           <Link
             to="/profile?tab=notifications"
             className={cn(
-              'group relative flex h-9 w-9 items-center justify-center rounded-xl transition-colors',
+              'group relative hidden sm:flex h-9 w-9 items-center justify-center rounded-xl transition-colors',
               isDark
                 ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-amber-400'
                 : 'bg-stone-100 text-stone-600 hover:bg-stone-200 hover:text-amber-500',
@@ -194,7 +194,7 @@ export default function Navbar() {
           <Link
             to="/profile?tab=wishlist"
             className={cn(
-              'group relative flex h-9 w-9 items-center justify-center rounded-xl transition-colors',
+              'group relative hidden sm:flex h-9 w-9 items-center justify-center rounded-xl transition-colors',
               isDark
                 ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-rose-400'
                 : 'bg-stone-100 text-stone-600 hover:bg-stone-200 hover:text-rose-500',
@@ -234,7 +234,7 @@ export default function Navbar() {
             onClick={() => openInbox()}
             title="Hộp thư & Trò chuyện"
             className={cn(
-              'group relative flex h-9 w-9 items-center justify-center rounded-xl transition-colors',
+              'group relative hidden sm:flex h-9 w-9 items-center justify-center rounded-xl transition-colors',
               isDark
                 ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white'
                 : 'bg-stone-100 text-stone-600 hover:bg-stone-200 hover:text-stone-900',
@@ -253,7 +253,7 @@ export default function Navbar() {
             onClick={toggleTheme}
             aria-label="Toggle theme"
             className={cn(
-              'relative flex h-8 w-14 shrink-0 items-center rounded-full transition-colors',
+              'relative hidden sm:flex h-8 w-14 shrink-0 items-center rounded-full transition-colors',
               isDark
                 ? 'bg-slate-700'
                 : 'bg-stone-200',
@@ -563,6 +563,52 @@ export default function Navbar() {
                   {label}
                 </Link>
               ))}
+              <div className="my-2 border-t border-stone-200 dark:border-slate-700" />
+
+              {/* Chat / Support in mobile drawer */}
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileOpen(false)
+                  openInbox()
+                }}
+                className={cn(
+                  'flex w-full items-center justify-between rounded-lg px-4 py-3 text-left text-sm font-medium transition-colors',
+                  isDark ? 'text-slate-300 hover:bg-slate-800' : 'text-stone-700 hover:bg-stone-50'
+                )}
+              >
+                <span className="flex items-center gap-2">
+                  <HiOutlineChat className="h-4 w-4 text-amber-500" />
+                  Tin nhắn & Hỗ trợ
+                </span>
+                {unreadTotal > 0 && (
+                  <span className="rounded-full bg-rose-500 px-2 py-0.5 text-[10px] font-bold text-white">
+                    {unreadTotal > 99 ? '99+' : unreadTotal}
+                  </span>
+                )}
+              </button>
+
+              {/* Theme toggle in mobile drawer */}
+              <div className="flex items-center justify-between rounded-lg px-4 py-3 text-sm font-medium">
+                <span className={cn(isDark ? 'text-slate-300' : 'text-stone-700')}>Giao diện tối</span>
+                <button
+                  onClick={toggleTheme}
+                  aria-label="Toggle theme"
+                  className={cn(
+                    'relative flex h-7 w-12 shrink-0 items-center rounded-full transition-colors',
+                    isDark ? 'bg-slate-700' : 'bg-stone-200',
+                  )}
+                >
+                  <motion.div
+                    className="absolute left-1 h-5 w-5 rounded-full bg-amber-500 shadow-md"
+                    animate={{ x: isDark ? 20 : 0 }}
+                    transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                  />
+                  <HiOutlineSun className={cn('absolute left-1.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5', !isDark ? 'text-amber-600' : 'text-slate-500')} />
+                  <HiOutlineMoon className={cn('absolute right-1.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5', isDark ? 'text-amber-400' : 'text-stone-400')} />
+                </button>
+              </div>
+
               <div className="my-2 border-t border-stone-200 dark:border-slate-700" />
 
               {!isAuthenticated ? (

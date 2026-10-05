@@ -85,6 +85,11 @@ export default function Home() {
   // Gợi ý cá nhân hóa đa tầng (Shopee-inspired Hybrid RecSys)
   useEffect(() => {
     const fetchRecommendations = async () => {
+      if (!isAuthenticated) {
+        setRecommendations([])
+        setRecLoading(false)
+        return
+      }
       try {
         setRecLoading(true)
         const list = await recommendationService.getPersonalized(8)

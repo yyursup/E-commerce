@@ -95,9 +95,14 @@ axiosClient.interceptors.response.use(
                 return Promise.reject(error)
             }
 
+            const token = getAccessToken()
             const refreshToken = getRefreshToken()
+            const isUserLoggedIn = Boolean(token || useAuthStore.getState().isAuthenticated)
+
             if (!refreshToken) {
-                handleCleanLogoutAndRedirect()
+                if (isUserLoggedIn) {
+                    handleCleanLogoutAndRedirect()
+                }
                 return Promise.reject(error)
             }
 

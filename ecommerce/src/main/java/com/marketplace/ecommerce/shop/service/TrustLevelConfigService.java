@@ -19,4 +19,6 @@ public interface TrustLevelConfigService {
     TrustLevelConfig getConfigByStarLevel(Integer starLevel);
 
     int resolveTrustLevel(BigDecimal depositAmount);
+
+    List<TrustLevelConfigResponse> resetDefaultConfigs(UUID adminId);
 }

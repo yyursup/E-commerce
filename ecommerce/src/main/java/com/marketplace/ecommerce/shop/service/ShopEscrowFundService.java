@@ -1,5 +1,6 @@
 package com.marketplace.ecommerce.shop.service;
 
+import com.marketplace.ecommerce.shop.dto.request.AdminAdjustEscrowFundRequest;
 import com.marketplace.ecommerce.shop.dto.request.TopUpEscrowFundRequest;
 import com.marketplace.ecommerce.shop.dto.response.ShopEscrowFundResponse;
 import com.marketplace.ecommerce.shop.dto.response.ShopEscrowTransactionResponse;
@@ -23,6 +24,8 @@ public interface ShopEscrowFundService {
     ShopEscrowFundResponse topUpFund(UUID shopId, TopUpEscrowFundRequest request);
 
     ShopEscrowTransaction deductCompensation(UUID shopId, UUID orderId, UUID reportId, BigDecimal deductAmount, String reason);
+
+    ShopEscrowFundResponse adminAdjustFund(UUID shopId, AdminAdjustEscrowFundRequest request, UUID adminId);
 
     Page<ShopEscrowTransactionResponse> getTransactionsByShopId(UUID shopId, Pageable pageable);
 

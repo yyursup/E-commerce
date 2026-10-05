@@ -2106,6 +2106,12 @@ public class DataInitializer implements CommandLineRunner {
         }
 
         private void initializeTrustLevels() {
+                // Chỉ khởi tạo nếu cơ sở dữ liệu chưa có cấu hình bậc sao nào,
+                // tránh ghi đè các thiết lập hạn mức/bậc sao mà Quản trị viên sàn đã tùy chỉnh.
+                if (trustLevelConfigRepository.count() > 0) {
+                        return;
+                }
+
                 initializeSingleTrustLevel(1, "Cơ bản", BigDecimal.ZERO, new BigDecimal("4999999"), BigDecimal.ZERO,
                                 "Gian hàng mới tham gia, miễn phí duy trì, áp dụng biểu phí hoa hồng tiêu chuẩn.");
                 initializeSingleTrustLevel(2, "Tiềm năng", new BigDecimal("5000000"), new BigDecimal("9999999"), new BigDecimal("0.20"),
@@ -2119,27 +2125,18 @@ public class DataInitializer implements CommandLineRunner {
         }
 
         private void initializeSingleTrustLevel(int star, String name, BigDecimal min, BigDecimal max, BigDecimal discount, String desc) {
-                trustLevelConfigRepository.findByStarLevel(star)
-                                .map(existing -> {
-                                        existing.setTierName(name);
-                                        existing.setMinDeposit(min);
-                                        existing.setMaxDeposit(max);
-                                        existing.setCommissionDiscount(discount);
-                                        existing.setBenefitsDescription(desc);
-                                        return trustLevelConfigRepository.save(existing);
-                                })
-                                .orElseGet(() -> {
-                                        TrustLevelConfig config = TrustLevelConfig.builder()
-                                                        .starLevel(star)
-                                                        .tierName(name)
-                                                        .minDeposit(min)
-                                                        .maxDeposit(max)
-                                                        .commissionDiscount(discount)
-                                                        .benefitsDescription(desc)
-                                                        .isActive(true)
-                                                        .build();
-                                        return trustLevelConfigRepository.save(config);
-                                });
+                if (trustLevelConfigRepository.findByStarLevel(star).isEmpty()) {
+                        TrustLevelConfig config = TrustLevelConfig.builder()
+                                        .starLevel(star)
+                                        .tierName(name)
+                                        .minDeposit(min)
+                                        .maxDeposit(max)
+                                        .commissionDiscount(discount)
+                                        .benefitsDescription(desc)
+                                        .isActive(true)
+                                        .build();
+                        trustLevelConfigRepository.save(config);
+                }
         }
 
         private void initializeSeniorityPolicies() {

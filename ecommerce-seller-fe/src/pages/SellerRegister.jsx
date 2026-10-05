@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo, useCallback } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -153,24 +153,47 @@ export default function SellerRegister() {
     fetchLevels()
   }, [])
 
-  const calculatePreviewStar = (amount) => {
+  const depositPackages = useMemo(() => {
+    if (Array.isArray(trustLevels) && trustLevels.length > 0) {
+      const activeTiers = trustLevels
+        .filter((lvl) => lvl.isActive !== false && lvl.starLevel >= 2)
+        .sort((a, b) => a.starLevel - b.starLevel)
+      if (activeTiers.length > 0) {
+        return activeTiers.map((lvl) => ({
+          star: lvl.starLevel,
+          amount: String(lvl.minDeposit),
+          label: `${Number(lvl.minDeposit).toLocaleString('vi-VN')} ₫`,
+          tier: lvl.tierName,
+        }))
+      }
+    }
+    return [
+      { star: 2, amount: '5000000', label: '5.000.000 ₫', tier: 'Tiềm Năng' },
+      { star: 3, amount: '10000000', label: '10.000.000 ₫', tier: 'Uy Tín' },
+      { star: 4, amount: '30000000', label: '30.000.000 ₫', tier: 'Vàng' },
+      { star: 5, amount: '50000000', label: '50.000.000 ₫', tier: 'Kim Cương' },
+    ]
+  }, [trustLevels])
+
+  const calculatePreviewStar = useCallback((amount) => {
     const num = Number(amount || 0)
-    if (!num || num < 1000000) return 1
-    if (trustLevels.length > 0) {
+    if (!num || num <= 0) return 1
+    if (Array.isArray(trustLevels) && trustLevels.length > 0) {
       let star = 1
-      for (const tier of trustLevels) {
-        if (num >= Number(tier.minDeposit)) {
+      const sorted = [...trustLevels].sort((a, b) => a.starLevel - b.starLevel)
+      for (const tier of sorted) {
+        if (tier.minDeposit !== null && tier.minDeposit !== undefined && num >= Number(tier.minDeposit)) {
           star = tier.starLevel
         }
       }
       return star
     }
     if (num >= 50000000) return 5
-    if (num >= 20000000) return 4
-    if (num >= 5000000) return 3
-    if (num >= 1000000) return 2
+    if (num >= 30000000) return 4
+    if (num >= 10000000) return 3
+    if (num >= 5000000) return 2
     return 1
-  }
+  }, [trustLevels])
 
   const {
     register,
@@ -1954,12 +1977,7 @@ export default function SellerRegister() {
                           Chọn mức tiền ký quỹ cam kết ban đầu:
                         </label>
                         <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
-                          {[
-                            { star: 2, amount: '1000000', label: '1.000.000 ₫', tier: 'Tiềm Năng' },
-                            { star: 3, amount: '5000000', label: '5.000.000 ₫', tier: 'Uy Tín Tiêu Chuẩn' },
-                            { star: 4, amount: '20000000', label: '20.000.000 ₫', tier: 'Đối Tác Vàng' },
-                            { star: 5, amount: '50000000', label: '50.000.000 ₫', tier: 'Kim Cương' },
-                          ].map((pkg) => {
+                          {depositPackages.map((pkg) => {
                             const isSelected = selectedDepositAmount === pkg.amount
                             return (
                               <button

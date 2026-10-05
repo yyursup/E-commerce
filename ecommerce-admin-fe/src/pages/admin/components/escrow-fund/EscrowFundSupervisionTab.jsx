@@ -10,6 +10,7 @@ import {
   HiOutlineCheckCircle,
   HiOutlineClock,
   HiOutlineSearch,
+  HiOutlinePencilAlt,
 } from 'react-icons/hi'
 import toast from 'react-hot-toast'
 import { useThemeStore } from '../../../../store/useThemeStore'
@@ -39,6 +40,14 @@ export default function EscrowFundSupervisionTab() {
   const [deductAmount, setDeductAmount] = useState('')
   const [deductReason, setDeductReason] = useState('')
   const [deductSubmitting, setDeductSubmitting] = useState(false)
+
+  // Modal Điều Chỉnh Quỹ Ký Quỹ & Cấp Sao Uy Tín
+  const [adjustShop, setAdjustShop] = useState(null)
+  const [adjustCommitted, setAdjustCommitted] = useState('')
+  const [adjustBalance, setAdjustBalance] = useState('')
+  const [adjustStarLevel, setAdjustStarLevel] = useState('')
+  const [adjustReason, setAdjustReason] = useState('')
+  const [adjustSubmitting, setAdjustSubmitting] = useState(false)
 
   const loadFunds = useCallback(async () => {
     try {
@@ -112,6 +121,42 @@ export default function EscrowFundSupervisionTab() {
       toast.error(err?.message || 'Trích bồi thường thất bại.')
     } finally {
       setDeductSubmitting(false)
+    }
+  }
+
+  const handleOpenAdjust = (fund) => {
+    setAdjustShop(fund)
+    setAdjustCommitted(fund.committedAmount !== null && fund.committedAmount !== undefined ? String(fund.committedAmount) : '0')
+    setAdjustBalance(fund.balance !== null && fund.balance !== undefined ? String(fund.balance) : '0')
+    setAdjustStarLevel(fund.currentTrustLevel ? String(fund.currentTrustLevel) : '1')
+    setAdjustReason('')
+  }
+
+  const handleAdjustSubmit = async (e) => {
+    e.preventDefault()
+    if (!adjustShop) return
+
+    if (!adjustReason.trim()) {
+      toast.error('Vui lòng nhập lý do điều chỉnh quỹ ký quỹ')
+      return
+    }
+
+    try {
+      setAdjustSubmitting(true)
+      await trustConfigService.adjustShopFund(adjustShop.shopId, {
+        committedAmount: Number(adjustCommitted),
+        balance: Number(adjustBalance),
+        targetTrustLevel: Number(adjustStarLevel),
+        reason: adjustReason.trim(),
+      })
+      toast.success(`Đã cập nhật quỹ ký quỹ & cấp sao cho gian hàng ${adjustShop.shopName || ''}!`)
+      setAdjustShop(null)
+      loadFunds()
+    } catch (err) {
+      console.error('Lỗi điều chỉnh quỹ:', err)
+      toast.error(err?.message || 'Điều chỉnh quỹ thất bại.')
+    } finally {
+      setAdjustSubmitting(false)
     }
   }
 
@@ -381,6 +426,13 @@ export default function EscrowFundSupervisionTab() {
                     </td>
                     <td className="px-6 py-4 text-right whitespace-nowrap space-x-2">
                       <button
+                        onClick={() => handleOpenAdjust(item)}
+                        className="inline-flex items-center gap-1 rounded-lg bg-amber-500/10 px-2.5 py-1.5 text-xs font-semibold text-amber-500 hover:bg-amber-500/20 transition border border-amber-500/20"
+                        title="Điều chỉnh quỹ ký quỹ & cấp sao uy tín"
+                      >
+                        <HiOutlinePencilAlt className="h-3.5 w-3.5" /> Điều chỉnh
+                      </button>
+                      <button
                         onClick={() => handleOpenLedger(item)}
                         className="inline-flex items-center gap-1 rounded-lg bg-blue-500/10 px-2.5 py-1.5 text-xs font-semibold text-blue-400 hover:bg-blue-500/20 transition border border-blue-500/20"
                       >
@@ -598,6 +650,134 @@ export default function EscrowFundSupervisionTab() {
                   className="rounded-xl bg-rose-600 px-5 py-2 text-sm font-bold text-white hover:bg-rose-700 disabled:opacity-50"
                 >
                   {deductSubmitting ? 'Đang xử lý...' : 'Xác nhận trích quỹ'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL ĐIỀU CHỈNH QUỸ KÝ QUỸ & CẤP SAO GIAN HÀNG */}
+      {adjustShop && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div
+            className={cn(
+              'w-full max-w-lg rounded-2xl border p-6 shadow-2xl relative animate-in fade-in zoom-in-95',
+              isDark ? 'border-slate-800 bg-slate-900 text-slate-100' : 'border-stone-200 bg-white text-stone-900'
+            )}
+          >
+            <h2 className="text-xl font-bold flex items-center gap-2">
+              <HiOutlinePencilAlt className="h-6 w-6 text-amber-500" />
+              Điều Chỉnh Quỹ Ký Quỹ & Cấp Sao Uy Tín
+            </h2>
+            <p className={cn('text-xs mt-1', isDark ? 'text-slate-400' : 'text-stone-500')}>
+              Gian hàng: <span className="font-bold text-amber-500">{adjustShop.shopName}</span>
+              {' '}| Cấp hiện tại: <span className="font-bold text-amber-500">{adjustShop.currentTrustLevel}★</span>
+            </p>
+
+            <form onSubmit={handleAdjustSubmit} className="mt-5 space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold mb-1">Số dư Quỹ ký quỹ (VNĐ)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="100000"
+                    required
+                    value={adjustBalance}
+                    onChange={(e) => setAdjustBalance(e.target.value)}
+                    className={cn(
+                      'w-full rounded-xl border px-4 py-2.5 text-sm font-semibold outline-none focus:ring-2 focus:ring-amber-500',
+                      isDark ? 'border-slate-700 bg-slate-950 text-white' : 'border-stone-300 bg-stone-50 text-stone-800'
+                    )}
+                  />
+                  <div className="text-[11px] text-amber-500 font-medium mt-1">
+                    {adjustBalance !== '' ? `→ ${formatVND(adjustBalance)}` : '0 ₫'}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold mb-1">Mức cọc cam kết (VNĐ)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="100000"
+                    required
+                    value={adjustCommitted}
+                    onChange={(e) => setAdjustCommitted(e.target.value)}
+                    className={cn(
+                      'w-full rounded-xl border px-4 py-2.5 text-sm font-semibold outline-none focus:ring-2 focus:ring-amber-500',
+                      isDark ? 'border-slate-700 bg-slate-950 text-white' : 'border-stone-300 bg-stone-50 text-stone-800'
+                    )}
+                  />
+                  <div className="text-[11px] text-slate-400 font-medium mt-1">
+                    {adjustCommitted !== '' ? `→ ${formatVND(adjustCommitted)}` : '0 ₫'}
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold mb-1">
+                  Cấp sao uy tín (1★ - 5★)
+                </label>
+                <div className="grid grid-cols-5 gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      type="button"
+                      key={star}
+                      onClick={() => setAdjustStarLevel(String(star))}
+                      className={cn(
+                        'flex flex-col items-center justify-center rounded-xl border py-2 text-xs font-bold transition',
+                        adjustStarLevel === String(star)
+                          ? 'border-amber-500 bg-amber-500/15 text-amber-500 ring-1 ring-amber-500'
+                          : isDark
+                          ? 'border-slate-800 bg-slate-950/60 text-slate-400 hover:text-white'
+                          : 'border-stone-200 bg-stone-50 text-stone-600 hover:bg-stone-100'
+                      )}
+                    >
+                      <div className="flex items-center gap-0.5">
+                        <HiStar className="h-4 w-4 text-amber-400" />
+                      </div>
+                      <span className="mt-1">{star} Sao</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold mb-1">Lý do điều chỉnh (ghi vào sổ cái)</label>
+                <textarea
+                  rows="2"
+                  required
+                  placeholder="Ví dụ: Ký hợp đồng đối tác chiến lược, điều chỉnh hạn mức cam kết theo thỏa thuận..."
+                  value={adjustReason}
+                  onChange={(e) => setAdjustReason(e.target.value)}
+                  className={cn(
+                    'w-full rounded-xl border px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-500',
+                    isDark ? 'border-slate-700 bg-slate-950 text-white' : 'border-stone-300 bg-stone-50 text-stone-800'
+                  )}
+                />
+              </div>
+
+              <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-600 dark:text-amber-400 leading-relaxed">
+                <span className="font-bold">Lưu ý:</span> Khi điều chỉnh số dư, hệ thống sẽ tự động ghi nhận một giao dịch biến động sổ cái loại <strong>ADMIN_ADJUSTMENT</strong> để đảm bảo tính minh bạch và đối soát tài chính.
+              </div>
+
+              <div className="mt-6 flex justify-end gap-3">
+                <button
+                  type="button"
+                  disabled={adjustSubmitting}
+                  onClick={() => setAdjustShop(null)}
+                  className="rounded-xl px-4 py-2 text-sm font-semibold text-slate-400 hover:text-white"
+                >
+                  Hủy bỏ
+                </button>
+                <button
+                  type="submit"
+                  disabled={adjustSubmitting}
+                  className="rounded-xl bg-amber-500 px-5 py-2 text-sm font-bold text-white hover:bg-amber-600 disabled:opacity-50 shadow-sm"
+                >
+                  {adjustSubmitting ? 'Đang lưu...' : 'Lưu điều chỉnh'}
                 </button>
               </div>
             </form>

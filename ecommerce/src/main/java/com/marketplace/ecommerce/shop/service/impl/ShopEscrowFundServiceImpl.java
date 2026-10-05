@@ -11,6 +11,7 @@ import com.marketplace.ecommerce.notification.valueObjects.NotificationType;
 import com.marketplace.ecommerce.order.entity.Order;
 import com.marketplace.ecommerce.order.repository.OrderRepository;
 import com.marketplace.ecommerce.order.valueObjects.OrderStatus;
+import com.marketplace.ecommerce.shop.dto.request.AdminAdjustEscrowFundRequest;
 import com.marketplace.ecommerce.shop.dto.request.TopUpEscrowFundRequest;
 import com.marketplace.ecommerce.shop.dto.response.ShopEscrowFundResponse;
 import com.marketplace.ecommerce.shop.dto.response.ShopEscrowTransactionResponse;
@@ -331,6 +332,84 @@ public class ShopEscrowFundServiceImpl implements ShopEscrowFundService {
         } catch (Exception e) {
             log.error("Lỗi gửi thông báo cảnh báo hụt quỹ ký quỹ cho shop: {}", fund.getShop().getId(), e);
         }
+    }
+
+    @Override
+    @Transactional
+    public ShopEscrowFundResponse adminAdjustFund(UUID shopId, AdminAdjustEscrowFundRequest request, UUID adminId) {
+        ShopEscrowFund fund = shopEscrowFundRepository.findByShopIdForUpdate(shopId)
+                .orElseThrow(() -> new CustomException("Không tìm thấy Quỹ ký quỹ của gian hàng: " + shopId));
+
+        BigDecimal oldBalance = fund.getBalance();
+        BigDecimal newBalance = request.getBalance() != null ? request.getBalance() : oldBalance;
+        BigDecimal oldCommitted = fund.getCommittedAmount() != null ? fund.getCommittedAmount() : BigDecimal.ZERO;
+        BigDecimal newCommitted = request.getCommittedAmount() != null ? request.getCommittedAmount() : oldCommitted;
+
+        if (newBalance.compareTo(BigDecimal.ZERO) < 0) {
+            throw new CustomException("Số dư quỹ ký quỹ không được âm");
+        }
+        if (newCommitted.compareTo(BigDecimal.ZERO) < 0) {
+            throw new CustomException("Hạn mức cam kết ký quỹ không được âm");
+        }
+
+        fund.setCommittedAmount(newCommitted);
+
+        // Nếu số dư thay đổi, ghi nhận giao dịch sổ cái loại ADMIN_ADJUSTMENT
+        if (newBalance.compareTo(oldBalance) != 0) {
+            fund.setBalance(newBalance);
+            BigDecimal diff = newBalance.subtract(oldBalance);
+            ShopEscrowTransaction tx = ShopEscrowTransaction.builder()
+                    .fund(fund)
+                    .transactionType(EscrowFundTransactionType.ADMIN_ADJUSTMENT)
+                    .amount(diff)
+                    .balanceBefore(oldBalance)
+                    .balanceAfter(newBalance)
+                    .referenceCode("ADMIN-ADJ-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase())
+                    .note(request.getReason() != null ? request.getReason().trim() : "Quản trị viên điều chỉnh số dư ký quỹ")
+                    .build();
+            shopEscrowTransactionRepository.save(tx);
+        }
+
+        // Cập nhật Cấp sao uy tín (nếu Admin chỉ định, hoặc tự động tính theo số dư mới)
+        int targetStarLevel;
+        if (request.getTargetTrustLevel() != null) {
+            if (request.getTargetTrustLevel() < 1 || request.getTargetTrustLevel() > 5) {
+                throw new CustomException("Cấp bậc sao không hợp lệ (1-5 sao)");
+            }
+            targetStarLevel = request.getTargetTrustLevel();
+        } else {
+            targetStarLevel = trustLevelConfigService.resolveTrustLevel(newBalance);
+        }
+
+        fund.setCurrentTrustLevel(targetStarLevel);
+        fund.getShop().setTrustLevel(targetStarLevel);
+
+        // Đánh giá tình trạng hụt quỹ so với mức cam kết
+        if (newBalance.compareTo(newCommitted) < 0) {
+            fund.setIsDeficit(true);
+            fund.setDeficitAmount(newCommitted.subtract(newBalance));
+            if (fund.getDeficitDeadline() == null) {
+                fund.setDeficitDeadline(LocalDateTime.now().plusHours(72));
+            }
+            fund.setStatus(EscrowFundStatus.DEFICIT);
+        } else {
+            fund.setIsDeficit(false);
+            fund.setDeficitAmount(BigDecimal.ZERO);
+            fund.setDeficitDeadline(null);
+            fund.setStatus(EscrowFundStatus.ACTIVE);
+            fund.getShop().setStatus(ShopStatus.ACTIVE);
+        }
+
+        shopRepository.save(fund.getShop());
+        ShopEscrowFund saved = shopEscrowFundRepository.save(fund);
+
+        log.info("Admin {} đã điều chỉnh Quỹ ký quỹ shop {}: Balance ({} -> {}), Committed ({} -> {}), StarLevel={}, Status={}",
+                adminId, fund.getShop().getName(), oldBalance, newBalance, oldCommitted, newCommitted, targetStarLevel, saved.getStatus());
+
+        TrustLevelConfig config = trustLevelConfigService.getConfigByStarLevel(saved.getCurrentTrustLevel());
+        String tierName = config != null ? config.getTierName() : ("Cấp độ " + saved.getCurrentTrustLevel() + " sao");
+
+        return ShopEscrowFundResponse.from(saved, tierName);
     }
 
     @Override

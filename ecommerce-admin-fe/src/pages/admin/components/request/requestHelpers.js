@@ -108,12 +108,28 @@ export const buildSellerInfoSections = (detail) => {
     { label: 'Tên chủ tài khoản', value: detail.bankAccountName },
   ]
 
+  // 5. Quỹ Ký Quỹ & Bảo Chứng Cam Kết
+  const escrowInfo = detail.isEscrowParticipated
+    ? [
+        { label: 'Cam kết Quỹ ký quỹ', value: 'Có tham gia (Bảo chứng uy tín sàn)' },
+        {
+          label: 'Hạn mức ký quỹ đăng ký',
+          value: detail.initialDepositAmount
+            ? `${Number(detail.initialDepositAmount).toLocaleString('vi-VN')} ₫`
+            : '0 ₫',
+        },
+      ]
+    : [
+        { label: 'Cam kết Quỹ ký quỹ', value: 'Không tham gia (Hạng 1★ Cơ bản)' },
+      ]
+
   return {
     isBusiness,
     shopInfo: shopInfo.filter((i) => i.value),
     legalInfo: legalInfo.filter((i) => i.value),
     logisticsInfo: logisticsInfo.filter((i) => i.value),
     bankInfo: bankInfo.filter((i) => i.value),
+    escrowInfo: escrowInfo.filter((i) => i.value),
     businessLicenseUrl: detail.businessLicenseUrl || null,
   }
 }
@@ -129,6 +145,7 @@ export const buildRequestDetailEntries = (requestType, requestDetail) => {
       ...sections.legalInfo.map((i) => [i.label, i.value]),
       ...sections.logisticsInfo.map((i) => [i.label, i.value]),
       ...sections.bankInfo.map((i) => [i.label, i.value]),
+      ...sections.escrowInfo.map((i) => [i.label, i.value]),
     ]
     if (sections.businessLicenseUrl) {
       entries.push(['Giấy phép kinh doanh', sections.businessLicenseUrl])

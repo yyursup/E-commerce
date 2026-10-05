@@ -5,6 +5,7 @@ import com.marketplace.ecommerce.auth.repository.UserRepository;
 import com.marketplace.ecommerce.common.CurrentUserInfo;
 import com.marketplace.ecommerce.common.exception.CustomException;
 import com.marketplace.ecommerce.config.CurrentUser;
+import com.marketplace.ecommerce.shop.dto.request.AdminAdjustEscrowFundRequest;
 import com.marketplace.ecommerce.shop.dto.request.AdminDeductCompensationRequest;
 import com.marketplace.ecommerce.shop.dto.request.TopUpEscrowFundRequest;
 import com.marketplace.ecommerce.shop.dto.response.ShopEscrowFundResponse;
@@ -146,5 +147,17 @@ public class ShopEscrowFundController {
                 request.getReason()
         );
         return ResponseEntity.ok(ShopEscrowTransactionResponse.from(tx));
+    }
+
+    @PutMapping("/admin/{shopId}/adjust")
+    public ResponseEntity<ShopEscrowFundResponse> adminAdjustFund(
+            @CurrentUser CurrentUserInfo currentUser,
+            @PathVariable UUID shopId,
+            @Valid @RequestBody AdminAdjustEscrowFundRequest request
+    ) {
+        if (currentUser == null || !"ADMIN".equalsIgnoreCase(currentUser.getRole())) {
+            throw new CustomException("Chỉ Quản trị viên sàn mới có quyền điều chỉnh Quỹ ký quỹ");
+        }
+        return ResponseEntity.ok(shopEscrowFundService.adminAdjustFund(shopId, request, currentUser.getAccountId()));
     }
 }

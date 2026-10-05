@@ -116,4 +116,60 @@ public class TrustLevelConfigServiceImpl implements TrustLevelConfigService {
 
         return resolvedStar;
     }
+
+    @Override
+    @Transactional
+    public List<TrustLevelConfigResponse> resetDefaultConfigs(UUID adminId) {
+        log.info("Admin {} đang khôi phục cấu hình bậc sao ký quỹ mặc định...", adminId);
+        List<TrustLevelConfig> defaults = List.of(
+                buildDefaultConfig(1, "Cơ bản", BigDecimal.ZERO, new BigDecimal("4999999"),
+                        "/badges/star-1.png", "Cấp độ cơ bản cho gian hàng mới hoặc chưa đóng ký quỹ. Vẫn được bán hàng, áp dụng biểu phí hoa hồng tiêu chuẩn.", BigDecimal.ZERO, adminId),
+                buildDefaultConfig(2, "Tiềm năng", new BigDecimal("5000000"), new BigDecimal("9999999"),
+                        "/badges/star-2.png", "Ký quỹ từ 5 triệu: Huy hiệu Bảo chứng 2 sao, ưu tiên hiển thị tìm kiếm, giảm 0.2% hoa hồng sàn.", new BigDecimal("0.20"), adminId),
+                buildDefaultConfig(3, "Uy tín", new BigDecimal("10000000"), new BigDecimal("29999999"),
+                        "/badges/star-3.png", "Ký quỹ từ 10 triệu: Huy hiệu Shop Uy Tín 3 sao, hỗ trợ flash sale độc quyền, giảm 0.5% hoa hồng sàn.", new BigDecimal("0.50"), adminId),
+                buildDefaultConfig(4, "Vàng", new BigDecimal("30000000"), new BigDecimal("49999999"),
+                        "/badges/star-4.png", "Ký quỹ từ 30 triệu: Huy hiệu Đối tác Vàng 4 sao, nhãn Gian hàng Đảm bảo, đẩy top tìm kiếm, giảm 1.0% hoa hồng sàn.", new BigDecimal("1.00"), adminId),
+                buildDefaultConfig(5, "Kim Cương", new BigDecimal("50000000"), null,
+                        "/badges/star-5.png", "Ký quỹ từ 50 triệu: Huy hiệu Kim Cương 5 sao danh giá nhất, banner trang chủ, hỗ trợ 1-1, giảm tối đa 1.5% hoa hồng sàn.", new BigDecimal("1.50"), adminId)
+        );
+
+        for (TrustLevelConfig def : defaults) {
+            TrustLevelConfig existing = trustLevelConfigRepository.findByStarLevel(def.getStarLevel()).orElse(null);
+            if (existing != null) {
+                existing.setTierName(def.getTierName());
+                existing.setMinDeposit(def.getMinDeposit());
+                existing.setMaxDeposit(def.getMaxDeposit());
+                existing.setBadgeIconUrl(def.getBadgeIconUrl());
+                existing.setBenefitsDescription(def.getBenefitsDescription());
+                existing.setCommissionDiscount(def.getCommissionDiscount());
+                existing.setIsActive(true);
+                existing.setUpdatedAt(LocalDateTime.now());
+                existing.setUpdatedBy(adminId);
+                trustLevelConfigRepository.save(existing);
+            } else {
+                trustLevelConfigRepository.save(def);
+            }
+        }
+
+        return getAllConfigs();
+    }
+
+    private TrustLevelConfig buildDefaultConfig(
+            int star, String name, BigDecimal min, BigDecimal max,
+            String icon, String desc, BigDecimal discount, UUID adminId
+    ) {
+        return TrustLevelConfig.builder()
+                .starLevel(star)
+                .tierName(name)
+                .minDeposit(min)
+                .maxDeposit(max)
+                .badgeIconUrl(icon)
+                .benefitsDescription(desc)
+                .commissionDiscount(discount)
+                .isActive(true)
+                .updatedAt(LocalDateTime.now())
+                .updatedBy(adminId)
+                .build();
+    }
 }

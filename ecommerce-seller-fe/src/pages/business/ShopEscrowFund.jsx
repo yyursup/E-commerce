@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import {
   HiOutlineShieldCheck,
@@ -59,6 +59,19 @@ export default function ShopEscrowFund() {
       setLoading(false)
     }
   }, [])
+
+  const quickTopUpSuggestions = useMemo(() => {
+    if (Array.isArray(trustLevels) && trustLevels.length > 0) {
+      const amounts = trustLevels
+        .filter((l) => l.isActive !== false && Number(l.minDeposit) > 0)
+        .map((l) => Number(l.minDeposit))
+        .sort((a, b) => a - b)
+      if (amounts.length > 0) {
+        return amounts
+      }
+    }
+    return [5000000, 10000000, 30000000, 50000000]
+  }, [trustLevels])
 
   const loadTransactions = useCallback(async () => {
     try {
@@ -700,8 +713,8 @@ export default function ShopEscrowFund() {
                 {/* Gợi ý chọn nhanh */}
                 <div className="mt-2 flex flex-wrap gap-2">
                   {(isPendingActivation && remainingToActivate > 0
-                    ? [remainingToActivate, 5000000, 20000000, 50000000]
-                    : [1000000, 5000000, 20000000, 50000000]
+                    ? [remainingToActivate, ...quickTopUpSuggestions.filter((a) => a !== remainingToActivate)]
+                    : quickTopUpSuggestions
                   ).map((amt, idx) => (
                     <button
                       type="button"

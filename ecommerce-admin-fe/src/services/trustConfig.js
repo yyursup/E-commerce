@@ -23,6 +23,15 @@ const trustConfigService = {
     }
   },
 
+  resetDefaultTrustLevels: async () => {
+    try {
+      const response = await axiosClient.post(`${TRUST_BASE}/admin/reset-defaults`)
+      return response.data
+    } catch (error) {
+      throw error.response ? error.response.data : error
+    }
+  },
+
   // Giám sát Quỹ ký quỹ toàn sàn
   getAdminEscrowFunds: async (params = {}) => {
     try {
@@ -45,6 +54,15 @@ const trustConfigService = {
   deductCompensation: async (shopId, payload) => {
     try {
       const response = await axiosClient.post(`${ESCROW_FUND_BASE}/admin/${shopId}/deduct`, payload)
+      return response.data
+    } catch (error) {
+      throw error.response ? error.response.data : error
+    }
+  },
+
+  adjustShopFund: async (shopId, payload) => {
+    try {
+      const response = await axiosClient.put(`${ESCROW_FUND_BASE}/admin/${shopId}/adjust`, payload)
       return response.data
     } catch (error) {
       throw error.response ? error.response.data : error

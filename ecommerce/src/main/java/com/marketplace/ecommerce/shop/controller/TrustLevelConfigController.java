@@ -44,4 +44,12 @@ public class TrustLevelConfigController {
         }
         return ResponseEntity.ok(trustLevelConfigService.updateConfig(starLevel, request, currentUser.getAccountId()));
     }
+
+    @PostMapping("/admin/reset-defaults")
+    public ResponseEntity<List<TrustLevelConfigResponse>> resetDefaultTrustLevels(@CurrentUser CurrentUserInfo currentUser) {
+        if (currentUser == null || !"ADMIN".equalsIgnoreCase(currentUser.getRole())) {
+            throw new CustomException("Chỉ Quản trị viên sàn mới có quyền khôi phục cấu hình bậc sao mặc định");
+        }
+        return ResponseEntity.ok(trustLevelConfigService.resetDefaultConfigs(currentUser.getAccountId()));
+    }
 }

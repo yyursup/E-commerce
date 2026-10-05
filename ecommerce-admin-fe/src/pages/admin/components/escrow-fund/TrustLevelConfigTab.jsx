@@ -105,6 +105,23 @@ export default function TrustLevelConfigTab() {
     }
   }
 
+  const handleResetDefaults = async () => {
+    if (!window.confirm('Bạn có chắc chắn muốn khôi phục lại cấu hình 5 bậc sao ký quỹ về mức chuẩn của sàn không?')) {
+      return
+    }
+    try {
+      setLoading(true)
+      const res = await trustConfigService.resetDefaultTrustLevels()
+      setConfigs(Array.isArray(res) ? res : [])
+      toast.success('Đã khôi phục cấu hình bậc sao ký quỹ chuẩn thành công!')
+    } catch (err) {
+      console.error('Lỗi khôi phục cấu hình chuẩn:', err)
+      toast.error(err?.message || 'Khôi phục cấu hình chuẩn thất bại.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const renderStars = (level) => {
     const stars = []
     for (let i = 1; i <= 5; i++) {
@@ -134,18 +151,34 @@ export default function TrustLevelConfigTab() {
             Thiết lập linh hoạt hạn mức ký quỹ từ 1★ đến 5★, mức giảm trừ hoa hồng và quyền lợi tương ứng.
           </p>
         </div>
-        <button
-          onClick={loadConfigs}
-          className={cn(
-            'flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-semibold border transition',
-            isDark
-              ? 'border-slate-800 bg-slate-900 text-slate-200 hover:bg-slate-800'
-              : 'border-stone-200 bg-white text-stone-700 hover:bg-stone-50'
-          )}
-        >
-          <HiOutlineRefresh className="h-4 w-4" />
-          Làm mới
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleResetDefaults}
+            disabled={loading}
+            className={cn(
+              'flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-semibold border transition',
+              isDark
+                ? 'border-slate-800 bg-slate-900 text-rose-400 hover:bg-slate-800'
+                : 'border-stone-200 bg-white text-rose-600 hover:bg-rose-50'
+            )}
+            title="Khôi phục 5 bậc sao về mức chuẩn mặc định"
+          >
+            Khôi phục mặc định
+          </button>
+          <button
+            onClick={loadConfigs}
+            disabled={loading}
+            className={cn(
+              'flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-semibold border transition',
+              isDark
+                ? 'border-slate-800 bg-slate-900 text-slate-200 hover:bg-slate-800'
+                : 'border-stone-200 bg-white text-stone-700 hover:bg-stone-50'
+            )}
+          >
+            <HiOutlineRefresh className={cn('h-4 w-4', loading && 'animate-spin')} />
+            Làm mới
+          </button>
+        </div>
       </div>
 
       {/* Guide Banner */}
@@ -298,6 +331,9 @@ export default function TrustLevelConfigTab() {
                       isDark ? 'border-slate-700 bg-slate-950 text-white' : 'border-stone-300 bg-stone-50 text-stone-800'
                     )}
                   />
+                  <div className="text-[11px] text-amber-500 font-medium mt-1">
+                    {minDeposit !== '' ? `→ ${formatVND(minDeposit)}` : '0 ₫'}
+                  </div>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold mb-1">
@@ -315,6 +351,9 @@ export default function TrustLevelConfigTab() {
                       isDark ? 'border-slate-700 bg-slate-950 text-white' : 'border-stone-300 bg-stone-50 text-stone-800'
                     )}
                   />
+                  <div className="text-[11px] text-slate-400 font-medium mt-1">
+                    {maxDeposit !== '' ? `→ ${formatVND(maxDeposit)}` : '→ Không giới hạn'}
+                  </div>
                 </div>
               </div>
 
@@ -335,6 +374,9 @@ export default function TrustLevelConfigTab() {
                     isDark ? 'border-slate-700 bg-slate-950 text-white' : 'border-stone-300 bg-stone-50 text-stone-800'
                   )}
                 />
+                <div className="text-[11px] text-emerald-500 font-medium mt-1">
+                  {`→ Giảm ${Number(commissionDiscount || 0)}% hoa hồng sàn`}
+                </div>
               </div>
 
               <div>

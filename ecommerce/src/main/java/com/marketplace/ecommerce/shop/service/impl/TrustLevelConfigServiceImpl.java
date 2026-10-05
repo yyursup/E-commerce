@@ -122,16 +122,16 @@ public class TrustLevelConfigServiceImpl implements TrustLevelConfigService {
     public List<TrustLevelConfigResponse> resetDefaultConfigs(UUID adminId) {
         log.info("Admin {} đang khôi phục cấu hình bậc sao ký quỹ mặc định...", adminId);
         List<TrustLevelConfig> defaults = List.of(
-                buildDefaultConfig(1, "Cơ bản", BigDecimal.ZERO, new BigDecimal("4999999"),
-                        "/badges/star-1.png", "Cấp độ cơ bản cho gian hàng mới hoặc chưa đóng ký quỹ. Vẫn được bán hàng, áp dụng biểu phí hoa hồng tiêu chuẩn.", BigDecimal.ZERO, adminId),
-                buildDefaultConfig(2, "Tiềm năng", new BigDecimal("5000000"), new BigDecimal("9999999"),
-                        "/badges/star-2.png", "Ký quỹ từ 5 triệu: Huy hiệu Bảo chứng 2 sao, ưu tiên hiển thị tìm kiếm, giảm 0.2% hoa hồng sàn.", new BigDecimal("0.20"), adminId),
-                buildDefaultConfig(3, "Uy tín", new BigDecimal("10000000"), new BigDecimal("29999999"),
-                        "/badges/star-3.png", "Ký quỹ từ 10 triệu: Huy hiệu Shop Uy Tín 3 sao, hỗ trợ flash sale độc quyền, giảm 0.5% hoa hồng sàn.", new BigDecimal("0.50"), adminId),
-                buildDefaultConfig(4, "Vàng", new BigDecimal("30000000"), new BigDecimal("49999999"),
-                        "/badges/star-4.png", "Ký quỹ từ 30 triệu: Huy hiệu Đối tác Vàng 4 sao, nhãn Gian hàng Đảm bảo, đẩy top tìm kiếm, giảm 1.0% hoa hồng sàn.", new BigDecimal("1.00"), adminId),
-                buildDefaultConfig(5, "Kim Cương", new BigDecimal("50000000"), null,
-                        "/badges/star-5.png", "Ký quỹ từ 50 triệu: Huy hiệu Kim Cương 5 sao danh giá nhất, banner trang chủ, hỗ trợ 1-1, giảm tối đa 1.5% hoa hồng sàn.", new BigDecimal("1.50"), adminId)
+                buildDefaultConfig(1, "Cơ bản (Chưa ký quỹ)", BigDecimal.ZERO, new BigDecimal("1000000"),
+                        "/badges/star-1.png", "Cấp độ cơ bản cho gian hàng không ký quỹ hoặc ký quỹ < 1 triệu. Vẫn được bán hàng nhưng mức độ bảo chứng tối thiểu, áp dụng hoa hồng tiêu chuẩn.", BigDecimal.ZERO, adminId),
+                buildDefaultConfig(2, "Tiềm năng", new BigDecimal("1000000"), new BigDecimal("5000000"),
+                        "/badges/star-2.png", "Huy hiệu Bảo chứng 2 sao. Có cam kết ký quỹ trách nhiệm từ 1 triệu đến dưới 5 triệu đồng, giảm 0.2% hoa hồng sàn.", new BigDecimal("0.20"), adminId),
+                buildDefaultConfig(3, "Uy tín Tiêu chuẩn", new BigDecimal("5000000"), new BigDecimal("20000000"),
+                        "/badges/star-3.png", "Huy hiệu Bảo chứng 3 sao. Ưu tiên hiển thị kết quả tìm kiếm, hỗ trợ phân xử khiếu nại nhanh, giảm 0.5% hoa hồng sàn.", new BigDecimal("0.50"), adminId),
+                buildDefaultConfig(4, "Đối tác Vàng", new BigDecimal("20000000"), new BigDecimal("50000000"),
+                        "/badges/star-4.png", "Huy hiệu Đối tác Vàng 4 sao. Được gắn nhãn Gian hàng Đảm bảo, ưu tiên đẩy top tìm kiếm và livestream, giảm 1.0% hoa hồng sàn.", new BigDecimal("1.00"), adminId),
+                buildDefaultConfig(5, "Kim Cương / Cam Kết Tối Đa", new BigDecimal("50000000"), null,
+                        "/badges/star-5.png", "Huy hiệu Kim Cương 5 sao danh giá nhất. Cam kết bảo chứng tối đa, ưu tiên nổi bật trên banner sàn, đền bù tức thì nếu có lỗi, giảm 1.5% hoa hồng sàn.", new BigDecimal("1.50"), adminId)
         );
 
         for (TrustLevelConfig def : defaults) {

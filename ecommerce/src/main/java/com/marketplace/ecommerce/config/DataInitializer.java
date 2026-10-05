@@ -2106,26 +2106,21 @@ public class DataInitializer implements CommandLineRunner {
         }
 
         private void initializeTrustLevels() {
-                // Chỉ khởi tạo nếu cơ sở dữ liệu chưa có cấu hình bậc sao nào,
-                // tránh ghi đè các thiết lập hạn mức/bậc sao mà Quản trị viên sàn đã tùy chỉnh.
-                if (trustLevelConfigRepository.count() > 0) {
-                        return;
-                }
-
-                initializeSingleTrustLevel(1, "Cơ bản", BigDecimal.ZERO, new BigDecimal("4999999"), BigDecimal.ZERO,
-                                "Gian hàng mới tham gia, miễn phí duy trì, áp dụng biểu phí hoa hồng tiêu chuẩn.");
-                initializeSingleTrustLevel(2, "Tiềm năng", new BigDecimal("5000000"), new BigDecimal("9999999"), new BigDecimal("0.20"),
-                                "Ký quỹ từ 5 triệu: Ưu tiên hiển thị tìm kiếm, giảm 0.2% hoa hồng sàn.");
-                initializeSingleTrustLevel(3, "Uy tín", new BigDecimal("10000000"), new BigDecimal("29999999"), new BigDecimal("0.50"),
-                                "Ký quỹ từ 10 triệu: Huy hiệu Shop Uy Tín, hỗ trợ flash sale, giảm 0.5% hoa hồng sàn.");
-                initializeSingleTrustLevel(4, "Vàng", new BigDecimal("30000000"), new BigDecimal("49999999"), new BigDecimal("1.00"),
-                                "Ký quỹ từ 30 triệu: Huy hiệu Đối tác Vàng, banner trang chủ, giảm 1.0% hoa hồng sàn.");
-                initializeSingleTrustLevel(5, "Kim Cương", new BigDecimal("50000000"), null, new BigDecimal("1.50"),
-                                "Ký quỹ từ 50 triệu: Đại lý phân phối cấp cao, hỗ trợ 1-1, giảm tối đa 1.5% hoa hồng sàn.");
+                initializeSingleTrustLevel(1, "Cơ bản (Chưa ký quỹ)", BigDecimal.ZERO, new BigDecimal("1000000"), BigDecimal.ZERO,
+                                "Cấp độ cơ bản cho gian hàng không ký quỹ hoặc ký quỹ < 1 triệu. Vẫn được bán hàng nhưng mức độ bảo chứng tối thiểu, áp dụng hoa hồng tiêu chuẩn.");
+                initializeSingleTrustLevel(2, "Tiềm năng", new BigDecimal("1000000"), new BigDecimal("5000000"), new BigDecimal("0.20"),
+                                "Huy hiệu Bảo chứng 2 sao. Có cam kết ký quỹ trách nhiệm từ 1 triệu đến dưới 5 triệu đồng, giảm 0.2% hoa hồng sàn.");
+                initializeSingleTrustLevel(3, "Uy tín Tiêu chuẩn", new BigDecimal("5000000"), new BigDecimal("20000000"), new BigDecimal("0.50"),
+                                "Huy hiệu Bảo chứng 3 sao. Ưu tiên hiển thị kết quả tìm kiếm, hỗ trợ phân xử khiếu nại nhanh, giảm 0.5% hoa hồng sàn.");
+                initializeSingleTrustLevel(4, "Đối tác Vàng", new BigDecimal("20000000"), new BigDecimal("50000000"), new BigDecimal("1.00"),
+                                "Huy hiệu Đối tác Vàng 4 sao. Được gắn nhãn Gian hàng Đảm bảo, ưu tiên đẩy top tìm kiếm và livestream, giảm 1.0% hoa hồng sàn.");
+                initializeSingleTrustLevel(5, "Kim Cương / Cam Kết Tối Đa", new BigDecimal("50000000"), null, new BigDecimal("1.50"),
+                                "Huy hiệu Kim Cương 5 sao danh giá nhất. Cam kết bảo chứng tối đa, ưu tiên nổi bật trên banner sàn, đền bù tức thì nếu có lỗi, giảm 1.5% hoa hồng sàn.");
         }
 
         private void initializeSingleTrustLevel(int star, String name, BigDecimal min, BigDecimal max, BigDecimal discount, String desc) {
-                if (trustLevelConfigRepository.findByStarLevel(star).isEmpty()) {
+                var existingOpt = trustLevelConfigRepository.findByStarLevel(star);
+                if (existingOpt.isEmpty()) {
                         TrustLevelConfig config = TrustLevelConfig.builder()
                                         .starLevel(star)
                                         .tierName(name)
@@ -2136,6 +2131,16 @@ public class DataInitializer implements CommandLineRunner {
                                         .isActive(true)
                                         .build();
                         trustLevelConfigRepository.save(config);
+                } else {
+                        // Nếu đã có trong DB nhưng chưa có chiết khấu (đang = 0 hoặc null) cho các bậc 2-5, tự động cập nhật mốc mặc định chuẩn
+                        TrustLevelConfig config = existingOpt.get();
+                        if (config.getCommissionDiscount() == null || (config.getCommissionDiscount().compareTo(BigDecimal.ZERO) == 0 && discount.compareTo(BigDecimal.ZERO) > 0)) {
+                                config.setCommissionDiscount(discount);
+                                if (config.getBenefitsDescription() == null || config.getBenefitsDescription().isBlank()) {
+                                        config.setBenefitsDescription(desc);
+                                }
+                                trustLevelConfigRepository.save(config);
+                        }
                 }
         }
 

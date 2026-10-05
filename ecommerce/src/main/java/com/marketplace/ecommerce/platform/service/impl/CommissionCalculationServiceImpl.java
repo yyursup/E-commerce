@@ -163,11 +163,14 @@ public class CommissionCalculationServiceImpl implements CommissionCalculationSe
         if (deposit.compareTo(new BigDecimal("50000000")) >= 0) {
             return new BigDecimal("1.50");
         }
-        if (deposit.compareTo(new BigDecimal("30000000")) >= 0) {
+        if (deposit.compareTo(new BigDecimal("20000000")) >= 0) {
             return new BigDecimal("1.00");
         }
-        if (deposit.compareTo(new BigDecimal("10000000")) >= 0) {
+        if (deposit.compareTo(new BigDecimal("5000000")) >= 0) {
             return new BigDecimal("0.50");
+        }
+        if (deposit.compareTo(new BigDecimal("1000000")) >= 0) {
+            return new BigDecimal("0.20");
         }
         return BigDecimal.ZERO;
     }

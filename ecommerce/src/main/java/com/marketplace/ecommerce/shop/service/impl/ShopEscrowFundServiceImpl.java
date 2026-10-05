@@ -282,20 +282,6 @@ public class ShopEscrowFundServiceImpl implements ShopEscrowFundService {
 
     @Override
     @Transactional
-    public ShopEscrowTransaction deductCompensation(UUID shopId, UUID orderId, UUID reportId, BigDecimal deductAmount,
-            String reason) {
-        AdminDeductCompensationRequest req = AdminDeductCompensationRequest.builder()
-                .orderId(orderId)
-                .reportId(reportId)
-                .amount(deductAmount)
-                .reason(reason)
-                .clientRequestId(UUID.randomUUID().toString())
-                .build();
-        return deductCompensation(shopId, req);
-    }
-
-    @Override
-    @Transactional
     public ShopEscrowTransaction deductCompensation(UUID shopId, AdminDeductCompensationRequest request) {
         if (request == null) {
             throw new CustomException("Dữ liệu yêu cầu bồi thường không hợp lệ");
@@ -625,77 +611,6 @@ public class ShopEscrowFundServiceImpl implements ShopEscrowFundService {
                     : ("Cấp độ " + fund.getCurrentTrustLevel() + " sao");
             return ShopEscrowFundResponse.from(fund, tierName);
         });
-    }
-
-    @Override
-    @Transactional
-    @Scheduled(cron = "0 0 * * * *") // Chạy mỗi giờ kiểm tra hạn nạp bù
-    public void checkAndAutoDowngradeDeficitShops() {
-        LocalDateTime now = LocalDateTime.now();
-        List<ShopEscrowFund> expiredDeficitFunds = shopEscrowFundRepository
-                .findByIsDeficitTrueAndDeficitDeadlineBefore(now);
-
-        for (ShopEscrowFund fund : expiredDeficitFunds) {
-            try {
-                int oldStar = fund.getCurrentTrustLevel();
-                int realStar = trustLevelConfigService.resolveTrustLevel(fund.getBalance());
-
-                if (realStar < oldStar) {
-                    fund.setCurrentTrustLevel(realStar);
-                    Shop shop = fund.getShop();
-                    if (shop != null) {
-                        shop.setTrustLevel(realStar);
-                        shopRepository.save(shop);
-                    }
-
-                    // Reset trạng thái hụt quỹ theo mức sao mới
-                    TrustLevelConfig newTier = trustLevelConfigService.getConfigByStarLevel(realStar);
-                    BigDecimal newMin = newTier != null ? newTier.getMinDeposit() : BigDecimal.ZERO;
-                    if (fund.getBalance().compareTo(newMin) >= 0) {
-                        fund.setIsDeficit(false);
-                        fund.setDeficitAmount(BigDecimal.ZERO);
-                        fund.setDeficitDeadline(null);
-                        fund.setStatus(EscrowFundStatus.ACTIVE);
-                    } else {
-                        fund.setDeficitAmount(newMin.subtract(fund.getBalance()));
-                    }
-
-                    shopEscrowFundRepository.save(fund);
-
-                    log.warn(
-                            "TỰ ĐỘNG GIÁNG CẤP UY TÍN: Gian hàng {} đã bị hạ từ {} sao xuống {} sao do hết hạn nạp bù quỹ ký quỹ!",
-                            shop != null ? shop.getName() : fund.getId(), oldStar, realStar);
-
-                    // Gửi thông báo giáng cấp
-                    if (shop != null && shop.getUser() != null) {
-                        Notification notif = Notification.builder()
-                                .eventId("ESCROW_DOWNGRADED_" + UUID.randomUUID())
-                                .user(shop.getUser())
-                                .type(NotificationType.SYSTEM)
-                                .channel(NotificationChannelType.IN_APP)
-                                .status(NotificationStatus.SENT)
-                                .title("Thông báo: Độ uy tín gian hàng đã bị giáng cấp!")
-                                .content("Gian hàng \"" + shop.getName()
-                                        + "\" đã hết thời hạn 72 giờ nạp bù Quỹ ký quỹ. " +
-                                        "Hệ thống đã tự động điều chỉnh Cấp độ uy tín từ " + oldStar + " sao xuống "
-                                        + realStar + " sao " +
-                                        "tương ứng với số dư thực tế còn lại (" + fund.getBalance() + " VNĐ).")
-                                .payload(Map.of("shopId", shop.getId().toString(), "newTrustLevel", realStar))
-                                .sentAt(LocalDateTime.now())
-                                .build();
-                        notificationRepository.save(notif);
-                    }
-                }
-            } catch (Exception e) {
-                log.error("Lỗi khi tự động giáng cấp cho quỹ: {}", fund.getId(), e);
-            }
-        }
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public void validateCanCloseShop(UUID shopId) {
-        validateCanCloseShopInternal(shopId, false);
     }
 
     private void validateCanCloseShopInternal(UUID shopId, boolean isApprovalStep) {

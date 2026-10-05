@@ -19,7 +19,6 @@ import com.marketplace.ecommerce.request.valueObjects.RequestStatus;
 import com.marketplace.ecommerce.request.valueObjects.RequestType;
 import com.marketplace.ecommerce.request.valueObjects.SellerType;
 import com.marketplace.ecommerce.shop.entity.Shop;
-import com.marketplace.ecommerce.shop.service.ShopEscrowFundService;
 import com.marketplace.ecommerce.shop.service.ShopService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -57,9 +56,6 @@ class RequestServiceImplTest {
 
         @Mock
         private ShopService shopService;
-
-        @Mock
-        private ShopEscrowFundService shopEscrowFundService;
 
         @InjectMocks
         private RequestServiceImpl requestService;

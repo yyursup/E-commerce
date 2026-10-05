@@ -26,12 +26,7 @@ public interface ShopEscrowFundService {
 
     ShopEscrowFundResponse topUpFund(UUID shopId, TopUpEscrowFundRequest request);
 
-    ShopEscrowTransaction deductCompensation(UUID shopId, UUID orderId, UUID reportId, BigDecimal deductAmount,
-            String reason);
-
     ShopEscrowTransaction deductCompensation(UUID shopId, AdminDeductCompensationRequest request);
-
-    void validateCanCloseShop(UUID shopId);
 
     ShopEscrowFundResponse adminAdjustFund(UUID shopId, AdminAdjustEscrowFundRequest request, UUID adminId);
 
@@ -40,8 +35,6 @@ public interface ShopEscrowFundService {
     Page<ShopEscrowTransactionResponse> getTransactionsByFundId(UUID fundId, Pageable pageable);
 
     Page<ShopEscrowFundResponse> getAllFunds(Boolean isDeficit, EscrowFundStatus status, Pageable pageable);
-
-    void checkAndAutoDowngradeDeficitShops();
 
     ShopEscrowFundResponse requestCloseShopAndRefund(UUID shopId);
 

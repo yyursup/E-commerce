@@ -4,7 +4,6 @@ import com.marketplace.ecommerce.product.entity.Product;
 import com.marketplace.ecommerce.product.valueObjects.ConditionGrade;
 import com.marketplace.ecommerce.product.valueObjects.ProductStatus;
 import com.marketplace.ecommerce.product.valueObjects.WarrantyType;
-import com.marketplace.ecommerce.review.entity.Review;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

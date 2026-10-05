@@ -6,7 +6,6 @@ import com.marketplace.ecommerce.auth.valueObjects.DisciplineLevel;
 import com.marketplace.ecommerce.common.exception.CustomException;
 import com.marketplace.ecommerce.product.dto.request.CreateProductRequest;
 import com.marketplace.ecommerce.product.dto.request.UpdateProductRequest;
-import com.marketplace.ecommerce.product.dto.response.ProductResponse;
 import com.marketplace.ecommerce.product.dto.response.SellerProductResponse;
 import com.marketplace.ecommerce.product.entity.Product;
 import com.marketplace.ecommerce.product.entity.ProductCategory;

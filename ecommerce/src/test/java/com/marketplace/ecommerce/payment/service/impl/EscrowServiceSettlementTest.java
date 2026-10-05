@@ -8,7 +8,6 @@ import com.marketplace.ecommerce.order.valueObjects.OrderStatus;
 import com.marketplace.ecommerce.payment.entity.Escrow;
 import com.marketplace.ecommerce.payment.entity.Transaction;
 import com.marketplace.ecommerce.payment.repository.EscrowRepository;
-import com.marketplace.ecommerce.payment.repository.PaymentRepository;
 import com.marketplace.ecommerce.payment.repository.TransactionRepository;
 import com.marketplace.ecommerce.payment.valueObjects.EscrowStatus;
 import com.marketplace.ecommerce.payment.valueObjects.PaymentMethod;

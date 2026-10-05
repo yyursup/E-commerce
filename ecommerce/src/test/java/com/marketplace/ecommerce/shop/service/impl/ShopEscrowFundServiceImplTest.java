@@ -3,7 +3,6 @@ package com.marketplace.ecommerce.shop.service.impl;
 import com.marketplace.ecommerce.auth.entity.Account;
 import com.marketplace.ecommerce.auth.entity.User;
 import com.marketplace.ecommerce.common.exception.CustomException;
-import com.marketplace.ecommerce.notification.repository.NotificationRepository;
 import com.marketplace.ecommerce.order.entity.Order;
 import com.marketplace.ecommerce.order.repository.OrderRepository;
 import com.marketplace.ecommerce.order.repository.OrderReturnRepository;
@@ -90,9 +89,6 @@ class ShopEscrowFundServiceImplTest {
 
         @Mock
         private RequestRepository requestRepository;
-
-        @Mock
-        private NotificationRepository notificationRepository;
 
         @Mock
         private VoucherService voucherService;

@@ -26,8 +26,6 @@ public interface ShopEscrowFundRepository extends JpaRepository<ShopEscrowFund, 
     @Query("SELECT f FROM ShopEscrowFund f WHERE f.shop.id = :shopId")
     Optional<ShopEscrowFund> findByShopIdForUpdate(@Param("shopId") UUID shopId);
 
-    List<ShopEscrowFund> findByIsDeficitTrue();
-
     List<ShopEscrowFund> findByIsDeficitTrueAndDeficitDeadlineBefore(LocalDateTime deadline);
 
     Page<ShopEscrowFund> findByIsDeficit(Boolean isDeficit, Pageable pageable);

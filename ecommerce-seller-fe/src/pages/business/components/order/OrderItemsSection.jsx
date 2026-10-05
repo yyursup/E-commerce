@@ -11,7 +11,7 @@ export default function OrderItemsSection({ items, isDark }) {
           Danh Sách Sản Phẩm Trong Đơn ({items?.length || 0})
         </h3>
         <span className="text-xs text-stone-400">
-          Tổng số lượng: {items?.reduce((a, b) => a + (b.quantity || 1), 0)} món
+          Tổng số lượng: {items?.reduce((a, b) => a + (b.quantity || 1), 0) || 0} món
         </span>
       </div>
 
@@ -83,7 +83,7 @@ export default function OrderItemsSection({ items, isDark }) {
             <div className="text-right sm:pl-4 border-t sm:border-t-0 pt-2 sm:pt-0 border-dashed border-stone-200 dark:border-slate-800">
               <span className="text-xs text-stone-400 block sm:hidden">Thành tiền</span>
               <p className={cn('text-sm sm:text-base font-black', isDark ? 'text-amber-400' : 'text-amber-600')}>
-                {formatCurrency(item.totalPrice || (item.price * item.quantity))}
+                {formatCurrency(item.totalPrice != null ? item.totalPrice : ((item.price || item.unitPrice || 0) * (item.quantity || 1)))}
               </p>
             </div>
           </div>

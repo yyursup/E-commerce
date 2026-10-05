@@ -20,6 +20,7 @@ import OrderAddressSection from './components/order/OrderAddressSection'
 import OrderItemsSection from './components/order/OrderItemsSection'
 import OrderSummarySection from './components/order/OrderSummarySection'
 import { formatDate } from './components/order/orderHelpers'
+import ErrorBoundary from '../../components/ErrorBoundary'
 
 export default function ShopOrderDetail() {
   const { orderId } = useParams()
@@ -195,8 +196,9 @@ export default function ShopOrderDetail() {
   ]
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 pb-12">
-      {/* Navigation & Header */}
+    <ErrorBoundary onReset={fetchOrder}>
+      <div className="max-w-5xl mx-auto space-y-6 pb-12">
+        {/* Navigation & Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <Link
@@ -357,8 +359,9 @@ export default function ShopOrderDetail() {
         <OrderItemsSection items={order.items} isDark={isDark} />
 
         {/* 4. Financial Summary & Escrow Protection */}
-        <OrderSummarySection order={order} isDark={isDark} />
+        <OrderSummarySection order={order} isDark={isDark} returnInfo={returnInfo || order?.returnInfo} />
       </motion.div>
     </div>
+    </ErrorBoundary>
   )
 }

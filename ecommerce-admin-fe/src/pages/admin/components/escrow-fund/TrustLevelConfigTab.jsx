@@ -12,9 +12,11 @@ import toast from 'react-hot-toast'
 import { useThemeStore } from '../../../../store/useThemeStore'
 import { cn } from '../../../../lib/cn'
 import trustConfigService from '../../../../services/trustConfig'
+import { useHorizontalScroll } from '../../../../hooks/useHorizontalScroll'
 
 export default function TrustLevelConfigTab() {
   const isDark = useThemeStore((state) => state.theme) === 'dark'
+  const tableContainerRef = useHorizontalScroll()
 
   const [configs, setConfigs] = useState([])
   const [loading, setLoading] = useState(true)
@@ -207,24 +209,30 @@ export default function TrustLevelConfigTab() {
           isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
         )}
       >
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
+        <div
+          ref={tableContainerRef}
+          className={cn(
+            'overflow-x-auto',
+            isDark ? 'custom-scrollbar-dark' : 'custom-scrollbar-light'
+          )}
+        >
+          <table className="w-full text-left text-sm min-w-[880px]">
             <thead className={cn('text-xs uppercase', isDark ? 'bg-slate-950 text-slate-400' : 'bg-stone-50 text-stone-600')}>
               <tr>
-                <th className="px-6 py-4">Bậc Uy Tín</th>
-                <th className="px-6 py-4">Tên Hạng / Danh Hiệu</th>
-                <th className="px-6 py-4">Ngưỡng Tiền Tối Thiểu</th>
-                <th className="px-6 py-4">Ngưỡng Tiền Tối Đa</th>
-                <th className="px-6 py-4">Giảm Hoa Hồng (%)</th>
-                <th className="px-6 py-4">Quyền Lợi & Đặc Quyền</th>
-                <th className="px-6 py-4 text-center">Trạng Thái</th>
-                <th className="px-6 py-4 text-right">Thao Tác</th>
+                <th className="px-4 py-3 sm:px-6 sm:py-4">Bậc Uy Tín</th>
+                <th className="px-4 py-3 sm:px-6 sm:py-4">Tên Hạng / Danh Hiệu</th>
+                <th className="px-4 py-3 sm:px-6 sm:py-4">Ngưỡng Tiền Tối Thiểu</th>
+                <th className="px-4 py-3 sm:px-6 sm:py-4">Ngưỡng Tiền Tối Đa</th>
+                <th className="px-4 py-3 sm:px-6 sm:py-4">Giảm Hoa Hồng (%)</th>
+                <th className="px-4 py-3 sm:px-6 sm:py-4">Quyền Lợi & Đặc Quyền</th>
+                <th className="px-4 py-3 sm:px-6 sm:py-4 text-center">Trạng Thái</th>
+                <th className="px-4 py-3 sm:px-6 sm:py-4 text-right">Thao Tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-700/30">
               {loading ? (
                 <tr>
-                  <td colSpan="8" className="px-6 py-10 text-center text-slate-400">
+                  <td colSpan="8" className="px-4 py-10 sm:px-6 sm:py-10 text-center text-slate-400">
                     <HiOutlineRefresh className="mx-auto h-6 w-6 animate-spin text-amber-500 mb-2" />
                     Đang tải cấu hình bậc sao...
                   </td>
@@ -232,7 +240,7 @@ export default function TrustLevelConfigTab() {
               ) : (
                 configs.map((cfg) => (
                   <tr key={cfg.starLevel} className={cn('hover:bg-slate-800/20 transition')}>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 py-3.5 sm:px-6 sm:py-4 whitespace-nowrap">
                       <div className="flex items-center gap-1.5">
                         <div className="flex items-center gap-0.5">
                           {renderStars(cfg.starLevel)}
@@ -242,22 +250,22 @@ export default function TrustLevelConfigTab() {
                         </span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap font-bold text-amber-500">
+                    <td className="px-4 py-3.5 sm:px-6 sm:py-4 whitespace-nowrap font-bold text-amber-500">
                       {cfg.tierName}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap font-semibold">
+                    <td className="px-4 py-3.5 sm:px-6 sm:py-4 whitespace-nowrap font-semibold">
                       {formatVND(cfg.minDeposit)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-slate-400">
+                    <td className="px-4 py-3.5 sm:px-6 sm:py-4 whitespace-nowrap text-slate-400">
                       {formatVND(cfg.maxDeposit)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap font-bold text-emerald-500">
+                    <td className="px-4 py-3.5 sm:px-6 sm:py-4 whitespace-nowrap font-bold text-emerald-500">
                       {cfg.commissionDiscount ? `-${Number(cfg.commissionDiscount)}%` : '0%'}
                     </td>
-                    <td className="px-6 py-4 text-xs max-w-xs text-slate-300">
+                    <td className="px-4 py-3.5 sm:px-6 sm:py-4 text-xs max-w-xs text-slate-300">
                       {cfg.benefitsDescription || '-'}
                     </td>
-                    <td className="px-6 py-4 text-center whitespace-nowrap">
+                    <td className="px-4 py-3.5 sm:px-6 sm:py-4 text-center whitespace-nowrap">
                       {cfg.isActive !== false ? (
                         <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-500">
                           <HiOutlineCheckCircle className="h-4 w-4" /> Kích hoạt
@@ -268,7 +276,7 @@ export default function TrustLevelConfigTab() {
                         </span>
                       )}
                     </td>
-                    <td className="px-6 py-4 text-right whitespace-nowrap">
+                    <td className="px-4 py-3.5 sm:px-6 sm:py-4 text-right whitespace-nowrap">
                       <button
                         onClick={() => handleOpenEdit(cfg)}
                         className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-500 hover:bg-amber-500/20 transition border border-amber-500/20"
@@ -289,13 +297,13 @@ export default function TrustLevelConfigTab() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
           <div
             className={cn(
-              'w-full max-w-lg rounded-2xl border p-6 shadow-2xl relative animate-in fade-in zoom-in-95',
+              'w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl border p-4 sm:p-6 shadow-2xl relative animate-in fade-in zoom-in-95',
               isDark ? 'border-slate-800 bg-slate-900 text-slate-100' : 'border-stone-200 bg-white text-stone-900'
             )}
           >
-            <h3 className="text-xl font-bold flex items-center gap-2">
-              <HiOutlineShieldCheck className="h-6 w-6 text-amber-500" />
-              Chỉnh Sửa Bậc Uy Tín {editingConfig.starLevel} Sao
+            <h3 className="text-lg sm:text-xl font-bold flex items-center gap-2">
+              <HiOutlineShieldCheck className="h-6 w-6 text-amber-500 shrink-0" />
+              <span>Chỉnh Sửa Bậc Uy Tín {editingConfig.starLevel} Sao</span>
             </h3>
             <p className={cn('text-xs mt-1', isDark ? 'text-slate-400' : 'text-stone-500')}>
               Điều chỉnh tên gọi, mức tiền ký quỹ, chiết khấu hoa hồng và đặc quyền.
@@ -316,7 +324,7 @@ export default function TrustLevelConfigTab() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold mb-1">Ngưỡng tối thiểu (VNĐ)</label>
                   <input

@@ -41,6 +41,8 @@ class EscrowServiceSettlementTest {
     private OrderRepository orderRepository;
     @Mock
     private TransactionRepository transactionRepository;
+    @Mock
+    private WalletRepository walletRepository;
 
     @InjectMocks
     private EscrowServiceImpl escrowService;

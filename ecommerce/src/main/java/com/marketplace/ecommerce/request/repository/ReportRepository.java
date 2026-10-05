@@ -191,5 +191,17 @@ public interface ReportRepository extends JpaRepository<Report, UUID> {
         order by req.createdAt desc
     """)
     List<Report> findReportsByTargetTypeAndTargetIdIn(@Param("targetType") TargetType targetType, @Param("targetIds") List<UUID> targetIds);
+
+    @Query("""
+        SELECT COUNT(r) > 0
+        FROM Report r JOIN r.request req
+        WHERE req.status = com.marketplace.ecommerce.request.valueObjects.RequestStatus.PENDING
+          AND (
+               (r.targetType = com.marketplace.ecommerce.request.valueObjects.TargetType.SHOP AND r.targetId = :shopId)
+            OR (r.targetType = com.marketplace.ecommerce.request.valueObjects.TargetType.PRODUCT AND r.targetId IN (SELECT p.id FROM Product p WHERE p.shop.id = :shopId))
+            OR (r.targetType = com.marketplace.ecommerce.request.valueObjects.TargetType.ORDER AND r.targetId IN (SELECT o.id FROM Order o WHERE o.shop.id = :shopId))
+          )
+    """)
+    boolean existsPendingReportsForShop(@Param("shopId") UUID shopId);
 }
 

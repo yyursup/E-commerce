@@ -249,6 +249,8 @@ export default function ShopEscrowFund() {
   }
 
   const isPendingActivation = fund?.status === 'PENDING_DEPOSIT'
+  const isRefundPending = fund?.status === 'REFUND_PENDING'
+  const isClosed = fund?.status === 'REFUNDED'
   const remainingToActivate = Math.max(0, Number(fund?.committedAmount || 0) - Number(fund?.balance || 0))
 
   return (
@@ -280,25 +282,77 @@ export default function ShopEscrowFund() {
             <HiOutlineRefresh className="h-4 w-4" />
             Làm mới
           </button>
-          <button
-            onClick={() => {
-              if (isPendingActivation && remainingToActivate > 0) {
-                setTopUpAmount(String(remainingToActivate))
-              }
-              setShowTopUpModal(true)
-            }}
-            className={cn(
-              'flex items-center gap-2 rounded-xl px-5 py-2 text-sm font-semibold text-white shadow-lg transition',
-              isPendingActivation
-                ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 shadow-amber-500/25 ring-2 ring-amber-500/50'
-                : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 shadow-amber-500/20'
-            )}
-          >
-            <HiOutlineCash className="h-4 w-4" />
-            {isPendingActivation ? 'Nạp tiền kích hoạt gian hàng' : 'Nạp thêm / Nạp bù quỹ'}
-          </button>
+          {!isRefundPending && !isClosed && (
+            <button
+              onClick={() => {
+                if (isPendingActivation && remainingToActivate > 0) {
+                  setTopUpAmount(String(remainingToActivate))
+                }
+                setShowTopUpModal(true)
+              }}
+              className={cn(
+                'flex items-center gap-2 rounded-xl px-5 py-2 text-sm font-semibold text-white shadow-lg transition',
+                isPendingActivation
+                  ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 shadow-amber-500/25 ring-2 ring-amber-500/50'
+                  : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 shadow-amber-500/20'
+              )}
+            >
+              <HiOutlineCash className="h-4 w-4" />
+              {isPendingActivation ? 'Nạp tiền kích hoạt gian hàng' : 'Nạp thêm / Nạp bù quỹ'}
+            </button>
+          )}
         </div>
       </div>
+
+      {/* THÔNG BÁO CHỜ DUYỆT ĐÓNG GIAN HÀNG & HOÀN TRẢ QUỸ */}
+      {isRefundPending && (
+        <div className="rounded-2xl border border-purple-500/50 bg-gradient-to-r from-purple-500/15 via-purple-500/10 to-transparent p-6 shadow-sm">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-4">
+              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-purple-500/20 text-purple-400">
+                <HiOutlineClock className="h-7 w-7 animate-pulse" />
+              </div>
+              <div>
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-500/20 text-purple-400 mb-1 border border-purple-500/30">
+                  <HiOutlineClock className="h-3.5 w-3.5" /> Đang chờ Admin đối soát đóng shop
+                </div>
+                <h3 className="text-base font-bold text-stone-900 dark:text-white">
+                  Yêu cầu đóng gian hàng & hoàn trả Quỹ ký quỹ đang được xử lý
+                </h3>
+                <p className={cn('text-sm mt-1', isDark ? 'text-slate-300' : 'text-stone-700')}>
+                  Gian hàng của bạn hiện đã chuyển sang trạng thái <strong>Tạm ngừng nhận đơn hàng mới (INACTIVE)</strong>.
+                  Ban Quản Trị sàn đang đối soát các điều kiện: không còn đơn đang vận chuyển, mọi đơn hoàn thành đã qua 7 ngày cooling period, không còn khiếu nại tranh chấp hay thâm hụt quỹ.
+                </p>
+                <div className="mt-2 text-xs font-semibold text-purple-400">
+                  Số dư Quỹ ký quỹ sẽ hoàn trả: <span className="text-amber-500 font-bold">{formatVND(fund?.balance)}</span> về Ví Của Gian Hàng sau khi Admin phê duyệt.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* THÔNG BÁO GIAN HÀNG ĐÃ ĐÓNG VĨNH VIỄN & HOÀN TẤT HOÀN QUỸ */}
+      {isClosed && (
+        <div className="rounded-2xl border border-slate-700/60 bg-slate-900/60 p-6 shadow-sm">
+          <div className="flex items-start gap-4">
+            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-slate-800 text-slate-400">
+              <HiOutlineCheckCircle className="h-7 w-7 text-emerald-400" />
+            </div>
+            <div>
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-800 text-slate-300 mb-1 border border-slate-700">
+                Gian hàng đã đóng (CLOSED)
+              </div>
+              <h3 className="text-base font-bold text-white">
+                Gian hàng đã chính thức đóng cửa và hoàn tất hoàn trả Quỹ ký quỹ
+              </h3>
+              <p className="text-sm mt-1 text-slate-400">
+                Toàn bộ tiền ký quỹ bảo chứng đã được hoàn trả về Ví Gian Hàng của bạn. Gian hàng đã ngừng toàn bộ hoạt động kinh doanh trên nền tảng.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* CẢNH BÁO CHỜ NẠP KÝ QUỸ ĐỂ KÍCH HOẠT GIAN HÀNG */}
       {isPendingActivation && (
@@ -460,6 +514,10 @@ export default function ShopEscrowFund() {
                     ? 'bg-rose-500/15 text-rose-500 animate-pulse'
                     : fund?.status === 'PENDING_DEPOSIT'
                     ? 'bg-amber-500/15 text-amber-500 border border-amber-500/30'
+                    : fund?.status === 'REFUND_PENDING'
+                    ? 'bg-purple-500/15 text-purple-400 border border-purple-500/30 animate-pulse'
+                    : fund?.status === 'REFUNDED'
+                    ? 'bg-slate-500/15 text-slate-400 border border-slate-500/30'
                     : 'bg-amber-500/15 text-amber-500'
                 )}
               >
@@ -469,6 +527,10 @@ export default function ShopEscrowFund() {
                   ? 'ĐANG HỤT QUỸ'
                   : fund?.status === 'PENDING_DEPOSIT'
                   ? 'CHỜ NẠP KÍCH HOẠT'
+                  : fund?.status === 'REFUND_PENDING'
+                  ? 'CHỜ DUYỆT ĐÓNG SHOP'
+                  : fund?.status === 'REFUNDED'
+                  ? 'ĐÃ ĐÓNG GIAN HÀNG'
                   : fund?.status || 'HOẠT ĐỘNG'}
               </span>
             </div>
@@ -482,6 +544,28 @@ export default function ShopEscrowFund() {
                   <div className="flex items-center gap-2 text-slate-400">
                     <HiOutlineInformationCircle className="h-4 w-4 text-blue-400 shrink-0" />
                     <span>Mở khóa đăng bán sản phẩm ngay sau khi kích hoạt</span>
+                  </div>
+                </>
+              ) : isRefundPending ? (
+                <>
+                  <div className="flex items-center gap-2 text-purple-400 font-medium">
+                    <HiOutlineClock className="h-4 w-4 shrink-0" />
+                    <span>Yêu cầu đóng shop đang chờ Admin đối soát điều kiện</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-slate-400">
+                    <HiOutlineInformationCircle className="h-4 w-4 text-blue-400 shrink-0" />
+                    <span>Tạm ngừng nhận đơn mới trong thời gian chờ duyệt</span>
+                  </div>
+                </>
+              ) : isClosed ? (
+                <>
+                  <div className="flex items-center gap-2 text-slate-300 font-medium">
+                    <HiOutlineCheckCircle className="h-4 w-4 text-emerald-400 shrink-0" />
+                    <span>Gian hàng đã chính thức đóng cửa vĩnh viễn</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-slate-400">
+                    <HiOutlineInformationCircle className="h-4 w-4 text-blue-400 shrink-0" />
+                    <span>Đã hoàn tất thanh quyết toán toàn bộ số dư ký quỹ</span>
                   </div>
                 </>
               ) : (
@@ -500,12 +584,24 @@ export default function ShopEscrowFund() {
           </div>
 
           <div className="mt-4 pt-4 border-t border-slate-700/40">
-            <button
-              onClick={() => setShowCloseShopModal(true)}
-              className="text-xs text-slate-400 hover:text-rose-500 transition underline underline-offset-4"
-            >
-              Quy trình đóng gian hàng & rút tiền ký quỹ
-            </button>
+            {isRefundPending ? (
+              <div className="text-xs text-purple-400 font-medium flex items-center gap-1.5">
+                <HiOutlineClock className="h-4 w-4 shrink-0 animate-pulse" />
+                <span>Đang chờ Admin phê duyệt hoàn quỹ đóng shop</span>
+              </div>
+            ) : isClosed ? (
+              <div className="text-xs text-slate-400 font-medium flex items-center gap-1.5">
+                <HiOutlineCheckCircle className="h-4 w-4 shrink-0 text-emerald-400" />
+                <span>Đã hoàn tất thủ tục đóng gian hàng</span>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowCloseShopModal(true)}
+                className="text-xs text-slate-400 hover:text-rose-500 transition underline underline-offset-4"
+              >
+                Quy trình đóng gian hàng & rút tiền ký quỹ
+              </button>
+            )}
           </div>
         </div>
       </div>

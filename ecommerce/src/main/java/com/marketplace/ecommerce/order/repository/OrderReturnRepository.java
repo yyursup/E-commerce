@@ -34,4 +34,7 @@ public interface OrderReturnRepository extends JpaRepository<OrderReturn, UUID> 
 
     @Query("SELECT r FROM OrderReturn r WHERE r.status = :status AND r.sellerInspectionDeadline IS NOT NULL AND r.sellerInspectionDeadline < :now")
     List<OrderReturn> findExpiredSellerInspections(@Param("status") ReturnStatus status, @Param("now") LocalDateTime now);
+
+    @Query("SELECT COUNT(r) > 0 FROM OrderReturn r WHERE r.order.shop.id = :shopId AND r.status IN :statuses")
+    boolean existsByOrderShopIdAndStatusIn(@Param("shopId") UUID shopId, @Param("statuses") java.util.Collection<ReturnStatus> statuses);
 }

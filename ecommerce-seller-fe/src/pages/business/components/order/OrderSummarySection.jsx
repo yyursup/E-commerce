@@ -11,15 +11,18 @@ import {
 
 const ESCROW_HELD_STATUSES = ['CONFIRMED', 'PROCESSING', 'SHIPPING', 'SHIPPED']
 
-export default function OrderSummarySection({ order, isDark }) {
-  const showEscrowHeld = ESCROW_HELD_STATUSES.includes(order.status)
-  const showEscrowDelivered = order.status === 'DELIVERED'
-  const showEscrowCompleted = order.status === 'COMPLETED'
+export default function OrderSummarySection({ order, isDark, returnInfo }) {
+  const showEscrowHeld = ESCROW_HELD_STATUSES.includes(order?.status)
+  const showEscrowDelivered = order?.status === 'DELIVERED'
+  const showEscrowCompleted = order?.status === 'COMPLETED'
+  const isRefunded =
+    order?.status === 'REFUNDED' ||
+    (returnInfo || order?.returnInfo)?.status === 'COMPLETED'
 
-  const subtotal = Number(order.subtotal || 0)
-  const shopDiscount = Number(order.shopDiscountAmount || 0)
-  const platformDiscount = Number(order.platformDiscountAmount || 0)
-  const platformCommission = Number(order.platformCommission || 0)
+  const subtotal = Number(order?.subtotal || 0)
+  const shopDiscount = Number(order?.shopDiscountAmount || 0)
+  const platformDiscount = Number(order?.platformDiscountAmount || 0)
+  const platformCommission = Number(order?.platformCommission || 0)
   
   // Tỷ lệ hoa hồng (%)
   const commissionRate = order.commissionRate != null 
@@ -53,7 +56,7 @@ export default function OrderSummarySection({ order, isDark }) {
             <span>Phí vận chuyển (GHN Express)</span>
           </span>
           <span className={cn('font-semibold', isDark ? 'text-white' : 'text-stone-900')}>
-            {formatCurrency(order.shippingFee)}
+            {formatCurrency(order?.shippingFee || 0)}
           </span>
         </div>
 
@@ -140,7 +143,7 @@ export default function OrderSummarySection({ order, isDark }) {
             <span className="text-xs text-stone-400">Đã bao gồm VAT & phí giao hàng GHN</span>
           </div>
           <span className="text-xl sm:text-2xl font-black text-amber-500">
-            {formatCurrency(order.total)}
+            {formatCurrency(order?.total || 0)}
           </span>
         </div>
 

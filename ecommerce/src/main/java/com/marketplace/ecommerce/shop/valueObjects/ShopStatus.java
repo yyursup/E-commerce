@@ -7,7 +7,8 @@ public enum ShopStatus {
     INACTIVE("INACTIVE", "Không hoạt động"),
     BANNED("BANNED", "Bị cấm"),
     SUSPENDED("SUSPENDED", "Đã tạm ngưng"),
-    WARNED("WARNED", "Đã cảnh báo");
+    WARNED("WARNED", "Đã cảnh báo"),
+    CLOSED("CLOSED", "Đã đóng");
 
     private final String code;
     private final String description;

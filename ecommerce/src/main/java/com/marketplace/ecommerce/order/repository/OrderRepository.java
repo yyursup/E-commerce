@@ -12,6 +12,7 @@ import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -161,5 +162,16 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
         AND o.status <> com.marketplace.ecommerce.order.valueObjects.OrderStatus.CANCELLED
   """)
   BigDecimal getBuyerTotalVoucherSaved(@Param("userId") UUID userId);
+
+  boolean existsByShopIdAndStatusIn(UUID shopId, Collection<OrderStatus> statuses);
+
+  @Query("""
+      SELECT COUNT(o) > 0
+      FROM Order o
+      WHERE o.shop.id = :shopId
+        AND o.status = com.marketplace.ecommerce.order.valueObjects.OrderStatus.COMPLETED
+        AND (o.deliveredAt IS NULL OR o.deliveredAt > :coolingCutoff)
+  """)
+  boolean existsCompletedOrderWithinCoolingPeriod(@Param("shopId") UUID shopId, @Param("coolingCutoff") LocalDateTime coolingCutoff);
 }
 

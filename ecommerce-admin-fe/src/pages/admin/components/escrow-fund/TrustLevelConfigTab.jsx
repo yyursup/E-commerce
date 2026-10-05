@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { Link } from 'react-router-dom'
 import {
   HiOutlineShieldCheck,
   HiOutlinePencilAlt,
@@ -11,6 +12,7 @@ import {
   HiOutlineViewList,
   HiOutlineSparkles,
   HiOutlineCash,
+  HiOutlineArrowNarrowRight,
 } from 'react-icons/hi'
 import toast from 'react-hot-toast'
 import { useThemeStore } from '../../../../store/useThemeStore'
@@ -273,20 +275,39 @@ export default function TrustLevelConfigTab() {
       {/* Guide Banner */}
       <div
         className={cn(
-          'rounded-2xl border p-4 sm:p-5 flex items-start gap-3.5',
+          'rounded-2xl border p-4 sm:p-5 flex flex-col md:flex-row items-start justify-between gap-4',
           isDark ? 'border-blue-500/20 bg-blue-500/5 text-slate-300' : 'border-blue-200 bg-blue-50/60 text-slate-800'
         )}
       >
-        <HiOutlineInformationCircle className="h-5 w-5 flex-shrink-0 text-blue-500 mt-0.5" />
-        <div className="text-xs leading-relaxed space-y-1">
-          <p className="font-semibold text-blue-500 text-sm">Nguyên tắc định lượng độ uy tín & xếp hạng:</p>
-          <p>
-            - <strong>1 Sao (0đ cọc):</strong> Áp dụng cho gian hàng mới hoặc không đóng quỹ ký quỹ. Vẫn được bán hàng nhưng độ tín nhiệm thấp nhất.
-          </p>
-          <p>
-            - <strong>2 đến 5 Sao:</strong> Hệ thống tự động so khớp số dư Quỹ ký quỹ thực tế của Shop để gắn huy hiệu sao tương ứng. Khi có sự cố bị trích cọc mà không nạp bù trong 72h, hệ thống sẽ tự động giáng cấp.
-          </p>
+        <div className="flex items-start gap-3.5">
+          <HiOutlineInformationCircle className="h-5 w-5 flex-shrink-0 text-blue-500 mt-0.5" />
+          <div className="text-xs leading-relaxed space-y-1">
+            <p className="font-semibold text-blue-500 text-sm">Nguyên tắc định lượng độ uy tín & xếp hạng:</p>
+            <p>
+              - <strong>1 Sao (0đ cọc):</strong> Áp dụng cho gian hàng mới hoặc không đóng quỹ ký quỹ. Vẫn được bán hàng nhưng độ tín nhiệm thấp nhất.
+            </p>
+            <p>
+              - <strong>2 đến 5 Sao:</strong> Hệ thống tự động so khớp số dư Quỹ ký quỹ thực tế của Shop để gắn huy hiệu sao tương ứng. Khi có sự cố bị trích cọc mà không nạp bù trong 72h, hệ thống sẽ tự động giáng cấp.
+            </p>
+            <p className="text-amber-600 dark:text-amber-400 font-medium">
+              - <strong>Liên kết động với Biểu Phí Hoa Hồng:</strong> % Giảm hoa hồng cài đặt tại đây là nguồn dữ liệu duy nhất (Single Source of Truth) kết nối trực tiếp vào công thức tính phí hoa hồng toàn sàn.
+            </p>
+          </div>
         </div>
+
+        <Link
+          to="/commissions?tab=policies"
+          className={cn(
+            'inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold shrink-0 transition shadow-sm border',
+            isDark
+              ? 'bg-slate-800 hover:bg-slate-700 text-amber-400 border-slate-700'
+              : 'bg-white hover:bg-amber-50 text-amber-700 border-amber-200'
+          )}
+        >
+          <HiOutlineCash className="h-4 w-4 text-amber-500" />
+          <span>Mô Phỏng Phí & Ưu Đãi</span>
+          <HiOutlineArrowNarrowRight className="h-4 w-4" />
+        </Link>
       </div>
 
       {/* LOADING STATE */}

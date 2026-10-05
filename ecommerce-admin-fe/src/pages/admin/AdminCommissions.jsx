@@ -25,9 +25,9 @@ const TABS = [
   },
   {
     id: 'policies',
-    label: 'Chính Sách Giảm Trừ Ký Quỹ & Thâm Niên',
+    label: 'Ưu Đãi Thâm Niên & Mô Phỏng Phí',
     icon: HiOutlineShieldCheck,
-    desc: 'Thiết lập ưu đãi giảm trừ theo Bậc sao Ký quỹ và Thâm niên hoạt động',
+    desc: 'Quản trị thâm niên hoạt động, tra cứu ma trận ký quỹ và công cụ mô phỏng phí sàn',
   },
 ]
 

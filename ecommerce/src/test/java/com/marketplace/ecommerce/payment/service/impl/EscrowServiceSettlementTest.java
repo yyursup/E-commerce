@@ -13,7 +13,6 @@ import com.marketplace.ecommerce.payment.valueObjects.EscrowStatus;
 import com.marketplace.ecommerce.payment.valueObjects.PaymentMethod;
 import com.marketplace.ecommerce.shop.entity.Shop;
 import com.marketplace.ecommerce.wallet.entity.Wallet;
-import com.marketplace.ecommerce.wallet.repository.WalletRepository;
 import com.marketplace.ecommerce.wallet.valueObjects.WalletType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -40,8 +39,6 @@ class EscrowServiceSettlementTest {
     private OrderRepository orderRepository;
     @Mock
     private TransactionRepository transactionRepository;
-    @Mock
-    private WalletRepository walletRepository;
 
     @InjectMocks
     private EscrowServiceImpl escrowService;

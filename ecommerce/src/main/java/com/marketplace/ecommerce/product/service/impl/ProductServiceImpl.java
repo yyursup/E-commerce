@@ -416,11 +416,13 @@ public class ProductServiceImpl implements ProductService {
             return ProductStatus.PENDING_APPROVAL;
         }
 
-        // 4. Shop doanh nghiệp uy tín (Official Mall / AAR / có ký quỹ / violation = 0) đăng hàng Mới 100%
+        // 4. Shop doanh nghiệp uy tín (Official Mall / AAR / có ký quỹ từ 2 sao trở lên / violation = 0) đăng hàng Mới 100%
+        Integer trustStar = shop.getTrustLevel();
+        if (trustStar == null && shop.getEscrowFund() != null) {
+            trustStar = shop.getEscrowFund().getCurrentTrustLevel();
+        }
         boolean isTrustedShop = (shop.getSellerType() == SellerType.BUSINESS)
-                || (shop.getTrustLevel() != null && shop.getTrustLevel() >= 2)
-                || (shop.getEscrowFund() != null && shop.getEscrowFund().getBalance() != null
-                    && shop.getEscrowFund().getBalance().compareTo(new BigDecimal("10000000")) >= 0);
+                || (trustStar != null && trustStar >= 2);
 
         if (isTrustedShop) {
             return ProductStatus.PUBLISHED; // Auto-publish ngay lập tức

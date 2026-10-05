@@ -30,6 +30,7 @@ public class TrustLevelConfigSeeder implements CommandLineRunner {
                     .minDeposit(BigDecimal.ZERO)
                     .maxDeposit(new BigDecimal("1000000"))
                     .badgeIconUrl("/badges/star-1.png")
+                    .commissionDiscount(BigDecimal.ZERO)
                     .benefitsDescription("Cấp độ cơ bản cho gian hàng không ký quỹ hoặc ký quỹ < 1 triệu. Vẫn được bán hàng nhưng mức độ bảo chứng tối thiểu.")
                     .isActive(true)
                     .build(),
@@ -39,7 +40,8 @@ public class TrustLevelConfigSeeder implements CommandLineRunner {
                     .minDeposit(new BigDecimal("1000000"))
                     .maxDeposit(new BigDecimal("5000000"))
                     .badgeIconUrl("/badges/star-2.png")
-                    .benefitsDescription("Huy hiệu Bảo chứng 2 sao. Có cam kết ký quỹ trách nhiệm từ 1 triệu đến dưới 5 triệu đồng.")
+                    .commissionDiscount(new BigDecimal("0.20"))
+                    .benefitsDescription("Huy hiệu Bảo chứng 2 sao. Có cam kết ký quỹ trách nhiệm từ 1 triệu đến dưới 5 triệu đồng, giảm 0.2% hoa hồng sàn.")
                     .isActive(true)
                     .build(),
                 TrustLevelConfig.builder()
@@ -48,7 +50,8 @@ public class TrustLevelConfigSeeder implements CommandLineRunner {
                     .minDeposit(new BigDecimal("5000000"))
                     .maxDeposit(new BigDecimal("20000000"))
                     .badgeIconUrl("/badges/star-3.png")
-                    .benefitsDescription("Huy hiệu Bảo chứng 3 sao. Ưu tiên hiển thị kết quả tìm kiếm, hỗ trợ phân xử khiếu nại nhanh.")
+                    .commissionDiscount(new BigDecimal("0.50"))
+                    .benefitsDescription("Huy hiệu Bảo chứng 3 sao. Ưu tiên hiển thị kết quả tìm kiếm, hỗ trợ phân xử khiếu nại nhanh, giảm 0.5% hoa hồng sàn.")
                     .isActive(true)
                     .build(),
                 TrustLevelConfig.builder()
@@ -57,7 +60,8 @@ public class TrustLevelConfigSeeder implements CommandLineRunner {
                     .minDeposit(new BigDecimal("20000000"))
                     .maxDeposit(new BigDecimal("50000000"))
                     .badgeIconUrl("/badges/star-4.png")
-                    .benefitsDescription("Huy hiệu Đối tác Vàng 4 sao. Được gắn nhãn Gian hàng Đảm bảo, ưu tiên đẩy top tìm kiếm và livestream.")
+                    .commissionDiscount(new BigDecimal("1.00"))
+                    .benefitsDescription("Huy hiệu Đối tác Vàng 4 sao. Được gắn nhãn Gian hàng Đảm bảo, ưu tiên đẩy top tìm kiếm và livestream, giảm 1.0% hoa hồng sàn.")
                     .isActive(true)
                     .build(),
                 TrustLevelConfig.builder()
@@ -66,7 +70,8 @@ public class TrustLevelConfigSeeder implements CommandLineRunner {
                     .minDeposit(new BigDecimal("50000000"))
                     .maxDeposit(null)
                     .badgeIconUrl("/badges/star-5.png")
-                    .benefitsDescription("Huy hiệu Kim Cương 5 sao danh giá nhất. Cam kết bảo chứng tối đa, ưu tiên nổi bật trên banner sàn, đền bù tức thì nếu có lỗi.")
+                    .commissionDiscount(new BigDecimal("1.50"))
+                    .benefitsDescription("Huy hiệu Kim Cương 5 sao danh giá nhất. Cam kết bảo chứng tối đa, ưu tiên nổi bật trên banner sàn, đền bù tức thì nếu có lỗi, giảm 1.5% hoa hồng sàn.")
                     .isActive(true)
                     .build()
             );

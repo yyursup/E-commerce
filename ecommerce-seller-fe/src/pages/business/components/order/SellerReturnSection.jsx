@@ -44,7 +44,7 @@ export default function SellerReturnSection({ returnInfo, isDark: isDarkProp, on
   if (!returnInfo) return null
 
   const statusBadge = getReturnStatusBadge(returnInfo.status)
-  const StatusIcon = statusBadge.icon
+  const StatusIcon = statusBadge?.icon
   const statusLabel = getReturnStatusLabel(returnInfo.status)
 
   const isVideoFile = (file) => {
@@ -197,7 +197,7 @@ export default function SellerReturnSection({ returnInfo, isDark: isDarkProp, on
             statusBadge.color,
           )}
         >
-          <StatusIcon className="h-4 w-4" />
+          {StatusIcon && <StatusIcon className="h-4 w-4" />}
           {statusLabel}
         </span>
       </div>

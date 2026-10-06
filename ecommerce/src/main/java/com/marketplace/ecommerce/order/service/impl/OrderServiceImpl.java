@@ -21,7 +21,6 @@ import com.marketplace.ecommerce.payment.service.EscrowService;
 import com.marketplace.ecommerce.payment.valueObjects.PaymentMethod;
 import com.marketplace.ecommerce.platform.service.CommissionCalculationService;
 import com.marketplace.ecommerce.platform.service.CommissionService;
-import com.marketplace.ecommerce.platform.service.PlatformSettingService;
 import com.marketplace.ecommerce.product.entity.Product;
 import com.marketplace.ecommerce.product.entity.ProductCategory;
 import com.marketplace.ecommerce.product.entity.ProductVariant;
@@ -39,6 +38,8 @@ import com.marketplace.ecommerce.product.valueObjects.InventoryActionType;
 import com.marketplace.ecommerce.request.service.OrderDisputeService;
 import com.marketplace.ecommerce.shop.entity.Shop;
 import com.marketplace.ecommerce.shop.repository.ShopRepository;
+import com.marketplace.ecommerce.shop.valueObjects.ShopStatus;
+import com.marketplace.ecommerce.voucher.service.VoucherService;
 import com.marketplace.ecommerce.wallet.service.WalletService;
 
 import lombok.RequiredArgsConstructor;
@@ -74,11 +75,10 @@ public class OrderServiceImpl implements OrderService {
     private final GHNClient ghnClient;
     private final UserAddressRepository userAddressRepository;
     private final ShippingService shippingService;
-    private final PlatformSettingService platformSettingService;
     private final CommissionCalculationService commissionCalculationService;
     private final EscrowService escrowService;
     private final CommissionService commissionService;
-    private final com.marketplace.ecommerce.voucher.service.VoucherService voucherService;
+    private final VoucherService voucherService;
     private final InventoryHistoryService inventoryHistoryService;
     private final OrderDisputeService orderDisputeService;
     private final WalletService walletService;
@@ -335,6 +335,10 @@ public class OrderServiceImpl implements OrderService {
     public OrderResponse convertCartToOrder(UUID accountId, CreateOrderRequest request) {
         Shop shop = shopRepository.findById(request.getShopId())
                 .orElseThrow(() -> new CustomException("Shop not found."));
+
+        if (shop.getStatus() == ShopStatus.CLOSED) {
+            throw new CustomException("Gian hàng này đã đóng cửa, không thể thực hiện đặt hàng.");
+        }
 
         User user = userRepository.findByAccountId(accountId)
                 .orElseThrow(() -> new CustomException("User not found."));

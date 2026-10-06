@@ -49,6 +49,10 @@ public class LiveStreamServiceImpl implements LiveStreamService {
         Shop shop = shopRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new CustomException("Chỉ người bán có gian hàng mới có thể tạo livestream"));
 
+        if (shop.getStatus() == com.marketplace.ecommerce.shop.valueObjects.ShopStatus.CLOSED) {
+            throw new CustomException("Gian hàng của bạn đã đóng cửa (CLOSED). Không thể tạo phiên Live Stream.");
+        }
+
         if (shop.getStatus() == com.marketplace.ecommerce.shop.valueObjects.ShopStatus.PENDING_DEPOSIT) {
             throw new CustomException("Gian hàng của bạn chưa được kích hoạt do chưa hoàn tất nạp tiền ký quỹ cam kết. Vui lòng nạp đủ tiền ký quỹ để mở khóa tính năng Live Stream.");
         }

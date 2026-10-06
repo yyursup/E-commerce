@@ -6,7 +6,6 @@ import com.marketplace.ecommerce.auth.valueObjects.DisciplineLevel;
 import com.marketplace.ecommerce.common.exception.CustomException;
 import com.marketplace.ecommerce.product.dto.request.CreateProductRequest;
 import com.marketplace.ecommerce.product.dto.request.UpdateProductRequest;
-import com.marketplace.ecommerce.product.dto.response.ProductResponse;
 import com.marketplace.ecommerce.product.dto.response.SellerProductResponse;
 import com.marketplace.ecommerce.product.entity.Product;
 import com.marketplace.ecommerce.product.entity.ProductCategory;
@@ -166,6 +165,11 @@ public class ProductServiceImpl implements ProductService {
 
         Shop shop = shopRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new CustomException("Shop not found"));
+
+        if (shop.getStatus() == ShopStatus.CLOSED) {
+            throw new CustomException(
+                    "Gian hàng của bạn đã đóng cửa (CLOSED). Không thể thực hiện thao tác quản lý hay đăng bán sản phẩm.");
+        }
 
         if (shop.getStatus() == ShopStatus.PENDING_DEPOSIT) {
             throw new CustomException(
@@ -426,6 +430,20 @@ public class ProductServiceImpl implements ProductService {
 
         // 5. Mặc định đối với seller cá nhân mới chưa có ký quỹ -> PENDING_APPROVAL
         return ProductStatus.PENDING_APPROVAL;
+    }
+
+    @Override
+    @Transactional
+    public void deactivateProductsOnShopClose(UUID shopId) {
+        if (shopId == null) {
+            return;
+        }
+        productRepository.updateStatusByShopId(
+                shopId,
+                List.of(ProductStatus.PUBLISHED, ProductStatus.PENDING_APPROVAL),
+                ProductStatus.INACTIVE,
+                LocalDateTime.now()
+        );
     }
 
 }

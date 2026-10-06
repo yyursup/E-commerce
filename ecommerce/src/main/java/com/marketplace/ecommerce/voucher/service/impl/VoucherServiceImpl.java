@@ -12,6 +12,7 @@ import com.marketplace.ecommerce.product.entity.ProductCategory;
 import com.marketplace.ecommerce.product.repository.ProductCategoryRepository;
 import com.marketplace.ecommerce.shop.entity.Shop;
 import com.marketplace.ecommerce.shop.repository.ShopRepository;
+import com.marketplace.ecommerce.shop.valueObjects.ShopStatus;
 import com.marketplace.ecommerce.voucher.dto.*;
 import com.marketplace.ecommerce.voucher.entity.UserVoucher;
 import com.marketplace.ecommerce.voucher.entity.Voucher;
@@ -278,6 +279,16 @@ public class VoucherServiceImpl implements VoucherService {
 
         if (!voucher.isCurrentlyActive()) {
             throw new CustomException("Voucher '" + voucher.getCode() + "' đã hết hạn hoặc hết lượt sử dụng");
+        }
+
+        if (voucher.getScope() == VoucherScope.SHOP && voucher.getShop() != null) {
+            ShopStatus shopStatus = voucher.getShop().getStatus();
+            if (shopStatus == ShopStatus.CLOSED) {
+                throw new CustomException("Voucher '" + voucher.getCode() + "' không thể sử dụng do gian hàng đã đóng cửa.");
+            }
+            if (shopStatus != ShopStatus.ACTIVE && shopStatus != ShopStatus.WARNED) {
+                throw new CustomException("Voucher '" + voucher.getCode() + "' hiện không khả dụng do trạng thái của gian hàng.");
+            }
         }
 
         BigDecimal eligibleSubtotal = subtotal;
@@ -566,7 +577,11 @@ public class VoucherServiceImpl implements VoucherService {
                         .orElseThrow(() -> new CustomException("Tài khoản chưa đăng ký Shop"));
             }
 
-            if (shop.getStatus() == com.marketplace.ecommerce.shop.valueObjects.ShopStatus.PENDING_DEPOSIT) {
+            if (shop.getStatus() == ShopStatus.CLOSED) {
+                throw new CustomException("Gian hàng của bạn đã đóng cửa (CLOSED). Không thể tạo voucher mới.");
+            }
+
+            if (shop.getStatus() == ShopStatus.PENDING_DEPOSIT) {
                 throw new CustomException("Gian hàng của bạn chưa được kích hoạt do chưa hoàn tất nạp tiền ký quỹ cam kết. Vui lòng nạp đủ tiền ký quỹ để mở khóa tính năng tạo Voucher.");
             }
         }
@@ -780,5 +795,14 @@ public class VoucherServiceImpl implements VoucherService {
         public String toString() {
             return val != null ? val.stripTrailingZeros().toPlainString() : "0";
         }
+    }
+
+    @Override
+    @Transactional
+    public void deactivateVouchersOnShopClose(UUID shopId) {
+        if (shopId == null) {
+            return;
+        }
+        voucherRepository.updateStatusByShopId(shopId, VoucherStatus.ACTIVE, VoucherStatus.INACTIVE);
     }
 }

@@ -17,14 +17,18 @@ import java.util.UUID;
 @AllArgsConstructor
 public class AdminDeductCompensationRequest {
 
-    @NotNull(message = "Số tiền trích bồi thường không được để trống")
-    @DecimalMin(value = "1000", message = "Số tiền trích tối thiểu là 1.000 VNĐ")
-    private BigDecimal amount;
-
+    @NotNull(message = "Mã đơn hàng không được để trống")
     private UUID orderId;
 
     private UUID reportId;
 
+    @NotNull(message = "Số tiền trích bồi thường không được để trống")
+    @DecimalMin(value = "1000", message = "Số tiền trích tối thiểu là 1.000 VNĐ")
+    private BigDecimal amount;
+
     @NotBlank(message = "Lý do trích bồi thường không được để trống")
     private String reason;
+
+    @NotBlank(message = "Mã yêu cầu (clientRequestId) không được để trống")
+    private String clientRequestId;
 }

@@ -67,6 +67,24 @@ const trustConfigService = {
     } catch (error) {
       throw error.response ? error.response.data : error
     }
+  },
+
+  approveCloseShopRefund: async (shopId) => {
+    try {
+      const response = await axiosClient.post(`${ESCROW_FUND_BASE}/admin/${shopId}/approve-close-refund`)
+      return response.data
+    } catch (error) {
+      throw error.response ? error.response.data : error
+    }
+  },
+
+  rejectCloseShopRefund: async (shopId, reason) => {
+    try {
+      const response = await axiosClient.post(`${ESCROW_FUND_BASE}/admin/${shopId}/reject-close-refund`, { reason })
+      return response.data
+    } catch (error) {
+      throw error.response ? error.response.data : error
+    }
   }
 }
 

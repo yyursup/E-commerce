@@ -11,7 +11,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -36,4 +35,7 @@ public interface EscrowRepository extends JpaRepository<Escrow, UUID> {
 
     long countByStatus(EscrowStatus status);
 
+    @Query("SELECT COUNT(e) > 0 FROM Escrow e WHERE e.order.shop.id = :shopId AND e.status IN :statuses")
+    boolean existsByOrderShopIdAndStatusIn(@Param("shopId") UUID shopId,
+            @Param("statuses") java.util.Collection<EscrowStatus> statuses);
 }

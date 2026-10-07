@@ -223,6 +223,15 @@ const shopService = {
       console.warn('API fetch my violations failed:', err)
     }
   },
+
+  updateEscrowStatus: async (payload) => {
+    try {
+      const response = await axiosClient.patch(`${SHOP_BASE}/my-shop/escrow-status`, payload)
+      return response.data
+    } catch (err) {
+      throw err.response ? err.response.data : err
+    }
+  },
 }
 
 export default shopService

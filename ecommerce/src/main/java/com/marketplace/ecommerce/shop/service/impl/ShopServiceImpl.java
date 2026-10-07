@@ -32,8 +32,15 @@ import com.marketplace.ecommerce.shop.dto.response.ShopViolationResponse;
 import com.marketplace.ecommerce.product.entity.Product;
 
 import com.marketplace.ecommerce.order.repository.OrderRepository;
+import com.marketplace.ecommerce.shop.repository.ShopEscrowFundRepository;
+import com.marketplace.ecommerce.shop.entity.ShopEscrowFund;
+import com.marketplace.ecommerce.shop.valueObjects.EscrowFundStatus;
+import com.marketplace.ecommerce.shop.dto.request.UpdateEscrowStatusRequest;
 import java.util.List;
 import java.util.UUID;
+import java.math.BigDecimal;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -48,6 +55,8 @@ public class ShopServiceImpl implements ShopService {
     private final UserRepository userRepository;
     private final ReportRepository reportRepository;
     private final OrderRepository orderRepository;
+    private final ShopEscrowFundRepository shopEscrowFundRepository;
+    private final StringRedisTemplate redisTemplate;
 
     @Override
     public Shop createShop(User ownerUser, String shopName, Request req, Seller sellerDetail) {
@@ -240,5 +249,88 @@ public class ShopServiceImpl implements ShopService {
         }
 
         return results;
+    }
+
+    @Override
+    public void updateEscrowStatus(UUID accountId, UpdateEscrowStatusRequest request) {
+        User user = userRepository.findByAccountId(accountId)
+                .orElseThrow(() -> new CustomException("Không tìm thấy thông tin người dùng"));
+        Shop shop = shopRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new CustomException("Tài khoản chưa có thông tin cửa hàng"));
+
+        // RATE LIMITING logic (Max 3 times / 24 hours)
+        String rateLimitKey = "escrow_switch_limit:" + shop.getId().toString();
+        String currentCountStr = redisTemplate.opsForValue().get(rateLimitKey);
+        int currentCount = currentCountStr != null ? Integer.parseInt(currentCountStr) : 0;
+        
+        if (currentCount >= 3) {
+            Long expireTime = redisTemplate.getExpire(rateLimitKey, TimeUnit.HOURS);
+            throw new CustomException("Bạn đã vượt quá số lần cho phép thay đổi trạng thái quỹ trong ngày. Vui lòng thử lại sau " + (expireTime != null && expireTime > 0 ? expireTime : 24) + " giờ.");
+        }
+
+        ShopEscrowFund fund = shopEscrowFundRepository.findByShopId(shop.getId()).orElse(null);
+
+        if (Boolean.TRUE.equals(request.getIsEscrowParticipated())) {
+            // Muốn ĐĂNG KÝ KÝ QUỸ
+            BigDecimal committed = request.getCommittedAmount();
+            if (committed == null || committed.compareTo(BigDecimal.ZERO) <= 0) {
+                throw new CustomException("Vui lòng nhập số tiền ký quỹ hợp lệ.");
+            }
+
+            if (fund == null) {
+                // Tạo mới nếu chưa có
+                fund = ShopEscrowFund.builder()
+                        .shop(shop)
+                        .balance(BigDecimal.ZERO)
+                        .committedAmount(committed)
+                        .currentTrustLevel(1)
+                        .isDeficit(false)
+                        .deficitAmount(BigDecimal.ZERO)
+                        .status(EscrowFundStatus.PENDING_DEPOSIT)
+                        .build();
+                shop.setStatus(ShopStatus.PENDING_DEPOSIT);
+            } else {
+                // Đã có fund
+                if (fund.getStatus() == EscrowFundStatus.ACTIVE && fund.getBalance().compareTo(BigDecimal.ZERO) > 0) {
+                    throw new CustomException("Gian hàng của bạn đã hoàn tất nạp quỹ, không thể đổi trạng thái đăng ký ký quỹ lúc này.");
+                } else if (fund.getStatus() == EscrowFundStatus.PENDING_DEPOSIT || fund.getBalance().compareTo(BigDecimal.ZERO) == 0) {
+                    // Cập nhật số tiền muốn nạp
+                    fund.setCommittedAmount(committed);
+                    fund.setStatus(EscrowFundStatus.PENDING_DEPOSIT);
+                    shop.setStatus(ShopStatus.PENDING_DEPOSIT);
+                } else {
+                    throw new CustomException("Trạng thái quỹ hiện tại không cho phép đăng ký lại: " + fund.getStatus());
+                }
+            }
+            shopEscrowFundRepository.save(fund);
+            shopRepository.save(shop);
+        } else {
+            // Muốn HỦY ĐĂNG KÝ KÝ QUỸ
+            if (fund != null) {
+                if (fund.getBalance().compareTo(BigDecimal.ZERO) > 0) {
+                    throw new CustomException("Gian hàng đã nạp quỹ. Quỹ này chỉ được hoàn trả khi bạn làm thủ tục Đóng gian hàng.");
+                }
+                
+                // Thu hồi đăng ký: Trả shop về trạng thái bình thường (ACTIVE), 
+                // Thay vì xóa fund (gây lỗi ObjectDeletedException do CascadeType.ALL trên Shop),
+                // ta sẽ update fund về trạng thái mặc định (NONE).
+                fund.setCommittedAmount(BigDecimal.ZERO);
+                fund.setStatus(EscrowFundStatus.ACTIVE);
+                shopEscrowFundRepository.save(fund);
+                
+                // Đưa shop về ACTIVE
+                shop.setStatus(ShopStatus.ACTIVE);
+                shopRepository.save(shop);
+            } else {
+                // Đang là KHÔNG KÝ QUỸ rồi, không cần làm gì cả.
+            }
+        }
+        
+        // Increase the counter if it reaches here
+        if (currentCount == 0) {
+            redisTemplate.opsForValue().set(rateLimitKey, "1", 24, TimeUnit.HOURS);
+        } else {
+            redisTemplate.opsForValue().increment(rateLimitKey);
+        }
     }
 }

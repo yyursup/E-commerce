@@ -7,6 +7,7 @@ import com.marketplace.ecommerce.shop.entity.Shop;
 
 import com.marketplace.ecommerce.shop.dto.response.ShopProfileResponse;
 import com.marketplace.ecommerce.shop.dto.response.ShopViolationResponse;
+import com.marketplace.ecommerce.shop.dto.request.UpdateEscrowStatusRequest;
 
 import java.util.List;
 import java.util.UUID;
@@ -17,4 +18,5 @@ public interface ShopService {
     ShopProfileResponse getMyShopProfile(UUID accountId);
     List<ShopViolationResponse> getMyShopViolations(UUID accountId);
     List<ShopProfileResponse> getAllActiveShops();
+    void updateEscrowStatus(UUID accountId, UpdateEscrowStatusRequest request);
 }

@@ -31,6 +31,7 @@ import { useChatNotification } from '../hooks/useChatNotification'
 import ChatNotificationToast from './ChatNotificationToast'
 import toast from 'react-hot-toast'
 import shopService from '../services/shop'
+import escrowFundService from '../services/escrowFund'
 
 const navItems = [
   { to: '/dashboard', label: 'Tổng quan (Dashboard)', icon: HiOutlineViewGrid },
@@ -39,8 +40,8 @@ const navItems = [
   { to: '/products', label: 'Quản lý Sản phẩm', icon: HiOutlineArchive },
   { to: '/inventory-history', label: 'Lịch sử Kho hàng', icon: HiOutlineClipboardList },
   { to: '/vouchers', label: 'Mã Giảm Giá Shop', icon: HiOutlineTicket },
-  { to: '/escrow-fund', label: 'Quỹ Ký Quỹ & Uy Tín', icon: HiOutlineCash },
-  { to: '/violations', label: 'Điểm uy tín Shop', icon: HiOutlineShieldCheck },
+  { to: '/escrow-fund', label: 'Quỹ Ký Quỹ & Uy Tín', icon: HiOutlineCash, isEscrowRelated: true },
+  { to: '/violations', label: 'Điểm uy tín Shop', icon: HiOutlineShieldCheck, isEscrowRelated: true },
   { to: '/chat', label: 'Tin nhắn (Chat CSKH)', icon: HiOutlineChat, isChat: true },
   { to: '/settings', label: 'Cài đặt Kho & Gian hàng', icon: HiOutlineCog },
 ]
@@ -52,6 +53,7 @@ export default function SellerLayout() {
   const { theme, toggleTheme } = useThemeStore()
   const isDark = theme === 'dark'
   const [unreadChatTotal, setUnreadChatTotal] = useState(0)
+  const [escrowFund, setEscrowFund] = useState(null)
 
   const {
     notifications,
@@ -141,10 +143,25 @@ export default function SellerLayout() {
       }
     }
     syncShopStatus()
+
+    // Fetch escrow fund to check if they are participating
+    const fetchEscrow = async () => {
+      try {
+        const data = await escrowFundService.getMyFund()
+        if (isMounted) setEscrowFund(data)
+      } catch(err) {
+        // ignore
+      }
+    }
+    fetchEscrow()
+
     return () => {
       isMounted = false
     }
   }, [token, location.pathname])
+
+  const isNoneEscrow = !escrowFund || escrowFund.committedAmount === 0
+
 
   return (
     <div className={cn('min-h-screen flex flex-col', isDark ? 'bg-slate-950 text-slate-100' : 'bg-stone-50 text-stone-900')}>
@@ -220,30 +237,41 @@ export default function SellerLayout() {
 
               {/* Navigation */}
               <nav className="space-y-1">
-                {navItems.map(({ to, label, icon: Icon, isChat }) => (
-                  <NavLink
-                    key={to}
-                    to={to}
-                    className={({ isActive }) => cn(
-                      'flex items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-semibold transition-all',
-                      isActive
-                        ? 'bg-amber-500 text-white shadow-sm shadow-amber-500/20'
-                        : isDark
-                          ? 'text-slate-300 hover:bg-slate-800'
-                          : 'text-stone-600 hover:bg-stone-100',
-                    )}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <Icon className="h-4 w-4 shrink-0" />
-                      <span>{label}</span>
-                    </div>
-                    {isChat && unreadChatTotal > 0 && (
-                      <span className="flex h-5 min-w-5 px-1.5 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white shadow-xs">
-                        {unreadChatTotal > 99 ? '99+' : unreadChatTotal}
-                      </span>
-                    )}
-                  </NavLink>
-                ))}
+                {navItems.map(({ to, label, icon: Icon, isChat, isEscrowRelated }) => {
+                  const isDisabled = isEscrowRelated && isNoneEscrow
+                  return (
+                    <NavLink
+                      key={to}
+                      to={isDisabled ? '#' : to}
+                      onClick={(e) => {
+                        if (isDisabled) {
+                          e.preventDefault()
+                          toast.error('Vui lòng tham gia Quỹ Ký Quỹ để sử dụng tính năng này.')
+                        }
+                      }}
+                      className={({ isActive }) => cn(
+                        'flex items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-semibold transition-all',
+                        isDisabled
+                          ? 'opacity-50 cursor-not-allowed text-stone-400 dark:text-slate-500'
+                          : isActive
+                            ? 'bg-amber-500 text-white shadow-sm shadow-amber-500/20'
+                            : isDark
+                              ? 'text-slate-300 hover:bg-slate-800'
+                              : 'text-stone-600 hover:bg-stone-100',
+                      )}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <Icon className="h-4 w-4 shrink-0" />
+                        <span>{label}</span>
+                      </div>
+                      {isChat && unreadChatTotal > 0 && (
+                        <span className="flex h-5 min-w-5 px-1.5 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white shadow-xs">
+                          {unreadChatTotal > 99 ? '99+' : unreadChatTotal}
+                        </span>
+                      )}
+                    </NavLink>
+                  )
+                })}
               </nav>
 
               <button

@@ -15,14 +15,15 @@ import {
 
 export default function AdminEscrowOrderSection({
   order,
+  escrow,
   isDark,
   formatVND,
   copyToClipboard,
 }) {
   if (!order) return null
 
-  const orderBadge = getOrderStatusBadge(order.status)
-  const OrderIcon = orderBadge.icon
+  const orderBadge = getOrderStatusBadge(order?.status)
+  const OrderIcon = orderBadge?.icon || HiOutlineShoppingBag
 
   // Thông tin người mua
   const buyerName = order?.shippingName || order?.userName || order?.user?.fullName || 'Người mua'
@@ -55,10 +56,10 @@ export default function AdminEscrowOrderSection({
             <h4 className="font-bold text-xs uppercase tracking-wider">Thông Tin Đơn Hàng Gốc</h4>
           </div>
           <div className="flex items-center gap-2">
-            <span className="font-mono text-xs font-semibold">#{order.orderNumber}</span>
+            <span className="font-mono text-xs font-semibold">#{order?.orderNumber || order?.id}</span>
             <button
               type="button"
-              onClick={() => copyToClipboard(order.orderNumber, 'Mã đơn')}
+              onClick={() => copyToClipboard(order?.orderNumber || order?.id, 'Mã đơn')}
               className="text-stone-400 hover:text-stone-600 dark:hover:text-white"
             >
               <HiOutlineClipboardCopy className="h-3.5 w-3.5" />
@@ -84,13 +85,13 @@ export default function AdminEscrowOrderSection({
               Phương thức:
             </span>
             <span className="font-semibold text-stone-900 dark:text-white">
-              {order.paymentMethod === 'VNPAY'
+              {order?.paymentMethod === 'VNPAY'
                 ? 'VNPay'
-                : order.paymentMethod === 'WALLET'
+                : order?.paymentMethod === 'WALLET'
                   ? 'Ví sàn'
                   : 'COD'}
             </span>
-            {(order.status === 'REFUNDED' || escrow.status === 'REFUNDED') && (
+            {(order?.status === 'REFUNDED' || escrow?.status === 'REFUNDED') && (
               <span className="block text-[10px] text-blue-600 dark:text-blue-400 font-semibold">
                 ↳ Hoàn về Ví
               </span>
@@ -103,11 +104,11 @@ export default function AdminEscrowOrderSection({
             <span
               className={cn(
                 'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold border mt-0.5',
-                orderBadge.color,
+                orderBadge?.color,
               )}
             >
               <OrderIcon className="h-3 w-3" />
-              {getOrderStatusLabel(order.status)}
+              {getOrderStatusLabel(order?.status)}
             </span>
           </div>
         </div>
@@ -173,7 +174,7 @@ export default function AdminEscrowOrderSection({
       </div>
 
       {/* 3. Danh sách sản phẩm trong đơn */}
-      {order.items?.length > 0 && (
+      {order?.items?.length > 0 && (
         <div
           className={cn(
             'rounded-2xl border p-4 space-y-2.5',

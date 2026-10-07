@@ -469,6 +469,7 @@ export default function Deals() {
         {quickViewProduct && (
           <ProductQuickView
             product={quickViewProduct}
+            onAddToCart={() => setQuickViewProduct(null)}
           />
         )}
       </Modal>

@@ -1,6 +1,8 @@
 package com.marketplace.ecommerce.product.entity;
 
+import com.marketplace.ecommerce.product.valueObjects.ConditionGrade;
 import com.marketplace.ecommerce.product.valueObjects.ProductStatus;
+import com.marketplace.ecommerce.product.valueObjects.WarrantyType;
 import com.marketplace.ecommerce.shop.entity.Shop;
 import jakarta.persistence.*;
 import lombok.*;
@@ -71,8 +73,47 @@ public class Product {
     @Column(nullable = false)
     private boolean flagged = false;
 
+    @Column(name = "last_reported_at")
+    private LocalDateTime lastReportedAt;
+
     @Column(name = "featured", nullable = false)
     private boolean featured = false;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "condition_grade", length = 30)
+    @Builder.Default
+    private ConditionGrade conditionGrade = ConditionGrade.GRADE_NEW;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "warranty_type", length = 30)
+    @Builder.Default
+    private WarrantyType warrantyType = WarrantyType.OFFICIAL;
+
+    @Column(name = "warranty_months")
+    @Builder.Default
+    private Integer warrantyMonths = 12;
+
+    @Column(name = "battery_health")
+    private Integer batteryHealth;
+
+    @Column(name = "is_repaired")
+    @Builder.Default
+    private Boolean isRepaired = false;
+
+    @Column(name = "repair_details", columnDefinition = "TEXT")
+    private String repairDetails;
+
+    @Column(name = "specifications", columnDefinition = "TEXT")
+    private String specifications;
+
+    @Column(name = "rejection_reason", columnDefinition = "TEXT")
+    private String rejectionReason;
+
+    @Column(name = "reviewed_at")
+    private LocalDateTime reviewedAt;
+
+    @Column(name = "reviewed_by")
+    private UUID reviewedBy;
 
     @Builder.Default
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)

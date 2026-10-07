@@ -3,6 +3,7 @@ import { HiOutlinePlus, HiOutlineSearch, HiOutlineRefresh } from 'react-icons/hi
 import toast from 'react-hot-toast'
 import voucherService from '../../services/voucher'
 import { useThemeStore } from '../../store/useThemeStore'
+import { useAuthStore } from '../../store/useAuthStore'
 import { cn } from '../../lib/cn'
 import VoucherTable from './components/voucher/VoucherTable'
 import CreateVoucherModal from './components/voucher/CreateVoucherModal'
@@ -10,6 +11,8 @@ import VoucherDetailModal from './components/voucher/VoucherDetailModal'
 
 export default function ShopVouchers() {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
+  const user = useAuthStore((s) => s.user)
+  const isShopClosed = user?.shopStatus === 'CLOSED'
   const [vouchers, setVouchers] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -90,14 +93,41 @@ export default function ShopVouchers() {
           </button>
 
           <button
-            onClick={() => setShowCreateModal(true)}
-            className="flex-1 sm:flex-initial flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 px-5 py-2.5 text-xs font-bold text-white hover:from-amber-600 hover:to-orange-600 active:scale-95 shadow-md shadow-amber-500/25 transition-all"
+            onClick={() => {
+              if (isShopClosed) {
+                toast.error('Gian hàng đã đóng cửa (CLOSED). Không thể tạo voucher mới.')
+                return
+              }
+              setShowCreateModal(true)
+            }}
+            disabled={isShopClosed}
+            className={cn(
+              "flex-1 sm:flex-initial flex items-center justify-center gap-2 rounded-2xl px-5 py-2.5 text-xs font-bold transition-all shadow-md",
+              isShopClosed
+                ? "bg-stone-300 text-stone-500 dark:bg-slate-800 dark:text-slate-500 cursor-not-allowed shadow-none"
+                : "bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 active:scale-95 shadow-amber-500/25"
+            )}
+            title={isShopClosed ? 'Gian hàng đã đóng cửa' : undefined}
           >
             <HiOutlinePlus className="h-4 w-4 stroke-[2.5]" />
             Tạo voucher mới
           </button>
         </div>
       </div>
+
+      {/* Cảnh báo gian hàng đã đóng cửa */}
+      {isShopClosed && (
+        <div className="rounded-2xl border border-rose-500/40 bg-gradient-to-r from-rose-500/15 via-rose-500/10 to-transparent p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+          <div>
+            <p className="font-bold text-rose-700 dark:text-rose-300">
+              Gian hàng đã hoàn tất thủ tục đóng cửa (CLOSED)
+            </p>
+            <p className={cn('mt-0.5', isDark ? 'text-slate-300' : 'text-stone-600')}>
+              Hệ thống đã khóa tính năng tạo mới và phát hành mã giảm giá. Danh sách voucher dưới đây chỉ phục vụ việc theo dõi lịch sử.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Filter Bar & Search (Layout chung đồng bộ với ShopProducts) */}
       <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">

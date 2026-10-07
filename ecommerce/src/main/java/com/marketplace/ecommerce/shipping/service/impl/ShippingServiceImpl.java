@@ -5,6 +5,7 @@ import com.marketplace.ecommerce.common.exception.CustomException;
 import com.marketplace.ecommerce.order.entity.Order;
 import com.marketplace.ecommerce.order.entity.OrderItem;
 import com.marketplace.ecommerce.payment.valueObjects.PaymentMethod;
+import com.marketplace.ecommerce.product.valueObjects.ConditionGrade;
 import com.marketplace.ecommerce.shipping.dto.request.GHNCalculateFeeRequest;
 import com.marketplace.ecommerce.shipping.dto.request.GHNCreateOrderRequest;
 import com.marketplace.ecommerce.shipping.dto.response.GHNCalculateFeeResponse;
@@ -68,10 +69,19 @@ public class ShippingServiceImpl implements ShippingService {
             ghnItems.add(apply);
         }
 
+        boolean hasBrandNewItem = order.getItems().stream()
+                .anyMatch(item -> item.getProduct() != null && item.getProduct().getConditionGrade() == ConditionGrade.GRADE_NEW);
+        String requiredNote = hasBrandNewItem ? "CHOXEMHANGKHONGTHU" : "CHOTHUHANG";
+
+        int insuranceValue = 0;
+        if (order.getSubtotal() != null) {
+            insuranceValue = Math.min(order.getSubtotal().intValue(), 5_000_000);
+        }
+
         return GHNCreateOrderRequest.builder()
                 .payment_type_id(1)
                 .note(order.getNotes() != null ? order.getNotes() : "")
-                .required_note("CHOTHUHANG")
+                .required_note(requiredNote)
                 .from_district_id(fromDistrictId)
                 .from_ward_code(fromWardCode)
                 .to_name(order.getShippingName())
@@ -83,7 +93,7 @@ public class ShippingServiceImpl implements ShippingService {
                 .length(20).width(20).height(10)
                 .service_type_id(2)
                 .cod_amount(order.getPaymentMethod() == PaymentMethod.COD && order.getTotal() != null ? order.getTotal().intValue() : 0)
-                .insurance_value(order.getSubtotal() != null ? order.getSubtotal().intValue() : 0)
+                .insurance_value(insuranceValue)
                 .client_order_code(order.getOrderNumber())
                 .items(ghnItems)
                 .build();

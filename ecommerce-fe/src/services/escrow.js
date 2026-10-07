@@ -20,6 +20,15 @@ const escrowService = {
       throw error.response ? error.response.data : error
     }
   },
+
+  getSettlementByOrderId: async (orderId) => {
+    try {
+      const response = await axiosClient.get(`${ESCROW_BASE}/orders/${orderId}/settlement`)
+      return response.data
+    } catch (error) {
+      throw error.response ? error.response.data : error
+    }
+  },
 }
 
 export default escrowService

@@ -4,11 +4,16 @@ import com.marketplace.ecommerce.order.entity.Order;
 import com.marketplace.ecommerce.voucher.dto.*;
 import com.marketplace.ecommerce.voucher.valueObjects.VoucherScope;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
 public interface VoucherService {
+
+    Page<VoucherResponse> listActiveVouchers(VoucherScope scope, UUID shopId, UUID accountId, Pageable pageable);
 
     List<VoucherResponse> listActiveVouchers(VoucherScope scope, UUID shopId, UUID accountId);
 
@@ -31,4 +36,12 @@ public interface VoucherService {
     VoucherResponse createVoucher(UUID accountId, CreateVoucherRequest request);
 
     List<VoucherResponse> getShopManageVouchers(UUID accountId);
+    
+    /**
+     * Vô hiệu hóa toàn bộ voucher đang hoạt động (ACTIVE) của gian hàng
+     * sang trạng thái INACTIVE khi gian hàng chính thức đóng cửa (ShopStatus.CLOSED).
+     *
+     * @param shopId Định danh của gian hàng vừa đóng cửa
+     */
+    void deactivateVouchersOnShopClose(UUID shopId);
 }

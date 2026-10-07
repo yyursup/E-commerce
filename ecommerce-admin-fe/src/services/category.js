@@ -12,6 +12,17 @@ const categoryService = {
       throw error.response ? error.response.data : error;
     }
   },
+  // Update category commission rate
+  updateCommissionRate: async (categoryId, commissionRate) => {
+    try {
+      const response = await api.put(`${CATEGORY_BASE}/${categoryId}/commission-rate`, {
+        commissionRate: Number(commissionRate),
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response ? error.response.data : error;
+    }
+  },
 };
 
 export default categoryService;

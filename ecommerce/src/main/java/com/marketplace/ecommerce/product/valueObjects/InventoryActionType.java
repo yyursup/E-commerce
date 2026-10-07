@@ -5,5 +5,6 @@ public enum InventoryActionType {
     STOCK_UPDATED,
     ORDER_PLACED,
     ORDER_CANCELLED,
-    MANUAL_ADJUSTMENT
+    MANUAL_ADJUSTMENT,
+    REFUND_RESTORE
 }

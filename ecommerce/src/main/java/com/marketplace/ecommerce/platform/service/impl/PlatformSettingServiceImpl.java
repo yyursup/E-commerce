@@ -31,15 +31,31 @@ public class PlatformSettingServiceImpl implements PlatformSettingService {
     @Override
     @Transactional(readOnly = true)
     public BigDecimal getCommissionRate() {
-        return repository.findByKey(PlatformConstant.KEY_COMMISSION_RATE)
+        return parseBigDecimalByKey(PlatformConstant.KEY_COMMISSION_RATE, new BigDecimal("5.00"));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public BigDecimal getFloorRate() {
+        return parseBigDecimalByKey(PlatformConstant.KEY_COMMISSION_FLOOR_RATE, new BigDecimal("1.50"));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public BigDecimal getUsedGoodsCommissionRate() {
+        return parseBigDecimalByKey(PlatformConstant.KEY_COMMISSION_USED_GOODS_RATE, new BigDecimal("6.00"));
+    }
+
+    private BigDecimal parseBigDecimalByKey(String key, BigDecimal defaultValue) {
+        return repository.findByKey(key)
                 .map(s -> {
                     try {
                         return new BigDecimal(s.getValue() != null ? s.getValue().trim() : "0");
                     } catch (NumberFormatException e) {
-                        return BigDecimal.ZERO;
+                        return defaultValue;
                     }
                 })
-                .orElse(BigDecimal.ZERO);
+                .orElse(defaultValue);
     }
 
 
@@ -67,5 +83,23 @@ public class PlatformSettingServiceImpl implements PlatformSettingService {
         setting.setValue(value != null ? value : "");
         repository.save(setting);
         return setting;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public java.util.List<PlatformSettingResponse> getAllSettings() {
+        return repository.findAll().stream()
+                .map(PlatformSettingResponse::from)
+                .toList();
+    }
+
+    @Override
+    @Transactional
+    public PlatformSettingResponse updateSetting(String key, String value) {
+        if (key == null || key.isBlank()) {
+            throw new CustomException("Setting key cannot be empty");
+        }
+        PlatformSetting setting = setValue(key, value);
+        return PlatformSettingResponse.from(setting);
     }
 }

@@ -5,6 +5,7 @@ import com.marketplace.ecommerce.request.valueObjects.SellerType;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @Entity
@@ -76,6 +77,12 @@ public class Seller {
 
     @Column(name = "bank_name", length = 150)
     private String bankName;
+
+    @Column(name = "is_escrow_participated")
+    private Boolean isEscrowParticipated;
+
+    @Column(name = "initial_deposit_amount", precision = 19, scale = 2)
+    private BigDecimal initialDepositAmount;
 
     @Column(name = "created_shop_id", columnDefinition = "uuid")
     private UUID createdShopId;

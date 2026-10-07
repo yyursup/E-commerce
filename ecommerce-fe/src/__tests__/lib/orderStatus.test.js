@@ -67,9 +67,45 @@ describe('orderStatus.js', () => {
     it('should format valid date string', () => {
       const dateStr = '2023-10-15T14:30:00Z'
       const formatted = formatOrderDate(dateStr)
-      // Just verifying it doesn't crash and returns a string containing the year
       expect(typeof formatted).toBe('string')
       expect(formatted).toContain('2023')
+    })
+  })
+
+  describe('ReturnStatus & EffectiveStatus', () => {
+    it('should distinguish ReturnStatus from OrderStatus for identical keys', () => {
+      const { getReturnStatusLabel, getOrderStatusLabel, getOrderEffectiveStatus } = require('../../lib/orderStatus')
+      
+      // SHIPPED: Order is 'Đã giao hàng', Return is 'Đang giao hàng hoàn'
+      expect(getOrderStatusLabel('SHIPPED')).toBe('Đã giao hàng')
+      expect(getReturnStatusLabel('SHIPPED')).toBe('Đang giao hàng hoàn')
+
+      // COMPLETED: Order is 'Đã nhận được hàng', Return is 'Đã hoàn tất đổi trả & Hoàn tiền'
+      expect(getOrderStatusLabel('COMPLETED')).toBe('Đã nhận được hàng')
+      expect(getReturnStatusLabel('COMPLETED')).toBe('Đã hoàn tất đổi trả & Hoàn tiền')
+
+      // CANCELLED: Order is 'Đã hủy', Return is 'Đã hủy đổi trả'
+      expect(getOrderStatusLabel('CANCELLED')).toBe('Đã hủy')
+      expect(getReturnStatusLabel('CANCELLED')).toBe('Đã hủy đổi trả')
+    })
+
+    it('should prioritize ReturnStatus when order has active return', () => {
+      const { getOrderEffectiveStatus } = require('../../lib/orderStatus')
+      const order = { status: 'DELIVERED', returnInfo: { status: 'DISPUTED' } }
+      const effective = getOrderEffectiveStatus(order)
+
+      expect(effective.isReturn).toBe(true)
+      expect(effective.label).toBe('Tranh chấp hàng hoàn')
+      expect(effective.color).toContain('bg-rose-100')
+    })
+
+    it('should fallback to OrderStatus when order return is cancelled', () => {
+      const { getOrderEffectiveStatus } = require('../../lib/orderStatus')
+      const order = { status: 'COMPLETED', returnInfo: { status: 'CANCELLED' } }
+      const effective = getOrderEffectiveStatus(order)
+
+      expect(effective.isReturn).toBe(false)
+      expect(effective.label).toBe('Đã nhận được hàng')
     })
   })
 })

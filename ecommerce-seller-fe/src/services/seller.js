@@ -73,6 +73,20 @@ const sellerService = {
       throw error.response ? error.response.data : error;
     }
   },
+
+  // Calculate commission preview based on category & condition
+  calculateCommissionPreview: async (categoryId, conditionGrade) => {
+    try {
+      const params = {};
+      if (categoryId) params.categoryId = categoryId;
+      if (conditionGrade) params.conditionGrade = conditionGrade;
+      const response = await axiosClient.get('/api/v1/platform/commission/calculate-preview', { params });
+      return response.data;
+    } catch (error) {
+      console.warn('Cannot preview commission rate:', error);
+      return null;
+    }
+  },
 };
 
 export default sellerService;

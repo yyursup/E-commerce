@@ -12,6 +12,11 @@ import {
   HiOutlineTicket,
   HiOutlineChat,
   HiOutlineClipboardList,
+  HiOutlineVideoCamera,
+  HiOutlineShieldCheck,
+  HiOutlineCash,
+  HiOutlineClock,
+  HiOutlineExclamation,
 } from 'react-icons/hi'
 import { useAuthStore } from '../store/useAuthStore'
 import { useThemeStore } from '../store/useThemeStore'
@@ -25,13 +30,17 @@ import {
 import { useChatNotification } from '../hooks/useChatNotification'
 import ChatNotificationToast from './ChatNotificationToast'
 import toast from 'react-hot-toast'
+import shopService from '../services/shop'
 
 const navItems = [
   { to: '/dashboard', label: 'Tổng quan (Dashboard)', icon: HiOutlineViewGrid },
+  { to: '/live', label: 'Kênh Livestream', icon: HiOutlineVideoCamera },
   { to: '/orders', label: 'Quản lý Đơn hàng', icon: HiOutlineShoppingBag },
   { to: '/products', label: 'Quản lý Sản phẩm', icon: HiOutlineArchive },
   { to: '/inventory-history', label: 'Lịch sử Kho hàng', icon: HiOutlineClipboardList },
   { to: '/vouchers', label: 'Mã Giảm Giá Shop', icon: HiOutlineTicket },
+  { to: '/escrow-fund', label: 'Quỹ Ký Quỹ & Uy Tín', icon: HiOutlineCash },
+  { to: '/violations', label: 'Điểm uy tín Shop', icon: HiOutlineShieldCheck },
   { to: '/chat', label: 'Tin nhắn (Chat CSKH)', icon: HiOutlineChat, isChat: true },
   { to: '/settings', label: 'Cài đặt Kho & Gian hàng', icon: HiOutlineCog },
 ]
@@ -110,6 +119,32 @@ export default function SellerLayout() {
       unregUpdated()
     }
   }, [token, location.pathname, addNotification, isThreadMuted])
+
+  // Tự động đồng bộ trạng thái Shop mới nhất từ Backend (ví dụ khi Admin vừa duyệt đóng shop)
+  useEffect(() => {
+    if (!token) return
+    let isMounted = true
+    const syncShopStatus = async () => {
+      try {
+        const profile = await shopService.getMyShop()
+        if (isMounted && profile?.status && profile.status !== user?.shopStatus) {
+          useAuthStore.getState().updateUser({
+            shopStatus: profile.status,
+            violationCount: profile.violationCount != null ? profile.violationCount : user?.violationCount,
+            shopName: profile.name || user?.shopName,
+          })
+        }
+      } catch (err) {
+        if (isMounted) {
+          console.warn('Không thể đồng bộ trạng thái shop mới nhất:', err)
+        }
+      }
+    }
+    syncShopStatus()
+    return () => {
+      isMounted = false
+    }
+  }, [token, location.pathname])
 
   return (
     <div className={cn('min-h-screen flex flex-col', isDark ? 'bg-slate-950 text-slate-100' : 'bg-stone-50 text-stone-900')}>
@@ -223,6 +258,50 @@ export default function SellerLayout() {
 
           {/* Main Workspace */}
           <main className="lg:col-span-3">
+            {/* Banner thông báo gian hàng đã đóng cửa (CLOSED) */}
+            {user?.shopStatus === 'CLOSED' && (
+              <div className="mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-2xl border border-rose-500/40 bg-gradient-to-r from-rose-500/15 via-rose-500/10 to-rose-500/5 px-4 py-3.5 text-xs text-rose-800 dark:text-rose-200 shadow-sm">
+                <div className="flex items-center gap-2">
+                  <HiOutlineExclamation className="h-5 w-5 text-rose-500 shrink-0" />
+                  <span>
+                    Gian hàng đã hoàn tất thủ tục <strong>Đóng cửa (CLOSED)</strong> và nhận lại toàn bộ tiền ký quỹ. Các tính năng đăng bán, cập nhật sản phẩm và tạo voucher đã bị vô hiệu hóa. Bạn vẫn có thể xem lịch sử đơn hàng, quỹ ký quỹ và thực hiện rút số dư ví khả dụng.
+                  </span>
+                </div>
+                <NavLink
+                  to="/escrow-fund"
+                  className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs shadow-sm transition shrink-0 self-end sm:self-auto"
+                >
+                  Xem quỹ & ví &rarr;
+                </NavLink>
+              </div>
+            )}
+
+            {/* Banner yêu cầu nạp ký quỹ để kích hoạt gian hàng */}
+            {user?.shopStatus === 'PENDING_DEPOSIT' && (
+              <div className="mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-2xl border border-amber-500/40 bg-gradient-to-r from-amber-500/15 via-amber-500/10 to-amber-500/5 px-4 py-3.5 text-xs text-amber-800 dark:text-amber-200 shadow-sm">
+                <span>
+                  Hồ sơ gian hàng đã được duyệt! Vui lòng <strong>nạp đủ số tiền ký quỹ cam kết</strong> để kích hoạt gian hàng và mở khóa tính năng đăng bán sản phẩm.
+                </span>
+                <NavLink
+                  to="/escrow-fund"
+                  className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-sm transition shrink-0 self-end sm:self-auto"
+                >
+                  Nạp ký quỹ kích hoạt &rarr;
+                </NavLink>
+              </div>
+            )}
+
+            {/* Top Banner cảnh báo vi phạm tinh gọn chuẩn Responsive */}
+            {Boolean(user?.shopStatus === 'WARNED' || user?.shopStatus === 'SUSPENDED' || (Number(user?.violationCount || 0) >= 3)) && (
+              <div className="mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 rounded-2xl border border-amber-500/35 bg-amber-500/10 px-4 py-3 text-xs text-amber-600 dark:text-amber-400">
+                <span>
+                  Gian hàng đang ở trạng thái <strong>{user?.shopStatus === 'SUSPENDED' ? 'Tạm ngưng hoạt động' : 'Cảnh báo vi phạm'}</strong> ({user?.violationCount || 3}/7 vi phạm). Sản phẩm có thể bị tạm ẩn và tiền ký quỹ Escrow được tạm giữ để đảm bảo an toàn.
+                </span>
+                <NavLink to="/violations" className="font-bold underline hover:text-amber-500 shrink-0 self-end sm:self-auto">
+                  Xem chi tiết & Kháng cáo &rarr;
+                </NavLink>
+              </div>
+            )}
             <Outlet />
           </main>
         </div>

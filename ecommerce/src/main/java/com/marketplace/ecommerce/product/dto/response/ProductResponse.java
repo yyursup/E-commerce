@@ -36,7 +36,14 @@ public class ProductResponse {
     private boolean featured;
     private Double rating;
     private Long reviewCount;
-
+    private String conditionGrade;
+    private String warrantyType;
+    private Integer warrantyMonths;
+    private Integer batteryHealth;
+    private Boolean isRepaired;
+    private String repairDetails;
+    private String specifications;
+    private String rejectionReason;
 
     public static ProductResponse from(Product product) {
         return ProductResponse.builder()
@@ -57,6 +64,14 @@ public class ProductResponse {
                 .createdAt(product.getCreatedAt())
                 .updatedAt(product.getUpdatedAt())
                 .featured(product.isFeatured())
+                .conditionGrade(product.getConditionGrade() != null ? product.getConditionGrade().name() : null)
+                .warrantyType(product.getWarrantyType() != null ? product.getWarrantyType().name() : null)
+                .warrantyMonths(product.getWarrantyMonths())
+                .batteryHealth(product.getBatteryHealth())
+                .isRepaired(product.getIsRepaired())
+                .repairDetails(product.getRepairDetails())
+                .specifications(product.getSpecifications())
+                .rejectionReason(product.getRejectionReason())
                 .build();
     }
 

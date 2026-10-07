@@ -8,6 +8,6 @@ public enum TransactionType {
     WITHDRAWAL,
     COMMISSION,
     RELEASE,
-    HOLD
-
+    HOLD,
+    COMPENSATION
 }

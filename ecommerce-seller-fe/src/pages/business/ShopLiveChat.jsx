@@ -1129,7 +1129,7 @@ export default function ShopLiveChat() {
                   align="left"
                 />
 
-                {/* Emoji Popover (😊 button) */}
+                {/* Emoji Popover */}
                 <EmojiPickerPopover
                   isOpen={showEmojiPicker}
                   onClose={() => setShowEmojiPicker(false)}
@@ -1180,7 +1180,7 @@ export default function ShopLiveChat() {
                     <HiPlus className={cn('h-5 w-5 transition-transform duration-200', showMediaPopover && 'rotate-45')} />
                   </button>
 
-                  {/* Emoji (😊) Button */}
+                  {/* Emoji Button */}
                   <button
                     type="button"
                     onClick={() => {

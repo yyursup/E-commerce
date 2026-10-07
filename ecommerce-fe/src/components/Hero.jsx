@@ -18,57 +18,57 @@ import { cn } from '../lib/cn'
 const heroBanners = [
   {
     id: 1,
-    badge: 'Siêu Hội Mua Sắm E-commerce',
-    title: 'Đại Tiệc Mua Sắm Đa Ngành Hàng',
-    subtitle: 'Hàng triệu deal hot từ Thời trang, Công nghệ, Đồ gia dụng đến Sách & Mỹ phẩm. Giảm giá sốc đến 50%!',
+    badge: 'Sàn Thương Mại Điện Tử & Đồ Công Nghệ',
+    title: 'Hệ Sinh Thái Đồ Công Nghệ Chính Hãng',
+    subtitle: 'Điện thoại, Laptop, Tablet, Linh kiện PC từ Apple, Samsung, Sony, Asus. Đầy đủ hóa đơn VAT & Bảo hành chính hãng.',
     ctaText: 'Khám phá ngay',
     ctaLink: '/products',
-    bgGradient: 'from-amber-600 via-orange-600 to-rose-700',
-    image: 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=1000&h=600&fit=crop',
-    tag: 'MEGA SALE 50%',
+    bgGradient: 'from-blue-700 via-indigo-700 to-slate-900',
+    image: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=1000&h=600&fit=crop',
+    tag: 'CHÍNH HÃNG 100%',
   },
   {
     id: 2,
-    badge: 'Vận Chuyển Toàn Quốc Cùng GHN',
-    title: 'Freeship Mọi Miền Đơn Từ 0Đ',
-    subtitle: 'Liên kết chính thức Giao Hàng Nhanh. Tra cứu phí ship tự động theo địa chỉ kho từng Shop, giao siêu tốc toàn quốc.',
-    ctaText: 'Săn mã Freeship',
-    ctaLink: '/deals',
-    bgGradient: 'from-blue-600 via-indigo-600 to-cyan-700',
-    image: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=1000&h=600&fit=crop',
-    tag: 'FREESHIP XTRA',
+    badge: 'Thị Trường Đồ Cũ Like New 99%',
+    title: 'Máy Cũ Kiểm Định - An Tâm Tuyệt Đối',
+    subtitle: 'Đội ngũ thẩm định chuyên nghiệp kiểm tra pin, bo mạch, màn hình. Minh bạch tình trạng máy & lịch sử sửa chữa.',
+    ctaText: 'Xem máy Like New',
+    ctaLink: '/products',
+    bgGradient: 'from-amber-600 via-orange-600 to-stone-900',
+    image: 'https://images.unsplash.com/photo-1550009158-9ebf69173e03?w=1000&h=600&fit=crop',
+    tag: 'TEST MÁY 3 NGÀY',
   },
   {
     id: 3,
-    badge: 'Công Nghệ Ký Quỹ Độc Quyền',
-    title: 'Thanh Toán Ký Quỹ Escrow An Toàn',
-    subtitle: 'Bảo vệ quyền lợi tối đa cho người mua. Tiền được giữ trong ví Escrow, chỉ giải ngân cho Shop khi bạn đã nhận hàng đúng cam kết.',
+    badge: 'Cơ Chế Ký Quỹ Độc Quyền Escrow',
+    title: 'Giao Dịch Đồ Công Nghệ Giá Trị Cao',
+    subtitle: 'Tiền được khóa an toàn tại Escrow sàn. Sau khi nhận máy và test trong 3 ngày hài lòng, tiền mới được giải ngân cho Shop.',
     ctaText: 'Tìm hiểu Escrow',
     ctaLink: '/help',
-    bgGradient: 'from-emerald-600 via-teal-600 to-cyan-700',
-    image: 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=1000&h=600&fit=crop',
+    bgGradient: 'from-emerald-600 via-teal-700 to-slate-900',
+    image: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?w=1000&h=600&fit=crop',
     tag: 'BẢO VỆ 100%',
   },
   {
     id: 4,
-    badge: 'Người Bán Đã Xác Thực eKYC',
-    title: 'Gian Hàng Chính Hãng Uy Tín',
-    subtitle: '100% chủ shop được định danh sinh trắc học khuôn mặt và CCCD qua VNPT eKYC trước khi mở bán. Cam kết không hàng giả.',
-    ctaText: 'Xem Gian Hàng Mall',
-    ctaLink: '/marketplace',
-    bgGradient: 'from-purple-600 via-fuchsia-600 to-pink-700',
-    image: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1000&h=600&fit=crop',
-    tag: 'eKYC VERIFIED',
+    badge: 'Vận Chuyển An Toàn GHN',
+    title: 'Giao Hàng Công Nghệ Toàn Quốc',
+    subtitle: 'Đóng gói chống sốc chuyên dụng, bảo hiểm 100% giá trị thiết bị điện tử cùng Giao Hàng Nhanh (GHN).',
+    ctaText: 'Săn mã Freeship',
+    ctaLink: '/deals',
+    bgGradient: 'from-purple-700 via-violet-700 to-slate-900',
+    image: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=1000&h=600&fit=crop',
+    tag: 'BẢO HIỂM THIẾT BỊ',
   },
 ]
 
 const quickServices = [
-  { icon: HiOutlineTag, label: 'Mã Giảm Giá Sàn', color: 'text-rose-500 bg-rose-500/10 dark:bg-rose-500/20', link: '/deals' },
-  { icon: HiOutlineTruck, label: 'Freeship Xtra GHN', color: 'text-blue-500 bg-blue-500/10 dark:bg-blue-500/20', link: '/deals' },
-  { icon: HiOutlineBadgeCheck, label: 'Shop eKYC Uy Tín', color: 'text-amber-500 bg-amber-500/10 dark:bg-amber-500/20', link: '/marketplace' },
+  { icon: HiOutlineTag, label: 'Mã Giảm Giá Tech', color: 'text-rose-500 bg-rose-500/10 dark:bg-rose-500/20', link: '/deals' },
+  { icon: HiOutlineBadgeCheck, label: 'Đồ Cũ Kiểm Định', color: 'text-amber-500 bg-amber-500/10 dark:bg-amber-500/20', link: '/products' },
+  { icon: HiOutlineTruck, label: 'Giao Chống Sốc GHN', color: 'text-blue-500 bg-blue-500/10 dark:bg-blue-500/20', link: '/deals' },
   { icon: HiOutlineShieldCheck, label: 'Ký Quỹ Escrow', color: 'text-emerald-500 bg-emerald-500/10 dark:bg-emerald-500/20', link: '/help' },
   { icon: HiOutlineCreditCard, label: 'Ví & Nạp Tiền', color: 'text-purple-500 bg-purple-500/10 dark:bg-purple-500/20', link: '/profile/wallet' },
-  { icon: HiOutlineSparkles, label: 'Gợi Ý AI Thông Minh', color: 'text-orange-500 bg-orange-500/10 dark:bg-orange-500/20', link: '/products' },
+  { icon: HiOutlineSparkles, label: 'AI Tư Vấn Cấu Hình', color: 'text-orange-500 bg-orange-500/10 dark:bg-orange-500/20', link: '/products' },
 ]
 
 export default function Hero() {
@@ -185,36 +185,36 @@ export default function Hero() {
             >
               <div
                 className="absolute inset-0 bg-cover bg-center opacity-30 group-hover:scale-105 transition-transform duration-500"
-                style={{ backgroundImage: `url(https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=500&h=300&fit=crop)` }}
+                style={{ backgroundImage: `url(https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=500&h=300&fit=crop)` }}
               />
               <div className="relative z-10">
                 <span className="rounded-md bg-amber-500 px-2 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider">
-                  MALL OFFICIAL
+                  TECH MALL
                 </span>
                 <h3 className="mt-1.5 text-base font-bold group-hover:text-amber-400 transition-colors">
-                  Gian Hàng Chính Hãng
+                  Đại Lý Phân Phối Ủy Quyền
                 </h3>
-                <p className="text-xs text-slate-300">Đã kiểm duyệt CCCD & eKYC 100%</p>
+                <p className="text-xs text-slate-300">Apple, Samsung, Sony, Asus chính hãng</p>
               </div>
             </Link>
 
             {/* Side Card 2 */}
             <Link
-              to="/deals"
+              to="/products"
               className="relative flex-1 rounded-2xl overflow-hidden shadow-md group min-h-[170px] flex items-end p-5 bg-gradient-to-tr from-indigo-950 via-slate-900 to-rose-950 text-white"
             >
               <div
                 className="absolute inset-0 bg-cover bg-center opacity-30 group-hover:scale-105 transition-transform duration-500"
-                style={{ backgroundImage: `url(https://images.unsplash.com/photo-1607083206869-4c7672e72a8a?w=500&h=300&fit=crop)` }}
+                style={{ backgroundImage: `url(https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?w=500&h=300&fit=crop)` }}
               />
               <div className="relative z-10">
-                <span className="rounded-md bg-rose-500 px-2 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider">
-                  HOT DEALS
+                <span className="rounded-md bg-emerald-500 px-2 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider">
+                  LIKE NEW 99%
                 </span>
-                <h3 className="mt-1.5 text-base font-bold group-hover:text-rose-400 transition-colors">
-                  Kho Voucher & Mã Khuyến Mãi
+                <h3 className="mt-1.5 text-base font-bold group-hover:text-emerald-400 transition-colors">
+                  Chợ Thiết Bị Cũ Kiểm Định
                 </h3>
-                <p className="text-xs text-slate-300">Thu thập voucher giảm sâu hôm nay</p>
+                <p className="text-xs text-slate-300">Bao test 3 ngày cùng Escrow ký quỹ</p>
               </div>
             </Link>
           </div>

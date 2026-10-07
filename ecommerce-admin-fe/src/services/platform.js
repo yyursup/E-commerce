@@ -24,6 +24,27 @@ const platformService = {
       throw error.response ? error.response.data : error;
     }
   },
+  // Get all platform settings
+  getAllPlatformSettings: async () => {
+    try {
+      const response = await axiosClient.get(`${PLATFORM_BASE}/all`);
+      return response.data;
+    } catch (error) {
+      throw error.response ? error.response.data : error;
+    }
+  },
+
+  // Update arbitrary platform setting by key
+  updatePlatformSetting: async (key, value) => {
+    try {
+      const response = await axiosClient.put(`${PLATFORM_BASE}/setting`, null, {
+        params: { key, value: String(value) }
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response ? error.response.data : error;
+    }
+  },
 };
 
 export default platformService;

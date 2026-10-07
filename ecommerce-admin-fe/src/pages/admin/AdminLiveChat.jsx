@@ -928,7 +928,7 @@ export default function AdminLiveChat() {
                   align="left"
                 />
 
-                {/* Emoji Popover (😊 button) */}
+                {/* Emoji Popover */}
                 <EmojiPickerPopover
                   isOpen={showEmojiPicker}
                   onClose={() => setShowEmojiPicker(false)}
@@ -979,7 +979,7 @@ export default function AdminLiveChat() {
                     <HiPlus className={cn('h-5 w-5 transition-transform duration-200', showMediaPopover && 'rotate-45')} />
                   </button>
 
-                  {/* Emoji Button (😊) */}
+                  {/* Emoji Button */}
                   <button
                     type="button"
                     onClick={() => {

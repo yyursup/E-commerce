@@ -23,7 +23,7 @@ export default function AdminVouchers() {
     try {
       setLoading(true)
       const data = await voucherService.getPlatformVouchers()
-      setVouchers(Array.isArray(data) ? data : [])
+      setVouchers(data?.content || (Array.isArray(data) ? data : []))
     } catch (err) {
       console.error('Load platform vouchers error:', err)
       toast.error(err?.message || err?.response?.data?.message || 'Không thể tải danh sách voucher toàn sàn')

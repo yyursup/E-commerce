@@ -19,4 +19,6 @@ public interface ReviewService {
     Page<ReviewResponse> getProductReviews(UUID productId,  Integer rating,  Boolean hasImages, Pageable pageable);
 
     ReviewResponse getMyReview(UUID accountId, UUID productId, UUID subOrderId);
+
+    Page<ReviewResponse> getMyReviews(UUID accountId, Pageable pageable);
 }

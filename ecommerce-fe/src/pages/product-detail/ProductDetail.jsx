@@ -34,9 +34,27 @@ import { useChatStore } from '../../store/useChatStore'
 import { useWishlistStore } from '../../store/useWishlistStore'
 import { cn } from '../../lib/cn'
 import productService from '../../services/product'
+import recommendationService from '../../services/recommendation'
 import cartService from '../../services/cart'
 import shopService, { FALLBACK_SHOPS } from '../../services/shop'
 import wishlistService from '../../services/wishlist'
+
+const getConditionDetail = (grade) => {
+  switch (grade) {
+    case 'GRADE_NEW':
+      return { label: 'Mới 100% Nguyên Seal', color: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' }
+    case 'GRADE_OPEN_BOX':
+      return { label: 'Hàng Trưng Bày / Mở Hộp (99%)', color: 'bg-sky-500/15 text-sky-600 dark:text-sky-400 border-sky-500/30' }
+    case 'GRADE_LIKE_NEW':
+      return { label: 'Like New 99% - Như Mới', color: 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30' }
+    case 'GRADE_FAIR':
+      return { label: 'Đã Qua Sử Dụng (90-95%)', color: 'bg-orange-500/15 text-orange-600 dark:text-orange-400 border-orange-500/30' }
+    case 'GRADE_AS_IS':
+      return { label: 'Thanh Lý / Xác Máy (As-is)', color: 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30' }
+    default:
+      return null
+  }
+}
 
 export default function ProductDetail() {
   const { productId } = useParams()
@@ -55,6 +73,9 @@ export default function ProductDetail() {
   const [shopProducts, setShopProducts] = useState([])
   const [similarProducts, setSimilarProducts] = useState([])
   const [similarLoading, setSimilarLoading] = useState(true)
+  const [accessories, setAccessories] = useState([])
+  const [accessoriesLoading, setAccessoriesLoading] = useState(true)
+  const [recTab, setRecTab] = useState('similar')
   const [savedVoucher, setSavedVoucher] = useState({})
 
   const { isAuthenticated, user } = useAuthStore()
@@ -71,6 +92,7 @@ export default function ProductDetail() {
         setError(null)
         const data = await productService.getProductById(productId)
         setProduct(data)
+        recommendationService.trackView(productId)
 
         // Fetch Shop info
         if (data?.shopId) {
@@ -141,14 +163,16 @@ export default function ProductDetail() {
     }
   }, [productId])
 
-  // 2. Fetch Similar Products
+  // 2. Fetch Similar Products & Compatible Accessories
   useEffect(() => {
-    const fetchSimilar = async () => {
+    const fetchRecommendations = async () => {
       if (!productId) return
+      const currentId = productId.toLowerCase()
+
+      // Fetch Similar
       try {
         setSimilarLoading(true)
-        const list = await productService.getSimilarProducts(productId, 6)
-        const currentId = productId.toLowerCase()
+        const list = await recommendationService.getSimilarProducts(productId, 6)
         const mapped = (list || [])
           .filter((p) => p.id && String(p.id).toLowerCase() !== currentId)
           .map((p) => {
@@ -158,13 +182,16 @@ export default function ProductDetail() {
               name: p.name,
               price: p.basePrice ? Number(p.basePrice) : 0,
               image: thumb?.imageUrl || '/product-placeholder.svg',
-              badge: p.status === 'PUBLISHED' ? 'Gợi ý AI' : null,
-              rating: p.rating != null ? Number(p.rating) : null,
+              badge: 'Tương đương',
+              rating: p.rating != null ? Number(p.rating) : 5.0,
               reviewCount: p.reviewCount != null ? Number(p.reviewCount) : 0,
               description: p.description,
               basePrice: p.basePrice,
               shopName: p.shopName,
               categoryName: p.categoryName,
+              conditionGrade: p.conditionGrade,
+              warrantyType: p.warrantyType,
+              warrantyMonths: p.warrantyMonths,
               originalProduct: p,
             }
           })
@@ -175,8 +202,42 @@ export default function ProductDetail() {
       } finally {
         setSimilarLoading(false)
       }
+
+      // Fetch Accessories
+      try {
+        setAccessoriesLoading(true)
+        const accList = await recommendationService.getCompatibleAccessories(productId, 6)
+        const mappedAcc = (accList || [])
+          .filter((p) => p.id && String(p.id).toLowerCase() !== currentId)
+          .map((p) => {
+            const thumb = p.images?.find((img) => img.isThumbnail) || p.images?.[0]
+            return {
+              id: p.id,
+              name: p.name,
+              price: p.basePrice ? Number(p.basePrice) : 0,
+              image: thumb?.imageUrl || '/product-placeholder.svg',
+              badge: 'Phụ kiện',
+              rating: p.rating != null ? Number(p.rating) : 5.0,
+              reviewCount: p.reviewCount != null ? Number(p.reviewCount) : 0,
+              description: p.description,
+              basePrice: p.basePrice,
+              shopName: p.shopName,
+              categoryName: p.categoryName,
+              conditionGrade: p.conditionGrade,
+              warrantyType: p.warrantyType,
+              warrantyMonths: p.warrantyMonths,
+              originalProduct: p,
+            }
+          })
+        setAccessories(mappedAcc)
+      } catch (err) {
+        console.error('Error fetching accessories:', err)
+        setAccessories([])
+      } finally {
+        setAccessoriesLoading(false)
+      }
     }
-    fetchSimilar()
+    fetchRecommendations()
   }, [productId])
 
   const handleAddToCart = async () => {
@@ -193,9 +254,7 @@ export default function ProductDetail() {
 
     const currentVariants = product.variants || []
     if (currentVariants.length > 0 && !selectedVariant) {
-      toast.error('Vui lòng chọn phân loại hàng (màu sắc / kích cỡ...) trước khi thêm vào giỏ hàng!', {
-        icon: '⚠️',
-      })
+      toast.error('Vui lòng chọn phân loại hàng (màu sắc / kích cỡ...) trước khi thêm vào giỏ hàng!')
       return
     }
 
@@ -238,9 +297,7 @@ export default function ProductDetail() {
 
     const currentVariants = product.variants || []
     if (currentVariants.length > 0 && !selectedVariant) {
-      toast.error('Vui lòng chọn phân loại hàng (màu sắc / kích cỡ...) trước khi đặt mua!', {
-        icon: '⚠️',
-      })
+      toast.error('Vui lòng chọn phân loại hàng (màu sắc / kích cỡ...) trước khi đặt mua!')
       return
     }
 
@@ -460,6 +517,32 @@ export default function ProductDetail() {
             <div className="lg:col-span-7 space-y-5">
               {/* Product Title & Badges */}
               <div>
+                {/* Tech & Condition Badges */}
+                <div className="flex flex-wrap items-center gap-2 mb-2.5">
+                  {product.conditionGrade && (
+                    (() => {
+                      const c = getConditionDetail(product.conditionGrade)
+                      return c ? (
+                        <span className={cn('px-2.5 py-0.5 rounded-lg text-xs font-bold border', c.color)}>
+                          {c.label}
+                        </span>
+                      ) : null
+                    })()
+                  )}
+
+                  {product.warrantyType && product.warrantyType !== 'NONE' && (
+                    <span className="px-2.5 py-0.5 rounded-lg text-xs font-bold border border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                      BH {product.warrantyMonths ? `${product.warrantyMonths} Tháng ` : ''}{product.warrantyType === 'OFFICIAL' ? 'Chính Hãng' : 'Tại Cửa Hàng'}
+                    </span>
+                  )}
+
+                  {product.batteryHealth && (
+                    <span className="px-2.5 py-0.5 rounded-lg text-xs font-bold border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                      Pin Zin: {product.batteryHealth}%
+                    </span>
+                  )}
+                </div>
+
                 <div className="flex items-start gap-2.5">
                   <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-stone-900 dark:text-white leading-snug">
                     {product.name}
@@ -545,6 +628,23 @@ export default function ProductDetail() {
                 <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 font-medium">
                   <HiOutlineShieldCheck className="h-5 w-5 shrink-0" />
                   <span>Ký Quỹ Escrow An Toàn 100% (Đổi trả 7 ngày / Hoàn tiền nếu hàng lỗi)</span>
+                </div>
+              </div>
+
+              {/* Tech Hardware Inspection Row */}
+              <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4 text-xs border-t pt-3 border-stone-100 dark:border-slate-800">
+                <span className="w-28 shrink-0 text-stone-500 dark:text-slate-400 font-semibold mt-0.5">
+                  Kiểm Định Máy
+                </span>
+                <div className="space-y-1.5 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className={cn('font-semibold', product.isRepaired ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400')}>
+                      {product.isRepaired ? `⚠️ Đã thay thế linh kiện: ${product.repairDetails || 'Có can thiệp phần cứng'}` : '✓ Thiết bị nguyên bản (Zin 100% chưa qua can thiệp linh kiện)'}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-stone-500 dark:text-slate-400">
+                    Sản phẩm điện tử được kiểm tra thẩm định trước khi mở bán. Bao test 3 ngày cùng cơ chế Escrow giữ tiền an toàn.
+                  </p>
                 </div>
               </div>
 
@@ -710,13 +810,30 @@ export default function ProductDetail() {
               </Link>
 
               <div className="flex-1 min-w-0">
-                <Link
-                  to={`/shop/${currentShopId}`}
-                  className="text-base font-bold text-stone-900 dark:text-white hover:text-amber-500 transition-colors flex items-center gap-1.5 truncate"
-                >
-                  <span className="truncate">{product.shopName || shopData?.name}</span>
-                  <HiOutlineBadgeCheck className="h-4 w-4 text-emerald-500 shrink-0" />
-                </Link>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Link
+                    to={`/shop/${currentShopId}`}
+                    className="text-base font-bold text-stone-900 dark:text-white hover:text-amber-500 transition-colors flex items-center gap-1.5 truncate"
+                  >
+                    <span className="truncate">{product.shopName || shopData?.name}</span>
+                    <HiOutlineBadgeCheck className="h-4 w-4 text-emerald-500 shrink-0" />
+                  </Link>
+
+                  <span
+                    className={cn(
+                      'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold border shrink-0',
+                      (shopData?.trustLevel || 1) >= 4
+                        ? 'bg-amber-500/20 text-amber-500 border-amber-500/40'
+                        : (shopData?.trustLevel || 1) >= 2
+                        ? 'bg-blue-500/15 text-blue-500 border-blue-500/30'
+                        : 'bg-stone-500/10 text-stone-500 border-stone-300 dark:border-slate-700'
+                    )}
+                    title="Gian hàng có cam kết Quỹ Ký Quỹ Bảo Chứng trách nhiệm trên sàn"
+                  >
+                    <HiOutlineShieldCheck className="h-3 w-3 text-amber-500" />
+                    {shopData?.trustLevel || 1}★ Ký Quỹ
+                  </span>
+                </div>
                 <div className="text-xs text-stone-400 dark:text-slate-400 mt-1 flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
                   <span className="truncate">{shopData?.address || shopData?.location || shopData?.city || 'Việt Nam'}</span>
@@ -848,36 +965,88 @@ export default function ProductDetail() {
           {/* Specifications Table */}
           <div>
             <h2 className="text-sm font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 mb-4 pb-2 border-b border-stone-100 dark:border-slate-800">
-              CHI TIẾT SẢN PHẨM
+              CHI TIẾT SẢN PHẨM & TÌNH TRẠNG THIẾT BỊ
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-8 text-xs">
               <div className="flex justify-between border-b pb-2 border-stone-100 dark:border-slate-800/80">
-                <span className="text-stone-500 dark:text-slate-400 w-32 shrink-0">Danh Mục:</span>
+                <span className="text-stone-500 dark:text-slate-400 w-36 shrink-0">Danh Mục:</span>
                 <span className="font-medium text-stone-900 dark:text-white text-right truncate">
-                  {product.categoryName || 'Sản phẩm đa ngành'}
+                  {product.categoryName || 'Thiết bị điện tử'}
                 </span>
               </div>
               <div className="flex justify-between border-b pb-2 border-stone-100 dark:border-slate-800/80">
-                <span className="text-stone-500 dark:text-slate-400 w-32 shrink-0">Thương Hiệu:</span>
+                <span className="text-stone-500 dark:text-slate-400 w-36 shrink-0">Thương Hiệu:</span>
                 <span className="font-medium text-stone-900 dark:text-white text-right">{product.brand || 'Chính Hãng Phân Phối'}</span>
               </div>
               <div className="flex justify-between border-b pb-2 border-stone-100 dark:border-slate-800/80">
-                <span className="text-stone-500 dark:text-slate-400 w-32 shrink-0">Mã SKU:</span>
+                <span className="text-stone-500 dark:text-slate-400 w-36 shrink-0">Tình Trạng Máy:</span>
+                <span className="font-bold text-amber-600 dark:text-amber-400 text-right">
+                  {getConditionDetail(product.conditionGrade)?.label || 'Tiêu chuẩn'}
+                </span>
+              </div>
+              <div className="flex justify-between border-b pb-2 border-stone-100 dark:border-slate-800/80">
+                <span className="text-stone-500 dark:text-slate-400 w-36 shrink-0">Pin (Battery Health):</span>
+                <span className="font-bold text-emerald-600 dark:text-emerald-400 text-right">
+                  {product.batteryHealth ? `${product.batteryHealth}%` : 'Không áp dụng / Chưa đo'}
+                </span>
+              </div>
+              <div className="flex justify-between border-b pb-2 border-stone-100 dark:border-slate-800/80">
+                <span className="text-stone-500 dark:text-slate-400 w-36 shrink-0">Chế Độ Bảo Hành:</span>
+                <span className="font-medium text-stone-900 dark:text-white text-right">
+                  {product.warrantyType === 'OFFICIAL' ? 'Chính hãng toàn quốc' : product.warrantyType === 'SHOP' ? 'Tại gian hàng' : 'Hết BH / Bao test 7 ngày'}
+                  {product.warrantyMonths ? ` (${product.warrantyMonths} tháng)` : ''}
+                </span>
+              </div>
+              <div className="flex justify-between border-b pb-2 border-stone-100 dark:border-slate-800/80">
+                <span className="text-stone-500 dark:text-slate-400 w-36 shrink-0">Linh Kiện & Sửa Chữa:</span>
+                <span className={cn('font-semibold text-right', product.isRepaired ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400')}>
+                  {product.isRepaired ? `Đã thay: ${product.repairDetails || 'Có can thiệp'}` : 'Zin 100% nguyên bản'}
+                </span>
+              </div>
+              <div className="flex justify-between border-b pb-2 border-stone-100 dark:border-slate-800/80">
+                <span className="text-stone-500 dark:text-slate-400 w-36 shrink-0">Mã SKU:</span>
                 <span className="font-medium text-stone-900 dark:text-white text-right">{product.sku || (product.id ? `SKU-${String(product.id).slice(0, 8).toUpperCase()}` : 'SKU-STANDARD')}</span>
               </div>
               <div className="flex justify-between border-b pb-2 border-stone-100 dark:border-slate-800/80">
-                <span className="text-stone-500 dark:text-slate-400 w-32 shrink-0">Kho Hàng:</span>
+                <span className="text-stone-500 dark:text-slate-400 w-36 shrink-0">Kho Hàng:</span>
                 <span className="font-medium text-stone-900 dark:text-white text-right">{displayStock}</span>
               </div>
               <div className="flex justify-between border-b pb-2 border-stone-100 dark:border-slate-800/80">
-                <span className="text-stone-500 dark:text-slate-400 w-32 shrink-0">Bảo Hành:</span>
-                <span className="font-medium text-stone-900 dark:text-white text-right">Bảo hành theo quy chuẩn sàn</span>
-              </div>
-              <div className="flex justify-between border-b pb-2 border-stone-100 dark:border-slate-800/80">
-                <span className="text-stone-500 dark:text-slate-400 w-32 shrink-0">Gửi Từ:</span>
+                <span className="text-stone-500 dark:text-slate-400 w-36 shrink-0">Gửi Từ:</span>
                 <span className="font-medium text-stone-900 dark:text-white text-right truncate">{shopData?.address || shopData?.location || shopData?.city || 'Việt Nam'}</span>
               </div>
             </div>
+
+            {/* Dynamic Technical Specifications Table */}
+            {(() => {
+              let specsObj = null
+              try {
+                if (product.specifications) {
+                  specsObj = typeof product.specifications === 'string' ? JSON.parse(product.specifications) : product.specifications
+                }
+              } catch (e) {
+                specsObj = null
+              }
+
+              if (specsObj && typeof specsObj === 'object' && Object.keys(specsObj).length > 0) {
+                return (
+                  <div className="mt-6">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-slate-400 mb-3">
+                      THÔNG SỐ KỸ THUẬT PHẦN CỨNG
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2.5 gap-x-8 text-xs bg-stone-50 dark:bg-slate-800/40 p-4 rounded-2xl border border-stone-200/80 dark:border-slate-800">
+                      {Object.entries(specsObj).map(([key, val], idx) => (
+                        <div key={idx} className="flex justify-between border-b border-stone-200/60 dark:border-slate-700/60 pb-2">
+                          <span className="text-stone-500 dark:text-slate-400 font-medium">{key}:</span>
+                          <span className="font-bold text-stone-900 dark:text-white text-right">{String(val)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              }
+              return null
+            })()}
           </div>
 
           {/* Description Content */}
@@ -933,23 +1102,76 @@ export default function ProductDetail() {
           </section>
         )}
 
-        {/* 7. SẢN PHẨM TƯƠNG TỰ (AI Recommendation) */}
-        {(similarLoading || similarProducts.length > 0) && (
+        {/* 7. GỢI Ý CÔNG NGHỆ THÔNG MINH (Smart Tech Recommendations & Cross-selling) */}
+        {(similarProducts.length > 0 || accessories.length > 0 || similarLoading || accessoriesLoading) && (
           <section className="space-y-4 pt-4">
-            <h3 className="text-lg font-bold text-stone-900 dark:text-white">
-              Gợi Ý Sản Phẩm Tương Tự
-            </h3>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-200 dark:border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                  <HiOutlineShoppingBag className="h-4 w-4" />
+                </span>
+                <h3 className="text-lg font-bold text-stone-900 dark:text-white">
+                  Gợi Ý Công Nghệ Dành Cho Bạn
+                </h3>
+              </div>
 
-            {similarLoading ? (
-              <div className="flex justify-center py-8">
-                <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-r-transparent" />
+              {/* Tabs Switcher */}
+              <div className="flex items-center gap-1.5 p-1 rounded-xl bg-stone-100 dark:bg-slate-800/80 self-start sm:self-auto text-xs font-semibold">
+                <button
+                  type="button"
+                  onClick={() => setRecTab('similar')}
+                  className={cn(
+                    'px-3 py-1.5 rounded-lg transition-all',
+                    recTab === 'similar'
+                      ? 'bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 shadow-sm font-bold'
+                      : 'text-stone-500 dark:text-slate-400 hover:text-stone-800 dark:hover:text-white'
+                  )}
+                >
+                  Sản phẩm tương đương ({similarProducts.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRecTab('accessories')}
+                  className={cn(
+                    'px-3 py-1.5 rounded-lg transition-all',
+                    recTab === 'accessories'
+                      ? 'bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 shadow-sm font-bold'
+                      : 'text-stone-500 dark:text-slate-400 hover:text-stone-800 dark:hover:text-white'
+                  )}
+                >
+                  Phụ kiện mua kèm ({accessories.length})
+                </button>
               </div>
+            </div>
+
+            {recTab === 'similar' ? (
+              similarLoading ? (
+                <div className="flex justify-center py-8">
+                  <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-r-transparent" />
+                </div>
+              ) : similarProducts.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
+                  {similarProducts.map((item) => (
+                    <ProductCard key={item.id} product={item} />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-stone-400 py-4 italic">Chưa có sản phẩm tương đương cùng tầm giá.</p>
+              )
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
-                {similarProducts.map((item) => (
-                  <ProductCard key={item.id} product={item} />
-                ))}
-              </div>
+              accessoriesLoading ? (
+                <div className="flex justify-center py-8">
+                  <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-r-transparent" />
+                </div>
+              ) : accessories.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
+                  {accessories.map((item) => (
+                    <ProductCard key={item.id} product={item} />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-stone-400 py-4 italic">Chưa có phụ kiện tương thích cho dòng máy này.</p>
+              )
             )}
           </section>
         )}

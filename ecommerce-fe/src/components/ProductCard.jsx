@@ -8,6 +8,23 @@ import { useAuthStore } from '../store/useAuthStore'
 import { useWishlistStore } from '../store/useWishlistStore'
 import { cn } from '../lib/cn'
 
+const getConditionBadge = (grade) => {
+  switch (grade) {
+    case 'GRADE_NEW':
+      return { label: 'Mới 100%', color: 'bg-emerald-600 text-white' }
+    case 'GRADE_OPEN_BOX':
+      return { label: 'Like New 99%', color: 'bg-sky-600 text-white' }
+    case 'GRADE_LIKE_NEW':
+      return { label: 'Like New 99%', color: 'bg-amber-600 text-white' }
+    case 'GRADE_FAIR':
+      return { label: 'Cũ 90-95%', color: 'bg-orange-600 text-white' }
+    case 'GRADE_AS_IS':
+      return { label: 'As-is', color: 'bg-rose-600 text-white' }
+    default:
+      return null
+  }
+}
+
 export default function ProductCard({ product, onQuickView, dataAos, dataAosDelay }) {
   const [hover, setHover] = useState(false)
   const isDark = useThemeStore((s) => s.theme) === 'dark'
@@ -98,6 +115,21 @@ export default function ProductCard({ product, onQuickView, dataAos, dataAosDela
         {product.featured && (
           <span className="inline-flex items-center gap-1 rounded-md bg-gradient-to-r from-amber-500 to-orange-500 px-2 py-0.5 text-[10px] font-black text-white shadow-md tracking-wider">
             ⭐ Nổi bật
+          </span>
+        )}
+        {product.conditionGrade && (
+          (() => {
+            const c = getConditionBadge(product.conditionGrade)
+            return c ? (
+              <span className={cn('rounded-md px-1.5 py-0.5 text-[10px] font-bold shadow-sm', c.color)}>
+                {c.label}
+              </span>
+            ) : null
+          })()
+        )}
+        {product.warrantyMonths && product.warrantyMonths > 0 && (
+          <span className="rounded-md bg-blue-600 text-white px-1.5 py-0.5 text-[10px] font-bold shadow-sm">
+            BH {product.warrantyMonths}T
           </span>
         )}
         {badge && badge !== 'Bestseller' && (
@@ -198,6 +230,22 @@ export default function ProductCard({ product, onQuickView, dataAos, dataAosDela
               </span>
             )}
           </div>
+
+          {/* Quick Hardware Spec Pills */}
+          {(product.batteryHealth || (product.warrantyType && product.warrantyType !== 'NONE')) && (
+            <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
+              {product.batteryHealth && (
+                <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
+                  Pin {product.batteryHealth}%
+                </span>
+              )}
+              {product.warrantyType && product.warrantyType !== 'NONE' && (
+                <span className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded">
+                  {product.warrantyType === 'OFFICIAL' ? 'BH Hãng' : 'BH Shop'}
+                </span>
+              )}
+            </div>
+          )}
 
           {/* Title */}
           <Link to={`/products/${id}`}>

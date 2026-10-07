@@ -105,9 +105,7 @@ export default function ProductQuickView({ product, onAddToCart }) {
     }
 
     if (hasVariants && !selectedVariant) {
-      toast.error('Vui lòng chọn phân loại hàng (màu sắc / kích cỡ...) trước khi thêm vào giỏ!', {
-        icon: '⚠️',
-      })
+      toast.error('Vui lòng chọn phân loại hàng (màu sắc / kích cỡ...) trước khi thêm vào giỏ!')
       return
     }
 

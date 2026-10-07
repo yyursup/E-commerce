@@ -4,7 +4,7 @@ import com.marketplace.ecommerce.common.CurrentUserInfo;
 import com.marketplace.ecommerce.config.CurrentUser;
 import com.marketplace.ecommerce.product.dto.request.CreateProductRequest;
 import com.marketplace.ecommerce.product.dto.request.UpdateProductRequest;
-import com.marketplace.ecommerce.product.dto.response.ProductResponse;
+import com.marketplace.ecommerce.product.dto.response.SellerProductResponse;
 import com.marketplace.ecommerce.product.service.ProductService;
 import com.marketplace.ecommerce.product.service.QueryProductService;
 import jakarta.validation.Valid;
@@ -24,22 +24,22 @@ public class SellerProductController {
     private final QueryProductService queryProductService;
 
     @PostMapping
-    public ResponseEntity<ProductResponse> createProduct(
+    public ResponseEntity<SellerProductResponse> createProduct(
             @CurrentUser CurrentUserInfo u,
             @Valid @RequestBody CreateProductRequest request
     ) {
-        ProductResponse created = productService.createProduct(u.getAccountId(), request);
+        SellerProductResponse created = productService.createProduct(u.getAccountId(), request);
         return ResponseEntity.ok(created);
     }
 
     @GetMapping("/{productId}")
-    public ProductResponse getProductById(@PathVariable UUID productId) {
+    public SellerProductResponse getProductById(@PathVariable UUID productId) {
         return queryProductService.getProductById(productId);
     }
 
 
     @GetMapping("/by-shop")
-    public List<ProductResponse> getProductsByShop(
+    public List<SellerProductResponse> getProductsByShop(
             @CurrentUser CurrentUserInfo u,
             @RequestParam(required = false) String status
     ) {
@@ -48,12 +48,12 @@ public class SellerProductController {
     }
 
     @PutMapping("/{productId}")
-    public ResponseEntity<ProductResponse> updateProduct(
+    public ResponseEntity<SellerProductResponse> updateProduct(
             @CurrentUser CurrentUserInfo u,
             @PathVariable UUID productId,
             @Valid @RequestBody UpdateProductRequest request
     ) {
-        ProductResponse updated = productService.updateProduct(u.getAccountId(), productId, request);
+        SellerProductResponse updated = productService.updateProduct(u.getAccountId(), productId, request);
         return ResponseEntity.ok(updated);
     }
 
@@ -67,11 +67,11 @@ public class SellerProductController {
     }
 
     @PatchMapping("/{productId}/featured")
-    public ResponseEntity<ProductResponse> toggleFeatured(
+    public ResponseEntity<SellerProductResponse> toggleFeatured(
             @CurrentUser CurrentUserInfo u,
             @PathVariable UUID productId
     ) {
-        ProductResponse response = productService.toggleFeatured(u.getAccountId(), productId);
+        SellerProductResponse response = productService.toggleFeatured(u.getAccountId(), productId);
         return ResponseEntity.ok(response);
     }
 }

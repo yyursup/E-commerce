@@ -1,17 +1,9 @@
 package com.marketplace.ecommerce.platform.service.impl;
 
-import com.marketplace.ecommerce.auth.entity.User;
-import com.marketplace.ecommerce.auth.repository.UserRepository;
-import com.marketplace.ecommerce.order.dto.response.RevenueSummaryResponse;
-import com.marketplace.ecommerce.order.entity.Order;
-import com.marketplace.ecommerce.order.repository.OrderRepository;
-import com.marketplace.ecommerce.order.service.QueryOrderService;
-import com.marketplace.ecommerce.order.valueObjects.OrderStatus;
 import com.marketplace.ecommerce.platform.dto.response.*;
 import com.marketplace.ecommerce.platform.repository.CommissionRepository;
 import com.marketplace.ecommerce.platform.service.CommissionService;
 import com.marketplace.ecommerce.platform.service.CommissionStatisticsService;
-import com.marketplace.ecommerce.shop.entity.Shop;
 import com.marketplace.ecommerce.shop.repository.ShopRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -28,53 +20,6 @@ public class CommissionStatisticsServiceImpl implements CommissionStatisticsServ
     private final CommissionRepository commissionRepository;
     private final ShopRepository shopRepository;
     private final CommissionService commissionService;
-    private final UserRepository userRepository;
-    private final QueryOrderService queryOrderService;
-    private final OrderRepository orderRepository;
-
-    @Override
-    public SellerStatisticsResponse getStatistics(UUID accountId) {
-        User user = userRepository.findByAccountId(accountId)
-                .orElseThrow(() -> new RuntimeException("can not find user"));
-        Shop shop = shopRepository.findByUserId(user.getId())
-                .orElseThrow(() -> new RuntimeException("can not find shop"));
-
-        List<Order> orders = orderRepository.getOrdersByShop(shop);
-
-        long totalOrders = orders.stream()
-                .filter(order -> order.getStatus() != OrderStatus.PENDING_PAYMENT)
-                .count();
-
-        BigDecimal totalCommission = commissionService.getTotalCommissionBySeller(accountId);
-        BigDecimal totalNetIncome = commissionService.getTotalNetIncomeBySeller(accountId);
-
-        Map<OrderStatus, Long> orderCountByStatus = new EnumMap<>(OrderStatus.class);
-        for (OrderStatus status : OrderStatus.values()) {
-            orderCountByStatus.put(status, 0L);
-        }
-
-        for (Order order : orders) {
-            OrderStatus status = order.getStatus();
-            orderCountByStatus.put(status, orderCountByStatus.getOrDefault(status, 0L) + 1);
-        }
-
-        Map<String, Long> orderCountByStatusStr = new LinkedHashMap<>();
-        for (OrderStatus status : OrderStatus.values()) {
-            orderCountByStatusStr.put(status.name(), orderCountByStatus.getOrDefault(status, 0L));
-        }
-
-        RevenueSummaryResponse revenueSummary = queryOrderService.getRevenueSummaryByShop(accountId);
-
-        return SellerStatisticsResponse.builder()
-                .shopName(shop.getName())
-                .totalRevenue(revenueSummary.getRevenue())
-                .estimatedRevenue(revenueSummary.getEstimatedRevenue())
-                .totalOrders(totalOrders)
-                .totalCommission(totalCommission)
-                .totalNetIncome(totalNetIncome)
-                .orderCountByStatus(orderCountByStatusStr)
-                .build();
-    }
 
     @Override
     @Transactional(readOnly = true)

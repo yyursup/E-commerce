@@ -5,22 +5,22 @@ import {
   HiOutlineArrowLeft,
   HiOutlineRefresh,
   HiOutlineCheckCircle,
-  HiOutlineClock,
-  HiOutlineTruck,
-  HiOutlineShieldCheck,
-  HiOutlineXCircle,
 } from 'react-icons/hi'
 import { useThemeStore } from '../../store/useThemeStore'
 import { useAuthStore } from '../../store/useAuthStore'
 import { cn } from '../../lib/cn'
 import toast from 'react-hot-toast'
 import orderService from '../../services/order'
+import returnService from '../../services/returnService'
+import escrowService from '../../services/escrow'
 import OrderStatusBadge from './components/order/OrderStatusBadge'
 import SellerOrderActions from './components/order/SellerOrderActions'
+import SellerReturnSection from './components/order/SellerReturnSection'
 import OrderAddressSection from './components/order/OrderAddressSection'
 import OrderItemsSection from './components/order/OrderItemsSection'
 import OrderSummarySection from './components/order/OrderSummarySection'
 import { formatDate } from './components/order/orderHelpers'
+import ErrorBoundary from '../../components/ErrorBoundary'
 
 export default function ShopOrderDetail() {
   const { orderId } = useParams()
@@ -28,10 +28,11 @@ export default function ShopOrderDetail() {
   const { isAuthenticated } = useAuthStore()
 
   const [order, setOrder] = useState(null)
+  const [returnInfo, setReturnInfo] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
   const [actionLoading, setActionLoading] = useState(false)
   const [ghnOrderCodeInput, setGhnOrderCodeInput] = useState('')
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     if (!isAuthenticated || !orderId) return
@@ -45,6 +46,25 @@ export default function ShopOrderDetail() {
       const orderData = await orderService.getShopOrderById(orderId)
       setOrder(orderData)
       setGhnOrderCodeInput(orderData?.ghnOrderCode || '')
+      let retInfo = orderData?.returnInfo || null
+      if (!retInfo) {
+        try {
+          retInfo = await returnService.getReturnByOrderId(orderId)
+        } catch {
+          retInfo = null
+        }
+      }
+      if (retInfo && !retInfo.settlement) {
+        try {
+          const settlement = await escrowService.getSettlementByOrderId(orderId)
+          if (settlement) {
+            retInfo = { ...retInfo, settlement }
+          }
+        } catch {
+          // Bỏ qua nếu chưa settlement
+        }
+      }
+      setReturnInfo(retInfo)
     } catch (err) {
       console.error('Error fetching order:', err)
       const msg = err?.response?.data?.message || err?.message || 'Không thể tải thông tin đơn hàng'
@@ -176,8 +196,9 @@ export default function ShopOrderDetail() {
   ]
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 pb-12">
-      {/* Navigation & Header */}
+    <ErrorBoundary onReset={fetchOrder}>
+      <div className="max-w-5xl mx-auto space-y-6 pb-12">
+        {/* Navigation & Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <Link
@@ -198,11 +219,26 @@ export default function ShopOrderDetail() {
               'px-3 py-1 rounded-full text-xs font-bold border',
               order.paymentMethod === 'VNPAY'
                 ? 'border-blue-500/30 bg-blue-500/10 text-blue-500'
-                : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                : order.paymentMethod === 'WALLET'
+                  ? 'border-purple-500/30 bg-purple-500/10 text-purple-600 dark:text-purple-400'
+                  : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
             )}>
-              {order.paymentMethod === 'VNPAY' ? 'VNPAY (Trực tuyến)' : 'COD (Tiền mặt khi nhận)'}
+              {order.paymentMethod === 'VNPAY'
+                ? 'VNPAY'
+                : order.paymentMethod === 'WALLET'
+                  ? 'Ví sàn'
+                  : 'COD'}
             </span>
-            <OrderStatusBadge status={order.status} className="px-3 py-1 text-xs" />
+            {(order.status === 'REFUNDED' || (returnInfo || order.returnInfo)?.status === 'COMPLETED') && (
+              <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/25">
+                ↳ Hoàn về Ví số dư khách hàng
+              </span>
+            )}
+            <OrderStatusBadge
+              status={order.status}
+              returnInfo={returnInfo || order.returnInfo}
+              className="px-3 py-1 text-xs"
+            />
           </div>
           <p className={cn('mt-1 text-xs sm:text-sm', isDark ? 'text-slate-400' : 'text-stone-500')}>
             Đặt lúc: <strong>{formatDate(order.createdAt)}</strong> • Khách hàng: <strong>{order.userName || order.shippingName || '-'}</strong>
@@ -256,12 +292,12 @@ export default function ShopOrderDetail() {
                       isCancelled
                         ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20'
                         : isDone
-                        ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/25'
-                        : isCurr
-                        ? 'bg-amber-500 text-white shadow-md shadow-amber-500/25 ring-4 ring-amber-500/20'
-                        : isDark
-                        ? 'bg-slate-800 text-slate-500 border border-slate-700'
-                        : 'bg-stone-200 text-stone-500'
+                          ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/25'
+                          : isCurr
+                            ? 'bg-amber-500 text-white shadow-md shadow-amber-500/25 ring-4 ring-amber-500/20'
+                            : isDark
+                              ? 'bg-slate-800 text-slate-500 border border-slate-700'
+                              : 'bg-stone-200 text-stone-500'
                     )}
                   >
                     {isDone ? (
@@ -277,10 +313,10 @@ export default function ShopOrderDetail() {
                         isCurr
                           ? 'text-amber-500'
                           : isDone
-                          ? isDark
-                            ? 'text-white'
-                            : 'text-stone-900'
-                          : 'text-stone-400'
+                            ? isDark
+                              ? 'text-white'
+                              : 'text-stone-900'
+                            : 'text-stone-400'
                       )}
                     >
                       {step.title}
@@ -307,6 +343,15 @@ export default function ShopOrderDetail() {
           onSetManualGhnCode={handleSetManualGhnCode}
         />
 
+        {/* 1.5 Return & Refund Section (If active return exists) */}
+        {(returnInfo || order?.returnInfo) && (
+          <SellerReturnSection
+            returnInfo={returnInfo || order?.returnInfo}
+            isDark={isDark}
+            onRefresh={fetchOrder}
+          />
+        )}
+
         {/* 2. Customer & Address Details */}
         <OrderAddressSection order={order} isDark={isDark} />
 
@@ -314,8 +359,9 @@ export default function ShopOrderDetail() {
         <OrderItemsSection items={order.items} isDark={isDark} />
 
         {/* 4. Financial Summary & Escrow Protection */}
-        <OrderSummarySection order={order} isDark={isDark} />
+        <OrderSummarySection order={order} isDark={isDark} returnInfo={returnInfo || order?.returnInfo} />
       </motion.div>
     </div>
+    </ErrorBoundary>
   )
 }

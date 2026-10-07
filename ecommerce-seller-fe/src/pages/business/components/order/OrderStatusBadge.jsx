@@ -1,20 +1,20 @@
 import { cn } from '../../../../lib/cn'
-import { getOrderStatusBadge, getOrderStatusLabel } from './orderHelpers'
+import { getOrderEffectiveStatus } from './orderHelpers'
 
-export default function OrderStatusBadge({ status, className }) {
-  const statusBadge = getOrderStatusBadge(status)
-  const StatusIcon = statusBadge.icon
+export default function OrderStatusBadge({ status, returnInfo, className }) {
+  const effective = getOrderEffectiveStatus({ status }, returnInfo)
+  const StatusIcon = effective?.icon
 
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium',
-        statusBadge.color,
+        'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold border',
+        effective?.color,
         className,
       )}
     >
-      <StatusIcon className="h-3 w-3" />
-      {getOrderStatusLabel(status)}
+      {StatusIcon && <StatusIcon className="h-3.5 w-3.5" />}
+      {effective?.label || status}
     </span>
   )
 }

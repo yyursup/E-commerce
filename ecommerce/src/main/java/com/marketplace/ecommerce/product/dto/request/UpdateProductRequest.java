@@ -1,5 +1,7 @@
 package com.marketplace.ecommerce.product.dto.request;
 
+import com.marketplace.ecommerce.product.valueObjects.ConditionGrade;
+import com.marketplace.ecommerce.product.valueObjects.WarrantyType;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
@@ -33,6 +35,20 @@ public class UpdateProductRequest {
     private Integer stockQuantity;
 
     private String status;
+
+    private ConditionGrade conditionGrade;
+
+    private WarrantyType warrantyType;
+
+    private Integer warrantyMonths;
+
+    private Integer batteryHealth;
+
+    private Boolean isRepaired;
+
+    private String repairDetails;
+
+    private String specifications;
 
     @Valid
     private List<ProductImageRequest> images;

@@ -107,7 +107,7 @@ export default function CreateAdminVoucherModal({ isOpen, onClose, onSuccess, is
               </span>
               <div>
                 <h3 className={cn('text-lg font-bold', isDark ? 'text-white' : 'text-stone-900')}>
-                  Tạo Voucher Toàn Sàn (Sàn Tài Trợ)
+                  Tạo Voucher Toàn Sàn
                 </h3>
                 <p className={cn("text-xs", isDark ? "text-slate-400" : "text-stone-500")}>Chi phí chiết khấu/vận chuyển do Sàn chi trả</p>
               </div>

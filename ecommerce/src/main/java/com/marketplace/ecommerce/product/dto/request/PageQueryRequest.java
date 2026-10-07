@@ -1,5 +1,7 @@
 package com.marketplace.ecommerce.product.dto.request;
 
+import com.marketplace.ecommerce.product.valueObjects.ConditionGrade;
+import com.marketplace.ecommerce.product.valueObjects.WarrantyType;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.AllArgsConstructor;
@@ -27,6 +29,10 @@ public class PageQueryRequest {
     private UUID categoryId;
 
     private UUID shopId;
+
+    private ConditionGrade conditionGrade;
+
+    private WarrantyType warrantyType;
 
     private BigDecimal minPrice;
 

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { motion } from 'framer-motion'
@@ -12,7 +12,14 @@ import authService from '../services/auth'
 export default function AdminLogin() {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
   const navigate = useNavigate()
-  const login = useAuthStore((s) => s.login)
+  const { isAuthenticated, user, login } = useAuthStore()
+
+  useEffect(() => {
+    const role = user?.role?.toUpperCase()?.replace(/^ROLE_/, '')
+    if (isAuthenticated && role === 'ADMIN') {
+      navigate('/dashboard', { replace: true })
+    }
+  }, [isAuthenticated, user, navigate])
 
   const {
     register,
@@ -25,14 +32,15 @@ export default function AdminLogin() {
       const res = await authService.login(data)
 
       // Strict Guard: ONLY ROLE_ADMIN ALLOWED
-      if (res.role !== 'ADMIN') {
+      const normalizedRole = res.role?.toUpperCase()?.replace(/^ROLE_/, '')
+      if (normalizedRole !== 'ADMIN') {
         toast.error('Truy cập bị từ chối! Tài khoản của bạn không có đặc quyền Quản trị viên.')
         return
       }
 
       const userPayload = {
         email: res.email,
-        role: res.role,
+        role: normalizedRole,
         accountId: res.accountId,
       }
       login(res.token, userPayload, res.refreshToken)

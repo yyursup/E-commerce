@@ -1,64 +1,23 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
 import {
   HiOutlineShoppingBag,
-  HiOutlineClock,
-  HiOutlineCheckCircle,
-  HiOutlineTruck,
-  HiOutlineXCircle,
   HiOutlineCreditCard,
-  HiOutlineStar,
 } from 'react-icons/hi'
 import { useThemeStore } from '../../store/useThemeStore'
 import { useAuthStore } from '../../store/useAuthStore'
 import { cn } from '../../lib/cn'
 import toast from 'react-hot-toast'
 import orderService from '../../services/order'
+import OrderReportModal from '../../components/OrderReportModal'
+import OrderItemCard from './components/OrderItemCard'
+import {
+  ORDER_STATUSES,
+  formatOrderCurrency,
+  formatOrderDate,
+} from '../../lib/orderStatus'
 
-const ORDER_STATUSES = [
-  { value: '', label: 'Tất cả' },
-  { value: 'PENDING', label: 'Chờ xử lý' },
-  { value: 'CONFIRMED', label: 'Đã xác nhận' },
-  { value: 'PROCESSING', label: 'Đang xử lý' },
-  { value: 'SHIPPING', label: 'Đang giao hàng' },
-  { value: 'SHIPPED', label: 'Đã giao hàng' },
-  { value: 'DELIVERED', label: 'Đã nhận hàng' },
-  { value: 'COMPLETED', label: 'Hoàn thành' },
-  { value: 'CANCELLED', label: 'Đã hủy' },
-  { value: 'REFUNDED', label: 'Đã hoàn tiền' },
-]
-
-const getStatusBadge = (status) => {
-  const statusMap = {
-    PENDING: { color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400', icon: HiOutlineClock },
-    CONFIRMED: { color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400', icon: HiOutlineCheckCircle },
-    PROCESSING: { color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400', icon: HiOutlineShoppingBag },
-    SHIPPING: { color: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400', icon: HiOutlineTruck },
-    SHIPPED: { color: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400', icon: HiOutlineTruck },
-    DELIVERED: { color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400', icon: HiOutlineCheckCircle },
-    COMPLETED: { color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400', icon: HiOutlineCheckCircle },
-    CANCELLED: { color: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400', icon: HiOutlineXCircle },
-    REFUNDED: { color: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400', icon: HiOutlineXCircle },
-  }
-  return statusMap[status] || { color: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400', icon: HiOutlineClock }
-}
-
-const getStatusLabel = (status) => {
-  const statusMap = {
-    PENDING: 'Chờ xử lý',
-    CONFIRMED: 'Đã xác nhận',
-    PROCESSING: 'Đang xử lý',
-    SHIPPING: 'Đang giao hàng',
-    SHIPPED: 'Đã giao hàng',
-    DELIVERED: 'Đã giao hàng thành công',
-    COMPLETED: 'Đã nhận được hàng',
-    CANCELLED: 'Đã hủy',
-    REFUNDED: 'Đã hoàn tiền',
-    PENDING_PAYMENT: 'Chờ thanh toán',
-  }
-  return statusMap[status] || status
-}
+// Statuses where buyer money is held in system escrow
+const ESCROW_HELD_STATUSES = ['CONFIRMED', 'PROCESSING', 'SHIPPING', 'SHIPPED', 'DELIVERED']
 
 export default function MyOrders() {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
@@ -67,11 +26,9 @@ export default function MyOrders() {
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState('')
   const [error, setError] = useState(null)
-  const [walletBalance, setWalletBalance] = useState(0)
+  const [walletBalance] = useState(0)
   const [escrowHeld, setEscrowHeld] = useState(0)
-
-  // Statuses where buyer money is held in system escrow
-  const ESCROW_HELD_STATUSES = ['CONFIRMED', 'PROCESSING', 'SHIPPING', 'SHIPPED', 'DELIVERED']
+  const [reportingOrder, setReportingOrder] = useState(null)
 
   useEffect(() => {
     if (!isAuthenticated) return
@@ -88,14 +45,12 @@ export default function MyOrders() {
       setOrders(ordersData || [])
 
       // Compute escrow-held from orders (only when showing all orders)
-      // buyer wallet.lockedBalance is always 0 — escrow funds go to system ESCROW wallet
       if (!statusFilter) {
-        const held = (ordersData || []).filter(o =>
-          ESCROW_HELD_STATUSES.includes(o.status)
-        ).reduce((sum, o) => sum + (o.total || 0), 0)
+        const held = (ordersData || [])
+          .filter((o) => ESCROW_HELD_STATUSES.includes(o.status))
+          .reduce((sum, o) => sum + (o.total || 0), 0)
         setEscrowHeld(held)
       }
-
     } catch (err) {
       console.error('Error fetching data:', err)
       setError(err?.response?.data?.message || err?.message || 'Không thể tải dữ liệu')
@@ -106,52 +61,36 @@ export default function MyOrders() {
   }
 
   const handleMarkReceived = async (orderId) => {
-    if (!window.confirm("Bạn xác nhận đã nhận được hàng và hài lòng với sản phẩm?")) return;
+    if (!window.confirm('Bạn xác nhận đã nhận được hàng và hài lòng với sản phẩm?')) return
     try {
-      await orderService.markOrderReceived(orderId);
-      toast.success("Đã xác nhận nhận hàng!");
-      fetchData(); // Reload list
+      await orderService.markOrderReceived(orderId)
+      toast.success('Đã xác nhận nhận hàng!')
+      fetchData()
     } catch (error) {
-      console.error(error);
-      toast.error("Có lỗi xảy ra, vui lòng thử lại.");
+      console.error(error)
+      toast.error('Có lỗi xảy ra, vui lòng thử lại.')
     }
   }
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-    }).format(amount)
-  }
-
-  const formatDate = (dateString) => {
-    if (!dateString) return ''
-    return new Date(dateString).toLocaleDateString('vi-VN', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
-  }
+  const canMarkReceived = (order) =>
+    ['DELIVERED'].includes(order.status) &&
+    !order.hasActiveDispute &&
+    (!order.returnInfo || order.returnInfo.status === 'CANCELLED')
 
   if (!isAuthenticated) {
     return (
       <div className={cn('min-h-screen flex items-center justify-center', isDark ? 'bg-slate-950' : 'bg-stone-50')}>
-        <div className="text-center">
-          <p className={cn('text-lg', isDark ? 'text-slate-400' : 'text-stone-600')}>
-            Vui lòng đăng nhập để xem đơn hàng
-          </p>
-        </div>
+        <p className={cn('text-lg', isDark ? 'text-slate-400' : 'text-stone-600')}>
+          Vui lòng đăng nhập để xem đơn hàng
+        </p>
       </div>
     )
   }
 
-  const canMarkReceived = (status) => ['DELIVERED'].includes(status);
-
   return (
     <div className={cn('min-h-screen px-4 py-8 sm:px-6 lg:px-8', isDark ? 'bg-slate-950' : 'bg-stone-50')}>
       <div className="mx-auto max-w-7xl">
+        {/* Header & Escrow Summary */}
         <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
             <h1 className={cn('text-3xl font-bold', isDark ? 'text-white' : 'text-stone-900')}>
@@ -163,38 +102,40 @@ export default function MyOrders() {
           </div>
 
           {/* Escrow Held Card */}
-          <div className={cn(
-            "flex items-center gap-4 px-6 py-4 rounded-xl shadow-sm border",
-            isDark ? "bg-slate-900 border-slate-700" : "bg-white border-stone-200"
-          )}>
-            <div className="p-3 rounded-full bg-amber-500/10 text-amber-500">
+          <div
+            className={cn(
+              'flex items-center gap-4 px-5 py-4 rounded-2xl shadow-sm border',
+              isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-stone-200',
+            )}
+          >
+            <div className="p-3 rounded-2xl bg-amber-500/10 text-amber-500 border border-amber-500/20">
               <HiOutlineCreditCard className="w-6 h-6" />
             </div>
             <div>
-              <p className={cn("text-xs font-medium uppercase tracking-wider", isDark ? "text-slate-400" : "text-stone-500")}>
-                Đang trong Escrow
+              <p className={cn('text-[11px] font-bold uppercase tracking-wider', isDark ? 'text-slate-400' : 'text-stone-500')}>
+                Ký Quỹ Đang Bảo Vệ (Escrow)
               </p>
-              <p className={cn("text-xl font-bold", isDark ? "text-white" : "text-stone-900")}>
-                {formatCurrency(statusFilter === '' ? escrowHeld : walletBalance)}
+              <p className={cn('text-xl font-bold font-mono text-amber-600 dark:text-amber-400', isDark ? 'text-amber-400' : 'text-amber-600')}>
+                {formatOrderCurrency(statusFilter === '' ? escrowHeld : walletBalance)}
               </p>
             </div>
           </div>
         </div>
 
-        {/* Filter */}
-        <div className="mb-6 overflow-x-auto pb-2">
+        {/* Status Filter Tabs */}
+        <div className="mb-6 overflow-x-auto pb-2 custom-scrollbar">
           <div className="flex gap-2 min-w-max">
             {ORDER_STATUSES.map((status) => (
               <button
                 key={status.value}
                 onClick={() => setStatusFilter(status.value)}
                 className={cn(
-                  'rounded-full px-4 py-2 text-sm font-medium transition-colors border',
+                  'rounded-full px-4 py-2 text-xs font-bold transition-all duration-150 border',
                   statusFilter === status.value
-                    ? 'bg-amber-500 text-white border-amber-500'
+                    ? 'bg-amber-500 text-white border-amber-500 shadow-sm'
                     : isDark
-                      ? 'border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700'
-                      : 'border-stone-200 bg-white text-stone-600 hover:bg-stone-50'
+                      ? 'border-slate-800 bg-slate-800/60 text-slate-300 hover:bg-slate-800 hover:border-slate-700'
+                      : 'border-stone-200 bg-white text-stone-600 hover:bg-stone-50 hover:border-stone-300',
                 )}
               >
                 {status.label}
@@ -203,139 +144,60 @@ export default function MyOrders() {
           </div>
         </div>
 
+        {/* Loading State */}
         {loading && (
-          <div className="flex items-center justify-center py-12">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent"></div>
+          <div className="flex items-center justify-center py-16">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
           </div>
         )}
 
+        {/* Error State */}
         {error && !loading && (
-          <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-center dark:border-red-800 dark:bg-red-900/20">
-            <p className={cn('text-sm', isDark ? 'text-red-400' : 'text-red-600')}>{error}</p>
+          <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center dark:border-red-900/40 dark:bg-red-950/20">
+            <p className={cn('text-sm font-medium', isDark ? 'text-red-400' : 'text-red-600')}>{error}</p>
           </div>
         )}
 
+        {/* Empty State */}
         {!loading && !error && orders.length === 0 && (
-          <div className={cn(
-            'rounded-xl border p-12 text-center',
-            isDark ? 'border-slate-700 bg-slate-900' : 'border-stone-200 bg-white'
-          )}>
-            <HiOutlineShoppingBag className={cn('mx-auto h-12 w-12', isDark ? 'text-slate-600' : 'text-stone-400')} />
-            <p className={cn('mt-4 text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
-              Bạn chưa có đơn hàng nào
+          <div
+            className={cn(
+              'rounded-3xl border p-12 text-center',
+              isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white',
+            )}
+          >
+            <HiOutlineShoppingBag className={cn('mx-auto h-12 w-12', isDark ? 'text-slate-600' : 'text-stone-300')} />
+            <p className={cn('mt-4 text-sm font-semibold', isDark ? 'text-slate-400' : 'text-stone-600')}>
+              Bạn chưa có đơn hàng nào trong mục này
             </p>
           </div>
         )}
 
+        {/* Orders List */}
         {!loading && !error && orders.length > 0 && (
           <div className="space-y-4">
-            {orders.map((order) => {
-              const statusBadge = getStatusBadge(order.status)
-              const StatusIcon = statusBadge.icon
-              const thumbnailImage = order.items?.[0]?.productImageUrl
-
-              return (
-                <motion.div
-                  key={order.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className={cn(
-                    'rounded-xl border p-6 transition-shadow hover:shadow-lg',
-                    isDark ? 'border-slate-700 bg-slate-900' : 'border-stone-200 bg-white',
-                  )}
-                >
-                  <Link to={`/orders/${order.id}`}>
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="flex gap-4">
-                        {thumbnailImage && (
-                          <img
-                            src={thumbnailImage}
-                            alt={order.items[0]?.productName}
-                            className="h-20 w-20 rounded-lg object-cover bg-stone-100 dark:bg-slate-800"
-                            onError={(e) => { e.target.src = '/product-placeholder.svg' }}
-                          />
-                        )}
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <h3 className={cn('font-semibold', isDark ? 'text-white' : 'text-stone-900')}>
-                              {order.orderNumber}
-                            </h3>
-                            <span
-                              className={cn(
-                                'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
-                                statusBadge.color,
-                              )}
-                            >
-                              <StatusIcon className="h-3 w-3" />
-                              {getStatusLabel(order.status)}
-                            </span>
-                            <span className={cn(
-                              "text-[10px] px-2 py-0.5 rounded font-medium",
-                              order.paymentMethod === 'VNPAY'
-                                ? "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
-                                : "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
-                            )}>
-                              {order.paymentMethod === 'VNPAY' ? 'VNPAY' : 'COD'}
-                            </span>
-                          </div>
-                          <p className={cn('mt-1 text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
-                            {order.shopName}
-                          </p>
-                          {order.items?.[0] && (order.items[0].variantColor || order.items[0].variantSize) && (
-                            <p className="text-xs text-stone-500 dark:text-slate-400 mt-0.5">
-                              Phân loại: {[order.items[0].variantColor, order.items[0].variantSize].filter(Boolean).join(' - ')}
-                              {order.items.length > 1 ? ` (+${order.items.length - 1} sp)` : ''}
-                            </p>
-                          )}
-                          <p className={cn('mt-1 text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
-                            {order.items?.length || 0} sản phẩm
-                          </p>
-                          <p className={cn('mt-1 text-xs', isDark ? 'text-slate-500' : 'text-stone-500')}>
-                            {formatDate(order.createdAt)}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        {Number(order.shippingFee) > 0 && (
-                          <p className="text-xs text-stone-500 dark:text-slate-400 mb-0.5">
-                            Phí giao hàng: {formatCurrency(order.shippingFee)}
-                          </p>
-                        )}
-                        <p className={cn('text-lg font-bold', isDark ? 'text-white' : 'text-stone-900')}>
-                          {formatCurrency(order.total)}
-                        </p>
-
-                        <div className="flex flex-col items-end gap-2 mt-2">
-                          {canMarkReceived(order.status) && (
-                            <button
-                              onClick={(e) => {
-                                e.preventDefault(); // Prevent Link navigation
-                                handleMarkReceived(order.id);
-                              }}
-                              className="inline-block rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-600"
-                            >
-                              Đã nhận được hàng
-                            </button>
-                          )}
-                          {['DELIVERED', 'COMPLETED'].includes(order.status) && (
-                            <Link
-                              to={`/orders/${order.id}`}
-                              onClick={(e) => e.stopPropagation()}
-                              className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-500 transition hover:bg-amber-500/20"
-                            >
-                              <HiOutlineStar className="h-3.5 w-3.5" />
-                              Viết đánh giá
-                            </Link>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
-                </motion.div>
-              )
-            })}
+            {orders.map((order) => (
+              <OrderItemCard
+                key={order.id}
+                order={order}
+                isDark={isDark}
+                formatCurrency={formatOrderCurrency}
+                formatDate={formatOrderDate}
+                canMarkReceived={canMarkReceived}
+                onMarkReceived={handleMarkReceived}
+                onReport={(targetOrder) => setReportingOrder(targetOrder)}
+              />
+            ))}
           </div>
         )}
+
+        {/* Order Report / Dispute Modal */}
+        <OrderReportModal
+          isOpen={reportingOrder !== null}
+          onClose={() => setReportingOrder(null)}
+          order={reportingOrder}
+          onSuccess={fetchData}
+        />
       </div>
     </div>
   )

@@ -34,8 +34,8 @@ public class Escrow {
     @JoinColumn(name = "buyer_wallet_id", nullable = false)
     private Wallet buyerWallet;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "seller_wallet_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "seller_wallet_id")
     private Wallet sellerWallet;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

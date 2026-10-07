@@ -34,6 +34,10 @@ public class RegisterSellerResponse {
     private String bankAccountNumber;
     private String bankName;
 
+    // Ký quỹ bảo chứng
+    private Boolean isEscrowParticipated;
+    private java.math.BigDecimal initialDepositAmount;
+
     public static RegisterSellerResponse from(Seller s) {
         if (s == null) return null;
         return RegisterSellerResponse.builder()
@@ -53,6 +57,8 @@ public class RegisterSellerResponse {
                 .bankAccountName(s.getBankAccountName())
                 .bankAccountNumber(s.getBankAccountNumber())
                 .bankName(s.getBankName())
+                .isEscrowParticipated(s.getIsEscrowParticipated())
+                .initialDepositAmount(s.getInitialDepositAmount())
                 .build();
     }
 }

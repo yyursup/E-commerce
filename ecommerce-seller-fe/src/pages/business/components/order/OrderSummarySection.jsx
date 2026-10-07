@@ -11,15 +11,18 @@ import {
 
 const ESCROW_HELD_STATUSES = ['CONFIRMED', 'PROCESSING', 'SHIPPING', 'SHIPPED']
 
-export default function OrderSummarySection({ order, isDark }) {
-  const showEscrowHeld = ESCROW_HELD_STATUSES.includes(order.status)
-  const showEscrowDelivered = order.status === 'DELIVERED'
-  const showEscrowCompleted = order.status === 'COMPLETED'
+export default function OrderSummarySection({ order, isDark, returnInfo }) {
+  const showEscrowHeld = ESCROW_HELD_STATUSES.includes(order?.status)
+  const showEscrowDelivered = order?.status === 'DELIVERED'
+  const showEscrowCompleted = order?.status === 'COMPLETED'
+  const isRefunded =
+    order?.status === 'REFUNDED' ||
+    (returnInfo || order?.returnInfo)?.status === 'COMPLETED'
 
-  const subtotal = Number(order.subtotal || 0)
-  const shopDiscount = Number(order.shopDiscountAmount || 0)
-  const platformDiscount = Number(order.platformDiscountAmount || 0)
-  const platformCommission = Number(order.platformCommission || 0)
+  const subtotal = Number(order?.subtotal || 0)
+  const shopDiscount = Number(order?.shopDiscountAmount || 0)
+  const platformDiscount = Number(order?.platformDiscountAmount || 0)
+  const platformCommission = Number(order?.platformCommission || 0)
   
   // Tỷ lệ hoa hồng (%)
   const commissionRate = order.commissionRate != null 
@@ -53,7 +56,7 @@ export default function OrderSummarySection({ order, isDark }) {
             <span>Phí vận chuyển (GHN Express)</span>
           </span>
           <span className={cn('font-semibold', isDark ? 'text-white' : 'text-stone-900')}>
-            {formatCurrency(order.shippingFee)}
+            {formatCurrency(order?.shippingFee || 0)}
           </span>
         </div>
 
@@ -108,14 +111,27 @@ export default function OrderSummarySection({ order, isDark }) {
           <span className={isDark ? 'text-slate-400' : 'text-stone-600'}>
             Phương thức thanh toán
           </span>
-          <span className={cn(
-            'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-xs font-bold border',
-            order.paymentMethod === 'VNPAY'
-              ? 'border-blue-500/30 bg-blue-500/10 text-blue-500'
-              : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-          )}>
-            {order.paymentMethod === 'VNPAY' ? 'VNPAY (Trực tuyến)' : 'COD (Tiền mặt khi nhận)'}
-          </span>
+          <div className="text-right space-y-1">
+            <span className={cn(
+              'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-xs font-bold border',
+              order.paymentMethod === 'VNPAY'
+                ? 'border-blue-500/30 bg-blue-500/10 text-blue-500'
+                : order.paymentMethod === 'WALLET'
+                  ? 'border-purple-500/30 bg-purple-500/10 text-purple-600 dark:text-purple-400'
+                  : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+            )}>
+              {order.paymentMethod === 'VNPAY'
+                ? 'VNPAY (Trực tuyến)'
+                : order.paymentMethod === 'WALLET'
+                  ? 'Ví sàn (Ký quỹ)'
+                  : 'COD (Tiền mặt khi nhận)'}
+            </span>
+            {isRefunded && (
+              <span className="block text-[11px] font-semibold text-blue-600 dark:text-blue-400">
+                ↳ Hoàn tiền: Ví số dư người mua
+              </span>
+            )}
+          </div>
         </div>
 
         {/* 7. Grand Total (Khách thanh toán) */}
@@ -127,7 +143,7 @@ export default function OrderSummarySection({ order, isDark }) {
             <span className="text-xs text-stone-400">Đã bao gồm VAT & phí giao hàng GHN</span>
           </div>
           <span className="text-xl sm:text-2xl font-black text-amber-500">
-            {formatCurrency(order.total)}
+            {formatCurrency(order?.total || 0)}
           </span>
         </div>
 
@@ -135,31 +151,58 @@ export default function OrderSummarySection({ order, isDark }) {
         <div
           className={cn(
             'p-4 rounded-2xl border flex items-center justify-between',
-            isDark ? 'border-amber-500/30 bg-amber-500/10' : 'border-amber-200 bg-amber-50/70'
+            isRefunded
+              ? (isDark ? 'border-slate-700 bg-slate-800/40' : 'border-stone-200 bg-stone-100/70')
+              : (isDark ? 'border-amber-500/30 bg-amber-500/10' : 'border-amber-200 bg-amber-50/70')
           )}
         >
           <div>
-            <p className={cn('text-xs font-bold uppercase tracking-wider', isDark ? 'text-amber-400' : 'text-amber-800')}>
-              Thực nhận dự kiến của Shop
+            <p className={cn('text-xs font-bold uppercase tracking-wider', isRefunded ? 'text-stone-500 dark:text-slate-400' : isDark ? 'text-amber-400' : 'text-amber-800')}>
+              {isRefunded ? 'Thực nhận của Shop (Đã hoàn tiền)' : 'Thực nhận dự kiến của Shop'}
             </p>
             <p className="text-[11px] text-stone-400 mt-0.5">
-              = Tạm tính - Voucher Shop - Hoa hồng sàn {commissionRate != null ? `(${commissionRate}%)` : ''} (Voucher Sàn không trừ tiền của Shop)
+              {isRefunded
+                ? 'Đơn hàng đã hoàn tất thủ tục hoàn tiền cho Người mua'
+                : `= Tạm tính - Voucher Shop - Hoa hồng sàn ${commissionRate != null ? `(${commissionRate}%)` : ''} (Voucher Sàn không trừ tiền của Shop)`}
             </p>
           </div>
-          <span className="text-lg font-black text-amber-600 dark:text-amber-400">
-            {formatCurrency(shopNetIncome)}
+          <span className={cn('text-lg font-black', isRefunded ? 'text-stone-500 line-through' : 'text-amber-600 dark:text-amber-400')}>
+            {isRefunded ? formatCurrency(0) : formatCurrency(shopNetIncome)}
           </span>
         </div>
       </div>
 
       {/* Escrow Status for Seller */}
-      {(showEscrowHeld || showEscrowDelivered || showEscrowCompleted) && (
+      {(showEscrowHeld || showEscrowDelivered || showEscrowCompleted || isRefunded) && (
         <div className="border-t border-stone-200 dark:border-slate-800 pt-4">
           <h4 className={cn('text-xs font-bold uppercase tracking-wider mb-3 text-stone-400')}>
             Bảo Đảm Ký Quỹ Escrow (An Toàn Dòng Tiền)
           </h4>
 
-          {showEscrowHeld && (
+          {isRefunded && (
+            <div
+              className={cn(
+                'flex items-start gap-3 rounded-2xl p-4 border',
+                isDark ? 'bg-blue-500/10 border-blue-500/25' : 'bg-blue-50 border-blue-200'
+              )}
+            >
+              <div className="mt-0.5 p-2 rounded-xl bg-blue-500/20 shrink-0">
+                <HiOutlineShieldCheck className="h-5 w-5 text-blue-500" />
+              </div>
+              <div className="space-y-1">
+                <p className={cn('text-sm font-bold', isDark ? 'text-blue-400' : 'text-blue-900')}>
+                  Đơn hàng đã hoàn tiền về Ví người mua
+                </p>
+                <p className={cn('text-xs leading-relaxed', isDark ? 'text-slate-300' : 'text-stone-600')}>
+                  {order.paymentMethod === 'COD'
+                    ? 'Đơn hàng ban đầu thanh toán bằng COD (tiền mặt khi nhận). Hệ thống Ký quỹ Escrow đã hoàn trả 100% số tiền vào Ví số dư tài khoản của Người mua (hệ thống trích từ quỹ Escrow COD, Shop không cần hoàn tiền mặt trực tiếp cho khách).'
+                    : 'Toàn bộ số tiền thanh toán đã được hoàn trả từ Ký quỹ Escrow về Ví số dư tài khoản của Người mua.'}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {!isRefunded && showEscrowHeld && (
             <div
               className={cn(
                 'flex items-start gap-3 rounded-2xl p-4 border',
@@ -180,7 +223,7 @@ export default function OrderSummarySection({ order, isDark }) {
             </div>
           )}
 
-          {showEscrowDelivered && (
+          {!isRefunded && showEscrowDelivered && (
             <div
               className={cn(
                 'flex items-start gap-3 rounded-2xl p-4 border',
@@ -201,7 +244,7 @@ export default function OrderSummarySection({ order, isDark }) {
             </div>
           )}
 
-          {showEscrowCompleted && (
+          {!isRefunded && showEscrowCompleted && (
             <div
               className={cn(
                 'flex items-start gap-3 rounded-2xl p-4 border',

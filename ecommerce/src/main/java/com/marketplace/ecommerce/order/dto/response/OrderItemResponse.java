@@ -2,6 +2,8 @@ package com.marketplace.ecommerce.order.dto.response;
 
 import com.marketplace.ecommerce.order.entity.OrderItem;
 import com.marketplace.ecommerce.product.entity.ProductImage;
+import com.marketplace.ecommerce.product.valueObjects.ConditionGrade;
+import com.marketplace.ecommerce.product.valueObjects.WarrantyType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -28,6 +30,9 @@ public class OrderItemResponse {
     private UUID variantId;
     private String variantColor;
     private String variantSize;
+    private ConditionGrade conditionGrade;
+    private WarrantyType warrantyType;
+    private Integer warrantyMonths;
     private boolean isReviewed;
 
     public static OrderItemResponse fromOrderItem(OrderItem orderItem) {
@@ -57,6 +62,9 @@ public class OrderItemResponse {
                 .variantId(orderItem.getVariantId())
                 .variantColor(orderItem.getVariantColor())
                 .variantSize(orderItem.getVariantSize())
+                .conditionGrade(orderItem.getProduct() != null ? orderItem.getProduct().getConditionGrade() : null)
+                .warrantyType(orderItem.getProduct() != null ? orderItem.getProduct().getWarrantyType() : null)
+                .warrantyMonths(orderItem.getProduct() != null ? orderItem.getProduct().getWarrantyMonths() : null)
                 .build();
     }
 }

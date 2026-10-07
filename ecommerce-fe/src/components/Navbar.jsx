@@ -31,6 +31,7 @@ import AdvancedSearchBar from './AdvancedSearchBar'
 
 const navLinks = [
   { to: '/', label: 'Trang chủ' },
+  { to: '/live', label: 'Livestream', isLive: true },
   { to: '/products', label: 'Tất cả sản phẩm' },
   { to: '/deals', label: 'Khuyến mãi & Voucher' },
   { to: '/marketplace', label: 'Khám phá Gian hàng' },
@@ -124,9 +125,10 @@ export default function Navbar() {
             href="http://localhost:3001"
             target="_blank"
             rel="noreferrer"
-            className="font-semibold text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1"
+            className="font-semibold text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1.5"
           >
-            🏪 Kênh Người Bán
+            <HiOutlineShoppingBag className="h-3.5 w-3.5" />
+            <span>Kênh Người Bán</span>
           </a>
           <span className="hidden sm:inline text-stone-300 dark:text-slate-700">|</span>
           <a
@@ -168,12 +170,12 @@ export default function Navbar() {
         {/* Desktop nav links moved to secondary bar below */}
 
         {/* Right: theme + dropdown + mobile menu */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {/* Notification Button */}
           <Link
             to="/profile?tab=notifications"
             className={cn(
-              'group relative flex h-9 w-9 items-center justify-center rounded-xl transition-colors',
+              'group relative hidden sm:flex h-9 w-9 items-center justify-center rounded-xl transition-colors',
               isDark
                 ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-amber-400'
                 : 'bg-stone-100 text-stone-600 hover:bg-stone-200 hover:text-amber-500',
@@ -192,7 +194,7 @@ export default function Navbar() {
           <Link
             to="/profile?tab=wishlist"
             className={cn(
-              'group relative flex h-9 w-9 items-center justify-center rounded-xl transition-colors',
+              'group relative hidden sm:flex h-9 w-9 items-center justify-center rounded-xl transition-colors',
               isDark
                 ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-rose-400'
                 : 'bg-stone-100 text-stone-600 hover:bg-stone-200 hover:text-rose-500',
@@ -232,7 +234,7 @@ export default function Navbar() {
             onClick={() => openInbox()}
             title="Hộp thư & Trò chuyện"
             className={cn(
-              'group relative flex h-9 w-9 items-center justify-center rounded-xl transition-colors',
+              'group relative hidden sm:flex h-9 w-9 items-center justify-center rounded-xl transition-colors',
               isDark
                 ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white'
                 : 'bg-stone-100 text-stone-600 hover:bg-stone-200 hover:text-stone-900',
@@ -251,7 +253,7 @@ export default function Navbar() {
             onClick={toggleTheme}
             aria-label="Toggle theme"
             className={cn(
-              'relative flex h-8 w-14 shrink-0 items-center rounded-full transition-colors',
+              'relative hidden sm:flex h-8 w-14 shrink-0 items-center rounded-full transition-colors',
               isDark
                 ? 'bg-slate-700'
                 : 'bg-stone-200',
@@ -488,15 +490,20 @@ export default function Navbar() {
           isDark ? "border-slate-800 bg-slate-900/90" : "border-stone-100 bg-white"
       )}>
         <div className="mx-auto flex h-10 w-full max-w-7xl items-center gap-6 px-4 sm:px-6 lg:px-8">
-          {navLinks.map(({ to, label }) => (
+          {navLinks.map(({ to, label, isLive }) => (
             <Link
               key={to}
               to={to}
               className={cn(
-                'text-sm font-medium transition-colors hover:text-amber-500',
-                isDark ? 'text-slate-300' : 'text-stone-600'
+                'text-sm font-medium transition-colors flex items-center gap-1.5',
+                isLive
+                  ? 'text-rose-500 font-bold hover:text-rose-600'
+                  : isDark
+                  ? 'text-slate-300 hover:text-amber-500'
+                  : 'text-stone-600 hover:text-amber-500'
               )}
             >
+              {isLive && <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>}
               {label}
             </Link>
           ))}
@@ -538,21 +545,70 @@ export default function Navbar() {
                 />
                 <HiOutlineSearch className="absolute left-3.5 h-4 w-4 text-stone-400 dark:text-slate-400" />
               </form>
-              {navLinks.map(({ to, label }) => (
+              {navLinks.map(({ to, label, isLive }) => (
                 <Link
                   key={to}
                   to={to}
                   onClick={() => setMobileOpen(false)}
                   className={cn(
-                    'rounded-lg px-4 py-3 text-sm font-medium',
-                    isDark
+                    'rounded-lg px-4 py-3 text-sm font-medium flex items-center gap-2',
+                    isLive
+                      ? 'text-rose-500 font-bold'
+                      : isDark
                       ? 'text-slate-300 hover:bg-slate-800'
                       : 'text-stone-600 hover:bg-stone-50',
                   )}
                 >
+                  {isLive && <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>}
                   {label}
                 </Link>
               ))}
+              <div className="my-2 border-t border-stone-200 dark:border-slate-700" />
+
+              {/* Chat / Support in mobile drawer */}
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileOpen(false)
+                  openInbox()
+                }}
+                className={cn(
+                  'flex w-full items-center justify-between rounded-lg px-4 py-3 text-left text-sm font-medium transition-colors',
+                  isDark ? 'text-slate-300 hover:bg-slate-800' : 'text-stone-700 hover:bg-stone-50'
+                )}
+              >
+                <span className="flex items-center gap-2">
+                  <HiOutlineChat className="h-4 w-4 text-amber-500" />
+                  Tin nhắn & Hỗ trợ
+                </span>
+                {unreadTotal > 0 && (
+                  <span className="rounded-full bg-rose-500 px-2 py-0.5 text-[10px] font-bold text-white">
+                    {unreadTotal > 99 ? '99+' : unreadTotal}
+                  </span>
+                )}
+              </button>
+
+              {/* Theme toggle in mobile drawer */}
+              <div className="flex items-center justify-between rounded-lg px-4 py-3 text-sm font-medium">
+                <span className={cn(isDark ? 'text-slate-300' : 'text-stone-700')}>Giao diện tối</span>
+                <button
+                  onClick={toggleTheme}
+                  aria-label="Toggle theme"
+                  className={cn(
+                    'relative flex h-7 w-12 shrink-0 items-center rounded-full transition-colors',
+                    isDark ? 'bg-slate-700' : 'bg-stone-200',
+                  )}
+                >
+                  <motion.div
+                    className="absolute left-1 h-5 w-5 rounded-full bg-amber-500 shadow-md"
+                    animate={{ x: isDark ? 20 : 0 }}
+                    transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                  />
+                  <HiOutlineSun className={cn('absolute left-1.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5', !isDark ? 'text-amber-600' : 'text-slate-500')} />
+                  <HiOutlineMoon className={cn('absolute right-1.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5', isDark ? 'text-amber-400' : 'text-stone-400')} />
+                </button>
+              </div>
+
               <div className="my-2 border-t border-stone-200 dark:border-slate-700" />
 
               {!isAuthenticated ? (
@@ -588,9 +644,10 @@ export default function Navbar() {
                     target="_blank"
                     rel="noreferrer"
                     onClick={() => setMobileOpen(false)}
-                    className="rounded-lg px-4 py-3 text-left text-sm font-semibold text-amber-600 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-slate-800"
+                    className="rounded-lg px-4 py-3 text-left text-sm font-semibold text-amber-600 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-slate-800 flex items-center gap-2"
                   >
-                    🏪 Kênh Người Bán (Seller Centre)
+                    <HiOutlineShoppingBag className="h-4 w-4" />
+                    <span>Kênh Người Bán (Seller Centre)</span>
                   </a>
                   <Link
                     to="/my-orders"

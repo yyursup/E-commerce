@@ -106,7 +106,7 @@ export default function Footer() {
               </span>
             </Link>
             <p className="mt-4 text-sm leading-relaxed text-slate-400">
-              Sàn thương mại điện tử đa ngành hàng hàng đầu. Nền tảng kết nối hàng triệu người tiêu dùng và nhà bán hàng uy tín, ứng dụng AI gợi ý thông minh và công nghệ ký quỹ Escrow bảo vệ tài chính an toàn tuyệt đối.
+              Kênh quản trị nhà bán hàng chuyên biệt về thiết bị điện tử & đồ công nghệ. Nền tảng kết nối hàng triệu người tiêu dùng, hỗ trợ đăng bán máy mới chính hãng và máy cũ Like New kiểm định, ứng dụng công nghệ ký quỹ Escrow an toàn.
             </p>
             <div className="mt-6 space-y-2.5 text-sm text-slate-400">
               <div className="flex items-center gap-3">

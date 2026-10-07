@@ -11,7 +11,16 @@ const REFRESH_TOKEN_KEY = 'refreshToken'
  * @returns {string | null} Access token for API/WebSocket auth, or null if not set.
  */
 export function getAccessToken() {
-  return localStorage.getItem(TOKEN_KEY) || localStorage.getItem(ACCESS_TOKEN_KEY) || null
+  const direct = localStorage.getItem(TOKEN_KEY) || localStorage.getItem(ACCESS_TOKEN_KEY)
+  if (direct) return direct
+  try {
+    const raw = localStorage.getItem('auth-storage')
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      return parsed?.state?.token || null
+    }
+  } catch (e) {}
+  return null
 }
 
 /**
@@ -30,7 +39,16 @@ export function setAccessToken(token) {
  * @returns {string | null} Refresh token, or null if not set.
  */
 export function getRefreshToken() {
-  return localStorage.getItem(REFRESH_TOKEN_KEY) || null
+  const direct = localStorage.getItem(REFRESH_TOKEN_KEY)
+  if (direct) return direct
+  try {
+    const raw = localStorage.getItem('auth-storage')
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      return parsed?.state?.refreshToken || null
+    }
+  } catch (e) {}
+  return null
 }
 
 /**
@@ -45,10 +63,18 @@ export function setRefreshToken(refreshToken) {
 }
 
 /**
- * Remove stored token(s).
+ * Remove stored token(s) and auth storage to prevent stale login states.
  */
 export function clearAccessToken() {
   localStorage.removeItem(TOKEN_KEY)
   localStorage.removeItem(ACCESS_TOKEN_KEY)
   localStorage.removeItem(REFRESH_TOKEN_KEY)
+  localStorage.removeItem('auth-storage')
+  try {
+    sessionStorage.clear()
+  } catch (e) {}
+}
+
+export function clearAuthStorage() {
+  clearAccessToken()
 }

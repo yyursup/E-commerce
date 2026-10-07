@@ -14,7 +14,5 @@ public interface CommissionStatisticsService {
 
     List<TopSellerCommissionResponse> getTopSellers(int limit);
 
-    SellerStatisticsResponse getStatistics(UUID accountId);
-
     List<CommissionByCategoryResponse> getByCategory();
 }

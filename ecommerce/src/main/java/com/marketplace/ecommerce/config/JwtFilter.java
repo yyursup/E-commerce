@@ -3,6 +3,7 @@ package com.marketplace.ecommerce.config;
 import com.marketplace.ecommerce.auth.entity.Account;
 import com.marketplace.ecommerce.auth.service.TokenService;
 import com.marketplace.ecommerce.common.CurrentUserInfo;
+import com.marketplace.ecommerce.common.exception.InvalidCredentialsException;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -33,6 +34,7 @@ public class JwtFilter extends OncePerRequestFilter {
             "/static/**",
             "/uploads/**",
             "/api/v1/auth/login",
+            "/api/v1/auth/refresh-token",
             "/api/v1/payment/vnpay/**",
             "/payments/vnpay/callback",
             "/api/v1/product",
@@ -55,7 +57,12 @@ public class JwtFilter extends OncePerRequestFilter {
             "/api/v1/ws-chat",
             "/api/v1/ws-chat/**",
             "/ws/chat",
-            "/ws/chat/**"
+            "/ws/chat/**",
+            "/api/v1/livestreams/active",
+            "/api/v1/livestreams/*",
+            "/api/v1/livestreams/*/join",
+            "/api/v1/livestreams/*/like",
+            "/api/v1/vouchers"
     );
 
     public JwtFilter(
@@ -100,7 +107,7 @@ public class JwtFilter extends OncePerRequestFilter {
                 filterChain.doFilter(request, response);
             } else {
                 resolver.resolveException(request, response, null,
-                        new RuntimeException("Missing Authorization Bearer token"));
+                        new InvalidCredentialsException("Missing Authorization Bearer token"));
             }
             return;
         }
@@ -132,7 +139,7 @@ public class JwtFilter extends OncePerRequestFilter {
                 filterChain.doFilter(request, response);
             } else {
                 resolver.resolveException(request, response, null,
-                        new RuntimeException("Token expired"));
+                        new InvalidCredentialsException("Token expired"));
             }
 
         } catch (Exception ex) {
@@ -140,7 +147,7 @@ public class JwtFilter extends OncePerRequestFilter {
                 filterChain.doFilter(request, response);
             } else {
                 resolver.resolveException(request, response, null,
-                        new RuntimeException("Invalid token"));
+                        new InvalidCredentialsException("Invalid token"));
             }
         }
     }

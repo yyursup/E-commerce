@@ -24,6 +24,14 @@ import com.marketplace.ecommerce.review.valueObjects.ReviewStatus;
 import com.marketplace.ecommerce.chat.repository.ChatThreadRepository;
 import com.marketplace.ecommerce.chat.entity.ChatThread;
 
+import com.marketplace.ecommerce.auth.repository.UserRepository;
+import com.marketplace.ecommerce.request.entity.Report;
+import com.marketplace.ecommerce.request.repository.ReportRepository;
+import com.marketplace.ecommerce.request.valueObjects.TargetType;
+import com.marketplace.ecommerce.shop.dto.response.ShopViolationResponse;
+import com.marketplace.ecommerce.product.entity.Product;
+
+import com.marketplace.ecommerce.order.repository.OrderRepository;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -37,9 +45,16 @@ public class ShopServiceImpl implements ShopService {
     private final ShopFollowerRepository shopFollowerRepository;
     private final ReviewRepository reviewRepository;
     private final ChatThreadRepository chatThreadRepository;
+    private final UserRepository userRepository;
+    private final ReportRepository reportRepository;
+    private final OrderRepository orderRepository;
 
     @Override
     public Shop createShop(User ownerUser, String shopName, Request req, Seller sellerDetail) {
+
+        boolean requiresDeposit = Boolean.TRUE.equals(sellerDetail.getIsEscrowParticipated())
+                && sellerDetail.getInitialDepositAmount() != null
+                && sellerDetail.getInitialDepositAmount().compareTo(java.math.BigDecimal.ZERO) > 0;
 
         Shop shop = Shop.builder()
                 .user(ownerUser)
@@ -61,7 +76,8 @@ public class ShopServiceImpl implements ShopService {
                 .businessName(sellerDetail.getBusinessName())
                 .businessAddress(sellerDetail.getBusinessAddress())
                 .businessLicenseUrl(sellerDetail.getBusinessLicenseUrl())
-                .status(ShopStatus.ACTIVE)
+                .status(requiresDeposit ? ShopStatus.PENDING_DEPOSIT : ShopStatus.ACTIVE)
+                .trustLevel(1)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
@@ -121,10 +137,108 @@ public class ShopServiceImpl implements ShopService {
     }
 
     @Override
+    public ShopProfileResponse getMyShopProfile(UUID accountId) {
+        User user = userRepository.findByAccountId(accountId)
+                .orElseThrow(() -> new CustomException("Không tìm thấy thông tin người dùng"));
+        Shop shop = shopRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new CustomException("Tài khoản chưa có thông tin cửa hàng"));
+        return buildShopProfile(shop);
+    }
+
+    @Override
     public List<ShopProfileResponse> getAllActiveShops() {
         return shopRepository.findAll().stream()
-                .filter(s -> s.getStatus() == ShopStatus.ACTIVE)
+                .filter(s -> s.getStatus() == ShopStatus.ACTIVE || s.getStatus() == ShopStatus.WARNED)
                 .map(this::buildShopProfile)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ShopViolationResponse> getMyShopViolations(UUID accountId) {
+        User user = userRepository.findByAccountId(accountId)
+                .orElseThrow(() -> new CustomException("Không tìm thấy thông tin người dùng"));
+        Shop shop = shopRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new CustomException("Tài khoản chưa có thông tin cửa hàng"));
+
+        List<Product> products = productRepository.findAllByShopIdWithDetails(shop.getId());
+        List<UUID> productIds = products.stream().map(Product::getId).collect(Collectors.toList());
+
+        List<Report> reports = new java.util.ArrayList<>();
+        reports.addAll(reportRepository.findApprovedReportsByShopId(shop.getId()));
+        if (!productIds.isEmpty()) {
+            reports.addAll(reportRepository.findApprovedReportsByProductIds(productIds));
+        }
+        reports.addAll(reportRepository.findApprovedReportsByShopIdForOrders(shop.getId()));
+
+        // Lấy danh sách appeal do account này gửi
+        List<Report> appeals = reportRepository.findAllAppealsByAccountId(accountId);
+        java.util.Map<UUID, Report> appealByReportIdMap = new java.util.HashMap<>();
+        java.util.Set<UUID> usedLegacyAppealIds = new java.util.HashSet<>();
+
+        for (Report a : appeals) {
+            if (a.getViolationReportId() != null && !appealByReportIdMap.containsKey(a.getViolationReportId())) {
+                appealByReportIdMap.put(a.getViolationReportId(), a);
+            }
+        }
+
+        java.util.Map<UUID, String> productNameMap = products.stream()
+                .collect(Collectors.toMap(Product::getId, Product::getName, (existing, replacement) -> existing));
+
+        List<ShopViolationResponse> results = new java.util.ArrayList<>();
+        for (Report rep : reports) {
+            String targetName;
+            if (rep.getTargetType() == TargetType.SHOP) {
+                targetName = shop.getName();
+            } else if (rep.getTargetType() == TargetType.ORDER) {
+                targetName = orderRepository.findById(rep.getTargetId())
+                        .map(o -> "Đơn hàng " + o.getOrderNumber())
+                        .orElse("Đơn hàng vi phạm");
+            } else {
+                targetName = productNameMap.getOrDefault(rep.getTargetId(), "Sản phẩm vi phạm");
+            }
+
+            String appealStatus = "NONE";
+            UUID appealRequestId = null;
+            String appealResponse = null;
+
+            // 1. Khớp chính xác theo vi phạm cụ thể (violationReportId)
+            Report appeal = appealByReportIdMap.get(rep.getId());
+
+            // 2. Fallback cho appeal cũ chưa có violationReportId: chỉ gán tối đa 1-1 cho 1 report vi phạm duy nhất
+            if (appeal == null) {
+                for (Report a : appeals) {
+                    if (a.getViolationReportId() == null && !usedLegacyAppealIds.contains(a.getId())) {
+                        if (a.getTargetId() != null && a.getTargetId().equals(rep.getTargetId())) {
+                            appeal = a;
+                            usedLegacyAppealIds.add(a.getId());
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (appeal != null && appeal.getRequest() != null) {
+                appealStatus = appeal.getRequest().getStatus().name();
+                appealRequestId = appeal.getRequest().getId();
+                appealResponse = appeal.getRequest().getResponse();
+            }
+
+            results.add(ShopViolationResponse.builder()
+                    .reportId(rep.getId())
+                    .targetType(rep.getTargetType())
+                    .targetId(rep.getTargetId())
+                    .targetName(targetName)
+                    .reason(rep.getRequest() != null ? rep.getRequest().getDescription() : "")
+                    .evidenceUrl(rep.getEvidenceUrl())
+                    .coverImageUrl(rep.getRequest() != null ? rep.getRequest().getCoverImageUrl() : null)
+                    .createdAt(rep.getRequest() != null ? rep.getRequest().getCreatedAt() : null)
+                    .adminNote(rep.getModeratorNote() != null ? rep.getModeratorNote() : (rep.getRequest() != null ? rep.getRequest().getResponse() : null))
+                    .appealStatus(appealStatus)
+                    .appealRequestId(appealRequestId)
+                    .appealResponse(appealResponse)
+                    .build());
+        }
+
+        return results;
     }
 }

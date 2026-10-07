@@ -20,23 +20,33 @@ public class VNPayServiceImpl implements VNPayService {
 
     @Override
     public String buildPaymentUrl(Payment payment) {
+        return buildPaymentUrl(
+                payment.getTxnRef(),
+                payment.getAmount(),
+                "Thanh toan don hang " + payment.getOrder().getOrderNumber(),
+                vnPayConfig.returnUrl,
+                "127.0.0.1"
+        );
+    }
 
+    @Override
+    public String buildPaymentUrl(String txnRef, BigDecimal amount, String orderInfo, String returnUrl, String ipAddr) {
         Map<String, String> params = new TreeMap<>();
         params.put("vnp_Version", "2.1.0");
         params.put("vnp_Command", "pay");
         params.put("vnp_TmnCode", vnPayConfig.tmnCode);
-        params.put("vnp_TxnRef", payment.getTxnRef());
-        params.put("vnp_OrderInfo", "Thanh toan don hang " + payment.getOrder().getOrderNumber());
+        params.put("vnp_TxnRef", txnRef);
+        params.put("vnp_OrderInfo", orderInfo != null ? orderInfo : "Thanh toan VNPay");
         params.put("vnp_OrderType", "other");
-        params.put("vnp_Amount", payment.getAmount().multiply(BigDecimal.valueOf(100)).toBigInteger().toString());
-        params.put("vnp_ReturnUrl", vnPayConfig.returnUrl);
-        params.put("vnp_IpAddr", "127.0.0.1");
+        params.put("vnp_Amount", amount.multiply(BigDecimal.valueOf(100)).toBigInteger().toString());
+        params.put("vnp_ReturnUrl", returnUrl != null ? returnUrl : vnPayConfig.returnUrl);
+        params.put("vnp_IpAddr", (ipAddr != null && !ipAddr.isBlank()) ? ipAddr : "127.0.0.1");
         params.put("vnp_CreateDate", LocalDateTime.now()
                 .format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")));
         params.put("vnp_CurrCode", "VND");
         params.put("vnp_Locale", "vn");
 
-        // Expiration date is required by VNPay (default 15 mins)
+        // Expiration date is required by VNPay (default 15 mins, set to 30 mins)
         params.put("vnp_ExpireDate", LocalDateTime.now().plusMinutes(30)
                 .format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")));
 

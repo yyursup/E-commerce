@@ -56,7 +56,7 @@ export const createWebSocketConnection = (token) => {
 
   // If token changed (account switched or re-logged), force close old connection
   if (ws && currentToken && currentToken !== token) {
-    console.log('🔄 Token changed (account switch detected), reconnecting WebSocket...')
+    console.log('[WebSocket] Token changed (account switch detected), reconnecting...')
     closeWebSocketConnection()
   }
 
@@ -86,7 +86,7 @@ export const createWebSocketConnection = (token) => {
     ws = new WebSocket(wsUrl)
 
     ws.onopen = () => {
-      console.log('⚡ Chat WebSocket connected')
+      console.log('[WebSocket] Chat connected')
       reconnectAttempts = 0
       dispatchEvent('CONNECT', { connected: true })
     }

@@ -170,7 +170,7 @@ const shopService = {
     // Match by ID or Name from fallback list
     const found = FALLBACK_SHOPS.find(
       (s) => String(s.id).toLowerCase() === String(shopId).toLowerCase() ||
-             String(s.name).toLowerCase().includes(String(shopId).toLowerCase())
+        String(s.name).toLowerCase().includes(String(shopId).toLowerCase())
     )
 
     return found || FALLBACK_SHOPS[0]
@@ -201,6 +201,27 @@ const shopService = {
       console.warn('API fetch all shops failed, returning fallback', err)
     }
     return FALLBACK_SHOPS
+  },
+
+  // Lấy thông tin shop của tài khoản hiện tại kèm chỉ số sức khỏe & vi phạm
+  getMyShop: async () => {
+    try {
+      const response = await axiosClient.get(`${SHOP_BASE}/my-shop`)
+      return response.data
+    } catch (err) {
+      console.warn('API fetch my shop failed:', err)
+      throw err
+    }
+  },
+
+  // Lấy danh sách các vi phạm của Shop để thực hiện kháng cáo theo từng sự vụ
+  getMyViolations: async () => {
+    try {
+      const response = await axiosClient.get(`${SHOP_BASE}/my-violations`)
+      return response.data
+    } catch (err) {
+      console.warn('API fetch my violations failed:', err)
+    }
   },
 }
 

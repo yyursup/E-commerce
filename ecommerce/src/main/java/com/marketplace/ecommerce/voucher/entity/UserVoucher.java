@@ -13,8 +13,9 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "user_vouchers", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"user_id", "voucher_id", "status"})
+@Table(name = "user_vouchers", indexes = {
+        @Index(name = "idx_user_vouchers_user_voucher", columnList = "user_id, voucher_id"),
+        @Index(name = "idx_user_vouchers_order", columnList = "order_id")
 })
 @Getter
 @Setter

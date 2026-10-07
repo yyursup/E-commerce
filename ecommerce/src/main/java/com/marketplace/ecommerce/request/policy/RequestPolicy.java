@@ -12,10 +12,15 @@ import com.marketplace.ecommerce.request.valueObjects.ApproveSellerContext;
 import com.marketplace.ecommerce.request.valueObjects.RequestStatus;
 import com.marketplace.ecommerce.request.valueObjects.TargetType;
 import com.marketplace.ecommerce.shop.repository.ShopRepository;
+import com.marketplace.ecommerce.order.entity.Order;
+import com.marketplace.ecommerce.order.repository.OrderRepository;
+import com.marketplace.ecommerce.order.valueObjects.OrderStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 
@@ -27,6 +32,7 @@ public class RequestPolicy {
     private final SellerRepository sellerRepository;
     private final ShopRepository shopRepository;
     private final UserRepository userRepository;
+    private final OrderRepository orderRepository;
 
     public TargetType resolve(UUID targetId) {
         List<String> types = reportRepository.resolveTargetTypes(targetId);
@@ -45,14 +51,53 @@ public class RequestPolicy {
         }
     }
 
-
     public UUID resolveTargetAccountId(TargetType type, UUID targetId) {
         return switch (type) {
             case USER -> reportRepository.resolveUserAccountId(targetId);
             case SHOP -> reportRepository.resolveShopOwnerAccountId(targetId);
             case PRODUCT -> reportRepository.resolveProductOwnerAccountId(targetId);
             case REVIEW -> reportRepository.resolveReviewOwnerAccountId(targetId);
+            case ORDER -> reportRepository.resolveOrderShopOwnerAccountId(targetId);
         };
+    }
+
+    public void validateOrderReport(UUID buyerAccountId, UUID orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new CustomException("Không tìm thấy đơn hàng: " + orderId));
+
+        if (order.getUser() == null || order.getUser().getAccount() == null ||
+                !order.getUser().getAccount().getId().equals(buyerAccountId)) {
+            throw new CustomException("Bạn không có quyền khiếu nại đơn hàng này.");
+        }
+
+        if (order.getStatus() == OrderStatus.CANCELLED) {
+            throw new CustomException("Không thể khiếu nại đơn hàng đã bị hủy.");
+        }
+        if (order.getStatus() == OrderStatus.REFUNDED) {
+            throw new CustomException("Đơn hàng này đã được hoàn tiền trước đó.");
+        }
+
+        // Kiểm tra tính hợp lệ về thời điểm:
+        // 1. DELIVERED: Hợp lệ khiếu nại (trong vòng 7 ngày kể từ khi giao)
+        // 2. SHIPPED / SHIPPING: Chỉ cho phép khiếu nại khi đơn bị quá hạn giao (sau 3
+        // ngày kể từ khi xuất kho)
+        if (order.getStatus() == OrderStatus.DELIVERED) {
+            if (order.getDeliveredAt() != null) {
+                long daysSinceDelivered = ChronoUnit.DAYS.between(order.getDeliveredAt(),
+                        java.time.LocalDateTime.now());
+                if (daysSinceDelivered > 7) {
+                    throw new CustomException(
+                            "Đã quá thời hạn 7 ngày khiếu nại kể từ khi đơn hàng được giao thành công.");
+                }
+            }
+        } else {
+            throw new CustomException(
+                    "Chỉ có thể khiếu nại đơn hàng sau khi hệ thống đã cập nhật giao hàng thành công.");
+        }
+
+        if (reportRepository.existsPendingReportByOrderId(orderId)) {
+            throw new CustomException("Đơn hàng này đang có một khiếu nại đang chờ Ban Quản Trị xử lý.");
+        }
     }
 
     public ApproveSellerContext validateApproveSellerRequest(Request req, UUID requestId) {

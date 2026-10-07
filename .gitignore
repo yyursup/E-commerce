@@ -1,4 +1,4 @@
-﻿# Node & Frontend dependencies and builds
+# Node & Frontend dependencies and builds
 **/node_modules/
 **/dist/
 **/dist-ssr/
@@ -45,3 +45,7 @@ lerna-debug.log*
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Graphify
+graphify-out/
+**/graphify-out/

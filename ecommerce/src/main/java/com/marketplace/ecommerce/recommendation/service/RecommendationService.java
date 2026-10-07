@@ -24,7 +24,17 @@ public interface RecommendationService {
     List<ProductResponse> getRecommendationsForUser(String sessionId, UUID userId, int limit);
 
     /**
-     * Sản phẩm tương tự với sản phẩm hiện tại (cùng category + embedding similarity).
+     * Gợi ý sản phẩm cho user/session có kèm danh sách ID xem gần đây từ guest client.
+     */
+    List<ProductResponse> getRecommendationsForUser(String sessionId, UUID userId, List<UUID> guestRecentIds, int limit);
+
+    /**
+     * Sản phẩm tương tự với sản phẩm hiện tại (cùng category + embedding similarity hoặc hybrid fallback).
      */
     List<ProductResponse> getSimilarProducts(UUID productId, int limit);
+
+    /**
+     * Gợi ý phụ kiện công nghệ tương thích (Cross-selling).
+     */
+    List<ProductResponse> getCompatibleAccessories(UUID productId, int limit);
 }

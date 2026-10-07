@@ -16,12 +16,12 @@ public class CreateReportRequest {
     @Size(max = 5000)
     private String description;
 
-    @Size(max = 255)
+    @Size(max = 2000)
     private String coverImageUrl;
 
     @NotNull
     private UUID targetId;
 
-    @Size(max = 255)
+    @Size(max = 2000)
     private String evidenceUrl;
 }

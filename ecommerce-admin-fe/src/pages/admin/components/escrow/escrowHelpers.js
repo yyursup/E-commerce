@@ -51,4 +51,4 @@ export const escrowStatusBadgeClass = (status, isDark) => {
   }
 }
 
-export const canReleaseEscrow = (status) => status === 'HELD' || status === 'PARTIALLY_RELEASED'
+export const canReleaseEscrow = (status) => status === 'HELD' || status === 'PARTIALLY_RELEASED' || status === 'DISPUTED'

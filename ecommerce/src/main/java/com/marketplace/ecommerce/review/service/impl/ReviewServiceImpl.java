@@ -53,6 +53,16 @@ public class ReviewServiceImpl implements ReviewService {
         return ReviewResponse.fromEntity(review);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ReviewResponse> getMyReviews(UUID accountId, Pageable pageable) {
+        User user = userRepository.findByAccountId(accountId)
+                .orElseThrow(() -> new CustomException("Account not found"));
+
+        return reviewRepository.findByUserIdWithDetails(user.getId(), pageable)
+                .map(ReviewResponse::fromEntity);
+    }
+
 
     @Override
     @Transactional(readOnly = true)

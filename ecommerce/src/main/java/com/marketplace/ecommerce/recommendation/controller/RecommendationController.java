@@ -22,19 +22,59 @@ public class RecommendationController {
     private final UserRepository userRepository;
 
     /**
-     * Gợi ý sản phẩm cho user/session (dựa trên lịch sử tìm kiếm + đã xem).
-     * Frontend gọi với credentials để có sessionId; nếu đăng nhập thì có thêm userId.
+     * Gợi ý sản phẩm cho user/session (dựa trên lịch sử tìm kiếm + đã xem + guest recent IDs).
      */
     @GetMapping
     public ResponseEntity<List<ProductResponse>> getRecommendations(
             HttpSession session,
             @CurrentUser CurrentUserInfo principal,
+            @RequestParam(required = false) List<UUID> recentProductIds,
             @RequestParam(defaultValue = "8") int limit
     ) {
         UUID userId = principal != null && principal.getAccountId() != null
                 ? userRepository.findByAccountId(principal.getAccountId()).map(u -> u.getId()).orElse(null)
                 : null;
-        List<ProductResponse> list = recommendationService.getRecommendationsForUser(session.getId(), userId, limit);
+        List<ProductResponse> list = recommendationService.getRecommendationsForUser(session.getId(), userId, recentProductIds, limit);
         return ResponseEntity.ok(list);
+    }
+
+    /**
+     * Gợi ý sản phẩm tương đương cấu hình & tầm giá (Dùng cho trang chi tiết).
+     */
+    @GetMapping("/similar/{productId}")
+    public ResponseEntity<List<ProductResponse>> getSimilarProducts(
+            @PathVariable UUID productId,
+            @RequestParam(defaultValue = "8") int limit
+    ) {
+        List<ProductResponse> list = recommendationService.getSimilarProducts(productId, limit);
+        return ResponseEntity.ok(list);
+    }
+
+    /**
+     * Gợi ý phụ kiện công nghệ tương thích (Cross-selling).
+     */
+    @GetMapping("/accessories/{productId}")
+    public ResponseEntity<List<ProductResponse>> getCompatibleAccessories(
+            @PathVariable UUID productId,
+            @RequestParam(defaultValue = "8") int limit
+    ) {
+        List<ProductResponse> list = recommendationService.getCompatibleAccessories(productId, limit);
+        return ResponseEntity.ok(list);
+    }
+
+    /**
+     * Ghi nhận lượt xem / tương tác từ Frontend (Client tracking).
+     */
+    @PostMapping("/track")
+    public ResponseEntity<Void> trackActivity(
+            HttpSession session,
+            @CurrentUser CurrentUserInfo principal,
+            @RequestParam UUID productId
+    ) {
+        UUID userId = principal != null && principal.getAccountId() != null
+                ? userRepository.findByAccountId(principal.getAccountId()).map(u -> u.getId()).orElse(null)
+                : null;
+        recommendationService.recordProductView(session.getId(), userId, productId);
+        return ResponseEntity.ok().build();
     }
 }

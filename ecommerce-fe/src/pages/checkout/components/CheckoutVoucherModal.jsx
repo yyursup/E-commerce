@@ -187,7 +187,18 @@ export default function CheckoutVoucherModal({
                             <p className="text-sm font-medium text-stone-500">Không có voucher phù hợp trong mục này.</p>
                         </div>
                     ) : (
-                        displayedVouchers.map((v) => {
+                        displayedVouchers
+                            .slice()
+                            .sort((a, b) => {
+                                const aMin = Number(a.minOrderAmount || a.minOrderValue || 0)
+                                const bMin = Number(b.minOrderAmount || b.minOrderValue || 0)
+                                const aEligible = (totalPrice >= aMin) && a.isEligible !== false && a.isAvailable !== false
+                                const bEligible = (totalPrice >= bMin) && b.isEligible !== false && b.isAvailable !== false
+                                if (aEligible && !bEligible) return -1
+                                if (!aEligible && bEligible) return 1
+                                return 0
+                            })
+                            .map((v) => {
                             const isShop = v.scope === 'SHOP'
                             const isSelected = isShop
                                 ? tempSelectedShop?.code === v.code
@@ -206,7 +217,16 @@ export default function CheckoutVoucherModal({
                                 )
                             }
 
-                            const isEligible = isMinOrderSatisfied && isCategorySatisfied
+                            // User quota & platform availability check
+                            const isUserQuotaSatisfied = v.isEligible !== false && (v.userRemainingUsage === undefined || v.userRemainingUsage === null || v.userRemainingUsage > 0)
+                            const isAvailableSatisfied = v.isAvailable !== false
+
+                            const isEligible = isMinOrderSatisfied && isCategorySatisfied && isUserQuotaSatisfied && isAvailableSatisfied
+
+                            const hasMultipleUsage = v.userUsageLimit && v.userUsageLimit > 1
+                            const remaining = v.userRemainingUsage !== undefined && v.userRemainingUsage !== null
+                                ? v.userRemainingUsage
+                                : (v.userUsageLimit ? Math.max(0, v.userUsageLimit - (v.userUsedCount || 0)) : 1)
 
                             return (
                                 <div
@@ -242,6 +262,16 @@ export default function CheckoutVoucherModal({
                                             )}>
                                                 {isShop ? 'Voucher Shop' : 'Voucher Sàn'}
                                             </span>
+                                            {hasMultipleUsage && (
+                                                <span className={cn(
+                                                    "text-[10px] font-bold px-2 py-0.5 rounded border",
+                                                    remaining > 0
+                                                        ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+                                                        : "bg-stone-500/10 text-stone-500 border-stone-500/20"
+                                                )}>
+                                                    Còn {remaining}/{v.userUsageLimit} lượt
+                                                </span>
+                                            )}
                                             {v.categoryName && (
                                                 <span className="text-[11px] font-medium px-2 py-0.5 rounded bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
                                                     Ngành: {v.categoryName}
@@ -256,12 +286,22 @@ export default function CheckoutVoucherModal({
                                             {v.description || `Đơn tối thiểu ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(minRequired)}`}
                                         </p>
 
-                                        {!isMinOrderSatisfied && (
+                                        {!isAvailableSatisfied && (
+                                            <p className="text-[11px] text-rose-500 font-medium mt-1">
+                                                * {v.ineligibleReason || 'Voucher đã hết hạn hoặc hết lượt sử dụng trên hệ thống'}
+                                            </p>
+                                        )}
+                                        {isAvailableSatisfied && !isUserQuotaSatisfied && (
+                                            <p className="text-[11px] text-rose-500 font-medium mt-1">
+                                                * {v.ineligibleReason || 'Bạn đã sử dụng hết lượt cho phép đối với voucher này'}
+                                            </p>
+                                        )}
+                                        {isAvailableSatisfied && isUserQuotaSatisfied && !isMinOrderSatisfied && (
                                             <p className="text-[11px] text-rose-500 font-medium mt-1">
                                                 * Cần mua thêm {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(minRequired - totalPrice)} để áp dụng
                                             </p>
                                         )}
-                                        {isMinOrderSatisfied && !isCategorySatisfied && (
+                                        {isAvailableSatisfied && isUserQuotaSatisfied && isMinOrderSatisfied && !isCategorySatisfied && (
                                             <p className="text-[11px] text-rose-500 font-medium mt-1">
                                                 * Không có sản phẩm thuộc ngành {v.categoryName}
                                             </p>

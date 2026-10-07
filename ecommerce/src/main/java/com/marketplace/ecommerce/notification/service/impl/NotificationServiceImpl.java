@@ -83,7 +83,7 @@ public class NotificationServiceImpl implements NotificationService {
         }
 
         String shopName = (shop.getName() != null && !shop.getName().isBlank()) ? shop.getName() : "Shop bạn đang theo dõi";
-        String title = "🎁 Ưu đãi mới từ " + shopName + "!";
+        String title = "Ưu đãi mới từ " + shopName + "!";
         String discountText = formatDiscountText(voucher);
         String content = "Cửa hàng " + shopName + " vừa phát hành mã voucher [" + voucher.getCode() + "] - " +
                 voucher.getTitle() + " (" + discountText + "). Số lượng có hạn, khám phá và lưu mã ngay!";

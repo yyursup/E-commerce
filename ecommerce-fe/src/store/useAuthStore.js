@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { decodeJWT, getAccountVerified } from '../lib/jwt'
+import { decodeJWT, getAccountVerified, isTokenExpired } from '../lib/jwt'
 import { setAccessToken, setRefreshToken, clearAccessToken } from '../lib/auth'
 import { closeWebSocketConnection } from '../services/websocketService'
 
@@ -45,6 +45,7 @@ export const useAuthStore = create(
                 set((state) => ({
                     token,
                     refreshToken: refreshToken || state.refreshToken,
+                    isAuthenticated: Boolean(token),
                 }))
             },
 
@@ -61,8 +62,21 @@ export const useAuthStore = create(
                 }))
             },
 
+            checkTokenExpiration: () => {
+                const { token, refreshToken, logout } = get()
+                if (token && isTokenExpired(token, 0)) {
+                    if (!refreshToken || isTokenExpired(refreshToken, 0)) {
+                        logout()
+                        return false
+                    }
+                }
+                return true
+            },
+
             logout: () => {
-                closeWebSocketConnection()
+                try {
+                    closeWebSocketConnection()
+                } catch (e) {}
                 clearAccessToken()
                 set({
                     token: null,
@@ -74,8 +88,24 @@ export const useAuthStore = create(
             },
         }),
         {
-            name: 'auth-storage', // name of the item in the storage (must be unique)
-            partialize: (state) => ({ user: state.user, token: state.token, refreshToken: state.refreshToken, isAuthenticated: state.isAuthenticated, accountVerified: state.accountVerified }), // persist these fields
+            name: 'auth-storage',
+            partialize: (state) => ({
+                user: state.user,
+                token: state.token,
+                refreshToken: state.refreshToken,
+                isAuthenticated: state.isAuthenticated,
+                accountVerified: state.accountVerified
+            }),
+            onRehydrateStorage: () => (state) => {
+                if (!state) return
+                // Kiểm tra token khi nạp lại từ LocalStorage: nếu đã hết hạn và refresh token cũng hết hạn -> logout dọn dẹp state ngay
+                if (state.token && isTokenExpired(state.token, 0)) {
+                    if (!state.refreshToken || isTokenExpired(state.refreshToken, 0)) {
+                        console.warn('[AuthStore] Session has expired during rehydration. Clearing auth state.')
+                        state.logout()
+                    }
+                }
+            },
         },
     ),
 )

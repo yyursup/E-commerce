@@ -15,6 +15,7 @@ import com.marketplace.ecommerce.order.service.CheckoutService;
 import com.marketplace.ecommerce.shipping.service.ShippingService;
 import com.marketplace.ecommerce.shop.entity.Shop;
 import com.marketplace.ecommerce.shop.repository.ShopRepository;
+import com.marketplace.ecommerce.shop.valueObjects.ShopStatus;
 import com.marketplace.ecommerce.voucher.dto.VoucherCalculationResponse;
 import com.marketplace.ecommerce.voucher.dto.VoucherResponse;
 import com.marketplace.ecommerce.voucher.service.VoucherService;
@@ -46,6 +47,10 @@ public class CheckoutServiceImpl implements CheckoutService {
 
         Shop shop = shopRepository.findById(req.getShopId())
                 .orElseThrow(() -> new CustomException("Shop not found."));
+
+        if (shop.getStatus() == ShopStatus.CLOSED) {
+            throw new CustomException("Gian hàng này đã đóng cửa, không thể thực hiện đặt hàng.");
+        }
 
         UserAddress addr = userAddressRepository.findByIdAndUserIdAndDeletedFalse(req.getAddressId(), user.getId())
                 .orElseThrow(() -> new CustomException("Address not found."));
@@ -130,6 +135,10 @@ public class CheckoutServiceImpl implements CheckoutService {
 
         Shop shop = shopRepository.findById(shopId)
                 .orElseThrow(() -> new CustomException("Shop not found."));
+
+        if (shop.getStatus() == ShopStatus.CLOSED) {
+            throw new CustomException("Gian hàng này đã đóng cửa, không thể thực hiện đặt hàng.");
+        }
 
         Cart cart = cartRepository.findByUserIdWithItems(user.getId())
                 .orElseThrow(() -> new CustomException("Cart not found."));

@@ -17,4 +17,12 @@ public interface PlatformSettingService {
     PlatformSetting setValue(String key, String value);
 
     BigDecimal getCommissionRate();
+
+    BigDecimal getFloorRate();
+
+    BigDecimal getUsedGoodsCommissionRate();
+
+    java.util.List<PlatformSettingResponse> getAllSettings();
+
+    PlatformSettingResponse updateSetting(String key, String value);
 }

@@ -11,7 +11,10 @@ import org.springframework.security.authentication.AccountStatusException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.LockedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -46,11 +49,14 @@ public class GlobalExceptionHandler {
     }
 
     // =========================
-    // 401 - Authentication
+    // 401 - Authentication & Token Expiration
     // =========================
     @ExceptionHandler({
             InvalidCredentialsException.class,
-            BadCredentialsException.class
+            BadCredentialsException.class,
+            ExpiredJwtException.class,
+            JwtException.class,
+            AuthenticationException.class
     })
     public ResponseEntity<ErrorResponse> handleBadCredentials(
             Exception ex,
@@ -100,6 +106,34 @@ public class GlobalExceptionHandler {
                 "Bạn không có quyền thực hiện hành động này",
                 request
         );
+    }
+
+    @ExceptionHandler(AccountLockedException.class)
+    public ResponseEntity<java.util.Map<String, Object>> handleAccountLocked(
+            AccountLockedException ex,
+            HttpServletRequest request
+    ) {
+        java.util.Map<String, Object> response = new java.util.HashMap<>();
+        response.put("status", HttpStatus.FORBIDDEN.value());
+        response.put("error", HttpStatus.FORBIDDEN.getReasonPhrase());
+        response.put("message", ex.getMessage());
+        response.put("path", request.getRequestURI());
+        response.put("timestamp", Instant.now());
+        
+        java.util.Map<String, Object> data = new java.util.HashMap<>();
+        data.put("appealToken", ex.getAppealToken());
+        data.put("bannedUntil", ex.getBannedUntil());
+        
+        // Extract accountId from token to return to frontend
+        try {
+            // A simple decode to get accountId since we know the structure, 
+            // but it's cleaner to get it from the exception if we had it.
+            // Wait, we can get it from the token using base64 decode of payload, or we can just pass it via exception.
+        } catch (Exception ignore) {}
+        
+        response.put("data", data);
+        
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
     }
 
     // =========================

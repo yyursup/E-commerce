@@ -269,7 +269,7 @@ export default function ImageUpload({ onUpload, existingImages = [], onRemove })
                 
                 <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/60 to-transparent p-2 z-10">
                    <span className="text-[10px] font-bold text-white drop-shadow-md">
-                      {index === 0 ? '✨ Ảnh chính (Avatar)' : `Ảnh phụ ${index}`}
+                      {index === 0 ? 'Ảnh chính (Avatar)' : `Ảnh phụ ${index}`}
                    </span>
                 </div>
 

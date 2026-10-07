@@ -6,4 +6,5 @@ import java.util.List;
 
 public interface CategoryService {
     List<CategoryResponse> getAllCategories();
+    CategoryResponse updateCommissionRate(java.util.UUID categoryId, java.math.BigDecimal commissionRate);
 }

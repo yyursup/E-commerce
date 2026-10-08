@@ -43,6 +43,33 @@ const productService = {
       throw error.response ? error.response.data : error;
     }
   },
+
+  getPendingProducts: async () => {
+    try {
+      const response = await api.get('/api/v1/admin/products/pending');
+      return response.data?.data || response.data || [];
+    } catch (error) {
+      throw error.response ? error.response.data : error;
+    }
+  },
+
+  approveProduct: async (productId) => {
+    try {
+      const response = await api.post(`/api/v1/admin/products/${productId}/approve`);
+      return response.data?.data || response.data;
+    } catch (error) {
+      throw error.response ? error.response.data : error;
+    }
+  },
+
+  rejectProduct: async (productId, reason) => {
+    try {
+      const response = await api.post(`/api/v1/admin/products/${productId}/reject`, { reason });
+      return response.data?.data || response.data;
+    } catch (error) {
+      throw error.response ? error.response.data : error;
+    }
+  },
 };
 
 export default productService;

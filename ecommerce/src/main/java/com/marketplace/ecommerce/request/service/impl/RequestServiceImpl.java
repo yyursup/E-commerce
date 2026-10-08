@@ -4,8 +4,14 @@ import com.marketplace.ecommerce.auth.entity.Account;
 import com.marketplace.ecommerce.auth.entity.Role;
 import com.marketplace.ecommerce.auth.repository.AccountRepository;
 import com.marketplace.ecommerce.auth.repository.RoleRepository;
+import com.marketplace.ecommerce.auth.valueObjects.AccountStatus;
+import com.marketplace.ecommerce.auth.valueObjects.DisciplineLevel;
 import com.marketplace.ecommerce.common.exception.CustomException;
+import com.marketplace.ecommerce.product.entity.Product;
+import com.marketplace.ecommerce.product.repository.ProductRepository;
+import com.marketplace.ecommerce.product.valueObjects.ProductStatus;
 import com.marketplace.ecommerce.request.constant.RequestConstant;
+import com.marketplace.ecommerce.request.dto.request.CreateAppealRequest;
 import com.marketplace.ecommerce.request.dto.request.CreateSendRequest;
 import com.marketplace.ecommerce.request.dto.response.*;
 import com.marketplace.ecommerce.request.entity.Report;
@@ -18,24 +24,45 @@ import com.marketplace.ecommerce.request.service.RequestService;
 import com.marketplace.ecommerce.request.policy.RequestPolicy;
 import com.marketplace.ecommerce.request.valueObjects.ApproveSellerContext;
 import com.marketplace.ecommerce.request.valueObjects.RequestStatus;
+import com.marketplace.ecommerce.request.valueObjects.RequestType;
 import com.marketplace.ecommerce.request.valueObjects.TargetType;
+import com.marketplace.ecommerce.review.entity.Review;
+import com.marketplace.ecommerce.review.repository.ReviewRepository;
+import com.marketplace.ecommerce.review.valueObjects.ReviewStatus;
 import com.marketplace.ecommerce.shop.entity.Shop;
+import com.marketplace.ecommerce.shop.repository.ShopRepository;
 import com.marketplace.ecommerce.shop.service.ShopService;
+import com.marketplace.ecommerce.shop.valueObjects.ShopStatus;
+import com.marketplace.ecommerce.order.entity.Order;
+import com.marketplace.ecommerce.order.repository.OrderRepository;
+import com.marketplace.ecommerce.order.valueObjects.OrderStatus;
+import com.marketplace.ecommerce.order.service.OrderReturnService;
+import com.marketplace.ecommerce.payment.repository.EscrowRepository;
+import com.marketplace.ecommerce.payment.service.EscrowService;
+import com.marketplace.ecommerce.payment.valueObjects.EscrowStatus;
+import com.marketplace.ecommerce.request.valueObjects.ResolutionType;
+import com.marketplace.ecommerce.shop.service.ShopEscrowFundService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+import java.math.BigDecimal;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class RequestServiceImpl implements RequestService {
-
 
     private final RequestRepository requestRepository;
     private final ReportRepository reportRepository;
@@ -44,13 +71,26 @@ public class RequestServiceImpl implements RequestService {
     private final RoleRepository roleRepository;
     private final RequestPolicy requestValidation;
     private final ShopService shopService;
+    private final ProductRepository productRepository;
+    private final ShopRepository shopRepository;
+    private final ReviewRepository reviewRepository;
+    private final OrderRepository orderRepository;
+    private final EscrowRepository escrowRepository;
+    private final EscrowService escrowService;
+    private final OrderReturnService orderReturnService;
+    private final ShopEscrowFundService shopEscrowFundService;
+
+    @Value("${marketplace.dispute.appeal-window-hours}")
+    private long appealWindowHours;
 
     @Transactional
     public RequestResponse approveSellerRegistration(UUID requestId, UUID adminAccountId, String response) {
 
-        Account acc = accountRepository.findById(adminAccountId).orElseThrow(() -> new CustomException("Account not found"));
+        Account acc = accountRepository.findById(adminAccountId)
+                .orElseThrow(() -> new CustomException("Account not found"));
 
-        Request req = requestRepository.findById(requestId).orElseThrow(() -> new CustomException("Request not found: " + requestId));
+        Request req = requestRepository.findById(requestId)
+                .orElseThrow(() -> new CustomException("Request not found: " + requestId));
 
         ApproveSellerContext ctx = requestValidation.validateApproveSellerRequest(req, requestId);
 
@@ -58,6 +98,12 @@ public class RequestServiceImpl implements RequestService {
 
         ctx.sellerDetail().setCreatedShopId(savedShop.getId());
         sellerRepository.save(ctx.sellerDetail());
+
+        // Khởi tạo Quỹ ký quỹ cho gian hàng
+        BigDecimal initialDeposit = Boolean.TRUE.equals(ctx.sellerDetail().getIsEscrowParticipated())
+                ? ctx.sellerDetail().getInitialDepositAmount()
+                : BigDecimal.ZERO;
+        shopEscrowFundService.createInitialFund(savedShop, initialDeposit, "REG-" + req.getDisplayCode());
 
         // Update account role from CUSTOMER to BUSINESS
         Account ownerAccount = req.getAccount();
@@ -71,6 +117,127 @@ public class RequestServiceImpl implements RequestService {
         return RequestResponse.from(req);
     }
 
+    @Override
+    @Transactional
+    public RequestResponse approveRequest(UUID requestId, UUID adminAccountId, String response) {
+        Request req = requestRepository.findById(requestId)
+                .orElseThrow(() -> new CustomException("Request not found: " + requestId));
+
+        if (req.getType() == RequestType.SELLER_REGISTRATION) {
+            return approveSellerRegistration(requestId, adminAccountId, response);
+        }
+
+        if (req.getType() == RequestType.APPEAL) {
+            Account admin = accountRepository.findById(adminAccountId)
+                    .orElseThrow(() -> new CustomException("Admin account not found: " + adminAccountId));
+
+            Report report = reportRepository.findByRequestId(requestId);
+            if (report != null && report.getTargetType() != null && report.getTargetId() != null) {
+                TargetType targetType = report.getTargetType();
+                UUID targetId = report.getTargetId();
+
+                switch (targetType) {
+                    case SHOP -> {
+                        Shop shop = shopRepository.findById(targetId)
+                                .orElseThrow(() -> new CustomException("Shop not found: " + targetId));
+
+                        if (shop.getUser() != null && shop.getUser().getAccount() != null) {
+                            Account owner = shop.getUser().getAccount();
+                            // Mỗi lần duyệt kháng cáo thành công chỉ giảm trừ đúng 1 lần vi phạm tương ứng
+                            int newViolationCount = Math.max(0, owner.getViolationCount() - 1);
+                            owner.setViolationCount(newViolationCount);
+
+                            // Cập nhật lại trạng thái tương ứng với số điểm vi phạm mới
+                            if (newViolationCount < 5) {
+                                // Đã giảm xuống dưới ngưỡng 5 -> Thoát đình chỉ SUSPENDED, khôi phục sản phẩm
+                                shop.setStatus(newViolationCount >= 3 ? ShopStatus.WARNED : ShopStatus.ACTIVE);
+                                productRepository.updateStatusByShopId(shop.getId(), ProductStatus.PUBLISHED);
+                                owner.setStatus(AccountStatus.ACTIVE);
+                                owner.setIsActive(true);
+                                owner.setBannedUntil(null);
+                                owner.setDisciplineLevel(
+                                        newViolationCount >= 3 ? DisciplineLevel.WARNED : DisciplineLevel.NONE);
+                            }
+                            accountRepository.save(owner);
+                            shopRepository.save(shop);
+                        }
+                    }
+                    case PRODUCT -> {
+                        Product product = productRepository.findById(targetId)
+                                .orElseThrow(() -> new CustomException("Product not found: " + targetId));
+                        product.setStatus(ProductStatus.PUBLISHED);
+                        product.setFlagged(false);
+                        product.setReportCount(0);
+                        product.setDeleted(false);
+                        productRepository.save(product);
+                    }
+                    case REVIEW -> {
+                        Review review = reviewRepository.findById(targetId)
+                                .orElseThrow(() -> new CustomException("Review not found: " + targetId));
+                        review.setStatus(ReviewStatus.ACTIVE);
+                        review.setFlagged(false);
+                        review.setReportCount(0);
+                        reviewRepository.save(review);
+                    }
+                    case USER -> {
+                        Account userAcc = accountRepository.findById(targetId)
+                                .orElseThrow(() -> new CustomException("Target user account not found: " + targetId));
+                        userAcc.setStatus(AccountStatus.ACTIVE);
+                        userAcc.setIsActive(true);
+                        userAcc.setDisciplineLevel(DisciplineLevel.NONE);
+                        userAcc.setViolationCount(0);
+                        userAcc.setBannedUntil(null);
+                        accountRepository.save(userAcc);
+                    }
+                    case ORDER -> {
+                        Order order = orderRepository.findById(targetId)
+                                .orElseThrow(() -> new CustomException("Order not found: " + targetId));
+                        if (order.getShop() != null && order.getShop().getUser() != null
+                                && order.getShop().getUser().getAccount() != null) {
+                            Account owner = order.getShop().getUser().getAccount();
+                            int newViolationCount = Math.max(0, owner.getViolationCount() - 1);
+                            owner.setViolationCount(newViolationCount);
+
+                            if (newViolationCount < 5) {
+                                order.getShop()
+                                        .setStatus(newViolationCount >= 3 ? ShopStatus.WARNED : ShopStatus.ACTIVE);
+                                productRepository.updateStatusByShopId(order.getShop().getId(),
+                                        ProductStatus.PUBLISHED);
+                                owner.setStatus(AccountStatus.ACTIVE);
+                                owner.setIsActive(true);
+                                owner.setBannedUntil(null);
+                                owner.setDisciplineLevel(
+                                        newViolationCount >= 3 ? DisciplineLevel.WARNED : DisciplineLevel.NONE);
+                            }
+                            accountRepository.save(owner);
+                            shopRepository.save(order.getShop());
+                        }
+
+                        // Kháng cáo đơn hàng thành công -> Shop thắng dispute!
+                        // Phục hồi Escrow về HELD rồi giải ngân trực tiếp cho Shop và hoàn tất đơn hàng
+                        escrowRepository.findByOrderIdForUpdate(targetId).ifPresent(escrow -> {
+                            if (escrow.getStatus() == EscrowStatus.DISPUTED) {
+                                escrow.setStatus(EscrowStatus.HELD);
+                                escrowRepository.save(escrow);
+                            }
+                        });
+
+                        order.setReceivedByBuyer(true);
+                        order.setReceivedAt(LocalDateTime.now());
+                        escrowService.releaseByOrder(order.getId());
+                        order.setStatus(OrderStatus.COMPLETED);
+                        orderRepository.save(order);
+                    }
+                }
+            }
+
+            markApprovedRequest(req, admin, response);
+            return RequestResponse.from(req);
+        }
+
+        throw new CustomException("Unsupported request type for approve: " + req.getType());
+    }
+
     public void markApprovedRequest(Request req, Account admin, String response) {
         req.setStatus(RequestStatus.APPROVED);
         req.setReviewedBy(admin);
@@ -80,10 +247,103 @@ public class RequestServiceImpl implements RequestService {
     }
 
     @Override
-    public RequestResponse rejectRequest(UUID adminAccountId, UUID requestId, String response) {
-        Account acc = accountRepository.findById(adminAccountId).orElseThrow(() -> new CustomException("Account not found"));
+    @Transactional
+    public CreateRequestResponse createAppeal(UUID accountId, CreateAppealRequest req) {
+        Account acc = accountRepository.findById(accountId)
+                .orElseThrow(() -> new CustomException("Account not found: " + accountId));
 
-        Request request = requestRepository.findById(requestId).orElseThrow(() -> new CustomException("Request not found"));
+        // Kiểm tra lịch sử kháng cáo của vi phạm này để tuân thủ quy tắc kháng cáo
+        // chuẩn
+        if (req.getReportId() != null) {
+            List<Report> existingAppeals = reportRepository.findAppealsByViolationReportId(req.getReportId());
+            for (Report appeal : existingAppeals) {
+                if (appeal.getRequest() != null) {
+                    RequestStatus st = appeal.getRequest().getStatus();
+                    if (st == RequestStatus.PENDING) {
+                        throw new CustomException(
+                                "Bạn đã có đơn kháng cáo đang chờ quản trị viên xử lý cho vi phạm này.");
+                    } else if (st == RequestStatus.REJECTED) {
+                        throw new CustomException(
+                                "Đơn kháng cáo cho vi phạm này đã bị từ chối. Quyết định của Quản trị viên là quyết định cuối cùng.");
+                    } else if (st == RequestStatus.APPROVED) {
+                        throw new CustomException("Đơn kháng cáo cho vi phạm này đã được chấp thuận trước đó.");
+                    }
+                }
+            }
+        } else {
+            List<Report> existingAppeals = reportRepository.findAppealsByAccountIdAndTargetId(accountId,
+                    req.getTargetId());
+            for (Report appeal : existingAppeals) {
+                if (appeal.getRequest() != null) {
+                    RequestStatus st = appeal.getRequest().getStatus();
+                    if (st == RequestStatus.PENDING) {
+                        throw new CustomException("Bạn đã có đơn kháng cáo đang chờ quản trị viên xử lý cho mục này.");
+                    } else if (st == RequestStatus.REJECTED) {
+                        throw new CustomException(
+                                "Đơn kháng cáo cho vi phạm này đã bị từ chối. Quyết định của Quản trị viên là quyết định cuối cùng.");
+                    } else if (st == RequestStatus.APPROVED) {
+                        throw new CustomException("Đơn kháng cáo cho vi phạm này đã được chấp thuận trước đó.");
+                    }
+                }
+            }
+        }
+
+        Request r = Request.builder()
+                .account(acc)
+                .type(RequestType.APPEAL)
+                .status(RequestStatus.PENDING)
+                .description(req.getDescription())
+                .coverImageUrl(req.getEvidenceUrl())
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+
+        r = requestRepository.save(r);
+
+        Report appealReport = Report.builder()
+                .request(r)
+                .targetType(req.getTargetType())
+                .targetId(req.getTargetId())
+                .violationReportId(req.getReportId())
+                .evidenceUrl(req.getEvidenceUrl())
+                .moderatorNote(null)
+                .build();
+        reportRepository.save(appealReport);
+
+        return CreateRequestResponse.from(r);
+    }
+
+    @Override
+    @Transactional
+    public RequestResponse rejectRequest(UUID adminAccountId, UUID requestId, String response) {
+        Account acc = accountRepository.findById(adminAccountId)
+                .orElseThrow(() -> new CustomException("Account not found"));
+
+        Request request = requestRepository.findById(requestId)
+                .orElseThrow(() -> new CustomException("Request not found"));
+
+        if (request.getType() == RequestType.APPEAL) {
+            Report report = reportRepository.findByRequestId(requestId);
+            if (report != null && report.getTargetType() == TargetType.PRODUCT && report.getTargetId() != null) {
+                // Nếu bác đơn kháng cáo sản phẩm vi phạm -> Chuyển sang DELETED với flagged =
+                // true
+                productRepository.findById(report.getTargetId()).ifPresent(p -> {
+                    p.setStatus(ProductStatus.DELETED);
+                    p.setFlagged(true);
+                    p.setDeleted(true);
+                    productRepository.save(p);
+                });
+            } else if (report != null && report.getTargetType() == TargetType.ORDER && report.getTargetId() != null) {
+                // Nếu bác đơn kháng cáo đơn hàng vi phạm của Shop -> Đọc ResolutionType từ
+                // report gốc để rẽ nhánh
+                Report originalReport = report;
+                if (report.getViolationReportId() != null) {
+                    originalReport = reportRepository.findById(report.getViolationReportId()).orElse(report);
+                }
+                orchestrateCustomerWon(report.getTargetId(), originalReport.getId(), originalReport.getResolutionType(),
+                        "Admin bác bỏ đơn kháng cáo của Shop, hoàn trả 100% tiền về ví người mua");
+            }
+        }
 
         request.setStatus(RequestStatus.REJECTED);
         request.setResponse(response);
@@ -95,29 +355,96 @@ public class RequestServiceImpl implements RequestService {
         return RequestResponse.from(request);
     }
 
-
     @Override
     @Transactional(readOnly = true)
     public RequestDetailsResponse getDetails(UUID requestId) {
 
-        Request r = requestRepository.findById(requestId).orElseThrow(() -> new CustomException("Request not found: " + requestId));
+        Request r = requestRepository.findById(requestId)
+                .orElseThrow(() -> new CustomException("Request not found: " + requestId));
 
         Object detail = switch (r.getType()) {
 
-            case REPORT -> {
+            case REPORT, APPEAL -> {
                 Report rep = reportRepository.findByRequestId(requestId);
-                if (rep == null) throw new CustomException("Report detail not found for request: " + requestId);
+                if (rep == null) {
+                    yield null;
+                }
+                String targetName = "Không xác định";
+                String targetInfo = "";
+                if (rep.getTargetType() != null && rep.getTargetId() != null) {
+                    switch (rep.getTargetType()) {
+                        case SHOP -> {
+                            var shopOpt = shopRepository.findById(rep.getTargetId());
+                            if (shopOpt.isPresent()) {
+                                var s = shopOpt.get();
+                                targetName = s.getName();
+                                targetInfo = "SĐT: " + (s.getPhoneNumber() != null ? s.getPhoneNumber() : "N/A")
+                                        + " | Địa chỉ: " + (s.getAddress() != null ? s.getAddress() : "N/A");
+                            }
+                        }
+                        case PRODUCT -> {
+                            var prodOpt = productRepository.findById(rep.getTargetId());
+                            if (prodOpt.isPresent()) {
+                                var p = prodOpt.get();
+                                targetName = p.getName();
+                                targetInfo = "SKU: " + (p.getSku() != null ? p.getSku() : "N/A")
+                                        + " | Gian hàng: " + (p.getShop() != null ? p.getShop().getName() : "N/A")
+                                        + " | Giá: " + (p.getBasePrice() != null ? p.getBasePrice() + " đ" : "");
+                            }
+                        }
+                        case USER -> {
+                            var accOpt = accountRepository.findById(rep.getTargetId());
+                            if (accOpt.isPresent()) {
+                                var a = accOpt.get();
+                                targetName = a.getEmail();
+                                targetInfo = "Số lần vi phạm: " + a.getViolationCount() + " lần"
+                                        + " | Trạng thái: " + a.getStatus();
+                            }
+                        }
+                        case REVIEW -> {
+                            var revOpt = reviewRepository.findById(rep.getTargetId());
+                            if (revOpt.isPresent()) {
+                                var rv = revOpt.get();
+                                targetName = "Đánh giá " + rv.getRating() + " sao";
+                                targetInfo = "Nội dung: " + (rv.getComment() != null ? rv.getComment() : "");
+                            }
+                        }
+                        case ORDER -> {
+                            var orderOpt = orderRepository.findById(rep.getTargetId());
+                            if (orderOpt.isPresent()) {
+                                var o = orderOpt.get();
+                                targetName = "Đơn hàng " + o.getOrderNumber();
+                                targetInfo = "Gian hàng: " + (o.getShop() != null ? o.getShop().getName() : "N/A")
+                                        + " | Người mua: " + (o.getUser() != null ? o.getUser().getFullName() : "N/A")
+                                        + " | Tổng tiền: " + (o.getTotal() != null ? o.getTotal() + " đ" : "")
+                                        + " | Trạng thái: " + o.getStatus()
+                                        + " | PTTT: " + o.getPaymentMethod();
 
-                yield ReportDetailsResponse.builder().targetId(rep.getTargetId())
+                                var ret = orderReturnService.getReturnByOrderId(o.getId());
+                                if (ret != null) {
+                                    targetInfo += " | Kiện hoàn: " + ret.getStatus()
+                                            + (ret.getConditionStatus() != null ? " (" + ret.getConditionStatus() + ")"
+                                                    : "");
+                                }
+                            }
+                        }
+                    }
+                }
+
+                yield ReportDetailsResponse.builder()
+                        .targetId(rep.getTargetId())
                         .targetType(rep.getTargetType() != null ? TargetType.valueOf(rep.getTargetType().name()) : null)
                         .evidenceUrl(rep.getEvidenceUrl())
                         .moderatorNote(rep.getModeratorNote())
+                        .targetName(targetName)
+                        .targetInfo(targetInfo)
                         .build();
             }
 
             case SELLER_REGISTRATION -> {
                 Seller s = sellerRepository.findByRequestId(requestId);
-                if (s == null) throw new CustomException("Seller detail not found for request: " + requestId);
+                if (s == null)
+                    throw new CustomException("Seller detail not found for request: " + requestId);
 
                 yield RegisterSellerResponse.from(s);
             }
@@ -130,42 +457,93 @@ public class RequestServiceImpl implements RequestService {
 
     @Override
     public Page<CreateRequestResponse> getRequests(UUID accountId, Pageable pageable) {
-        return requestRepository.findAllRequestByAccountId(accountId, pageable).map(r -> CreateRequestResponse.builder()
-                .requestId(r.getId())
-                .accountId(accountId)
-                .type(r.getType())
-                .status(r.getStatus())
-                .createdAt(r.getCreatedAt())
-                .build());
+        return requestRepository.findAllRequestByAccountId(accountId, pageable).map(CreateRequestResponse::from);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Page<CreateRequestResponse> getAllRequests(RequestStatus status, Pageable pageable) {
+    public Page<CreateRequestResponse> getAllRequests(RequestType type, RequestStatus status, Pageable pageable) {
         Pageable newestFirstPageable = PageRequest.of(
                 pageable.getPageNumber(),
                 pageable.getPageSize(),
-                Sort.by(Sort.Direction.DESC, RequestConstant.CREATED_AT)
-        );
+                Sort.by(Sort.Direction.DESC, RequestConstant.CREATED_AT));
 
-        Page<Request> requests = status == null
-                ? requestRepository.findAll(newestFirstPageable)
-                : requestRepository.findAllByStatus(status, newestFirstPageable);
+        Page<Request> requests;
+        if (type != null) {
+            requests = status == null
+                    ? requestRepository.findAllByType(type, newestFirstPageable)
+                    : requestRepository.findAllByTypeAndStatus(type, status, newestFirstPageable);
+        } else {
+            requests = status == null
+                    ? requestRepository.findAll(newestFirstPageable)
+                    : requestRepository.findAllByStatus(status, newestFirstPageable);
+        }
 
-        return requests.map(r -> CreateRequestResponse.builder()
-                .requestId(r.getId())
-                .accountId(r.getAccount() != null ? r.getAccount().getId() : null)
-                .type(r.getType())
-                .status(r.getStatus())
-                .createdAt(r.getCreatedAt())
-                .build());
+        return requests.map(CreateRequestResponse::from);
+    }
+
+    private String generateDisplayCode(com.marketplace.ecommerce.request.valueObjects.RequestType type) {
+        String prefix = type == com.marketplace.ecommerce.request.valueObjects.RequestType.REPORT ? "REP" : "REG";
+        String randomSuffix = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        return prefix + "-" + randomSuffix;
     }
 
     @Override
     public Request createRequest(Account account, CreateSendRequest request) {
+        String displayCode = generateDisplayCode(request.getRequestType());
 
-        Request re = Request.builder().account(account).type(request.getRequestType()).status(RequestStatus.PENDING).description(request.getDescription()).coverImageUrl(request.getCoverImage()).createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build();
+        Request re = Request.builder().account(account).type(request.getRequestType()).status(RequestStatus.PENDING)
+                .description(request.getDescription()).coverImageUrl(request.getCoverImage())
+                .displayCode(displayCode)
+                .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build();
 
         return requestRepository.save(re);
+    }
+
+    private void orchestrateCustomerWon(UUID orderId, UUID reportId, ResolutionType resolutionType,
+            String refundReason) {
+        if (resolutionType == ResolutionType.RETURN_AND_REFUND) {
+            log.info("Coordinator initiating RETURN_AND_REFUND for disputed orderId={}, reportId={}", orderId,
+                    reportId);
+            orderReturnService.createReturn(orderId, reportId);
+        } else {
+            log.info("Coordinator initiating REFUND_ONLY for disputed orderId={}", orderId);
+            escrowService.refundByOrder(orderId, refundReason);
+        }
+    }
+
+    @Override
+    @Transactional
+    @Scheduled(cron = "0 0 * * * *") // Chạy định kỳ mỗi giờ để tự động hoàn tiền/tạo return nếu quá hạn kháng cáo
+    public void autoRefundExpiredDisputedOrders() {
+        LocalDateTime threshold = LocalDateTime.now().minusHours(appealWindowHours);
+        List<Report> expiredReports = reportRepository.findApprovedOrderReportsReviewedBefore(threshold);
+
+        for (Report report : expiredReports) {
+            UUID orderId = report.getTargetId();
+            if (orderId == null)
+                continue;
+
+            try {
+                // Kiểm tra xem Shop đã gửi đơn kháng cáo chưa
+                List<Report> appeals = reportRepository.findAppealsByViolationReportId(report.getId());
+                boolean hasPendingOrApprovedAppeal = appeals.stream().anyMatch(a -> a.getRequest() != null &&
+                        (a.getRequest().getStatus() == RequestStatus.PENDING ||
+                                a.getRequest().getStatus() == RequestStatus.APPROVED));
+
+                if (!hasPendingOrApprovedAppeal) {
+                    // Nếu không có kháng cáo hợp lệ đang chờ hoặc đã duyệt, và Escrow vẫn đang
+                    // DISPUTED -> Xử lý theo ResolutionType đã lưu từ lúc duyệt Report
+                    var escrowOpt = escrowRepository.findByOrderIdForUpdate(orderId);
+                    if (escrowOpt.isPresent() && escrowOpt.get().getStatus() == EscrowStatus.DISPUTED) {
+                        orchestrateCustomerWon(orderId, report.getId(), report.getResolutionType(),
+                                "Tự động hoàn tiền do Shop không gửi kháng cáo trong thời hạn quy định ("
+                                        + appealWindowHours + " giờ)");
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("Auto handle expired disputed order failed for orderId={}", orderId, e);
+            }
+        }
     }
 }

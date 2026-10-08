@@ -86,9 +86,9 @@ export default function Deals() {
     fetchProducts()
   }, [])
 
-  // 3. Fetch Real Platform Vouchers & User's Claimed Vouchers
+  // 3. Fetch Real Platform & Shop Vouchers & User's Claimed Vouchers
   useEffect(() => {
-    const fetchPlatformVouchers = async () => {
+    const fetchAllDealsVouchers = async () => {
       try {
         setLoadingVouchers(true)
         const claimedSet = new Set()
@@ -107,26 +107,50 @@ export default function Deals() {
           }
         }
 
-        // Fetch platform vouchers from Backend
-        const data = await voucherService.listVouchers({ scope: 'PLATFORM' })
-        if (Array.isArray(data) && data.length > 0) {
-          const mapped = data.map((v) => {
+        // Fetch cả voucher Toàn sàn lẫn voucher các Shop
+        const [platformRes, shopRes] = await Promise.allSettled([
+          voucherService.listVouchers({ scope: 'PLATFORM', page: 0, size: 20 }),
+          voucherService.listVouchers({ scope: 'SHOP', page: 0, size: 20 }),
+        ])
+
+        const platformList = platformRes.status === 'fulfilled'
+          ? (platformRes.value?.content || (Array.isArray(platformRes.value) ? platformRes.value : []))
+          : []
+        const shopList = shopRes.status === 'fulfilled'
+          ? (shopRes.value?.content || (Array.isArray(shopRes.value) ? shopRes.value : []))
+          : []
+
+        const combined = [...platformList, ...shopList]
+
+        if (combined.length > 0) {
+          const mapped = combined.map((v) => {
             const isUserClaimed = Boolean(v.isClaimed || v.claimed || claimedSet.has(v.code))
             if (isUserClaimed) claimedSet.add(v.code)
             const isShipping = v.voucherType === 'FREE_SHIPPING' || v.type === 'SHIPPING_FREE' || v.type === 'FREE_SHIPPING'
+            const isShopVoucher = v.scope === 'SHOP'
             return {
               id: v.id,
               code: v.code,
               type: v.type || v.voucherType,
+              scope: v.scope,
+              shopId: v.shopId,
+              shopName: v.shopName,
               isShipping,
-              title: v.title || (isShipping ? 'Miễn Phí Vận Chuyển' : `Giảm ${v.discountValue}% Toàn Sàn`),
+              isShopVoucher,
+              title: v.title || (isShipping ? 'Miễn Phí Vận Chuyển' : `Giảm ${v.discountValue}%`),
               description: v.description || `Đơn từ ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(v.minOrderValue || v.minOrderAmount || 0)}`,
-              badge: v.scope === 'PLATFORM' ? 'Toàn Sàn' : 'Voucher Shop',
+              badge: isShipping ? 'Freeship' : isShopVoucher ? (v.shopName ? `Shop` : 'Voucher Shop') : 'Voucher Sàn',
               color: isShipping
                 ? 'border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-400'
-                : 'border-amber-500 bg-amber-500/10 text-amber-600 dark:text-amber-400',
+                : isShopVoucher
+                  ? 'border-purple-500 bg-purple-500/10 text-purple-600 dark:text-purple-400'
+                  : 'border-amber-500 bg-amber-500/10 text-amber-600 dark:text-amber-400',
               expiry: v.endDate || v.validTo ? `HSD: ${new Date(v.endDate || v.validTo).toLocaleDateString('vi-VN')}` : 'Còn hạn',
               isClaimed: isUserClaimed,
+              isEligible: v.isEligible,
+              userRemainingUsage: v.userRemainingUsage,
+              userUsageLimit: v.userUsageLimit,
+              ineligibleReason: v.ineligibleReason,
             }
           })
           setVouchers(mapped)
@@ -136,14 +160,14 @@ export default function Deals() {
           setCollectedVouchers(new Set(claimedSet))
         }
       } catch (err) {
-        console.error('Error fetching platform vouchers:', err)
+        console.error('Error fetching vouchers in Deals:', err)
         setVouchers([])
       } finally {
         setLoadingVouchers(false)
       }
     }
 
-    fetchPlatformVouchers()
+    fetchAllDealsVouchers()
   }, [isAuthenticated])
 
   // Handle Claim Voucher
@@ -273,6 +297,12 @@ export default function Deals() {
 
   // Filter vouchers
   const filteredVouchers = useMemo(() => {
+    if (voucherFilter === 'PLATFORM') {
+      return vouchers.filter((v) => v.scope === 'PLATFORM')
+    }
+    if (voucherFilter === 'SHOP') {
+      return vouchers.filter((v) => v.scope === 'SHOP')
+    }
     if (voucherFilter === 'SHIPPING') {
       return vouchers.filter((v) => v.isShipping)
     }
@@ -439,6 +469,7 @@ export default function Deals() {
         {quickViewProduct && (
           <ProductQuickView
             product={quickViewProduct}
+            onAddToCart={() => setQuickViewProduct(null)}
           />
         )}
       </Modal>

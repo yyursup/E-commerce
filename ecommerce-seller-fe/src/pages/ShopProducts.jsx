@@ -11,9 +11,16 @@ import {
   HiOutlineEye,
   HiStar,
   HiOutlineStar,
+  HiOutlineFire,
+  HiOutlineExclamation,
+  HiOutlineFlag,
+  HiOutlineBan,
+  HiOutlineLockClosed,
 } from 'react-icons/hi'
 import toast from 'react-hot-toast'
+import { useNavigate } from 'react-router-dom'
 import { useThemeStore } from '../store/useThemeStore'
+import { useAuthStore } from '../store/useAuthStore'
 import { cn } from '../lib/cn'
 import sellerService from '../services/seller'
 import ProductFormModal from './business/components/ProductFormModal'
@@ -21,6 +28,10 @@ import ProductDetailModal from './business/components/ProductDetailModal'
 
 export default function ShopProducts() {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
+  const user = useAuthStore((s) => s.user)
+  const navigate = useNavigate()
+  const isPendingDeposit = user?.shopStatus === 'PENDING_DEPOSIT'
+  const isShopClosed = user?.shopStatus === 'CLOSED'
 
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
@@ -52,18 +63,35 @@ export default function ShopProducts() {
   }, [statusFilter])
 
   const handleCreateProduct = () => {
+    if (isShopClosed) {
+      toast.error('Gian hàng đã đóng cửa (CLOSED). Không thể tạo sản phẩm mới.')
+      return
+    }
+    if (isPendingDeposit) {
+      toast.error('Gian hàng chưa được kích hoạt! Vui lòng nạp đủ tiền ký quỹ cam kết để bắt đầu đăng bán sản phẩm.')
+      navigate('/escrow-fund')
+      return
+    }
     setEditingProduct(null)
     setShowProductModal(true)
   }
 
   const handleEditProduct = (product, e) => {
     e?.stopPropagation()
+    if (isShopClosed) {
+      toast.error('Gian hàng đã đóng cửa (CLOSED). Không thể chỉnh sửa sản phẩm.')
+      return
+    }
     setEditingProduct(product)
     setShowProductModal(true)
   }
 
   const handleDeleteProduct = async (productId, productName, e) => {
     e?.stopPropagation()
+    if (isShopClosed) {
+      toast.error('Gian hàng đã đóng cửa (CLOSED). Không thể xóa sản phẩm.')
+      return
+    }
     if (!window.confirm(`Bạn có chắc chắn muốn xóa sản phẩm "${productName || 'này'}" khỏi gian hàng?`)) {
       return
     }
@@ -89,14 +117,18 @@ export default function ShopProducts() {
 
   const handleToggleFeatured = async (product, e) => {
     e?.stopPropagation()
+    if (isShopClosed) {
+      toast.error('Gian hàng đã đóng cửa (CLOSED). Không thể thay đổi trạng thái nổi bật.')
+      return
+    }
     try {
       setTogglingFeaturedId(product.id)
       const updated = await sellerService.toggleFeatured(product.id)
       setProducts((prev) => prev.map((p) => p.id === product.id ? { ...p, featured: updated.featured } : p))
       if (updated.featured) {
-        toast.success(`⭐ Đã đẩy nổi bật "${product.name}"`)
+        toast.success(`Đã đẩy nổi bật "${product.name}"`)
       } else {
-        toast('Đã bỏ đẩy nổi bật sản phẩm này', { icon: '🔕' })
+        toast('Đã bỏ đẩy nổi bật sản phẩm này')
       }
     } catch (err) {
       const msg = err?.message || err?.error || 'Không thể thay đổi trạng thái nổi bật'
@@ -121,7 +153,7 @@ export default function ShopProducts() {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amt || 0)
   }
 
-  // Khớp 100% với ProductStatus enum Backend: PUBLISHED, DRAFT, INACTIVE, ARCHIVED, DELETED
+  // Khớp 100% với ProductStatus enum Backend: PUBLISHED, PENDING_APPROVAL, REJECTED, DRAFT, INACTIVE, ARCHIVED, DELETED
   const getStatusBadge = (status) => {
     const st = status?.toUpperCase() || 'PUBLISHED'
     if (st === 'PUBLISHED') {
@@ -130,10 +162,22 @@ export default function ShopProducts() {
         color: 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30',
       }
     }
+    if (st === 'PENDING_APPROVAL') {
+      return {
+        label: 'Chờ duyệt kiểm định',
+        color: 'bg-amber-500/20 text-amber-500 border border-amber-500/40 font-bold',
+      }
+    }
+    if (st === 'REJECTED') {
+      return {
+        label: 'Bị từ chối duyệt',
+        color: 'bg-rose-500/20 text-rose-500 border border-rose-500/40 font-bold',
+      }
+    }
     if (st === 'DRAFT') {
       return {
         label: 'Bản nháp',
-        color: 'bg-amber-500/15 text-amber-400 border border-amber-500/30',
+        color: 'bg-stone-500/15 text-stone-400 border border-stone-500/30',
       }
     }
     if (st === 'INACTIVE') {
@@ -142,9 +186,32 @@ export default function ShopProducts() {
         color: 'bg-sky-500/15 text-sky-400 border border-sky-500/30',
       }
     }
+    if (st === 'DELETED') {
+      return {
+        label: 'Bị sàn khóa / Vi phạm',
+        color: 'bg-rose-500/15 text-rose-500 border border-rose-500/30 font-bold',
+      }
+    }
     return {
       label: 'Đã lưu trữ',
       color: 'bg-slate-500/15 text-slate-400 border border-slate-500/30',
+    }
+  }
+
+  const getConditionBadge = (grade) => {
+    switch (grade) {
+      case 'GRADE_NEW':
+        return { label: 'Mới 100%', color: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-500' }
+      case 'GRADE_OPEN_BOX':
+        return { label: 'Trưng bày 99%', color: 'border-sky-500/30 bg-sky-500/10 text-sky-500' }
+      case 'GRADE_LIKE_NEW':
+        return { label: 'Like New 99%', color: 'border-amber-500/30 bg-amber-500/10 text-amber-500' }
+      case 'GRADE_FAIR':
+        return { label: 'Cũ 90-95%', color: 'border-orange-500/30 bg-orange-500/10 text-orange-500' }
+      case 'GRADE_AS_IS':
+        return { label: 'Xác / Bán đứt', color: 'border-rose-500/30 bg-rose-500/10 text-rose-500' }
+      default:
+        return null
     }
   }
 
@@ -189,13 +256,60 @@ export default function ShopProducts() {
 
           <button
             onClick={handleCreateProduct}
-            className="flex-1 sm:flex-initial flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 px-5 py-2.5 text-xs font-bold text-white hover:from-amber-600 hover:to-orange-600 active:scale-95 shadow-md shadow-amber-500/25 transition-all"
+            disabled={isPendingDeposit || isShopClosed}
+            className={cn(
+              "flex-1 sm:flex-initial flex items-center justify-center gap-2 rounded-2xl px-5 py-2.5 text-xs font-bold transition-all shadow-md",
+              isShopClosed || isPendingDeposit
+                ? "bg-stone-300 text-stone-500 dark:bg-slate-800 dark:text-slate-500 cursor-not-allowed shadow-none"
+                : "bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 active:scale-95 shadow-amber-500/25"
+            )}
+            title={isShopClosed ? 'Gian hàng đã đóng cửa' : undefined}
           >
             <HiOutlinePlus className="h-4 w-4 stroke-[2.5]" />
             Thêm sản phẩm mới
           </button>
         </div>
       </div>
+
+      {/* Cảnh báo gian hàng đã đóng cửa */}
+      {isShopClosed && (
+        <div className="rounded-2xl border border-rose-500/40 bg-gradient-to-r from-rose-500/15 via-rose-500/10 to-transparent p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+          <div>
+            <p className="font-bold text-rose-700 dark:text-rose-300">
+              Gian hàng đã hoàn tất thủ tục đóng cửa (CLOSED)
+            </p>
+            <p className={cn('mt-0.5', isDark ? 'text-slate-300' : 'text-stone-600')}>
+              Hệ thống đã khóa các thao tác tạo mới, chỉnh sửa, xóa và đẩy nổi bật sản phẩm. Toàn bộ danh mục sản phẩm dưới đây được lưu giữ chỉ nhằm mục đích tra cứu lịch sử.
+            </p>
+          </div>
+          <button
+            onClick={() => navigate('/escrow-fund')}
+            className="px-4 py-2 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs shadow transition shrink-0"
+          >
+            Xem Quỹ & Ví &rarr;
+          </button>
+        </div>
+      )}
+
+      {/* Cảnh báo chưa kích hoạt gian hàng */}
+      {isPendingDeposit && (
+        <div className="rounded-2xl border border-amber-500/40 bg-gradient-to-r from-amber-500/15 via-amber-500/10 to-transparent p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+          <div>
+            <p className="font-bold text-amber-700 dark:text-amber-300">
+              Tính năng đăng bán sản phẩm đang tạm khóa
+            </p>
+            <p className={cn('mt-0.5', isDark ? 'text-slate-300' : 'text-stone-600')}>
+              Gian hàng của bạn đang ở trạng thái <strong>Chờ nạp ký quỹ</strong>. Vui lòng nạp đủ tiền ký quỹ đã cam kết để kích hoạt gian hàng và mở khóa tính năng đăng bán sản phẩm.
+            </p>
+          </div>
+          <button
+            onClick={() => navigate('/escrow-fund')}
+            className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow transition shrink-0"
+          >
+            Nạp ký quỹ kích hoạt &rarr;
+          </button>
+        </div>
+      )}
 
       {/* Filter Bar & Search */}
       <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
@@ -224,9 +338,12 @@ export default function ShopProducts() {
           {[
             { key: 'ALL', label: 'Tất cả' },
             { key: 'PUBLISHED', label: 'Đang bán' },
+            { key: 'PENDING_APPROVAL', label: 'Chờ duyệt' },
+            { key: 'REJECTED', label: 'Bị từ chối' },
             { key: 'DRAFT', label: 'Bản nháp' },
             { key: 'INACTIVE', label: 'Tạm ngưng' },
             { key: 'ARCHIVED', label: 'Đã lưu trữ' },
+            { key: 'VIOLATION', label: 'Vi phạm' },
           ].map((tab) => {
             const isActive = statusFilter === tab.key
             return (
@@ -310,8 +427,8 @@ export default function ShopProducts() {
                       ? 'border-amber-500/50 bg-amber-500/5 hover:border-amber-400 hover:shadow-lg hover:shadow-amber-500/10'
                       : 'border-amber-400/60 bg-amber-50/40 hover:border-amber-500 hover:shadow-md hover:shadow-amber-500/10'
                     : isDark
-                    ? 'border-slate-800 bg-slate-900 hover:border-amber-500/50 hover:bg-slate-900/90 hover:shadow-lg hover:shadow-amber-500/5'
-                    : 'border-stone-200 bg-white hover:border-amber-400 hover:bg-amber-50/20 hover:shadow-md'
+                      ? 'border-slate-800 bg-slate-900 hover:border-amber-500/50 hover:bg-slate-900/90 hover:shadow-lg hover:shadow-amber-500/5'
+                      : 'border-stone-200 bg-white hover:border-amber-400 hover:bg-amber-50/20 hover:shadow-md'
                 )}
                 title="Nhấp để xem chi tiết sản phẩm"
               >
@@ -353,14 +470,57 @@ export default function ShopProducts() {
                       )}>
                         {prod.categoryName || 'Mặc định'}
                       </span>
+                      {/* Tình trạng máy */}
+                      {prod.conditionGrade && (
+                        (() => {
+                          const c = getConditionBadge(prod.conditionGrade)
+                          return c ? (
+                            <span className={cn('text-[11px] font-bold px-2 py-0.5 rounded-lg border shrink-0', c.color)}>
+                              {c.label}
+                            </span>
+                          ) : null
+                        })()
+                      )}
+                      {/* Chế độ bảo hành */}
+                      {prod.warrantyType && prod.warrantyType !== 'NONE' && (
+                        <span className={cn(
+                          'text-[11px] font-bold px-2 py-0.5 rounded-lg border shrink-0',
+                          prod.warrantyType === 'OFFICIAL'
+                            ? 'border-blue-500/30 bg-blue-500/10 text-blue-500'
+                            : 'border-purple-500/30 bg-purple-500/10 text-purple-500'
+                        )}>
+                          BH {prod.warrantyMonths ? `${prod.warrantyMonths}T ` : ''}{prod.warrantyType === 'OFFICIAL' ? 'Chính hãng' : 'Cửa hàng'}
+                        </span>
+                      )}
                       {prod.sold >= 50 && (
                         <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/10 px-2 py-0.5 text-[11px] font-bold text-rose-500 border border-rose-500/20 shrink-0">
-                          🔥 Bán chạy
+                          <HiOutlineFire className="h-3.5 w-3.5" /> Bán chạy
+                        </span>
+                      )}
+                      {prod.flagged && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-bold text-amber-500 border border-amber-500/30 shrink-0">
+                          <HiOutlineExclamation className="h-3.5 w-3.5" /> Bị cảnh báo ({prod.reportCount || 0} tố cáo)
                         </span>
                       )}
                       {isFeatured && (
                         <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] font-bold text-amber-500 border border-amber-500/25 shrink-0">
                           <HiStar className="h-3 w-3" /> Đang đẩy
+                        </span>
+                      )}
+                      {prod.flagged && (
+                        <span 
+                          className="inline-flex items-center gap-1 rounded-full bg-rose-500/15 px-2 py-0.5 text-[11px] font-bold text-rose-500 border border-rose-500/30 shrink-0"
+                          title={prod.lastReportedAt ? `Bị report gần nhất lúc: ${new Date(prod.lastReportedAt).toLocaleString('vi-VN')}` : 'Sản phẩm đang bị cảnh báo khóa'}
+                        >
+                          <HiOutlineFlag className="h-3.5 w-3.5" /> Bị cắm cờ (Lỗi: {prod.reportCount || 0}/5)
+                        </span>
+                      )}
+                      {!prod.flagged && prod.reportCount > 0 && (
+                        <span 
+                          className="inline-flex items-center gap-1 rounded-full bg-orange-500/15 px-2 py-0.5 text-[11px] font-bold text-orange-500 border border-orange-500/30 shrink-0"
+                          title={prod.lastReportedAt ? `Bị report gần nhất lúc: ${new Date(prod.lastReportedAt).toLocaleString('vi-VN')}` : 'Sản phẩm bị khách hàng report'}
+                        >
+                          <HiOutlineExclamation className="h-3.5 w-3.5" /> Bị báo cáo ({prod.reportCount}/5)
                         </span>
                       )}
                     </div>
@@ -371,6 +531,18 @@ export default function ShopProducts() {
                     )}>
                       {prod.name}
                     </h3>
+
+                    {/* Rejection / Moderation notification */}
+                    {prod.status === 'REJECTED' && prod.rejectionReason && (
+                      <div className="rounded-xl border border-rose-500/40 bg-rose-500/10 p-2.5 text-xs text-rose-500">
+                        <span className="font-bold">Lý do từ chối kiểm duyệt:</span> {prod.rejectionReason}
+                      </div>
+                    )}
+                    {prod.status === 'PENDING_APPROVAL' && (
+                      <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-2 text-xs text-amber-500 font-medium">
+                        Đang chờ Admin duyệt sản phẩm công nghệ (kiểm tra ngoại quan / thông số).
+                      </div>
+                    )}
 
                     {/* Stock & Quick Stats */}
                     <div className="flex items-center gap-3 text-xs">
@@ -412,74 +584,82 @@ export default function ShopProducts() {
 
                   {/* Actions Bar */}
                   <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-                    {/* Featured Toggle Button */}
-                    <button
-                      type="button"
-                      onClick={(e) => handleToggleFeatured(prod, e)}
-                      disabled={isTogglingFeatured}
-                      title={isFeatured ? 'Bỏ đẩy nổi bật' : 'Đẩy sản phẩm này lên nổi bật'}
-                      className={cn(
-                        'p-2 rounded-xl border transition-all active:scale-95 disabled:opacity-50',
-                        isFeatured
-                          ? 'border-amber-500/50 bg-amber-500/15 text-amber-500 hover:bg-amber-500/25'
-                          : isDark
-                            ? 'border-slate-800 bg-slate-800/80 text-slate-400 hover:text-amber-400 hover:border-amber-500/40'
-                            : 'border-stone-200 bg-stone-50 text-stone-400 hover:text-amber-500 hover:border-amber-400'
-                      )}
-                    >
-                      {isTogglingFeatured
-                        ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-amber-500 border-t-transparent" />
-                        : isFeatured
-                          ? <HiStar className="h-4 w-4" />
-                          : <HiOutlineStar className="h-4 w-4" />
-                      }
-                    </button>
+                    {prod.status === 'DELETED' ? (
+                      <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-500 font-bold text-xs tracking-wide">
+                        <HiOutlineBan className="h-3.5 w-3.5" /> Bị sàn cấm (Chỉ xem)
+                      </span>
+                    ) : (
+                      <>
+                        {/* Featured Toggle Button */}
+                        <button
+                          type="button"
+                          onClick={(e) => handleToggleFeatured(prod, e)}
+                          disabled={isTogglingFeatured}
+                          title={isFeatured ? 'Bỏ đẩy nổi bật' : 'Đẩy sản phẩm này lên nổi bật'}
+                          className={cn(
+                            'p-2 rounded-xl border transition-all active:scale-95 disabled:opacity-50',
+                            isFeatured
+                              ? 'border-amber-500/50 bg-amber-500/15 text-amber-500 hover:bg-amber-500/25'
+                              : isDark
+                                ? 'border-slate-800 bg-slate-800/80 text-slate-400 hover:text-amber-400 hover:border-amber-500/40'
+                                : 'border-stone-200 bg-stone-50 text-stone-400 hover:text-amber-500 hover:border-amber-400'
+                          )}
+                        >
+                          {isTogglingFeatured
+                            ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-amber-500 border-t-transparent" />
+                            : isFeatured
+                              ? <HiStar className="h-4 w-4" />
+                              : <HiOutlineStar className="h-4 w-4" />
+                          }
+                        </button>
 
-                    <a
-                      href={`http://localhost:3000/products/${prod.id}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                      className={cn(
-                        'p-2 rounded-xl border transition-all active:scale-95',
-                        isDark
-                          ? 'border-slate-800 bg-slate-800/80 text-slate-300 hover:text-amber-400 hover:border-amber-500/40'
-                          : 'border-stone-200 bg-stone-50 text-stone-600 hover:text-amber-600 hover:border-amber-500/40'
-                      )}
-                      title="Xem sản phẩm trên sàn"
-                    >
-                      <HiOutlineExternalLink className="h-4 w-4" />
-                    </a>
+                        <a
+                          href={`http://localhost:3000/products/${prod.id}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className={cn(
+                            'p-2 rounded-xl border transition-all active:scale-95',
+                            isDark
+                              ? 'border-slate-800 bg-slate-800/80 text-slate-300 hover:text-amber-400 hover:border-amber-500/40'
+                              : 'border-stone-200 bg-stone-50 text-stone-600 hover:text-amber-600 hover:border-amber-500/40'
+                          )}
+                          title="Xem sản phẩm trên sàn"
+                        >
+                          <HiOutlineExternalLink className="h-4 w-4" />
+                        </a>
 
-                    <button
-                      type="button"
-                      onClick={(e) => handleEditProduct(prod, e)}
-                      className={cn(
-                        'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all active:scale-95',
-                        isDark
-                          ? 'border-blue-500/30 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20'
-                          : 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100'
-                      )}
-                      title="Chỉnh sửa sản phẩm"
-                    >
-                      <HiOutlinePencilAlt className="h-4 w-4" />
-                      <span>Sửa</span>
-                    </button>
+                        <button
+                          type="button"
+                          onClick={(e) => handleEditProduct(prod, e)}
+                          className={cn(
+                            'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all active:scale-95',
+                            isDark
+                              ? 'border-blue-500/30 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20'
+                              : 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100'
+                          )}
+                          title="Chỉnh sửa sản phẩm"
+                        >
+                          <HiOutlinePencilAlt className="h-4 w-4" />
+                          <span>Sửa</span>
+                        </button>
 
-                    <button
-                      type="button"
-                      onClick={(e) => handleDeleteProduct(prod.id, prod.name, e)}
-                      disabled={isDeleting}
-                      className={cn(
-                        'p-2 rounded-xl border transition-all active:scale-95 disabled:opacity-50',
-                        isDark
-                          ? 'border-rose-500/30 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20'
-                          : 'border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100'
-                      )}
-                      title="Xóa sản phẩm"
-                    >
-                      <HiOutlineTrash className="h-4 w-4" />
-                    </button>
+                        <button
+                          type="button"
+                          onClick={(e) => handleDeleteProduct(prod.id, prod.name, e)}
+                          disabled={isDeleting}
+                          className={cn(
+                            'p-2 rounded-xl border transition-all active:scale-95 disabled:opacity-50',
+                            isDark
+                              ? 'border-rose-500/30 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20'
+                              : 'border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100'
+                          )}
+                          title="Xóa sản phẩm"
+                        >
+                          <HiOutlineTrash className="h-4 w-4" />
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               </motion.div>

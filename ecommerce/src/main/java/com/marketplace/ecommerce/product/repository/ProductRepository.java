@@ -1,8 +1,9 @@
 package com.marketplace.ecommerce.product.repository;
 
 import com.marketplace.ecommerce.product.entity.Product;
+import com.marketplace.ecommerce.product.valueObjects.ConditionGrade;
 import com.marketplace.ecommerce.product.valueObjects.ProductStatus;
-import com.marketplace.ecommerce.review.entity.Review;
+import com.marketplace.ecommerce.product.valueObjects.WarrantyType;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -33,6 +34,8 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
 
     long countByShopIdAndDeletedFalse(UUID shopId);
 
+    List<Product> findByStatusAndDeletedFalseOrderByCreatedAtDesc(ProductStatus status);
+
 
     @Modifying
     @Query("update Product p set p.status = :status where p.shop.id = :shopId")
@@ -60,7 +63,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
                 left join fetch p.images i
                 where p.id = :id
                   and p.status = 'PUBLISHED'
-                  and s.status = 'ACTIVE'
+                  and s.status in ('ACTIVE', 'WARNED')
                   and s.user.account.isActive = true
                   and p.deleted = false
             """)
@@ -73,7 +76,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
                 join fetch p.productCategory c
                 where p.id <> :excludeId
                   and p.status = 'PUBLISHED'
-                  and p.shop.status = 'ACTIVE'
+                  and p.shop.status in ('ACTIVE', 'WARNED')
                   and p.shop.user.account.isActive = true
                   and p.deleted = false
                   and (:categoryId is null or p.productCategory.id = :categoryId)
@@ -87,11 +90,13 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
                 select p
                 from Product p
                 where p.status = 'PUBLISHED'
-                  and p.shop.status = 'ACTIVE'
+                  and p.shop.status in ('ACTIVE', 'WARNED')
                   and p.shop.user.account.isActive = true
                   and p.deleted = false
                   and (:categoryId is null or p.productCategory.id = :categoryId)
                   and (:shopId is null or p.shop.id = :shopId)
+                  and (:conditionGrade is null or p.conditionGrade = :conditionGrade)
+                  and (:warrantyType is null or p.warrantyType = :warrantyType)
                   and (:minPrice is null or p.basePrice >= :minPrice)
                   and (:maxPrice is null or p.basePrice <= :maxPrice)
                   and (
@@ -104,6 +109,8 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
     Page<Product> findPublishedProductsWithFilters(
             @Param("categoryId") UUID categoryId,
             @Param("shopId") UUID shopId,
+            @Param("conditionGrade") ConditionGrade conditionGrade,
+            @Param("warrantyType") WarrantyType warrantyType,
             @Param("minPrice") BigDecimal minPrice,
             @Param("maxPrice") BigDecimal maxPrice,
             @Param("search") String search,
@@ -154,12 +161,111 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
                 join fetch p.productCategory c
                 left join fetch p.images i
                 where s.id = :shopId
+                  and s.status in ('ACTIVE', 'WARNED')
+                  and s.user.account.isActive = true
                   and p.featured = true
                   and p.status = 'PUBLISHED'
                   and p.deleted = false
             """)
     List<Product> findFeaturedByShopIdWithDetails(@Param("shopId") UUID shopId);
 
+    @Query("""
+                select distinct p
+                from Product p
+                join fetch p.shop s
+                join fetch p.productCategory c
+                left join fetch p.images i
+                where s.id = :shopId
+                  and (p.status = 'DELETED' or p.flagged = true or p.deleted = true)
+            """)
+    List<Product> findAllViolatedProductsByShopId(@Param("shopId") UUID shopId);
+
     long countByShopIdAndFeaturedTrueAndDeletedFalse(UUID shopId);
+
+    @Query("""
+        select p
+        from Product p
+        join fetch p.shop s
+        join fetch p.productCategory c
+        left join fetch p.images i
+        where p.status = 'PUBLISHED'
+          and p.shop.status in ('ACTIVE', 'WARNED')
+          and p.shop.user.account.isActive = true
+          and p.deleted = false
+        order by p.featured desc, p.createdAt desc
+    """)
+    List<Product> findTopPublishedForRecommendation(Pageable pageable);
+
+    @Query("""
+        select p
+        from Product p
+        join fetch p.shop s
+        join fetch p.productCategory c
+        left join fetch p.images i
+        where p.status = 'PUBLISHED'
+          and p.shop.status in ('ACTIVE', 'WARNED')
+          and p.shop.user.account.isActive = true
+          and p.deleted = false
+          and p.id <> :excludeId
+          and (
+               lower(c.name) like '%phụ kiện%'
+            or lower(c.name) like '%sạc%'
+            or lower(c.name) like '%cáp%'
+            or lower(c.name) like '%tai nghe%'
+            or lower(c.name) like '%chuột%'
+            or lower(c.name) like '%bàn phím%'
+            or lower(c.name) like '%loa%'
+            or lower(c.name) like '%pin%'
+            or lower(p.name) like '%sạc%'
+            or lower(p.name) like '%tai nghe%'
+            or lower(p.name) like '%cáp%'
+          )
+        order by p.createdAt desc
+    """)
+    List<Product> findPotentialAccessories(@Param("excludeId") UUID excludeId, Pageable pageable);
+
+    @Query("""
+        SELECT p
+        FROM Product p
+        LEFT JOIN FETCH p.images i
+        WHERE p.shop.id = :shopId
+          AND p.deleted = false
+          AND p.quantity <= :threshold
+        ORDER BY p.quantity ASC
+    """)
+    List<Product> findLowStockProductsByShop(@Param("shopId") UUID shopId, @Param("threshold") Integer threshold, Pageable pageable);
+
+    @Query("""
+        SELECT p.conditionGrade, COUNT(p)
+        FROM Product p
+        WHERE p.deleted = false AND p.status = 'PUBLISHED'
+        GROUP BY p.conditionGrade
+    """)
+    List<Object[]> countPublishedProductsByConditionGrade();
+
+    @Query("""
+        SELECT c.id, c.name, COUNT(p)
+        FROM Product p
+        JOIN p.productCategory c
+        WHERE p.deleted = false AND p.status = 'PUBLISHED'
+        GROUP BY c.id, c.name
+        ORDER BY COUNT(p) DESC
+    """)
+    List<Object[]> getTopCategoriesByProductCount(Pageable pageable);
+
+    @Modifying
+    @Query("""
+        UPDATE Product p
+        SET p.status = :newStatus, p.updatedAt = :now
+        WHERE p.shop.id = :shopId
+          AND p.status in :targetStatuses
+          AND p.deleted = false
+    """)
+    int updateStatusByShopId(
+            @Param("shopId") UUID shopId,
+            @Param("targetStatuses") java.util.Collection<ProductStatus> targetStatuses,
+            @Param("newStatus") ProductStatus newStatus,
+            @Param("now") java.time.LocalDateTime now
+    );
 }
 

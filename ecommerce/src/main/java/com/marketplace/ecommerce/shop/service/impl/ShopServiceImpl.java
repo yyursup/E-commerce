@@ -24,8 +24,23 @@ import com.marketplace.ecommerce.review.valueObjects.ReviewStatus;
 import com.marketplace.ecommerce.chat.repository.ChatThreadRepository;
 import com.marketplace.ecommerce.chat.entity.ChatThread;
 
+import com.marketplace.ecommerce.auth.repository.UserRepository;
+import com.marketplace.ecommerce.request.entity.Report;
+import com.marketplace.ecommerce.request.repository.ReportRepository;
+import com.marketplace.ecommerce.request.valueObjects.TargetType;
+import com.marketplace.ecommerce.shop.dto.response.ShopViolationResponse;
+import com.marketplace.ecommerce.product.entity.Product;
+
+import com.marketplace.ecommerce.order.repository.OrderRepository;
+import com.marketplace.ecommerce.shop.repository.ShopEscrowFundRepository;
+import com.marketplace.ecommerce.shop.entity.ShopEscrowFund;
+import com.marketplace.ecommerce.shop.valueObjects.EscrowFundStatus;
+import com.marketplace.ecommerce.shop.dto.request.UpdateEscrowStatusRequest;
 import java.util.List;
 import java.util.UUID;
+import java.math.BigDecimal;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -37,9 +52,18 @@ public class ShopServiceImpl implements ShopService {
     private final ShopFollowerRepository shopFollowerRepository;
     private final ReviewRepository reviewRepository;
     private final ChatThreadRepository chatThreadRepository;
+    private final UserRepository userRepository;
+    private final ReportRepository reportRepository;
+    private final OrderRepository orderRepository;
+    private final ShopEscrowFundRepository shopEscrowFundRepository;
+    private final StringRedisTemplate redisTemplate;
 
     @Override
     public Shop createShop(User ownerUser, String shopName, Request req, Seller sellerDetail) {
+
+        boolean requiresDeposit = Boolean.TRUE.equals(sellerDetail.getIsEscrowParticipated())
+                && sellerDetail.getInitialDepositAmount() != null
+                && sellerDetail.getInitialDepositAmount().compareTo(java.math.BigDecimal.ZERO) > 0;
 
         Shop shop = Shop.builder()
                 .user(ownerUser)
@@ -61,7 +85,8 @@ public class ShopServiceImpl implements ShopService {
                 .businessName(sellerDetail.getBusinessName())
                 .businessAddress(sellerDetail.getBusinessAddress())
                 .businessLicenseUrl(sellerDetail.getBusinessLicenseUrl())
-                .status(ShopStatus.ACTIVE)
+                .status(requiresDeposit ? ShopStatus.PENDING_DEPOSIT : ShopStatus.ACTIVE)
+                .trustLevel(1)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
@@ -121,10 +146,191 @@ public class ShopServiceImpl implements ShopService {
     }
 
     @Override
+    public ShopProfileResponse getMyShopProfile(UUID accountId) {
+        User user = userRepository.findByAccountId(accountId)
+                .orElseThrow(() -> new CustomException("Không tìm thấy thông tin người dùng"));
+        Shop shop = shopRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new CustomException("Tài khoản chưa có thông tin cửa hàng"));
+        return buildShopProfile(shop);
+    }
+
+    @Override
     public List<ShopProfileResponse> getAllActiveShops() {
         return shopRepository.findAll().stream()
-                .filter(s -> s.getStatus() == ShopStatus.ACTIVE)
+                .filter(s -> s.getStatus() == ShopStatus.ACTIVE || s.getStatus() == ShopStatus.WARNED)
                 .map(this::buildShopProfile)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ShopViolationResponse> getMyShopViolations(UUID accountId) {
+        User user = userRepository.findByAccountId(accountId)
+                .orElseThrow(() -> new CustomException("Không tìm thấy thông tin người dùng"));
+        Shop shop = shopRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new CustomException("Tài khoản chưa có thông tin cửa hàng"));
+
+        List<Product> products = productRepository.findAllByShopIdWithDetails(shop.getId());
+        List<UUID> productIds = products.stream().map(Product::getId).collect(Collectors.toList());
+
+        List<Report> reports = new java.util.ArrayList<>();
+        reports.addAll(reportRepository.findApprovedReportsByShopId(shop.getId()));
+        if (!productIds.isEmpty()) {
+            reports.addAll(reportRepository.findApprovedReportsByProductIds(productIds));
+        }
+        reports.addAll(reportRepository.findApprovedReportsByShopIdForOrders(shop.getId()));
+
+        // Lấy danh sách appeal do account này gửi
+        List<Report> appeals = reportRepository.findAllAppealsByAccountId(accountId);
+        java.util.Map<UUID, Report> appealByReportIdMap = new java.util.HashMap<>();
+        java.util.Set<UUID> usedLegacyAppealIds = new java.util.HashSet<>();
+
+        for (Report a : appeals) {
+            if (a.getViolationReportId() != null && !appealByReportIdMap.containsKey(a.getViolationReportId())) {
+                appealByReportIdMap.put(a.getViolationReportId(), a);
+            }
+        }
+
+        java.util.Map<UUID, String> productNameMap = products.stream()
+                .collect(Collectors.toMap(Product::getId, Product::getName, (existing, replacement) -> existing));
+
+        List<ShopViolationResponse> results = new java.util.ArrayList<>();
+        for (Report rep : reports) {
+            String targetName;
+            if (rep.getTargetType() == TargetType.SHOP) {
+                targetName = shop.getName();
+            } else if (rep.getTargetType() == TargetType.ORDER) {
+                targetName = orderRepository.findById(rep.getTargetId())
+                        .map(o -> "Đơn hàng " + o.getOrderNumber())
+                        .orElse("Đơn hàng vi phạm");
+            } else {
+                targetName = productNameMap.getOrDefault(rep.getTargetId(), "Sản phẩm vi phạm");
+            }
+
+            String appealStatus = "NONE";
+            UUID appealRequestId = null;
+            String appealResponse = null;
+
+            // 1. Khớp chính xác theo vi phạm cụ thể (violationReportId)
+            Report appeal = appealByReportIdMap.get(rep.getId());
+
+            // 2. Fallback cho appeal cũ chưa có violationReportId: chỉ gán tối đa 1-1 cho 1 report vi phạm duy nhất
+            if (appeal == null) {
+                for (Report a : appeals) {
+                    if (a.getViolationReportId() == null && !usedLegacyAppealIds.contains(a.getId())) {
+                        if (a.getTargetId() != null && a.getTargetId().equals(rep.getTargetId())) {
+                            appeal = a;
+                            usedLegacyAppealIds.add(a.getId());
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (appeal != null && appeal.getRequest() != null) {
+                appealStatus = appeal.getRequest().getStatus().name();
+                appealRequestId = appeal.getRequest().getId();
+                appealResponse = appeal.getRequest().getResponse();
+            }
+
+            results.add(ShopViolationResponse.builder()
+                    .reportId(rep.getId())
+                    .targetType(rep.getTargetType())
+                    .targetId(rep.getTargetId())
+                    .targetName(targetName)
+                    .reason(rep.getRequest() != null ? rep.getRequest().getDescription() : "")
+                    .evidenceUrl(rep.getEvidenceUrl())
+                    .coverImageUrl(rep.getRequest() != null ? rep.getRequest().getCoverImageUrl() : null)
+                    .createdAt(rep.getRequest() != null ? rep.getRequest().getCreatedAt() : null)
+                    .adminNote(rep.getModeratorNote() != null ? rep.getModeratorNote() : (rep.getRequest() != null ? rep.getRequest().getResponse() : null))
+                    .appealStatus(appealStatus)
+                    .appealRequestId(appealRequestId)
+                    .appealResponse(appealResponse)
+                    .build());
+        }
+
+        return results;
+    }
+
+    @Override
+    public void updateEscrowStatus(UUID accountId, UpdateEscrowStatusRequest request) {
+        User user = userRepository.findByAccountId(accountId)
+                .orElseThrow(() -> new CustomException("Không tìm thấy thông tin người dùng"));
+        Shop shop = shopRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new CustomException("Tài khoản chưa có thông tin cửa hàng"));
+
+        // RATE LIMITING logic (Max 3 times / 24 hours)
+        String rateLimitKey = "escrow_switch_limit:" + shop.getId().toString();
+        String currentCountStr = redisTemplate.opsForValue().get(rateLimitKey);
+        int currentCount = currentCountStr != null ? Integer.parseInt(currentCountStr) : 0;
+        
+        if (currentCount >= 3) {
+            Long expireTime = redisTemplate.getExpire(rateLimitKey, TimeUnit.HOURS);
+            throw new CustomException("Bạn đã vượt quá số lần cho phép thay đổi trạng thái quỹ trong ngày. Vui lòng thử lại sau " + (expireTime != null && expireTime > 0 ? expireTime : 24) + " giờ.");
+        }
+
+        ShopEscrowFund fund = shopEscrowFundRepository.findByShopId(shop.getId()).orElse(null);
+
+        if (Boolean.TRUE.equals(request.getIsEscrowParticipated())) {
+            // Muốn ĐĂNG KÝ KÝ QUỸ
+            BigDecimal committed = request.getCommittedAmount();
+            if (committed == null || committed.compareTo(BigDecimal.ZERO) <= 0) {
+                throw new CustomException("Vui lòng nhập số tiền ký quỹ hợp lệ.");
+            }
+
+            if (fund == null) {
+                // Tạo mới nếu chưa có
+                fund = ShopEscrowFund.builder()
+                        .shop(shop)
+                        .balance(BigDecimal.ZERO)
+                        .committedAmount(committed)
+                        .currentTrustLevel(1)
+                        .isDeficit(false)
+                        .deficitAmount(BigDecimal.ZERO)
+                        .status(EscrowFundStatus.PENDING_DEPOSIT)
+                        .build();
+                shop.setStatus(ShopStatus.PENDING_DEPOSIT);
+            } else {
+                // Đã có fund
+                if (fund.getStatus() == EscrowFundStatus.ACTIVE && fund.getBalance().compareTo(BigDecimal.ZERO) > 0) {
+                    throw new CustomException("Gian hàng của bạn đã hoàn tất nạp quỹ, không thể đổi trạng thái đăng ký ký quỹ lúc này.");
+                } else if (fund.getStatus() == EscrowFundStatus.PENDING_DEPOSIT || fund.getBalance().compareTo(BigDecimal.ZERO) == 0) {
+                    // Cập nhật số tiền muốn nạp
+                    fund.setCommittedAmount(committed);
+                    fund.setStatus(EscrowFundStatus.PENDING_DEPOSIT);
+                    shop.setStatus(ShopStatus.PENDING_DEPOSIT);
+                } else {
+                    throw new CustomException("Trạng thái quỹ hiện tại không cho phép đăng ký lại: " + fund.getStatus());
+                }
+            }
+            shopEscrowFundRepository.save(fund);
+            shopRepository.save(shop);
+        } else {
+            // Muốn HỦY ĐĂNG KÝ KÝ QUỸ
+            if (fund != null) {
+                if (fund.getBalance().compareTo(BigDecimal.ZERO) > 0) {
+                    throw new CustomException("Gian hàng đã nạp quỹ. Quỹ này chỉ được hoàn trả khi bạn làm thủ tục Đóng gian hàng.");
+                }
+                
+                // Thu hồi đăng ký: Trả shop về trạng thái bình thường (ACTIVE), 
+                // Thay vì xóa fund (gây lỗi ObjectDeletedException do CascadeType.ALL trên Shop),
+                // ta sẽ update fund về trạng thái mặc định (NONE).
+                fund.setCommittedAmount(BigDecimal.ZERO);
+                fund.setStatus(EscrowFundStatus.ACTIVE);
+                shopEscrowFundRepository.save(fund);
+                
+                // Đưa shop về ACTIVE
+                shop.setStatus(ShopStatus.ACTIVE);
+                shopRepository.save(shop);
+            } else {
+                // Đang là KHÔNG KÝ QUỸ rồi, không cần làm gì cả.
+            }
+        }
+        
+        // Increase the counter if it reaches here
+        if (currentCount == 0) {
+            redisTemplate.opsForValue().set(rateLimitKey, "1", 24, TimeUnit.HOURS);
+        } else {
+            redisTemplate.opsForValue().increment(rateLimitKey);
+        }
     }
 }

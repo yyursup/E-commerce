@@ -37,6 +37,9 @@ public class ProductCategory {
     @Column(name = "name", nullable = false, unique = true, length = 255)
     private String name;
 
+    @Column(name = "commission_rate", precision = 5, scale = 2)
+    private java.math.BigDecimal commissionRate;
+
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

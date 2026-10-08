@@ -31,6 +31,8 @@ export default function Products() {
   const search = searchParams.get('search') || ''
   const categoryId = searchParams.get('categoryId') || ''
   const shopId = searchParams.get('shopId') || ''
+  const conditionGrade = searchParams.get('conditionGrade') || ''
+  const warrantyType = searchParams.get('warrantyType') || ''
   const minPrice = searchParams.get('minPrice') ? Number(searchParams.get('minPrice')) : null
   const maxPrice = searchParams.get('maxPrice') ? Number(searchParams.get('maxPrice')) : null
   const sortBy = searchParams.get('sortBy') || 'createdAt'
@@ -68,6 +70,8 @@ export default function Products() {
           ...(search && { search }),
           ...(categoryId && { categoryId }),
           ...(shopId && { shopId }),
+          ...(conditionGrade && { conditionGrade }),
+          ...(warrantyType && { warrantyType }),
           ...(minPrice !== null && { minPrice }),
           ...(maxPrice !== null && { maxPrice }),
         }
@@ -123,7 +127,7 @@ export default function Products() {
     }
 
     fetchProducts()
-  }, [page, size, search, categoryId, shopId, minPrice, maxPrice, sortBy, sortDir])
+  }, [page, size, search, categoryId, shopId, conditionGrade, warrantyType, minPrice, maxPrice, sortBy, sortDir])
 
   // Update local search when URL changes
   useEffect(() => {
@@ -189,6 +193,28 @@ export default function Products() {
     setSearchParams(newParams)
   }
 
+  const handleConditionChange = (grade) => {
+    const newParams = new URLSearchParams(searchParams)
+    if (grade) {
+      newParams.set('conditionGrade', grade)
+    } else {
+      newParams.delete('conditionGrade')
+    }
+    newParams.set('page', '0')
+    setSearchParams(newParams)
+  }
+
+  const handleWarrantyChange = (warranty) => {
+    const newParams = new URLSearchParams(searchParams)
+    if (warranty) {
+      newParams.set('warrantyType', warranty)
+    } else {
+      newParams.delete('warrantyType')
+    }
+    newParams.set('page', '0')
+    setSearchParams(newParams)
+  }
+
   const handleSortChange = (sortValue) => {
     const [sortBy, sortDir] = sortValue.split(',')
     const newParams = new URLSearchParams(searchParams)
@@ -212,12 +238,9 @@ export default function Products() {
   }
 
   const handleQuickView = (product) => setQuickViewProduct(product)
-  const handleAddToCart = (product) => {
-    toast.success(`${product.name} đã thêm vào giỏ (demo)`)
-    setQuickViewProduct(null)
-  }
+  const handleQuickViewClose = () => setQuickViewProduct(null)
 
-  const hasActiveFilters = search || categoryId || shopId || minPrice !== null || maxPrice !== null
+  const hasActiveFilters = search || categoryId || shopId || conditionGrade || warrantyType || minPrice !== null || maxPrice !== null
 
   return (
     <div className={cn('min-h-screen', isDark ? 'bg-slate-950' : 'bg-stone-50')}>
@@ -277,6 +300,10 @@ export default function Products() {
             onPriceRangeChange={handlePriceRangeChange}
             selectedCategoryId={categoryId}
             onCategoryChange={handleCategoryChange}
+            selectedConditionGrade={conditionGrade}
+            onConditionChange={handleConditionChange}
+            selectedWarrantyType={warrantyType}
+            onWarrantyChange={handleWarrantyChange}
             hasActiveFilters={hasActiveFilters}
             onClearFilters={clearFilters}
           />
@@ -325,6 +352,10 @@ export default function Products() {
         onClose={() => setMobileFilterOpen(false)}
         selectedPriceRange={selectedPriceRange}
         onPriceRangeChange={handlePriceRangeChange}
+        selectedConditionGrade={conditionGrade}
+        onConditionChange={handleConditionChange}
+        selectedWarrantyType={warrantyType}
+        onWarrantyChange={handleWarrantyChange}
         hasActiveFilters={hasActiveFilters}
         onClearFilters={clearFilters}
       />
@@ -339,7 +370,7 @@ export default function Products() {
         {quickViewProduct && (
           <ProductQuickView
             product={quickViewProduct}
-            onAddToCart={handleAddToCart}
+            onAddToCart={handleQuickViewClose}
           />
         )}
       </Modal>

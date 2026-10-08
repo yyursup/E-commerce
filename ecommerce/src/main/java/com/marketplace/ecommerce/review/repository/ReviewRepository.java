@@ -28,6 +28,10 @@ public interface ReviewRepository extends JpaRepository<Review, UUID> {
             UUID userId, UUID productId, UUID subOrderId
     );
 
+    @EntityGraph(attributePaths = {"product", "product.images", "images", "reply"})
+    @Query("SELECT r FROM Review r WHERE r.user.id = :userId ORDER BY r.createdAt DESC")
+    Page<Review> findByUserIdWithDetails(@Param("userId") UUID userId, Pageable pageable);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select r from Review r where r.id = :id")
     Optional<Review> findByIdForUpdate(@Param("id") UUID id);

@@ -4,5 +4,7 @@ public enum TargetType {
     USER,
     PRODUCT,
     SHOP,
-    REVIEW
+    REVIEW,
+    ORDER
 }
+

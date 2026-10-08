@@ -6,6 +6,7 @@ import {
   HiOutlineRefresh,
   HiOutlineClipboardCopy,
   HiOutlineCheckCircle,
+  HiOutlineExclamation,
 } from 'react-icons/hi'
 import toast from 'react-hot-toast'
 import { cn } from '../../../../lib/cn'
@@ -147,7 +148,7 @@ export default function SellerOrderActions({
         >
           <div>
             <p className={cn('text-xs sm:text-sm font-bold', isDark ? 'text-amber-400' : 'text-amber-800')}>
-              ⚠️ Đơn hàng chưa có mã vận đơn GHN Express
+              Đơn hàng chưa có mã vận đơn GHN Express
             </p>
             <p className={cn('text-xs mt-0.5', isDark ? 'text-slate-400' : 'text-stone-500')}>
               Hệ thống có thể tự động tạo lại mã vận đơn qua API GHN hoặc bạn có thể nhập mã phiếu gửi hàng thủ công.

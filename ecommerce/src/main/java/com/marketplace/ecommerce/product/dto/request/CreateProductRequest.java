@@ -1,5 +1,7 @@
 package com.marketplace.ecommerce.product.dto.request;
 
+import com.marketplace.ecommerce.product.valueObjects.ConditionGrade;
+import com.marketplace.ecommerce.product.valueObjects.WarrantyType;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
@@ -35,6 +37,19 @@ public class CreateProductRequest {
     @Min(value = 0, message = "Stock quantity must be greater than or equal to 0")
     private Integer stockQuantity;
 
+    private ConditionGrade conditionGrade = ConditionGrade.GRADE_NEW;
+
+    private WarrantyType warrantyType = WarrantyType.OFFICIAL;
+
+    private Integer warrantyMonths = 12;
+
+    private Integer batteryHealth;
+
+    private Boolean isRepaired = false;
+
+    private String repairDetails;
+
+    private String specifications;
 
     @Valid
     private List<ProductImageRequest> images;

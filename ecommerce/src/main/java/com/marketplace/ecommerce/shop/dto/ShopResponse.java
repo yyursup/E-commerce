@@ -25,6 +25,8 @@ public class ShopResponse {
     private String address;
     private ShopStatus status;
     private Float averageRating;
+    private Integer trustLevel;
+    private java.math.BigDecimal escrowBalance;
     private UUID ownerAccountId;
     private LocalDateTime createdAt;
 
@@ -33,6 +35,9 @@ public class ShopResponse {
         UUID ownerAccountId = (s.getUser() != null && s.getUser().getAccount() != null)
                 ? s.getUser().getAccount().getId()
                 : null;
+        java.math.BigDecimal escrowBalance = (s.getEscrowFund() != null)
+                ? s.getEscrowFund().getBalance()
+                : java.math.BigDecimal.ZERO;
         return ShopResponse.builder()
                 .id(s.getId())
                 .name(s.getName())
@@ -43,6 +48,8 @@ public class ShopResponse {
                 .address(s.getAddress())
                 .status(s.getStatus())
                 .averageRating(s.getAverageRating() != null ? s.getAverageRating() : 5.0f)
+                .trustLevel(s.getTrustLevel() != null ? s.getTrustLevel() : 1)
+                .escrowBalance(escrowBalance)
                 .ownerAccountId(ownerAccountId)
                 .createdAt(s.getCreatedAt())
                 .build();

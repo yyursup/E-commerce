@@ -10,6 +10,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -78,4 +80,9 @@ public class RegisterSellerRequest {
     @NotBlank(message = "Tên ngân hàng không được để trống")
     @Size(max = 150, message = "Tên ngân hàng tối đa 150 ký tự")
     private String bankName;
+
+    // Ký quỹ bảo chứng (Escrow Capital Deposit)
+    private Boolean isEscrowParticipated;
+
+    private BigDecimal initialDepositAmount;
 }

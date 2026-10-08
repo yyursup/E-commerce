@@ -15,6 +15,7 @@ import java.util.UUID;
 @Builder
 public class RequestDetailsResponse {
     private UUID requestId;
+    private String displayCode;
     private RequestType type;
     private RequestStatus status;
 
@@ -46,6 +47,7 @@ public class RequestDetailsResponse {
                 .note(r.getResponse())
                 .createdAt(r.getCreatedAt())
                 .updatedAt(r.getUpdatedAt())
+                .displayCode(r.getDisplayCode())
                 .detail(detail)
                 .build();
     }

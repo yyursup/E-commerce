@@ -2,6 +2,7 @@ package com.marketplace.ecommerce.product.service;
 
 import com.marketplace.ecommerce.product.dto.request.PageQueryRequest;
 import com.marketplace.ecommerce.product.dto.response.ProductResponse;
+import com.marketplace.ecommerce.product.dto.response.SellerProductResponse;
 import org.springframework.data.domain.Page;
 
 import java.util.List;
@@ -11,11 +12,11 @@ public interface QueryProductService {
 
     ProductResponse getPublishedProductById(UUID productId);
 
-    ProductResponse getProductById(UUID productId);
+    SellerProductResponse getProductById(UUID productId);
 
 //    List<ProductResponse> getAllProductsByShop(UUID shopId);
 
-    List<ProductResponse> getProductsByShopAndStatus(UUID accountId, String status);
+    List<SellerProductResponse> getProductsByShopAndStatus(UUID accountId, String status);
 
     Page<ProductResponse> getPublishedProducts(PageQueryRequest req);
 

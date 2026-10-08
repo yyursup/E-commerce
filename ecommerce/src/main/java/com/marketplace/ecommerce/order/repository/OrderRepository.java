@@ -12,6 +12,7 @@ import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -97,11 +98,6 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
 
   long countByShop_IdAndCreatedAtAfter(UUID shopId, LocalDateTime createdAt);
 
-  /**
-   * Bảng xếp hạng shop theo doanh thu (đơn DELIVERED hoặc COMPLETED).
-   * Returns: shopId (UUID), shopName (String), totalRevenue (BigDecimal),
-   * orderCount (Long).
-   */
   @Query("""
       SELECT o.shop.id, o.shop.name, COALESCE(SUM(o.total), 0), COUNT(o)
       FROM Order o
@@ -111,4 +107,71 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
       ORDER BY SUM(o.total) DESC
       """)
   List<Object[]> getShopRankingByRevenue();
+
+  long countByStatus(OrderStatus status);
+
+  long countByShopIdAndStatus(UUID shopId, OrderStatus status);
+
+  long countByShopId(UUID shopId);
+
+  @Query("SELECT COALESCE(SUM(o.total), 0) FROM Order o WHERE o.status <> com.marketplace.ecommerce.order.valueObjects.OrderStatus.CANCELLED")
+  BigDecimal getPlatformTotalGmv();
+
+  @Query("""
+      SELECT COALESCE(SUM(o.total), 0)
+      FROM Order o
+      WHERE o.status = com.marketplace.ecommerce.order.valueObjects.OrderStatus.DELIVERED
+         OR o.status = com.marketplace.ecommerce.order.valueObjects.OrderStatus.COMPLETED
+  """)
+  BigDecimal getPlatformSettledRevenue();
+
+  @Query("""
+      SELECT CAST(o.createdAt as LocalDate), COALESCE(SUM(o.total), 0), COUNT(o)
+      FROM Order o
+      WHERE o.createdAt >= :startDate
+        AND o.status <> com.marketplace.ecommerce.order.valueObjects.OrderStatus.CANCELLED
+      GROUP BY CAST(o.createdAt as LocalDate)
+      ORDER BY CAST(o.createdAt as LocalDate) ASC
+  """)
+  List<Object[]> getDailyPlatformGmvSince(@Param("startDate") LocalDateTime startDate);
+
+  @Query("""
+      SELECT CAST(o.createdAt as LocalDate), COALESCE(SUM(o.subtotal), 0), COUNT(o)
+      FROM Order o
+      WHERE o.shop.id = :shopId
+        AND o.createdAt >= :startDate
+        AND o.status <> com.marketplace.ecommerce.order.valueObjects.OrderStatus.CANCELLED
+      GROUP BY CAST(o.createdAt as LocalDate)
+      ORDER BY CAST(o.createdAt as LocalDate) ASC
+  """)
+  List<Object[]> getShopDailySalesSince(@Param("shopId") UUID shopId, @Param("startDate") LocalDateTime startDate);
+
+  @Query("""
+      SELECT COALESCE(SUM(o.total), 0)
+      FROM Order o
+      WHERE o.user.id = :userId
+        AND (o.status = com.marketplace.ecommerce.order.valueObjects.OrderStatus.DELIVERED
+             OR o.status = com.marketplace.ecommerce.order.valueObjects.OrderStatus.COMPLETED)
+  """)
+  BigDecimal getBuyerTotalSpent(@Param("userId") UUID userId);
+
+  @Query("""
+      SELECT COALESCE(SUM(o.discountAmount), 0)
+      FROM Order o
+      WHERE o.user.id = :userId
+        AND o.status <> com.marketplace.ecommerce.order.valueObjects.OrderStatus.CANCELLED
+  """)
+  BigDecimal getBuyerTotalVoucherSaved(@Param("userId") UUID userId);
+
+  boolean existsByShopIdAndStatusIn(UUID shopId, Collection<OrderStatus> statuses);
+
+  @Query("""
+      SELECT COUNT(o) > 0
+      FROM Order o
+      WHERE o.shop.id = :shopId
+        AND o.status = com.marketplace.ecommerce.order.valueObjects.OrderStatus.COMPLETED
+        AND (o.deliveredAt IS NULL OR o.deliveredAt > :coolingCutoff)
+  """)
+  boolean existsCompletedOrderWithinCoolingPeriod(@Param("shopId") UUID shopId, @Param("coolingCutoff") LocalDateTime coolingCutoff);
 }
+

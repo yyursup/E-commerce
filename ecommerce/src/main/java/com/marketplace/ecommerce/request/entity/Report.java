@@ -1,5 +1,6 @@
 package com.marketplace.ecommerce.request.entity;
 
+import com.marketplace.ecommerce.request.valueObjects.ResolutionType;
 import com.marketplace.ecommerce.request.valueObjects.TargetType;
 import jakarta.persistence.*;
 import lombok.*;
@@ -17,7 +18,7 @@ public class Report {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "request_id", columnDefinition = "uuid")
-    private UUID id;;
+    private UUID id;
 
     @OneToOne(fetch = FetchType.LAZY, optional = false)
     @MapsId
@@ -31,9 +32,16 @@ public class Report {
     @Column(name = "target_id", nullable = false, columnDefinition = "uuid")
     private UUID targetId;
 
-    @Column(name = "evidence_url", length = 255)
+    @Column(name = "evidence_url", columnDefinition = "TEXT")
     private String evidenceUrl;
 
     @Column(name = "moderator_note", columnDefinition = "TEXT")
     private String moderatorNote;
+
+    @Column(name = "violation_report_id", columnDefinition = "uuid")
+    private UUID violationReportId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "resolution_type", length = 30)
+    private ResolutionType resolutionType;
 }

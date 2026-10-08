@@ -15,7 +15,9 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "transactions")
+@Table(name = "transactions", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_transactions_dedupe_key", columnNames = "dedupe_key")
+})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -55,7 +57,7 @@ public class Transaction {
     @Builder.Default
     private TransactionStatus status = TransactionStatus.PENDING;
 
-    @Column(name = "dedupe_key", nullable = false, length = 120)
+    @Column(name = "dedupe_key", nullable = false, unique = true, length = 120)
     private String dedupeKey;
 
     @Column(name = "provider_txn_no", length = 100)

@@ -13,6 +13,7 @@ import {
 } from 'react-icons/hi'
 import toast from 'react-hot-toast'
 import { cn } from '../../../../lib/cn'
+import { getConditionBadge, getWarrantyBadge } from '../../../../lib/techBadges'
 import OrderStatusBadge from './OrderStatusBadge'
 import { formatCurrency, formatDate } from './orderHelpers'
 
@@ -70,51 +71,6 @@ export default function ShopOrderCard({ order, isDark, onQuickStatusUpdate, acti
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
-          {order.ghnOrderCode ? (
-            <button
-              type="button"
-              onClick={handleCopyGhn}
-              title="Nhấp để sao chép mã vận đơn GHN"
-              className={cn(
-                'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-semibold border transition-all',
-                isDark
-                  ? 'border-indigo-500/30 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20'
-                  : 'border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
-              )}
-            >
-              <HiOutlineTruck className="h-3.5 w-3.5" />
-              <span>GHN: {order.ghnOrderCode}</span>
-              {copiedGhn ? (
-                <HiOutlineCheck className="h-3.5 w-3.5 text-emerald-500" />
-              ) : (
-                <HiOutlineClipboardCopy className="h-3.5 w-3.5 opacity-60" />
-              )}
-            </button>
-          ) : (
-            <span
-              className={cn(
-                'px-2 py-0.5 rounded text-[11px] font-medium',
-                isDark ? 'bg-slate-800 text-slate-400' : 'bg-stone-100 text-stone-500'
-              )}
-            >
-              Chưa có mã GHN
-            </span>
-          )}
-
-          <span
-            className={cn(
-              'px-2 py-0.5 rounded text-[11px] font-bold border',
-              order.paymentMethod === 'VNPAY'
-                ? 'border-blue-500/30 bg-blue-500/10 text-blue-500'
-                : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-            )}
-          >
-            {order.paymentMethod === 'VNPAY' ? 'VNPAY' : 'COD'}
-          </span>
-
-          <OrderStatusBadge status={order.status} />
-        </div>
       </div>
 
       {/* 2. Card Content: Product Previews & Customer Address */}
@@ -149,16 +105,26 @@ export default function ShopOrderCard({ order, isDark, onQuickStatusUpdate, acti
                 {items[0]?.productName || 'Sản phẩm'}
               </h4>
 
-              {(items[0]?.variantColor || items[0]?.variantSize) && (
-                <div className="mt-1">
+              <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+                {items[0]?.conditionGrade && (
+                  <span className={cn("text-[10px] font-semibold px-2 py-0.5 rounded-full border", getConditionBadge(items[0].conditionGrade)?.cls)}>
+                    {getConditionBadge(items[0].conditionGrade)?.label}
+                  </span>
+                )}
+                {items[0]?.warrantyType && (
+                  <span className={cn("text-[10px] font-medium px-2 py-0.5 rounded-full border", getWarrantyBadge(items[0].warrantyType, items[0].warrantyMonths)?.cls)}>
+                    {getWarrantyBadge(items[0].warrantyType, items[0].warrantyMonths)?.label}
+                  </span>
+                )}
+                {(items[0]?.variantColor || items[0]?.variantSize) && (
                   <span className={cn(
-                    'px-2 py-0.5 rounded text-[11px] font-semibold inline-block',
-                    isDark ? 'bg-amber-950/40 text-amber-400 border border-amber-800/40' : 'bg-amber-50 text-amber-700 border border-amber-200'
+                    'px-2 py-0.5 rounded text-[10px] font-medium inline-block',
+                    isDark ? 'bg-slate-800 text-slate-300 border border-slate-700' : 'bg-stone-100 text-stone-700 border border-stone-200'
                   )}>
                     Phân loại: {[items[0].variantColor, items[0].variantSize].filter(Boolean).join(' - ')}
                   </span>
-                </div>
-              )}
+                )}
+              </div>
 
               <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
                 <span

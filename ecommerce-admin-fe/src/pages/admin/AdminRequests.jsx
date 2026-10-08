@@ -2,10 +2,11 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
+import { HiOutlineDuplicate } from 'react-icons/hi'
 import { useThemeStore } from '../../store/useThemeStore'
 import { cn } from '../../lib/cn'
 import requestService from '../../services/request'
-import { getRequestTypeBadge, formatAdminRequestDate } from './components/request/requestHelpers'
+import { getRequestTypeBadge, formatAdminRequestDate, shortUUID } from './components/request/requestHelpers'
 
 const getStatusBadge = (status, isDark) => {
   switch (status) {
@@ -56,13 +57,15 @@ export default function AdminRequests() {
     try {
       setLoading(true)
       setError(null)
-      const params = { page, size }
+      const params = { page, size, type: 'SELLER_REGISTRATION' }
       if (statusFilter) params.status = statusFilter
       const res = await requestService.getAdminRequests(params)
       const content = Array.isArray(res?.content) ? res.content : Array.isArray(res) ? res : []
-      setRequests(content)
+      // Phân tách nghiệp vụ: Trang này chỉ dành riêng cho Duyệt mở Shop (SELLER_REGISTRATION)
+      const sellerRequests = content.filter((r) => r.type === 'SELLER_REGISTRATION')
+      setRequests(sellerRequests)
       setTotalPages(typeof res?.totalPages === 'number' ? res.totalPages : 0)
-      setTotalElements(typeof res?.totalElements === 'number' ? res.totalElements : content.length)
+      setTotalElements(typeof res?.totalElements === 'number' ? res.totalElements : sellerRequests.length)
     } catch (err) {
       console.error('Admin request list error:', err)
       setError(err?.message || 'Failed to load requests.')
@@ -80,9 +83,9 @@ export default function AdminRequests() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">Admin requests</h1>
-          <p className={cn('text-sm', isDark ? 'text-slate-400' : 'text-stone-500')}>
-            Total: {totalElements}
+          <h1 className="text-2xl font-semibold">Duyệt Đăng Ký Mở Shop</h1>
+          <p className={cn('text-sm mt-0.5', isDark ? 'text-slate-400' : 'text-stone-500')}>
+            Danh sách yêu cầu mở gian hàng từ người bán (Tổng: {totalElements})
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -121,17 +124,18 @@ export default function AdminRequests() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
         className={cn(
-          'overflow-hidden rounded-2xl border shadow-sm',
+          'overflow-x-auto rounded-2xl border shadow-sm',
           isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white',
         )}
       >
-        <div className="grid grid-cols-12 gap-3 border-b px-6 py-4 text-xs font-semibold uppercase tracking-wide text-stone-500 dark:border-slate-800 dark:text-slate-400">
-          <div className="col-span-3">Mã yêu cầu</div>
-          <div className="col-span-3">Loại yêu cầu</div>
-          <div className="col-span-2">Trạng thái</div>
-          <div className="col-span-2">Thời gian gửi</div>
-          <div className="col-span-2 text-right">Thao tác</div>
-        </div>
+        <div className="min-w-[640px]">
+          <div className="grid grid-cols-12 gap-3 border-b px-6 py-4 text-xs font-semibold uppercase tracking-wide text-stone-500 dark:border-slate-800 dark:text-slate-400">
+            <div className="col-span-3">Mã yêu cầu</div>
+            <div className="col-span-3">Loại yêu cầu</div>
+            <div className="col-span-2">Trạng thái</div>
+            <div className="col-span-2">Thời gian gửi</div>
+            <div className="col-span-2 text-right">Thao tác</div>
+          </div>
 
         {loading && (
           <div className="flex items-center justify-center gap-3 px-6 py-10 text-sm">
@@ -162,8 +166,25 @@ export default function AdminRequests() {
                 'border-b last:border-b-0',
               )}
             >
-              <div className="col-span-3 font-mono text-xs font-semibold">
-                <span title={req.requestId}>{shortId(req.requestId)}</span>
+              <div className="col-span-3 flex items-center gap-2 font-mono text-xs font-semibold">
+                <span title={req.requestId}>{req.displayCode || shortUUID(req.requestId)}</span>
+                {req.requestId && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      navigator.clipboard.writeText(req.displayCode || req.requestId);
+                      toast.success('Đã copy Mã yêu cầu');
+                    }}
+                    className={cn(
+                      'p-1.5 rounded-lg transition hover:shadow-sm',
+                      isDark ? 'text-slate-400 hover:bg-slate-700 hover:text-slate-200' : 'text-stone-400 hover:bg-stone-200 hover:text-stone-600'
+                    )}
+                    title="Copy Mã yêu cầu"
+                  >
+                    <HiOutlineDuplicate className="h-3.5 w-3.5" />
+                  </button>
+                )}
               </div>
               <div className="col-span-3">
                 <span className={cn('inline-block rounded-full px-2.5 py-1 text-xs font-medium border', typeBadge.className)}>
@@ -198,6 +219,7 @@ export default function AdminRequests() {
             </div>
           )
         })}
+        </div>
       </motion.div>
 
       {totalPages > 1 && (

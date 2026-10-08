@@ -1,4 +1,4 @@
-﻿export const formatAdminRequestDate = (value) => {
+export const formatAdminRequestDate = (value) => {
   if (!value) return '-'
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return String(value)
@@ -9,6 +9,19 @@
     month: '2-digit',
     year: 'numeric',
   })
+}
+
+export const isUUID = (str) => {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(str || ''))
+}
+
+export const shortUUID = (str) => {
+  if (!str) return '-'
+  const s = String(str)
+  if (isUUID(s)) {
+    return `${s.slice(0, 8)}...${s.slice(-4)}`
+  }
+  return s.length > 12 ? `${s.slice(0, 8)}...` : s
 }
 
 export const isSellerBusiness = (detail) => {
@@ -95,12 +108,28 @@ export const buildSellerInfoSections = (detail) => {
     { label: 'Tên chủ tài khoản', value: detail.bankAccountName },
   ]
 
+  // 5. Quỹ Ký Quỹ & Bảo Chứng Cam Kết
+  const escrowInfo = detail.isEscrowParticipated
+    ? [
+        { label: 'Cam kết Quỹ ký quỹ', value: 'Có tham gia (Bảo chứng uy tín sàn)' },
+        {
+          label: 'Hạn mức ký quỹ đăng ký',
+          value: detail.initialDepositAmount
+            ? `${Number(detail.initialDepositAmount).toLocaleString('vi-VN')} ₫`
+            : '0 ₫',
+        },
+      ]
+    : [
+        { label: 'Cam kết Quỹ ký quỹ', value: 'Không tham gia (Hạng 1★ Cơ bản)' },
+      ]
+
   return {
     isBusiness,
     shopInfo: shopInfo.filter((i) => i.value),
     legalInfo: legalInfo.filter((i) => i.value),
     logisticsInfo: logisticsInfo.filter((i) => i.value),
     bankInfo: bankInfo.filter((i) => i.value),
+    escrowInfo: escrowInfo.filter((i) => i.value),
     businessLicenseUrl: detail.businessLicenseUrl || null,
   }
 }
@@ -116,6 +145,7 @@ export const buildRequestDetailEntries = (requestType, requestDetail) => {
       ...sections.legalInfo.map((i) => [i.label, i.value]),
       ...sections.logisticsInfo.map((i) => [i.label, i.value]),
       ...sections.bankInfo.map((i) => [i.label, i.value]),
+      ...sections.escrowInfo.map((i) => [i.label, i.value]),
     ]
     if (sections.businessLicenseUrl) {
       entries.push(['Giấy phép kinh doanh', sections.businessLicenseUrl])
@@ -124,8 +154,15 @@ export const buildRequestDetailEntries = (requestType, requestDetail) => {
   }
 
   if (requestType === 'REPORT') {
+    const targetTypeStr = String(requestDetail.targetType || '').toUpperCase();
+    let targetTypeLabel = requestDetail.targetType;
+    if (targetTypeStr === 'PRODUCT') targetTypeLabel = 'Sản phẩm (Product)';
+    else if (targetTypeStr === 'SHOP') targetTypeLabel = 'Gian hàng (Shop)';
+    else if (targetTypeStr === 'USER') targetTypeLabel = 'Người dùng (User)';
+    else if (targetTypeStr === 'REVIEW') targetTypeLabel = 'Đánh giá (Review)';
+
     return [
-      ['Đối tượng báo cáo', requestDetail.targetType],
+      ['Đối tượng báo cáo', targetTypeLabel],
       ['ID đối tượng', requestDetail.targetId],
       ['Bằng chứng vi phạm', requestDetail.evidenceUrl],
       ['Ghi chú kiểm duyệt', requestDetail.moderatorNote],

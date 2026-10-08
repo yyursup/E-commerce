@@ -19,6 +19,7 @@ import CheckoutVoucherSection from './components/CheckoutVoucherSection'
 import CheckoutVoucherModal from './components/CheckoutVoucherModal'
 import CheckoutOrderSummary from './components/CheckoutOrderSummary'
 import CheckoutPaymentMethodSection from './components/CheckoutPaymentMethodSection'
+import walletService from '../../services/wallet'
 
 export default function Checkout() {
     const { isAuthenticated } = useAuthStore()
@@ -51,6 +52,8 @@ export default function Checkout() {
     const [selectedAddressId, setSelectedAddressId] = useState(null)
     const [notes, setNotes] = useState('')
     const [paymentMethod, setPaymentMethod] = useState('COD')
+    const [walletBalance, setWalletBalance] = useState(0)
+    const [loadingWallet, setLoadingWallet] = useState(false)
     const [processing, setProcessing] = useState(false)
     const [showAddAddress, setShowAddAddress] = useState(false)
 
@@ -119,6 +122,17 @@ export default function Checkout() {
             // Fetch Available Vouchers (Shop vouchers + Platform vouchers)
             await loadAvailableVouchers(shopId)
 
+            // Fetch Wallet Balance
+            try {
+                setLoadingWallet(true)
+                const wData = await walletService.getMyWallet()
+                setWalletBalance(Number(wData?.availableBalance || 0))
+            } catch (wErr) {
+                console.warn("Could not fetch wallet balance", wErr)
+            } finally {
+                setLoadingWallet(false)
+            }
+
         } catch (error) {
             console.error("Failed to load checkout data", error)
             toast.error("Có lỗi xảy ra khi tải dữ liệu")
@@ -136,11 +150,13 @@ export default function Checkout() {
             ])
 
             const list = []
-            if (shopVouchersRes.status === 'fulfilled' && Array.isArray(shopVouchersRes.value)) {
-                list.push(...shopVouchersRes.value)
+            if (shopVouchersRes.status === 'fulfilled') {
+                const sItems = shopVouchersRes.value?.content || (Array.isArray(shopVouchersRes.value) ? shopVouchersRes.value : [])
+                list.push(...sItems)
             }
-            if (platformVouchersRes.status === 'fulfilled' && Array.isArray(platformVouchersRes.value)) {
-                list.push(...platformVouchersRes.value)
+            if (platformVouchersRes.status === 'fulfilled') {
+                const pItems = platformVouchersRes.value?.content || (Array.isArray(platformVouchersRes.value) ? platformVouchersRes.value : [])
+                list.push(...pItems)
             }
             setAvailableVouchers(list)
         } catch (e) {
@@ -452,13 +468,16 @@ export default function Checkout() {
                 voucherParams,
                 paymentMethod
             )
-            toast.success("Đặt hàng thành công!")
-
             // 2. Handle Payment Redirection
-            if (paymentMethod === 'COD') {
+            if (paymentMethod === 'WALLET') {
+                toast.success("Đặt hàng & thanh toán bằng ví thành công!")
+                navigate(`/orders/${order.id}`)
+            } else if (paymentMethod === 'COD') {
+                toast.success("Đặt hàng thành công!")
                 navigate(`/orders/${order.id}`)
             } else {
                 // VNPAY
+                toast.success("Đặt hàng thành công! Đang chuyển hướng cổng thanh toán...")
                 const paymentRes = await orderService.createPayment(order.id)
                 if (paymentRes.paymentUrl) {
                     window.location.href = paymentRes.paymentUrl
@@ -540,6 +559,9 @@ export default function Checkout() {
                         <CheckoutPaymentMethodSection
                             paymentMethod={paymentMethod}
                             setPaymentMethod={setPaymentMethod}
+                            walletBalance={walletBalance}
+                            loadingWallet={loadingWallet}
+                            finalTotal={finalTotal}
                             isDark={isDark}
                         />
 

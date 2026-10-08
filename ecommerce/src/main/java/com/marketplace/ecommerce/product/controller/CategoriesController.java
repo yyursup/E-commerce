@@ -19,5 +19,13 @@ public class CategoriesController {
     public ResponseEntity<List<CategoryResponse>> getAllCategories() {
         return ResponseEntity.ok(categoryService.getAllCategories());
     }
+
+    @PutMapping("/{id}/commission-rate")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<CategoryResponse> updateCommissionRate(
+            @PathVariable java.util.UUID id,
+            @jakarta.validation.Valid @RequestBody com.marketplace.ecommerce.product.dto.request.UpdateCategoryCommissionRequest request) {
+        return ResponseEntity.ok(categoryService.updateCommissionRate(id, request.getCommissionRate()));
+    }
 }
 

@@ -7,6 +7,10 @@ import com.marketplace.ecommerce.voucher.service.VoucherService;
 import com.marketplace.ecommerce.voucher.valueObjects.VoucherScope;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,13 +25,14 @@ public class VoucherController {
     private final VoucherService voucherService;
 
     @GetMapping
-    public ResponseEntity<List<VoucherResponse>> listActiveVouchers(
+    public ResponseEntity<Page<VoucherResponse>> listActiveVouchers(
             @CurrentUser CurrentUserInfo c,
             @RequestParam(value = "scope", required = false) VoucherScope scope,
-            @RequestParam(value = "shopId", required = false) UUID shopId
+            @RequestParam(value = "shopId", required = false) UUID shopId,
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         UUID accountId = c != null ? c.getAccountId() : null;
-        return ResponseEntity.ok(voucherService.listActiveVouchers(scope, shopId, accountId));
+        return ResponseEntity.ok(voucherService.listActiveVouchers(scope, shopId, accountId, pageable));
     }
 
     @GetMapping("/shop/{shopId}")

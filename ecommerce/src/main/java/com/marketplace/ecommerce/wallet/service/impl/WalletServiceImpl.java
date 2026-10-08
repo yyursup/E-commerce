@@ -22,8 +22,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.marketplace.ecommerce.payment.repository.PaymentRepository;
+import com.marketplace.ecommerce.payment.valueObjects.PaymentMethod;
+import com.marketplace.ecommerce.payment.valueObjects.PaymentStatus;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -33,6 +37,7 @@ public class WalletServiceImpl implements WalletService {
     private final EscrowRepository escrowRepo;
     private final TransactionRepository txRepo;
     private final UserRepository userRepository;
+    private final PaymentRepository paymentRepository;
 
     @Override
     public WalletResponse getWalletByUserName(String username) {
@@ -137,5 +142,83 @@ public class WalletServiceImpl implements WalletService {
 
         walletRepo.save(buyerWallet);
         walletRepo.save(escrowWallet);
+    }
+
+    @Override
+    @Transactional
+    public void payOrderWithWallet(Order order) {
+        BigDecimal amount = order.getTotal();
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new CustomException("Số tiền thanh toán đơn hàng không hợp lệ");
+        }
+
+        // 1. Khóa bi quan ví người mua
+        Wallet buyerWallet = walletRepo.findByUserIdForUpdate(order.getUser().getId())
+                .orElseThrow(() -> new CustomException("Ví người mua không tồn tại hoặc chưa được kích hoạt"));
+
+        if (buyerWallet.getAvailableBalance() == null || buyerWallet.getAvailableBalance().compareTo(amount) < 0) {
+            BigDecimal currentBal = buyerWallet.getAvailableBalance() != null ? buyerWallet.getAvailableBalance() : BigDecimal.ZERO;
+            throw new CustomException("Số dư ví không đủ để thanh toán đơn hàng. Hiện có: "
+                    + currentBal.toPlainString() + " VND, Cần thanh toán: " + amount.toPlainString() + " VND");
+        }
+
+        // 2. Lấy ví Escrow sàn (Tuyệt đối không đụng vào ví người bán lúc thanh toán)
+        Wallet escrowWallet = walletRepo.findSystemWalletForUpdate(WalletType.ESCROW)
+                .orElseThrow(() -> new CustomException("Hệ thống ví ký quỹ ESCROW không tồn tại"));
+
+        // 3. Trừ tiền ví buyer, cộng tiền khóa vào escrowWallet
+        buyerWallet.subAvailable(amount);
+        escrowWallet.addLocked(amount);
+        walletRepo.saveAll(List.of(buyerWallet, escrowWallet));
+
+        // 4. Tạo hoặc cập nhật Payment record
+        String payDedupe = "WALLET_PAY:" + order.getId();
+        Payment payment = paymentRepository.findByOrderId(order.getId())
+                .orElseGet(() -> Payment.builder()
+                        .order(order)
+                        .amount(amount)
+                        .method(PaymentMethod.WALLET)
+                        .status(PaymentStatus.SUCCESS)
+                        .txnRef("WAL-" + order.getOrderNumber() + "-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase())
+                        .providerTxnNo(payDedupe)
+                        .createdAt(LocalDateTime.now())
+                        .build());
+        payment.setMethod(PaymentMethod.WALLET);
+        payment.setStatus(PaymentStatus.SUCCESS);
+        payment.setAmount(amount);
+        payment.setProviderTxnNo(payDedupe);
+        paymentRepository.save(payment);
+
+        // 5. Tạo Escrow record (chỉ lưu buyerWallet và escrowWallet, không đụng ví người bán)
+        Escrow escrow = escrowRepo.findByOrderId(order.getId())
+                .orElseGet(() -> Escrow.builder()
+                        .order(order)
+                        .buyerWallet(buyerWallet)
+                        .escrowWallet(escrowWallet)
+                        .amount(amount)
+                        .status(EscrowStatus.HELD)
+                        .createdAt(LocalDateTime.now())
+                        .build());
+        escrow.setStatus(EscrowStatus.HELD);
+        escrow.setAmount(amount);
+        escrowRepo.save(escrow);
+
+        // 7. Ghi nhận Transaction HOLD vào Ký quỹ
+        String holdDedupe = "WALLET_HOLD:" + escrow.getId();
+        if (!txRepo.existsByDedupeKey(holdDedupe)) {
+            Transaction tx = Transaction.builder()
+                    .fromWallet(buyerWallet)
+                    .toWallet(escrowWallet)
+                    .amount(amount)
+                    .type(TransactionType.HOLD)
+                    .status(TransactionStatus.SUCCESS)
+                    .referenceType(ReferenceType.ESCROW)
+                    .referenceId(escrow.getId())
+                    .dedupeKey(holdDedupe)
+                    .createdAt(LocalDateTime.now())
+                    .note("Thanh toán đơn hàng " + order.getOrderNumber() + " bằng ví số dư tài khoản")
+                    .build();
+            txRepo.save(tx);
+        }
     }
 }

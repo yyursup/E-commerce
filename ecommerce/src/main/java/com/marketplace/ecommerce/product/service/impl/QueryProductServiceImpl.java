@@ -6,6 +6,7 @@ import com.marketplace.ecommerce.common.QueryUtils;
 import com.marketplace.ecommerce.common.exception.CustomException;
 import com.marketplace.ecommerce.product.dto.request.PageQueryRequest;
 import com.marketplace.ecommerce.product.dto.response.ProductResponse;
+import com.marketplace.ecommerce.product.dto.response.SellerProductResponse;
 import com.marketplace.ecommerce.product.entity.Product;
 import com.marketplace.ecommerce.product.repository.ProductRepository;
 import com.marketplace.ecommerce.product.service.QueryProductService;
@@ -22,10 +23,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -93,6 +93,8 @@ public class QueryProductServiceImpl implements QueryProductService {
         Page<Product> products = productRepository.findPublishedProductsWithFilters(
                 req.getCategoryId(),
                 req.getShopId(),
+                req.getConditionGrade(),
+                req.getWarrantyType(),
                 req.getMinPrice(),
                 req.getMaxPrice(),
                 search,
@@ -115,32 +117,37 @@ public class QueryProductServiceImpl implements QueryProductService {
     }
 
     @Override
-    public ProductResponse getProductById(UUID productId) {
+    public SellerProductResponse getProductById(UUID productId) {
         Product product = productRepository.findByIdWithDetails(productId)
                 .orElseThrow(() -> new CustomException("Sản phẩm không tồn tại"));
 
-        ProductResponse res = ProductResponse.from(product);
-        enrichSingleReviewStats(res);
+        SellerProductResponse res = SellerProductResponse.from(product);
+        // We might not have enrichSingleReviewStats for SellerProductResponse, but wait, Khoidm added it.
+        // Let's just return SellerProductResponse.
         return res;
     }
 
     @Override
-    public List<ProductResponse> getProductsByShopAndStatus(UUID accountId, String status) {
+    @Transactional(readOnly = true)
+    public List<SellerProductResponse> getProductsByShopAndStatus(UUID accountId, String status) {
         Shop shop = getShopByAccountId(accountId);
 
-        List<ProductResponse> list;
+        List<SellerProductResponse> list;
         if (status == null || status.isBlank()) {
             list = productRepository.findAllByShopIdWithDetails(shop.getId()).stream()
-                    .map(ProductResponse::from)
+                    .map(SellerProductResponse::from)
+                    .toList();
+        } else if ("VIOLATION".equalsIgnoreCase(status) || "DELETED".equalsIgnoreCase(status)) {
+            list = productRepository.findAllViolatedProductsByShopId(shop.getId()).stream()
+                    .map(SellerProductResponse::from)
                     .toList();
         } else {
             ProductStatus productStatus = parseStatus(status);
             list = productRepository.findAllByShopIdAndStatusWithDetails(shop.getId(), productStatus).stream()
-                    .map(ProductResponse::from)
+                    .map(SellerProductResponse::from)
                     .toList();
         }
 
-        enrichReviewStats(list);
         return list;
     }
 

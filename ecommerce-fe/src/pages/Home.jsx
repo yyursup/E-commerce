@@ -11,10 +11,9 @@ import ProductQuickView from '../components/ProductQuickView'
 import Footer from '../components/Footer'
 import { useThemeStore } from '../store/useThemeStore'
 import { useAuthStore } from '../store/useAuthStore'
-import { useCartStore } from '../store/useCartStore'
 import { cn } from '../lib/cn'
 import productService from '../services/product'
-import cartService from '../services/cart'
+import recommendationService from '../services/recommendation'
 import voucherService from '../services/voucher'
 import { Link, useNavigate } from 'react-router-dom'
 
@@ -31,7 +30,6 @@ export default function Home() {
   const [recLoading, setRecLoading] = useState(true)
 
   const { isAuthenticated } = useAuthStore()
-  const { updateCartCount } = useCartStore()
   const isDark = useThemeStore((s) => s.theme) === 'dark'
 
   // Fetch all products from API
@@ -81,12 +79,17 @@ export default function Home() {
     fetchProducts()
   }, [])
 
-  // Gợi ý cho bạn (AI vector embedding recommendations)
+  // Gợi ý cá nhân hóa đa tầng (Shopee-inspired Hybrid RecSys)
   useEffect(() => {
     const fetchRecommendations = async () => {
+      if (!isAuthenticated) {
+        setRecommendations([])
+        setRecLoading(false)
+        return
+      }
       try {
         setRecLoading(true)
-        const list = await productService.getRecommendations(8)
+        const list = await recommendationService.getPersonalized(8)
         const mapped = (list || []).map((product) => {
           const thumbnailImage = product.images?.find((img) => img.isThumbnail) || product.images?.[0]
           const imageUrl = thumbnailImage?.imageUrl || '/product-placeholder.svg'
@@ -96,12 +99,16 @@ export default function Home() {
             name: product.name,
             price,
             image: imageUrl,
-            badge: 'AI Gợi Ý',
-            rating: 4.9,
+            badge: 'Dành Cho Bạn',
+            rating: product.rating != null ? Number(product.rating) : 5.0,
+            reviewCount: product.reviewCount != null ? Number(product.reviewCount) : 0,
             description: product.description,
             basePrice: product.basePrice,
             shopName: product.shopName,
             categoryName: product.categoryName,
+            conditionGrade: product.conditionGrade,
+            warrantyType: product.warrantyType,
+            warrantyMonths: product.warrantyMonths,
             originalProduct: product,
           }
         })
@@ -120,8 +127,9 @@ export default function Home() {
   useEffect(() => {
     const fetchWelcomeVoucher = async () => {
       try {
-        const list = await voucherService.listVouchers({ scope: 'PLATFORM' })
-        if (Array.isArray(list) && list.length > 0) {
+        const res = await voucherService.listVouchers({ scope: 'PLATFORM' })
+        const list = res?.content || (Array.isArray(res) ? res : [])
+        if (list.length > 0) {
           const match =
             list.find((v) => v.code === 'ECOMNEW15') ||
             list.find((v) => v.isFirstOrderOnly) ||
@@ -159,7 +167,6 @@ export default function Home() {
         // ignore storage error
       }
       toast('Vui lòng đăng nhập để lưu mã voucher vào ví!', {
-        icon: '🔐',
         id: 'voucher-login-required',
       })
       setWelcomeModalOpen(false)
@@ -181,7 +188,8 @@ export default function Home() {
 
       // Fallback nếu welcomeVoucher chưa kịp load vào state
       if (!targetVoucher || !targetVoucher.id) {
-        const list = await voucherService.listVouchers({ scope: 'PLATFORM' })
+        const res = await voucherService.listVouchers({ scope: 'PLATFORM' })
+        const list = res?.content || (Array.isArray(res) ? res : [])
         targetVoucher =
           list?.find((v) => v.code === 'ECOMNEW15') ||
           list?.find((v) => v.isFirstOrderOnly) ||
@@ -203,7 +211,7 @@ export default function Home() {
 
       await voucherService.claimVoucher(targetVoucher.id)
       setWelcomeVoucher({ ...targetVoucher, isClaimed: true })
-      toast.success(`Đã lưu mã ${targetVoucher.code} vào ví voucher của bạn! 🎉`, {
+      toast.success(`Đã lưu mã ${targetVoucher.code} vào ví voucher của bạn!`, {
         id: 'voucher-claimed-success',
       })
       setWelcomeModalOpen(false)
@@ -217,30 +225,7 @@ export default function Home() {
   }
 
   const handleQuickView = (product) => setQuickViewProduct(product)
-
-  const handleAddToCart = async (product) => {
-    if (!isAuthenticated) {
-      toast.error('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng')
-      return
-    }
-
-    if (!product || !product.id) {
-      toast.error('Thông tin sản phẩm không hợp lệ')
-      return
-    }
-
-    try {
-      const cartResponse = await cartService.addToCart(product.id, 1)
-      updateCartCount(cartResponse)
-      toast.success(`Đã thêm ${product.name} vào giỏ hàng`)
-      setQuickViewProduct(null)
-    } catch (error) {
-      console.error('Error adding to cart:', error)
-      const errorMessage =
-        error?.message || error?.response?.data?.message || 'Không thể thêm sản phẩm vào giỏ hàng'
-      toast.error(errorMessage)
-    }
-  }
+  const handleQuickViewClose = () => setQuickViewProduct(null)
 
   return (
     <div className={cn(isDark ? 'bg-slate-950' : 'bg-stone-50/50')}>
@@ -257,22 +242,27 @@ export default function Home() {
       {recommendations.length > 0 && (
         <section id="recommendations" className="py-8">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
               <div className="flex items-center gap-2.5">
                 <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/25">
                   <HiOutlineSparkles className="h-5 w-5" />
                 </span>
                 <div>
-                  <h2
-                    className={cn(
-                      'text-xl sm:text-2xl font-bold tracking-tight',
-                      isDark ? 'text-white' : 'text-stone-900'
-                    )}
-                  >
-                    Gợi Ý Riêng Cho Bạn (AI Powered)
-                  </h2>
-                  <p className="text-xs sm:text-sm text-stone-500 dark:text-slate-400">
-                    Phân tích thói quen tìm kiếm và gợi ý bằng Vector Embedding
+                  <div className="flex items-center gap-2">
+                    <h2
+                      className={cn(
+                        'text-xl sm:text-2xl font-bold tracking-tight',
+                        isDark ? 'text-white' : 'text-stone-900'
+                      )}
+                    >
+                      GỢI Ý RIÊNG CHO BẠN
+                    </h2>
+                    <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20 uppercase tracking-wider">
+                      Cá nhân hóa
+                    </span>
+                  </div>
+                  <p className="text-xs sm:text-sm text-stone-500 dark:text-slate-400 mt-0.5">
+                    Hệ thống đề xuất dựa trên sở thích danh mục & mức giá thiết bị bạn quan tâm
                   </p>
                 </div>
               </div>
@@ -376,7 +366,7 @@ export default function Home() {
       <Modal
         open={welcomeModalOpen}
         onClose={() => setWelcomeModalOpen(false)}
-        title="Chào mừng bạn đến E-commerce 🎉"
+        title="Chào mừng bạn đến E-commerce"
         size="md"
       >
         <PromoModalContent
@@ -410,7 +400,7 @@ export default function Home() {
         {quickViewProduct && (
           <ProductQuickView
             product={quickViewProduct}
-            onAddToCart={handleAddToCart}
+            onAddToCart={handleQuickViewClose}
           />
         )}
       </Modal>

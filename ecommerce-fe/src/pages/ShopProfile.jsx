@@ -314,7 +314,6 @@ export default function ShopProfile() {
       } else {
         toast(res?.message || 'Đã hủy theo dõi gian hàng', {
           id: 'shop-follow-toast',
-          icon: '👋',
           duration: 2500,
         })
       }
@@ -407,6 +406,30 @@ export default function ShopProfile() {
                       eKYC
                     </span>
                   )}
+                  {/* Huy hiệu Độ Uy Tín & Ký Quỹ Bảo Chứng (Trust Level 1-5 sao) */}
+                  <div
+                    className={cn(
+                      'inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-bold border shadow-sm cursor-help',
+                      (shop?.trustLevel || 1) >= 4
+                        ? 'bg-gradient-to-r from-amber-500/30 to-yellow-500/30 text-amber-300 border-amber-400/50'
+                        : (shop?.trustLevel || 1) >= 2
+                        ? 'bg-blue-500/20 text-blue-300 border-blue-400/40'
+                        : 'bg-slate-700/40 text-slate-300 border-slate-600/40'
+                    )}
+                    title={
+                      shop?.escrowBalance > 0
+                        ? `Gian hàng đã ký quỹ bảo chứng ${Number(shop.escrowBalance).toLocaleString('vi-VN')} ₫. Sàn cam kết hoàn tiền/đền bù 100% nếu có tranh chấp.`
+                        : 'Gian hàng tiêu chuẩn cấp độ 1 sao.'
+                    }
+                  >
+                    <HiOutlineShieldCheck className="h-3.5 w-3.5 text-amber-400" />
+                    <span>{shop?.trustLevel || 1}★ Ký Quỹ Bảo Chứng</span>
+                    {shop?.escrowBalance > 0 && (
+                      <span className="text-[10px] opacity-80 font-normal">
+                        ({(Number(shop.escrowBalance) / 1000000).toFixed(0)}Tr)
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <div className="mt-2 flex items-center justify-center sm:justify-start gap-2 text-xs text-slate-300">
@@ -606,32 +629,42 @@ export default function ShopProfile() {
           <div className="flex flex-wrap items-center gap-3">
             {shopVouchers.map((v) => {
               const isSaved = savedVouchers[v.code]
+              const isExhausted = v.isEligible === false && v.userRemainingUsage !== undefined && v.userRemainingUsage <= 0
+              const hasMultipleUsage = v.userUsageLimit && v.userUsageLimit > 1
               const titleText = v.title || (v.discountType === 'PERCENTAGE' ? `Giảm ${v.discountValue}%` : `Giảm ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(v.discountValue || 0)}`)
-              const minText = v.minOrderAmount ? `Đơn từ ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(v.minOrderAmount)}` : 'Mọi đơn hàng'
+              const minText = v.minOrderAmount || v.minOrderValue ? `Đơn từ ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(v.minOrderAmount || v.minOrderValue)}` : 'Mọi đơn hàng'
 
               return (
                 <div
                   key={v.id || v.code}
                   className={cn(
                     'flex items-center gap-3 rounded-xl border border-dashed px-3 py-2 text-xs transition-all',
-                    isDark ? 'border-amber-500/40 bg-amber-500/5' : 'border-amber-500/50 bg-amber-50/60'
+                    isDark ? 'border-amber-500/40 bg-amber-500/5' : 'border-amber-500/50 bg-amber-50/60',
+                    isExhausted && 'opacity-60'
                   )}
                 >
                   <div>
                     <div className="font-bold text-amber-600 dark:text-amber-400">{titleText}</div>
                     <div className="text-[10px] text-stone-400 dark:text-slate-500">{minText}</div>
+                    {hasMultipleUsage && (
+                      <div className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400">
+                        {isExhausted ? 'Hết lượt cá nhân' : `Còn ${v.userRemainingUsage ?? v.userUsageLimit}/${v.userUsageLimit} lượt`}
+                      </div>
+                    )}
                   </div>
                   <button
-                    onClick={() => handleSaveVoucher(v)}
-                    disabled={isSaved}
+                    onClick={() => !isExhausted && handleSaveVoucher(v)}
+                    disabled={isSaved || isExhausted}
                     className={cn(
                       'rounded-lg px-2.5 py-1 font-bold text-[11px] transition-colors',
-                      isSaved
+                      isExhausted
                         ? 'bg-stone-200 dark:bg-slate-800 text-stone-400 cursor-not-allowed'
-                        : 'bg-amber-500 text-white hover:bg-amber-600'
+                        : isSaved
+                          ? 'bg-stone-200 dark:bg-slate-800 text-stone-400 cursor-not-allowed'
+                          : 'bg-amber-500 text-white hover:bg-amber-600'
                     )}
                   >
-                    {isSaved ? 'Đã lưu' : 'Lưu'}
+                    {isExhausted ? 'Hết lượt' : isSaved ? 'Đã lưu' : 'Lưu'}
                   </button>
                 </div>
               )

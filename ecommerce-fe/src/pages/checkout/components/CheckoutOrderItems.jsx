@@ -1,6 +1,8 @@
 import { HiOutlineShoppingBag, HiOutlineLocationMarker } from 'react-icons/hi'
 import { cn } from '../../../lib/cn'
 
+import { getConditionBadge, getWarrantyBadge } from '../../../lib/techBadges'
+
 export default function CheckoutOrderItems({
     shopName = '',
     shopOrigin = null,
@@ -45,18 +47,28 @@ export default function CheckoutOrderItems({
                                 <h3 className={cn("text-sm font-medium line-clamp-2", isDark ? "text-white" : "text-stone-900")}>
                                     {item.productName}
                                 </h3>
-                                {(item.variantColor || item.variantSize) && (
-                                    <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+                                <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+                                    {item.conditionGrade && (
+                                        <span className={cn("text-[10px] font-semibold px-2 py-0.5 rounded-full border", getConditionBadge(item.conditionGrade)?.cls)}>
+                                            {getConditionBadge(item.conditionGrade)?.label}
+                                        </span>
+                                    )}
+                                    {item.warrantyType && (
+                                        <span className={cn("text-[10px] font-medium px-2 py-0.5 rounded-full border", getWarrantyBadge(item.warrantyType, item.warrantyMonths)?.cls)}>
+                                            {getWarrantyBadge(item.warrantyType, item.warrantyMonths)?.label}
+                                        </span>
+                                    )}
+                                    {(item.variantColor || item.variantSize) && (
                                         <span className={cn(
-                                            "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium",
+                                            "inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium",
                                             isDark ? "bg-slate-800 text-slate-300 border border-slate-700" : "bg-stone-100 text-stone-600 border border-stone-200"
                                         )}>
                                             Phân loại: {[item.variantColor, item.variantSize].filter(Boolean).join(' - ')}
                                         </span>
-                                    </div>
-                                )}
-                                <div className="mt-1 flex justify-between items-center text-sm">
-                                    <span className={isDark ? "text-slate-400" : "text-stone-500"}>x{item.quantity}</span>
+                                    )}
+                                </div>
+                                <div className="mt-2 flex justify-between items-center text-sm">
+                                    <span className={isDark ? "text-slate-400" : "text-stone-500"}>Số lượng: x{item.quantity}</span>
                                     <span className={cn("font-medium", isDark ? "text-amber-400" : "text-amber-600")}>
                                         {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.totalPrice)}
                                     </span>

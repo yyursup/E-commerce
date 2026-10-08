@@ -1,7 +1,6 @@
 package com.marketplace.ecommerce.order.service;
 
 import com.marketplace.ecommerce.order.dto.response.OrderResponse;
-import com.marketplace.ecommerce.order.dto.response.RevenueSummaryResponse;
 import com.marketplace.ecommerce.order.valueObjects.OrderStatus;
 
 import java.util.List;
@@ -20,6 +19,4 @@ public interface QueryOrderService {
     OrderResponse adminGetOrder(UUID orderId, UUID accountId);
 
     List<OrderResponse> adminListOrders(UUID accountId, OrderStatus statusOpt);
-
-    RevenueSummaryResponse getRevenueSummaryByShop(UUID accountId);
 }

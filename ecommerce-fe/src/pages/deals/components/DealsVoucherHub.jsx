@@ -3,6 +3,7 @@ import {
   HiOutlineCheck,
   HiOutlineChevronLeft,
   HiOutlineChevronRight,
+  HiOutlineShoppingBag,
 } from 'react-icons/hi'
 import { cn } from '../../../lib/cn'
 
@@ -31,25 +32,47 @@ export default function DealsVoucherHub({
               Kho Voucher Nổi Bật
             </h2>
             <p className="text-xs sm:text-sm text-stone-500 dark:text-slate-400">
-              Lưu mã để tự động áp dụng khi đặt hàng thanh toán
+              Lưu mã sàn và mã shop để tự động áp dụng khi đặt hàng thanh toán
             </p>
           </div>
         </div>
 
         {/* Voucher filter pills & Navigation Controls */}
         {vouchers.length > 0 && (
-          <div className="flex items-center gap-2.5 self-start sm:self-auto">
-            <div className="flex items-center gap-1.5 bg-stone-100 dark:bg-slate-900 p-1 rounded-xl border border-stone-200/80 dark:border-slate-800">
+          <div className="flex items-center gap-2.5 self-start sm:self-auto flex-wrap">
+            <div className="flex items-center gap-1.5 bg-stone-100 dark:bg-slate-900 p-1 rounded-xl border border-stone-200/80 dark:border-slate-800 flex-wrap">
               <button
                 onClick={() => setVoucherFilter('ALL')}
                 className={cn(
                   'px-3 py-1.5 text-xs font-semibold rounded-lg transition-all',
                   voucherFilter === 'ALL'
                     ? 'bg-white dark:bg-slate-800 text-amber-600 dark:text-amber-400 shadow-sm'
-                    : 'text-stone-600 dark:text-slate-400 hover:text-stone-900'
+                    : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white'
                 )}
               >
                 Tất cả ({vouchers.length})
+              </button>
+              <button
+                onClick={() => setVoucherFilter('PLATFORM')}
+                className={cn(
+                  'px-3 py-1.5 text-xs font-semibold rounded-lg transition-all',
+                  voucherFilter === 'PLATFORM'
+                    ? 'bg-white dark:bg-slate-800 text-amber-600 dark:text-amber-400 shadow-sm'
+                    : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white'
+                )}
+              >
+                Toàn Sàn
+              </button>
+              <button
+                onClick={() => setVoucherFilter('SHOP')}
+                className={cn(
+                  'px-3 py-1.5 text-xs font-semibold rounded-lg transition-all',
+                  voucherFilter === 'SHOP'
+                    ? 'bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-400 shadow-sm'
+                    : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white'
+                )}
+              >
+                Voucher Shop
               </button>
               <button
                 onClick={() => setVoucherFilter('SHIPPING')}
@@ -57,7 +80,7 @@ export default function DealsVoucherHub({
                   'px-3 py-1.5 text-xs font-semibold rounded-lg transition-all',
                   voucherFilter === 'SHIPPING'
                     ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm'
-                    : 'text-stone-600 dark:text-slate-400 hover:text-stone-900'
+                    : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white'
                 )}
               >
                 Freeship
@@ -68,7 +91,7 @@ export default function DealsVoucherHub({
                   'px-3 py-1.5 text-xs font-semibold rounded-lg transition-all',
                   voucherFilter === 'DISCOUNT'
                     ? 'bg-white dark:bg-slate-800 text-amber-600 dark:text-amber-400 shadow-sm'
-                    : 'text-stone-600 dark:text-slate-400 hover:text-stone-900'
+                    : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white'
                 )}
               >
                 Giảm giá
@@ -128,7 +151,7 @@ export default function DealsVoucherHub({
         <div className={cn('text-center py-8 rounded-2xl border', isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white')}>
           <HiOutlineTicket className="h-10 w-10 mx-auto text-stone-400 mb-2" />
           <p className={cn('text-xs sm:text-sm font-medium', isDark ? 'text-slate-400' : 'text-stone-600')}>
-            Hiện chưa có voucher toàn sàn nào thuộc nhóm này. Bạn có thể xem thêm voucher tại trang từng Shop!
+            Hiện chưa có voucher nào thuộc danh mục này. Hãy khám phá các danh mục khác nhé!
           </p>
         </div>
       ) : filteredVouchers.length > 4 ? (
@@ -160,21 +183,30 @@ export default function DealsVoucherHub({
             )}
           >
             {filteredVouchers.map((voucher) => {
+              const isExhausted = voucher.isEligible === false && voucher.userRemainingUsage !== undefined && voucher.userRemainingUsage <= 0
               const isCollected = collectedVouchers.has(voucher.code)
+              const hasMultipleUsage = voucher.userUsageLimit && voucher.userUsageLimit > 1
               return (
                 <div
                   key={voucher.id || voucher.code}
                   className={cn(
-                    'w-[285px] sm:w-[310px] shrink-0 relative rounded-2xl border p-5 flex flex-col justify-between shadow-sm transition-all duration-300 hover:shadow-md hover:border-amber-500/40',
-                    isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
+                    'w-[285px] sm:w-[315px] min-h-[210px] shrink-0 relative rounded-2xl border p-4 sm:p-5 flex flex-col justify-between shadow-sm transition-all duration-300 hover:shadow-md hover:border-amber-500/40',
+                    isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white',
+                    isExhausted && 'opacity-60'
                   )}
                 >
                   <div>
-                    <div className="flex items-center justify-between mb-2.5">
-                      <span className={cn('rounded-lg px-2.5 py-0.5 text-xs font-bold border', voucher.color)}>
+                    <div className="flex items-center justify-between gap-2 mb-2.5 min-w-0 w-full">
+                      <span
+                        className={cn(
+                          'rounded-lg px-2 py-0.5 text-xs font-bold border truncate min-w-0 max-w-[calc(100%-85px)]',
+                          voucher.color
+                        )}
+                        title={voucher.badge}
+                      >
                         {voucher.badge}
                       </span>
-                      <span className="text-[11px] text-stone-400 dark:text-slate-500 font-medium">
+                      <span className="text-[11px] text-stone-400 dark:text-slate-500 font-medium shrink-0 whitespace-nowrap ml-auto">
                         {voucher.expiry}
                       </span>
                     </div>
@@ -183,9 +215,22 @@ export default function DealsVoucherHub({
                       {voucher.title}
                     </h3>
 
-                    <p className="mt-1 text-xs text-stone-500 dark:text-slate-400 leading-relaxed line-clamp-2">
+                    {voucher.isShopVoucher && voucher.shopName && (
+                      <div className="inline-flex items-center gap-1.5 mt-1.5 px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 text-[11px] font-medium max-w-full">
+                        <HiOutlineShoppingBag className="h-3.5 w-3.5 shrink-0 text-purple-500" />
+                        <span className="truncate">{voucher.shopName}</span>
+                      </div>
+                    )}
+
+                    <p className="mt-1.5 text-xs text-stone-500 dark:text-slate-400 leading-relaxed line-clamp-2 min-h-[32px]">
                       {voucher.description}
                     </p>
+
+                    {hasMultipleUsage && (
+                      <span className="inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                        {isExhausted ? 'Đã hết lượt cá nhân' : `Còn ${voucher.userRemainingUsage ?? voucher.userUsageLimit}/${voucher.userUsageLimit} lượt dùng`}
+                      </span>
+                    )}
                   </div>
 
                   <div className="mt-4 pt-3 border-t border-dashed border-stone-200 dark:border-slate-800 flex items-center justify-between">
@@ -193,16 +238,20 @@ export default function DealsVoucherHub({
                       {voucher.code}
                     </span>
                     <button
-                      onClick={() => onCollectVoucher(voucher)}
-                      disabled={isCollected}
+                      onClick={() => !isExhausted && onCollectVoucher(voucher)}
+                      disabled={isCollected || isExhausted}
                       className={cn(
                         'rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all shadow-sm flex items-center gap-1.5',
-                        isCollected
-                          ? 'bg-emerald-500 text-white cursor-default shadow-emerald-500/20'
-                          : 'bg-amber-500 text-white hover:bg-amber-600 active:scale-95 shadow-amber-500/20'
+                        isExhausted
+                          ? 'bg-stone-200 dark:bg-slate-800 text-stone-400 dark:text-slate-500 cursor-not-allowed shadow-none'
+                          : isCollected
+                            ? 'bg-emerald-500 text-white cursor-default shadow-emerald-500/20'
+                            : 'bg-amber-500 text-white hover:bg-amber-600 active:scale-95 shadow-amber-500/20'
                       )}
                     >
-                      {isCollected ? (
+                      {isExhausted ? (
+                        'Hết lượt'
+                      ) : isCollected ? (
                         <>
                           <HiOutlineCheck className="h-4 w-4 stroke-[2.5]" />
                           Đã lưu
@@ -221,21 +270,30 @@ export default function DealsVoucherHub({
         /* Grid Layout for <= 4 Vouchers */
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {filteredVouchers.map((voucher) => {
+            const isExhausted = voucher.isEligible === false && voucher.userRemainingUsage !== undefined && voucher.userRemainingUsage <= 0
             const isCollected = collectedVouchers.has(voucher.code)
+            const hasMultipleUsage = voucher.userUsageLimit && voucher.userUsageLimit > 1
             return (
               <div
                 key={voucher.id || voucher.code}
                 className={cn(
-                  'relative rounded-2xl border p-5 flex flex-col justify-between shadow-sm transition-all duration-300 hover:shadow-md hover:border-amber-500/40',
-                  isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
+                  'min-h-[210px] relative rounded-2xl border p-4 sm:p-5 flex flex-col justify-between shadow-sm transition-all duration-300 hover:shadow-md hover:border-amber-500/40',
+                  isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white',
+                  isExhausted && 'opacity-60'
                 )}
               >
                 <div>
-                  <div className="flex items-center justify-between mb-2.5">
-                    <span className={cn('rounded-lg px-2.5 py-0.5 text-xs font-bold border', voucher.color)}>
+                  <div className="flex items-center justify-between gap-2 mb-2.5 min-w-0 w-full">
+                    <span
+                      className={cn(
+                        'rounded-lg px-2 py-0.5 text-xs font-bold border truncate min-w-0 max-w-[calc(100%-85px)]',
+                        voucher.color
+                      )}
+                      title={voucher.badge}
+                    >
                       {voucher.badge}
                     </span>
-                    <span className="text-[11px] text-stone-400 dark:text-slate-500 font-medium">
+                    <span className="text-[11px] text-stone-400 dark:text-slate-500 font-medium shrink-0 whitespace-nowrap ml-auto">
                       {voucher.expiry}
                     </span>
                   </div>
@@ -244,9 +302,22 @@ export default function DealsVoucherHub({
                     {voucher.title}
                   </h3>
 
-                  <p className="mt-1 text-xs text-stone-500 dark:text-slate-400 leading-relaxed line-clamp-2">
+                  {voucher.isShopVoucher && voucher.shopName && (
+                    <div className="inline-flex items-center gap-1.5 mt-1.5 px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 text-[11px] font-medium max-w-full">
+                      <HiOutlineShoppingBag className="h-3.5 w-3.5 shrink-0 text-purple-500" />
+                      <span className="truncate">{voucher.shopName}</span>
+                    </div>
+                  )}
+
+                  <p className="mt-1.5 text-xs text-stone-500 dark:text-slate-400 leading-relaxed line-clamp-2 min-h-[32px]">
                     {voucher.description}
                   </p>
+
+                  {hasMultipleUsage && (
+                    <span className="inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                      {isExhausted ? 'Đã hết lượt cá nhân' : `Còn ${voucher.userRemainingUsage ?? voucher.userUsageLimit}/${voucher.userUsageLimit} lượt dùng`}
+                    </span>
+                  )}
                 </div>
 
                 <div className="mt-4 pt-3 border-t border-dashed border-stone-200 dark:border-slate-800 flex items-center justify-between">
@@ -254,16 +325,20 @@ export default function DealsVoucherHub({
                     {voucher.code}
                   </span>
                   <button
-                    onClick={() => onCollectVoucher(voucher)}
-                    disabled={isCollected}
+                    onClick={() => !isExhausted && onCollectVoucher(voucher)}
+                    disabled={isCollected || isExhausted}
                     className={cn(
                       'rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all shadow-sm flex items-center gap-1.5',
-                      isCollected
-                        ? 'bg-emerald-500 text-white cursor-default shadow-emerald-500/20'
-                        : 'bg-amber-500 text-white hover:bg-amber-600 active:scale-95 shadow-amber-500/20'
+                      isExhausted
+                        ? 'bg-stone-200 dark:bg-slate-800 text-stone-400 dark:text-slate-500 cursor-not-allowed shadow-none'
+                        : isCollected
+                          ? 'bg-emerald-500 text-white cursor-default shadow-emerald-500/20'
+                          : 'bg-amber-500 text-white hover:bg-amber-600 active:scale-95 shadow-amber-500/20'
                     )}
                   >
-                    {isCollected ? (
+                    {isExhausted ? (
+                      'Hết lượt'
+                    ) : isCollected ? (
                       <>
                         <HiOutlineCheck className="h-4 w-4 stroke-[2.5]" />
                         Đã lưu

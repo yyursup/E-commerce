@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { HiStar, HiOutlineChatAlt2, HiPlay, HiX } from 'react-icons/hi'
+import { HiStar, HiOutlineChatAlt2, HiPlay, HiX, HiOutlineScale, HiOutlineExclamationCircle } from 'react-icons/hi'
 import toast from 'react-hot-toast'
 import ReportActionButton from '../../../components/ReportActionButton'
+import ReviewAppealModal from '../../../components/ReviewAppealModal'
 import { cn } from '../../../lib/cn'
 import reviewService from '../../../services/review'
 import replyService from '../../../services/reply'
@@ -25,24 +26,36 @@ export default function ProductReviews({ productId }) {
   const [totalPages, setTotalPages] = useState(0)
   const [filterRating, setFilterRating] = useState(null)
   const [selectedMedia, setSelectedMedia] = useState(null)
+  const [myReview, setMyReview] = useState(null)
+  const [appealModal, setAppealModal] = useState({ isOpen: false, review: null })
 
   const fetchReviews = useCallback(async () => {
     try {
       setLoading(true)
-      const [statsData, reviewsData] = await Promise.all([
+      const promises = [
         reviewService.getProductReviewStats(productId),
         reviewService.getProductReviews(productId, { rating: filterRating, page, size: 5 }),
-      ])
+      ]
+      if (currentUserId) {
+        promises.push(reviewService.getMyAllReviews({ size: 50 }).catch(() => null))
+      }
+      const [statsData, reviewsData, myAll] = await Promise.all(promises)
 
       setStats(statsData)
       setReviews(reviewsData.content || [])
       setTotalPages(reviewsData.totalPages || 0)
+
+      if (myAll) {
+        const myRevList = myAll?.content || (Array.isArray(myAll) ? myAll : [])
+        const found = myRevList.find((r) => String(r.productId).toLowerCase() === String(productId).toLowerCase())
+        setMyReview(found || null)
+      }
     } catch (error) {
       console.error('Error fetching reviews:', error)
     } finally {
       setLoading(false)
     }
-  }, [productId, filterRating, page])
+  }, [productId, filterRating, page, currentUserId])
 
   useEffect(() => {
     fetchReviews()
@@ -127,6 +140,41 @@ export default function ProductReviews({ productId }) {
           ))}
         </div>
       </div>
+
+      {/* Banner cảnh báo nếu đánh giá của chính người dùng bị ẩn hoặc gắn cờ */}
+      {myReview && (myReview.status === 'HIDDEN' || myReview.warning || myReview.flagCount > 0) && (
+        <div
+          className={cn(
+            'p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3',
+            myReview.status === 'HIDDEN'
+              ? 'border-rose-500/30 bg-rose-500/10 text-rose-300'
+              : 'border-amber-500/30 bg-amber-500/10 text-amber-300',
+          )}
+        >
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 font-bold text-xs sm:text-sm">
+              <HiOutlineExclamationCircle className="h-5 w-5 shrink-0" />
+              <span>
+                {myReview.status === 'HIDDEN'
+                  ? `Đánh giá của bạn về sản phẩm này đã bị ẩn do vi phạm tiêu chuẩn (${myReview.flagCount || 0} lượt báo cáo)`
+                  : `Đánh giá của bạn về sản phẩm này đang bị cảnh báo vi phạm (${myReview.flagCount || 0} lượt báo cáo)`}
+              </span>
+            </div>
+            <p className="text-xs text-stone-400 italic">
+              Nội dung đánh giá: &ldquo;{myReview.comment || 'Không có văn bản'}&rdquo;
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setAppealModal({ isOpen: true, review: myReview })}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-amber-500 hover:bg-amber-600 active:scale-95 transition shrink-0 shadow-sm"
+          >
+            <HiOutlineScale className="h-4 w-4" />
+            Kháng cáo đánh giá này
+          </button>
+        </div>
+      )}
 
       <div className="space-y-6">
         {reviews.length === 0 ? (
@@ -358,6 +406,14 @@ export default function ProductReviews({ productId }) {
           </div>
         </div>
       )}
+
+      {/* Modal Kháng cáo đánh giá vi phạm */}
+      <ReviewAppealModal
+        isOpen={appealModal.isOpen}
+        onClose={() => setAppealModal({ isOpen: false, review: null })}
+        review={appealModal.review}
+        onSuccess={fetchReviews}
+      />
     </div>
   )
 }

@@ -29,4 +29,13 @@ public interface EscrowRepository extends JpaRepository<Escrow, UUID> {
                 order by e.createdAt desc
             """)
     Page<Escrow> adminList(@Param("status") EscrowStatus status, Pageable pageable);
+
+    @Query("SELECT COALESCE(SUM(e.amount), 0) FROM Escrow e WHERE e.status = :status")
+    java.math.BigDecimal sumAmountByStatus(@Param("status") EscrowStatus status);
+
+    long countByStatus(EscrowStatus status);
+
+    @Query("SELECT COUNT(e) > 0 FROM Escrow e WHERE e.order.shop.id = :shopId AND e.status IN :statuses")
+    boolean existsByOrderShopIdAndStatusIn(@Param("shopId") UUID shopId,
+            @Param("statuses") java.util.Collection<EscrowStatus> statuses);
 }

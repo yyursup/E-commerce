@@ -66,4 +66,35 @@ public class TokenServiceImpl implements TokenService {
                 .signWith(getSignInKey())
                 .compact();
     }
+
+    @Override
+    public String createAppealToken(Account account) {
+        long currentTime = System.currentTimeMillis();
+        return Jwts.builder()
+                .subject(account.getUsername() + "")
+                .claim("scope", "APPEAL_ONLY")
+                .claim("accountId", account.getId())
+                .issuedAt(new Date(currentTime))
+                .expiration(new Date(currentTime + 1000 * 60 * 30)) // 30 minutes
+                .signWith(getSignInKey())
+                .compact();
+    }
+
+    @Override
+    public Account getAccountFromAppealToken(String token) {
+        Claims claims = Jwts.parser()
+                .verifyWith(getSignInKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+                
+        String scope = claims.get("scope", String.class);
+        if (!"APPEAL_ONLY".equals(scope)) {
+            throw new RuntimeException("Invalid token scope");
+        }
+        
+        String username = claims.getSubject();
+        return accountRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Account not found"));
+    }
 }

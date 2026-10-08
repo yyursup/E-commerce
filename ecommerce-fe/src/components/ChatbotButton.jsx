@@ -1309,7 +1309,7 @@ export default function ChatbotButton() {
                         align="left"
                       />
 
-                      {/* Emoji Picker Popover (😊 button) */}
+                      {/* Emoji Picker Popover */}
                       <EmojiPickerPopover
                         isOpen={showEmojiPicker}
                         onClose={() => setShowEmojiPicker(false)}
@@ -1360,7 +1360,7 @@ export default function ChatbotButton() {
                           <HiPlus className={cn('h-5 w-5 transition-transform duration-200', showMediaPopover && 'rotate-45')} />
                         </button>
 
-                        {/* Emoji (😊) Button */}
+                        {/* Emoji Button */}
                         <button
                           type="button"
                           onClick={() => {

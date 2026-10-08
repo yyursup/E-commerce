@@ -12,6 +12,11 @@ import {
   HiOutlineTicket,
   HiOutlineChat,
   HiOutlineClipboardList,
+  HiOutlineVideoCamera,
+  HiOutlineShieldCheck,
+  HiOutlineCash,
+  HiOutlineClock,
+  HiOutlineExclamation,
 } from 'react-icons/hi'
 import { useAuthStore } from '../store/useAuthStore'
 import { useThemeStore } from '../store/useThemeStore'
@@ -25,13 +30,18 @@ import {
 import { useChatNotification } from '../hooks/useChatNotification'
 import ChatNotificationToast from './ChatNotificationToast'
 import toast from 'react-hot-toast'
+import shopService from '../services/shop'
+import escrowFundService from '../services/escrowFund'
 
 const navItems = [
   { to: '/dashboard', label: 'Tổng quan (Dashboard)', icon: HiOutlineViewGrid },
+  { to: '/live', label: 'Kênh Livestream', icon: HiOutlineVideoCamera },
   { to: '/orders', label: 'Quản lý Đơn hàng', icon: HiOutlineShoppingBag },
   { to: '/products', label: 'Quản lý Sản phẩm', icon: HiOutlineArchive },
   { to: '/inventory-history', label: 'Lịch sử Kho hàng', icon: HiOutlineClipboardList },
   { to: '/vouchers', label: 'Mã Giảm Giá Shop', icon: HiOutlineTicket },
+  { to: '/escrow-fund', label: 'Quỹ Ký Quỹ & Uy Tín', icon: HiOutlineCash, isEscrowRelated: true },
+  { to: '/violations', label: 'Điểm uy tín Shop', icon: HiOutlineShieldCheck },
   { to: '/chat', label: 'Tin nhắn (Chat CSKH)', icon: HiOutlineChat, isChat: true },
   { to: '/settings', label: 'Cài đặt Kho & Gian hàng', icon: HiOutlineCog },
 ]
@@ -43,6 +53,7 @@ export default function SellerLayout() {
   const { theme, toggleTheme } = useThemeStore()
   const isDark = theme === 'dark'
   const [unreadChatTotal, setUnreadChatTotal] = useState(0)
+  const [escrowFund, setEscrowFund] = useState(null)
 
   const {
     notifications,
@@ -110,6 +121,47 @@ export default function SellerLayout() {
       unregUpdated()
     }
   }, [token, location.pathname, addNotification, isThreadMuted])
+
+  // Tự động đồng bộ trạng thái Shop mới nhất từ Backend (ví dụ khi Admin vừa duyệt đóng shop)
+  useEffect(() => {
+    if (!token) return
+    let isMounted = true
+    const syncShopStatus = async () => {
+      try {
+        const profile = await shopService.getMyShop()
+        if (isMounted && profile?.status && profile.status !== user?.shopStatus) {
+          useAuthStore.getState().updateUser({
+            shopStatus: profile.status,
+            violationCount: profile.violationCount != null ? profile.violationCount : user?.violationCount,
+            shopName: profile.name || user?.shopName,
+          })
+        }
+      } catch (err) {
+        if (isMounted) {
+          console.warn('Không thể đồng bộ trạng thái shop mới nhất:', err)
+        }
+      }
+    }
+    syncShopStatus()
+
+    // Fetch escrow fund to check if they are participating
+    const fetchEscrow = async () => {
+      try {
+        const data = await escrowFundService.getMyFund()
+        if (isMounted) setEscrowFund(data)
+      } catch(err) {
+        // ignore
+      }
+    }
+    fetchEscrow()
+
+    return () => {
+      isMounted = false
+    }
+  }, [token, location.pathname])
+
+  const isNoneEscrow = !escrowFund || escrowFund.committedAmount === 0
+
 
   return (
     <div className={cn('min-h-screen flex flex-col', isDark ? 'bg-slate-950 text-slate-100' : 'bg-stone-50 text-stone-900')}>
@@ -185,30 +237,41 @@ export default function SellerLayout() {
 
               {/* Navigation */}
               <nav className="space-y-1">
-                {navItems.map(({ to, label, icon: Icon, isChat }) => (
-                  <NavLink
-                    key={to}
-                    to={to}
-                    className={({ isActive }) => cn(
-                      'flex items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-semibold transition-all',
-                      isActive
-                        ? 'bg-amber-500 text-white shadow-sm shadow-amber-500/20'
-                        : isDark
-                          ? 'text-slate-300 hover:bg-slate-800'
-                          : 'text-stone-600 hover:bg-stone-100',
-                    )}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <Icon className="h-4 w-4 shrink-0" />
-                      <span>{label}</span>
-                    </div>
-                    {isChat && unreadChatTotal > 0 && (
-                      <span className="flex h-5 min-w-5 px-1.5 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white shadow-xs">
-                        {unreadChatTotal > 99 ? '99+' : unreadChatTotal}
-                      </span>
-                    )}
-                  </NavLink>
-                ))}
+                {navItems.map(({ to, label, icon: Icon, isChat, isEscrowRelated }) => {
+                  const isDisabled = isEscrowRelated && isNoneEscrow
+                  return (
+                    <NavLink
+                      key={to}
+                      to={isDisabled ? '#' : to}
+                      onClick={(e) => {
+                        if (isDisabled) {
+                          e.preventDefault()
+                          toast.error('Vui lòng tham gia Quỹ Ký Quỹ để sử dụng tính năng này.')
+                        }
+                      }}
+                      className={({ isActive }) => cn(
+                        'flex items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-semibold transition-all',
+                        isDisabled
+                          ? 'opacity-50 cursor-not-allowed text-stone-400 dark:text-slate-500'
+                          : isActive
+                            ? 'bg-amber-500 text-white shadow-sm shadow-amber-500/20'
+                            : isDark
+                              ? 'text-slate-300 hover:bg-slate-800'
+                              : 'text-stone-600 hover:bg-stone-100',
+                      )}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <Icon className="h-4 w-4 shrink-0" />
+                        <span>{label}</span>
+                      </div>
+                      {isChat && unreadChatTotal > 0 && (
+                        <span className="flex h-5 min-w-5 px-1.5 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white shadow-xs">
+                          {unreadChatTotal > 99 ? '99+' : unreadChatTotal}
+                        </span>
+                      )}
+                    </NavLink>
+                  )
+                })}
               </nav>
 
               <button
@@ -223,6 +286,50 @@ export default function SellerLayout() {
 
           {/* Main Workspace */}
           <main className="lg:col-span-3">
+            {/* Banner thông báo gian hàng đã đóng cửa (CLOSED) */}
+            {user?.shopStatus === 'CLOSED' && (
+              <div className="mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-2xl border border-rose-500/40 bg-gradient-to-r from-rose-500/15 via-rose-500/10 to-rose-500/5 px-4 py-3.5 text-xs text-rose-800 dark:text-rose-200 shadow-sm">
+                <div className="flex items-center gap-2">
+                  <HiOutlineExclamation className="h-5 w-5 text-rose-500 shrink-0" />
+                  <span>
+                    Gian hàng đã hoàn tất thủ tục <strong>Đóng cửa (CLOSED)</strong> và nhận lại toàn bộ tiền ký quỹ. Các tính năng đăng bán, cập nhật sản phẩm và tạo voucher đã bị vô hiệu hóa. Bạn vẫn có thể xem lịch sử đơn hàng, quỹ ký quỹ và thực hiện rút số dư ví khả dụng.
+                  </span>
+                </div>
+                <NavLink
+                  to="/escrow-fund"
+                  className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs shadow-sm transition shrink-0 self-end sm:self-auto"
+                >
+                  Xem quỹ & ví &rarr;
+                </NavLink>
+              </div>
+            )}
+
+            {/* Banner yêu cầu nạp ký quỹ để kích hoạt gian hàng */}
+            {user?.shopStatus === 'PENDING_DEPOSIT' && (
+              <div className="mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-2xl border border-amber-500/40 bg-gradient-to-r from-amber-500/15 via-amber-500/10 to-amber-500/5 px-4 py-3.5 text-xs text-amber-800 dark:text-amber-200 shadow-sm">
+                <span>
+                  Hồ sơ gian hàng đã được duyệt! Vui lòng <strong>nạp đủ số tiền ký quỹ cam kết</strong> để kích hoạt gian hàng và mở khóa tính năng đăng bán sản phẩm.
+                </span>
+                <NavLink
+                  to="/escrow-fund"
+                  className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-sm transition shrink-0 self-end sm:self-auto"
+                >
+                  Nạp ký quỹ kích hoạt &rarr;
+                </NavLink>
+              </div>
+            )}
+
+            {/* Top Banner cảnh báo vi phạm tinh gọn chuẩn Responsive */}
+            {Boolean(user?.shopStatus === 'WARNED' || user?.shopStatus === 'SUSPENDED' || (Number(user?.violationCount || 0) >= 3)) && (
+              <div className="mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 rounded-2xl border border-amber-500/35 bg-amber-500/10 px-4 py-3 text-xs text-amber-600 dark:text-amber-400">
+                <span>
+                  Gian hàng đang ở trạng thái <strong>{user?.shopStatus === 'SUSPENDED' ? 'Tạm ngưng hoạt động' : 'Cảnh báo vi phạm'}</strong> ({user?.violationCount || 3}/7 vi phạm). Sản phẩm có thể bị tạm ẩn và tiền ký quỹ Escrow được tạm giữ để đảm bảo an toàn.
+                </span>
+                <NavLink to="/violations" className="font-bold underline hover:text-amber-500 shrink-0 self-end sm:self-auto">
+                  Xem chi tiết & Kháng cáo &rarr;
+                </NavLink>
+              </div>
+            )}
             <Outlet />
           </main>
         </div>

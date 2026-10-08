@@ -15,6 +15,7 @@ import java.util.UUID;
 @Builder
 public class RequestResponse {
     private UUID requestId;
+    private String displayCode;
     private RequestType type;
     private RequestStatus status;
 
@@ -33,6 +34,7 @@ public class RequestResponse {
     public static RequestResponse from(Request request) {
         return RequestResponse.builder()
                 .requestId(request.getId())
+                .displayCode(request.getDisplayCode())
                 .type(request.getType())
                 .status(request.getStatus())
                 .description(request.getDescription())

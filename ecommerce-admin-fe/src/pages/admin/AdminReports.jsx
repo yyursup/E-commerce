@@ -1,63 +1,506 @@
-import { useState, useEffect, useCallback } from 'react';
-import { motion } from 'framer-motion';
-import { HiOutlineExclamationCircle, HiOutlineCheck, HiOutlineX } from 'react-icons/hi';
-import { cn } from '../../lib/cn';
-import { useThemeStore } from '../../store/useThemeStore';
-import reportService from '../../services/report';
-import toast from 'react-hot-toast';
+import { useState, useEffect, useCallback } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import {
+  HiOutlineExclamationCircle,
+  HiOutlineShieldCheck,
+  HiOutlineRefresh,
+  HiOutlineCash,
+  HiOutlineScale,
+  HiOutlineShoppingBag,
+  HiOutlineTag,
+  HiOutlineUser,
+  HiOutlineStar,
+  HiOutlineTruck,
+} from 'react-icons/hi'
+import { cn } from '../../lib/cn'
+import { useThemeStore } from '../../store/useThemeStore'
+import reportService from '../../services/report'
+import requestService from '../../services/request'
+import escrowService from '../../services/escrow'
+import toast from 'react-hot-toast'
+
+import AdminReportsTab from './components/reports/AdminReportsTab'
+import AdminAppealsTab from './components/reports/AdminAppealsTab'
+import AdminEscrowTab from './components/reports/AdminEscrowTab'
+import AdminReportDetailModal from './components/reports/AdminReportDetailModal'
+import AdminEscrowDetailModal from './components/reports/AdminEscrowDetailModal'
+import AdminActionModal from './components/reports/AdminActionModal'
+import orderService from '../../services/order'
+import returnService from '../../services/returnService'
+
+// Helper tách và gom tất cả link ảnh từ các nguồn (hỗ trợ nhiều ảnh phân cách bằng dấu phẩy)
+export const parseImages = (...sources) => {
+  const urls = []
+  sources.forEach((src) => {
+    if (typeof src === 'string' && src.trim()) {
+      src.split(',').forEach((url) => {
+        const trimmed = url.trim()
+        if (trimmed && !urls.includes(trimmed)) {
+          urls.push(trimmed)
+        }
+      })
+    }
+  })
+  return urls
+}
+
+const VALID_TABS = ['REPORTS', 'APPEALS', 'ESCROW']
 
 export default function AdminReports() {
-    const isDark = useThemeStore((s) => s.theme) === 'dark';
-    const [reports, setReports] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [filter, setFilter] = useState('ALL');
+  const isDark = useThemeStore((s) => s.theme) === 'dark'
+  const [searchParams, setSearchParams] = useSearchParams()
+  const tabParam = searchParams.get('tab')?.toUpperCase()
+  const [activeTab, setActiveTab] = useState(VALID_TABS.includes(tabParam) ? tabParam : 'REPORTS')
+  const [loading, setLoading] = useState(true)
 
-    // Note: Backend might need a listReports API. 
-    // If it doesn't exist, we might need to use the generic request list if they are stored there.
-    // Looking at RequestController.java, it has getRequests and getAllRequests.
-    // It's likely Reports are a type of Request.
+  // Đồng bộ activeTab khi query param trên URL thay đổi (Back / Forward)
+  useEffect(() => {
+    if (tabParam && VALID_TABS.includes(tabParam) && tabParam !== activeTab) {
+      setActiveTab(tabParam)
+    }
+  }, [tabParam, activeTab])
 
-    const fetchReports = useCallback(async () => {
+  const handleTabChange = (key) => {
+    setActiveTab(key)
+    setSearchParams({ tab: key.toLowerCase() }, { replace: true })
+  }
+
+  // Data states
+  const [reports, setReports] = useState([])
+  const [appeals, setAppeals] = useState([])
+  const [escrows, setEscrows] = useState([])
+
+  // Modal actions (xác nhận/từ chối kèm ghi chú)
+  const [actionModal, setActionModal] = useState({
+    isOpen: false,
+    type: '', // 'REPORT_APPROVE', 'REPORT_REJECT', 'APPEAL_APPROVE', 'APPEAL_REJECT', 'ESCROW_REFUND', 'ESCROW_RELEASE'
+    item: null,
+    note: '',
+  })
+  const [submitting, setSubmitting] = useState(false)
+
+  // Modal xem chi tiết
+  const [detailModal, setDetailModal] = useState({
+    isOpen: false,
+    loading: false,
+    data: null,
+    rawItem: null,
+  })
+
+  // Modal xem chi tiết Ký quỹ Escrow
+  const [escrowDetailModal, setEscrowDetailModal] = useState({
+    isOpen: false,
+    loading: false,
+    item: null,
+    order: null,
+    returnDetails: null,
+  })
+
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true)
+      // Gọi đồng thời cả 3 nguồn: Báo cáo, Kháng cáo, Ký quỹ Escrow
+      // đảm bảo khi reload trang ở bất kỳ tab nào dữ liệu và badge số lượng đều đồng bộ ngay lập tức
+      const [reportRes, appealRes, escrowRes] = await Promise.all([
+        requestService.getAdminRequests({ type: 'REPORT' }),
+        requestService.getAdminRequests({ type: 'APPEAL' }),
+        escrowService.getAdminEscrows(),
+      ])
+      const reportList = reportRes?.content || (Array.isArray(reportRes) ? reportRes : [])
+      const appealList = appealRes?.content || (Array.isArray(appealRes) ? appealRes : [])
+      const rawEscrows = escrowRes?.content || (Array.isArray(escrowRes) ? escrowRes : [])
+
+      setReports(reportList)
+      setAppeals(appealList)
+
+      // Lấy thông tin hoàn hàng batch cho danh sách escrow chỉ với 1 API duy nhất
+      const orderIds = rawEscrows
+        .map((item) => item.orderId || item.order?.id)
+        .filter(Boolean)
+
+      let returnBatchMap = {}
+      if (orderIds.length > 0) {
         try {
-            setLoading(true);
-            // Assuming reports are fetched via the general request API with a type filter or similar
-            // For now, let's use the getAllRequests and filter by type if possible, 
-            // or if there's a specific report list API (not seen in Controller though).
-            // If I don't see a specific one, I'll assume they are in the request list.
-            // Wait, ReportController doesn't have a GET list. 
-            // RequestController DOES have Page<CreateRequestResponse> getAllRequests.
-
-            const response = await fetch('/api/v1/request/admin?type=REPORT').then(r => r.json());
-            setReports(response.content || []);
-        } catch (error) {
-            console.error('Error fetching reports:', error);
-        } finally {
-            setLoading(false);
+          returnBatchMap = await returnService.getReturnInfoBatch(orderIds)
+        } catch (err) {
+          console.error('Lỗi tải batch return info:', err)
         }
-    }, []);
+      }
 
-    useEffect(() => {
-        // fetchReports(); // This might fail if the endpoint is wrong. 
-        // I'll stick to what I know exists in RequestController.
-    }, []);
+      const enrichedEscrows = rawEscrows.map((item) => {
+        const orderId = item.orderId || item.order?.id
+        return {
+          ...item,
+          orderReturn: (orderId && returnBatchMap[orderId]) ? returnBatchMap[orderId] : null,
+        }
+      })
+      setEscrows(enrichedEscrows)
+    } catch (err) {
+      console.error('Lỗi tải dữ liệu kiểm duyệt:', err)
+      toast.error('Không thể tải danh sách dữ liệu kiểm duyệt.')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
-    return (
-        <div className="space-y-6">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-                <h1 className={cn('text-2xl font-bold', isDark ? 'text-white' : 'text-stone-900')}>
-                    Quản lý báo cáo vi phạm
-                </h1>
-            </div>
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
 
-            <div className={cn(
-                'rounded-2xl border overflow-hidden',
-                isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
-            )}>
-                <div className="p-12 text-center">
-                    <HiOutlineExclamationCircle className="mx-auto h-12 w-12 text-stone-400" />
-                    <p className="mt-4 text-stone-500">Tính năng quản lý báo cáo đang được cập nhật kết nối với Request System...</p>
-                </div>
-            </div>
+  const handleOpenDetail = async (item) => {
+    const requestId = item.requestId || item.id
+    setDetailModal({
+      isOpen: true,
+      loading: true,
+      data: null,
+      rawItem: item,
+    })
+    try {
+      const details = await requestService.getRequestDetails(requestId)
+      setDetailModal({
+        isOpen: true,
+        loading: false,
+        data: details,
+        rawItem: {
+          ...item,
+          targetType: details?.detail?.targetType,
+          targetName: details?.detail?.targetName,
+          detail: details?.detail,
+        },
+      })
+    } catch (err) {
+      console.error('Lỗi tải chi tiết yêu cầu:', err)
+      toast.error('Không thể tải chi tiết. Vui lòng thử lại.')
+      setDetailModal((prev) => ({ ...prev, loading: false }))
+    }
+  }
+
+  const handleOpenActionModal = async (type, item) => {
+    let resolvedItem = item
+    if (!resolvedItem.targetType && !resolvedItem.detail?.targetType) {
+      try {
+        const requestId = item.requestId || item.id
+        const details = await requestService.getRequestDetails(requestId)
+        resolvedItem = {
+          ...item,
+          targetType: details?.detail?.targetType,
+          targetName: details?.detail?.targetName,
+          detail: details?.detail,
+        }
+      } catch (e) {
+        console.warn('Could not prefetch details for action modal:', e)
+      }
+    }
+    setActionModal({
+      isOpen: true,
+      type,
+      item: resolvedItem,
+      note: '',
+    })
+  }
+
+  const handleOpenEscrowDetail = async (item) => {
+    const orderId = item.orderId || item.order?.id
+    setEscrowDetailModal({
+      isOpen: true,
+      loading: true,
+      item,
+      order: null,
+      returnDetails: null,
+    })
+    try {
+      let order = null
+      let returnDetails = null
+      let currentItem = item
+      if (orderId) {
+        const [orderRes, returnRes, settlementRes] = await Promise.allSettled([
+          orderService.getOrderById(orderId),
+          returnService.getReturnByOrderId(orderId),
+          escrowService.getSettlementByOrderId(orderId),
+        ])
+        if (orderRes.status === 'fulfilled') {
+          order = orderRes.value
+        }
+        if (returnRes.status === 'fulfilled') {
+          returnDetails = returnRes.value
+        }
+        if (settlementRes.status === 'fulfilled' && settlementRes.value) {
+          currentItem = { ...item, settlement: settlementRes.value }
+        }
+      }
+      setEscrowDetailModal({
+        isOpen: true,
+        loading: false,
+        item: currentItem,
+        order,
+        returnDetails,
+      })
+    } catch (err) {
+      console.error('Lỗi tải chi tiết ký quỹ:', err)
+      toast.error('Không thể tải chi tiết ký quỹ.')
+      setEscrowDetailModal((prev) => ({ ...prev, loading: false }))
+    }
+  }
+
+  const handleActionConfirm = async () => {
+    const { type, item, note } = actionModal
+    if (!item) return
+
+    const trimmedNote = note?.trim() || ''
+
+    // Bắt buộc nhập lý do phán quyết đối với duyệt / từ chối report hoặc kháng cáo
+    if (!trimmedNote && ['REPORT_APPROVE', 'REPORT_REJECT', 'APPEAL_APPROVE', 'APPEAL_REJECT'].includes(type)) {
+      toast.error('Vui lòng nhập hoặc chọn lý do / phán quyết của Ban Quản Trị!')
+      return
+    }
+
+    try {
+      setSubmitting(true)
+      const requestId = item.requestId || item.id
+      const targetType = item.targetType || item.detail?.targetType
+
+      if (type === 'REPORT_APPROVE') {
+        const resolution = targetType === 'ORDER' ? (actionModal.resolutionType || 'REFUND_ONLY') : null
+        await reportService.handleReport(requestId, 'APPROVE', trimmedNote, resolution)
+        if (targetType === 'ORDER') {
+          toast.success('Đã xác nhận vi phạm! Hệ thống đã ghi nhận phương án giải quyết và mở thời hạn kháng cáo 72h cho Shop.')
+        } else if (targetType === 'USER') {
+          toast.success('Đã xác nhận vi phạm! Hệ thống đã áp dụng chế tài kỷ luật cộng gậy cho tài khoản người dùng.')
+        } else if (targetType === 'REVIEW') {
+          toast.success('Đã xác nhận vi phạm! Đánh giá đã bị xử lý và áp dụng chế tài kỷ luật lên tác giả.')
+        } else if (targetType === 'PRODUCT') {
+          toast.success('Đã xác nhận vi phạm! Sản phẩm vi phạm đã được cập nhật trạng thái theo quy định.')
+        } else {
+          toast.success('Đã xác nhận vi phạm và áp dụng chế tài thành công!')
+        }
+      } else if (type === 'REPORT_REJECT') {
+        await reportService.handleReport(requestId, 'REJECT', trimmedNote)
+        toast.success('Đã bác bỏ báo cáo vi phạm.')
+      } else if (type === 'APPEAL_APPROVE') {
+        await requestService.approveRequest(requestId, trimmedNote)
+        toast.success('Đã chấp thuận kháng cáo! Đã khôi phục trạng thái và điều chỉnh điểm vi phạm về an toàn.')
+      } else if (type === 'APPEAL_REJECT') {
+        await requestService.rejectRequest(requestId, trimmedNote)
+        toast.success('Đã từ chối kháng cáo.')
+      } else if (type === 'ESCROW_REFUND') {
+        const orderId = item.orderId || item.order?.id
+        await escrowService.refundByOrder(orderId, trimmedNote || 'Admin phân xử hoàn tiền 100% cho người mua do Shop vi phạm')
+        toast.success('Đã kích hoạt hoàn tiền ký quỹ Escrow về Ví người mua thành công!')
+      } else if (type === 'ESCROW_RELEASE') {
+        const orderId = item.orderId || item.order?.id
+        await escrowService.releaseByOrder(orderId, trimmedNote || 'Ban Quản Trị giải ngân ký quỹ cho Shop')
+        toast.success('Đã giải ngân tiền ký quỹ về Ví người bán!')
+      } else if (type === 'ESCROW_SPLIT') {
+        const orderId = item.orderId || item.order?.id
+        const buyerPercentage = actionModal.buyerPercentage != null ? Number(actionModal.buyerPercentage) : 50
+        const sellerPercentage = 100 - buyerPercentage
+        await escrowService.splitSettleByOrder(orderId, {
+          buyerPercentage,
+          sellerPercentage,
+          note: trimmedNote || `Admin phân chia ký quỹ: Người mua ${buyerPercentage}%, Người bán ${sellerPercentage}%`,
+        })
+        toast.success(`Đã phân chia ký quỹ thành công: Người mua ${buyerPercentage}%, Người bán ${sellerPercentage}%!`)
+      }
+
+      setActionModal({ isOpen: false, type: '', item: null, note: '' })
+      setDetailModal({ isOpen: false, loading: false, data: null, rawItem: null })
+      fetchData()
+    } catch (err) {
+      console.error('Action error:', err)
+      toast.error(err?.response?.data?.message || err?.message || 'Có lỗi xảy ra khi thực hiện thao tác.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const copyToClipboard = (text) => {
+    if (!text) return
+    navigator.clipboard.writeText(text)
+    toast.success('Đã sao chép mã ID vào bộ nhớ đệm')
+  }
+
+  const formatVND = (amt) => {
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amt || 0)
+  }
+
+  const getTargetIcon = (targetType) => {
+    switch (targetType) {
+      case 'SHOP':
+        return <HiOutlineShoppingBag className="h-5 w-5 text-amber-500" />
+      case 'PRODUCT':
+        return <HiOutlineTag className="h-5 w-5 text-indigo-500" />
+      case 'USER':
+        return <HiOutlineUser className="h-5 w-5 text-sky-500" />
+      case 'REVIEW':
+        return <HiOutlineStar className="h-5 w-5 text-yellow-500" />
+      case 'ORDER':
+        return <HiOutlineTruck className="h-5 w-5 text-emerald-500" />
+      default:
+        return <HiOutlineExclamationCircle className="h-5 w-5 text-stone-400" />
+    }
+  }
+
+  const getTargetLabel = (targetType) => {
+    switch (targetType) {
+      case 'SHOP':
+        return 'Gian hàng (Shop)'
+      case 'PRODUCT':
+        return 'Sản phẩm (Product)'
+      case 'USER':
+        return 'Tài khoản người dùng (User)'
+      case 'REVIEW':
+        return 'Đánh giá / Nhận xét (Review)'
+      case 'ORDER':
+        return 'Đơn hàng (Order)'
+      default:
+        return 'Đối tượng chưa xác định'
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div
+        className={cn(
+          'rounded-3xl border p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-colors',
+          isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white',
+        )}
+      >
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-500 border border-amber-500/25 shadow-sm">
+            <HiOutlineShieldCheck className="h-6 w-6" />
+          </div>
+          <div>
+            <h1 className={cn('text-2xl font-bold tracking-tight', isDark ? 'text-white' : 'text-stone-900')}>
+              Kiểm Soát An Toàn, Vi Phạm & Kháng Cáo (Trust & Safety)
+            </h1>
+            <p className={cn('text-xs mt-0.5', isDark ? 'text-slate-400' : 'text-stone-500')}>
+              Thẩm định báo cáo vi phạm, xét duyệt kháng cáo và phân xử ký quỹ Escrow bảo vệ người mua
+            </p>
+          </div>
         </div>
-    );
+
+        <button
+          onClick={fetchData}
+          disabled={loading}
+          className={cn(
+            'p-2.5 rounded-2xl border transition-all active:scale-95 disabled:opacity-50',
+            isDark
+              ? 'border-slate-800 bg-slate-800/80 text-slate-200 hover:bg-slate-800'
+              : 'border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100',
+          )}
+          title="Tải lại dữ liệu"
+        >
+          <HiOutlineRefresh className={cn('h-5 w-5', loading && 'animate-spin')} />
+        </button>
+      </div>
+
+      {/* Tabs Navigation */}
+      <div
+        className={cn(
+          'flex flex-wrap items-center gap-2 p-1.5 rounded-2xl border transition-all',
+          isDark ? 'border-slate-800 bg-slate-900/90' : 'border-stone-200 bg-stone-100/90',
+        )}
+      >
+        {[
+          { key: 'REPORTS', label: `Báo Cáo Vi Phạm (${reports.length})`, icon: HiOutlineExclamationCircle },
+          { key: 'APPEALS', label: `Hàng Đợi Kháng Cáo (${appeals.length})`, icon: HiOutlineScale },
+          { key: 'ESCROW', label: `Xử Lý Ký Quỹ Escrow (${escrows.length})`, icon: HiOutlineCash },
+        ].map((tab) => {
+          const isActive = activeTab === tab.key
+          const Icon = tab.icon
+          return (
+            <button
+              key={tab.key}
+              onClick={() => handleTabChange(tab.key)}
+              className={cn(
+                'flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all',
+                isActive
+                  ? 'bg-amber-500 text-white shadow-md shadow-amber-500/25'
+                  : isDark
+                    ? 'text-slate-300 hover:text-white hover:bg-slate-800'
+                    : 'text-stone-600 hover:text-stone-900 hover:bg-white',
+              )}
+            >
+              <Icon className="h-4 w-4" />
+              {tab.label}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Content Container */}
+      <div
+        className={cn(
+          'rounded-3xl border p-6 shadow-sm overflow-hidden transition-colors',
+          isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white',
+        )}
+      >
+        {loading ? (
+          <div className="py-20 text-center">
+            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-r-transparent" />
+            <p className="mt-3 text-xs text-stone-400">Đang tải dữ liệu kiểm duyệt...</p>
+          </div>
+        ) : activeTab === 'REPORTS' ? (
+          <AdminReportsTab
+            reports={reports}
+            isDark={isDark}
+            handleOpenDetail={handleOpenDetail}
+            setActionModal={setActionModal}
+            handleOpenActionModal={handleOpenActionModal}
+            parseImages={parseImages}
+          />
+        ) : activeTab === 'APPEALS' ? (
+          <AdminAppealsTab
+            appeals={appeals}
+            isDark={isDark}
+            handleOpenDetail={handleOpenDetail}
+            setActionModal={setActionModal}
+            handleOpenActionModal={handleOpenActionModal}
+            parseImages={parseImages}
+          />
+        ) : (
+          <AdminEscrowTab
+            escrows={escrows}
+            isDark={isDark}
+            formatVND={formatVND}
+            setActionModal={setActionModal}
+            handleOpenEscrowDetail={handleOpenEscrowDetail}
+          />
+        )}
+      </div>
+
+      {/* Detail Modal (Xem Chi Tiết Đầy Đủ) */}
+      <AdminReportDetailModal
+        detailModal={detailModal}
+        setDetailModal={setDetailModal}
+        isDark={isDark}
+        copyToClipboard={copyToClipboard}
+        getTargetIcon={getTargetIcon}
+        getTargetLabel={getTargetLabel}
+        parseImages={parseImages}
+        setActionModal={setActionModal}
+      />
+
+      {/* Action Modal (Nhập ghi chú phán quyết) */}
+      <AdminActionModal
+        actionModal={actionModal}
+        setActionModal={setActionModal}
+        isDark={isDark}
+        formatVND={formatVND}
+        submitting={submitting}
+        handleActionConfirm={handleActionConfirm}
+      />
+
+      {/* Escrow Detail Modal (Xem Chi Tiết Ký Quỹ & Đơn Hàng) */}
+      <AdminEscrowDetailModal
+        escrowDetailModal={escrowDetailModal}
+        setEscrowDetailModal={setEscrowDetailModal}
+        isDark={isDark}
+        formatVND={formatVND}
+        copyToClipboard={copyToClipboard}
+        setActionModal={setActionModal}
+      />
+    </div>
+  )
 }

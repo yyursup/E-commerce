@@ -18,17 +18,11 @@ export default function ProtectedRoute({ children, allowedRoles = [], requireAut
 
   // If roles are specified, check if user has required role
   if (allowedRoles.length > 0) {
-    const userRole = user?.role?.toUpperCase()
+    const userRole = user?.role?.toUpperCase()?.replace(/^ROLE_/, '')
+    const normalizedAllowed = allowedRoles.map((r) => r.toUpperCase().replace(/^ROLE_/, ''))
     
-    if (!userRole || !allowedRoles.includes(userRole)) {
-      // Redirect based on role
-      if (userRole === 'CUSTOMER') {
-        // Customer cannot access BUSINESS/ADMIN pages
-        return <Navigate to="/" replace />
-      } else {
-        // Other roles go to home
-        return <Navigate to="/" replace />
-      }
+    if (!userRole || !normalizedAllowed.includes(userRole)) {
+      return <Navigate to="/login" replace />
     }
   }
 

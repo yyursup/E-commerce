@@ -1,5 +1,6 @@
 package com.marketplace.ecommerce.shop.dto.response;
 
+import com.marketplace.ecommerce.auth.entity.Account;
 import com.marketplace.ecommerce.request.valueObjects.BusinessType;
 import com.marketplace.ecommerce.request.valueObjects.SellerType;
 import com.marketplace.ecommerce.shop.entity.Shop;
@@ -33,26 +34,39 @@ public class ShopProfileResponse {
     private BusinessType businessType;
     private String businessName;
     private Float averageRating;
+    private Integer trustLevel;
+    private java.math.BigDecimal escrowBalance;
     private Long reviewCount;
     private Long followerCount;
     private String responseRate;
     private Long productCount;
     private UUID ownerAccountId;
     private LocalDateTime createdAt;
+    private Integer violationCount;
+    private String disciplineLevel;
+    private LocalDateTime bannedUntil;
+    private LocalDateTime lastViolationAt;
 
     public static ShopProfileResponse from(Shop shop, Long productCount) {
         return from(shop, productCount, 0L, 0L, null, "100%");
     }
 
-    public static ShopProfileResponse from(Shop shop, Long productCount, Long followerCount, Long reviewCount, Float averageRating, String responseRate) {
-        if (shop == null) return null;
+    public static ShopProfileResponse from(Shop shop, Long productCount, Long followerCount, Long reviewCount,
+            Float averageRating, String responseRate) {
+        if (shop == null)
+            return null;
         Float finalRating = averageRating != null
                 ? averageRating
                 : (shop.getAverageRating() != null && shop.getAverageRating() > 0 ? shop.getAverageRating() : null);
 
-        UUID ownerAccountId = (shop.getUser() != null && shop.getUser().getAccount() != null)
-                ? shop.getUser().getAccount().getId()
-                : null;
+        Account owner = (shop.getUser() != null) ? shop.getUser().getAccount() : null;
+        UUID ownerAccountId = owner != null ? owner.getId() : null;
+        Integer violationCount = owner != null ? owner.getViolationCount() : 0;
+        String disciplineLevel = (owner != null && owner.getDisciplineLevel() != null)
+                ? owner.getDisciplineLevel().name()
+                : "NONE";
+        LocalDateTime bannedUntil = owner != null ? owner.getBannedUntil() : null;
+        LocalDateTime lastViolationAt = owner != null ? owner.getLastViolationAt() : null;
 
         return ShopProfileResponse.builder()
                 .id(shop.getId())
@@ -71,12 +85,18 @@ public class ShopProfileResponse {
                 .businessType(shop.getBusinessType())
                 .businessName(shop.getBusinessName())
                 .averageRating(finalRating)
+                .trustLevel(shop.getTrustLevel() != null ? shop.getTrustLevel() : 1)
+                .escrowBalance(shop.getEscrowFund() != null ? shop.getEscrowFund().getBalance() : java.math.BigDecimal.ZERO)
                 .reviewCount(reviewCount != null ? reviewCount : 0L)
                 .followerCount(followerCount != null ? followerCount : 0L)
                 .responseRate(responseRate != null ? responseRate : "100%")
                 .productCount(productCount != null ? productCount : 0L)
                 .ownerAccountId(ownerAccountId)
                 .createdAt(shop.getCreatedAt())
+                .violationCount(violationCount)
+                .disciplineLevel(disciplineLevel)
+                .bannedUntil(bannedUntil)
+                .lastViolationAt(lastViolationAt)
                 .build();
     }
 }

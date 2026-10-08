@@ -25,6 +25,9 @@ public class Request {
     @Column(name = "id", columnDefinition = "uuid")
     private UUID id;
 
+    @Column(name = "display_code", length = 20, unique = true)
+    private String displayCode;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "account_id", nullable = false)
     private Account account;
@@ -32,7 +35,7 @@ public class Request {
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "cover_image_url", length = 255)
+    @Column(name = "cover_image_url", columnDefinition = "TEXT")
     private String coverImageUrl;
 
     @Enumerated(EnumType.STRING)

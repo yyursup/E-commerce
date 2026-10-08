@@ -259,17 +259,18 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 phone = userRepository.findByAccountId(users.getId()).map(User::getPhoneNumber).orElse(null);
             }
 
-            LoginResponse.LoginResponseBuilder builder = LoginResponse.builder()
+            LoginResponse response = LoginResponse.builder()
                     .email(users.getEmail())
                     .phoneNumber(phone)
                     .username(users.getUsername())
                     .token(tokenService.createToken(users))
                     .refreshToken(tokenService.refreshToken(users))
-                    .role(users.getRole().getRoleName());
+                    .role(users.getRole().getRoleName())
+                    .build();
 
-            populateShopAndSellerStatus(builder, users.getId());
+            populateShopAndSellerStatus(response, users.getId());
 
-            return builder.build();
+            return response;
 
         } catch (BadCredentialsException e) {
             throw new InvalidCredentialsException("Tên đăng nhập hoặc mật khẩu không chính xác.");
@@ -278,9 +279,14 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             if (acc != null && (acc.getStatus() == AccountStatus.BANNED || acc.getDisciplineLevel() == DisciplineLevel.BANNED)) {
                 if (acc.getBannedUntil() != null) {
                     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm 'ngày' dd/MM/yyyy");
-                    throw new CustomException("Tài khoản của bạn đã bị khóa đến " + acc.getBannedUntil().format(formatter) + " do vi phạm quy định cộng đồng.");
+                    String appealToken = tokenService.createAppealToken(acc);
+                    throw new com.marketplace.ecommerce.common.exception.AccountLockedException(
+                            "Tài khoản của bạn đã bị khóa đến " + acc.getBannedUntil().format(formatter) + " do vi phạm quy định cộng đồng.", 
+                            appealToken, 
+                            acc.getBannedUntil()
+                    );
                 }
-                throw new CustomException("Tài khoản của bạn đã bị khóa vĩnh viễn do vi phạm quy định cộng đồng.");
+                throw new CustomException("Tài khoản của bạn đã bị khóa vĩnh viễn do vi phạm quy định cộng đồng. (Không hỗ trợ kháng cáo)");
             }
             throw new CustomException("Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên để được hỗ trợ.");
         } catch (DisabledException e) {
@@ -314,33 +320,39 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             phone = userRepository.findByAccountId(account.getId()).map(User::getPhoneNumber).orElse(null);
         }
 
-        LoginResponse.LoginResponseBuilder builder = LoginResponse.builder()
+        LoginResponse response = LoginResponse.builder()
                 .email(account.getEmail())
                 .phoneNumber(phone)
                 .username(account.getUsername())
                 .token(tokenService.createToken(account))
                 .role(account.getRole() != null ? account.getRole().getRoleName() : "CUSTOMER")
-                .accountId(account.getId());
+                .accountId(account.getId())
+                .build();
 
-        populateShopAndSellerStatus(builder, account.getId());
+        populateShopAndSellerStatus(response, account.getId());
 
-        return builder.build();
+        return response;
     }
 
-    private void populateShopAndSellerStatus(LoginResponse.LoginResponseBuilder builder, UUID accountId) {
+    private void populateShopAndSellerStatus(LoginResponse builder, UUID accountId) {
         boolean hasShop = false;
         UUID shopId = null;
         String shopName = null;
         String sellerStatus = "NONE";
+        String shopStatus = "ACTIVE";
 
         Optional<User> userOpt = userRepository.findByAccountId(accountId);
         if (userOpt.isPresent()) {
             Optional<Shop> shopOpt = shopRepository.findByUserId(userOpt.get().getId());
             if (shopOpt.isPresent()) {
                 hasShop = true;
-                shopId = shopOpt.get().getId();
-                shopName = shopOpt.get().getName();
+                Shop s = shopOpt.get();
+                shopId = s.getId();
+                shopName = s.getName();
                 sellerStatus = "APPROVED";
+                if (s.getStatus() != null) {
+                    shopStatus = s.getStatus().name();
+                }
             }
         }
 
@@ -360,11 +372,22 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             }
         }
 
-        builder.accountId(accountId)
-                .hasShop(hasShop)
-                .shopId(shopId)
-                .shopName(shopName)
-                .sellerStatus(sellerStatus);
+        Account account = accountRepository.findById(accountId).orElse(null);
+        int violationCount = account != null ? account.getViolationCount() : 0;
+        String disciplineLevel = (account != null && account.getDisciplineLevel() != null)
+                ? account.getDisciplineLevel().name()
+                : "NONE";
+        LocalDateTime bannedUntil = account != null ? account.getBannedUntil() : null;
+
+        builder.setAccountId(accountId);
+        builder.setHasShop(hasShop);
+        builder.setShopId(shopId);
+        builder.setShopName(shopName);
+        builder.setSellerStatus(sellerStatus);
+        builder.setShopStatus(shopStatus);
+        builder.setViolationCount(violationCount);
+        builder.setDisciplineLevel(disciplineLevel);
+        builder.setBannedUntil(bannedUntil);
     }
 
     @Override
@@ -495,42 +518,44 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             }
         }
 
-        LoginResponse.LoginResponseBuilder builder = LoginResponse.builder()
+        LoginResponse response = LoginResponse.builder()
                 .email(account.getEmail())
                 .token(tokenService.createToken(account))
                 .refreshToken(tokenService.refreshToken(account))
-                .role(account.getRole().getRoleName());
+                .role(account.getRole().getRoleName())
+                .build();
         
-        populateShopAndSellerStatus(builder, account.getId());
-        return builder.build();
+        populateShopAndSellerStatus(response, account.getId());
+        return response;
     }
 
     @Override
     public LoginResponse refreshToken(String refreshToken) {
         if (refreshToken == null || refreshToken.isBlank()) {
-            throw new CustomException("Refresh token không được để trống.");
+            throw new InvalidCredentialsException("Refresh token không được để trống.");
         }
         try {
             Account account = tokenService.getAccountFromToken(refreshToken);
             if (account == null) {
-                throw new CustomException("Tài khoản không tồn tại.");
+                throw new InvalidCredentialsException("Tài khoản không tồn tại.");
             }
             if (account.getStatus() == AccountStatus.BANNED || !Boolean.TRUE.equals(account.getIsActive())) {
                 throw new CustomException("Tài khoản đã bị khóa hoặc ngừng hoạt động.");
             }
 
-            LoginResponse.LoginResponseBuilder builder = LoginResponse.builder()
+            LoginResponse response = LoginResponse.builder()
                     .email(account.getEmail())
                     .token(tokenService.createToken(account))
                     .refreshToken(tokenService.refreshToken(account))
-                    .role(account.getRole().getRoleName());
+                    .role(account.getRole().getRoleName())
+                    .build();
 
-            populateShopAndSellerStatus(builder, account.getId());
-            return builder.build();
+            populateShopAndSellerStatus(response, account.getId());
+            return response;
         } catch (CustomException ce) {
             throw ce;
         } catch (Exception e) {
-            throw new CustomException("Refresh token không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại.");
+            throw new InvalidCredentialsException("Refresh token không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại.");
         }
     }
 }

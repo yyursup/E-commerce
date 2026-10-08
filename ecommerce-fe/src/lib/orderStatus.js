@@ -4,8 +4,12 @@ import {
   HiOutlineTruck,
   HiOutlineShoppingBag,
   HiOutlineXCircle,
+  HiOutlineExclamationCircle,
 } from 'react-icons/hi'
 
+// ==========================================
+// 1. ORDER STATUS (Trạng thái Đơn hàng)
+// ==========================================
 export const ORDER_STATUS_LABEL_MAP = {
   PENDING_PAYMENT: 'Chờ thanh toán',
   PENDING: 'Chờ xử lý',
@@ -14,50 +18,50 @@ export const ORDER_STATUS_LABEL_MAP = {
   SHIPPING: 'Đang giao hàng',
   SHIPPED: 'Đã giao hàng',
   DELIVERED: 'Đã giao thành công',
-  COMPLETED: 'Hoàn thành',
+  COMPLETED: 'Đã nhận được hàng',
   CANCELLED: 'Đã hủy',
   REFUNDED: 'Đã hoàn tiền',
 }
 
 export const ORDER_STATUS_BADGE_MAP = {
   PENDING_PAYMENT: {
-    color: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
+    color: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 border border-amber-300 dark:border-amber-700',
     icon: HiOutlineClock,
   },
   PENDING: {
-    color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
+    color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 border border-yellow-300 dark:border-yellow-700',
     icon: HiOutlineClock,
   },
   CONFIRMED: {
-    color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+    color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 border border-blue-300 dark:border-blue-700',
     icon: HiOutlineCheckCircle,
   },
   PROCESSING: {
-    color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
+    color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400 border border-purple-300 dark:border-purple-700',
     icon: HiOutlineShoppingBag,
   },
   SHIPPING: {
-    color: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400',
+    color: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400 border border-indigo-300 dark:border-indigo-700',
     icon: HiOutlineTruck,
   },
   SHIPPED: {
-    color: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400',
+    color: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400 border border-indigo-300 dark:border-indigo-700',
     icon: HiOutlineTruck,
   },
   DELIVERED: {
-    color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+    color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border border-green-300 dark:border-green-700',
     icon: HiOutlineCheckCircle,
   },
   COMPLETED: {
-    color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+    color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border border-green-300 dark:border-green-700',
     icon: HiOutlineCheckCircle,
   },
   CANCELLED: {
-    color: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+    color: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border border-red-300 dark:border-red-700',
     icon: HiOutlineXCircle,
   },
   REFUNDED: {
-    color: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400',
+    color: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400 border border-gray-300 dark:border-gray-700',
     icon: HiOutlineXCircle,
   },
 }
@@ -80,12 +84,102 @@ export const ADMIN_ORDER_STATUSES = ORDER_STATUSES.filter((status) => status.val
 
 export const getOrderStatusBadge = (status) =>
   ORDER_STATUS_BADGE_MAP[status] || {
-    color: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400',
+    color: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400 border border-gray-200 dark:border-gray-800',
     icon: HiOutlineClock,
   }
 
 export const getOrderStatusLabel = (status) => ORDER_STATUS_LABEL_MAP[status] || status
 
+// ==========================================
+// 2. RETURN STATUS (Trạng thái Đổi trả / Hoàn tiền)
+// Lưu ý: Các mã trạng thái SHIPPED, COMPLETED, CANCELLED trùng tên với OrderStatus
+// nhưng mang ý nghĩa nghiệp vụ hoàn toàn khác trong chu trình khiếu nại hoàn hàng!
+// ==========================================
+export const RETURN_STATUS_LABEL_MAP = {
+  WAITING_FOR_SHIPMENT: 'Chờ gửi hàng hoàn',
+  SHIPPED: 'Đang giao hàng hoàn',
+  RETURNED: 'Đã giao hàng hoàn (Shop kiểm 72h)',
+  DISPUTED: 'Tranh chấp hàng hoàn',
+  COMPLETED: 'Đã hoàn tất đổi trả & Hoàn tiền',
+  CANCELLED: 'Đã hủy đổi trả',
+}
+
+export const RETURN_STATUS_BADGE_MAP = {
+  WAITING_FOR_SHIPMENT: {
+    label: 'Chờ gửi hàng hoàn',
+    color: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 border border-amber-300 dark:border-amber-700',
+    icon: HiOutlineClock,
+  },
+  SHIPPED: {
+    label: 'Đang giao hàng hoàn',
+    color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 border border-blue-300 dark:border-blue-700',
+    icon: HiOutlineTruck,
+  },
+  RETURNED: {
+    label: 'Đã giao hàng hoàn',
+    color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400 border border-purple-300 dark:border-purple-700',
+    icon: HiOutlineCheckCircle,
+  },
+  DISPUTED: {
+    label: 'Tranh chấp hàng hoàn',
+    color: 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400 border border-rose-300 dark:border-rose-700',
+    icon: HiOutlineExclamationCircle,
+  },
+  COMPLETED: {
+    label: 'Đã hoàn tất đổi trả',
+    color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-700',
+    icon: HiOutlineCheckCircle,
+  },
+  CANCELLED: {
+    label: 'Đã hủy đổi trả',
+    color: 'bg-stone-100 text-stone-700 dark:bg-slate-800 dark:text-slate-300 border border-stone-300 dark:border-slate-700',
+    icon: HiOutlineXCircle,
+  },
+}
+
+export const getReturnStatusBadge = (returnStatus) =>
+  RETURN_STATUS_BADGE_MAP[returnStatus] || {
+    color: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400 border border-gray-200 dark:border-gray-800',
+    icon: HiOutlineClock,
+  }
+
+export const getReturnStatusLabel = (returnStatus) => RETURN_STATUS_LABEL_MAP[returnStatus] || returnStatus
+
+export const getReturnStatusDisplay = (returnStatus) => {
+  if (!returnStatus) return null
+  return RETURN_STATUS_BADGE_MAP[returnStatus] || null
+}
+
+// ==========================================
+// 3. EFFECTIVE STATUS (Tổng hợp trạng thái hiển thị)
+// Nếu đơn có quy trình đổi trả đang active (chưa hủy), ưu tiên ReturnStatus
+// ==========================================
+export const getOrderEffectiveStatus = (order, returnInfo = null) => {
+  const activeReturn = returnInfo || order?.returnInfo
+  if (activeReturn && activeReturn.status && activeReturn.status !== 'CANCELLED') {
+    const returnDisplay = getReturnStatusDisplay(activeReturn.status)
+    if (returnDisplay) {
+      return {
+        label: returnDisplay.label,
+        color: returnDisplay.color,
+        icon: returnDisplay.icon,
+        isReturn: true,
+      }
+    }
+  }
+
+  const orderBadge = getOrderStatusBadge(order?.status)
+  return {
+    label: getOrderStatusLabel(order?.status),
+    color: orderBadge.color,
+    icon: orderBadge.icon,
+    isReturn: false,
+  }
+}
+
+// ==========================================
+// 4. FORMATTERS
+// ==========================================
 export const formatOrderCurrency = (amount) =>
   new Intl.NumberFormat('vi-VN', {
     style: 'currency',

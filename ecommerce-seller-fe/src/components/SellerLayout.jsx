@@ -41,7 +41,7 @@ const navItems = [
   { to: '/inventory-history', label: 'Lịch sử Kho hàng', icon: HiOutlineClipboardList },
   { to: '/vouchers', label: 'Mã Giảm Giá Shop', icon: HiOutlineTicket },
   { to: '/escrow-fund', label: 'Quỹ Ký Quỹ & Uy Tín', icon: HiOutlineCash, isEscrowRelated: true },
-  { to: '/violations', label: 'Điểm uy tín Shop', icon: HiOutlineShieldCheck, isEscrowRelated: true },
+  { to: '/violations', label: 'Điểm uy tín Shop', icon: HiOutlineShieldCheck },
   { to: '/chat', label: 'Tin nhắn (Chat CSKH)', icon: HiOutlineChat, isChat: true },
   { to: '/settings', label: 'Cài đặt Kho & Gian hàng', icon: HiOutlineCog },
 ]

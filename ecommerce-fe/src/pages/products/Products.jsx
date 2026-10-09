@@ -238,10 +238,7 @@ export default function Products() {
   }
 
   const handleQuickView = (product) => setQuickViewProduct(product)
-  const handleAddToCart = (product) => {
-    toast.success(`${product.name} đã thêm vào giỏ (demo)`)
-    setQuickViewProduct(null)
-  }
+  const handleQuickViewClose = () => setQuickViewProduct(null)
 
   const hasActiveFilters = search || categoryId || shopId || conditionGrade || warrantyType || minPrice !== null || maxPrice !== null
 
@@ -373,7 +370,7 @@ export default function Products() {
         {quickViewProduct && (
           <ProductQuickView
             product={quickViewProduct}
-            onAddToCart={handleAddToCart}
+            onAddToCart={handleQuickViewClose}
           />
         )}
       </Modal>

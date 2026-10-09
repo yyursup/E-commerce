@@ -334,6 +334,7 @@ export default function AdminEscrowDetailModal({
                 {/* 2. Sub-component: Đơn hàng gốc & Thông tin các bên Người mua / Người bán / Sản phẩm */}
                 <AdminEscrowOrderSection
                   order={order}
+                  escrow={item}
                   isDark={isDark}
                   formatVND={formatVND}
                   copyToClipboard={copyToClipboard}

@@ -11,11 +11,9 @@ import ProductQuickView from '../components/ProductQuickView'
 import Footer from '../components/Footer'
 import { useThemeStore } from '../store/useThemeStore'
 import { useAuthStore } from '../store/useAuthStore'
-import { useCartStore } from '../store/useCartStore'
 import { cn } from '../lib/cn'
 import productService from '../services/product'
 import recommendationService from '../services/recommendation'
-import cartService from '../services/cart'
 import voucherService from '../services/voucher'
 import { Link, useNavigate } from 'react-router-dom'
 
@@ -32,7 +30,6 @@ export default function Home() {
   const [recLoading, setRecLoading] = useState(true)
 
   const { isAuthenticated } = useAuthStore()
-  const { updateCartCount } = useCartStore()
   const isDark = useThemeStore((s) => s.theme) === 'dark'
 
   // Fetch all products from API
@@ -228,30 +225,7 @@ export default function Home() {
   }
 
   const handleQuickView = (product) => setQuickViewProduct(product)
-
-  const handleAddToCart = async (product) => {
-    if (!isAuthenticated) {
-      toast.error('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng')
-      return
-    }
-
-    if (!product || !product.id) {
-      toast.error('Thông tin sản phẩm không hợp lệ')
-      return
-    }
-
-    try {
-      const cartResponse = await cartService.addToCart(product.id, 1)
-      updateCartCount(cartResponse)
-      toast.success(`Đã thêm ${product.name} vào giỏ hàng`)
-      setQuickViewProduct(null)
-    } catch (error) {
-      console.error('Error adding to cart:', error)
-      const errorMessage =
-        error?.message || error?.response?.data?.message || 'Không thể thêm sản phẩm vào giỏ hàng'
-      toast.error(errorMessage)
-    }
-  }
+  const handleQuickViewClose = () => setQuickViewProduct(null)
 
   return (
     <div className={cn(isDark ? 'bg-slate-950' : 'bg-stone-50/50')}>
@@ -426,7 +400,7 @@ export default function Home() {
         {quickViewProduct && (
           <ProductQuickView
             product={quickViewProduct}
-            onAddToCart={handleAddToCart}
+            onAddToCart={handleQuickViewClose}
           />
         )}
       </Modal>

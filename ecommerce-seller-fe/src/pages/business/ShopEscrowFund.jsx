@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import {
   HiOutlineShieldCheck,
@@ -21,9 +21,10 @@ import { cn } from '../../lib/cn'
 import escrowFundService from '../../services/escrowFund'
 
 export default function ShopEscrowFund() {
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const isDark = useThemeStore((state) => state.theme) === 'dark'
   const updateUser = useAuthStore((state) => state.updateUser)
+  const vnpayHandledRef = useRef(false)
 
   const [fund, setFund] = useState(null)
   const [trustLevels, setTrustLevels] = useState([])
@@ -100,31 +101,37 @@ export default function ShopEscrowFund() {
     const vnpResponseCode = searchParams.get('vnp_ResponseCode')
     const vnpAmount = searchParams.get('vnp_Amount')
 
-    if (vnpResponseCode) {
-      if (vnpResponseCode === '00') {
-        const paidAmount = vnpAmount ? Number(vnpAmount) / 100 : null
-        toast.success(
-          paidAmount
-            ? `Nạp tiền Quỹ ký quỹ qua VNPay thành công: ${paidAmount.toLocaleString('vi-VN')} ₫!`
-            : 'Thanh toán nạp tiền Quỹ ký quỹ qua VNPay thành công!',
-          { duration: 6000 }
-        )
-        if (updateUser) {
-          updateUser({ shopStatus: 'ACTIVE' })
-        }
-        loadFundData()
-        loadTransactions()
-      } else if (vnpResponseCode === '24') {
-        toast.error('Giao dịch thanh toán nạp Quỹ ký quỹ đã bị hủy bởi người dùng.')
-      } else {
-        toast.error(`Giao dịch thanh toán qua VNPay không thành công (Mã phản hồi: ${vnpResponseCode}).`)
-      }
+    if (!vnpResponseCode || vnpayHandledRef.current) return
+    vnpayHandledRef.current = true
 
-      // Dọn dẹp tham số query trên URL tránh kích hoạt lặp lại
-      const newUrl = window.location.pathname
-      window.history.replaceState({}, document.title, newUrl)
+    if (vnpResponseCode === '00') {
+      const paidAmount = vnpAmount ? Number(vnpAmount) / 100 : null
+      toast.success(
+        paidAmount
+          ? `Nạp tiền Quỹ ký quỹ qua VNPay thành công: ${paidAmount.toLocaleString('vi-VN')} ₫!`
+          : 'Thanh toán nạp tiền Quỹ ký quỹ qua VNPay thành công!',
+        { id: 'vnpay-escrow-topup-toast', duration: 6000 }
+      )
+      if (updateUser) {
+        updateUser({ shopStatus: 'ACTIVE' })
+      }
+      loadFundData()
+      loadTransactions()
+    } else if (vnpResponseCode === '24') {
+      toast.error('Giao dịch thanh toán nạp Quỹ ký quỹ đã bị hủy bởi người dùng.', {
+        id: 'vnpay-escrow-topup-toast',
+      })
+    } else {
+      toast.error(`Giao dịch thanh toán qua VNPay không thành công (Mã phản hồi: ${vnpResponseCode}).`, {
+        id: 'vnpay-escrow-topup-toast',
+      })
     }
-  }, [searchParams, loadFundData, loadTransactions, updateUser])
+
+    // Dọn dẹp tham số query trên URL tránh kích hoạt lặp lại
+    setSearchParams({}, { replace: true })
+    const newUrl = window.location.pathname
+    window.history.replaceState({}, document.title, newUrl)
+  }, [searchParams, setSearchParams, loadFundData, loadTransactions, updateUser])
 
   const formatVND = (val) => {
     if (val === null || val === undefined) return '0 ₫'

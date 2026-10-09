@@ -19,7 +19,7 @@ export default function AdminEscrowReturnSection({
   if (!returnDetails) return null
 
   const returnBadge = getReturnStatusBadge(returnDetails.status)
-  const ReturnIcon = returnBadge.icon
+  const ReturnIcon = returnBadge?.icon || HiOutlineTruck
 
   const parseMedia = (urls) => {
     if (!urls) return []

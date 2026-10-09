@@ -93,6 +93,8 @@ export default function ProductQuickView({ product, onAddToCart }) {
   }
 
   const handleAddToCartClick = async () => {
+    if (addingToCart) return
+
     if (!isAuthenticated) {
       toast.error('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng')
       navigate('/login')
@@ -124,14 +126,13 @@ export default function ProductQuickView({ product, onAddToCart }) {
       const cartResponse = await cartService.addToCart(target.id, quantity, selectedVariant?.id || null)
 
       updateCartCount(cartResponse)
-      onAddToCart?.(target)
-
       setShowAddAnimation(true)
       toast.success(`Đã thêm ${quantity} sản phẩm vào giỏ hàng`)
 
       setTimeout(() => {
         setShowAddAnimation(false)
-      }, 1500)
+        onAddToCart?.(target)
+      }, 600)
     } catch (error) {
       console.error('Error adding to cart:', error)
       const errorMessage = error?.message || error?.response?.data?.message || 'Không thể thêm sản phẩm vào giỏ hàng'

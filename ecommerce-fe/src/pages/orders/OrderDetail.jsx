@@ -221,6 +221,7 @@ export default function OrderDetail() {
               order={order}
               returnInfo={activeReturn}
               isDark={isDark}
+              onRefresh={fetchOrder}
             />
 
             {/* Quick Action Bar for DELIVERED */}

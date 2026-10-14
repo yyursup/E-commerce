@@ -40,7 +40,7 @@ const navItems = [
   { to: '/products', label: 'Quản lý Sản phẩm', icon: HiOutlineArchive },
   { to: '/inventory-history', label: 'Lịch sử Kho hàng', icon: HiOutlineClipboardList },
   { to: '/vouchers', label: 'Mã Giảm Giá Shop', icon: HiOutlineTicket },
-  { to: '/escrow-fund', label: 'Quỹ Ký Quỹ & Uy Tín', icon: HiOutlineCash, isEscrowRelated: true },
+  { to: '/escrow-fund', label: 'Quỹ Ký Quỹ & Uy Tín', icon: HiOutlineCash },
   { to: '/violations', label: 'Điểm uy tín Shop', icon: HiOutlineShieldCheck },
   { to: '/chat', label: 'Tin nhắn (Chat CSKH)', icon: HiOutlineChat, isChat: true },
   { to: '/settings', label: 'Cài đặt Kho & Gian hàng', icon: HiOutlineCog },
@@ -160,7 +160,7 @@ export default function SellerLayout() {
     }
   }, [token, location.pathname])
 
-  const isNoneEscrow = !escrowFund || escrowFund.committedAmount === 0
+  const isNoneEscrow = escrowFund && (Number(escrowFund.balance || 0) <= 0 && Number(escrowFund.committedAmount || 0) <= 0)
 
 
   return (

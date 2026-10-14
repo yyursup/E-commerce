@@ -7,6 +7,7 @@ import com.marketplace.ecommerce.request.dto.response.OrderDisputeResponse;
 import com.marketplace.ecommerce.request.entity.Report;
 import com.marketplace.ecommerce.request.repository.ReportRepository;
 import com.marketplace.ecommerce.request.service.OrderDisputeService;
+import com.marketplace.ecommerce.request.valueObjects.ReportStage;
 import com.marketplace.ecommerce.request.valueObjects.RequestStatus;
 import com.marketplace.ecommerce.request.valueObjects.RequestType;
 import com.marketplace.ecommerce.request.valueObjects.TargetType;
@@ -89,7 +90,34 @@ public class OrderDisputeServiceImpl implements OrderDisputeService {
         }
 
         Report latestReport = initialReports.get(0);
-        RequestStatus reportStatus = latestReport.getRequest().getStatus();
+        ReportStage stage = latestReport.getStage();
+
+        // 1. Nếu vụ việc đã kết thúc (RESOLVED, CANCELLED, CLOSED) hoặc tiền đã hoàn (REFUNDED)
+        if (stage == ReportStage.RESOLVED || stage == ReportStage.CLOSED) {
+            return OrderDisputeResponse.builder()
+                    .hasActiveDispute(false)
+                    .disputeStatus("RESOLVED")
+                    .disputeReason(latestReport.getRequest() != null ? latestReport.getRequest().getDescription() : null)
+                    .build();
+        }
+
+        if (stage == ReportStage.CANCELLED) {
+            return OrderDisputeResponse.builder()
+                    .hasActiveDispute(false)
+                    .disputeStatus("CANCELLED")
+                    .disputeReason(latestReport.getRequest() != null ? latestReport.getRequest().getDescription() : null)
+                    .build();
+        }
+
+        if (escrow != null && escrow.getStatus() == EscrowStatus.REFUNDED) {
+            return OrderDisputeResponse.builder()
+                    .hasActiveDispute(false)
+                    .disputeStatus("REFUNDED")
+                    .disputeReason(latestReport.getRequest() != null ? latestReport.getRequest().getDescription() : null)
+                    .build();
+        }
+
+        RequestStatus reportStatus = latestReport.getRequest() != null ? latestReport.getRequest().getStatus() : null;
 
         if (reportStatus == RequestStatus.PENDING) {
             return OrderDisputeResponse.builder()

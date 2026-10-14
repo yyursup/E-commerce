@@ -2,18 +2,59 @@ package com.marketplace.ecommerce.request.repository;
 
 import com.marketplace.ecommerce.request.entity.Report;
 import com.marketplace.ecommerce.request.valueObjects.TargetType;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
 public interface ReportRepository extends JpaRepository<Report, UUID> {
 
     Report findByRequestId(UUID requestId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select r from Report r where r.id = :id")
+    Optional<Report> findByIdForUpdate(@Param("id") UUID id);
+
+    @Query("""
+        select r from Report r
+        join fetch r.request req
+        where r.targetType = 'ORDER'
+          and r.stage = com.marketplace.ecommerce.request.valueObjects.ReportStage.DIRECT_NEGOTIATION
+          and r.sellerResponseDeadline <= :now
+    """)
+    List<Report> findExpiredDirectNegotiations(@Param("now") java.time.LocalDateTime now);
+
+    @Query("""
+        select case when count(r) > 0 then true else false end
+        from Report r join r.request req
+        where r.targetType = 'ORDER'
+          and r.targetId = :orderId
+          and (
+               r.stage in (
+                   com.marketplace.ecommerce.request.valueObjects.ReportStage.DIRECT_NEGOTIATION,
+                   com.marketplace.ecommerce.request.valueObjects.ReportStage.RETURN_IN_PROGRESS,
+                   com.marketplace.ecommerce.request.valueObjects.ReportStage.ESCALATED_TO_ADMIN
+               )
+               or req.status = com.marketplace.ecommerce.request.valueObjects.RequestStatus.PENDING
+          )
+    """)
+    boolean hasActiveOrderDispute(@Param("orderId") UUID orderId);
+
+    @Query("""
+        select r from Report r
+        join fetch r.request req
+        where r.targetType = 'ORDER'
+          and r.targetId = :orderId
+        order by req.createdAt desc
+    """)
+    List<Report> findByOrderIdOrderByCreatedAtDesc(@Param("orderId") UUID orderId);
 
     @Query("""
         select r from Report r
@@ -104,42 +145,32 @@ public interface ReportRepository extends JpaRepository<Report, UUID> {
         """, nativeQuery = true)
     UUID resolveUserAccountId(@Param("targetId") UUID targetId);
 
-    @Query(value = """
-        select a.id
-        from shops s
-        join users u on u.id = s.user_id
-        join accounts a on a.id = u.account_id
+    @Query("""
+        select s.user.account.id
+        from Shop s
         where s.id = :targetId
-        """, nativeQuery = true)
+    """)
     UUID resolveShopOwnerAccountId(@Param("targetId") UUID targetId);
 
-    @Query(value = """
-        select a.id
-        from products p
-        join shops s on s.id = p.shop_id
-        join users u on u.id = s.user_id
-        join accounts a on a.id = u.account_id
+    @Query("""
+        select p.shop.user.account.id
+        from Product p
         where p.id = :targetId
-        """, nativeQuery = true)
+    """)
     UUID resolveProductOwnerAccountId(@Param("targetId") UUID targetId);
 
-    @Query(value = """
-        select a.id
-        from reviews r
-        join users u on u.id = r.user_id
-        join accounts a on a.id = u.account_id
+    @Query("""
+        select r.user.account.id
+        from Review r
         where r.id = :targetId
-        """, nativeQuery = true)
+    """)
     UUID resolveReviewOwnerAccountId(@Param("targetId") UUID targetId);
 
-    @Query(value = """
-        select a.id
-        from orders o
-        join shops s on s.id = o.shop_id
-        join users u on u.id = s.user_id
-        join accounts a on a.id = u.account_id
+    @Query("""
+        select o.shop.user.account.id
+        from Order o
         where o.id = :targetId
-        """, nativeQuery = true)
+    """)
     UUID resolveOrderShopOwnerAccountId(@Param("targetId") UUID targetId);
 
     @Query("""

@@ -79,6 +79,37 @@ export default function SellerOrderActions({
         </div>
       )}
 
+      {order?.hasActiveDispute && (
+        <div
+          className={cn(
+            'p-4 rounded-2xl border text-xs sm:text-sm flex items-start gap-3',
+            isDark ? 'border-amber-500/40 bg-amber-500/10 text-amber-300' : 'border-amber-300 bg-amber-50 text-amber-800'
+          )}
+        >
+          <HiOutlineExclamation className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+          <div>
+            <p className="font-bold">Đơn hàng đang có yêu cầu khiếu nại (Thương lượng trực tiếp 1:1)</p>
+            <p className="text-[11px] opacity-90 mt-0.5">
+              Khách hàng đã nộp khiếu nại. Vui lòng xem chi tiết hình ảnh, lý do và phản hồi xử lý ở mục <strong>Yêu Cầu Khiếu Nại</strong> ngay bên dưới.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {order?.status === 'DELIVERED' && !order?.hasActiveDispute && (
+        <div
+          className={cn(
+            'p-4 rounded-2xl border text-xs sm:text-sm flex items-center gap-2.5',
+            isDark ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300' : 'border-emerald-200 bg-emerald-50 text-emerald-800'
+          )}
+        >
+          <HiOutlineCheckCircle className="h-5 w-5 text-emerald-500 shrink-0" />
+          <span>
+            Đơn hàng đã giao thành công tới tay khách hàng. Tiền ký quỹ Escrow sẽ tự động được giải ngân sau 3 ngày nếu khách không khiếu nại.
+          </span>
+        </div>
+      )}
+
       {/* Action Buttons Row */}
       <div className="flex flex-wrap items-center gap-3">
         {canMoveToProcessing && (

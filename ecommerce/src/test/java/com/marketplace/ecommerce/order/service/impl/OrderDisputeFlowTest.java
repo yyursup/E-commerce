@@ -36,6 +36,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -330,5 +331,41 @@ class OrderDisputeFlowTest {
         OrderDisputeResponse info6 = disputeService.getDisputeInfo(orderId);
         assertFalse(info6.isHasActiveDispute());
         assertEquals("NONE", info6.getDisputeStatus());
+    }
+
+    @Test
+    @DisplayName("OrderDisputeServiceImpl: getDisputeInfoBatch gom nhóm truy vấn 1 lần, triệt tiêu N+1")
+    void orderDisputeServiceImpl_GetDisputeInfoBatch_OptimizedQueries() {
+        // Given
+        OrderDisputeServiceImpl disputeService = new OrderDisputeServiceImpl(reportRepository, escrowRepository);
+        UUID orderId1 = UUID.randomUUID();
+        UUID orderId2 = UUID.randomUUID();
+        List<UUID> orderIds = List.of(orderId1, orderId2);
+
+        Request rPending = Request.builder().type(RequestType.REPORT).status(RequestStatus.PENDING).description("Lỗi phần cứng").build();
+        Report repOrder1 = Report.builder().request(rPending).targetType(TargetType.ORDER).targetId(orderId1).build();
+
+        when(reportRepository.findReportsByTargetTypeAndTargetIdIn(TargetType.ORDER, orderIds))
+                .thenReturn(List.of(repOrder1));
+
+        Escrow escrow1 = Escrow.builder().id(UUID.randomUUID()).order(Order.builder().id(orderId1).build()).status(EscrowStatus.DISPUTED).build();
+        Escrow escrow2 = Escrow.builder().id(UUID.randomUUID()).order(Order.builder().id(orderId2).build()).status(EscrowStatus.HELD).build();
+
+        when(escrowRepository.findByOrderIdIn(orderIds))
+                .thenReturn(List.of(escrow1, escrow2));
+
+        // When
+        Map<UUID, OrderDisputeResponse> batchResult = disputeService.getDisputeInfoBatch(orderIds);
+
+        // Then
+        assertEquals(2, batchResult.size());
+        assertTrue(batchResult.get(orderId1).isHasActiveDispute());
+        assertEquals("REPORT_PENDING", batchResult.get(orderId1).getDisputeStatus());
+        assertFalse(batchResult.get(orderId2).isHasActiveDispute());
+        assertEquals("NONE", batchResult.get(orderId2).getDisputeStatus());
+
+        // Verify escrowRepository.findByOrderIdIn được gọi đúng 1 lần duy nhất, findByOrderId đơn lẻ không được gọi
+        verify(escrowRepository, times(1)).findByOrderIdIn(orderIds);
+        verify(escrowRepository, never()).findByOrderId(any(UUID.class));
     }
 }

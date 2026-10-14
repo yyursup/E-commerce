@@ -14,6 +14,7 @@ import { cn } from '../../../../lib/cn'
 import toast from 'react-hot-toast'
 import reportService from '../../../../services/report'
 import fileService from '../../../../services/fileService'
+import SellerDisputeActionModal from './SellerDisputeActionModal'
 
 const MAX_IMAGES = 4
 
@@ -404,174 +405,25 @@ export default function SellerDisputeSection({ orderId, order, isDark, onRefresh
         )}
       </div>
 
-      {/* Modal Dialogs */}
-      {activeModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
-          <div
-            className={cn(
-              'w-full max-w-lg rounded-2xl border p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto',
-              isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white border-stone-200 text-stone-900'
-            )}
-          >
-            <div className="flex items-center justify-between border-b pb-3 border-stone-100 dark:border-slate-800">
-              <h4 className="text-base font-bold">
-                {activeModal === 'REFUND' && 'Xác Nhận Đồng Ý Hoàn Tiền'}
-                {activeModal === 'RETURN' && 'Xác Nhận Nhận Lại Hàng Đổi Trả'}
-                {activeModal === 'REJECT' && 'Từ Chối & Chuyển Ban Quản Trị Sàn'}
-              </h4>
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveModal(null)
-                  setResponseNote('')
-                  setEvidenceUrls([])
-                }}
-                className="rounded-lg p-1 text-stone-400 hover:text-stone-600 dark:hover:text-white"
-              >
-                <HiOutlineX className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="space-y-3 text-xs leading-relaxed">
-              {activeModal === 'REFUND' && (
-                <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-3 text-emerald-800 dark:text-emerald-300">
-                  <p className="font-bold">Lợi ích thương lượng thành công:</p>
-                  <p className="mt-1">
-                    Hệ thống sẽ hoàn 100% tiền ký quỹ về ví của Người mua. <strong>Shop KHÔNG bị trừ điểm uy tín</strong> và không bị ghi nhận vi phạm gian hàng.
-                  </p>
-                </div>
-              )}
-
-              {activeModal === 'RETURN' && (
-                <div className="rounded-xl bg-sky-500/10 border border-sky-500/20 p-3 text-sky-800 dark:text-sky-300">
-                  <p className="font-bold">Quy trình đổi trả hàng:</p>
-                  <p className="mt-1">
-                    Yêu cầu trả hàng sẽ được khởi tạo. Khách hàng có 3 ngày để nộp mã vận đơn gửi hàng về kho của bạn. Tiền ký quỹ tiếp tục được bảo lưu an toàn.
-                  </p>
-                </div>
-              )}
-
-              {activeModal === 'REJECT' && (
-                <div className="rounded-xl bg-rose-500/10 border border-rose-500/20 p-3 text-rose-800 dark:text-rose-300">
-                  <p className="font-bold">Lưu ý khi chuyển Admin phân xử:</p>
-                  <p className="mt-1">
-                    Vụ việc sẽ được chuyển lên Ban Quản Trị sàn thẩm định. Vui lòng cung cấp đầy đủ lý do và hình ảnh chứng minh (video test máy, ảnh đóng gói seal) để bảo vệ quyền lợi.
-                  </p>
-                </div>
-              )}
-
-              {/* Note Input */}
-              <div>
-                <label className="block font-bold mb-1">
-                  {activeModal === 'REFUND' && 'Lời nhắn cho khách hàng (không bắt buộc):'}
-                  {activeModal === 'RETURN' && 'Hướng dẫn đóng gói & gửi hàng cho khách:'}
-                  {activeModal === 'REJECT' && 'Lý do từ chối giải trình với BQT (bắt buộc):'}
-                </label>
-                <textarea
-                  rows={3}
-                  value={responseNote}
-                  onChange={(e) => setResponseNote(e.target.value)}
-                  placeholder={
-                    activeModal === 'REFUND'
-                      ? 'Shop xin lỗi quý khách vì sự cố này, shop chấp nhận hoàn tiền.'
-                      : activeModal === 'RETURN'
-                        ? 'Shop đồng ý nhận lại máy để kiểm tra/đổi mới. Quý khách vui lòng đóng gói cẩn thận.'
-                        : 'Sản phẩm trước khi gửi đi đã được kiểm tra kỹ IMEI và tem bảo hành còn nguyên vẹn...'
-                  }
-                  className={cn(
-                    'w-full rounded-xl border p-3 text-xs outline-hidden transition-all',
-                    isDark
-                      ? 'bg-slate-800 border-slate-700 text-white focus:border-amber-500'
-                      : 'bg-white border-stone-200 text-stone-900 focus:border-amber-500'
-                  )}
-                />
-              </div>
-
-              {/* Evidence Upload for REJECT */}
-              {activeModal === 'REJECT' && (
-                <div className="space-y-2 pt-1">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold">Ảnh bằng chứng của Shop ({evidenceUrls.length}/4):</span>
-                    {evidenceUrls.length < MAX_IMAGES && (
-                      <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={uploadingImage}
-                        className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-600 hover:text-amber-700 dark:text-amber-400"
-                      >
-                        <HiOutlinePhotograph className="h-4 w-4" />
-                        <span>{uploadingImage ? 'Đang tải...' : 'Thêm ảnh'}</span>
-                      </button>
-                    )}
-                  </div>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={handleFileUpload}
-                    className="hidden"
-                  />
-
-                  {/* Image Grid */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {evidenceUrls.map((url, idx) => (
-                      <div
-                        key={idx}
-                        className="group relative h-20 rounded-lg overflow-hidden border border-stone-200 dark:border-slate-700"
-                      >
-                        <img src={url} alt={`Chứng cứ ${idx}`} className="h-full w-full object-cover" />
-                        <button
-                          type="button"
-                          onClick={() => removeEvidence(idx)}
-                          className="absolute top-1 right-1 rounded-full bg-rose-600 p-1 text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <HiOutlineTrash className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Modal Actions */}
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-stone-100 dark:border-slate-800">
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveModal(null)
-                  setResponseNote('')
-                  setEvidenceUrls([])
-                }}
-                disabled={submitting}
-                className="rounded-xl px-4 py-2 text-xs font-bold border border-stone-200 dark:border-slate-700 hover:bg-stone-100 dark:hover:bg-slate-800 transition-colors"
-              >
-                Hủy bỏ
-              </button>
-              <button
-                type="button"
-                disabled={submitting}
-                onClick={() => {
-                  if (activeModal === 'REFUND') handleSellerAction('ACCEPT_REFUND')
-                  else if (activeModal === 'RETURN') handleSellerAction('ACCEPT_RETURN')
-                  else if (activeModal === 'REJECT') handleSellerAction('REJECT_AND_ESCALATE')
-                }}
-                className={cn(
-                  'rounded-xl px-4 py-2 text-xs font-bold text-white shadow-sm transition-all',
-                  activeModal === 'REFUND'
-                    ? 'bg-emerald-600 hover:bg-emerald-700'
-                    : activeModal === 'RETURN'
-                      ? 'bg-sky-600 hover:bg-sky-700'
-                      : 'bg-rose-600 hover:bg-rose-700'
-                )}
-              >
-                {submitting ? 'Đang xử lý...' : 'Xác nhận gửi'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Modal Dialogs (Modular Sub-Component) */}
+      <SellerDisputeActionModal
+        activeModal={activeModal}
+        onClose={() => {
+          setActiveModal(null)
+          setResponseNote('')
+          setEvidenceUrls([])
+        }}
+        isDark={isDark}
+        responseNote={responseNote}
+        setResponseNote={setResponseNote}
+        evidenceUrls={evidenceUrls}
+        removeEvidence={removeEvidence}
+        handleFileSelect={handleFileUpload}
+        uploadingImage={uploadingImage}
+        fileInputRef={fileInputRef}
+        submitting={submitting}
+        onSubmit={handleSellerAction}
+      />
     </div>
     </div>
   )

@@ -38,13 +38,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 import com.marketplace.ecommerce.request.repository.ReportRepository;
-import com.marketplace.ecommerce.product.repository.ProductRepository;
-import com.marketplace.ecommerce.shop.repository.ShopRepository;
-import com.marketplace.ecommerce.review.repository.ReviewRepository;
-import com.marketplace.ecommerce.order.repository.OrderRepository;
-import com.marketplace.ecommerce.order.service.OrderReturnService;
-import com.marketplace.ecommerce.payment.repository.EscrowRepository;
-import com.marketplace.ecommerce.payment.service.EscrowService;
 import com.marketplace.ecommerce.request.entity.Report;
 import com.marketplace.ecommerce.request.valueObjects.ReportStage;
 import com.marketplace.ecommerce.request.valueObjects.TargetType;
@@ -77,6 +70,9 @@ class RequestServiceImplTest {
 
         @Mock
         private ShopService shopService;
+
+        @Mock
+        private ShopEscrowFundService shopEscrowFundService;
 
         @InjectMocks
         private RequestServiceImpl requestService;

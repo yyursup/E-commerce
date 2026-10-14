@@ -57,11 +57,16 @@ public class OrderDisputeServiceImpl implements OrderDisputeService {
                 .filter(r -> r.getTargetId() != null)
                 .collect(Collectors.groupingBy(Report::getTargetId));
 
+        List<Escrow> allEscrows = escrowRepository.findByOrderIdIn(orderIds);
+        Map<UUID, Escrow> escrowByOrderId = allEscrows.stream()
+                .filter(e -> e.getOrder() != null && e.getOrder().getId() != null)
+                .collect(Collectors.toMap(e -> e.getOrder().getId(), e -> e, (e1, e2) -> e1));
+
         Map<UUID, OrderDisputeResponse> resultMap = new HashMap<>();
         for (UUID orderId : orderIds) {
             List<Report> reports = reportsByOrderId.getOrDefault(orderId, Collections.emptyList());
-            Optional<Escrow> escrowOpt = escrowRepository.findByOrderId(orderId);
-            resultMap.put(orderId, computeDisputeInfo(reports, escrowOpt.orElse(null)));
+            Escrow escrow = escrowByOrderId.get(orderId);
+            resultMap.put(orderId, computeDisputeInfo(reports, escrow));
         }
 
         return resultMap;

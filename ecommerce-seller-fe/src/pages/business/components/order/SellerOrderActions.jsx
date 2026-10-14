@@ -89,7 +89,7 @@ export default function SellerOrderActions({
             className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-5 py-2.5 text-xs sm:text-sm font-bold text-white shadow-md shadow-amber-500/20 hover:from-amber-600 hover:to-orange-600 transition-all disabled:opacity-50"
           >
             <HiOutlineCheck className="h-4 w-4" />
-            <span>Xác Nhận & Bắt Đầu Đóng Gói (PROCESSING)</span>
+            <span>Xác Nhận & Bắt Đầu Đóng Gói</span>
           </button>
         )}
 
@@ -101,7 +101,7 @@ export default function SellerOrderActions({
             className="inline-flex items-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 px-5 py-2.5 text-xs sm:text-sm font-bold text-white shadow-md shadow-blue-500/20 transition-all disabled:opacity-50"
           >
             <HiOutlineTruck className="h-4 w-4" />
-            <span>Đã Giao Cho Shipper GHN (SHIPPING)</span>
+            <span>Đã Giao Cho Shipper GHN</span>
           </button>
         )}
 
@@ -117,7 +117,7 @@ export default function SellerOrderActions({
             className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-5 py-2.5 text-xs sm:text-sm font-bold text-white shadow-md shadow-emerald-500/20 transition-all disabled:opacity-50"
           >
             <HiOutlineCheckCircle className="h-4 w-4" />
-            <span>Xác Nhận Đã Giao Thành Công (DELIVERED)</span>
+            <span>Xác Nhận Đã Giao Thành Công</span>
           </button>
         )}
 

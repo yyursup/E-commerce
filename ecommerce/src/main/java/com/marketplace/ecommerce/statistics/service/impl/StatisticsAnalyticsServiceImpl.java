@@ -220,8 +220,10 @@ public class StatisticsAnalyticsServiceImpl implements StatisticsAnalyticsServic
             settledNetIncome = BigDecimal.ZERO;
         }
 
-        BigDecimal pendingEscrowRevenue = estimatedRevenue.subtract(totalRevenue);
-        if (pendingEscrowRevenue.compareTo(BigDecimal.ZERO) < 0) {
+        List<OrderStatus> pendingEscrowStatuses = List.of(
+                OrderStatus.CONFIRMED, OrderStatus.PROCESSING, OrderStatus.SHIPPING, OrderStatus.DELIVERED);
+        BigDecimal pendingEscrowRevenue = orderRepository.getPendingEscrowRevenueByShop(shop.getId(), pendingEscrowStatuses);
+        if (pendingEscrowRevenue == null || pendingEscrowRevenue.compareTo(BigDecimal.ZERO) < 0) {
             pendingEscrowRevenue = BigDecimal.ZERO;
         }
 

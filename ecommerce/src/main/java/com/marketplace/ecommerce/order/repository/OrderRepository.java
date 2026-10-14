@@ -82,6 +82,28 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
       @Param("statuses") List<OrderStatus> statuses);
 
   /**
+   * Doanh thu thực nhận đang chờ giải ngân trong Ký quỹ (Escrow):
+   * Chỉ tính các đơn hàng đã thanh toán thành công và tiền đang được bảo đảm trong Escrow
+   * (CONFIRMED, PROCESSING, SHIPPING, DELIVERED).
+   * Số tiền thực nhận = subtotal - shopDiscountAmount - platformCommission (voucher Sàn do Sàn tài trợ không trừ).
+   */
+  @Query("""
+      SELECT COALESCE(SUM(
+          CASE 
+              WHEN (o.subtotal - COALESCE(o.shopDiscountAmount, 0) - COALESCE(o.platformCommission, 0)) > 0 
+              THEN (o.subtotal - COALESCE(o.shopDiscountAmount, 0) - COALESCE(o.platformCommission, 0))
+              ELSE 0 
+          END
+      ), 0)
+      FROM Order o
+      WHERE o.shop.id = :shopId
+        AND o.status IN :statuses
+      """)
+  BigDecimal getPendingEscrowRevenueByShop(
+      @Param("shopId") UUID shopId,
+      @Param("statuses") List<OrderStatus> statuses);
+
+  /**
    * Doanh thu từ đơn đã giao/hoàn thành: tổng tiền hàng (subtotal), không bao gồm
    * phí ship.
    */

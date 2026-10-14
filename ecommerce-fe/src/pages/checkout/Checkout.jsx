@@ -51,7 +51,7 @@ export default function Checkout() {
     const [addresses, setAddresses] = useState([])
     const [selectedAddressId, setSelectedAddressId] = useState(null)
     const [notes, setNotes] = useState('')
-    const [paymentMethod, setPaymentMethod] = useState('COD')
+    const [paymentMethod, setPaymentMethod] = useState('VNPAY')
     const [walletBalance, setWalletBalance] = useState(0)
     const [loadingWallet, setLoadingWallet] = useState(false)
     const [processing, setProcessing] = useState(false)
@@ -520,116 +520,116 @@ export default function Checkout() {
         <div className={cn("min-h-screen flex flex-col justify-between transition-colors", isDark ? "bg-slate-950 text-slate-100" : "bg-stone-50 text-stone-900")}>
             <div className="flex-1 py-10 px-4 sm:px-6 lg:px-8">
                 <div className="mx-auto max-w-4xl">
-                {/* Header */}
-                <div className="mb-8 flex items-center gap-4">
-                    <button
-                        onClick={() => navigate('/cart')}
-                        className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
-                    >
-                        <HiArrowLeft className={cn("w-6 h-6", isDark ? "text-white" : "text-stone-900")} />
-                    </button>
-                    <h1 className={cn("text-2xl font-bold", isDark ? "text-white" : "text-stone-900")}>
-                        Thanh toán ({shopName})
-                    </h1>
-                </div>
-
-                <div className="grid gap-8 lg:grid-cols-12">
-                    {/* Left Column: Order Info, Address & Voucher */}
-                    <div className="lg:col-span-8 space-y-6">
-                        {/* Address Section */}
-                        <CheckoutAddressSection
-                            addresses={addresses}
-                            selectedAddressId={selectedAddressId}
-                            onSelectAddress={setSelectedAddressId}
-                            onOpenAddModal={() => setShowAddAddress(true)}
-                            isDark={isDark}
-                        />
-
-                        {/* Order Items & Notes */}
-                        <CheckoutOrderItems
-                            shopName={shopName}
-                            shopOrigin={shopOrigin}
-                            cartItems={cartItems}
-                            notes={notes}
-                            setNotes={setNotes}
-                            isDark={isDark}
-                        />
-
-                        {/* Payment Method Section */}
-                        <CheckoutPaymentMethodSection
-                            paymentMethod={paymentMethod}
-                            setPaymentMethod={setPaymentMethod}
-                            walletBalance={walletBalance}
-                            loadingWallet={loadingWallet}
-                            finalTotal={finalTotal}
-                            isDark={isDark}
-                        />
-
-                        {/* Voucher Section */}
-                        <CheckoutVoucherSection
-                            voucherCodeInput={voucherCodeInput}
-                            setVoucherCodeInput={setVoucherCodeInput}
-                            appliedShopVoucher={selectedShopVoucher}
-                            appliedPlatformVoucher={selectedPlatformVoucher}
-                            shopDiscountAmount={shopDiscountAmount}
-                            platformDiscountAmount={platformDiscountAmount}
-                            discountAmount={discountAmount}
-                            isApplyingVoucher={isApplyingVoucher}
-                            availableCount={availableVouchers.length}
-                            onApplyVoucher={handleApplyVoucher}
-                            onRemoveShopVoucher={handleRemoveShopVoucher}
-                            onRemovePlatformVoucher={handleRemovePlatformVoucher}
-                            onRemoveVoucher={handleRemoveAllVouchers}
-                            onOpenVoucherModal={() => setShowVoucherModal(true)}
-                            isDark={isDark}
-                        />
+                    {/* Header */}
+                    <div className="mb-8 flex items-center gap-4">
+                        <button
+                            onClick={() => navigate('/cart')}
+                            className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                        >
+                            <HiArrowLeft className={cn("w-6 h-6", isDark ? "text-white" : "text-stone-900")} />
+                        </button>
+                        <h1 className={cn("text-2xl font-bold", isDark ? "text-white" : "text-stone-900")}>
+                            Thanh toán ({shopName})
+                        </h1>
                     </div>
 
-                    {/* Right Column: Calculations */}
-                    <div className="lg:col-span-4">
-                        <CheckoutOrderSummary
-                            totalPrice={totalPrice}
-                            shippingFee={shippingFee}
-                            appliedShopVoucher={selectedShopVoucher}
-                            appliedPlatformVoucher={selectedPlatformVoucher}
-                            shopDiscountAmount={shopDiscountAmount}
-                            platformDiscountAmount={platformDiscountAmount}
-                            discountAmount={discountAmount}
-                            voucherCodeInput={voucherCodeInput}
-                            finalTotal={finalTotal}
-                            isCalculatingFee={isCalculatingFee}
-                            processing={processing}
-                            cartItemsCount={cartItems.length}
-                            onCreateOrder={handleCreateOrder}
-                            isDark={isDark}
-                        />
+                    <div className="grid gap-8 lg:grid-cols-12">
+                        {/* Left Column: Order Info, Address & Voucher */}
+                        <div className="lg:col-span-8 space-y-6">
+                            {/* Address Section */}
+                            <CheckoutAddressSection
+                                addresses={addresses}
+                                selectedAddressId={selectedAddressId}
+                                onSelectAddress={setSelectedAddressId}
+                                onOpenAddModal={() => setShowAddAddress(true)}
+                                isDark={isDark}
+                            />
+
+                            {/* Order Items & Notes */}
+                            <CheckoutOrderItems
+                                shopName={shopName}
+                                shopOrigin={shopOrigin}
+                                cartItems={cartItems}
+                                notes={notes}
+                                setNotes={setNotes}
+                                isDark={isDark}
+                            />
+
+                            {/* Payment Method Section */}
+                            <CheckoutPaymentMethodSection
+                                paymentMethod={paymentMethod}
+                                setPaymentMethod={setPaymentMethod}
+                                walletBalance={walletBalance}
+                                loadingWallet={loadingWallet}
+                                finalTotal={finalTotal}
+                                isDark={isDark}
+                            />
+
+                            {/* Voucher Section */}
+                            <CheckoutVoucherSection
+                                voucherCodeInput={voucherCodeInput}
+                                setVoucherCodeInput={setVoucherCodeInput}
+                                appliedShopVoucher={selectedShopVoucher}
+                                appliedPlatformVoucher={selectedPlatformVoucher}
+                                shopDiscountAmount={shopDiscountAmount}
+                                platformDiscountAmount={platformDiscountAmount}
+                                discountAmount={discountAmount}
+                                isApplyingVoucher={isApplyingVoucher}
+                                availableCount={availableVouchers.length}
+                                onApplyVoucher={handleApplyVoucher}
+                                onRemoveShopVoucher={handleRemoveShopVoucher}
+                                onRemovePlatformVoucher={handleRemovePlatformVoucher}
+                                onRemoveVoucher={handleRemoveAllVouchers}
+                                onOpenVoucherModal={() => setShowVoucherModal(true)}
+                                isDark={isDark}
+                            />
+                        </div>
+
+                        {/* Right Column: Calculations */}
+                        <div className="lg:col-span-4">
+                            <CheckoutOrderSummary
+                                totalPrice={totalPrice}
+                                shippingFee={shippingFee}
+                                appliedShopVoucher={selectedShopVoucher}
+                                appliedPlatformVoucher={selectedPlatformVoucher}
+                                shopDiscountAmount={shopDiscountAmount}
+                                platformDiscountAmount={platformDiscountAmount}
+                                discountAmount={discountAmount}
+                                voucherCodeInput={voucherCodeInput}
+                                finalTotal={finalTotal}
+                                isCalculatingFee={isCalculatingFee}
+                                processing={processing}
+                                cartItemsCount={cartItems.length}
+                                onCreateOrder={handleCreateOrder}
+                                isDark={isDark}
+                            />
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            {/* Address Modal */}
-            <AddressFormModal
-                isOpen={showAddAddress}
-                onClose={() => setShowAddAddress(false)}
-                onSuccess={handleAddressAdded}
-                isDark={isDark}
-            />
+                {/* Address Modal */}
+                <AddressFormModal
+                    isOpen={showAddAddress}
+                    onClose={() => setShowAddAddress(false)}
+                    onSuccess={handleAddressAdded}
+                    isDark={isDark}
+                />
 
-            {/* Voucher Selection Modal */}
-            <CheckoutVoucherModal
-                isOpen={showVoucherModal}
-                onClose={() => setShowVoucherModal(false)}
-                loading={loadingVouchers}
-                vouchers={availableVouchers}
-                appliedShopVoucher={selectedShopVoucher}
-                appliedPlatformVoucher={selectedPlatformVoucher}
-                totalPrice={totalPrice}
-                shippingFee={shippingFee}
-                cartItems={cartItems}
-                onApplyMulti={handleApplyMultiVouchers}
-                onApply={handleApplyVoucher}
-                isDark={isDark}
-            />
+                {/* Voucher Selection Modal */}
+                <CheckoutVoucherModal
+                    isOpen={showVoucherModal}
+                    onClose={() => setShowVoucherModal(false)}
+                    loading={loadingVouchers}
+                    vouchers={availableVouchers}
+                    appliedShopVoucher={selectedShopVoucher}
+                    appliedPlatformVoucher={selectedPlatformVoucher}
+                    totalPrice={totalPrice}
+                    shippingFee={shippingFee}
+                    cartItems={cartItems}
+                    onApplyMulti={handleApplyMultiVouchers}
+                    onApply={handleApplyVoucher}
+                    isDark={isDark}
+                />
             </div>
             <Footer />
         </div>

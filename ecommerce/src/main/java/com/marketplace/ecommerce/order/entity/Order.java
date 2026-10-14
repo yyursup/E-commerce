@@ -49,7 +49,7 @@ public class Order {
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_method", length = 50)
     @Builder.Default
-    private PaymentMethod paymentMethod = PaymentMethod.COD;
+    private PaymentMethod paymentMethod = PaymentMethod.WALLET;
 
     @Column(name = "shipping_name", nullable = false, length = 255)
     private String shippingName;

@@ -42,8 +42,6 @@ class StatisticsAnalyticsServiceImplTest {
     @Mock
     private ProductRepository productRepository;
     @Mock
-    private EscrowRepository escrowRepository;
-    @Mock
     private CommissionRepository commissionRepository;
     @Mock
     private ShopRepository shopRepository;

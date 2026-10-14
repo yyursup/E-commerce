@@ -79,6 +79,37 @@ export default function SellerOrderActions({
         </div>
       )}
 
+      {order?.hasActiveDispute && (
+        <div
+          className={cn(
+            'p-4 rounded-2xl border text-xs sm:text-sm flex items-start gap-3',
+            isDark ? 'border-amber-500/40 bg-amber-500/10 text-amber-300' : 'border-amber-300 bg-amber-50 text-amber-800'
+          )}
+        >
+          <HiOutlineExclamation className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+          <div>
+            <p className="font-bold">Đơn hàng đang có yêu cầu khiếu nại (Thương lượng trực tiếp 1:1)</p>
+            <p className="text-[11px] opacity-90 mt-0.5">
+              Khách hàng đã nộp khiếu nại. Vui lòng xem chi tiết hình ảnh, lý do và phản hồi xử lý ở mục <strong>Yêu Cầu Khiếu Nại</strong> ngay bên dưới.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {order?.status === 'DELIVERED' && !order?.hasActiveDispute && (
+        <div
+          className={cn(
+            'p-4 rounded-2xl border text-xs sm:text-sm flex items-center gap-2.5',
+            isDark ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300' : 'border-emerald-200 bg-emerald-50 text-emerald-800'
+          )}
+        >
+          <HiOutlineCheckCircle className="h-5 w-5 text-emerald-500 shrink-0" />
+          <span>
+            Đơn hàng đã giao thành công tới tay khách hàng. Tiền ký quỹ Escrow sẽ tự động được giải ngân sau 3 ngày nếu khách không khiếu nại.
+          </span>
+        </div>
+      )}
+
       {/* Action Buttons Row */}
       <div className="flex flex-wrap items-center gap-3">
         {canMoveToProcessing && (
@@ -89,7 +120,7 @@ export default function SellerOrderActions({
             className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-5 py-2.5 text-xs sm:text-sm font-bold text-white shadow-md shadow-amber-500/20 hover:from-amber-600 hover:to-orange-600 transition-all disabled:opacity-50"
           >
             <HiOutlineCheck className="h-4 w-4" />
-            <span>Xác Nhận & Bắt Đầu Đóng Gói (PROCESSING)</span>
+            <span>Xác Nhận & Bắt Đầu Đóng Gói</span>
           </button>
         )}
 
@@ -101,7 +132,7 @@ export default function SellerOrderActions({
             className="inline-flex items-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 px-5 py-2.5 text-xs sm:text-sm font-bold text-white shadow-md shadow-blue-500/20 transition-all disabled:opacity-50"
           >
             <HiOutlineTruck className="h-4 w-4" />
-            <span>Đã Giao Cho Shipper GHN (SHIPPING)</span>
+            <span>Đã Giao Cho Shipper GHN</span>
           </button>
         )}
 
@@ -117,7 +148,7 @@ export default function SellerOrderActions({
             className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-5 py-2.5 text-xs sm:text-sm font-bold text-white shadow-md shadow-emerald-500/20 transition-all disabled:opacity-50"
           >
             <HiOutlineCheckCircle className="h-4 w-4" />
-            <span>Xác Nhận Đã Giao Thành Công (DELIVERED)</span>
+            <span>Xác Nhận Đã Giao Thành Công</span>
           </button>
         )}
 

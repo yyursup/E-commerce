@@ -19,7 +19,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
@@ -78,16 +77,14 @@ public class RequestPolicy {
         }
 
         // Kiểm tra tính hợp lệ về thời điểm:
-        // 1. DELIVERED: Hợp lệ khiếu nại (trong vòng 7 ngày kể từ khi giao)
-        // 2. SHIPPED / SHIPPING: Chỉ cho phép khiếu nại khi đơn bị quá hạn giao (sau 3
-        // ngày kể từ khi xuất kho)
+        // 1. DELIVERED: Hợp lệ khiếu nại (trong vòng 3 ngày kể từ khi giao, trước khi hệ thống tự động giải ngân)
         if (order.getStatus() == OrderStatus.DELIVERED) {
             if (order.getDeliveredAt() != null) {
                 long daysSinceDelivered = ChronoUnit.DAYS.between(order.getDeliveredAt(),
                         java.time.LocalDateTime.now());
-                if (daysSinceDelivered > 7) {
+                if (daysSinceDelivered > 3) {
                     throw new CustomException(
-                            "Đã quá thời hạn 7 ngày khiếu nại kể từ khi đơn hàng được giao thành công.");
+                            "Đã quá thời hạn 3 ngày khiếu nại kể từ khi đơn hàng được giao thành công.");
                 }
             }
         } else {

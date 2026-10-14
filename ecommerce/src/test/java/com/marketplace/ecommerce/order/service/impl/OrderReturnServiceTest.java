@@ -28,6 +28,7 @@ import com.marketplace.ecommerce.product.service.InventoryHistoryService;
 import com.marketplace.ecommerce.product.valueObjects.InventoryActionType;
 import com.marketplace.ecommerce.auth.entity.Account;
 import com.marketplace.ecommerce.request.entity.Report;
+import com.marketplace.ecommerce.request.valueObjects.ReportStage;
 import com.marketplace.ecommerce.request.repository.ReportRepository;
 import com.marketplace.ecommerce.request.repository.RequestRepository;
 import com.marketplace.ecommerce.request.valueObjects.ResolutionType;
@@ -305,7 +306,7 @@ public class OrderReturnServiceTest {
         assertEquals(ReturnStatus.DISPUTED, res.getStatus());
         assertEquals(ReturnConditionStatus.DAMAGED, res.getConditionStatus());
         verify(requestRepository, never()).save(any());
-        verify(reportRepository, never()).save(any());
+        verify(reportRepository).save(argThat(r -> r.getStage() == ReportStage.ESCALATED_TO_ADMIN));
         verify(escrowService, never()).refundByOrder(any(), any());
     }
 

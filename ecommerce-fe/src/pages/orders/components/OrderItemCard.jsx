@@ -66,8 +66,11 @@ export default function OrderItemCard({
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          {/* Dispute status indicator */}
-          {order.hasActiveDispute && (
+          {/* Dispute status indicator: Ẩn nếu đã hoàn tất đổi trả, đã hoàn tiền hoặc case đã resolved */}
+          {order.hasActiveDispute &&
+            order.status !== 'REFUNDED' &&
+            order.returnInfo?.status !== 'COMPLETED' &&
+            !['RESOLVED', 'CANCELLED', 'REFUNDED', 'NONE'].includes(order.disputeStatus) && (
             <span
               className={cn(
                 'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold border uppercase tracking-wider',

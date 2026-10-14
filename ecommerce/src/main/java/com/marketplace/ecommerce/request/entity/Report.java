@@ -1,10 +1,13 @@
 package com.marketplace.ecommerce.request.entity;
 
+import com.marketplace.ecommerce.request.valueObjects.DisputeSellerAction;
+import com.marketplace.ecommerce.request.valueObjects.ReportStage;
 import com.marketplace.ecommerce.request.valueObjects.ResolutionType;
 import com.marketplace.ecommerce.request.valueObjects.TargetType;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
@@ -44,4 +47,30 @@ public class Report {
     @Enumerated(EnumType.STRING)
     @Column(name = "resolution_type", length = 30)
     private ResolutionType resolutionType;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "stage", length = 30)
+    private ReportStage stage;
+
+    @Column(name = "seller_response_deadline")
+    private LocalDateTime sellerResponseDeadline;
+
+    @Column(name = "seller_response", columnDefinition = "TEXT")
+    private String sellerResponse;
+
+    @Column(name = "seller_evidence_url", columnDefinition = "TEXT")
+    private String sellerEvidenceUrl;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "seller_action", length = 30)
+    private DisputeSellerAction sellerAction;
+
+    @Column(name = "escalated_at")
+    private LocalDateTime escalatedAt;
+
+    @Column(name = "escalated_by_account_id", columnDefinition = "uuid")
+    private UUID escalatedByAccountId;
+
+    @Column(name = "escalation_reason", columnDefinition = "TEXT")
+    private String escalationReason;
 }

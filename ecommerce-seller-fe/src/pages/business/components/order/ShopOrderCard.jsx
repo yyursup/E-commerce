@@ -71,6 +71,17 @@ export default function ShopOrderCard({ order, isDark, onQuickStatusUpdate, acti
           </span>
         </div>
 
+        <div className="flex items-center gap-2 flex-wrap">
+          {order.hasActiveDispute &&
+            order.status !== 'REFUNDED' &&
+            order.returnInfo?.status !== 'COMPLETED' &&
+            !['RESOLVED', 'CANCELLED', 'REFUNDED', 'NONE'].includes(order.disputeStatus) && (
+            <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold border border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400">
+              Đang khiếu nại (1:1)
+            </span>
+          )}
+          <OrderStatusBadge status={order.status} returnInfo={order.returnInfo} />
+        </div>
       </div>
 
       {/* 2. Card Content: Product Previews & Customer Address */}

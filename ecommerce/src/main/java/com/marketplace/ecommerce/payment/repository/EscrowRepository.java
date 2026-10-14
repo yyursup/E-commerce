@@ -18,6 +18,9 @@ import java.util.UUID;
 public interface EscrowRepository extends JpaRepository<Escrow, UUID> {
     Optional<Escrow> findByOrderId(UUID orderId);
 
+    @Query("select e from Escrow e where e.order.id in :orderIds")
+    java.util.List<Escrow> findByOrderIdIn(@Param("orderIds") java.util.Collection<UUID> orderIds);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select e from Escrow e where e.order.id = :orderId")
     Optional<Escrow> findByOrderIdForUpdate(@Param("orderId") UUID orderId);

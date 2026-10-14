@@ -54,6 +54,18 @@ export default function AdminReportsTab({
                     ? 'Đã bác đơn'
                     : 'Chờ thẩm định'}
               </span>
+
+              {item.targetType === 'ORDER' && (
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold border bg-purple-500/10 text-purple-400 border-purple-500/30">
+                  Tranh chấp đơn hàng
+                </span>
+              )}
+              {item.stage === 'ESCALATED_TO_ADMIN' && (
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold border bg-rose-500/10 text-rose-400 border-rose-500/30">
+                  Chờ BQT phân xử
+                </span>
+              )}
+
               <span className="text-xs text-stone-400 font-mono" title={item.requestId || item.id}>
                 {item.displayCode || `#${String(item.requestId || item.id).substring(0, 8)}`}
               </span>
@@ -126,20 +138,28 @@ export default function AdminReportsTab({
 
             {item.status === 'PENDING' && (
               <>
-                <button
-                  onClick={() => (handleOpenActionModal ? handleOpenActionModal('REPORT_APPROVE', item) : setActionModal({ isOpen: true, type: 'REPORT_APPROVE', item, note: '' }))}
-                  className="flex items-center gap-1 px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 active:scale-95 shadow-sm transition-all"
-                >
-                  <HiOutlineCheck className="h-4 w-4" />
-                  Xác nhận vi phạm
-                </button>
-                <button
-                  onClick={() => (handleOpenActionModal ? handleOpenActionModal('REPORT_REJECT', item) : setActionModal({ isOpen: true, type: 'REPORT_REJECT', item, note: '' }))}
-                  className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-bold border border-stone-200 dark:border-slate-700 text-stone-600 dark:text-slate-300 hover:bg-stone-100 dark:hover:bg-slate-800 active:scale-95 transition-all"
-                >
-                  <HiOutlineX className="h-4 w-4" />
-                  Bác bỏ
-                </button>
+                {item.targetType === 'ORDER' && item.stage !== 'ESCALATED_TO_ADMIN' ? (
+                  <span className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-stone-100 dark:bg-slate-800 text-stone-500 dark:text-slate-400 border border-stone-200 dark:border-slate-700">
+                    Đang thương lượng 1:1
+                  </span>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => (handleOpenActionModal ? handleOpenActionModal('REPORT_APPROVE', item) : setActionModal({ isOpen: true, type: 'REPORT_APPROVE', item, note: '' }))}
+                      className="flex items-center gap-1 px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 active:scale-95 shadow-sm transition-all"
+                    >
+                      <HiOutlineCheck className="h-4 w-4" />
+                      {item.targetType === 'ORDER' ? 'Buyer thắng (Hoàn tiền)' : 'Xác nhận vi phạm'}
+                    </button>
+                    <button
+                      onClick={() => (handleOpenActionModal ? handleOpenActionModal('REPORT_REJECT', item) : setActionModal({ isOpen: true, type: 'REPORT_REJECT', item, note: '' }))}
+                      className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-bold border border-stone-200 dark:border-slate-700 text-stone-600 dark:text-slate-300 hover:bg-stone-100 dark:hover:bg-slate-800 active:scale-95 transition-all"
+                    >
+                      <HiOutlineX className="h-4 w-4" />
+                      {item.targetType === 'ORDER' ? 'Shop thắng (Bác khiếu nại)' : 'Bác bỏ'}
+                    </button>
+                  </>
+                )}
               </>
             )}
           </div>

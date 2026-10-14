@@ -56,8 +56,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -438,6 +441,13 @@ public class RequestServiceImpl implements RequestService {
                         .moderatorNote(rep.getModeratorNote())
                         .targetName(targetName)
                         .targetInfo(targetInfo)
+                        .stage(rep.getStage())
+                        .sellerResponseDeadline(rep.getSellerResponseDeadline())
+                        .sellerResponse(rep.getSellerResponse())
+                        .sellerEvidenceUrl(rep.getSellerEvidenceUrl())
+                        .sellerAction(rep.getSellerAction())
+                        .escalatedAt(rep.getEscalatedAt())
+                        .escalationReason(rep.getEscalationReason())
                         .build();
             }
 
@@ -468,18 +478,13 @@ public class RequestServiceImpl implements RequestService {
                 pageable.getPageSize(),
                 Sort.by(Sort.Direction.DESC, RequestConstant.CREATED_AT));
 
-        Page<Request> requests;
-        if (type != null) {
-            requests = status == null
-                    ? requestRepository.findAllByType(type, newestFirstPageable)
-                    : requestRepository.findAllByTypeAndStatus(type, status, newestFirstPageable);
-        } else {
-            requests = status == null
-                    ? requestRepository.findAll(newestFirstPageable)
-                    : requestRepository.findAllByStatus(status, newestFirstPageable);
-        }
+        Page<Request> requests = requestRepository.findAllAdminRequests(type, status, newestFirstPageable);
 
-        return requests.map(CreateRequestResponse::from);
+        List<UUID> reqIds = requests.getContent().stream().map(Request::getId).toList();
+        Map<UUID, Report> reportMap = reqIds.isEmpty() ? Collections.emptyMap()
+                : reportRepository.findAllById(reqIds).stream().collect(Collectors.toMap(Report::getId, r -> r));
+
+        return requests.map(req -> CreateRequestResponse.from(req, reportMap.get(req.getId())));
     }
 
     private String generateDisplayCode(com.marketplace.ecommerce.request.valueObjects.RequestType type) {

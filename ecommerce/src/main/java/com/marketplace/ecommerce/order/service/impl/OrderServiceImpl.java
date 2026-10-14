@@ -356,13 +356,17 @@ public class OrderServiceImpl implements OrderService {
             throw new CustomException("There's no items in this cart from the shop.");
         }
 
-        PaymentMethod paymentMethod = PaymentMethod.COD;
+        PaymentMethod paymentMethod = PaymentMethod.WALLET;
         if (request.getPaymentMethod() != null && !request.getPaymentMethod().isBlank()) {
             try {
                 paymentMethod = PaymentMethod.valueOf(request.getPaymentMethod().trim().toUpperCase());
             } catch (Exception e) {
-                log.warn("Invalid payment method: {}, defaulting to COD", request.getPaymentMethod());
+                throw new CustomException("Phương thức thanh toán không hợp lệ: " + request.getPaymentMethod());
             }
+        }
+
+        if (paymentMethod == PaymentMethod.COD) {
+            throw new CustomException("Phương thức thanh toán khi nhận hàng (COD) đã ngừng hỗ trợ. Vui lòng thanh toán qua VNPay hoặc Ví sàn.");
         }
 
         BigDecimal subtotal = getBigDecimal(cartItems);
@@ -377,7 +381,7 @@ public class OrderServiceImpl implements OrderService {
         order.setUser(user);
         order.setShop(shop);
         order.setPaymentMethod(paymentMethod);
-        if (paymentMethod == PaymentMethod.COD || paymentMethod == PaymentMethod.WALLET) {
+        if (paymentMethod == PaymentMethod.WALLET) {
             order.setStatus(OrderStatus.CONFIRMED);
         } else {
             order.setStatus(OrderStatus.PENDING_PAYMENT);
@@ -484,11 +488,7 @@ public class OrderServiceImpl implements OrderService {
             cartItemRepository.save(cartItem);
         }
 
-        if (paymentMethod == PaymentMethod.COD) {
-            escrowService.recordCodEscrow(order);
-            tryCreateGHNOrder(order);
-            order = orderRepository.save(order);
-        } else if (paymentMethod == PaymentMethod.WALLET) {
+        if (paymentMethod == PaymentMethod.WALLET) {
             walletService.payOrderWithWallet(order);
             tryCreateGHNOrder(order);
             order = orderRepository.save(order);

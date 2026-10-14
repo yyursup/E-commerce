@@ -21,10 +21,6 @@ import java.util.UUID;
 public interface OrderRepository extends JpaRepository<Order, UUID> {
   Optional<Order> findByOrderNumber(String orderNumber);
 
-  Optional<Order> findByIdAndUserId(UUID id, UUID userId);
-
-  Optional<Order> findByIdAndShopId(UUID id, UUID shopId);
-
   List<Order> findByUserIdOrderByCreatedAtDesc(UUID userId);
 
   List<Order> findByUserIdAndStatusOrderByCreatedAtDesc(UUID userId, OrderStatus status);
@@ -47,9 +43,6 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
   List<Order> findByStatusOrderByCreatedAtDesc(OrderStatus status);
 
   Optional<Order> findByGhnOrderCode(String ghnOrderCode);
-
-  @Query("SELECT o FROM Order o WHERE o.shop = :shop ORDER BY o.createdAt DESC")
-  List<Order> getOrdersByShop(@Param("shop") Shop shop);
 
   @Query("""
           select o.id
@@ -78,6 +71,28 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
         AND o.status IN :statuses
       """)
   BigDecimal getEstimatedRevenueByShop(
+      @Param("shopId") UUID shopId,
+      @Param("statuses") List<OrderStatus> statuses);
+
+  /**
+   * Doanh thu thực nhận đang chờ giải ngân trong Ký quỹ (Escrow):
+   * Chỉ tính các đơn hàng đã thanh toán thành công và tiền đang được bảo đảm trong Escrow
+   * (CONFIRMED, PROCESSING, SHIPPING, DELIVERED).
+   * Số tiền thực nhận = subtotal - shopDiscountAmount - platformCommission (voucher Sàn do Sàn tài trợ không trừ).
+   */
+  @Query("""
+      SELECT COALESCE(SUM(
+          CASE
+              WHEN (o.subtotal - COALESCE(o.shopDiscountAmount, 0) - COALESCE(o.platformCommission, 0)) > 0 
+              THEN (o.subtotal - COALESCE(o.shopDiscountAmount, 0) - COALESCE(o.platformCommission, 0))
+              ELSE 0 
+          END
+      ), 0)
+      FROM Order o
+      WHERE o.shop.id = :shopId
+        AND o.status IN :statuses
+      """)
+  BigDecimal getPendingEscrowRevenueByShop(
       @Param("shopId") UUID shopId,
       @Param("statuses") List<OrderStatus> statuses);
 

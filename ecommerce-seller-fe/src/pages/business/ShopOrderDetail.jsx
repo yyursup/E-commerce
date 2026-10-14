@@ -5,6 +5,7 @@ import {
   HiOutlineArrowLeft,
   HiOutlineRefresh,
   HiOutlineCheckCircle,
+  HiOutlineExclamation,
 } from 'react-icons/hi'
 import { useThemeStore } from '../../store/useThemeStore'
 import { useAuthStore } from '../../store/useAuthStore'
@@ -15,6 +16,7 @@ import returnService from '../../services/returnService'
 import escrowService from '../../services/escrow'
 import OrderStatusBadge from './components/order/OrderStatusBadge'
 import SellerOrderActions from './components/order/SellerOrderActions'
+import SellerDisputeSection from './components/order/SellerDisputeSection'
 import SellerReturnSection from './components/order/SellerReturnSection'
 import OrderAddressSection from './components/order/OrderAddressSection'
 import OrderItemsSection from './components/order/OrderItemsSection'
@@ -192,7 +194,15 @@ export default function ShopOrderDetail() {
     { num: 1, title: 'Đã Đặt Hàng', desc: 'Khách xác nhận đơn' },
     { num: 2, title: 'Đóng Gói Hàng', desc: 'Shop chuẩn bị hàng' },
     { num: 3, title: 'Vận Chuyển GHN', desc: 'Bàn giao shipper GHN' },
-    { num: 4, title: 'Giao Thành Công', desc: 'Giải ngân Escrow' },
+    {
+      num: 4,
+      title: order?.status === 'REFUNDED' ? 'Đã Hoàn Tiền' : 'Giao Thành Công',
+      desc: order?.hasActiveDispute
+        ? 'Tạm giữ Escrow (Đang khiếu nại)'
+        : order?.status === 'REFUNDED'
+          ? 'Đã hoàn 100% tiền cho khách'
+          : 'Giải ngân Escrow',
+    },
   ]
 
   return (
@@ -239,6 +249,12 @@ export default function ShopOrderDetail() {
               returnInfo={returnInfo || order.returnInfo}
               className="px-3 py-1 text-xs"
             />
+            {order.hasActiveDispute && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400 animate-pulse">
+                <HiOutlineExclamation className="h-3.5 w-3.5 text-amber-500" />
+                <span>Đang có khiếu nại (Thương lượng 1:1)</span>
+              </span>
+            )}
           </div>
           <p className={cn('mt-1 text-xs sm:text-sm', isDark ? 'text-slate-400' : 'text-stone-500')}>
             Đặt lúc: <strong>{formatDate(order.createdAt)}</strong> • Khách hàng: <strong>{order.userName || order.shippingName || '-'}</strong>
@@ -341,6 +357,14 @@ export default function ShopOrderDetail() {
           onUpdateStatus={handleUpdateStatus}
           onRetryCreateGhn={handleRetryCreateGhn}
           onSetManualGhnCode={handleSetManualGhnCode}
+        />
+
+        {/* 1.1 Dispute & Negotiation Section (B2: Direct Negotiation 1:1) */}
+        <SellerDisputeSection
+          orderId={order.id}
+          order={order}
+          isDark={isDark}
+          onRefresh={fetchOrder}
         />
 
         {/* 1.5 Return & Refund Section (If active return exists) */}

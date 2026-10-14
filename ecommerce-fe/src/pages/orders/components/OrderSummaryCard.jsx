@@ -171,7 +171,7 @@ export default function OrderSummaryCard({
                         Tiền đang được giữ an toàn (Ký quỹ Escrow)
                       </p>
                       <p className={cn('mt-1 text-xs', isDark ? 'text-slate-400' : 'text-stone-500')}>
-                        Số tiền <span className="font-semibold">{formatCurrency(order.subtotal || order.total)}</span> đang được giữ bởi hệ thống Escrow sàn.
+                        Số tiền <span className="font-semibold">{formatCurrency(order.total)}</span> đang được giữ bởi hệ thống Escrow sàn.
                         Tiền sẽ chỉ giải ngân cho Người bán sau khi bạn xác nhận đã nhận hàng hài lòng.
                       </p>
                       {order.status === 'DELIVERED' && (

@@ -2,7 +2,7 @@ import { HiOutlineCreditCard, HiOutlineTruck, HiOutlineCheckCircle, HiOutlineCur
 import { cn } from '../../../lib/cn'
 
 export default function CheckoutPaymentMethodSection({
-    paymentMethod = 'COD',
+    paymentMethod = 'VNPAY',
     setPaymentMethod,
     walletBalance = 0,
     loadingWallet = false,
@@ -19,14 +19,6 @@ export default function CheckoutPaymentMethodSection({
     }
 
     const methods = [
-        {
-            id: 'COD',
-            name: 'Thanh toán khi nhận hàng (COD)',
-            description: 'Thanh toán bằng tiền mặt trực tiếp cho nhân viên giao hàng khi nhận kiện hàng.',
-            icon: HiOutlineTruck,
-            badge: 'Phổ biến',
-            disabled: false
-        },
         {
             id: 'WALLET',
             name: 'Ví số dư tài khoản',

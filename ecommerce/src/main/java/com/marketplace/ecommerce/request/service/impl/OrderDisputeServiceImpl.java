@@ -61,13 +61,13 @@ public class OrderDisputeServiceImpl implements OrderDisputeService {
         for (UUID orderId : orderIds) {
             List<Report> reports = reportsByOrderId.getOrDefault(orderId, Collections.emptyList());
             Optional<Escrow> escrowOpt = escrowRepository.findByOrderId(orderId);
-            resultMap.put(orderId, computeDisputeInfo(orderId, reports, escrowOpt.orElse(null)));
+            resultMap.put(orderId, computeDisputeInfo(reports, escrowOpt.orElse(null)));
         }
 
         return resultMap;
     }
 
-    private OrderDisputeResponse computeDisputeInfo(UUID orderId, List<Report> reports, Escrow escrow) {
+    private OrderDisputeResponse computeDisputeInfo(List<Report> reports, Escrow escrow) {
         if (reports == null || reports.isEmpty()) {
             boolean isDisputed = escrow != null && escrow.getStatus() == EscrowStatus.DISPUTED;
             return OrderDisputeResponse.builder()

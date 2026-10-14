@@ -26,7 +26,6 @@ import com.marketplace.ecommerce.request.repository.RequestRepository;
 import com.marketplace.ecommerce.request.service.RequestService;
 import com.marketplace.ecommerce.request.valueObjects.*;
 import com.marketplace.ecommerce.review.repository.ReviewRepository;
-import com.marketplace.ecommerce.shop.entity.Shop;
 import com.marketplace.ecommerce.shop.repository.ShopRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -59,12 +58,6 @@ class ReportDisputeFlowTest {
     @Mock
     private RequestPolicy requestPolicy;
     @Mock
-    private ReviewRepository reviewRepository;
-    @Mock
-    private ShopRepository shopRepository;
-    @Mock
-    private ProductRepository productRepository;
-    @Mock
     private OrderRepository orderRepository;
     @Mock
     private EscrowRepository escrowRepository;
@@ -84,7 +77,6 @@ class ReportDisputeFlowTest {
     private UUID orderId;
     private UUID reportId;
     private Account buyerAccount;
-    private Account sellerAccount;
     private Account adminAccount;
     private Request requestEntity;
     private Report reportEntity;
@@ -100,7 +92,6 @@ class ReportDisputeFlowTest {
         reportId = UUID.randomUUID();
 
         buyerAccount = Account.builder().id(buyerAccountId).build();
-        sellerAccount = Account.builder().id(sellerAccountId).build();
         adminAccount = Account.builder().id(adminAccountId).build();
 
         requestEntity = Request.builder()

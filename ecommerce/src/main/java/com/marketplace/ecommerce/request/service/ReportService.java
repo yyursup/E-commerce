@@ -20,7 +20,5 @@ public interface ReportService {
 
     void escalateReport(UUID accountId, UUID reportId, EscalateReportRequest req);
 
-    void autoEscalateExpiredDisputes();
-
     ReportDetailsResponse getReportByOrderId(UUID accountId, UUID orderId);
 }

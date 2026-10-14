@@ -44,9 +44,6 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
 
   Optional<Order> findByGhnOrderCode(String ghnOrderCode);
 
-  @Query("SELECT o FROM Order o WHERE o.shop = :shop ORDER BY o.createdAt DESC")
-  List<Order> getOrdersByShop(@Param("shop") Shop shop);
-
   @Query("""
           select o.id
           from Order o
@@ -85,7 +82,7 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
    */
   @Query("""
       SELECT COALESCE(SUM(
-          CASE 
+          CASE
               WHEN (o.subtotal - COALESCE(o.shopDiscountAmount, 0) - COALESCE(o.platformCommission, 0)) > 0 
               THEN (o.subtotal - COALESCE(o.shopDiscountAmount, 0) - COALESCE(o.platformCommission, 0))
               ELSE 0 

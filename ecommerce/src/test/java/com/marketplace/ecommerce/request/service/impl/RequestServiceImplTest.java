@@ -78,30 +78,6 @@ class RequestServiceImplTest {
         @Mock
         private ShopService shopService;
 
-        @Mock
-        private ProductRepository productRepository;
-
-        @Mock
-        private ShopRepository shopRepository;
-
-        @Mock
-        private ReviewRepository reviewRepository;
-
-        @Mock
-        private OrderRepository orderRepository;
-
-        @Mock
-        private EscrowRepository escrowRepository;
-
-        @Mock
-        private EscrowService escrowService;
-
-        @Mock
-        private OrderReturnService orderReturnService;
-
-        @Mock
-        private ShopEscrowFundService shopEscrowFundService;
-
         @InjectMocks
         private RequestServiceImpl requestService;
 

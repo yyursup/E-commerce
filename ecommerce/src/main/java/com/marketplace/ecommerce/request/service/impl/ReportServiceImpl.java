@@ -41,12 +41,10 @@ import com.marketplace.ecommerce.shop.repository.ShopRepository;
 import com.marketplace.ecommerce.order.service.OrderReturnService;
 import com.marketplace.ecommerce.request.dto.request.EscalateReportRequest;
 import com.marketplace.ecommerce.request.dto.request.SellerDisputeRespondRequest;
-import com.marketplace.ecommerce.request.valueObjects.DisputeSellerAction;
 import com.marketplace.ecommerce.request.valueObjects.ReportStage;
 import com.marketplace.ecommerce.shop.valueObjects.ShopStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -508,31 +506,6 @@ public class ReportServiceImpl implements ReportService {
 
         reportRepository.save(report);
         log.info("Dispute reportId={} escalated to Admin by accountId={}", reportId, accountId);
-    }
-
-    @Override
-    @Transactional
-    @Scheduled(cron = "0 */10 * * * *") // Quét mỗi 10 phút một lần
-    public void autoEscalateExpiredDisputes() {
-        LocalDateTime now = LocalDateTime.now();
-        List<Report> expiredReports = reportRepository.findExpiredDirectNegotiations(now);
-
-        for (Report r : expiredReports) {
-            try {
-                Optional<Report> lockedOpt = reportRepository.findByIdForUpdate(r.getId());
-                if (lockedOpt.isPresent() && lockedOpt.get().getStage() == ReportStage.DIRECT_NEGOTIATION) {
-                    Report report = lockedOpt.get();
-                    report.setStage(ReportStage.ESCALATED_TO_ADMIN);
-                    report.setEscalatedAt(now);
-                    report.setEscalationReason(
-                            "Hệ thống tự động chuyển lên Quản trị viên do Người bán quá hạn 48 giờ không phản hồi thương lượng.");
-                    reportRepository.save(report);
-                    log.info("Auto escalated expired dispute reportId={} to Admin", report.getId());
-                }
-            } catch (Exception e) {
-                log.error("Failed to auto escalate expired dispute reportId={}", r.getId(), e);
-            }
-        }
     }
 
     private void handleReportOrder(UUID orderId, LocalDateTime now) {

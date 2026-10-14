@@ -18,12 +18,6 @@ public interface RequestRepository extends JpaRepository<Request, UUID> {
 
     Page<Request> findAllRequestByAccountId(UUID accountId, Pageable pageable);
 
-    Page<Request> findAllByStatus(RequestStatus status, Pageable pageable);
-
-    Page<Request> findAllByType(RequestType type, Pageable pageable);
-
-    Page<Request> findAllByTypeAndStatus(RequestType type, RequestStatus status, Pageable pageable);
-
     List<Request> findByAccountIdAndTypeOrderByCreatedAtDesc(UUID accountId, RequestType type);
 
     boolean existsByAccountIdAndTypeAndStatus(UUID accountId, RequestType type, RequestStatus status);

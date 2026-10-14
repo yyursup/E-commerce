@@ -1,5 +1,8 @@
 package com.marketplace.ecommerce.request.valueObjects;
 
+import lombok.Getter;
+
+@Getter
 public enum ReportStage {
     DIRECT_NEGOTIATION("DIRECT_NEGOTIATION", "Thương lượng 1:1 giữa Khách hàng và Người bán"),
     RETURN_IN_PROGRESS("RETURN_IN_PROGRESS", "Đang trong tiến trình đổi trả hàng"),
@@ -16,11 +19,4 @@ public enum ReportStage {
         this.description = description;
     }
 
-    public String getCode() {
-        return code;
-    }
-
-    public String getDescription() {
-        return description;
-    }
 }

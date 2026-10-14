@@ -43,7 +43,7 @@ public class OrderDisputeServiceImpl implements OrderDisputeService {
         List<Report> reports = reportRepository.findReportsByTargetTypeAndTargetId(TargetType.ORDER, orderId);
         Optional<Escrow> escrowOpt = escrowRepository.findByOrderId(orderId);
 
-        return computeDisputeInfo(orderId, reports, escrowOpt.orElse(null));
+        return computeDisputeInfo(reports, escrowOpt.orElse(null));
     }
 
     @Override

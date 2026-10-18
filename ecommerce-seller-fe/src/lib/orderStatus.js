@@ -151,10 +151,51 @@ export const getReturnStatusDisplay = (returnStatus) => {
 }
 
 // ==========================================
+// 2.1 CONDITION STATUS (Tình trạng kiểm hàng hoàn từ Shop)
+// ==========================================
+export const CONDITION_STATUS_LABEL_MAP = {
+  INTACT: 'Hàng nguyên vẹn / Đạt yêu cầu',
+  DAMAGED: 'Hàng bị hư hỏng / bể vỡ',
+  WRONG_ITEM: 'Hàng bị tráo / Sai sản phẩm',
+  EMPTY_BOX: 'Kiện hàng rỗng / Mất ruột',
+  MISSING_PARTS: 'Thiếu phụ kiện / linh kiện',
+}
+
+export const getConditionStatusLabel = (status) =>
+  CONDITION_STATUS_LABEL_MAP[status] || status || 'Chưa xác định'
+
+// ==========================================
 // 3. EFFECTIVE STATUS (Tổng hợp trạng thái hiển thị)
+// Khi đơn hàng đã kết thúc (REFUNDED / COMPLETED), phán quyết cuối cùng của Admin / Hệ thống
+// có hiệu lực thi hành, tuyệt đối không hiển thị trạng thái DISPUTED hay cảnh báo tranh chấp.
 // ==========================================
 export const getOrderEffectiveStatus = (order, returnInfo = null) => {
+  const status = order?.status
   const activeReturn = returnInfo || order?.returnInfo
+
+  // 1. Terminal state: REFUNDED (Đã hoàn tiền)
+  if (status === 'REFUNDED') {
+    return {
+      label: activeReturn && activeReturn.status !== 'CANCELLED'
+        ? 'Đã hoàn tất đổi trả & Hoàn tiền'
+        : 'Đã hoàn tiền',
+      color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-700',
+      icon: HiOutlineCheckCircle,
+      isReturn: !!activeReturn,
+    }
+  }
+
+  // 2. Terminal state: COMPLETED (Hoàn thành / Giải ngân)
+  if (status === 'COMPLETED') {
+    return {
+      label: ORDER_STATUS_LABEL_MAP.COMPLETED || 'Hoàn thành',
+      color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border border-green-300 dark:border-green-700',
+      icon: HiOutlineCheckCircle,
+      isReturn: false,
+    }
+  }
+
+  // 3. Nếu đơn có quy trình đổi trả đang diễn ra (chưa hủy, đơn chưa kết thúc)
   if (activeReturn && activeReturn.status && activeReturn.status !== 'CANCELLED') {
     const returnDisplay = getReturnStatusDisplay(activeReturn.status)
     if (returnDisplay) {
@@ -178,9 +219,9 @@ export const getOrderEffectiveStatus = (order, returnInfo = null) => {
     }
   }
 
-  const orderBadge = getOrderStatusBadge(order?.status)
+  const orderBadge = getOrderStatusBadge(status)
   return {
-    label: getOrderStatusLabel(order?.status),
+    label: getOrderStatusLabel(status),
     color: orderBadge.color,
     icon: orderBadge.icon,
     isReturn: false,

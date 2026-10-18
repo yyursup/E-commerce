@@ -26,6 +26,7 @@ import com.marketplace.ecommerce.product.service.InventoryHistoryService;
 import com.marketplace.ecommerce.product.valueObjects.InventoryActionType;
 import com.marketplace.ecommerce.request.entity.Report;
 import com.marketplace.ecommerce.request.repository.ReportRepository;
+import com.marketplace.ecommerce.request.valueObjects.DisputeSellerAction;
 import com.marketplace.ecommerce.request.valueObjects.ReportStage;
 import com.marketplace.ecommerce.request.valueObjects.RequestStatus;
 import com.marketplace.ecommerce.shop.entity.Shop;
@@ -304,10 +305,16 @@ public class OrderReturnServiceImpl implements OrderReturnService {
         });
 
         if (returnObj.getReport() != null) {
-            returnObj.getReport().setStage(ReportStage.ESCALATED_TO_ADMIN);
-            returnObj.getReport().setEscalationReason("Người bán khiếu nại kiện hàng hoàn: " + request.getConditionNote());
-            returnObj.getReport().setEscalatedAt(LocalDateTime.now());
-            reportRepository.save(returnObj.getReport());
+            Report rep = returnObj.getReport();
+            rep.setStage(ReportStage.ESCALATED_TO_ADMIN);
+            rep.setEscalationReason("Người bán khiếu nại kiện hàng hoàn: " + request.getConditionNote());
+            rep.setEscalatedAt(LocalDateTime.now());
+            rep.setSellerEvidenceUrl(request.getSellerEvidenceUrls());
+            rep.setSellerResponse(
+                    (request.getConditionStatus() != null ? "[" + request.getConditionStatus() + "] " : "")
+                            + (request.getConditionNote() != null ? request.getConditionNote() : ""));
+            rep.setSellerAction(DisputeSellerAction.REJECT_AND_ESCALATE);
+            reportRepository.save(rep);
         }
 
         log.warn("Seller disputed returnId={}, condition={}, note={}",
@@ -340,7 +347,7 @@ public class OrderReturnServiceImpl implements OrderReturnService {
                             + (request.getAdminNote() != null ? request.getAdminNote() : ""));
 
             if (returnObj.getReport() != null) {
-                returnObj.getReport().setStage(ReportStage.RESOLVED);
+                returnObj.getReport().setStage(ReportStage.CLOSED);
                 reportRepository.save(returnObj.getReport());
             }
 

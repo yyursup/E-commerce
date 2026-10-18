@@ -252,6 +252,7 @@ export default function OrderDetail() {
             <div className="border-b p-5 sm:p-6">
               <CustomerReturnCard
                 returnInfo={activeReturn}
+                order={order}
                 isDark={isDark}
                 onRefresh={fetchOrder}
               />

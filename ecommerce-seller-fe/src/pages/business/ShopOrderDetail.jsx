@@ -209,183 +209,207 @@ export default function ShopOrderDetail() {
     <ErrorBoundary onReset={fetchOrder}>
       <div className="max-w-5xl mx-auto space-y-6 pb-12">
         {/* Navigation & Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <Link
-            to="/orders"
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <Link
+              to="/orders"
+              className={cn(
+                'inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold transition-colors mb-2',
+                isDark ? 'text-amber-400 hover:text-amber-300' : 'text-amber-600 hover:text-amber-700'
+              )}
+            >
+              <HiOutlineArrowLeft className="h-4 w-4" />
+              <span>Quay lại danh sách đơn hàng</span>
+            </Link>
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className={cn('text-2xl sm:text-3xl font-black font-mono tracking-tight', isDark ? 'text-white' : 'text-stone-900')}>
+                {order.orderNumber}
+              </h1>
+              <span className={cn(
+                'px-3 py-1 rounded-full text-xs font-bold border',
+                order.paymentMethod === 'VNPAY'
+                  ? 'border-blue-500/30 bg-blue-500/10 text-blue-500'
+                  : order.paymentMethod === 'WALLET'
+                    ? 'border-purple-500/30 bg-purple-500/10 text-purple-600 dark:text-purple-400'
+                    : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+              )}>
+                {order.paymentMethod === 'VNPAY'
+                  ? 'VNPAY'
+                  : order.paymentMethod === 'WALLET'
+                    ? 'Ví sàn'
+                    : 'COD'}
+              </span>
+              {(order.status === 'REFUNDED' || (returnInfo || order.returnInfo)?.status === 'COMPLETED') && (
+                <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/25">
+                  Hoàn về Ví số dư khách hàng
+                </span>
+              )}
+              <OrderStatusBadge
+                status={order.status}
+                returnInfo={returnInfo || order.returnInfo}
+                className="px-3 py-1 text-xs"
+              />
+              {order.hasActiveDispute && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400 animate-pulse">
+                  <HiOutlineExclamation className="h-3.5 w-3.5 text-amber-500" />
+                  <span>Đang có khiếu nại (Thương lượng 1:1)</span>
+                </span>
+              )}
+            </div>
+            <p className={cn('mt-1 text-xs sm:text-sm', isDark ? 'text-slate-400' : 'text-stone-500')}>
+              Đặt lúc: <strong>{formatDate(order.createdAt)}</strong> • Khách hàng: <strong>{order.userName || order.shippingName || '-'}</strong>
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={fetchOrder}
+            disabled={loading || actionLoading}
             className={cn(
-              'inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold transition-colors mb-2',
-              isDark ? 'text-amber-400 hover:text-amber-300' : 'text-amber-600 hover:text-amber-700'
+              'inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-xs font-bold transition-all shadow-sm self-start sm:self-auto',
+              isDark
+                ? 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700 hover:text-white'
+                : 'border-stone-200 bg-white text-stone-700 hover:bg-stone-50 hover:text-stone-900'
             )}
           >
-            <HiOutlineArrowLeft className="h-4 w-4" />
-            <span>Quay lại danh sách đơn hàng</span>
-          </Link>
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className={cn('text-2xl sm:text-3xl font-black font-mono tracking-tight', isDark ? 'text-white' : 'text-stone-900')}>
-              {order.orderNumber}
-            </h1>
-            <span className={cn(
-              'px-3 py-1 rounded-full text-xs font-bold border',
-              order.paymentMethod === 'VNPAY'
-                ? 'border-blue-500/30 bg-blue-500/10 text-blue-500'
-                : order.paymentMethod === 'WALLET'
-                  ? 'border-purple-500/30 bg-purple-500/10 text-purple-600 dark:text-purple-400'
-                  : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-            )}>
-              {order.paymentMethod === 'VNPAY'
-                ? 'VNPAY'
-                : order.paymentMethod === 'WALLET'
-                  ? 'Ví sàn'
-                  : 'COD'}
-            </span>
-            {(order.status === 'REFUNDED' || (returnInfo || order.returnInfo)?.status === 'COMPLETED') && (
-              <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/25">
-                ↳ Hoàn về Ví số dư khách hàng
-              </span>
-            )}
-            <OrderStatusBadge
-              status={order.status}
-              returnInfo={returnInfo || order.returnInfo}
-              className="px-3 py-1 text-xs"
-            />
-            {order.hasActiveDispute && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400 animate-pulse">
-                <HiOutlineExclamation className="h-3.5 w-3.5 text-amber-500" />
-                <span>Đang có khiếu nại (Thương lượng 1:1)</span>
-              </span>
-            )}
-          </div>
-          <p className={cn('mt-1 text-xs sm:text-sm', isDark ? 'text-slate-400' : 'text-stone-500')}>
-            Đặt lúc: <strong>{formatDate(order.createdAt)}</strong> • Khách hàng: <strong>{order.userName || order.shippingName || '-'}</strong>
-          </p>
+            <HiOutlineRefresh className={cn('h-4 w-4', (loading || actionLoading) && 'animate-spin text-amber-500')} />
+            <span>Làm mới chi tiết</span>
+          </button>
         </div>
 
-        <button
-          type="button"
-          onClick={fetchOrder}
-          disabled={loading || actionLoading}
+        {/* Main Container Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
           className={cn(
-            'inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-xs font-bold transition-all shadow-sm self-start sm:self-auto',
-            isDark
-              ? 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700 hover:text-white'
-              : 'border-stone-200 bg-white text-stone-700 hover:bg-stone-50 hover:text-stone-900'
+            'rounded-3xl border overflow-hidden shadow-sm',
+            isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
           )}
         >
-          <HiOutlineRefresh className={cn('h-4 w-4', (loading || actionLoading) && 'animate-spin text-amber-500')} />
-          <span>Làm mới chi tiết</span>
-        </button>
-      </div>
+          {/* Order Stepper Progress Indicator */}
+          <div
+            className={cn(
+              'border-b p-6',
+              isDark ? 'border-slate-800 bg-slate-800/30' : 'border-stone-100 bg-stone-50/70'
+            )}
+          >
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {steps.map((step) => {
+                const state = getStepStatus(step.num)
+                const isDone = state === 'completed'
+                const isCurr = state === 'current'
+                const isCancelled = state === 'cancelled'
 
-      {/* Main Container Card */}
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        className={cn(
-          'rounded-3xl border overflow-hidden shadow-sm',
-          isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
-        )}
-      >
-        {/* Order Stepper Progress Indicator */}
-        <div
-          className={cn(
-            'border-b p-6',
-            isDark ? 'border-slate-800 bg-slate-800/30' : 'border-stone-100 bg-stone-50/70'
-          )}
-        >
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {steps.map((step) => {
-              const state = getStepStatus(step.num)
-              const isDone = state === 'completed'
-              const isCurr = state === 'current'
-              const isCancelled = state === 'cancelled'
-
-              return (
-                <div key={step.num} className="flex items-start gap-3">
-                  <div
-                    className={cn(
-                      'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl font-bold text-xs transition-all',
-                      isCancelled
-                        ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20'
-                        : isDone
-                          ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/25'
-                          : isCurr
-                            ? 'bg-amber-500 text-white shadow-md shadow-amber-500/25 ring-4 ring-amber-500/20'
-                            : isDark
-                              ? 'bg-slate-800 text-slate-500 border border-slate-700'
-                              : 'bg-stone-200 text-stone-500'
-                    )}
-                  >
-                    {isDone ? (
-                      <HiOutlineCheckCircle className="h-5 w-5" />
-                    ) : (
-                      step.num
-                    )}
-                  </div>
-                  <div className="min-w-0">
-                    <p
+                return (
+                  <div key={step.num} className="flex items-start gap-3">
+                    <div
                       className={cn(
-                        'text-xs font-bold truncate',
-                        isCurr
-                          ? 'text-amber-500'
+                        'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl font-bold text-xs transition-all',
+                        isCancelled
+                          ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20'
                           : isDone
-                            ? isDark
-                              ? 'text-white'
-                              : 'text-stone-900'
-                            : 'text-stone-400'
+                            ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/25'
+                            : isCurr
+                              ? 'bg-amber-500 text-white shadow-md shadow-amber-500/25 ring-4 ring-amber-500/20'
+                              : isDark
+                                ? 'bg-slate-800 text-slate-500 border border-slate-700'
+                                : 'bg-stone-200 text-stone-500'
                       )}
                     >
-                      {step.title}
-                    </p>
-                    <p className="text-[11px] text-stone-400 dark:text-slate-500 truncate">
-                      {step.desc}
-                    </p>
+                      {isDone ? (
+                        <HiOutlineCheckCircle className="h-5 w-5" />
+                      ) : (
+                        step.num
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <p
+                        className={cn(
+                          'text-xs font-bold truncate',
+                          isCurr
+                            ? 'text-amber-500'
+                            : isDone
+                              ? isDark
+                                ? 'text-white'
+                                : 'text-stone-900'
+                              : 'text-stone-400'
+                        )}
+                      >
+                        {step.title}
+                      </p>
+                      <p className="text-[11px] text-stone-400 dark:text-slate-500 truncate">
+                        {step.desc}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              )
-            })}
+                )
+              })}
+            </div>
           </div>
-        </div>
 
-        {/* 1. Seller Actions & GHN Tracking */}
-        <SellerOrderActions
-          order={order}
-          isDark={isDark}
-          actionLoading={actionLoading}
-          ghnOrderCodeInput={ghnOrderCodeInput}
-          onGhnOrderCodeChange={setGhnOrderCodeInput}
-          onUpdateStatus={handleUpdateStatus}
-          onRetryCreateGhn={handleRetryCreateGhn}
-          onSetManualGhnCode={handleSetManualGhnCode}
-        />
-
-        {/* 1.1 Dispute & Negotiation Section (B2: Direct Negotiation 1:1) */}
-        <SellerDisputeSection
-          orderId={order.id}
-          order={order}
-          isDark={isDark}
-          onRefresh={fetchOrder}
-        />
-
-        {/* 1.5 Return & Refund Section (If active return exists) */}
-        {(returnInfo || order?.returnInfo) && (
-          <SellerReturnSection
-            returnInfo={returnInfo || order?.returnInfo}
+          {/* 1. Seller Actions & GHN Tracking */}
+          <SellerOrderActions
+            order={order}
             isDark={isDark}
-            onRefresh={fetchOrder}
+            actionLoading={actionLoading}
+            ghnOrderCodeInput={ghnOrderCodeInput}
+            onGhnOrderCodeChange={setGhnOrderCodeInput}
+            onUpdateStatus={handleUpdateStatus}
+            onRetryCreateGhn={handleRetryCreateGhn}
+            onSetManualGhnCode={handleSetManualGhnCode}
           />
-        )}
 
-        {/* 2. Customer & Address Details */}
-        <OrderAddressSection order={order} isDark={isDark} />
+          {/* 
+            PHÂN ĐỊNH HIỂN THỊ CHUẨN XÁC GIỮA HỒ SƠ KHIẾU NẠI & TIẾN TRÌNH TRẢ HÀNG:
+            1. Khi vụ việc là TRANH CHẤP ĐÃ ĐƯỢC ADMIN PHÂN XỬ hoặc ĐANG CHỜ BQT PHÂN XỬ:
+               -> Hiển thị DUY NHẤT "Hồ Sơ Khiếu Nại" (SellerDisputeSection) với 2 cột đối chất và phán quyết chính thức của BQT.
+            2. Khi đơn hàng đang trong tiến trình đổi trả hàng thông thường (khách đang gửi GHN / Shop chưa kiểm hàng):
+               -> Hiển thị "Xử Lý Yêu Cầu Trả Hàng & Hoàn Tiền" (SellerReturnSection) để Shop theo dõi vận đơn và thao tác kiểm hàng.
+          */}
+          {(() => {
+            const currentReturn = returnInfo || order?.returnInfo
+            const isDisputeOrSettledByAdmin =
+              order?.hasActiveDispute ||
+              order?.status === 'REFUNDED' ||
+              currentReturn?.status === 'DISPUTED' ||
+              ['REPORT_PENDING', 'DISPUTED'].includes(order?.disputeStatus)
 
-        {/* 3. Items List */}
-        <OrderItemsSection items={order.items} isDark={isDark} />
+            if (isDisputeOrSettledByAdmin) {
+              return (
+                <SellerDisputeSection
+                  orderId={order.id}
+                  order={order}
+                  returnInfo={currentReturn}
+                  isDark={isDark}
+                  onRefresh={fetchOrder}
+                />
+              )
+            }
 
-        {/* 4. Financial Summary & Escrow Protection */}
-        <OrderSummarySection order={order} isDark={isDark} returnInfo={returnInfo || order?.returnInfo} />
-      </motion.div>
-    </div>
+            if (currentReturn) {
+              return (
+                <SellerReturnSection
+                  returnInfo={currentReturn}
+                  order={order}
+                  isDark={isDark}
+                  onRefresh={fetchOrder}
+                />
+              )
+            }
+
+            return null
+          })()}
+
+          {/* 2. Customer & Address Details */}
+          <OrderAddressSection order={order} isDark={isDark} />
+
+          {/* 3. Items List */}
+          <OrderItemsSection items={order.items} isDark={isDark} />
+
+          {/* 4. Financial Summary & Escrow Protection */}
+          <OrderSummarySection order={order} isDark={isDark} returnInfo={returnInfo || order?.returnInfo} />
+        </motion.div>
+      </div>
     </ErrorBoundary>
   )
 }

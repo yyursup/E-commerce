@@ -135,7 +135,7 @@ export default function AdminReportDisputeSideBySide({
                 <span
                   className={cn(
                     'inline-flex items-center px-2.5 py-1 rounded-xl text-xs font-bold border',
-                    sellerAction === 'REJECT_AND_ESCALATE'
+                    sellerAction === 'REJECT_AND_ESCALATE' || sellerAction === 'DISPUTE'
                       ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30'
                       : sellerAction === 'ACCEPT_REFUND'
                         ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
@@ -144,7 +144,7 @@ export default function AdminReportDisputeSideBySide({
                 >
                   {sellerAction === 'ACCEPT_REFUND' && 'Đồng ý hoàn tiền'}
                   {sellerAction === 'ACCEPT_RETURN' && 'Đồng ý nhận lại hàng đổi trả'}
-                  {sellerAction === 'REJECT_AND_ESCALATE' && 'Từ chối & Khiếu nại lên BQT'}
+                  {(sellerAction === 'REJECT_AND_ESCALATE' || sellerAction === 'DISPUTE') && 'Khiếu nại kiện hoàn lên BQT'}
                   {!sellerAction && 'Chưa có phản hồi'}
                 </span>
               </div>
@@ -163,7 +163,13 @@ export default function AdminReportDisputeSideBySide({
                     : 'border-sky-100 bg-white text-stone-800',
                 )}
               >
-                {sellerResponse || 'Shop chưa để lại lời giải trình chi tiết'}
+                {sellerResponse
+                  ? sellerResponse
+                      .replace(/\[DAMAGED\]/gi, '[Tình trạng: Hàng bị hư hỏng / bể vỡ] ')
+                      .replace(/\[GOOD\]/gi, '[Tình trạng: Hàng nguyên vẹn] ')
+                      .replace(/\[WRONG_ITEM\]/gi, '[Tình trạng: Giao sai hàng / tráo hàng] ')
+                      .replace(/\[MISSING_PARTS\]/gi, '[Tình trạng: Thiếu linh kiện / quà tặng] ')
+                  : 'Shop chưa để lại lời giải trình chi tiết'}
               </div>
             </div>
           </div>

@@ -33,6 +33,7 @@ import com.marketplace.ecommerce.order.repository.OrderRepository;
 import com.marketplace.ecommerce.order.repository.OrderReturnRepository;
 import com.marketplace.ecommerce.order.valueObjects.OrderStatus;
 import com.marketplace.ecommerce.order.valueObjects.ReturnStatus;
+import com.marketplace.ecommerce.payment.dto.EscrowAdminResponse;
 import com.marketplace.ecommerce.payment.repository.EscrowRepository;
 import com.marketplace.ecommerce.payment.service.EscrowService;
 import com.marketplace.ecommerce.payment.valueObjects.EscrowStatus;
@@ -41,6 +42,7 @@ import com.marketplace.ecommerce.shop.repository.ShopRepository;
 import com.marketplace.ecommerce.order.service.OrderReturnService;
 import com.marketplace.ecommerce.request.dto.request.EscalateReportRequest;
 import com.marketplace.ecommerce.request.dto.request.SellerDisputeRespondRequest;
+import com.marketplace.ecommerce.request.valueObjects.DisputeSellerAction;
 import com.marketplace.ecommerce.request.valueObjects.ReportStage;
 import com.marketplace.ecommerce.shop.valueObjects.ShopStatus;
 import lombok.RequiredArgsConstructor;
@@ -195,6 +197,7 @@ public class ReportServiceImpl implements ReportService {
         r.setReviewedAt(now);
         r.setResponse(note);
         report.setModeratorNote(note);
+        report.setStage(ReportStage.CLOSED);
         requestRepository.save(r);
         reportRepository.save(report);
     }
@@ -226,6 +229,7 @@ public class ReportServiceImpl implements ReportService {
         r.setReviewedAt(now);
         r.setResponse(note);
         report.setModeratorNote(note);
+        report.setStage(ReportStage.CLOSED);
         requestRepository.save(r);
         reportRepository.save(report);
     }
@@ -293,6 +297,12 @@ public class ReportServiceImpl implements ReportService {
                 orderRepository.findByIdForUpdate(orderId).ifPresent(o -> {
                     o.setStatus(OrderStatus.REFUNDED);
                     orderRepository.save(o);
+                });
+                orderReturnRepository.findByOrderIdForUpdate(orderId).ifPresent(ret -> {
+                    ret.setStatus(ReturnStatus.COMPLETED);
+                    ret.setConditionNote((ret.getConditionNote() != null ? ret.getConditionNote() + " | " : "")
+                            + "Admin chấp thuận hoàn tiền cho người mua: " + (note != null ? note : ""));
+                    orderReturnRepository.save(ret);
                 });
                 log.info("Admin approved buyer dispute, refunded orderId={}", orderId);
             } else if (finalResolution == ResolutionType.RETURN_AND_REFUND) {
@@ -719,6 +729,25 @@ public class ReportServiceImpl implements ReportService {
             throw new CustomException("Bạn không có quyền xem thông tin khiếu nại của đơn hàng này");
         }
 
+        EscrowAdminResponse escrowDto = escrowRepository.findByOrderId(orderId)
+                .map(EscrowAdminResponse::from)
+                .orElse(null);
+
+        String sellerResponse = report.getSellerResponse();
+        String sellerEvidenceUrl = report.getSellerEvidenceUrl();
+        DisputeSellerAction sellerAction = report.getSellerAction();
+
+        var ret = orderReturnService.getReturnByOrderId(orderId);
+        if (ret != null && (ret.getStatus() == ReturnStatus.DISPUTED || ret.getConditionStatus() != null)) {
+            if (ret.getSellerEvidenceUrls() != null && !ret.getSellerEvidenceUrls().isBlank()) {
+                sellerEvidenceUrl = ret.getSellerEvidenceUrls();
+            }
+            if (ret.getConditionNote() != null && !ret.getConditionNote().isBlank()) {
+                sellerResponse = ret.getConditionNote();
+            }
+            sellerAction = DisputeSellerAction.REJECT_AND_ESCALATE;
+        }
+
         return ReportDetailsResponse.builder()
                 .id(report.getId())
                 .requestId(req != null ? req.getId() : null)
@@ -728,9 +757,9 @@ public class ReportServiceImpl implements ReportService {
                 .resolutionType(report.getResolutionType())
                 .stage(report.getStage())
                 .sellerResponseDeadline(report.getSellerResponseDeadline())
-                .sellerResponse(report.getSellerResponse())
-                .sellerEvidenceUrl(report.getSellerEvidenceUrl())
-                .sellerAction(report.getSellerAction())
+                .sellerResponse(sellerResponse)
+                .sellerEvidenceUrl(sellerEvidenceUrl)
+                .sellerAction(sellerAction)
                 .escalatedAt(report.getEscalatedAt())
                 .escalationReason(report.getEscalationReason())
                 .status(req != null && req.getStatus() != null ? req.getStatus().name() : null)
@@ -738,6 +767,7 @@ public class ReportServiceImpl implements ReportService {
                 .response(req != null ? req.getResponse() : null)
                 .createdAt(req != null ? req.getCreatedAt() : null)
                 .reviewedAt(req != null ? req.getReviewedAt() : null)
+                .escrow(escrowDto)
                 .build();
     }
 

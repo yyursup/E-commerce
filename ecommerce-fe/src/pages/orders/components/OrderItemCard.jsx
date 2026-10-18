@@ -29,7 +29,9 @@ export default function OrderItemCard({
   const hasActiveReturn =
     order.returnInfo &&
     order.returnInfo.status !== 'COMPLETED' &&
-    order.returnInfo.status !== 'CANCELLED'
+    order.returnInfo.status !== 'CANCELLED' &&
+    order.status !== 'REFUNDED' &&
+    order.status !== 'COMPLETED'
 
   return (
     <motion.div

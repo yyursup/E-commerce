@@ -36,10 +36,13 @@ import com.marketplace.ecommerce.shop.valueObjects.ShopStatus;
 import com.marketplace.ecommerce.order.entity.Order;
 import com.marketplace.ecommerce.order.repository.OrderRepository;
 import com.marketplace.ecommerce.order.valueObjects.OrderStatus;
+import com.marketplace.ecommerce.order.valueObjects.ReturnStatus;
 import com.marketplace.ecommerce.order.service.OrderReturnService;
+import com.marketplace.ecommerce.payment.dto.EscrowAdminResponse;
 import com.marketplace.ecommerce.payment.repository.EscrowRepository;
 import com.marketplace.ecommerce.payment.service.EscrowService;
 import com.marketplace.ecommerce.payment.valueObjects.EscrowStatus;
+import com.marketplace.ecommerce.request.valueObjects.DisputeSellerAction;
 import com.marketplace.ecommerce.request.valueObjects.ResolutionType;
 import com.marketplace.ecommerce.shop.service.ShopEscrowFundService;
 import lombok.RequiredArgsConstructor;
@@ -192,45 +195,8 @@ public class RequestServiceImpl implements RequestService {
                         userAcc.setBannedUntil(null);
                         accountRepository.save(userAcc);
                     }
-                    case ORDER -> {
-                        Order order = orderRepository.findById(targetId)
-                                .orElseThrow(() -> new CustomException("Order not found: " + targetId));
-                        if (order.getShop() != null && order.getShop().getUser() != null
-                                && order.getShop().getUser().getAccount() != null) {
-                            Account owner = order.getShop().getUser().getAccount();
-                            int newViolationCount = Math.max(0, owner.getViolationCount() - 1);
-                            owner.setViolationCount(newViolationCount);
-
-                            if (newViolationCount < 5) {
-                                order.getShop()
-                                        .setStatus(newViolationCount >= 3 ? ShopStatus.WARNED : ShopStatus.ACTIVE);
-                                productRepository.updateStatusByShopId(order.getShop().getId(),
-                                        ProductStatus.PUBLISHED);
-                                owner.setStatus(AccountStatus.ACTIVE);
-                                owner.setIsActive(true);
-                                owner.setBannedUntil(null);
-                                owner.setDisciplineLevel(
-                                        newViolationCount >= 3 ? DisciplineLevel.WARNED : DisciplineLevel.NONE);
-                            }
-                            accountRepository.save(owner);
-                            shopRepository.save(order.getShop());
-                        }
-
-                        // Kháng cáo đơn hàng thành công -> Shop thắng dispute!
-                        // Phục hồi Escrow về HELD rồi giải ngân trực tiếp cho Shop và hoàn tất đơn hàng
-                        escrowRepository.findByOrderIdForUpdate(targetId).ifPresent(escrow -> {
-                            if (escrow.getStatus() == EscrowStatus.DISPUTED) {
-                                escrow.setStatus(EscrowStatus.HELD);
-                                escrowRepository.save(escrow);
-                            }
-                        });
-
-                        order.setReceivedByBuyer(true);
-                        order.setReceivedAt(LocalDateTime.now());
-                        escrowService.releaseByOrder(order.getId());
-                        order.setStatus(OrderStatus.COMPLETED);
-                        orderRepository.save(order);
-                    }
+                    case ORDER -> throw new CustomException(
+                            "Kháng cáo không còn áp dụng đối với đơn hàng. Phán quyết của Quản trị viên là quyết định cuối cùng.");
                 }
             }
 
@@ -252,6 +218,8 @@ public class RequestServiceImpl implements RequestService {
     @Override
     @Transactional
     public CreateRequestResponse createAppeal(UUID accountId, CreateAppealRequest req) {
+        requestValidation.validateAppealRequest(req);
+
         Account acc = accountRepository.findById(accountId)
                 .orElseThrow(() -> new CustomException("Account not found: " + accountId));
 
@@ -327,6 +295,10 @@ public class RequestServiceImpl implements RequestService {
 
         if (request.getType() == RequestType.APPEAL) {
             Report report = reportRepository.findByRequestId(requestId);
+            if (report != null && report.getTargetType() == TargetType.ORDER) {
+                throw new CustomException(
+                        "Kháng cáo không còn áp dụng đối với đơn hàng. Phán quyết của Quản trị viên là quyết định cuối cùng.");
+            }
             if (report != null && report.getTargetType() == TargetType.PRODUCT && report.getTargetId() != null) {
                 // Nếu bác đơn kháng cáo sản phẩm vi phạm -> Chuyển sang DELETED với flagged =
                 // true
@@ -336,15 +308,6 @@ public class RequestServiceImpl implements RequestService {
                     p.setDeleted(true);
                     productRepository.save(p);
                 });
-            } else if (report != null && report.getTargetType() == TargetType.ORDER && report.getTargetId() != null) {
-                // Nếu bác đơn kháng cáo đơn hàng vi phạm của Shop -> Đọc ResolutionType từ
-                // report gốc để rẽ nhánh
-                Report originalReport = report;
-                if (report.getViolationReportId() != null) {
-                    originalReport = reportRepository.findById(report.getViolationReportId()).orElse(report);
-                }
-                orchestrateCustomerWon(report.getTargetId(), originalReport.getId(), originalReport.getResolutionType(),
-                        "Admin bác bỏ đơn kháng cáo của Shop, hoàn trả 100% tiền về ví người mua");
             }
         }
 
@@ -374,6 +337,11 @@ public class RequestServiceImpl implements RequestService {
                 }
                 String targetName = "Không xác định";
                 String targetInfo = "";
+                EscrowAdminResponse escrowDto = null;
+                String sellerResponse = rep.getSellerResponse();
+                String sellerEvidenceUrl = rep.getSellerEvidenceUrl();
+                DisputeSellerAction sellerAction = rep.getSellerAction();
+
                 if (rep.getTargetType() != null && rep.getTargetId() != null) {
                     switch (rep.getTargetType()) {
                         case SHOP -> {
@@ -428,6 +396,27 @@ public class RequestServiceImpl implements RequestService {
                                     targetInfo += " | Kiện hoàn: " + ret.getStatus()
                                             + (ret.getConditionStatus() != null ? " (" + ret.getConditionStatus() + ")"
                                                     : "");
+
+                                    // Fallback nạp ảnh và chứng từ khiếu nại của Shop từ kiện hoàn nếu trên Report chưa lưu
+                                    if ((sellerEvidenceUrl == null || sellerEvidenceUrl.isBlank())
+                                            && ret.getSellerEvidenceUrls() != null
+                                            && !ret.getSellerEvidenceUrls().isBlank()) {
+                                        sellerEvidenceUrl = ret.getSellerEvidenceUrls();
+                                    }
+                                    if ((sellerResponse == null || sellerResponse.isBlank())
+                                            && ret.getConditionNote() != null
+                                            && !ret.getConditionNote().isBlank()) {
+                                        sellerResponse = (ret.getConditionStatus() != null ? "[" + ret.getConditionStatus() + "] " : "")
+                                                + ret.getConditionNote();
+                                    }
+                                    if (sellerAction == null && ret.getStatus() == ReturnStatus.DISPUTED) {
+                                        sellerAction = DisputeSellerAction.REJECT_AND_ESCALATE;
+                                    }
+                                }
+
+                                var escOpt = escrowRepository.findByOrderId(o.getId());
+                                if (escOpt.isPresent()) {
+                                    escrowDto = EscrowAdminResponse.from(escOpt.get());
                                 }
                             }
                         }
@@ -443,11 +432,12 @@ public class RequestServiceImpl implements RequestService {
                         .targetInfo(targetInfo)
                         .stage(rep.getStage())
                         .sellerResponseDeadline(rep.getSellerResponseDeadline())
-                        .sellerResponse(rep.getSellerResponse())
-                        .sellerEvidenceUrl(rep.getSellerEvidenceUrl())
-                        .sellerAction(rep.getSellerAction())
+                        .sellerResponse(sellerResponse)
+                        .sellerEvidenceUrl(sellerEvidenceUrl)
+                        .sellerAction(sellerAction)
                         .escalatedAt(rep.getEscalatedAt())
                         .escalationReason(rep.getEscalationReason())
+                        .escrow(escrowDto)
                         .build();
             }
 
@@ -505,50 +495,11 @@ public class RequestServiceImpl implements RequestService {
         return requestRepository.save(re);
     }
 
-    private void orchestrateCustomerWon(UUID orderId, UUID reportId, ResolutionType resolutionType,
-            String refundReason) {
-        if (resolutionType == ResolutionType.RETURN_AND_REFUND) {
-            log.info("Coordinator initiating RETURN_AND_REFUND for disputed orderId={}, reportId={}", orderId,
-                    reportId);
-            orderReturnService.createReturn(orderId, reportId);
-        } else {
-            log.info("Coordinator initiating REFUND_ONLY for disputed orderId={}", orderId);
-            escrowService.refundByOrder(orderId, refundReason);
-        }
-    }
-
     @Override
     @Transactional
-    @Scheduled(cron = "0 0 * * * *") // Chạy định kỳ mỗi giờ để tự động hoàn tiền/tạo return nếu quá hạn kháng cáo
     public void autoRefundExpiredDisputedOrders() {
-        LocalDateTime threshold = LocalDateTime.now().minusHours(appealWindowHours);
-        List<Report> expiredReports = reportRepository.findApprovedOrderReportsReviewedBefore(threshold);
-
-        for (Report report : expiredReports) {
-            UUID orderId = report.getTargetId();
-            if (orderId == null)
-                continue;
-
-            try {
-                // Kiểm tra xem Shop đã gửi đơn kháng cáo chưa
-                List<Report> appeals = reportRepository.findAppealsByViolationReportId(report.getId());
-                boolean hasPendingOrApprovedAppeal = appeals.stream().anyMatch(a -> a.getRequest() != null &&
-                        (a.getRequest().getStatus() == RequestStatus.PENDING ||
-                                a.getRequest().getStatus() == RequestStatus.APPROVED));
-
-                if (!hasPendingOrApprovedAppeal) {
-                    // Nếu không có kháng cáo hợp lệ đang chờ hoặc đã duyệt, và Escrow vẫn đang
-                    // DISPUTED -> Xử lý theo ResolutionType đã lưu từ lúc duyệt Report
-                    var escrowOpt = escrowRepository.findByOrderIdForUpdate(orderId);
-                    if (escrowOpt.isPresent() && escrowOpt.get().getStatus() == EscrowStatus.DISPUTED) {
-                        orchestrateCustomerWon(orderId, report.getId(), report.getResolutionType(),
-                                "Tự động hoàn tiền do Shop không gửi kháng cáo trong thời hạn quy định ("
-                                        + appealWindowHours + " giờ)");
-                    }
-                }
-            } catch (Exception e) {
-                log.warn("Auto handle expired disputed order failed for orderId={}", orderId, e);
-            }
-        }
+        // No-op: Phán quyết của Admin đối với tranh chấp đơn hàng (ORDER) có hiệu lực
+        // thi hành ngay lập tức.
+        // Hệ thống không còn duy trì vòng chờ kháng cáo 72h đối với đơn hàng.
     }
 }

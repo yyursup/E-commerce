@@ -1,5 +1,6 @@
 package com.marketplace.ecommerce.request.dto.response;
 
+import com.marketplace.ecommerce.payment.dto.EscrowAdminResponse;
 import com.marketplace.ecommerce.request.valueObjects.DisputeSellerAction;
 import com.marketplace.ecommerce.request.valueObjects.ReportStage;
 import com.marketplace.ecommerce.request.valueObjects.ResolutionType;
@@ -36,4 +37,9 @@ public class ReportDetailsResponse {
     private String response;
     private LocalDateTime createdAt;
     private LocalDateTime reviewedAt;
+
+    /**
+     * Thông tin Ký Quỹ Escrow tích hợp đối với Báo Cáo Vi Phạm Đơn Hàng (TargetType = ORDER)
+     */
+    private EscrowAdminResponse escrow;
 }

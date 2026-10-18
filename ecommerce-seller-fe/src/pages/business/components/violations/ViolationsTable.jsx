@@ -184,6 +184,11 @@ export default function ViolationsTable({
                           Bị bác đơn
                         </span>
                       )}
+                      {v.appealStatus === 'FINAL_RULING' && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-blue-500/15 text-blue-400 border border-blue-500/30">
+                          Phán quyết cuối cùng
+                        </span>
+                      )}
                     </td>
 
                     <td className="py-4 px-4 align-top text-right whitespace-nowrap min-w-[160px]">

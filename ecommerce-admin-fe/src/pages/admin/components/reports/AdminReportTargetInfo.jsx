@@ -1,5 +1,36 @@
 import { cn } from '../../../../lib/cn'
 
+const ORDER_STATUS_MAP = {
+  PENDING: 'Chờ xử lý',
+  PROCESSING: 'Đang chuẩn bị hàng',
+  SHIPPING: 'Đang vận chuyển',
+  DELIVERED: 'Đã giao hàng',
+  COMPLETED: 'Hoàn tất',
+  CANCELLED: 'Đã hủy',
+  REFUNDED: 'Đã hoàn tiền',
+}
+
+const RETURN_STATUS_MAP = {
+  WAITING_FOR_SHIPMENT: 'Chờ khách gửi hàng',
+  SHIPPED: 'Đang chuyển hoàn',
+  RETURNED: 'Kiện hoàn đã tới Shop',
+  DISPUTED: 'Shop khiếu nại kiện hoàn',
+  COMPLETED: 'Đã hoàn tất đổi trả',
+  CANCELLED: 'Đã hủy đổi trả',
+}
+
+const CONDITION_STATUS_MAP = {
+  GOOD: 'Hàng nguyên vẹn',
+  DAMAGED: 'Hàng bị hư hỏng / bể vỡ',
+  WRONG_ITEM: 'Giao sai hàng / tráo hàng',
+  MISSING_PARTS: 'Thiếu linh kiện / phụ kiện',
+}
+
+const PAYMENT_METHOD_MAP = {
+  WALLET: 'Ví Marketplace',
+  VNPAY: 'VNPay',
+}
+
 export const renderTargetChips = (targetInfo, isDark) => {
   if (!targetInfo) return null
 
@@ -24,20 +55,41 @@ export const renderTargetChips = (targetInfo, isDark) => {
           }
 
           const label = part.substring(0, colonIndex).trim()
-          let value = part.substring(colonIndex + 1).trim()
+          let rawValue = part.substring(colonIndex + 1).trim()
+          let displayValue = rawValue
 
-          const isPrice = label.toLowerCase().includes('tiền') || value.endsWith('đ') || value.endsWith('₫')
+          const isPrice = label.toLowerCase().includes('tiền') || rawValue.endsWith('đ') || rawValue.endsWith('₫')
           if (isPrice) {
-            const numericPart = value.replace(/đ|₫|VND/gi, '').trim()
+            const numericPart = rawValue.replace(/đ|₫|VND/gi, '').trim()
             const parsed = parseFloat(numericPart)
             if (!isNaN(parsed)) {
-              value = new Intl.NumberFormat('vi-VN').format(parsed) + ' đ'
+              displayValue = new Intl.NumberFormat('vi-VN').format(parsed) + ' đ'
             }
           }
 
           const isStatus = label.toLowerCase().includes('trạng thái')
+          if (isStatus) {
+            displayValue = ORDER_STATUS_MAP[rawValue.toUpperCase()] || rawValue
+          }
+
           const isPayment = label.toLowerCase().includes('pttt') || label.toLowerCase().includes('thanh toán')
+          if (isPayment) {
+            displayValue = PAYMENT_METHOD_MAP[rawValue.toUpperCase()] || rawValue
+          }
+
           const isReturn = label.toLowerCase().includes('hoàn') || label.toLowerCase().includes('kiện')
+          if (isReturn) {
+            if (rawValue.includes('(')) {
+              const [mainPart, condPart] = rawValue.split('(')
+              const cleanMain = mainPart.trim().toUpperCase()
+              const cleanCond = condPart.replace(')', '').trim().toUpperCase()
+              const translatedMain = RETURN_STATUS_MAP[cleanMain] || mainPart.trim()
+              const translatedCond = CONDITION_STATUS_MAP[cleanCond] || cleanCond
+              displayValue = `${translatedMain} (${translatedCond})`
+            } else {
+              displayValue = RETURN_STATUS_MAP[rawValue.toUpperCase()] || rawValue
+            }
+          }
 
           return (
             <div
@@ -56,7 +108,7 @@ export const renderTargetChips = (targetInfo, isDark) => {
               )}
             >
               <span className="text-stone-400 dark:text-slate-400 font-normal">{label}:</span>
-              <span className={cn('font-semibold', isPrice && 'font-mono text-xs sm:text-sm tracking-tight')}>{value}</span>
+              <span className={cn('font-semibold', isPrice && 'font-mono text-xs sm:text-sm tracking-tight')}>{displayValue}</span>
             </div>
           )
         })}

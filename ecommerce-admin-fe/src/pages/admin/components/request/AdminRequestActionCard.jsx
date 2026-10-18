@@ -331,7 +331,7 @@ export default function AdminRequestActionCard({
               </label>
             </div>
             <p className="text-[11px] text-stone-400 dark:text-slate-400 leading-relaxed">
-              * Có hiệu lực sau khi kết thúc 72h kháng cáo của Shop nếu Shop không kháng cáo hoặc bị bác kháng cáo.
+              * Phán quyết có hiệu lực thi hành ngay lập tức sau khi Quản trị viên phê duyệt.
             </p>
           </div>
         )}

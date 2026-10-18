@@ -228,82 +228,36 @@ class OrderReportDisputeTest {
         }
 
         @Test
-        @DisplayName("Tự động quét hoàn tiền Escrow khi quá hạn 72h Shop không kháng cáo (REFUND_ONLY)")
+        @DisplayName("Luồng mới: autoRefundExpiredDisputedOrders là no-op vì Admin phán quyết đã thực thi hoàn tiền ngay")
         void autoRefundExpiredDisputedOrders_ExecutesRefund() {
                 // Given
                 RequestServiceImpl requestServiceImpl = new RequestServiceImpl(
                                 requestRepository, reportRepository, null, accountRepository, null,
                                 requestValidation, null, null, null, null, orderRepository, escrowRepository,
                                 escrowService, orderReturnService, null);
-                ReflectionTestUtils.setField(requestServiceImpl, "appealWindowHours", 72);
-
-                Request expiredRequest = Request.builder()
-                                .id(UUID.randomUUID())
-                                .status(RequestStatus.APPROVED)
-                                .reviewedAt(LocalDateTime.now().minusHours(73))
-                                .build();
-
-                Report expiredReport = Report.builder()
-                                .id(UUID.randomUUID())
-                                .targetType(TargetType.ORDER)
-                                .targetId(orderId)
-                                .request(expiredRequest)
-                                .resolutionType(ResolutionType.REFUND_ONLY)
-                                .build();
-
-                when(reportRepository.findApprovedOrderReportsReviewedBefore(any(LocalDateTime.class)))
-                                .thenReturn(List.of(expiredReport));
-                when(reportRepository.findAppealsByViolationReportId(expiredReport.getId()))
-                                .thenReturn(Collections.emptyList());
-                when(escrowRepository.findByOrderIdForUpdate(orderId))
-                                .thenReturn(Optional.of(heldEscrow));
-                heldEscrow.setStatus(EscrowStatus.DISPUTED);
 
                 // When
                 requestServiceImpl.autoRefundExpiredDisputedOrders();
 
-                // Then
-                verify(escrowService, times(1)).refundByOrder(eq(orderId), anyString());
+                // Then: No-op, không tương tác gọi refund kép
+                verify(escrowService, never()).refundByOrder(any(), any());
                 verify(orderReturnService, never()).createReturn(any(), any());
         }
 
         @Test
-        @DisplayName("Tự động khởi tạo Return khi quá hạn 72h Shop không kháng cáo (RETURN_AND_REFUND)")
+        @DisplayName("Luồng mới: autoRefundExpiredDisputedOrders là no-op vì Admin phán quyết đã khởi tạo Return ngay")
         void autoRefundExpiredDisputedOrders_InitiatesReturn_WhenReturnAndRefund() {
                 // Given
                 RequestServiceImpl requestServiceImpl = new RequestServiceImpl(
                                 requestRepository, reportRepository, null, accountRepository, null,
                                 requestValidation, null, null, null, null, orderRepository, escrowRepository,
                                 escrowService, orderReturnService, null);
-                ReflectionTestUtils.setField(requestServiceImpl, "appealWindowHours", 72);
-
-                Request expiredRequest = Request.builder()
-                                .id(UUID.randomUUID())
-                                .status(RequestStatus.APPROVED)
-                                .reviewedAt(LocalDateTime.now().minusHours(73))
-                                .build();
-
-                Report expiredReport = Report.builder()
-                                .id(UUID.randomUUID())
-                                .targetType(TargetType.ORDER)
-                                .targetId(orderId)
-                                .request(expiredRequest)
-                                .resolutionType(ResolutionType.RETURN_AND_REFUND)
-                                .build();
-
-                when(reportRepository.findApprovedOrderReportsReviewedBefore(any(LocalDateTime.class)))
-                                .thenReturn(List.of(expiredReport));
-                when(reportRepository.findAppealsByViolationReportId(expiredReport.getId()))
-                                .thenReturn(Collections.emptyList());
-                when(escrowRepository.findByOrderIdForUpdate(orderId))
-                                .thenReturn(Optional.of(heldEscrow));
-                heldEscrow.setStatus(EscrowStatus.DISPUTED);
 
                 // When
                 requestServiceImpl.autoRefundExpiredDisputedOrders();
 
-                // Then
-                verify(orderReturnService, times(1)).createReturn(eq(orderId), eq(expiredReport.getId()));
+                // Then: No-op
+                verify(orderReturnService, never()).createReturn(any(), any());
                 verify(escrowService, never()).refundByOrder(any(), any());
         }
 

@@ -7,6 +7,7 @@ import {
 } from 'react-icons/hi'
 import { cn } from '../../../../lib/cn'
 import AdminReportTargetInfo from './AdminReportTargetInfo'
+import AdminReportEscrowSection from './AdminReportEscrowSection'
 import AdminReportDisputeSideBySide from './AdminReportDisputeSideBySide'
 import AdminReportSingleClaim from './AdminReportSingleClaim'
 import AdminReportImageLightbox from './AdminReportImageLightbox'
@@ -27,6 +28,12 @@ export default function AdminReportDetailModal({
   const isPending = (detailModal.data?.status || detailModal.rawItem?.status) === 'PENDING'
   const isApproved = (detailModal.data?.status || detailModal.rawItem?.status) === 'APPROVED'
   const isRejected = (detailModal.data?.status || detailModal.rawItem?.status) === 'REJECTED'
+
+  const targetType =
+    detailModal.data?.detail?.targetType ||
+    detailModal.rawItem?.targetType ||
+    (detailModal.data?.detail?.escrow ? 'ORDER' : null)
+  const isOrderReport = targetType === 'ORDER' || Boolean(detailModal.data?.detail?.escrow)
 
   // Kiểm tra xem đây có phải là vụ việc tranh chấp đơn hàng có phản hồi/đối chất từ phía Người bán hay không
   const hasSellerResponse = Boolean(
@@ -64,6 +71,21 @@ export default function AdminReportDetailModal({
       },
       note: '',
     })
+  }
+
+  const translateReportStage = (stage) => {
+    switch (stage) {
+      case 'CLOSED':
+        return 'Đã đóng / Hoàn tất'
+      case 'DIRECT_NEGOTIATION':
+        return 'Thương lượng 1-1'
+      case 'ESCALATED_TO_ADMIN':
+        return 'BQT can thiệp phân xử'
+      case 'PENDING':
+        return 'Chờ tiếp nhận'
+      default:
+        return stage
+    }
   }
 
   return (
@@ -112,7 +134,7 @@ export default function AdminReportDetailModal({
                   </span>
                   {detailModal.data?.detail?.stage && (
                     <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold uppercase border bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/30">
-                      Giai đoạn: {detailModal.data.detail.stage}
+                      Giai đoạn: {translateReportStage(detailModal.data.detail.stage)}
                     </span>
                   )}
                 </div>
@@ -169,6 +191,14 @@ export default function AdminReportDetailModal({
                     getTargetIcon={getTargetIcon}
                     getTargetLabel={getTargetLabel}
                   />
+
+                  {/* Khối 1.5: Thông tin Ký Quỹ Escrow (Dành cho Báo cáo Đơn hàng Order) */}
+                  {isOrderReport && (
+                    <AdminReportEscrowSection
+                      detail={detailModal.data?.detail}
+                      isDark={isDark}
+                    />
+                  )}
 
                   {/* Khối 2: BỐ CỤC ĐỐI CHẤT 2 PHÍA (BUYER VS SELLER) NẾU CÓ TRANH CHẤP */}
                   {hasSellerResponse ? (

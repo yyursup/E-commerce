@@ -4,7 +4,6 @@ import {
   HiOutlineExclamationCircle,
   HiOutlineShieldCheck,
   HiOutlineRefresh,
-  HiOutlineCash,
   HiOutlineScale,
   HiOutlineShoppingBag,
   HiOutlineTag,
@@ -16,17 +15,12 @@ import { cn } from '../../lib/cn'
 import { useThemeStore } from '../../store/useThemeStore'
 import reportService from '../../services/report'
 import requestService from '../../services/request'
-import escrowService from '../../services/escrow'
 import toast from 'react-hot-toast'
 
 import AdminReportsTab from './components/reports/AdminReportsTab'
 import AdminAppealsTab from './components/reports/AdminAppealsTab'
-import AdminEscrowTab from './components/reports/AdminEscrowTab'
 import AdminReportDetailModal from './components/reports/AdminReportDetailModal'
-import AdminEscrowDetailModal from './components/reports/AdminEscrowDetailModal'
 import AdminActionModal from './components/reports/AdminActionModal'
-import orderService from '../../services/order'
-import returnService from '../../services/returnService'
 
 // Helper tách và gom tất cả link ảnh từ các nguồn (hỗ trợ nhiều ảnh phân cách bằng dấu phẩy)
 export const parseImages = (...sources) => {
@@ -44,7 +38,7 @@ export const parseImages = (...sources) => {
   return urls
 }
 
-const VALID_TABS = ['REPORTS', 'APPEALS', 'ESCROW']
+const VALID_TABS = ['REPORTS', 'APPEALS']
 
 export default function AdminReports() {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
@@ -68,12 +62,11 @@ export default function AdminReports() {
   // Data states
   const [reports, setReports] = useState([])
   const [appeals, setAppeals] = useState([])
-  const [escrows, setEscrows] = useState([])
 
   // Modal actions (xác nhận/từ chối kèm ghi chú)
   const [actionModal, setActionModal] = useState({
     isOpen: false,
-    type: '', // 'REPORT_APPROVE', 'REPORT_REJECT', 'APPEAL_APPROVE', 'APPEAL_REJECT', 'ESCROW_REFUND', 'ESCROW_RELEASE'
+    type: '', // 'REPORT_APPROVE', 'REPORT_REJECT', 'APPEAL_APPROVE', 'APPEAL_REJECT'
     item: null,
     note: '',
   })
@@ -87,54 +80,18 @@ export default function AdminReports() {
     rawItem: null,
   })
 
-  // Modal xem chi tiết Ký quỹ Escrow
-  const [escrowDetailModal, setEscrowDetailModal] = useState({
-    isOpen: false,
-    loading: false,
-    item: null,
-    order: null,
-    returnDetails: null,
-  })
-
   const fetchData = useCallback(async () => {
     try {
       setLoading(true)
-      // Gọi đồng thời cả 3 nguồn: Báo cáo, Kháng cáo, Ký quỹ Escrow
-      // đảm bảo khi reload trang ở bất kỳ tab nào dữ liệu và badge số lượng đều đồng bộ ngay lập tức
-      const [reportRes, appealRes, escrowRes] = await Promise.all([
+      const [reportRes, appealRes] = await Promise.all([
         requestService.getAdminRequests({ type: 'REPORT' }),
         requestService.getAdminRequests({ type: 'APPEAL' }),
-        escrowService.getAdminEscrows(),
       ])
       const reportList = reportRes?.content || (Array.isArray(reportRes) ? reportRes : [])
       const appealList = appealRes?.content || (Array.isArray(appealRes) ? appealRes : [])
-      const rawEscrows = escrowRes?.content || (Array.isArray(escrowRes) ? escrowRes : [])
 
       setReports(reportList)
       setAppeals(appealList)
-
-      // Lấy thông tin hoàn hàng batch cho danh sách escrow chỉ với 1 API duy nhất
-      const orderIds = rawEscrows
-        .map((item) => item.orderId || item.order?.id)
-        .filter(Boolean)
-
-      let returnBatchMap = {}
-      if (orderIds.length > 0) {
-        try {
-          returnBatchMap = await returnService.getReturnInfoBatch(orderIds)
-        } catch (err) {
-          console.error('Lỗi tải batch return info:', err)
-        }
-      }
-
-      const enrichedEscrows = rawEscrows.map((item) => {
-        const orderId = item.orderId || item.order?.id
-        return {
-          ...item,
-          orderReturn: (orderId && returnBatchMap[orderId]) ? returnBatchMap[orderId] : null,
-        }
-      })
-      setEscrows(enrichedEscrows)
     } catch (err) {
       console.error('Lỗi tải dữ liệu kiểm duyệt:', err)
       toast.error('Không thể tải danh sách dữ liệu kiểm duyệt.')
@@ -199,49 +156,6 @@ export default function AdminReports() {
     })
   }
 
-  const handleOpenEscrowDetail = async (item) => {
-    const orderId = item.orderId || item.order?.id
-    setEscrowDetailModal({
-      isOpen: true,
-      loading: true,
-      item,
-      order: null,
-      returnDetails: null,
-    })
-    try {
-      let order = null
-      let returnDetails = null
-      let currentItem = item
-      if (orderId) {
-        const [orderRes, returnRes, settlementRes] = await Promise.allSettled([
-          orderService.getOrderById(orderId),
-          returnService.getReturnByOrderId(orderId),
-          escrowService.getSettlementByOrderId(orderId),
-        ])
-        if (orderRes.status === 'fulfilled') {
-          order = orderRes.value
-        }
-        if (returnRes.status === 'fulfilled') {
-          returnDetails = returnRes.value
-        }
-        if (settlementRes.status === 'fulfilled' && settlementRes.value) {
-          currentItem = { ...item, settlement: settlementRes.value }
-        }
-      }
-      setEscrowDetailModal({
-        isOpen: true,
-        loading: false,
-        item: currentItem,
-        order,
-        returnDetails,
-      })
-    } catch (err) {
-      console.error('Lỗi tải chi tiết ký quỹ:', err)
-      toast.error('Không thể tải chi tiết ký quỹ.')
-      setEscrowDetailModal((prev) => ({ ...prev, loading: false }))
-    }
-  }
-
   const handleActionConfirm = async () => {
     const { type, item, note } = actionModal
     if (!item) return
@@ -263,7 +177,7 @@ export default function AdminReports() {
         const resolution = targetType === 'ORDER' ? (actionModal.resolutionType || 'REFUND_ONLY') : null
         await reportService.handleReport(requestId, 'APPROVE', trimmedNote, resolution)
         if (targetType === 'ORDER') {
-          toast.success('Đã xác nhận vi phạm! Hệ thống đã ghi nhận phương án giải quyết và mở thời hạn kháng cáo 72h cho Shop.')
+          toast.success('Đã xác nhận vi phạm đơn hàng! Hệ thống đã thực thi phán quyết bồi hoàn ngay lập tức.')
         } else if (targetType === 'USER') {
           toast.success('Đã xác nhận vi phạm! Hệ thống đã áp dụng chế tài kỷ luật cộng gậy cho tài khoản người dùng.')
         } else if (targetType === 'REVIEW') {
@@ -405,7 +319,6 @@ export default function AdminReports() {
         {[
           { key: 'REPORTS', label: `Báo Cáo Vi Phạm (${reports.length})`, icon: HiOutlineExclamationCircle },
           { key: 'APPEALS', label: `Hàng Đợi Kháng Cáo (${appeals.length})`, icon: HiOutlineScale },
-          { key: 'ESCROW', label: `Xử Lý Ký Quỹ Escrow (${escrows.length})`, icon: HiOutlineCash },
         ].map((tab) => {
           const isActive = activeTab === tab.key
           const Icon = tab.icon
@@ -450,7 +363,7 @@ export default function AdminReports() {
             handleOpenActionModal={handleOpenActionModal}
             parseImages={parseImages}
           />
-        ) : activeTab === 'APPEALS' ? (
+        ) : (
           <AdminAppealsTab
             appeals={appeals}
             isDark={isDark}
@@ -458,14 +371,6 @@ export default function AdminReports() {
             setActionModal={setActionModal}
             handleOpenActionModal={handleOpenActionModal}
             parseImages={parseImages}
-          />
-        ) : (
-          <AdminEscrowTab
-            escrows={escrows}
-            isDark={isDark}
-            formatVND={formatVND}
-            setActionModal={setActionModal}
-            handleOpenEscrowDetail={handleOpenEscrowDetail}
           />
         )}
       </div>
@@ -490,16 +395,6 @@ export default function AdminReports() {
         formatVND={formatVND}
         submitting={submitting}
         handleActionConfirm={handleActionConfirm}
-      />
-
-      {/* Escrow Detail Modal (Xem Chi Tiết Ký Quỹ & Đơn Hàng) */}
-      <AdminEscrowDetailModal
-        escrowDetailModal={escrowDetailModal}
-        setEscrowDetailModal={setEscrowDetailModal}
-        isDark={isDark}
-        formatVND={formatVND}
-        copyToClipboard={copyToClipboard}
-        setActionModal={setActionModal}
       />
     </div>
   )

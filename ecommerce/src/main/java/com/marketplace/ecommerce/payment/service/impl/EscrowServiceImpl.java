@@ -7,7 +7,6 @@ import com.marketplace.ecommerce.order.valueObjects.OrderStatus;
 import com.marketplace.ecommerce.payment.dto.EscrowAdminResponse;
 import com.marketplace.ecommerce.payment.dto.SettlementInfo;
 import com.marketplace.ecommerce.payment.entity.Escrow;
-import com.marketplace.ecommerce.payment.entity.Payment;
 import com.marketplace.ecommerce.payment.entity.Transaction;
 import com.marketplace.ecommerce.payment.repository.EscrowRepository;
 import com.marketplace.ecommerce.payment.repository.PaymentRepository;

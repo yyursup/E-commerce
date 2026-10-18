@@ -24,4 +24,6 @@ public interface ReportService {
     ReportDetailsResponse getReportByOrderId(UUID accountId, UUID orderId);
 
     java.util.List<DisputePolicyClauseResponse> getDisputePolicyClauses();
+
+    void processExpiredDirectNegotiations();
 }

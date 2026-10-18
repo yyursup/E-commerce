@@ -53,6 +53,7 @@ import com.marketplace.ecommerce.request.valueObjects.DisputePolicyClause;
 import com.marketplace.ecommerce.request.dto.response.DisputePolicyClauseResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -903,5 +904,34 @@ public class ReportServiceImpl implements ReportService {
         return Arrays.stream(DisputePolicyClause.values())
                 .map(DisputePolicyClauseResponse::from)
                 .toList();
+    }
+
+    @Override
+    @Transactional
+    @Scheduled(cron = "0 */10 * * * *")
+    public void processExpiredDirectNegotiations() {
+        LocalDateTime now = LocalDateTime.now();
+        List<Report> expired = reportRepository.findExpiredDirectNegotiations(now);
+        for (Report r : expired) {
+            try {
+                Optional<Report> lockedOpt = reportRepository.findByIdForUpdate(r.getId());
+                if (lockedOpt.isPresent()) {
+                    Report report = lockedOpt.get();
+                    if (report.getStage() == ReportStage.DIRECT_NEGOTIATION
+                            && report.getSellerResponseDeadline() != null
+                            && !report.getSellerResponseDeadline().isAfter(now)) {
+                        report.setStage(ReportStage.ESCALATED_TO_ADMIN);
+                        report.setEscalatedAt(now);
+                        report.setEscalatedByAccountId(null);
+                        report.setEscalationReason(
+                                "Hệ thống tự động chuyển Ban Quản Trị sàn phân xử do Người bán quá hạn 48 giờ không phản hồi thương lượng.");
+                        reportRepository.save(report);
+                        log.info("Auto escalated expired dispute reportId={} to Admin queue", report.getId());
+                    }
+                }
+            } catch (Exception e) {
+                log.error("Failed to auto-escalate expired dispute reportId={}", r.getId(), e);
+            }
+        }
     }
 }

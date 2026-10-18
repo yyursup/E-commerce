@@ -73,4 +73,10 @@ public class Report {
 
     @Column(name = "escalation_reason", columnDefinition = "TEXT")
     private String escalationReason;
+
+    @Column(name = "policy_clause_code", length = 100)
+    private String policyClauseCode;
+
+    @Column(name = "policy_clause_title", length = 255)
+    private String policyClauseTitle;
 }

@@ -79,4 +79,9 @@ public class ReportController {
         }
         return ResponseEntity.ok(report);
     }
+
+    @GetMapping("/policy-clauses")
+    public ResponseEntity<java.util.List<com.marketplace.ecommerce.request.dto.response.DisputePolicyClauseResponse>> getPolicyClauses() {
+        return ResponseEntity.ok(reportService.getDisputePolicyClauses());
+    }
 }

@@ -18,7 +18,7 @@ export const formatSellerAction = (action, isReturnDispute) => {
     case 'ACCEPT_REFUND':
       return 'Shop đồng ý hoàn 100% tiền ngay'
     case 'REJECT_AND_ESCALATE':
-      return 'Shop từ chối khiếu nại & Chuyển lên BQT sàn'
+      return 'Shop gửi giải trình & đối soát cho BQT sàn'
     case 'DISPUTE':
       return 'Shop khiếu nại kiện hàng hoàn'
     default:
@@ -217,6 +217,18 @@ export default function SellerDisputeSideBySide({
               <p className="font-bold">⏳ Shop chưa gửi phản hồi xử lý</p>
               <p className="text-[11px] opacity-90">
                 Vui lòng chọn một trong các phương án bên dưới để phản hồi khách hàng trong thời hạn 48 giờ.
+              </p>
+            </div>
+          ) : report.stage === 'ESCALATED_TO_ADMIN' ? (
+            <div
+              className={cn(
+                'p-4 rounded-xl border text-xs leading-relaxed space-y-2',
+                isDark ? 'border-purple-500/30 bg-purple-950/20 text-purple-300' : 'border-purple-200 bg-purple-50/70 text-purple-800'
+              )}
+            >
+              <p className="font-bold">⚖️ Tranh chấp đã chuyển lên Ban Quản Trị sàn</p>
+              <p className="text-[11px] opacity-90">
+                Shop chưa nộp hồ sơ giải trình. Vui lòng bấm nút <strong>"Gửi Giải Trình Cho BQT Sàn"</strong> bên dưới để cung cấp bằng chứng đóng hàng đối soát trước khi Quản trị viên phán quyết.
               </p>
             </div>
           ) : (

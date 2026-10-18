@@ -12,8 +12,9 @@ import { cn } from '../../../lib/cn'
 import toast from 'react-hot-toast'
 import reportService from '../../../services/report'
 
-export default function OrderDisputeBanner({ order, returnInfo, isDark, onRefresh }) {
-  const [report, setReport] = useState(null)
+export default function OrderDisputeBanner({ order, returnInfo, report: reportProp, isDark, onRefresh }) {
+  const [internalReport, setInternalReport] = useState(null)
+  const report = reportProp || internalReport
   const [loading, setLoading] = useState(false)
   const [showCancelModal, setShowCancelModal] = useState(false)
   const [showEscalateModal, setShowEscalateModal] = useState(false)
@@ -27,18 +28,19 @@ export default function OrderDisputeBanner({ order, returnInfo, isDark, onRefres
     !hasActiveReturn
 
   useEffect(() => {
-    if (!order?.id || !order?.hasActiveDispute) return
+    if (reportProp || !order?.id) return
+    if (!order?.hasActiveDispute && order?.status !== 'REFUNDED') return
     loadReport()
-  }, [order?.id, order?.hasActiveDispute])
+  }, [order?.id, order?.hasActiveDispute, order?.status, reportProp])
 
   const loadReport = async () => {
     try {
       setLoading(true)
       const data = await reportService.getReportByOrderId(order.id)
-      setReport(data || null)
+      setInternalReport(data || null)
     } catch (err) {
       console.warn('Lỗi tải report của đơn hàng:', err)
-      setReport(null)
+      setInternalReport(null)
     } finally {
       setLoading(false)
     }
@@ -209,6 +211,22 @@ export default function OrderDisputeBanner({ order, returnInfo, isDark, onRefres
             </div>
           )}
 
+          {/* Căn cứ Điều khoản chính sách khi BQT phán quyết */}
+          {(report?.policyClauseTitle || report?.policyClauseCode) && (
+            <div className="rounded-xl bg-purple-500/15 border border-purple-500/30 p-3 text-purple-900 dark:text-purple-200 flex items-start gap-2.5">
+              <HiOutlineScale className="h-4 w-4 shrink-0 mt-0.5 text-purple-600 dark:text-purple-400" />
+              <div className="space-y-0.5">
+                <span className="font-bold text-xs">⚖️ Căn cứ Điều khoản phán quyết: </span>
+                <span className="font-semibold text-xs">{report.policyClauseTitle || report.policyClauseCode}</span>
+                {report.adminNote && (
+                  <p className="text-[11px] opacity-90 leading-relaxed italic pt-0.5">
+                    Ghi chú phán quyết BQT: &ldquo;{report.adminNote}&rdquo;
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Action buttons for Buyer during DIRECT_NEGOTIATION */}
           {isNegotiating && (
             <div className="flex flex-wrap items-center gap-2.5 pt-1">
@@ -230,6 +248,38 @@ export default function OrderDisputeBanner({ order, returnInfo, isDark, onRefres
                 <span>Yêu cầu Ban Quản Trị can thiệp</span>
               </button>
             </div>
+          )}
+        </div>
+      )}
+
+      {/* 3. Phán quyết BQT khi tranh chấp đã khép lại */}
+      {!order.hasActiveDispute && (report?.policyClauseTitle || report?.policyClauseCode || (report?.adminNote && order.status === 'REFUNDED')) && (
+        <div
+          className={cn(
+            'rounded-2xl p-4 border text-xs space-y-2 shadow-xs',
+            report?.status === 'APPROVED' || order.status === 'REFUNDED'
+              ? isDark
+                ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-300'
+                : 'bg-emerald-50 border-emerald-200 text-emerald-900'
+              : isDark
+                ? 'bg-slate-800/60 border-slate-700 text-slate-300'
+                : 'bg-stone-100 border-stone-200 text-stone-800'
+          )}
+        >
+          <div className="flex items-center gap-2 font-bold text-sm">
+            <HiOutlineScale className="h-5 w-5 text-purple-500 shrink-0" />
+            <span>Kết luận giải quyết khiếu nại từ Ban Quản Trị</span>
+          </div>
+          {(report?.policyClauseTitle || report?.policyClauseCode) && (
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-purple-500/15 border border-purple-500/30 text-xs font-semibold text-purple-800 dark:text-purple-300">
+              <span>⚖️ Căn cứ Điều khoản:</span>
+              <span>{report.policyClauseTitle || report.policyClauseCode}</span>
+            </div>
+          )}
+          {report?.adminNote && (
+            <p className="text-xs leading-relaxed opacity-90 pl-1">
+              Phán quyết BQT: &ldquo;{report.adminNote}&rdquo;
+            </p>
           )}
         </div>
       )}

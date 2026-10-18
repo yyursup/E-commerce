@@ -14,16 +14,35 @@ const reportService = {
     }
   },
 
-  handleReport: async (requestId, decision, note = null, resolutionType = null) => {
+  handleReport: async (
+    requestId,
+    decision,
+    note = null,
+    resolutionType = null,
+    policyClauseCode = null,
+    removeShopPenalty = true
+  ) => {
     try {
       const response = await axiosClient.put(`${REPORT_BASE}/${requestId}/handle`, {
         decision,
         note,
         resolutionType,
+        policyClauseCode,
+        removeShopPenalty,
       })
       return response.data
     } catch (error) {
       throw error.response ? error.response.data : error
+    }
+  },
+
+  getPolicyClauses: async () => {
+    try {
+      const response = await axiosClient.get(`${REPORT_BASE}/policy-clauses`)
+      return response.data || []
+    } catch (error) {
+      console.error('Failed to fetch policy clauses', error)
+      return []
     }
   },
 

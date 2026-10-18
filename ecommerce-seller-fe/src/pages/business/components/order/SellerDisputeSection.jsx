@@ -6,6 +6,7 @@ import {
   HiOutlineX,
   HiOutlineArrowNarrowRight,
   HiOutlineRefresh,
+  HiOutlineUpload,
 } from 'react-icons/hi'
 import { cn } from '../../../../lib/cn'
 import toast from 'react-hot-toast'
@@ -139,8 +140,14 @@ export default function SellerDisputeSection({ orderId, order, returnInfo, isDar
   const handleSellerAction = async (actionType) => {
     if (!report?.id) return
 
+    const isEscalatedMode = report?.stage === 'ESCALATED_TO_ADMIN'
+
     if (actionType === 'REJECT_AND_ESCALATE' && !responseNote.trim()) {
-      toast.error('Vui lòng nhập lý do từ chối để Admin đối soát!')
+      toast.error(
+        isEscalatedMode
+          ? 'Vui lòng nhập nội dung giải trình đối soát!'
+          : 'Vui lòng nhập lý do từ chối để Admin đối soát!'
+      )
       return
     }
 
@@ -159,7 +166,11 @@ export default function SellerDisputeSection({ orderId, order, returnInfo, isDar
       } else if (actionType === 'ACCEPT_RETURN') {
         toast.success('Đã chấp thuận đổi trả! Chờ khách gửi hàng hoàn về kho.')
       } else {
-        toast.success('Đã gửi phản hồi và chuyển hồ sơ lên Ban Quản Trị sàn!')
+        toast.success(
+          isEscalatedMode
+            ? 'Đã gửi hồ sơ giải trình tới Ban Quản Trị sàn!'
+            : 'Đã gửi phản hồi và chuyển hồ sơ lên Ban Quản Trị sàn!'
+        )
       }
 
       setActiveModal(null)
@@ -244,7 +255,21 @@ export default function SellerDisputeSection({ orderId, order, returnInfo, isDar
     : []
 
   const isNegotiating = report.stage === 'DIRECT_NEGOTIATION'
+  const isEscalated = report.stage === 'ESCALATED_TO_ADMIN'
+  const isPendingResolution = report.status === 'PENDING' || !report.reviewedAt
+  const hasSellerResponded = Boolean(report.sellerResponse || report.sellerEvidenceUrl)
   const isOrderRefunded = order?.status === 'REFUNDED'
+
+  const openRejectOrExplainModal = () => {
+    if (isEscalated && hasSellerResponded) {
+      setResponseNote(report.sellerResponse || '')
+      setEvidenceUrls(sellerEvidenceList || [])
+    } else {
+      setResponseNote('')
+      setEvidenceUrls([])
+    }
+    setActiveModal('REJECT')
+  }
 
   return (
     <div className="border-b border-stone-200 dark:border-slate-800 p-4 sm:p-6">
@@ -322,6 +347,63 @@ export default function SellerDisputeSection({ orderId, order, returnInfo, isDar
           </div>
         )}
 
+        {isEscalated && isPendingResolution && (
+          <div
+            className={cn(
+              'p-4 sm:p-5 border-t',
+              hasSellerResponded
+                ? isDark
+                  ? 'border-emerald-900/30 bg-emerald-950/20'
+                  : 'border-emerald-100 bg-emerald-50/60'
+                : isDark
+                  ? 'border-purple-900/30 bg-purple-950/20'
+                  : 'border-purple-100 bg-purple-50/50'
+            )}
+          >
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <p
+                  className={cn(
+                    'text-xs font-bold flex items-center gap-1.5 flex-wrap',
+                    hasSellerResponded
+                      ? 'text-emerald-900 dark:text-emerald-200'
+                      : 'text-purple-900 dark:text-purple-200'
+                  )}
+                >
+                  <span>
+                    {hasSellerResponded
+                      ? '✅ Hồ sơ đối chất đã được gửi và khóa thành công'
+                      : '⚖️ Tranh chấp đang chờ Ban Quản Trị sàn phán quyết'}
+                  </span>
+                  {hasSellerResponded && (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                      Chứng từ bất biến
+                    </span>
+                  )}
+                </p>
+                <p className="text-[11px] text-stone-600 dark:text-slate-300 mt-0.5">
+                  {hasSellerResponded
+                    ? 'Lời giải trình và bằng chứng đối soát của Shop đã được chuyển cho Quản trị viên sàn. Hồ sơ được lưu trữ bất biến phục vụ phân xử.'
+                    : 'Người mua đã chuyển khiếu nại lên BQT. Vui lòng gửi giải trình và bằng chứng đóng gói đối soát ngay để bảo vệ quyền lợi!'}
+                </p>
+              </div>
+
+              {!hasSellerResponded && (
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={openRejectOrExplainModal}
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 px-4 py-2 text-xs font-bold text-white shadow-sm transition-all duration-150 active:scale-[0.98]"
+                  >
+                    <HiOutlineUpload className="h-4 w-4" />
+                    <span>Gửi Giải Trình Cho BQT Sàn</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Modal Dialog */}
         <SellerDisputeActionModal
           activeModal={activeModal}
@@ -341,6 +423,8 @@ export default function SellerDisputeSection({ orderId, order, returnInfo, isDar
           submitting={submitting}
           onSubmit={handleSellerAction}
           order={order}
+          isEscalated={isEscalated}
+          isUpdating={hasSellerResponded}
         />
       </div>
     </div>

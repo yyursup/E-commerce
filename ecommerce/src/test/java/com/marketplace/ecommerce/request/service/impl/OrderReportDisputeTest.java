@@ -43,6 +43,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
@@ -58,7 +59,7 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class OrderReportDisputeTest {
 
-        @Mock
+        @Mock(name = "requestPolicy")
         private RequestPolicy requestValidation;
 
         @Mock
@@ -160,6 +161,9 @@ class OrderReportDisputeTest {
                                 .status(EscrowStatus.HELD)
                                 .amount(new BigDecimal("500000"))
                                 .build();
+
+                Mockito.lenient().when(accountRepository.findByIdForUpdate(buyerAccountId))
+                                .thenReturn(Optional.of(buyerAccount));
         }
 
         @Test
@@ -242,7 +246,8 @@ class OrderReportDisputeTest {
                 // Given
                 RequestServiceImpl requestServiceImpl = new RequestServiceImpl(
                                 requestRepository, reportRepository, null, accountRepository, null,
-                                requestValidation, null, null, null, null, orderRepository, escrowRepository, orderReturnService, null);
+                                requestValidation, null, null, null, null, orderRepository, escrowRepository,
+                                orderReturnService, null);
 
                 // When
                 requestServiceImpl.autoRefundExpiredDisputedOrders();
@@ -258,7 +263,8 @@ class OrderReportDisputeTest {
                 // Given
                 RequestServiceImpl requestServiceImpl = new RequestServiceImpl(
                                 requestRepository, reportRepository, null, accountRepository, null,
-                                requestValidation, null, null, null, null, orderRepository, escrowRepository, orderReturnService, null);
+                                requestValidation, null, null, null, null, orderRepository, escrowRepository,
+                                orderReturnService, null);
 
                 // When
                 requestServiceImpl.autoRefundExpiredDisputedOrders();
@@ -308,8 +314,117 @@ class OrderReportDisputeTest {
 
                 assertEquals(RequestStatus.APPROVED, disputeReq.getStatus());
                 assertEquals(ReturnStatus.CANCELLED, orderReturn.getStatus());
+                assertEquals(1, buyerAccount.getViolationCount());
                 verify(escrowService).releaseByOrder(orderId);
                 verify(escrowService, never()).refundByOrder(any(), any());
+        }
+
+        @Test
+        @DisplayName("Admin duyệt khiếu nại kiện hoàn: Tùy chọn removeShopPenalty = false -> Giữ nguyên gậy của Shop, vẫn phạt Buyer")
+        void handleReport_SellerReturnDispute_Approve_KeepShopPenalty() {
+                Account shopOwner = Account.builder()
+                                .id(UUID.randomUUID())
+                                .violationCount(1)
+                                .disciplineLevel(DisciplineLevel.NONE)
+                                .status(AccountStatus.ACTIVE)
+                                .build();
+                User shopUser = User.builder().account(shopOwner).build();
+                shop.setUser(shopUser);
+
+                Request disputeReq = Request.builder()
+                                .id(reportRequestId)
+                                .type(RequestType.REPORT)
+                                .status(RequestStatus.PENDING)
+                                .build();
+
+                Report disputeReport = Report.builder()
+                                .id(reportRequestId)
+                                .request(disputeReq)
+                                .targetType(TargetType.ORDER)
+                                .targetId(orderId)
+                                .build();
+
+                OrderReturn orderReturn = OrderReturn.builder()
+                                .id(UUID.randomUUID())
+                                .order(deliveredOrder)
+                                .status(ReturnStatus.DISPUTED)
+                                .build();
+
+                when(accountRepository.findById(adminAccountId)).thenReturn(Optional.of(adminAccount));
+                when(reportRepository.findByRequestId(reportRequestId)).thenReturn(disputeReport);
+                when(orderRepository.findByIdForUpdate(orderId)).thenReturn(Optional.of(deliveredOrder));
+                when(orderReturnRepository.findByOrderIdForUpdate(orderId)).thenReturn(Optional.of(orderReturn));
+                when(escrowRepository.findByOrderIdForUpdate(orderId)).thenReturn(Optional.of(heldEscrow));
+                heldEscrow.setStatus(EscrowStatus.DISPUTED);
+
+                HandleReportRequest req = HandleReportRequest.builder()
+                                .decision(ReportDecision.APPROVE)
+                                .note("Khách tráo hàng, nhưng Shop cũng có lỗi ban đầu nên giữ nguyên gậy")
+                                .removeShopPenalty(false)
+                                .build();
+
+                reportService.handleReport(adminAccountId, reportRequestId, req);
+
+                // Shop giữ nguyên 1 gậy vi phạm
+                assertEquals(1, shopOwner.getViolationCount());
+                // Buyer vẫn bị phạt 1 gậy vi phạm gian lận
+                assertEquals(1, buyerAccount.getViolationCount());
+                assertEquals(RequestStatus.APPROVED, disputeReq.getStatus());
+                verify(escrowService).releaseByOrder(orderId);
+        }
+
+        @Test
+        @DisplayName("Admin duyệt khiếu nại kiện hoàn: Tùy chọn removeShopPenalty = true -> Xóa 1 gậy của Shop, phạt Buyer")
+        void handleReport_SellerReturnDispute_Approve_RemoveShopPenalty() {
+                Account shopOwner = Account.builder()
+                                .id(UUID.randomUUID())
+                                .violationCount(2)
+                                .disciplineLevel(DisciplineLevel.NONE)
+                                .status(AccountStatus.ACTIVE)
+                                .build();
+                User shopUser = User.builder().account(shopOwner).build();
+                shop.setUser(shopUser);
+
+                Request disputeReq = Request.builder()
+                                .id(reportRequestId)
+                                .type(RequestType.REPORT)
+                                .status(RequestStatus.PENDING)
+                                .build();
+
+                Report disputeReport = Report.builder()
+                                .id(reportRequestId)
+                                .request(disputeReq)
+                                .targetType(TargetType.ORDER)
+                                .targetId(orderId)
+                                .build();
+
+                OrderReturn orderReturn = OrderReturn.builder()
+                                .id(UUID.randomUUID())
+                                .order(deliveredOrder)
+                                .status(ReturnStatus.DISPUTED)
+                                .build();
+
+                when(accountRepository.findById(adminAccountId)).thenReturn(Optional.of(adminAccount));
+                when(reportRepository.findByRequestId(reportRequestId)).thenReturn(disputeReport);
+                when(orderRepository.findByIdForUpdate(orderId)).thenReturn(Optional.of(deliveredOrder));
+                when(orderReturnRepository.findByOrderIdForUpdate(orderId)).thenReturn(Optional.of(orderReturn));
+                when(escrowRepository.findByOrderIdForUpdate(orderId)).thenReturn(Optional.of(heldEscrow));
+                heldEscrow.setStatus(EscrowStatus.DISPUTED);
+
+                HandleReportRequest req = HandleReportRequest.builder()
+                                .decision(ReportDecision.APPROVE)
+                                .note("Xác nhận khách tráo hàng, xóa gậy minh oan cho Shop")
+                                .removeShopPenalty(true)
+                                .build();
+
+                reportService.handleReport(adminAccountId, reportRequestId, req);
+
+                // Shop được giảm 1 gậy từ 2 xuống 1
+                assertEquals(1, shopOwner.getViolationCount());
+                // Buyer bị phạt 1 gậy vi phạm
+                assertEquals(1, buyerAccount.getViolationCount());
+                assertEquals(RequestStatus.APPROVED, disputeReq.getStatus());
+                verify(escrowService).releaseByOrder(orderId);
         }
 
         @Test
@@ -438,8 +553,10 @@ class OrderReportDisputeTest {
 
                 assertEquals(RequestStatus.APPROVED, reportReq.getStatus());
                 assertEquals(ReportStage.RETURN_IN_PROGRESS, report.getStage());
-                assertEquals(ReturnStatus.WAITING_FOR_SHIPMENT, inProgressReturn.getStatus(), "Trạng thái không được reset");
-                assertEquals(fixedDeadline, inProgressReturn.getBuyerShipmentDeadline(), "Deadline không bị khởi động lại");
+                assertEquals(ReturnStatus.WAITING_FOR_SHIPMENT, inProgressReturn.getStatus(),
+                                "Trạng thái không được reset");
+                assertEquals(fixedDeadline, inProgressReturn.getBuyerShipmentDeadline(),
+                                "Deadline không bị khởi động lại");
                 verify(orderReturnService, never()).createReturn(any(), any());
         }
 
@@ -475,7 +592,8 @@ class OrderReportDisputeTest {
                 when(escrowRepository.findByOrderIdForUpdate(orderId)).thenReturn(Optional.of(heldEscrow));
                 heldEscrow.setStatus(EscrowStatus.DISPUTED);
 
-                // Admin gửi generic RETURN_AND_REFUND nhưng đây là Seller Return Dispute -> Không tạo return mới mà bồi hoàn Buyer
+                // Admin gửi generic RETURN_AND_REFUND nhưng đây là Seller Return Dispute ->
+                // Không tạo return mới mà bồi hoàn Buyer
                 HandleReportRequest req = HandleReportRequest.builder()
                                 .decision(ReportDecision.APPROVE)
                                 .resolutionType(ResolutionType.RETURN_AND_REFUND)
@@ -565,5 +683,46 @@ class OrderReportDisputeTest {
                 assertThrows(com.marketplace.ecommerce.common.exception.CustomException.class,
                                 () -> reportService.handleReport(adminAccountId, reportRequestId, req));
                 verify(escrowService, never()).releaseByOrder(any());
+        }
+
+        @Test
+        @DisplayName("Admin phán quyết tranh chấp ORDER lưu đúng Căn cứ Điều khoản Chính sách")
+        void handleReport_Order_SavesPolicyClause_WhenClauseProvided() {
+                Request reportReq = Request.builder()
+                                .id(reportRequestId)
+                                .type(RequestType.REPORT)
+                                .status(RequestStatus.PENDING)
+                                .build();
+
+                Report report = Report.builder()
+                                .id(reportRequestId)
+                                .request(reportReq)
+                                .targetType(TargetType.ORDER)
+                                .targetId(orderId)
+                                .stage(ReportStage.ESCALATED_TO_ADMIN)
+                                .build();
+
+                HandleReportRequest req = HandleReportRequest.builder()
+                                .decision(ReportDecision.APPROVE)
+                                .resolutionType(ResolutionType.REFUND_ONLY)
+                                .policyClauseCode("CLAUSE_9_1_HARDWARE_FAULT")
+                                .note("Xác nhận hàng lỗi phần cứng theo biên bản")
+                                .build();
+
+                when(accountRepository.findById(adminAccountId)).thenReturn(Optional.of(adminAccount));
+                when(reportRepository.findByRequestId(reportRequestId)).thenReturn(report);
+                when(orderRepository.findByIdForUpdate(orderId)).thenReturn(Optional.of(deliveredOrder));
+                when(requestValidation.validateDisputePolicyClause(eq(TargetType.ORDER),
+                                eq("CLAUSE_9_1_HARDWARE_FAULT"), eq(ReportDecision.APPROVE), anyBoolean()))
+                                .thenReturn(com.marketplace.ecommerce.request.valueObjects.DisputePolicyClause.CLAUSE_9_1_HARDWARE_FAULT);
+                when(requestValidation.resolveTargetAccountId(TargetType.ORDER, orderId)).thenReturn(buyerAccountId);
+                when(accountRepository.findByIdForUpdate(buyerAccountId)).thenReturn(Optional.of(buyerAccount));
+
+                reportService.handleReport(adminAccountId, reportRequestId, req);
+
+                assertEquals("CLAUSE_9_1_HARDWARE_FAULT", report.getPolicyClauseCode());
+                assertEquals("Điều khoản 9.1: Lỗi kỹ thuật hoặc hỏng hóc chức năng", report.getPolicyClauseTitle());
+                verify(reportRepository).save(report);
+                verify(escrowService).refundByOrder(eq(orderId), anyString());
         }
 }

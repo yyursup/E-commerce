@@ -28,6 +28,12 @@ export default function SellerDisputeAdminBanner({ report, isOrderRefunded, isDa
             ? 'Phán quyết chính thức: Chấp thuận bồi hoàn 100% cho Người mua'
             : 'Kết luận xử lý từ Ban Quản Trị sàn'}
         </p>
+        {(report?.policyClauseTitle || report?.policyClauseCode) && (
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-500/15 border border-amber-500/30 text-xs font-bold text-amber-800 dark:text-amber-300">
+            <span>⚖️ Căn cứ Điều khoản:</span>
+            <span>{report.policyClauseTitle || report.policyClauseCode}</span>
+          </div>
+        )}
         <p className="text-xs leading-relaxed opacity-90">
           {report?.adminNote ||
             (isApprovedRefund

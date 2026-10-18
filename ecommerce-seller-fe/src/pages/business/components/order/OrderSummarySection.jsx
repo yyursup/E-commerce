@@ -179,28 +179,64 @@ export default function OrderSummarySection({ order, isDark, returnInfo }) {
             Bảo Đảm Ký Quỹ Escrow (An Toàn Dòng Tiền)
           </h4>
 
-          {isRefunded && (
-            <div
-              className={cn(
-                'flex items-start gap-3 rounded-2xl p-4 border',
-                isDark ? 'bg-blue-500/10 border-blue-500/25' : 'bg-blue-50 border-blue-200'
-              )}
-            >
-              <div className="mt-0.5 p-2 rounded-xl bg-blue-500/20 shrink-0">
-                <HiOutlineShieldCheck className="h-5 w-5 text-blue-500" />
+          {isRefunded && (() => {
+            const activeReturn = returnInfo || order?.returnInfo
+            const isReturnProcess = Boolean(activeReturn && activeReturn.status !== 'CANCELLED')
+            const outboundFee = Number(order?.shippingFee || 0)
+            const returnFee = Number(activeReturn?.shippingFee || outboundFee)
+            const totalReturnShipping = outboundFee + returnFee
+            const merchandiseRefund = Math.max(0, Number(order?.total || 0) - outboundFee)
+
+            return (
+              <div
+                className={cn(
+                  'flex items-start gap-3 rounded-2xl p-4 border',
+                  isDark ? 'bg-blue-500/10 border-blue-500/25' : 'bg-blue-50 border-blue-200'
+                )}
+              >
+                <div className="mt-0.5 p-2 rounded-xl bg-blue-500/20 shrink-0">
+                  <HiOutlineShieldCheck className="h-5 w-5 text-blue-500" />
+                </div>
+                <div className="space-y-1.5 text-xs">
+                  <p className={cn('text-sm font-bold', isDark ? 'text-blue-400' : 'text-blue-900')}>
+                    {isReturnProcess
+                      ? 'Đơn hàng đã hoàn tất đổi trả & Hoàn tiền'
+                      : 'Đơn hàng đã hoàn tiền hàng (Khách giữ hàng)'}
+                  </p>
+                  {isReturnProcess ? (
+                    <div className="space-y-1 leading-relaxed">
+                      <p className={isDark ? 'text-slate-300' : 'text-stone-600'}>
+                        Hệ thống đã bồi hoàn 100% tiền đơn ({formatCurrency(order?.total || 0)}) từ Ký quỹ Escrow về Ví người mua.
+                      </p>
+                      <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-900 dark:text-amber-300 space-y-0.5 font-mono text-[11px]">
+                        <div className="flex justify-between font-bold">
+                          <span className="font-sans">Cước 2 chiều đã trích Quỹ ký quỹ Shop:</span>
+                          <span>{formatCurrency(totalReturnShipping)}</span>
+                        </div>
+                        <div className="flex justify-between text-[10px] text-stone-500 dark:text-slate-400">
+                          <span className="font-sans">• Chiều đi ban đầu:</span>
+                          <span>{formatCurrency(outboundFee)}</span>
+                        </div>
+                        <div className="flex justify-between text-[10px] text-stone-500 dark:text-slate-400">
+                          <span className="font-sans">• Chiều về thu gom:</span>
+                          <span>{formatCurrency(returnFee)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-1 leading-relaxed">
+                      <p className={isDark ? 'text-slate-300' : 'text-stone-600'}>
+                        Đã hoàn tiền hàng <strong className="font-mono text-blue-600 dark:text-blue-400">{formatCurrency(merchandiseRefund)}</strong> về Ví người mua do Shop đồng ý thương lượng.
+                      </p>
+                      <p className="text-[11px] text-stone-500 dark:text-slate-400">
+                        * Cước vận chuyển chiều đi ({formatCurrency(outboundFee)}) được chuyển cho Sàn thanh toán cho GHN vì chuyến giao hàng thành công. Quỹ ký quỹ của Shop không bị trích.
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="space-y-1">
-                <p className={cn('text-sm font-bold', isDark ? 'text-blue-400' : 'text-blue-900')}>
-                  Đơn hàng đã hoàn tiền về Ví người mua
-                </p>
-                <p className={cn('text-xs leading-relaxed', isDark ? 'text-slate-300' : 'text-stone-600')}>
-                  {order.paymentMethod === 'COD'
-                    ? 'Đơn hàng ban đầu thanh toán bằng COD (tiền mặt khi nhận). Hệ thống Ký quỹ Escrow đã hoàn trả 100% số tiền vào Ví số dư tài khoản của Người mua (hệ thống trích từ quỹ Escrow COD, Shop không cần hoàn tiền mặt trực tiếp cho khách).'
-                    : 'Toàn bộ số tiền thanh toán đã được hoàn trả từ Ký quỹ Escrow về Ví số dư tài khoản của Người mua.'}
-                </p>
-              </div>
-            </div>
-          )}
+            )
+          })()}
 
           {!isRefunded && showEscrowHeld && (
             <div

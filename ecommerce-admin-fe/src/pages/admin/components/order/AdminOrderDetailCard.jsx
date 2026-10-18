@@ -180,11 +180,19 @@ export default function AdminOrderDetailCard({ order, isDark }) {
                     ? 'Ví sàn'
                     : 'COD'}
               </span>
-              {order.status === 'REFUNDED' && (
-                <span className="block text-[11px] font-semibold text-blue-600 dark:text-blue-400">
-                  ↳ Đã hoàn tiền vào Ví người mua
-                </span>
-              )}
+              {order.status === 'REFUNDED' && (() => {
+                const isReturn = Boolean(order.returnInfo && order.returnInfo.status !== 'CANCELLED')
+                const shippingFee = Number(order.shippingFee || 0)
+                const refundAmount = isReturn ? Number(order.total || 0) : Math.max(0, Number(order.total || 0) - shippingFee)
+
+                return (
+                  <span className="block text-[11px] font-semibold text-blue-600 dark:text-blue-400">
+                    {isReturn
+                      ? `↳ Đã hoàn 100% (${formatAdminOrderCurrency(refundAmount)}) qua Đổi trả (Shop chịu cước 2 chiều)`
+                      : `↳ Đã hoàn tiền hàng (${formatAdminOrderCurrency(refundAmount)}) do khách giữ hàng (Cước ship đi vào Sàn trả GHN)`}
+                  </span>
+                )
+              })()}
             </div>
           </div>
           {Number(order.shopDiscountAmount) > 0 && (

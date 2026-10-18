@@ -210,26 +210,31 @@ public class ShopServiceImpl implements ShopService {
             UUID appealRequestId = null;
             String appealResponse = null;
 
-            // 1. Khớp chính xác theo vi phạm cụ thể (violationReportId)
-            Report appeal = appealByReportIdMap.get(rep.getId());
+            // Đối với vi phạm đơn hàng (ORDER), phán quyết của Quản trị viên là quyết định cuối cùng, không áp dụng kháng cáo
+            if (rep.getTargetType() == TargetType.ORDER) {
+                appealStatus = "FINAL_RULING";
+            } else {
+                // 1. Khớp chính xác theo vi phạm cụ thể (violationReportId)
+                Report appeal = appealByReportIdMap.get(rep.getId());
 
-            // 2. Fallback cho appeal cũ chưa có violationReportId: chỉ gán tối đa 1-1 cho 1 report vi phạm duy nhất
-            if (appeal == null) {
-                for (Report a : appeals) {
-                    if (a.getViolationReportId() == null && !usedLegacyAppealIds.contains(a.getId())) {
-                        if (a.getTargetId() != null && a.getTargetId().equals(rep.getTargetId())) {
-                            appeal = a;
-                            usedLegacyAppealIds.add(a.getId());
-                            break;
+                // 2. Fallback cho appeal cũ chưa có violationReportId: chỉ gán tối đa 1-1 cho 1 report vi phạm duy nhất
+                if (appeal == null) {
+                    for (Report a : appeals) {
+                        if (a.getViolationReportId() == null && !usedLegacyAppealIds.contains(a.getId())) {
+                            if (a.getTargetId() != null && a.getTargetId().equals(rep.getTargetId())) {
+                                appeal = a;
+                                usedLegacyAppealIds.add(a.getId());
+                                break;
+                            }
                         }
                     }
                 }
-            }
 
-            if (appeal != null && appeal.getRequest() != null) {
-                appealStatus = appeal.getRequest().getStatus().name();
-                appealRequestId = appeal.getRequest().getId();
-                appealResponse = appeal.getRequest().getResponse();
+                if (appeal != null && appeal.getRequest() != null) {
+                    appealStatus = appeal.getRequest().getStatus().name();
+                    appealRequestId = appeal.getRequest().getId();
+                    appealResponse = appeal.getRequest().getResponse();
+                }
             }
 
             results.add(ShopViolationResponse.builder()

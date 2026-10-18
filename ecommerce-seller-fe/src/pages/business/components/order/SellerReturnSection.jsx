@@ -2,12 +2,9 @@ import { useState, useRef } from 'react'
 import { motion } from 'framer-motion'
 import {
   HiOutlineTruck,
-  HiOutlineClock,
   HiOutlineCheckCircle,
   HiOutlineExclamation,
   HiOutlineXCircle,
-  HiOutlineShieldCheck,
-  HiOutlinePhotograph,
 } from 'react-icons/hi'
 import toast from 'react-hot-toast'
 import { cn } from '../../../../lib/cn'
@@ -17,13 +14,15 @@ import fileService from '../../../../services/fileService'
 import {
   getReturnStatusBadge,
   getReturnStatusLabel,
-  formatOrderDate,
   formatOrderCurrency,
 } from '../../../../lib/orderStatus'
+import SellerReturnTimeline from './SellerReturnTimeline'
+import SellerReturnDisputeBanner from './SellerReturnDisputeBanner'
+import SellerReturnSettlementBanner from './SellerReturnSettlementBanner'
 import SellerReturnCompleteModal from './SellerReturnCompleteModal'
 import SellerReturnDisputeModal from './SellerReturnDisputeModal'
 
-export default function SellerReturnSection({ returnInfo, isDark: isDarkProp, onRefresh }) {
+export default function SellerReturnSection({ returnInfo, order, isDark: isDarkProp, onRefresh }) {
   const storeTheme = useThemeStore((s) => s.theme)
   const isDark = isDarkProp !== undefined ? isDarkProp : storeTheme === 'dark'
   const [submitting, setSubmitting] = useState(false)
@@ -43,9 +42,22 @@ export default function SellerReturnSection({ returnInfo, isDark: isDarkProp, on
 
   if (!returnInfo) return null
 
-  const statusBadge = getReturnStatusBadge(returnInfo.status)
+  const isOrderRefunded = order?.status === 'REFUNDED'
+  const isOrderCompleted = order?.status === 'COMPLETED'
+  const isSettled = isOrderRefunded || isOrderCompleted || returnInfo.status === 'COMPLETED'
+
+  const statusBadge = isOrderRefunded || isOrderCompleted
+    ? {
+        color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-700',
+        icon: HiOutlineCheckCircle,
+      }
+    : getReturnStatusBadge(returnInfo.status)
   const StatusIcon = statusBadge?.icon
-  const statusLabel = getReturnStatusLabel(returnInfo.status)
+  const statusLabel = isOrderRefunded
+    ? 'Đã hoàn tất đổi trả & Hoàn tiền'
+    : isOrderCompleted
+      ? 'Đã hoàn tất đổi trả'
+      : getReturnStatusLabel(returnInfo.status)
 
   const isVideoFile = (file) => {
     return file.type?.startsWith('video/') || /\.(mp4|webm|mov|mkv)$/i.test(file.name)
@@ -56,39 +68,53 @@ export default function SellerReturnSection({ returnInfo, isDark: isDarkProp, on
     return /\.(mp4|webm|mov|mkv)(\?.*)?$/i.test(url)
   }
 
+  const currentImages = evidenceUrls.filter((u) => !isVideoUrl(u))
+  const currentVideos = evidenceUrls.filter((u) => isVideoUrl(u))
+
   const handleImageUpload = async (e) => {
     const files = Array.from(e.target.files || [])
     if (!files.length) return
 
-    const MAX_FILES = 4
-    const remainingSlots = MAX_FILES - evidenceUrls.length
+    let availableImageSlots = 4 - currentImages.length
+    let availableVideoSlots = 1 - currentVideos.length
 
-    if (remainingSlots <= 0) {
-      toast.error('Chỉ được tải lên tối đa 4 tệp bằng chứng (ảnh / video)!')
+    if (availableImageSlots <= 0 && availableVideoSlots <= 0) {
+      toast.error('Đã đạt giới hạn tối đa (4 ảnh và 1 video bằng chứng)!')
       if (fileInputRef.current) fileInputRef.current.value = ''
       return
     }
 
-    const validFiles = []
+    const filesToUpload = []
     for (const file of files) {
       const isVid = isVideoFile(file)
-      const maxSize = isVid ? 50 * 1024 * 1024 : 10 * 1024 * 1024
-      if (file.size > maxSize) {
-        toast.error(`Tệp "${file.name}" vượt quá dung lượng tối đa (${isVid ? '50MB cho video' : '10MB cho ảnh'})!`)
+      if (isVid) {
+        if (availableVideoSlots <= 0) {
+          toast.error(`Chỉ được tải lên tối đa 1 video bằng chứng! Đã bỏ qua "${file.name}"`)
+          continue
+        }
+        if (file.size > 50 * 1024 * 1024) {
+          toast.error(`Video "${file.name}" vượt quá dung lượng tối đa 50MB!`)
+          continue
+        }
+        filesToUpload.push(file)
+        availableVideoSlots--
       } else {
-        validFiles.push(file)
+        if (availableImageSlots <= 0) {
+          toast.error(`Chỉ được tải lên tối đa 4 hình ảnh bằng chứng! Đã bỏ qua "${file.name}"`)
+          continue
+        }
+        if (file.size > 10 * 1024 * 1024) {
+          toast.error(`Ảnh "${file.name}" vượt quá dung lượng tối đa 10MB!`)
+          continue
+        }
+        filesToUpload.push(file)
+        availableImageSlots--
       }
     }
 
-    if (!validFiles.length) {
+    if (!filesToUpload.length) {
       if (fileInputRef.current) fileInputRef.current.value = ''
       return
-    }
-
-    let filesToUpload = validFiles
-    if (validFiles.length > remainingSlots) {
-      toast.error(`Chỉ được tải tối đa ${MAX_FILES} tệp. Hệ thống sẽ xử lý ${remainingSlots} tệp hợp lệ đầu tiên.`)
-      filesToUpload = validFiles.slice(0, remainingSlots)
     }
 
     try {
@@ -96,7 +122,7 @@ export default function SellerReturnSection({ returnInfo, isDark: isDarkProp, on
       const uploaded = []
       for (const file of filesToUpload) {
         const res = await fileService.uploadFile(file, 'returns')
-        const uploadedUrl = res?.url || res?.data?.url
+        const uploadedUrl = res?.url || res?.data?.url || (res?.fileName ? `/files/view/${res.fileName}` : null)
         if (uploadedUrl) {
           uploaded.push(uploadedUrl)
         }
@@ -175,7 +201,7 @@ export default function SellerReturnSection({ returnInfo, isDark: isDarkProp, on
         isDark ? 'border-amber-500/30 bg-slate-900/90' : 'border-amber-200 bg-amber-50/40',
       )}
     >
-      {/* Header */}
+      {/* 1. Header */}
       <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-stone-200 dark:border-slate-800">
         <div className="flex items-center gap-2">
           <div className="p-2 rounded-xl bg-amber-500 text-white shadow-sm">
@@ -183,7 +209,7 @@ export default function SellerReturnSection({ returnInfo, isDark: isDarkProp, on
           </div>
           <div>
             <h3 className={cn('text-sm sm:text-base font-bold', isDark ? 'text-white' : 'text-stone-900')}>
-              Xử Lý Yêu Cầu Trả Hàng & Hoàn Tiền (Return Processing)
+              Xử Lý Yêu Cầu Trả Hàng & Hoàn Tiền
             </h3>
             <p className={cn('text-[11px]', isDark ? 'text-slate-400' : 'text-stone-500')}>
               Mã yêu cầu: <span className="font-mono font-semibold">{returnInfo.id?.substring(0, 8)}...</span>
@@ -202,7 +228,24 @@ export default function SellerReturnSection({ returnInfo, isDark: isDarkProp, on
         </span>
       </div>
 
-      {/* Khi CANCELLED: Khách hàng không gửi hàng quá 3 ngày hoặc đã hủy */}
+      {/* 1.1 Lý do ban đầu khách yêu cầu đổi trả */}
+      {order?.disputeReason && (
+        <div
+          className={cn(
+            'p-3.5 rounded-xl border text-xs flex items-start gap-2.5 shadow-2xs',
+            isDark ? 'border-slate-800 bg-slate-800/40 text-slate-300' : 'border-stone-200 bg-white text-stone-700'
+          )}
+        >
+          <span className="font-bold shrink-0 text-amber-600 dark:text-amber-400">
+            Lý do khách yêu cầu đổi trả:
+          </span>
+          <span className="leading-relaxed">
+            {order.disputeReason}
+          </span>
+        </div>
+      )}
+
+      {/* 2. Khi CANCELLED: Khách không gửi hàng quá 3 ngày hoặc đã hủy */}
       {returnInfo.status === 'CANCELLED' && (
         <div className="p-4 rounded-2xl border border-stone-300 dark:border-slate-700 bg-stone-100/70 dark:bg-slate-800/40 text-xs space-y-2">
           <div className="flex items-center gap-2">
@@ -217,62 +260,48 @@ export default function SellerReturnSection({ returnInfo, isDark: isDarkProp, on
         </div>
       )}
 
-      {/* Hạn chót & Thông tin vận chuyển */}
+      {/* 3. Deadlines & Timeline info */}
+      <SellerReturnTimeline
+        returnInfo={returnInfo}
+        isSettled={isSettled}
+        isDark={isDark}
+      />
+
+      {/* 3.1 Chi phí vận chuyển 2 chiều Shop chịu do phát sinh đổi trả */}
       {returnInfo.status !== 'CANCELLED' && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
-          {returnInfo.buyerShipmentDeadline && returnInfo.status === 'WAITING_FOR_SHIPMENT' && (
-            <div
-              className={cn(
-                'p-3 rounded-xl border flex items-center gap-2.5',
-                isDark ? 'border-slate-800 bg-slate-800/40 text-slate-300' : 'border-stone-200 bg-white text-stone-700',
-              )}
-            >
-              <HiOutlineClock className="h-4 w-4 text-amber-500 shrink-0" />
-              <div>
-                <p className="text-[11px] text-stone-400 dark:text-slate-400">Hạn chót người mua gửi hàng:</p>
-                <p className="font-bold">{formatOrderDate(returnInfo.buyerShipmentDeadline)}</p>
-              </div>
-            </div>
+        <div
+          className={cn(
+            'p-3.5 rounded-xl border text-xs space-y-1.5 shadow-2xs',
+            isDark ? 'border-slate-800 bg-slate-800/40 text-slate-300' : 'border-stone-200 bg-white text-stone-700'
           )}
-
-          {returnInfo.sellerInspectionDeadline && returnInfo.status === 'RETURNED' && (
-            <div
-              className={cn(
-                'p-3 rounded-xl border flex items-center gap-2.5 sm:col-span-2',
-                isDark ? 'border-purple-500/30 bg-purple-500/10 text-purple-300' : 'border-purple-200 bg-purple-50 text-purple-900',
-              )}
-            >
-              <HiOutlineShieldCheck className="h-5 w-5 text-purple-500 shrink-0" />
-              <div>
-                <p className="font-bold text-xs">Hạn chót Shop kiểm tra hàng (72 giờ):</p>
-                <p className="text-[11px] opacity-90 mt-0.5">
-                  Bạn có thời hạn đến <strong>{formatOrderDate(returnInfo.sellerInspectionDeadline)}</strong> để kiểm tra bưu kiện. Sau thời gian này nếu Shop không phản hồi, hệ thống sẽ tự động hoàn 100% tiền cho Khách hàng.
-                </p>
-              </div>
+        >
+          <div className="flex items-center justify-between font-bold">
+            <span className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
+              <HiOutlineTruck className="h-4 w-4" />
+              Chi phí vận chuyển 2 chiều (Shop chịu do phát sinh đổi trả):
+            </span>
+            <span className="font-mono text-sm text-rose-600 dark:text-rose-400">
+              {formatOrderCurrency(Number(order?.shippingFee || 0) + Number(returnInfo?.shippingFee || order?.shippingFee || 0))}
+            </span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 border-t border-stone-100 dark:border-slate-800 text-[11px] font-mono">
+            <div className="flex justify-between">
+              <span className="font-sans text-stone-500 dark:text-slate-400">• Cước chiều đi ban đầu:</span>
+              <span>{formatOrderCurrency(order?.shippingFee || 0)}</span>
             </div>
-          )}
-
-          {returnInfo.returnTrackingCode && (
-            <div
-              className={cn(
-                'p-3 rounded-xl border flex items-center gap-2.5',
-                isDark ? 'border-slate-800 bg-slate-800/40 text-slate-300' : 'border-stone-200 bg-white text-stone-700',
-              )}
-            >
-              <HiOutlineTruck className="h-4 w-4 text-blue-500 shrink-0" />
-              <div>
-                <p className="text-[11px] text-stone-400 dark:text-slate-400">Vận đơn hoàn (GHN):</p>
-                <p className="font-mono font-bold text-amber-600 dark:text-amber-400">
-                  {returnInfo.returnTrackingCode}
-                </p>
-              </div>
+            <div className="flex justify-between">
+              <span className="font-sans text-stone-500 dark:text-slate-400">• Cước chiều về thu gom tận nhà:</span>
+              <span>{formatOrderCurrency(returnInfo?.shippingFee || order?.shippingFee || 0)}</span>
             </div>
-          )}
+          </div>
+          <p className="text-[10px] text-stone-400 dark:text-slate-500 italic pt-0.5">
+            * Khoản cước này được tự động trích từ Quỹ Ký Quỹ Gian Hàng (ShopEscrowFund) nộp về Sàn để thanh toán cho đơn vị vận chuyển GHN khi hoàn tất.
+          </p>
         </div>
       )}
 
-      {/* Hành động kiểm tra kiện hàng hoàn khi RETURNED */}
-      {returnInfo.status === 'RETURNED' && (
+      {/* 4. Hành động kiểm tra kiện hàng hoàn khi RETURNED */}
+      {returnInfo.status === 'RETURNED' && !isSettled && (
         <div className="p-4 rounded-2xl border border-purple-500/30 bg-purple-500/5 space-y-3">
           <div>
             <p className="font-bold text-xs sm:text-sm text-purple-700 dark:text-purple-300">
@@ -304,130 +333,37 @@ export default function SellerReturnSection({ returnInfo, isDark: isDarkProp, on
         </div>
       )}
 
-      {/* Khi DISPUTED: Đang chờ BQT phân xử */}
-      {returnInfo.status === 'DISPUTED' && (
-        <div className="p-4 rounded-2xl border border-rose-500/30 bg-rose-500/5 space-y-2.5 text-xs">
-          <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 font-bold">
-            <HiOutlineExclamation className="h-4 w-4" />
-            <span>Hồ sơ khiếu nại đang được Ban Quản Trị xem xét phân xử</span>
-          </div>
-          <p className="text-[11px] text-stone-600 dark:text-slate-400 leading-relaxed">
-            Tình trạng báo cáo: <strong>{returnInfo.conditionStatus}</strong>.
-            Ghi chú của Shop: <em>&ldquo;{returnInfo.conditionNote}&rdquo;</em>.
-            Tiền ký quỹ tạm thời bị giữ an toàn (HELD / DISPUTED) cho đến khi có phán quyết cuối cùng từ BQT.
-          </p>
+      {/* 5. Khi DISPUTED: Tranh chấp kiện hàng hoàn (đã Việt hóa 100%) */}
+      <SellerReturnDisputeBanner
+        returnInfo={returnInfo}
+        isOrderRefunded={isOrderRefunded}
+        isVideoUrl={isVideoUrl}
+      />
 
-          {returnInfo.sellerEvidenceUrls && (
-            <div className="pt-1 space-y-1">
-              <span className="text-[11px] font-semibold text-rose-500">Bằng chứng Shop đã cung cấp:</span>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {returnInfo.sellerEvidenceUrls.split(',').filter(Boolean).map((url, i) => {
-                  const isVid = isVideoUrl(url.trim())
-                  return (
-                    <a
-                      key={i}
-                      href={url.trim()}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="relative rounded-xl border border-rose-300 dark:border-rose-900/50 overflow-hidden h-20 bg-stone-900/10 block group"
-                    >
-                      {isVid ? (
-                        <video src={url.trim()} className="w-full h-full object-cover group-hover:scale-105 transition-transform" muted />
-                      ) : (
-                        <img src={url.trim()} alt={`Bằng chứng ${i + 1}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                      )}
-                    </a>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-        </div>
+      {/* 6. Khi COMPLETED: Kết quả giải ngân / hoàn tiền */}
+      {returnInfo.status === 'COMPLETED' && (
+        <SellerReturnSettlementBanner settlement={returnInfo.settlement} />
       )}
 
-      {/* Khi COMPLETED: Hiển thị phán quyết kết quả hoàn tiền / giải ngân */}
-      {returnInfo.status === 'COMPLETED' && (() => {
-        const s = returnInfo.settlement
-        if (s && s.settlementType) {
-          if (s.settlementType === 'PARTIAL_SPLIT') {
-            return (
-              <div className="p-3.5 rounded-xl border border-amber-500/30 bg-amber-500/5 text-xs space-y-2">
-                <p className="font-bold text-amber-600 dark:text-amber-400">
-                  Phán quyết chia tiền: Khách {s.buyerPercentage}% — Shop {s.sellerPercentage}%
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-                    <p className="text-[11px] text-emerald-500 font-medium">Shop nhận ({s.sellerPercentage}%)</p>
-                    <p className="font-mono font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
-                      {formatOrderCurrency(s.sellerReleaseAmount)}
-                    </p>
-                  </div>
-                  <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                    <p className="text-[11px] text-blue-500 font-medium">Hoàn khách ({s.buyerPercentage}%)</p>
-                    <p className="font-mono font-bold text-blue-600 dark:text-blue-400 mt-0.5">
-                      {formatOrderCurrency(s.buyerRefundAmount)}
-                    </p>
-                  </div>
-                </div>
-                {s.settlementNote && (
-                  <p className="text-[11px] text-stone-500 dark:text-slate-400 italic">
-                    Ghi chú BQT: &ldquo;{s.settlementNote}&rdquo;
-                  </p>
-                )}
-              </div>
-            )
-          }
-          if (s.settlementType === 'FULL_RELEASE') {
-            return (
-              <div className="p-3.5 rounded-xl border border-emerald-500/30 bg-emerald-500/5 text-xs space-y-1">
-                <p className="font-bold text-emerald-600 dark:text-emerald-400">
-                  Phán quyết BQT: Giải ngân toàn bộ cho Shop
-                </p>
-                <p className="text-[11px] text-stone-500 dark:text-slate-400 leading-relaxed">
-                  Toàn bộ số tiền <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">{formatOrderCurrency(s.sellerReleaseAmount)}</span> đã được giải ngân vào ví người bán của bạn.
-                </p>
-              </div>
-            )
-          }
-          return (
-            <div className="p-3.5 rounded-xl border border-stone-300 dark:border-slate-700 bg-stone-50 dark:bg-slate-800/40 text-xs space-y-1">
-              <p className="font-bold text-stone-700 dark:text-slate-300">
-                Phán quyết BQT: Hoàn tiền toàn bộ cho Khách hàng
-              </p>
-              <p className="text-[11px] text-stone-500 dark:text-slate-400 leading-relaxed">
-                Sau khi xem xét bằng chứng, Ban Quản Trị đã hoàn 100% tiền đơn hàng cho Khách.
-              </p>
-            </div>
-          )
-        }
-        return (
-          <div className="p-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5 text-xs space-y-1">
-            <p className="font-bold text-emerald-600 dark:text-emerald-400">Đã hoàn tiền</p>
-            <p className="text-[11px] text-stone-500 dark:text-slate-400 leading-relaxed">
-              Quy trình trả hàng và hoàn tiền đã kết thúc thành công.
-            </p>
-          </div>
-        )
-      })()}
-
-      {/* Modal Hoàn Tất Nhận Hàng */}
+      {/* 7. Modal Hoàn tất kiểm tra hàng đạt */}
       <SellerReturnCompleteModal
         isOpen={showCompleteModal}
         onClose={() => setShowCompleteModal(false)}
-        isDark={isDark}
         submitting={submitting}
         conditionNote={conditionNote}
         setConditionNote={setConditionNote}
         isRestocked={isRestocked}
         setIsRestocked={setIsRestocked}
         onSubmit={handleSubmitComplete}
+        isDark={isDark}
+        order={order}
+        returnInfo={returnInfo}
       />
 
-      {/* Modal Khiếu Nại Kiện Hàng */}
+      {/* 8. Modal Khiếu nại kiện hàng hoàn */}
       <SellerReturnDisputeModal
         isOpen={showDisputeModal}
         onClose={() => setShowDisputeModal(false)}
-        isDark={isDark}
         submitting={submitting}
         disputeCondition={disputeCondition}
         setDisputeCondition={setDisputeCondition}
@@ -438,7 +374,9 @@ export default function SellerReturnSection({ returnInfo, isDark: isDarkProp, on
         uploadingImage={uploadingImage}
         fileInputRef={fileInputRef}
         onImageUpload={handleImageUpload}
+        handleImageUpload={handleImageUpload}
         onSubmit={handleSubmitDispute}
+        isDark={isDark}
       />
     </motion.div>
   )

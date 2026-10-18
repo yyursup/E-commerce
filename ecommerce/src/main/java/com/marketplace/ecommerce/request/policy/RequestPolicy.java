@@ -15,6 +15,8 @@ import com.marketplace.ecommerce.shop.repository.ShopRepository;
 import com.marketplace.ecommerce.order.entity.Order;
 import com.marketplace.ecommerce.order.repository.OrderRepository;
 import com.marketplace.ecommerce.order.valueObjects.OrderStatus;
+import com.marketplace.ecommerce.request.dto.request.CreateAppealRequest;
+import com.marketplace.ecommerce.request.entity.Report;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -138,5 +140,21 @@ public class RequestPolicy {
         }
 
         return new ApproveSellerContext(user, sellerDetail, shopName.trim());
+    }
+
+    public void validateAppealRequest(CreateAppealRequest req) {
+        if (req == null) {
+            throw new CustomException("Dữ liệu kháng cáo không hợp lệ");
+        }
+        if (req.getTargetType() == TargetType.ORDER) {
+            throw new CustomException("Phán quyết của Quản trị viên đối với khiếu nại đơn hàng là quyết định cuối cùng, không áp dụng kháng cáo.");
+        }
+        if (req.getReportId() != null) {
+            Report report = reportRepository.findById(req.getReportId())
+                    .orElseThrow(() -> new CustomException("Không tìm thấy khiếu nại vi phạm gốc"));
+            if (report.getTargetType() == TargetType.ORDER) {
+                throw new CustomException("Phán quyết của Quản trị viên đối với khiếu nại đơn hàng là quyết định cuối cùng, không áp dụng kháng cáo.");
+            }
+        }
     }
 }

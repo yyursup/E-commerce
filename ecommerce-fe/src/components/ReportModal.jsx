@@ -7,6 +7,8 @@ import reportService from '../services/report';
 import fileService from '../services/fileService';
 import toast from 'react-hot-toast';
 
+import { isVideoUrl, isVideoFile } from '../lib/mediaUtils';
+
 export default function ReportModal({ isOpen, onClose, targetId, targetName }) {
     const isDark = useThemeStore((s) => s.theme) === 'dark';
     const [loading, setLoading] = useState(false);
@@ -26,25 +28,49 @@ export default function ReportModal({ isOpen, onClose, targetId, targetName }) {
         { value: 'OTHER', label: 'Khác' },
     ];
 
+    const currentImages = formData.evidenceUrls.filter((u) => !isVideoUrl(u));
+    const currentVideos = formData.evidenceUrls.filter((u) => isVideoUrl(u));
+    const imageCount = currentImages.length;
+    const videoCount = currentVideos.length;
+
     const handleImageUpload = async (e) => {
         const files = Array.from(e.target.files || []);
         if (!files.length) return;
 
-        const MAX_IMAGES = 4;
-        const remainingSlots = MAX_IMAGES - formData.evidenceUrls.length;
+        let availableImageSlots = 4 - imageCount;
+        let availableVideoSlots = 1 - videoCount;
 
-        if (remainingSlots <= 0) {
-            toast.error('Chỉ được tải lên tối đa 4 hình ảnh bằng chứng!');
+        if (availableImageSlots <= 0 && availableVideoSlots <= 0) {
+            toast.error('Đã đạt giới hạn tối đa (4 ảnh và 1 video bằng chứng)!');
             if (fileInputRef.current) fileInputRef.current.value = '';
             return;
         }
 
         const validFiles = [];
         for (const file of files) {
-            if (file.size > 10 * 1024 * 1024) {
-                toast.error(`Ảnh "${file.name}" vượt quá dung lượng tối đa 10MB!`);
-            } else {
+            const isVid = isVideoFile(file);
+            if (isVid) {
+                if (availableVideoSlots <= 0) {
+                    toast.error(`Chỉ được tải lên tối đa 1 video bằng chứng! Đã bỏ qua "${file.name}"`);
+                    continue;
+                }
+                if (file.size > 50 * 1024 * 1024) {
+                    toast.error(`Video "${file.name}" vượt quá dung lượng tối đa 50MB!`);
+                    continue;
+                }
                 validFiles.push(file);
+                availableVideoSlots--;
+            } else {
+                if (availableImageSlots <= 0) {
+                    toast.error(`Chỉ được tải lên tối đa 4 hình ảnh bằng chứng! Đã bỏ qua "${file.name}"`);
+                    continue;
+                }
+                if (file.size > 10 * 1024 * 1024) {
+                    toast.error(`Ảnh "${file.name}" vượt quá dung lượng tối đa 10MB!`);
+                    continue;
+                }
+                validFiles.push(file);
+                availableImageSlots--;
             }
         }
 
@@ -53,16 +79,10 @@ export default function ReportModal({ isOpen, onClose, targetId, targetName }) {
             return;
         }
 
-        let filesToUpload = validFiles;
-        if (validFiles.length > remainingSlots) {
-            toast.error(`Chỉ được tải tối đa ${MAX_IMAGES} ảnh. Hệ thống chỉ xử lý ${remainingSlots} ảnh hợp lệ đầu tiên.`);
-            filesToUpload = validFiles.slice(0, remainingSlots);
-        }
-
         try {
             setUploadingImage(true);
             const uploaded = [];
-            for (const file of filesToUpload) {
+            for (const file of validFiles) {
                 const res = await fileService.uploadFile(file, 'reports');
                 const uploadedUrl = res?.url || res?.data?.url;
                 if (uploadedUrl) {
@@ -75,13 +95,13 @@ export default function ReportModal({ isOpen, onClose, targetId, targetName }) {
                     ...prev,
                     evidenceUrls: [...prev.evidenceUrls, ...uploaded],
                 }));
-                toast.success(`Đã tải lên ${uploaded.length} ảnh thành công!`);
+                toast.success(`Đã tải lên ${uploaded.length} tệp thành công!`);
             } else {
-                toast.error('Không nhận được đường dẫn ảnh từ máy chủ.');
+                toast.error('Không nhận được đường dẫn tệp từ máy chủ.');
             }
         } catch (err) {
-            console.error('Upload image error:', err);
-            toast.error(err?.message || 'Lỗi khi tải ảnh lên.');
+            console.error('Upload media error:', err);
+            toast.error(err?.message || 'Lỗi khi tải tệp lên.');
         } finally {
             setUploadingImage(false);
             if (fileInputRef.current) {
@@ -201,13 +221,15 @@ export default function ReportModal({ isOpen, onClose, targetId, targetName }) {
 
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between">
-                                    <label className="text-sm font-medium">Hình ảnh bằng chứng ({formData.evidenceUrls.length}/4)</label>
-                                    <span className="text-[11px] text-stone-400">Tối đa 4 ảnh, 10MB / ảnh</span>
+                                    <label className="text-sm font-medium">Bằng chứng hình ảnh & video</label>
+                                    <span className="text-[11px] font-mono text-stone-400">
+                                        {imageCount}/4 ảnh • {videoCount}/1 video
+                                    </span>
                                 </div>
                                 <input
                                     type="file"
                                     ref={fileInputRef}
-                                    accept="image/*"
+                                    accept="image/*,video/*"
                                     multiple
                                     onChange={handleImageUpload}
                                     className="hidden"
@@ -215,48 +237,64 @@ export default function ReportModal({ isOpen, onClose, targetId, targetName }) {
 
                                 {formData.evidenceUrls.length > 0 && (
                                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
-                                        {formData.evidenceUrls.map((url, idx) => (
-                                            <div key={idx} className="relative rounded-xl border border-stone-200 dark:border-slate-800 overflow-hidden group h-24 sm:h-28 bg-stone-900/10">
-                                                <img
-                                                    src={url}
-                                                    alt={`Bằng chứng ${idx + 1}`}
-                                                    className="w-full h-full object-cover rounded-xl"
-                                                />
-                                                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                                                    <a
-                                                        href={url}
-                                                        target="_blank"
-                                                        rel="noreferrer"
-                                                        className="p-1.5 rounded-lg bg-white text-stone-900 hover:bg-stone-100 text-xs font-bold shadow"
-                                                        title="Xem ảnh gốc"
-                                                    >
-                                                        <HiOutlineExternalLink className="h-4 w-4" />
-                                                    </a>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setFormData((prev) => ({
-                                                            ...prev,
-                                                            evidenceUrls: prev.evidenceUrls.filter((_, i) => i !== idx),
-                                                        }))}
-                                                        className="p-1.5 rounded-lg bg-red-600 text-white hover:bg-red-700 text-xs font-bold shadow"
-                                                        title="Xóa ảnh"
-                                                    >
-                                                        <HiOutlineTrash className="h-4 w-4" />
-                                                    </button>
+                                        {formData.evidenceUrls.map((url, idx) => {
+                                            const isVid = isVideoUrl(url);
+                                            return (
+                                                <div key={idx} className="relative rounded-xl border border-stone-200 dark:border-slate-800 overflow-hidden group h-24 sm:h-28 bg-stone-900/10">
+                                                    {isVid ? (
+                                                        <>
+                                                            <video
+                                                                src={url}
+                                                                className="w-full h-full object-cover rounded-xl"
+                                                                muted
+                                                            />
+                                                            <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-[8px] font-bold bg-red-600 text-white z-10">
+                                                                VIDEO
+                                                            </span>
+                                                        </>
+                                                    ) : (
+                                                        <img
+                                                            src={url}
+                                                            alt={`Bằng chứng ${idx + 1}`}
+                                                            className="w-full h-full object-cover rounded-xl"
+                                                        />
+                                                    )}
+                                                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                                        <a
+                                                            href={url}
+                                                            target="_blank"
+                                                            rel="noreferrer"
+                                                            className="p-1.5 rounded-lg bg-white text-stone-900 hover:bg-stone-100 text-xs font-bold shadow"
+                                                            title={isVid ? 'Xem video' : 'Xem ảnh gốc'}
+                                                        >
+                                                            <HiOutlineExternalLink className="h-4 w-4" />
+                                                        </a>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setFormData((prev) => ({
+                                                                ...prev,
+                                                                evidenceUrls: prev.evidenceUrls.filter((_, i) => i !== idx),
+                                                            }))}
+                                                            className="p-1.5 rounded-lg bg-red-600 text-white hover:bg-red-700 text-xs font-bold shadow"
+                                                            title="Xóa tệp"
+                                                        >
+                                                            <HiOutlineTrash className="h-4 w-4" />
+                                                        </button>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        ))}
+                                            );
+                                        })}
                                     </div>
                                 )}
 
-                                {formData.evidenceUrls.length >= 4 ? (
+                                {imageCount >= 4 && videoCount >= 1 ? (
                                     <div
                                         className={cn(
                                             'w-full border border-dashed rounded-xl p-3 text-center transition',
                                             isDark ? 'border-slate-800 bg-slate-900/40 text-slate-400' : 'border-stone-200 bg-stone-50 text-stone-500'
                                         )}
                                     >
-                                        <span className="text-xs font-medium">Đã đạt giới hạn tối đa 4/4 ảnh bằng chứng</span>
+                                        <span className="text-xs font-medium">Đã đạt giới hạn tối đa 4 ảnh và 1 video bằng chứng</span>
                                     </div>
                                 ) : (
                                     <div
@@ -272,15 +310,15 @@ export default function ReportModal({ isOpen, onClose, targetId, targetName }) {
                                         {uploadingImage ? (
                                             <div className="flex flex-col items-center justify-center gap-2 py-1">
                                                 <div className="h-5 w-5 animate-spin rounded-full border-2 border-red-500 border-r-transparent" />
-                                                <span className="text-xs font-medium text-red-500">Đang tải ảnh lên...</span>
+                                                <span className="text-xs font-medium text-red-500">Đang tải tệp lên...</span>
                                             </div>
                                         ) : (
                                             <div className="flex flex-col items-center justify-center gap-1 py-1">
                                                 <HiOutlineUpload className="h-6 w-6 text-red-500" />
                                                 <span className="text-xs font-semibold">
-                                                    {formData.evidenceUrls.length > 0 ? '+ Thêm ảnh bằng chứng' : 'Bấm để tải ảnh bằng chứng lên'}
+                                                    {formData.evidenceUrls.length > 0 ? '+ Thêm tệp bằng chứng' : 'Bấm để tải ảnh/video bằng chứng lên'}
                                                 </span>
-                                                <span className="text-[11px] text-stone-400">Hỗ trợ JPG, PNG, WEBP (Tối đa 4 ảnh, 10MB / ảnh)</span>
+                                                <span className="text-[11px] text-stone-400">Ảnh ≤ 10MB (tối đa 4 ảnh) • Video ≤ 50MB (tối đa 1 video)</span>
                                             </div>
                                         )}
                                     </div>

@@ -1,5 +1,6 @@
-import { HiOutlineEye } from 'react-icons/hi'
+import { HiOutlineEye, HiOutlinePlay } from 'react-icons/hi'
 import { cn } from '../../../../lib/cn'
+import { isVideoUrl } from '../../../../lib/mediaUtils'
 
 export default function AdminReportSingleClaim({
   detailModal,
@@ -10,6 +11,45 @@ export default function AdminReportSingleClaim({
   setPreviewImage,
 }) {
   const desc = detailModal.data?.description || detailModal.rawItem?.description || 'Không có mô tả chi tiết'
+
+  const renderSingleMediaItem = (imgUrl, altText, borderClass) => {
+    const isVid = isVideoUrl(imgUrl)
+    return (
+      <div
+        onClick={() => setPreviewImage(imgUrl)}
+        className={cn(
+          'relative group aspect-square rounded-2xl overflow-hidden border bg-stone-900/10 cursor-pointer shadow-xs',
+          borderClass,
+        )}
+      >
+        {isVid ? (
+          <div className="relative w-full h-full bg-black flex items-center justify-center">
+            <video src={imgUrl} className="w-full h-full object-cover" muted playsInline />
+            <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+              <span className="p-2 rounded-full bg-black/60 text-white backdrop-blur-xs">
+                <HiOutlinePlay className="h-5 w-5 fill-white/80" />
+              </span>
+            </div>
+            <span className="absolute top-1.5 left-1.5 px-2 py-0.5 rounded text-[9px] font-bold bg-rose-600 text-white shadow">
+              VIDEO
+            </span>
+          </div>
+        ) : (
+          <img
+            src={imgUrl}
+            alt={altText}
+            className="h-full w-full object-cover group-hover:scale-105 transition-transform"
+            onError={(e) => {
+              e.currentTarget.style.display = 'none'
+            }}
+          />
+        )}
+        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+          <HiOutlineEye className="h-6 w-6 text-white" />
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-4">
@@ -41,22 +81,8 @@ export default function AdminReportSingleClaim({
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
             {evImgs.map((imgUrl, idx) => (
-              <div
-                key={idx}
-                onClick={() => setPreviewImage(imgUrl)}
-                className="relative group aspect-square rounded-2xl overflow-hidden border border-rose-500/25 bg-stone-900/10 cursor-pointer shadow-xs"
-              >
-                <img
-                  src={imgUrl}
-                  alt={`Bằng chứng vi phạm ${idx + 1}`}
-                  className="h-full w-full object-cover group-hover:scale-105 transition-transform"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none'
-                  }}
-                />
-                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <HiOutlineEye className="h-6 w-6 text-white" />
-                </div>
+              <div key={idx}>
+                {renderSingleMediaItem(imgUrl, `Bằng chứng vi phạm ${idx + 1}`, 'border-rose-500/25')}
               </div>
             ))}
           </div>
@@ -75,22 +101,8 @@ export default function AdminReportSingleClaim({
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
             {covImgs.map((imgUrl, idx) => (
-              <div
-                key={idx}
-                onClick={() => setPreviewImage(imgUrl)}
-                className="relative group aspect-square rounded-2xl overflow-hidden border border-blue-500/25 bg-stone-900/10 cursor-pointer shadow-xs"
-              >
-                <img
-                  src={imgUrl}
-                  alt={`Minh họa shop ${idx + 1}`}
-                  className="h-full w-full object-cover group-hover:scale-105 transition-transform"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none'
-                  }}
-                />
-                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <HiOutlineEye className="h-6 w-6 text-white" />
-                </div>
+              <div key={idx}>
+                {renderSingleMediaItem(imgUrl, `Minh họa shop ${idx + 1}`, 'border-blue-500/25')}
               </div>
             ))}
           </div>

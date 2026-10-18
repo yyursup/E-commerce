@@ -8,6 +8,8 @@ import {
 } from 'react-icons/hi'
 import { cn } from '../../../../lib/cn'
 
+import { isVideoUrl } from '../../../../lib/mediaUtils'
+
 export default function SellerReturnDisputeModal({
   isOpen,
   onClose,
@@ -22,12 +24,13 @@ export default function SellerReturnDisputeModal({
   uploadingImage,
   fileInputRef,
   onImageUpload,
+  handleImageUpload,
   onSubmit,
 }) {
-  const isVideoUrl = (url) => {
-    if (!url) return false
-    return /\.(mp4|webm|mov|mkv)(\?.*)?$/i.test(url)
-  }
+  const uploadHandler = onImageUpload || handleImageUpload
+  const imageCount = (evidenceUrls || []).filter((url) => !isVideoUrl(url)).length
+  const videoCount = (evidenceUrls || []).filter((url) => isVideoUrl(url)).length
+  const canUploadMore = imageCount < 4 || videoCount < 1
 
   return (
     <AnimatePresence>
@@ -101,7 +104,7 @@ export default function SellerReturnDisputeModal({
                     Ảnh / Video bằng chứng thực tế: <span className="text-rose-500">*</span>
                   </label>
                   <span className="text-[11px] text-stone-400">
-                    {evidenceUrls.length}/4 tệp (Ảnh tối đa 10MB, Video tối đa 50MB)
+                    {imageCount}/4 ảnh • {videoCount}/1 video (Ảnh ≤ 10MB, Video ≤ 50MB)
                   </span>
                 </div>
 
@@ -114,7 +117,12 @@ export default function SellerReturnDisputeModal({
                         className="relative rounded-xl border overflow-hidden h-24 bg-stone-900/10 group dark:border-slate-700 border-stone-200"
                       >
                         {isVid ? (
-                          <video src={url} className="w-full h-full object-cover" muted />
+                          <div className="relative w-full h-full bg-black flex items-center justify-center">
+                            <video src={url} className="w-full h-full object-cover" muted />
+                            <span className="absolute top-1 left-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-600 text-white shadow">
+                              VIDEO
+                            </span>
+                          </div>
                         ) : (
                           <img src={url} alt={`Evidence ${i + 1}`} className="w-full h-full object-cover" />
                         )}
@@ -139,20 +147,24 @@ export default function SellerReturnDisputeModal({
                     )
                   })}
 
-                  {evidenceUrls.length < 4 && (
+                  {canUploadMore && (
                     <button
                       type="button"
                       disabled={uploadingImage}
                       onClick={() => fileInputRef.current?.click()}
                       className={cn(
-                        'h-24 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-1 transition text-[11px] font-medium disabled:opacity-50',
+                        'h-24 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-1.5 transition text-[11px] font-medium disabled:opacity-50 cursor-pointer',
                         isDark
                           ? 'border-slate-700 hover:border-rose-500 text-slate-400 hover:text-rose-400'
                           : 'border-stone-300 hover:border-rose-500 text-stone-500 hover:text-rose-600',
                       )}
                     >
-                      <HiOutlineUpload className="h-5 w-5" />
-                      <span>{uploadingImage ? 'Đang tải...' : 'Tải tệp lên'}</span>
+                      {uploadingImage ? (
+                        <div className="h-5 w-5 animate-spin rounded-full border-2 border-rose-500 border-t-transparent" />
+                      ) : (
+                        <HiOutlineUpload className="h-5 w-5" />
+                      )}
+                      <span>{uploadingImage ? 'Đang tải lên...' : 'Tải tệp lên'}</span>
                     </button>
                   )}
                 </div>
@@ -162,7 +174,7 @@ export default function SellerReturnDisputeModal({
                   type="file"
                   accept="image/*,video/*"
                   multiple
-                  onChange={onImageUpload}
+                  onChange={uploadHandler}
                   className="hidden"
                 />
               </div>

@@ -94,7 +94,7 @@ export default function OrderSummaryCard({
         )}
 
         {/* Total Price */}
-        <div className="border-t pt-3">
+        <div className="border-t pt-3 space-y-1.5">
           <div className="flex justify-between items-baseline">
             <span className={cn('text-lg font-semibold', isDark ? 'text-white' : 'text-stone-900')}>
               Tổng cộng
@@ -103,6 +103,22 @@ export default function OrderSummaryCard({
               {formatCurrency(order.total)}
             </span>
           </div>
+
+          {(order.status === 'REFUNDED' || order.returnInfo?.status === 'COMPLETED') && (() => {
+            const isReturnProcess = Boolean(order.returnInfo && order.returnInfo.status !== 'CANCELLED')
+            const shippingFee = Number(order.shippingFee || 0)
+            const orderTotal = Number(order.total || 0)
+            const actualRefund = isReturnProcess ? orderTotal : Math.max(0, orderTotal - shippingFee)
+
+            return (
+              <div className="flex justify-between items-center text-xs pt-1 border-t border-dashed border-stone-200 dark:border-slate-800 text-blue-600 dark:text-blue-400 font-medium">
+                <span>Tiền hoàn thực nhận vào ví:</span>
+                <span className="font-mono font-bold text-sm">
+                  {formatCurrency(actualRefund)}
+                </span>
+              </div>
+            )
+          })()}
         </div>
 
         {/* Payment Status / Escrow Protection Section */}
@@ -111,19 +127,43 @@ export default function OrderSummaryCard({
             <h3 className={cn('text-sm font-semibold mb-3', isDark ? 'text-slate-300' : 'text-stone-700')}>
               Trạng thái hoàn tiền
             </h3>
-            <div className="flex items-center gap-3 rounded-xl p-4 bg-blue-500/10 border border-blue-500/25">
-              <div className="p-2 rounded-full bg-blue-500/15 shrink-0 text-blue-500">
-                <HiOutlineShieldCheck className="h-4 w-4" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">
-                  Đã hoàn tiền về ví số dư tài khoản
-                </p>
-                <p className={cn('mt-0.5 text-xs', isDark ? 'text-slate-400' : 'text-stone-500')}>
-                  Số tiền hoàn: <strong className="text-blue-600 dark:text-blue-400">{formatCurrency(order.total)}</strong>
-                </p>
-              </div>
-            </div>
+            {(() => {
+              const isReturnProcess = Boolean(order.returnInfo && order.returnInfo.status !== 'CANCELLED')
+              const shippingFee = Number(order.shippingFee || 0)
+              const orderTotal = Number(order.total || 0)
+              const actualRefund = isReturnProcess ? orderTotal : Math.max(0, orderTotal - shippingFee)
+
+              return (
+                <div className="flex items-start gap-3 rounded-xl p-4 bg-blue-500/10 border border-blue-500/25">
+                  <div className="p-2 rounded-full bg-blue-500/15 shrink-0 text-blue-500 mt-0.5">
+                    <HiOutlineShieldCheck className="h-5 w-5" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">
+                      {isReturnProcess
+                        ? 'Đã hoàn 100% tiền đơn hàng về ví số dư tài khoản'
+                        : 'Đã hoàn tiền hàng về ví số dư tài khoản'}
+                    </p>
+                    <p className={cn('text-xs', isDark ? 'text-slate-300' : 'text-stone-700')}>
+                      Số tiền hoàn thực tế:{' '}
+                      <strong className="text-blue-600 dark:text-blue-400 font-mono text-sm">
+                        {formatCurrency(actualRefund)}
+                      </strong>
+                    </p>
+                    {!isReturnProcess && shippingFee > 0 && (
+                      <p className={cn('text-[11px] leading-relaxed', isDark ? 'text-slate-400' : 'text-stone-500')}>
+                        * Cước vận chuyển chiều đi ({formatCurrency(shippingFee)}) không hoàn lại do Quý khách tiếp tục giữ sản phẩm (chuyến giao hàng của bưu tá GHN đã hoàn thành nhiệm vụ).
+                      </p>
+                    )}
+                    {isReturnProcess && (
+                      <p className={cn('text-[11px] leading-relaxed', isDark ? 'text-slate-400' : 'text-stone-500')}>
+                        * Đã bồi hoàn 100% gồm cả tiền hàng và cước vận chuyển ban đầu do đơn hàng đã hoàn tất quy trình trả hàng cho Shop.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )
+            })()}
           </div>
         ) : !['PENDING_PAYMENT', 'CANCELLED'].includes(order.status) && (
           <div className="border-t pt-4 mt-4">

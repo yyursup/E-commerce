@@ -384,4 +384,43 @@ class ShopEscrowFundServiceImplTest {
                 assertEquals(EscrowFundStatus.ACTIVE, fund.getStatus());
                 assertEquals(ShopStatus.ACTIVE, shop.getStatus());
         }
+
+        @Test
+        @DisplayName("deductReturnDisputeShippingFees: Trích Quỹ Shop chi trả cước 2 chiều bù cho Sàn/GHN")
+        void deductReturnDisputeShippingFees_Success_DeductsBothLegsAndCreditsPlatform() {
+                UUID returnId = UUID.randomUUID();
+                com.marketplace.ecommerce.order.entity.OrderReturn orderReturn = com.marketplace.ecommerce.order.entity.OrderReturn.builder()
+                                .id(returnId)
+                                .order(order)
+                                .shippingFee(new BigDecimal("35000"))
+                                .isReturnShippingDeducted(false)
+                                .build();
+
+                order.setShippingFee(new BigDecimal("30000"));
+                fund.setBalance(new BigDecimal("10000000"));
+
+                Wallet platformEscrowWallet = Wallet.builder()
+                                .id(UUID.randomUUID())
+                                .walletType(com.marketplace.ecommerce.wallet.valueObjects.WalletType.ESCROW)
+                                .availableBalance(BigDecimal.ZERO)
+                                .lockedBalance(BigDecimal.ZERO)
+                                .build();
+
+                when(transactionRepository.existsByDedupeKey(any())).thenReturn(false);
+                when(shopEscrowFundRepository.findByShopIdForUpdate(shopId)).thenReturn(Optional.of(fund));
+                when(walletRepository.findSystemWalletForUpdate(com.marketplace.ecommerce.wallet.valueObjects.WalletType.ESCROW))
+                                .thenReturn(Optional.of(platformEscrowWallet));
+                when(shopEscrowFundRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+                when(trustLevelConfigService.getConfigByStarLevel(anyInt()))
+                                .thenReturn(TrustLevelConfig.builder().minDeposit(new BigDecimal("5000000")).build());
+
+                shopEscrowFundService.deductReturnDisputeShippingFees(orderReturn);
+
+                assertEquals(new BigDecimal("9935000"), fund.getBalance());
+                assertEquals(new BigDecimal("65000"), platformEscrowWallet.getAvailableBalance());
+                assertTrue(orderReturn.getIsReturnShippingDeducted());
+
+                verify(shopEscrowTransactionRepository).save(any(ShopEscrowTransaction.class));
+                verify(transactionRepository).save(any(Transaction.class));
+        }
 }

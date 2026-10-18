@@ -51,6 +51,13 @@ import com.marketplace.ecommerce.shop.service.ShopEscrowFundService;
 import com.marketplace.ecommerce.shop.valueObjects.ShopStatus;
 import com.marketplace.ecommerce.request.valueObjects.DisputePolicyClause;
 import com.marketplace.ecommerce.request.dto.response.DisputePolicyClauseResponse;
+import com.marketplace.ecommerce.auth.entity.User;
+import com.marketplace.ecommerce.auth.repository.UserRepository;
+import com.marketplace.ecommerce.notification.entity.Notification;
+import com.marketplace.ecommerce.notification.repository.NotificationRepository;
+import com.marketplace.ecommerce.notification.valueObjects.NotificationChannelType;
+import com.marketplace.ecommerce.notification.valueObjects.NotificationStatus;
+import com.marketplace.ecommerce.notification.valueObjects.NotificationType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -60,6 +67,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -81,6 +89,8 @@ public class ReportServiceImpl implements ReportService {
     private final EscrowService escrowService;
     private final OrderReturnService orderReturnService;
     private final ShopEscrowFundService shopEscrowFundService;
+    private final NotificationRepository notificationRepository;
+    private final UserRepository userRepository;
 
     @Override
     @Transactional
@@ -269,6 +279,19 @@ public class ReportServiceImpl implements ReportService {
         requestRepository.save(r);
         reportRepository.save(report);
 
+        // Gửi thông báo In-App cho Người bán và Người mua
+        String orderCodeSellerWins = order.getOrderNumber() != null ? order.getOrderNumber() : orderId.toString();
+        User buyerSellerWins = getOrderBuyerUser(order, report);
+        User sellerSellerWins = getOrderSellerUser(order);
+        sendDisputeNotification(sellerSellerWins,
+                "Khiếu nại kiện hoàn thành công - Giải ngân cho gian hàng",
+                "Ban Quản Trị đã chấp thuận khiếu nại kiện hoàn đơn hàng #" + orderCodeSellerWins + ". Tiền thanh toán đã được giải ngân cho gian hàng.",
+                orderId, report.getId());
+        sendDisputeNotification(buyerSellerWins,
+                "Kết quả phân xử khiếu nại kiện hoàn đơn hàng",
+                "Ban Quản Trị đã giải quyết khiếu nại kiện hoàn đơn hàng #" + orderCodeSellerWins + " với phán quyết chấp thuận giải trình từ phía gian hàng.",
+                orderId, report.getId());
+
         log.info("Admin resolved seller return dispute (Seller Wins) for orderId={}, released to shop", orderId);
     }
 
@@ -315,6 +338,19 @@ public class ReportServiceImpl implements ReportService {
         requestRepository.save(r);
         reportRepository.save(report);
 
+        // Gửi thông báo In-App cho Người mua và Người bán
+        String orderCodeBuyerWins = order.getOrderNumber() != null ? order.getOrderNumber() : orderId.toString();
+        User buyerBuyerWins = getOrderBuyerUser(order, report);
+        User sellerBuyerWins = getOrderSellerUser(order);
+        sendDisputeNotification(buyerBuyerWins,
+                "Khiếu nại kiện hoàn: Chấp thuận bồi hoàn cho người mua",
+                "Ban Quản Trị đã phân xử chấp thuận bồi hoàn đơn hàng #" + orderCodeBuyerWins + " cho bạn. Tiền thanh toán ký quỹ đã được hoàn trả.",
+                orderId, report.getId());
+        sendDisputeNotification(sellerBuyerWins,
+                "Kết quả phân xử khiếu nại kiện hoàn đơn hàng",
+                "Ban Quản Trị đã bác bỏ khiếu nại kiện hoàn đơn hàng #" + orderCodeBuyerWins + ". Tiền thanh toán đã được hoàn trả lại cho người mua.",
+                orderId, report.getId());
+
         log.info("Admin resolved seller return dispute (Buyer Wins) for orderId={}, refunded buyer", orderId);
     }
 
@@ -357,6 +393,21 @@ public class ReportServiceImpl implements ReportService {
                             }
                         }
                     });
+                }
+
+                if (order != null) {
+                    String orderCode = order.getOrderNumber() != null ? order.getOrderNumber() : orderId.toString();
+                    User buyer = getOrderBuyerUser(order, report);
+                    User seller = getOrderSellerUser(order);
+                    String clauseInfo = report.getPolicyClauseTitle() != null ? " (Căn cứ: " + report.getPolicyClauseTitle() + ")" : "";
+                    sendDisputeNotification(buyer,
+                            "Khiếu nại đơn hàng bị từ chối",
+                            "Khiếu nại của bạn cho đơn hàng #" + orderCode + " đã bị Ban Quản Trị từ chối" + clauseInfo + ". Lý do: " + (note != null ? note : "Không đáp ứng quy định khiếu nại"),
+                            order.getId(), report.getId());
+                    sendDisputeNotification(seller,
+                            "Khiếu nại đơn hàng được bác bỏ - Giải ngân thành công",
+                            "Ban Quản Trị đã bác bỏ khiếu nại của người mua cho đơn hàng #" + orderCode + "" + clauseInfo + ". Tiền thanh toán đã được giải ngân cho gian hàng.",
+                            order.getId(), report.getId());
                 }
             }
         }
@@ -411,6 +462,32 @@ public class ReportServiceImpl implements ReportService {
                             ret.getId(), ret.getStatus(), orderId);
                 }
             }
+
+            orderRepository.findById(orderId).ifPresent(order -> {
+                String orderCode = order.getOrderNumber() != null ? order.getOrderNumber() : orderId.toString();
+                User buyer = getOrderBuyerUser(order, report);
+                User seller = getOrderSellerUser(order);
+                String clauseInfo = report.getPolicyClauseTitle() != null ? " (Căn cứ: " + report.getPolicyClauseTitle() + ")" : "";
+                if (finalResolution == ResolutionType.REFUND_ONLY) {
+                    sendDisputeNotification(buyer,
+                            "Khiếu nại được chấp thuận - Hoàn tiền thành công",
+                            "Ban Quản Trị đã chấp thuận khiếu nại đơn hàng #" + orderCode + "" + clauseInfo + ". Tiền thanh toán đã được hoàn trả lại cho bạn.",
+                            order.getId(), report.getId());
+                    sendDisputeNotification(seller,
+                            "Phán quyết khiếu nại: Chấp thuận hoàn tiền cho người mua",
+                            "Ban Quản Trị đã chấp thuận khiếu nại của người mua cho đơn hàng #" + orderCode + "" + clauseInfo + ". Tiền ký quỹ được hoàn trả cho người mua.",
+                            order.getId(), report.getId());
+                } else if (finalResolution == ResolutionType.RETURN_AND_REFUND) {
+                    sendDisputeNotification(buyer,
+                            "Khiếu nại được chấp thuận - Hướng dẫn gửi trả hàng",
+                            "Ban Quản Trị đã chấp thuận khiếu nại đơn hàng #" + orderCode + "" + clauseInfo + ". Vui lòng đóng gói và gửi hàng hoàn theo hướng dẫn trên hệ thống.",
+                            order.getId(), report.getId());
+                    sendDisputeNotification(seller,
+                            "Phán quyết khiếu nại: Yêu cầu trả hàng hoàn tiền",
+                            "Ban Quản Trị đã chấp thuận khiếu nại của người mua cho đơn hàng #" + orderCode + "" + clauseInfo + ". Quy trình gửi trả hàng đã được khởi tạo.",
+                            order.getId(), report.getId());
+                }
+            });
         }
         requestRepository.save(r);
         reportRepository.save(report);
@@ -467,6 +544,22 @@ public class ReportServiceImpl implements ReportService {
 
         reportRepository.save(re);
 
+        if (targetType == TargetType.ORDER) {
+            orderRepository.findById(request.getTargetId()).ifPresent(order -> {
+                String orderCode = order.getOrderNumber() != null ? order.getOrderNumber() : order.getId().toString();
+                User buyer = getOrderBuyerUser(order, re);
+                User seller = getOrderSellerUser(order);
+                sendDisputeNotification(seller,
+                        "Khiếu nại đơn hàng mới - Cần phản hồi trong 48h",
+                        "Người mua đã gửi khiếu nại cho đơn hàng #" + orderCode + ". Vui lòng phản hồi thương lượng trực tiếp trong vòng 48 giờ để tránh bị tự động chuyển lên Ban Quản Trị sàn.",
+                        order.getId(), re.getId());
+                sendDisputeNotification(buyer,
+                        "Đã gửi khiếu nại đơn hàng thành công",
+                        "Bạn đã gửi khiếu nại cho đơn hàng #" + orderCode + ". Gian hàng có thời hạn tối đa 48 giờ để phản hồi thương lượng trực tiếp cùng bạn.",
+                        order.getId(), re.getId());
+            });
+        }
+
         return CreateRequestResponse.from(r);
     }
 
@@ -511,6 +604,18 @@ public class ReportServiceImpl implements ReportService {
 
         reportRepository.save(report);
         requestRepository.save(req);
+
+        if (report.getTargetType() == TargetType.ORDER && report.getTargetId() != null) {
+            orderRepository.findById(report.getTargetId()).ifPresent(order -> {
+                String orderCode = order.getOrderNumber() != null ? order.getOrderNumber() : order.getId().toString();
+                User seller = getOrderSellerUser(order);
+                sendDisputeNotification(seller,
+                        "Người mua đã rút khiếu nại đơn hàng",
+                        "Người mua đã chủ động rút khiếu nại cho đơn hàng #" + orderCode + ". Giao dịch tiếp tục được xử lý bình thường.",
+                        order.getId(), report.getId());
+            });
+        }
+
         log.info("Buyer accountId={} cancelled dispute reportId={}", buyerAccountId, reportId);
     }
 
@@ -563,6 +668,13 @@ public class ReportServiceImpl implements ReportService {
                 order.setStatus(OrderStatus.REFUNDED);
                 orderRepository.save(order);
 
+                String orderCode = order.getOrderNumber() != null ? order.getOrderNumber() : orderId.toString();
+                User buyer = getOrderBuyerUser(order, report);
+                sendDisputeNotification(buyer,
+                        "Người bán đồng ý hoàn tiền khiếu nại",
+                        "Người bán đã chấp nhận hoàn tiền cho đơn hàng #" + orderCode + ". Số tiền ký quỹ đã được hoàn trả lại cho bạn.",
+                        orderId, reportId);
+
                 log.info("Seller accepted refund for dispute reportId={}, orderId={}", reportId, orderId);
             }
 
@@ -574,6 +686,16 @@ public class ReportServiceImpl implements ReportService {
                 report.getRequest().setReviewedAt(now);
 
                 orderReturnService.createReturn(orderId, report.getId());
+
+                orderRepository.findById(orderId).ifPresent(order -> {
+                    String orderCode = order.getOrderNumber() != null ? order.getOrderNumber() : orderId.toString();
+                    User buyer = getOrderBuyerUser(order, report);
+                    sendDisputeNotification(buyer,
+                            "Người bán đồng ý nhận hàng đổi trả",
+                            "Người bán đã chấp nhận yêu cầu trả hàng cho đơn hàng #" + orderCode + ". Vui lòng theo dõi và gửi hàng hoàn theo hướng dẫn trên hệ thống.",
+                            orderId, reportId);
+                });
+
                 log.info("Seller accepted return for dispute reportId={}, created OrderReturn", reportId);
             }
 
@@ -587,6 +709,16 @@ public class ReportServiceImpl implements ReportService {
                     report.setEscalationReason(
                             "Người bán từ chối khiếu nại: " + (req.getResponseNote() != null ? req.getResponseNote() : ""));
                 }
+
+                orderRepository.findById(orderId).ifPresent(order -> {
+                    String orderCode = order.getOrderNumber() != null ? order.getOrderNumber() : orderId.toString();
+                    User buyer = getOrderBuyerUser(order, report);
+                    sendDisputeNotification(buyer,
+                            "Khiếu nại được chuyển lên Ban Quản Trị sàn",
+                            "Người bán từ chối phương án thương lượng cho đơn hàng #" + orderCode + " và đã gửi giải trình. Vụ việc được chuyển lên Ban Quản Trị sàn phân xử.",
+                            orderId, reportId);
+                });
+
                 log.info("Seller rejected dispute or provided explanation for reportId={}, escalated to admin", reportId);
             }
         }
@@ -629,6 +761,21 @@ public class ReportServiceImpl implements ReportService {
                 : "Hai bên không thống nhất được phương án giải quyết trong thương lượng 1:1");
 
         reportRepository.save(report);
+
+        orderRepository.findById(orderId).ifPresent(order -> {
+            String orderCode = order.getOrderNumber() != null ? order.getOrderNumber() : orderId.toString();
+            User buyer = getOrderBuyerUser(order, report);
+            User seller = getOrderSellerUser(order);
+            sendDisputeNotification(buyer,
+                    "Khiếu nại đã chuyển lên Ban Quản Trị sàn",
+                    "Khiếu nại đơn hàng #" + orderCode + " đã được chuyển lên Ban Quản Trị sàn phân xử. Quản trị viên sẽ xem xét hồ sơ và ra phán quyết.",
+                    order.getId(), report.getId());
+            sendDisputeNotification(seller,
+                    "Khiếu nại đã chuyển lên Ban Quản Trị sàn",
+                    "Khiếu nại đơn hàng #" + orderCode + " đã được chuyển lên Ban Quản Trị sàn phân xử. Vui lòng kiểm tra hồ sơ và chuẩn bị bằng chứng đối soát.",
+                    order.getId(), report.getId());
+        });
+
         log.info("Dispute reportId={} escalated to Admin by accountId={}", reportId, accountId);
     }
 
@@ -880,6 +1027,47 @@ public class ReportServiceImpl implements ReportService {
                 .build();
     }
 
+    private void sendDisputeNotification(User recipient, String title, String content, UUID orderId, UUID reportId) {
+        if (recipient == null) return;
+        try {
+            Notification notif = Notification.builder()
+                    .eventId("DISPUTE_" + UUID.randomUUID())
+                    .user(recipient)
+                    .type(NotificationType.ORDER)
+                    .channel(NotificationChannelType.IN_APP)
+                    .status(NotificationStatus.SENT)
+                    .title(title)
+                    .content(content)
+                    .payload(Map.of(
+                            "orderId", orderId != null ? orderId.toString() : "",
+                            "reportId", reportId != null ? reportId.toString() : ""
+                    ))
+                    .createdAt(LocalDateTime.now())
+                    .build();
+            notificationRepository.save(notif);
+            log.info("Dispatched dispute in-app notification to userId={}: {}", recipient.getId(), title);
+        } catch (Exception e) {
+            log.error("Failed to dispatch dispute notification to userId={}", recipient.getId(), e);
+        }
+    }
+
+    private User getOrderBuyerUser(Order order, Report report) {
+        if (order != null && order.getUser() != null) {
+            return order.getUser();
+        }
+        if (report != null && report.getRequest() != null && report.getRequest().getAccount() != null) {
+            return userRepository.findByAccountId(report.getRequest().getAccount().getId()).orElse(null);
+        }
+        return null;
+    }
+
+    private User getOrderSellerUser(Order order) {
+        if (order != null && order.getShop() != null && order.getShop().getUser() != null) {
+            return order.getShop().getUser();
+        }
+        return null;
+    }
+
     private boolean isOrderSeller(UUID orderId, UUID accountId) {
         if (orderId == null || accountId == null)
             return false;
@@ -927,6 +1115,22 @@ public class ReportServiceImpl implements ReportService {
                                 "Hệ thống tự động chuyển Ban Quản Trị sàn phân xử do Người bán quá hạn 48 giờ không phản hồi thương lượng.");
                         reportRepository.save(report);
                         log.info("Auto escalated expired dispute reportId={} to Admin queue", report.getId());
+
+                        if (report.getTargetType() == TargetType.ORDER && report.getTargetId() != null) {
+                            orderRepository.findById(report.getTargetId()).ifPresent(order -> {
+                                String orderCode = order.getOrderNumber() != null ? order.getOrderNumber() : order.getId().toString();
+                                User buyer = getOrderBuyerUser(order, report);
+                                User seller = getOrderSellerUser(order);
+                                sendDisputeNotification(buyer,
+                                        "Khiếu nại tự động chuyển BQT sàn (Quá hạn 48h)",
+                                        "Do Người bán không phản hồi khiếu nại đơn hàng #" + orderCode + " trong vòng 48 giờ, hệ thống đã tự động chuyển hồ sơ lên Ban Quản Trị sàn phân xử.",
+                                        order.getId(), report.getId());
+                                sendDisputeNotification(seller,
+                                        "Cảnh báo: Khiếu nại quá hạn 48h đã chuyển BQT sàn",
+                                        "Đơn hàng #" + orderCode + " đã quá hạn 48 giờ thương lượng trực tiếp mà bạn chưa phản hồi. Hồ sơ đã chuyển lên Ban Quản Trị sàn phân xử.",
+                                        order.getId(), report.getId());
+                            });
+                        }
                     }
                 }
             } catch (Exception e) {

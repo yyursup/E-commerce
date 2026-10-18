@@ -27,6 +27,7 @@ import ChatNotificationToast from './ChatNotificationToast'
 import EmojiPickerPopover from './EmojiPickerPopover'
 import MediaUploadPopover from './MediaUploadPopover'
 import ChatInboxList from './ChatInboxList'
+import ChatQuickCheckout from './ChatQuickCheckout'
 
 function formatPrice(value) {
   if (value == null) return ''
@@ -81,14 +82,11 @@ export default function ChatbotButton() {
   }, [activeShop])
 
   // --- BOT STATE ---
-  const [botCurrentNodeId, setBotCurrentNodeId] = useState(null)
   const [botMessages, setBotMessages] = useState([])
-  const [botOptions, setBotOptions] = useState([])
-  const [inputExpected, setInputExpected] = useState(false)
-  const [inputHint, setInputHint] = useState('')
   const [botInputValue, setBotInputValue] = useState('')
   const [botLoading, setBotLoading] = useState(false)
   const [botError, setBotError] = useState(null)
+  const [quickBuyProductId, setQuickBuyProductId] = useState(null)
 
   // --- LIVE CHAT STATE ---
   const [supportThread, setSupportThread] = useState(null)
@@ -161,7 +159,7 @@ export default function ChatbotButton() {
         liveInputRef.current?.focus()
       }
     }
-  }, [isOpen, activeTab, botMessages, liveMessages, botOptions, adminTyping, scrollToBottom])
+  }, [isOpen, activeTab, botMessages, liveMessages, botLoading, adminTyping, scrollToBottom])
 
   // Toggle widget open/close
   const handleToggle = () => {
@@ -169,40 +167,6 @@ export default function ChatbotButton() {
     setIsOpen(nextOpen)
     if (nextOpen && !activeShop) {
       setViewMode('inbox')
-    }
-    if (nextOpen && botMessages.length === 0) {
-      setBotLoading(true)
-      setBotError(null)
-      chatbotService
-        .init()
-        .then((data) => {
-          if (data.currentNodeId) {
-            setBotCurrentNodeId(data.currentNodeId)
-          }
-          setBotMessages([
-            {
-              id: 'init',
-              type: 'bot',
-              text: data.messageText,
-              productCards: data.productCards || [],
-            },
-          ])
-          setBotOptions(data.options || [])
-          setInputExpected(!!data.inputExpected)
-          setInputHint(data.inputHint || '')
-        })
-        .catch((err) => {
-          setBotError(err.response?.data?.message || err.message || 'Không kết nối được chatbot.')
-          setBotMessages([
-            {
-              id: 'err',
-              type: 'bot',
-              text: 'Không thể tải chatbot. Bạn hãy thử lại sau hoặc chuyển sang tab Hỗ trợ trực tuyến.',
-              productCards: [],
-            },
-          ])
-        })
-        .finally(() => setBotLoading(false))
     }
   }
 
@@ -566,68 +530,39 @@ export default function ChatbotButton() {
   }, [])
 
   // --- BOT LOGIC ---
-  const sendBotInteraction = (payload) => {
+  const handleBotSend = (preset) => {
+    const text = (typeof preset === 'string' ? preset : botInputValue).trim()
+    if (!text || botLoading) return
+    const userMsg = { id: `user-${Date.now()}`, type: 'user', text }
+    const history = [...botMessages.filter((m) => !m.isError), userMsg]
+    setBotMessages((prev) => [...prev, userMsg])
+    setBotInputValue('')
     setBotLoading(true)
     setBotError(null)
-    const fullPayload = {
-      currentNodeId: botCurrentNodeId,
-      ...payload,
-    }
     chatbotService
-      .interact(fullPayload)
+      // memo = id sản phẩm/địa chỉ từ lượt trước, gửi lại để AI dùng tiếp (không hiển thị)
+      .ask(history.map((m) => ({ role: m.type === 'user' ? 'user' : 'model', text: m.memo ? `${m.text}\n${m.memo}` : m.text })))
       .then((data) => {
-        if (data.currentNodeId) {
-          setBotCurrentNodeId(data.currentNodeId)
-        }
-        if (data.messageText != null && data.messageText !== '') {
-          setBotMessages((prev) => [
-            ...prev,
-            {
-              id: `bot-${Date.now()}`,
-              type: 'bot',
-              text: data.messageText,
-              productCards: data.productCards || [],
-            },
-          ])
-        }
-        setBotOptions(data.options || [])
-        setInputExpected(!!data.inputExpected)
-        setInputHint(data.inputHint || '')
-
-        // If handoff required, switch directly to live chat!
-        if (data.humanHandoffRequired) {
-          setActiveTab('live')
-        }
+        setBotMessages((prev) => [
+          ...prev,
+          {
+            id: `bot-${Date.now()}`,
+            type: 'bot',
+            text: data.reply,
+            productCards: data.productCards || [],
+            choices: data.choices || [],
+            paymentUrl: data.paymentUrl,
+            memo: data.memo,
+          },
+        ])
       })
       .catch((err) => {
-        setBotError(err.response?.data?.message || err.message || 'Có lỗi xảy ra.')
+        setBotMessages((prev) => [
+          ...prev,
+          { id: `err-${Date.now()}`, type: 'bot', isError: true, text: err?.message || 'Trợ lý AI đang bận, bạn thử lại sau nhé.', productCards: [] },
+        ])
       })
       .finally(() => setBotLoading(false))
-  }
-
-  const handleBotOptionClick = (opt) => {
-    setBotMessages((prev) => [
-      ...prev,
-      { id: `user-${Date.now()}`, type: 'user', text: opt.buttonLabel },
-    ])
-    if (opt.actionPayload === 'HANDOFF_LIVE_CHAT' || opt.actionPayload === 'HUMAN_HANDOFF') {
-      setActiveTab('live')
-      return
-    }
-    const payload = { action: opt.actionPayload, currentNodeId: botCurrentNodeId }
-    if (opt.categoryId) payload.categoryId = opt.categoryId
-    sendBotInteraction(payload)
-  }
-
-  const handleBotSend = () => {
-    const text = botInputValue.trim()
-    if (!text) return
-    setBotMessages((prev) => [
-      ...prev,
-      { id: `user-${Date.now()}`, type: 'user', text },
-    ])
-    setBotInputValue('')
-    sendBotInteraction({ text, currentNodeId: botCurrentNodeId })
   }
 
   // Do not render customer chatbot widget or toast inside admin panels
@@ -709,6 +644,21 @@ export default function ChatbotButton() {
               isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white',
             )}
           >
+            {quickBuyProductId && (
+              <ChatQuickCheckout
+                productId={quickBuyProductId}
+                isDark={isDark}
+                onClose={(order) => {
+                  setQuickBuyProductId(null)
+                  if (order) {
+                    setBotMessages((prev) => [
+                      ...prev,
+                      { id: `order-${order.id}`, type: 'bot', text: `Đã đặt đơn ${order.orderNumber} (${formatPrice(order.total)}). Xem tại mục Đơn hàng của tôi.`, productCards: [] },
+                    ])
+                  }
+                }}
+              />
+            )}
             {viewMode === 'inbox' ? (
               <ChatInboxList
                 onClose={() => closeChat()}
@@ -910,20 +860,13 @@ export default function ChatbotButton() {
               /* --- BOT TAB --- */
               <>
                 <div ref={botContainerRef} className="flex-1 overflow-y-auto p-4 space-y-3">
-                  {botLoading && botMessages.length === 0 && (
-                    <div className="flex justify-center py-8">
-                      <div className="flex gap-1">
-                        {[0, 1, 2].map((i) => (
-                          <div
-                            key={i}
-                            className={cn('h-2 w-2 rounded-full animate-bounce', isDark ? 'bg-slate-400' : 'bg-stone-400')}
-                          />
-                        ))}
-                      </div>
-                    </div>
+                  {botMessages.length === 0 && (
+                    <p className={cn('py-8 text-center text-sm', isDark ? 'text-slate-400' : 'text-stone-500')}>
+                      Hãy hỏi Trợ lý AI về sản phẩm, giá, voucher hoặc đơn hàng của bạn.
+                    </p>
                   )}
 
-                  {botMessages.map((msg) => (
+                  {botMessages.map((msg, idx) => (
                     <div
                       key={msg.id}
                       className={cn('flex', msg.type === 'user' ? 'justify-end' : 'justify-start')}
@@ -940,13 +883,13 @@ export default function ChatbotButton() {
                         {msg.productCards && msg.productCards.length > 0 && (
                           <div className="mt-3 space-y-2">
                             {msg.productCards.slice(0, 4).map((card) => (
+                              <div key={card.id} className="flex items-stretch gap-1">
                               <a
-                                key={card.id}
                                 href={card.productUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className={cn(
-                                  'flex gap-2 rounded-xl border p-2 text-left transition hover:opacity-90',
+                                  'flex min-w-0 flex-1 gap-2 rounded-xl border p-2 text-left transition hover:opacity-90',
                                   isDark ? 'border-slate-700 bg-slate-750' : 'border-stone-200 bg-white',
                                 )}
                               >
@@ -962,6 +905,37 @@ export default function ChatbotButton() {
                                   <p className="text-xs text-amber-600 dark:text-amber-400 font-semibold">{formatPrice(card.basePrice)}</p>
                                 </div>
                               </a>
+                              <button
+                                type="button"
+                                onClick={() => setQuickBuyProductId(card.id)}
+                                className="shrink-0 rounded-xl bg-amber-500 px-2 text-xs font-semibold text-white hover:bg-amber-600"
+                              >
+                                Mua ngay
+                              </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {msg.paymentUrl && (
+                          <a
+                            href={msg.paymentUrl}
+                            className="mt-3 block rounded-xl bg-blue-600 px-3 py-2 text-center text-xs font-semibold text-white hover:bg-blue-700"
+                          >
+                            Thanh toán VNPay
+                          </a>
+                        )}
+                        {idx === botMessages.length - 1 && msg.choices?.length > 0 && (
+                          <div className="mt-3 flex flex-wrap gap-1.5">
+                            {msg.choices.map((choice) => (
+                              <button
+                                key={choice}
+                                type="button"
+                                disabled={botLoading}
+                                onClick={() => handleBotSend(choice)}
+                                className="rounded-full border border-amber-500 px-3 py-1 text-xs text-amber-600 hover:bg-amber-50 disabled:opacity-50 dark:text-amber-400 dark:hover:bg-slate-700"
+                              >
+                                {choice}
+                              </button>
                             ))}
                           </div>
                         )}
@@ -969,28 +943,9 @@ export default function ChatbotButton() {
                     </div>
                   ))}
 
-                  {botOptions.length > 0 && !botLoading && (
-                    <div className="flex flex-wrap gap-2 pt-1">
-                      {botOptions.map((opt) => (
-                        <button
-                          key={opt.actionPayload + (opt.categoryId || '')}
-                          type="button"
-                          onClick={() => handleBotOptionClick(opt)}
-                          className={cn(
-                            'rounded-xl border px-3 py-1.5 text-xs font-medium transition',
-                            opt.actionPayload === 'HANDOFF_LIVE_CHAT'
-                              ? 'border-amber-500/50 bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20'
-                              : isDark
-                                ? 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700'
-                                : 'border-stone-300 bg-white text-stone-700 hover:bg-stone-100',
-                          )}
-                        >
-                          {opt.buttonLabel}
-                        </button>
-                      ))}
-                    </div>
+                  {botLoading && botMessages.length > 0 && (
+                    <p className={cn('text-xs italic', isDark ? 'text-slate-400' : 'text-stone-500')}>Trợ lý AI đang trả lời...</p>
                   )}
-
 
                   {botError && <p className="text-xs text-rose-500">{botError}</p>}
                 </div>
@@ -1009,7 +964,7 @@ export default function ChatbotButton() {
                       value={botInputValue}
                       onChange={(e) => setBotInputValue(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleBotSend()}
-                      placeholder={inputHint || 'Nhập tin nhắn...'}
+                      placeholder={botMessages.length === 0 ? 'Hỏi AI, ví dụ: tư vấn điện thoại dưới 10 triệu' : 'Nhập tin nhắn...'}
                       disabled={botLoading}
                       className={cn(
                         'flex-1 rounded-xl border px-3.5 py-2 text-sm outline-none transition focus:ring-2 focus:ring-amber-500/20',

@@ -233,19 +233,16 @@ public class ChatServiceImpl implements ChatService {
     @Override
     @Transactional(readOnly = true)
     public ChatThreadResponse getThreadById(CurrentUserInfo principal, UUID threadId) {
-        ChatThread thread = chatThreadRepository.findById(threadId)
-                .orElseThrow(() -> new CustomException("Không tìm thấy cuộc hội thoại"));
+        ChatThread thread = requireParticipantThread(principal, threadId);
 
-        boolean isAdmin = checkIsAdmin(principal != null ? principal.getRole() : null);
+        boolean isAdmin = checkIsAdmin(principal.getRole());
         return ChatThreadResponse.from(thread, principal.getAccountId(), isAdmin);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<ChatMessageResponse> getMessages(CurrentUserInfo principal, UUID threadId, int page, int size) {
-        if (!chatThreadRepository.existsById(threadId)) {
-            throw new CustomException("Không tìm thấy cuộc hội thoại");
-        }
+        requireParticipantThread(principal, threadId);
 
         PageRequest pageRequest = PageRequest.of(page, size, Sort.by("createdAt").descending());
         return chatMessageRepository.findByThread_IdOrderByCreatedAtDesc(threadId, pageRequest)
@@ -259,8 +256,7 @@ public class ChatServiceImpl implements ChatService {
             throw new CustomException("Chưa xác thực");
         }
 
-        ChatThread thread = chatThreadRepository.findById(request.getThreadId())
-                .orElseThrow(() -> new CustomException("Không tìm thấy cuộc hội thoại"));
+        ChatThread thread = requireParticipantThread(principal, request.getThreadId());
 
         validateNotSelfChat(thread);
 
@@ -324,8 +320,7 @@ public class ChatServiceImpl implements ChatService {
             throw new CustomException("Chưa xác thực");
         }
 
-        ChatThread thread = chatThreadRepository.findById(threadId)
-                .orElseThrow(() -> new CustomException("Không tìm thấy cuộc hội thoại"));
+        ChatThread thread = requireParticipantThread(principal, threadId);
 
         validateNotSelfChat(thread);
 
@@ -370,7 +365,7 @@ public class ChatServiceImpl implements ChatService {
         if (principal == null || principal.getAccountId() == null) return;
 
         ChatThread thread = chatThreadRepository.findById(threadId).orElse(null);
-        if (thread == null) return;
+        if (thread == null || !isParticipant(principal, thread)) return;
 
         boolean isAdmin = checkIsAdmin(principal.getRole());
         boolean isShopOwner = false;
@@ -415,8 +410,7 @@ public class ChatServiceImpl implements ChatService {
     @Override
     @Transactional
     public void closeThread(CurrentUserInfo principal, UUID threadId) {
-        ChatThread thread = chatThreadRepository.findById(threadId)
-                .orElseThrow(() -> new CustomException("Không tìm thấy cuộc hội thoại"));
+        ChatThread thread = requireParticipantThread(principal, threadId);
 
         thread.setStatus(ThreadStatus.RESOLVED);
         chatThreadRepository.save(thread);
@@ -450,8 +444,7 @@ public class ChatServiceImpl implements ChatService {
             throw new CustomException("Chưa xác thực");
         }
 
-        ChatThread thread = chatThreadRepository.findById(threadId)
-                .orElseThrow(() -> new CustomException("Không tìm thấy cuộc hội thoại"));
+        ChatThread thread = requireParticipantThread(principal, threadId);
 
         validateNotSelfChat(thread);
 
@@ -691,6 +684,29 @@ public class ChatServiceImpl implements ChatService {
         return userOpt.map(User::getFullName).filter(s -> !s.isBlank()).orElse(username);
     }
 
+    private boolean isParticipant(CurrentUserInfo principal, ChatThread thread) {
+        if (principal == null || principal.getAccountId() == null) return false;
+        if (checkIsAdmin(principal.getRole())) return true;
+        UUID me = principal.getAccountId();
+        if (thread.getCustomer() != null && me.equals(thread.getCustomer().getId())) return true;
+        return thread.getShop() != null && thread.getShop().getUser() != null
+                && thread.getShop().getUser().getAccount() != null
+                && me.equals(thread.getShop().getUser().getAccount().getId());
+    }
+
+    private ChatThread requireParticipantThread(CurrentUserInfo principal, UUID threadId) {
+        if (principal == null || principal.getAccountId() == null) {
+            throw new CustomException("Chưa xác thực");
+        }
+        ChatThread thread = chatThreadRepository.findById(threadId)
+                .orElseThrow(() -> new CustomException("Không tìm thấy cuộc hội thoại"));
+        if (!isParticipant(principal, thread)) {
+            // same message as not-found so thread ids can't be probed
+            throw new CustomException("Không tìm thấy cuộc hội thoại");
+        }
+        return thread;
+    }
+
     private boolean checkIsAdmin(String role) {
         if (role == null) return false;
         return "ADMIN".equalsIgnoreCase(role) || "ROLE_ADMIN".equalsIgnoreCase(role);
@@ -700,7 +716,7 @@ public class ChatServiceImpl implements ChatService {
     public void handleTyping(CurrentUserInfo principal, UUID threadId, boolean isTyping) {
         if (principal == null || threadId == null) return;
         ChatThread thread = chatThreadRepository.findById(threadId).orElse(null);
-        if (thread == null) return;
+        if (thread == null || !isParticipant(principal, thread)) return;
 
         Map<String, Object> payload = Map.of(
                 "threadId", thread.getId().toString(),

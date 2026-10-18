@@ -47,6 +47,7 @@ import com.marketplace.ecommerce.request.dto.request.EscalateReportRequest;
 import com.marketplace.ecommerce.request.dto.request.SellerDisputeRespondRequest;
 import com.marketplace.ecommerce.request.valueObjects.DisputeSellerAction;
 import com.marketplace.ecommerce.request.valueObjects.ReportStage;
+import com.marketplace.ecommerce.shop.service.ShopEscrowFundService;
 import com.marketplace.ecommerce.shop.valueObjects.ShopStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -75,6 +76,7 @@ public class ReportServiceImpl implements ReportService {
     private final OrderReturnRepository orderReturnRepository;
     private final EscrowService escrowService;
     private final OrderReturnService orderReturnService;
+    private final ShopEscrowFundService shopEscrowFundService;
 
     @Override
     @Transactional
@@ -266,6 +268,7 @@ public class ReportServiceImpl implements ReportService {
             ret.setConditionNote((ret.getConditionNote() != null ? ret.getConditionNote() + " | " : "")
                     + "Admin phán quyết Người mua thắng: " + (note != null ? note : ""));
             orderReturnRepository.save(ret);
+            shopEscrowFundService.deductReturnDisputeShippingFees(ret);
         }
 
         // 3. Hoàn tiền Escrow về cho Người mua (nếu trạng thái Escrow chưa hoàn)

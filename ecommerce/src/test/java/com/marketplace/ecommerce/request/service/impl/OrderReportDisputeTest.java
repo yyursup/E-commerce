@@ -33,6 +33,7 @@ import com.marketplace.ecommerce.request.valueObjects.ResolutionType;
 import com.marketplace.ecommerce.request.valueObjects.TargetType;
 import com.marketplace.ecommerce.shop.entity.Shop;
 import com.marketplace.ecommerce.shop.repository.ShopRepository;
+import com.marketplace.ecommerce.shop.service.ShopEscrowFundService;
 import com.marketplace.ecommerce.shop.valueObjects.ShopStatus;
 import com.marketplace.ecommerce.product.repository.ProductRepository;
 
@@ -86,6 +87,15 @@ class OrderReportDisputeTest {
 
         @Mock
         private OrderReturnRepository orderReturnRepository;
+
+        @Mock
+        private ShopEscrowFundService shopEscrowFundService;
+
+        @Mock
+        private ShopRepository shopRepository;
+
+        @Mock
+        private ProductRepository productRepository;
 
         @InjectMocks
         private ReportServiceImpl reportService;
@@ -342,6 +352,7 @@ class OrderReportDisputeTest {
                 assertEquals(ReturnStatus.COMPLETED, orderReturn.getStatus());
                 verify(escrowService).refundByOrder(eq(orderId), anyString());
                 verify(escrowService, never()).releaseByOrder(any());
+                verify(shopEscrowFundService).deductReturnDisputeShippingFees(orderReturn);
         }
 
         @Test

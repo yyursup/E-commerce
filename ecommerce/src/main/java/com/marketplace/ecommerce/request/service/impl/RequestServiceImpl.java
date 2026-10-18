@@ -420,6 +420,8 @@ public class RequestServiceImpl implements RequestService {
                         .response(r.getResponse())
                         .createdAt(r.getCreatedAt())
                         .reviewedAt(r.getReviewedAt())
+                        .policyClauseCode(rep.getPolicyClauseCode())
+                        .policyClauseTitle(rep.getPolicyClauseTitle())
                         .escrow(escrowDto)
                         .orderReturn(orderReturnDto)
                         .build();

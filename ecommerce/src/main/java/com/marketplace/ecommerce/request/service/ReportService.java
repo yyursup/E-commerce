@@ -5,6 +5,7 @@ import com.marketplace.ecommerce.request.dto.request.EscalateReportRequest;
 import com.marketplace.ecommerce.request.dto.request.HandleReportRequest;
 import com.marketplace.ecommerce.request.dto.request.SellerDisputeRespondRequest;
 import com.marketplace.ecommerce.request.dto.response.CreateRequestResponse;
+import com.marketplace.ecommerce.request.dto.response.DisputePolicyClauseResponse;
 import com.marketplace.ecommerce.request.dto.response.ReportDetailsResponse;
 
 import java.util.UUID;
@@ -21,4 +22,6 @@ public interface ReportService {
     void escalateReport(UUID accountId, UUID reportId, EscalateReportRequest req);
 
     ReportDetailsResponse getReportByOrderId(UUID accountId, UUID orderId);
+
+    java.util.List<DisputePolicyClauseResponse> getDisputePolicyClauses();
 }

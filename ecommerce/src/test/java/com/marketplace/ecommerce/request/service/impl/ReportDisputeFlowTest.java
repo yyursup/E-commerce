@@ -203,7 +203,7 @@ class ReportDisputeFlowTest {
         assertEquals(ReportStage.RESOLVED, reportEntity.getStage());
         assertEquals(ResolutionType.REFUND_ONLY, reportEntity.getResolutionType());
         assertEquals(OrderStatus.REFUNDED, orderEntity.getStatus());
-        verify(escrowService).refundByOrder(eq(orderId), any());
+        verify(escrowService).refundMerchandiseOnly(eq(orderId), any());
         verify(reportRepository).save(reportEntity);
     }
 
@@ -223,6 +223,28 @@ class ReportDisputeFlowTest {
         assertEquals(ReportStage.RETURN_IN_PROGRESS, reportEntity.getStage(), "Phải ở trạng thái trung gian RETURN_IN_PROGRESS, không được đóng case sớm");
         assertEquals(ResolutionType.RETURN_AND_REFUND, reportEntity.getResolutionType());
         verify(orderReturnService).createReturn(orderId, reportId);
+        verify(reportRepository).save(reportEntity);
+    }
+
+    @Test
+    @DisplayName("B2.1: Khi Buyer đã chuyển ESCALATED_TO_ADMIN -> Seller vẫn được phép gửi giải trình và bằng chứng cho Admin")
+    void sellerRespond_AllowsExplanationAndEvidence_WhenEscalatedToAdmin() {
+        reportEntity.setStage(ReportStage.ESCALATED_TO_ADMIN);
+        SellerDisputeRespondRequest req = SellerDisputeRespondRequest.builder()
+                .action(DisputeSellerAction.REJECT_AND_ESCALATE)
+                .responseNote("Shop đã quay video đóng hàng niêm phong, kiện hàng đủ phụ kiện")
+                .evidenceUrl("https://minio.example.com/disputes/package_video.mp4")
+                .build();
+
+        when(reportRepository.findByIdForUpdate(reportId)).thenReturn(Optional.of(reportEntity));
+        when(requestPolicy.resolveTargetAccountId(TargetType.ORDER, orderId)).thenReturn(sellerAccountId);
+
+        reportService.sellerRespond(sellerAccountId, reportId, req);
+
+        assertEquals(ReportStage.ESCALATED_TO_ADMIN, reportEntity.getStage());
+        assertEquals("Shop đã quay video đóng hàng niêm phong, kiện hàng đủ phụ kiện", reportEntity.getSellerResponse());
+        assertEquals("https://minio.example.com/disputes/package_video.mp4", reportEntity.getSellerEvidenceUrl());
+        assertEquals(DisputeSellerAction.REJECT_AND_ESCALATE, reportEntity.getSellerAction());
         verify(reportRepository).save(reportEntity);
     }
 

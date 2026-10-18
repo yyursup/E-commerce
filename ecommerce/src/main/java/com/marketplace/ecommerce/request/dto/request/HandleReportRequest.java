@@ -19,4 +19,7 @@ public class HandleReportRequest {
     private String note;
 
     private ResolutionType resolutionType;
+
+    private String policyClauseCode;
+    private Boolean removeShopPenalty;
 }

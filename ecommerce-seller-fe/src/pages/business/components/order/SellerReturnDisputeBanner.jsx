@@ -1,6 +1,7 @@
 import {
   HiOutlineCheckCircle,
   HiOutlineExclamation,
+  HiOutlineScale,
 } from 'react-icons/hi'
 import { cn } from '../../../../lib/cn'
 import { getConditionStatusLabel } from '../../../../lib/orderStatus'
@@ -9,6 +10,7 @@ export default function SellerReturnDisputeBanner({
   returnInfo,
   isOrderRefunded,
   isVideoUrl,
+  report,
 }) {
   if (returnInfo.status !== 'DISPUTED') return null
 
@@ -24,6 +26,18 @@ export default function SellerReturnDisputeBanner({
         <p className="text-[11px] text-stone-600 dark:text-slate-400 leading-relaxed">
           Ban Quản Trị đã hoàn tất xem xét hồ sơ và ban hành phán quyết cuối cùng: Bác bỏ khiếu nại kiện hàng hoàn của Shop và giải phóng toàn bộ tiền ký quỹ đơn hàng cho Người mua. Tranh chấp đơn hàng đã chính thức khép lại.
         </p>
+
+        {(report?.policyClauseTitle || report?.policyClauseCode) && (
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-xs font-semibold text-amber-800 dark:text-amber-300">
+            <HiOutlineScale className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+            <span>⚖️ Căn cứ Điều khoản: <strong>{report.policyClauseTitle || report.policyClauseCode}</strong></span>
+          </div>
+        )}
+        {report?.adminNote && (
+          <p className="text-xs italic text-stone-600 dark:text-slate-300">
+            Ghi chú phán quyết BQT: &ldquo;{report.adminNote}&rdquo;
+          </p>
+        )}
 
         {returnInfo.conditionStatus && (
           <div className="p-3 rounded-xl bg-white dark:bg-slate-800/80 border border-stone-200 dark:border-slate-700 text-stone-700 dark:text-slate-300 space-y-1.5">

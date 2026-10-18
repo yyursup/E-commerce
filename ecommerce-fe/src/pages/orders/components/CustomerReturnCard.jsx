@@ -10,6 +10,7 @@ import {
   HiOutlineExternalLink,
   HiOutlinePhotograph,
   HiOutlineVideoCamera,
+  HiOutlineScale,
 } from 'react-icons/hi'
 import toast from 'react-hot-toast'
 import { cn } from '../../../lib/cn'
@@ -26,7 +27,7 @@ import ReturnAddressSnapshot from './ReturnAddressSnapshot'
 import ReturnHandoverSection from './ReturnHandoverSection'
 import ReturnSettlementSection from './ReturnSettlementSection'
 
-export default function CustomerReturnCard({ returnInfo, order, isDark: isDarkProp, onRefresh }) {
+export default function CustomerReturnCard({ returnInfo, order, report, isDark: isDarkProp, onRefresh }) {
   const storeTheme = useThemeStore((s) => s.theme)
   const isDark = isDarkProp !== undefined ? isDarkProp : storeTheme === 'dark'
   const [submitting, setSubmitting] = useState(false)
@@ -221,6 +222,13 @@ export default function CustomerReturnCard({ returnInfo, order, isDark: isDarkPr
               </p>
             )}
 
+            {(report?.policyClauseTitle || report?.policyClauseCode) && (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/25 text-xs font-semibold text-rose-700 dark:text-rose-300">
+                <HiOutlineScale className="h-4 w-4 shrink-0 text-rose-500" />
+                <span>Căn cứ Điều khoản: <strong>{report.policyClauseTitle || report.policyClauseCode}</strong></span>
+              </div>
+            )}
+
             {/* Bằng chứng Shop đưa ra - Dù shop thắng khách hàng vẫn xem được đầy đủ */}
             {returnInfo.sellerEvidenceUrls && renderEvidenceGrid(
               returnInfo.sellerEvidenceUrls,
@@ -343,6 +351,17 @@ export default function CustomerReturnCard({ returnInfo, order, isDark: isDarkPr
                 <p className="text-[11px] text-stone-600 dark:text-slate-300 mt-0.5">
                   Khiếu nại kiện hàng hoàn đã được Ban Quản Trị giải quyết dứt điểm. Tiền ký quỹ đã được hoàn trả 100% về Ví tài khoản của Quý khách.
                 </p>
+                {(report?.policyClauseTitle || report?.policyClauseCode) && (
+                  <div className="mt-2 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-xs font-semibold text-emerald-800 dark:text-emerald-300">
+                    <HiOutlineScale className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                    <span>Căn cứ Điều khoản: <strong>{report.policyClauseTitle || report.policyClauseCode}</strong></span>
+                  </div>
+                )}
+                {report?.adminNote && (
+                  <p className="text-[11px] italic text-stone-600 dark:text-slate-300 pt-1">
+                    Ghi chú phán quyết BQT: &ldquo;{report.adminNote}&rdquo;
+                  </p>
+                )}
               </div>
             </div>
 

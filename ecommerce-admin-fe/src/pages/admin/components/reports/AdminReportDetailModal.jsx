@@ -263,6 +263,14 @@ export default function AdminReportDetailModal({
                             : ''}
                         </span>
                       </div>
+                      {(detailModal.data?.detail?.policyClauseTitle || detailModal.data?.detail?.policyClauseCode) && (
+                        <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-[11px] font-bold text-amber-800 dark:text-amber-300">
+                          <span>⚖️ Căn cứ Điều khoản:</span>
+                          <span className="underline decoration-amber-500/50">
+                            {detailModal.data.detail.policyClauseTitle || detailModal.data.detail.policyClauseCode}
+                          </span>
+                        </div>
+                      )}
                       <p
                         className={cn(
                           'text-xs font-medium',

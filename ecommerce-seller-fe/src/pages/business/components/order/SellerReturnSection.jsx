@@ -22,7 +22,7 @@ import SellerReturnSettlementBanner from './SellerReturnSettlementBanner'
 import SellerReturnCompleteModal from './SellerReturnCompleteModal'
 import SellerReturnDisputeModal from './SellerReturnDisputeModal'
 
-export default function SellerReturnSection({ returnInfo, order, isDark: isDarkProp, onRefresh }) {
+export default function SellerReturnSection({ returnInfo, order, report, isDark: isDarkProp, onRefresh }) {
   const storeTheme = useThemeStore((s) => s.theme)
   const isDark = isDarkProp !== undefined ? isDarkProp : storeTheme === 'dark'
   const [submitting, setSubmitting] = useState(false)
@@ -338,6 +338,7 @@ export default function SellerReturnSection({ returnInfo, order, isDark: isDarkP
         returnInfo={returnInfo}
         isOrderRefunded={isOrderRefunded}
         isVideoUrl={isVideoUrl}
+        report={report}
       />
 
       {/* 6. Khi COMPLETED: Kết quả giải ngân / hoàn tiền */}

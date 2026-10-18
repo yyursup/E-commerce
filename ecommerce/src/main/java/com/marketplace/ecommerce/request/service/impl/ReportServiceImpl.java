@@ -49,12 +49,15 @@ import com.marketplace.ecommerce.request.valueObjects.DisputeSellerAction;
 import com.marketplace.ecommerce.request.valueObjects.ReportStage;
 import com.marketplace.ecommerce.shop.service.ShopEscrowFundService;
 import com.marketplace.ecommerce.shop.valueObjects.ShopStatus;
+import com.marketplace.ecommerce.request.valueObjects.DisputePolicyClause;
+import com.marketplace.ecommerce.request.dto.response.DisputePolicyClauseResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -126,6 +129,14 @@ public class ReportServiceImpl implements ReportService {
             }
         }
 
+        // Validate và lưu Căn cứ Điều khoản Chính sách bắt buộc đối với tranh chấp Đơn hàng
+        DisputePolicyClause policyClause = requestPolicy.validateDisputePolicyClause(
+                report.getTargetType(), req.getPolicyClauseCode(), req.getDecision(), isSellerReturnDispute);
+        if (policyClause != null) {
+            report.setPolicyClauseCode(policyClause.getCode());
+            report.setPolicyClauseTitle(policyClause.getTitle());
+        }
+
         if (isSellerReturnDispute) {
             // Case 3: Xử lý tranh chấp kiện hàng hoàn do Seller khiếu nại
             // TUYỆT ĐỐI không gọi handleReportOrder (không phạt Shop vì đây là khiếu nại
@@ -138,7 +149,7 @@ public class ReportServiceImpl implements ReportService {
             if (buyerWins) {
                 handleSellerReturnDisputeBuyerWins(report, r, admin, now, req.getNote(), req.getDecision(), returnOpt);
             } else {
-                handleSellerReturnDisputeSellerWins(report, r, admin, now, req.getNote(), req.getDecision(), returnOpt);
+                handleSellerReturnDisputeSellerWins(report, r, admin, now, req.getNote(), req.getDecision(), returnOpt, req.getRemoveShopPenalty());
             }
             return;
         }
@@ -164,7 +175,7 @@ public class ReportServiceImpl implements ReportService {
     }
 
     private void handleSellerReturnDisputeSellerWins(Report report, Request r, Account admin, LocalDateTime now,
-            String note, ReportDecision decision, Optional<OrderReturn> returnOpt) {
+            String note, ReportDecision decision, Optional<OrderReturn> returnOpt, Boolean removeShopPenalty) {
         UUID orderId = report.getTargetId();
         Order order = orderRepository.findByIdForUpdate(orderId)
                 .orElseThrow(() -> new CustomException("Order not found: " + orderId));
@@ -179,11 +190,11 @@ public class ReportServiceImpl implements ReportService {
             throw new CustomException("Ký quỹ đơn hàng đã được hoàn tiền trước đó, không thể giải ngân cho Shop");
         }
 
-        // 2. Phục hồi điểm vi phạm cho Shop nếu Shop từng bị phạt từ khiếu nại ban đầu
-        // của Buyer
-        if (report.getViolationReportId() != null && order.getShop() != null && order.getShop().getUser() != null) {
+        // 2. Quyết định của Admin về việc xóa gậy hay giữ nguyên cho Shop:
+        boolean shouldPardonShop = removeShopPenalty == null || Boolean.TRUE.equals(removeShopPenalty);
+        if (shouldPardonShop && order.getShop() != null && order.getShop().getUser() != null) {
             Account shopOwner = order.getShop().getUser().getAccount();
-            if (shopOwner != null) {
+            if (shopOwner != null && shopOwner.getViolationCount() > 0) {
                 int newViolationCount = Math.max(0, shopOwner.getViolationCount() - 1);
                 shopOwner.setViolationCount(newViolationCount);
                 if (newViolationCount < 5) {
@@ -197,7 +208,18 @@ public class ReportServiceImpl implements ReportService {
                 }
                 accountRepository.save(shopOwner);
                 shopRepository.save(order.getShop());
+                log.info("Admin decided to PARDON shop penalty: orderId={}, newViolationCount={}", orderId, newViolationCount);
             }
+        } else {
+            log.info("Admin decided to KEEP shop penalty: orderId={}, removeShopPenalty={}", orderId, removeShopPenalty);
+        }
+
+        // 3. Xử phạt Buyer vì gian lận kiện hoàn (Return Fraud) & Chặn vĩnh viễn quyền kháng cáo theo mốc kỷ luật chuẩn
+        if (order.getUser() != null && order.getUser().getAccount() != null) {
+            UUID buyerAccountId = order.getUser().getAccount().getId();
+            DisciplineLevel buyerLevel = punishAccount(buyerAccountId, now);
+            log.info("Penalized buyer for return fraud via punishAccount: buyerAccountId={}, finalDisciplineLevel={}",
+                    buyerAccountId, buyerLevel);
         }
 
         // 3. Hủy kiện hàng hoàn (OrderReturn -> CANCELLED)
@@ -506,8 +528,17 @@ public class ReportServiceImpl implements ReportService {
             throw new CustomException("Bạn không phải chủ gian hàng sở hữu đơn hàng này");
         }
 
-        if (report.getStage() != ReportStage.DIRECT_NEGOTIATION) {
-            throw new CustomException("Khiếu nại không ở giai đoạn thương lượng 1:1");
+        if (report.getStage() != ReportStage.DIRECT_NEGOTIATION && report.getStage() != ReportStage.ESCALATED_TO_ADMIN) {
+            throw new CustomException("Khiếu nại không ở giai đoạn có thể phản hồi hoặc gửi giải trình");
+        }
+
+        if (report.getRequest() != null && report.getRequest().getStatus() != RequestStatus.PENDING) {
+            throw new CustomException("Khiếu nại đã được Quản trị viên xử lý hoặc đã kết thúc, không thể gửi phản hồi");
+        }
+
+        if (report.getStage() == ReportStage.ESCALATED_TO_ADMIN
+                && (report.getSellerResponse() != null || report.getSellerEvidenceUrl() != null)) {
+            throw new CustomException("Hồ sơ giải trình đối soát đã được gửi và khóa bất biến, không thể chỉnh sửa");
         }
 
         LocalDateTime now = LocalDateTime.now();
@@ -523,11 +554,11 @@ public class ReportServiceImpl implements ReportService {
                 report.setStage(ReportStage.RESOLVED);
                 report.setResolutionType(ResolutionType.REFUND_ONLY);
                 report.getRequest().setStatus(RequestStatus.APPROVED);
-                report.getRequest().setResponse("Người bán đồng ý hoàn tiền trong thương lượng 1:1: "
+                report.getRequest().setResponse("Người bán đồng ý hoàn tiền: "
                         + (req.getResponseNote() != null ? req.getResponseNote() : ""));
                 report.getRequest().setReviewedAt(now);
 
-                escrowService.refundMerchandiseOnly(orderId, "Shop chấp nhận hoàn tiền trong thương lượng 1:1 (khách giữ hàng)");
+                escrowService.refundMerchandiseOnly(orderId, "Shop chấp nhận hoàn tiền (khách giữ hàng)");
                 order.setStatus(OrderStatus.REFUNDED);
                 orderRepository.save(order);
 
@@ -547,11 +578,15 @@ public class ReportServiceImpl implements ReportService {
 
             case REJECT_AND_ESCALATE -> {
                 report.setStage(ReportStage.ESCALATED_TO_ADMIN);
-                report.setEscalatedAt(now);
-                report.setEscalatedByAccountId(sellerAccountId);
-                report.setEscalationReason(
-                        "Người bán từ chối khiếu nại: " + (req.getResponseNote() != null ? req.getResponseNote() : ""));
-                log.info("Seller rejected dispute reportId={}, escalated to admin", reportId);
+                if (report.getEscalatedAt() == null) {
+                    report.setEscalatedAt(now);
+                    report.setEscalatedByAccountId(sellerAccountId);
+                }
+                if (report.getEscalationReason() == null || report.getEscalationReason().isBlank()) {
+                    report.setEscalationReason(
+                            "Người bán từ chối khiếu nại: " + (req.getResponseNote() != null ? req.getResponseNote() : ""));
+                }
+                log.info("Seller rejected dispute or provided explanation for reportId={}, escalated to admin", reportId);
             }
         }
 
@@ -837,6 +872,8 @@ public class ReportServiceImpl implements ReportService {
                 .response(req != null ? req.getResponse() : null)
                 .createdAt(req != null ? req.getCreatedAt() : null)
                 .reviewedAt(req != null ? req.getReviewedAt() : null)
+                .policyClauseCode(report.getPolicyClauseCode())
+                .policyClauseTitle(report.getPolicyClauseTitle())
                 .escrow(escrowDto)
                 .orderReturn(orderReturnDto)
                 .build();
@@ -859,5 +896,12 @@ public class ReportServiceImpl implements ReportService {
         // 2. Fallback qua requestPolicy resolve
         UUID sellerAccountId = requestPolicy.resolveTargetAccountId(TargetType.ORDER, orderId);
         return sellerAccountId != null && sellerAccountId.equals(accountId);
+    }
+
+    @Override
+    public List<DisputePolicyClauseResponse> getDisputePolicyClauses() {
+        return Arrays.stream(DisputePolicyClause.values())
+                .map(DisputePolicyClauseResponse::from)
+                .toList();
     }
 }

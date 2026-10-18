@@ -62,6 +62,7 @@ export default function AdminReports() {
   // Data states
   const [reports, setReports] = useState([])
   const [appeals, setAppeals] = useState([])
+  const [policyClauses, setPolicyClauses] = useState([])
 
   // Modal actions (xác nhận/từ chối kèm ghi chú)
   const [actionModal, setActionModal] = useState({
@@ -69,6 +70,7 @@ export default function AdminReports() {
     type: '', // 'REPORT_APPROVE', 'REPORT_REJECT', 'APPEAL_APPROVE', 'APPEAL_REJECT'
     item: null,
     note: '',
+    policyClauseCode: '',
   })
   const [submitting, setSubmitting] = useState(false)
 
@@ -83,15 +85,17 @@ export default function AdminReports() {
   const fetchData = useCallback(async () => {
     try {
       setLoading(true)
-      const [reportRes, appealRes] = await Promise.all([
+      const [reportRes, appealRes, clauseRes] = await Promise.all([
         requestService.getAdminRequests({ type: 'REPORT' }),
         requestService.getAdminRequests({ type: 'APPEAL' }),
+        reportService.getPolicyClauses().catch(() => []),
       ])
       const reportList = reportRes?.content || (Array.isArray(reportRes) ? reportRes : [])
       const appealList = appealRes?.content || (Array.isArray(appealRes) ? appealRes : [])
 
       setReports(reportList)
       setAppeals(appealList)
+      setPolicyClauses(clauseRes || [])
     } catch (err) {
       console.error('Lỗi tải dữ liệu kiểm duyệt:', err)
       toast.error('Không thể tải danh sách dữ liệu kiểm duyệt.')
@@ -153,11 +157,13 @@ export default function AdminReports() {
       type,
       item: resolvedItem,
       note: '',
+      policyClauseCode: '',
+      removeShopPenalty: true,
     })
   }
 
   const handleActionConfirm = async () => {
-    const { type, item, note } = actionModal
+    const { type, item, note, policyClauseCode, removeShopPenalty = true } = actionModal
     if (!item) return
 
     const trimmedNote = note?.trim() || ''
@@ -173,6 +179,13 @@ export default function AdminReports() {
       const requestId = item.requestId || item.id
       const targetType = item.targetType || item.detail?.targetType
 
+      // Bắt buộc chọn Căn cứ Điều khoản Chính sách đối với tranh chấp Đơn hàng
+      if (targetType === 'ORDER' && ['REPORT_APPROVE', 'REPORT_REJECT'].includes(type) && !policyClauseCode) {
+        toast.error('Vui lòng chọn Căn cứ Điều khoản Chính sách khi xử lý tranh chấp đơn hàng!')
+        setSubmitting(false)
+        return
+      }
+
       const isSellerDispute = Boolean(
         item.isSellerReturnDispute ||
         item.detail?.targetInfo?.includes('DISPUTED') ||
@@ -182,9 +195,11 @@ export default function AdminReports() {
 
       if (type === 'REPORT_APPROVE') {
         const resolution = (targetType === 'ORDER' && !isSellerDispute) ? (actionModal.resolutionType || 'REFUND_ONLY') : null
-        await reportService.handleReport(requestId, 'APPROVE', trimmedNote, resolution)
+        await reportService.handleReport(requestId, 'APPROVE', trimmedNote, resolution, policyClauseCode, removeShopPenalty)
         if (isSellerDispute) {
-          toast.success('Đã chấp thuận khiếu nại của Shop! Đã hoàn tất và giải ngân tiền cho Shop.')
+          toast.success(
+            `Đã chấp thuận khiếu nại của Shop! Đã giải ngân cho Shop và ${removeShopPenalty ? 'xóa gậy phục hồi uy tín' : 'giữ nguyên gậy'}. Người mua bị phạt 1 gậy (Quyết định cuối cùng, không thể kháng cáo).`
+          )
         } else if (targetType === 'ORDER') {
           toast.success('Đã xác nhận vi phạm đơn hàng! Hệ thống đã thực thi phán quyết bồi hoàn ngay lập tức.')
         } else if (targetType === 'USER') {
@@ -197,7 +212,7 @@ export default function AdminReports() {
           toast.success('Đã xác nhận vi phạm và áp dụng chế tài thành công!')
         }
       } else if (type === 'REPORT_REJECT') {
-        await reportService.handleReport(requestId, 'REJECT', trimmedNote)
+        await reportService.handleReport(requestId, 'REJECT', trimmedNote, null, policyClauseCode)
         if (isSellerDispute) {
           toast.success('Đã bác bỏ khiếu nại của Shop! Đã phân xử bồi hoàn tiền cho Người mua.')
         } else {
@@ -408,6 +423,7 @@ export default function AdminReports() {
         formatVND={formatVND}
         submitting={submitting}
         handleActionConfirm={handleActionConfirm}
+        policyClauses={policyClauses}
       />
     </div>
   )

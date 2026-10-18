@@ -15,6 +15,7 @@ import toast from 'react-hot-toast'
 import orderService from '../../services/order'
 import returnService from '../../services/returnService'
 import escrowService from '../../services/escrow'
+import reportService from '../../services/report'
 import OrderStatusBadge from './components/order/OrderStatusBadge'
 import SellerOrderActions from './components/order/SellerOrderActions'
 import SellerDisputeSection from './components/order/SellerDisputeSection'
@@ -32,6 +33,7 @@ export default function ShopOrderDetail() {
 
   const [order, setOrder] = useState(null)
   const [returnInfo, setReturnInfo] = useState(null)
+  const [report, setReport] = useState(null)
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
   const [ghnOrderCodeInput, setGhnOrderCodeInput] = useState('')
@@ -68,6 +70,13 @@ export default function ShopOrderDetail() {
         }
       }
       setReturnInfo(retInfo)
+
+      try {
+        const rep = await reportService.getReportByOrderId(orderId)
+        setReport(rep || null)
+      } catch {
+        setReport(null)
+      }
     } catch (err) {
       console.error('Error fetching order:', err)
       const msg = err?.response?.data?.message || err?.message || 'Không thể tải thông tin đơn hàng'
@@ -390,6 +399,7 @@ export default function ShopOrderDetail() {
                   <SellerReturnSection
                     returnInfo={currentReturn}
                     order={order}
+                    report={report}
                     isDark={isDark}
                     onRefresh={fetchOrder}
                   />
@@ -412,6 +422,7 @@ export default function ShopOrderDetail() {
                   <SellerReturnSection
                     returnInfo={currentReturn}
                     order={order}
+                    report={report}
                     isDark={isDark}
                     onRefresh={fetchOrder}
                   />
@@ -449,6 +460,7 @@ export default function ShopOrderDetail() {
                     <SellerReturnSection
                       returnInfo={currentReturn}
                       order={order}
+                      report={report}
                       isDark={isDark}
                       onRefresh={fetchOrder}
                     />

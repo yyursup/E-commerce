@@ -39,6 +39,9 @@ public class ReportDetailsResponse {
     private LocalDateTime createdAt;
     private LocalDateTime reviewedAt;
 
+    private String policyClauseCode;
+    private String policyClauseTitle;
+
     /**
      * Thông tin Ký Quỹ Escrow tích hợp đối với Báo Cáo Vi Phạm Đơn Hàng (TargetType = ORDER)
      */

@@ -17,6 +17,8 @@ export default function SellerDisputeActionModal({
   submitting,
   onSubmit,
   order,
+  isEscalated = false,
+  isUpdating = false,
 }) {
   if (!activeModal) return null
 
@@ -40,7 +42,7 @@ export default function SellerDisputeActionModal({
           <h4 className="text-base font-bold">
             {activeModal === 'REFUND' && 'Xác Nhận Đồng Ý Hoàn Tiền (Khách Giữ Hàng)'}
             {activeModal === 'RETURN' && 'Xác Nhận Nhận Lại Hàng Đổi Trả'}
-            {activeModal === 'REJECT' && 'Từ Chối & Chuyển Ban Quản Trị Sàn'}
+            {activeModal === 'REJECT' && (isEscalated ? (isUpdating ? 'Cập Nhật Giải Trình & Bằng Chứng Cho BQT Sàn' : 'Gửi Giải Trình & Bằng Chứng Cho BQT Sàn') : 'Từ Chối & Chuyển Ban Quản Trị Sàn')}
           </h4>
           <button
             type="button"
@@ -115,17 +117,30 @@ export default function SellerDisputeActionModal({
           )}
 
           {activeModal === 'REJECT' && (
-            <div className="rounded-xl bg-rose-500/10 border border-rose-500/20 p-3 text-rose-800 dark:text-rose-300">
-              <p className="font-bold">Chuyển phán quyết lên Ban Quản Trị sàn:</p>
+            <div
+              className={cn(
+                'rounded-xl border p-3',
+                isEscalated
+                  ? 'bg-purple-500/10 border-purple-500/20 text-purple-800 dark:text-purple-300'
+                  : 'bg-rose-500/10 border-rose-500/20 text-rose-800 dark:text-rose-300'
+              )}
+            >
+              <p className="font-bold">
+                {isEscalated ? 'Hồ sơ đối chất gửi Ban Quản Trị sàn:' : 'Chuyển phán quyết lên Ban Quản Trị sàn:'}
+              </p>
               <p className="mt-1">
-                Admin sẽ căn cứ vào mô tả của khách hàng và bằng chứng đối soát do Shop cung cấp bên dưới để đưa ra phán quyết cuối cùng.
+                {isEscalated
+                  ? 'Ban Quản Trị sàn sẽ căn cứ vào mô tả khiếu nại của Người mua và hồ sơ giải trình, hình ảnh/video đóng gói đối soát do Shop cung cấp bên dưới để đưa ra phán quyết chính thức.'
+                  : 'Admin sẽ căn cứ vào mô tả của khách hàng và bằng chứng đối soát do Shop cung cấp bên dưới để đưa ra phán quyết cuối cùng.'}
               </p>
             </div>
           )}
 
           <div className="space-y-1.5 pt-1">
             <label className="font-bold text-stone-700 dark:text-slate-300">
-              {activeModal === 'REJECT' ? 'Lý do từ chối (Bắt buộc):' : 'Ghi chú gửi Người mua (Tùy chọn):'}
+              {activeModal === 'REJECT'
+                ? (isEscalated ? 'Nội dung giải trình đối soát (Bắt buộc):' : 'Lý do từ chối (Bắt buộc):')
+                : 'Ghi chú gửi Người mua (Tùy chọn):'}
             </label>
             <textarea
               rows={3}
@@ -133,7 +148,9 @@ export default function SellerDisputeActionModal({
               onChange={(e) => setResponseNote(e.target.value)}
               placeholder={
                 activeModal === 'REJECT'
-                  ? 'Ví dụ: Shop đã kiểm tra camera đóng hàng tem seal nguyên vẹn, sản phẩm giao đúng mã...'
+                  ? (isEscalated
+                      ? 'Ví dụ: Shop đã kiểm tra camera đóng gói đơn hàng, dán tem seal nguyên vẹn, gửi kèm video kiểm tra...'
+                      : 'Ví dụ: Shop đã kiểm tra camera đóng hàng tem seal nguyên vẹn, sản phẩm giao đúng mã...')
                   : 'Nhập lời nhắn gửi khách hàng...'
               }
               className={cn(
@@ -226,12 +243,12 @@ export default function SellerDisputeActionModal({
                 ? 'bg-emerald-600 hover:bg-emerald-700'
                 : activeModal === 'RETURN'
                   ? 'bg-sky-600 hover:bg-sky-700'
-                  : 'bg-rose-600 hover:bg-rose-700',
+                  : (isEscalated ? 'bg-purple-600 hover:bg-purple-700' : 'bg-rose-600 hover:bg-rose-700'),
               (submitting || (activeModal === 'REJECT' && !responseNote.trim())) && 'opacity-50 cursor-not-allowed'
             )}
           >
             <HiOutlineCheck className="h-4 w-4" />
-            <span>{submitting ? 'Đang gửi...' : 'Xác Nhận'}</span>
+            <span>{submitting ? 'Đang gửi...' : (isEscalated ? (isUpdating ? 'Cập Nhật Lên BQT Sàn' : 'Gửi Lên BQT Sàn') : 'Xác Nhận')}</span>
           </button>
         </div>
       </div>

@@ -3,6 +3,7 @@ import { cn } from '../../../../lib/cn'
 import AdminActionQuickTags from './AdminActionQuickTags'
 import AdminActionOrderResolution from './AdminActionOrderResolution'
 import AdminActionEscrowSplit from './AdminActionEscrowSplit'
+import AdminActionPolicyClauseSelector from './AdminActionPolicyClauseSelector'
 
 export default function AdminActionModal({
   actionModal,
@@ -11,6 +12,7 @@ export default function AdminActionModal({
   submitting,
   formatVND = (v) => `${Number(v || 0).toLocaleString('vi-VN')} ₫`,
   handleActionConfirm,
+  policyClauses = [],
 }) {
   const targetType = actionModal.item?.targetType || actionModal.item?.detail?.targetType
 
@@ -39,6 +41,21 @@ export default function AdminActionModal({
     actionModal.item?.detail?.escalationReason?.includes('kiện hàng hoàn') ||
     actionModal.item?.description?.includes('Shop khiếu nại kiện hàng hoàn')
   )
+
+  const isOrderDispute = targetType === 'ORDER' && ['REPORT_APPROVE', 'REPORT_REJECT'].includes(actionModal.type)
+  const isClauseMissing = isOrderDispute && !actionModal.policyClauseCode
+
+  const handleClauseSelect = (clauseCode) => {
+    const clauseInfo = policyClauses.find((c) => c.code === clauseCode)
+    setActionModal((prev) => {
+      const nextNote = !prev.note?.trim() && clauseInfo ? `${clauseInfo.title}: ${clauseInfo.description}` : prev.note
+      return {
+        ...prev,
+        policyClauseCode: clauseCode,
+        note: nextNote,
+      }
+    })
+  }
 
   const getSubmitButtonConfig = () => {
     if (submitting) {
@@ -110,7 +127,7 @@ export default function AdminActionModal({
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             className={cn(
-              'w-full max-w-lg rounded-3xl border p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto',
+              'w-full max-w-xl sm:max-w-2xl rounded-3xl border p-5 sm:p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto scrollbar-thin scrollbar-thumb-stone-300 dark:scrollbar-thumb-slate-700',
               isDark ? 'border-slate-800 bg-slate-900 text-white' : 'border-stone-200 bg-white text-stone-900',
             )}
           >
@@ -138,16 +155,111 @@ export default function AdminActionModal({
                 : 'Vui lòng nhập lý do / phán quyết chính thức từ Ban Quản Trị. Thông tin này sẽ được lưu trữ vào hồ sơ đối soát:'}
             </p>
 
-            {/* Quick tags gợi ý lý do nhanh */}
-            <AdminActionQuickTags
-              actionType={actionModal.type}
-              targetType={targetType}
-              currentNote={actionModal.note}
-              onSelectTag={(tag) => setActionModal((prev) => ({ ...prev, note: tag }))}
-              isDark={isDark}
-              targetTypeLabel={targetTypeLabel}
-              isSellerDispute={isSellerDispute}
-            />
+            {/* Quick tags gợi ý lý do nhanh (Chỉ áp dụng khi không phải tranh chấp Đơn hàng có Căn Cứ Điều Khoản chuẩn hóa) */}
+            {!isOrderDispute && (
+              <AdminActionQuickTags
+                actionType={actionModal.type}
+                targetType={targetType}
+                currentNote={actionModal.note}
+                onSelectTag={(tag) => setActionModal((prev) => ({ ...prev, note: tag }))}
+                isDark={isDark}
+                targetTypeLabel={targetTypeLabel}
+                isSellerDispute={isSellerDispute}
+              />
+            )}
+
+            {/* Bộ chọn Căn Cứ Điều Khoản Chính Sách bắt buộc cho tranh chấp Đơn hàng */}
+            {isOrderDispute && (
+              <AdminActionPolicyClauseSelector
+                policyClauses={policyClauses}
+                selectedClause={actionModal.policyClauseCode}
+                onChangeClause={handleClauseSelect}
+                targetType={targetType}
+                actionType={actionModal.type}
+                isSellerDispute={isSellerDispute}
+                isDark={isDark}
+              />
+            )}
+
+            {/* Tùy chọn kỷ luật Shop & Chế tài Buyer khi Shop thắng khiếu nại kiện hoàn */}
+            {isSellerDispute && actionModal.type === 'REPORT_APPROVE' && (
+              <div
+                className={cn(
+                  'mb-3.5 p-3.5 rounded-2xl border transition-all',
+                  isDark ? 'border-amber-500/30 bg-amber-950/20' : 'border-amber-500/30 bg-amber-500/5'
+                )}
+              >
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <span className="text-xs font-bold flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
+                    ⚖️ Phán quyết kỷ luật đối với Shop:
+                  </span>
+                  <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-md bg-amber-500 text-white">
+                    Tùy chọn BQT
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                  <label
+                    onClick={() => setActionModal((prev) => ({ ...prev, removeShopPenalty: true }))}
+                    className={cn(
+                      'flex items-center gap-2.5 p-2.5 rounded-xl border cursor-pointer transition select-none',
+                      actionModal.removeShopPenalty !== false
+                        ? 'border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-bold shadow-xs'
+                        : isDark
+                          ? 'border-slate-800 bg-slate-800/60 text-slate-400 hover:border-slate-700'
+                          : 'border-stone-200 bg-white text-stone-600 hover:border-stone-300'
+                    )}
+                  >
+                    <input
+                      type="radio"
+                      name="removeShopPenalty"
+                      checked={actionModal.removeShopPenalty !== false}
+                      onChange={() => setActionModal((prev) => ({ ...prev, removeShopPenalty: true }))}
+                      className="text-emerald-600 focus:ring-emerald-500"
+                    />
+                    <div className="min-w-0">
+                      <span className="block leading-tight">Xóa gậy cho Shop</span>
+                      <span className="text-[10px] font-normal text-stone-400 dark:text-slate-400">
+                        Phục hồi 1 điểm uy tín vi phạm
+                      </span>
+                    </div>
+                  </label>
+
+                  <label
+                    onClick={() => setActionModal((prev) => ({ ...prev, removeShopPenalty: false }))}
+                    className={cn(
+                      'flex items-center gap-2.5 p-2.5 rounded-xl border cursor-pointer transition select-none',
+                      actionModal.removeShopPenalty === false
+                        ? 'border-rose-500 bg-rose-500/10 text-rose-700 dark:text-rose-300 font-bold shadow-xs'
+                        : isDark
+                          ? 'border-slate-800 bg-slate-800/60 text-slate-400 hover:border-slate-700'
+                          : 'border-stone-200 bg-white text-stone-600 hover:border-stone-300'
+                    )}
+                  >
+                    <input
+                      type="radio"
+                      name="removeShopPenalty"
+                      checked={actionModal.removeShopPenalty === false}
+                      onChange={() => setActionModal((prev) => ({ ...prev, removeShopPenalty: false }))}
+                      className="text-rose-600 focus:ring-rose-500"
+                    />
+                    <div className="min-w-0">
+                      <span className="block leading-tight">Giữ nguyên gậy</span>
+                      <span className="text-[10px] font-normal text-stone-400 dark:text-slate-400">
+                        Shop vẫn có lỗi giao ẩu ban đầu
+                      </span>
+                    </div>
+                  </label>
+                </div>
+
+                <div className="mt-2.5 pt-2 border-t border-amber-500/20 flex items-start gap-1.5 text-[10.5px] leading-relaxed text-stone-600 dark:text-slate-300">
+                  <span className="shrink-0 text-amber-500 font-bold">⚠️ Chế tài Người mua:</span>
+                  <span>
+                    Người mua sẽ bị xử phạt <strong>+1 gậy vi phạm</strong> (Hành vi gian lận kiện hoàn). Đây là <strong>phán quyết tối cao cuối cùng</strong> của BQT sàn, Người mua <strong>không được phép kháng cáo</strong>.
+                  </span>
+                </div>
+              </div>
+            )}
 
             {/* Phương án bồi hoàn đơn hàng (Chỉ hiển thị khi đối tượng là ORDER và không phải khiếu nại kiện hoàn) */}
             {actionModal.type === 'REPORT_APPROVE' && targetType === 'ORDER' && !isSellerDispute && (
@@ -194,7 +306,7 @@ export default function AdminActionModal({
               <button
                 type="button"
                 onClick={handleActionConfirm}
-                disabled={submitting}
+                disabled={submitting || isClauseMissing}
                 className={cn(
                   'px-4.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 disabled:opacity-50',
                   submitBtnConfig.className,

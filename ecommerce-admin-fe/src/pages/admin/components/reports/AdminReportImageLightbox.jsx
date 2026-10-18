@@ -1,10 +1,13 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { HiOutlineX, HiOutlineExternalLink } from 'react-icons/hi'
+import { isVideoUrl } from '../../../../lib/mediaUtils'
 
 export default function AdminReportImageLightbox({
   previewImage,
   setPreviewImage,
 }) {
+  const isVid = isVideoUrl(previewImage)
+
   return (
     <AnimatePresence>
       {previewImage && (
@@ -28,22 +31,31 @@ export default function AdminReportImageLightbox({
                 title="Mở tab mới"
               >
                 <HiOutlineExternalLink className="h-4 w-4" />
-                Mở ảnh gốc
+                {isVid ? 'Mở video gốc' : 'Mở ảnh gốc'}
               </a>
               <button
                 type="button"
                 onClick={() => setPreviewImage(null)}
                 className="p-2 rounded-xl bg-black/60 hover:bg-black/80 text-white border border-white/20 backdrop-blur-sm transition-all"
-                title="Đóng xem ảnh"
+                title="Đóng xem"
               >
                 <HiOutlineX className="h-4 w-4" />
               </button>
             </div>
-            <img
-              src={previewImage}
-              alt="Phóng to ảnh bằng chứng"
-              className="max-h-[82vh] max-w-full object-contain mx-auto"
-            />
+            {isVid ? (
+              <video
+                src={previewImage}
+                controls
+                autoPlay
+                className="max-h-[82vh] max-w-full object-contain mx-auto rounded-lg"
+              />
+            ) : (
+              <img
+                src={previewImage}
+                alt="Phóng to ảnh bằng chứng"
+                className="max-h-[82vh] max-w-full object-contain mx-auto"
+              />
+            )}
           </motion.div>
         </div>
       )}

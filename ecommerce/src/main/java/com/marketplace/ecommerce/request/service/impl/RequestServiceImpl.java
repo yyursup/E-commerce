@@ -33,6 +33,7 @@ import com.marketplace.ecommerce.shop.entity.Shop;
 import com.marketplace.ecommerce.shop.repository.ShopRepository;
 import com.marketplace.ecommerce.shop.service.ShopService;
 import com.marketplace.ecommerce.shop.valueObjects.ShopStatus;
+import com.marketplace.ecommerce.order.dto.response.OrderReturnResponse;
 import com.marketplace.ecommerce.order.entity.Order;
 import com.marketplace.ecommerce.order.repository.OrderRepository;
 import com.marketplace.ecommerce.order.valueObjects.OrderStatus;
@@ -338,6 +339,7 @@ public class RequestServiceImpl implements RequestService {
                 String targetName = "Không xác định";
                 String targetInfo = "";
                 EscrowAdminResponse escrowDto = null;
+                OrderReturnResponse orderReturnDto = null;
                 String sellerResponse = rep.getSellerResponse();
                 String sellerEvidenceUrl = rep.getSellerEvidenceUrl();
                 DisputeSellerAction sellerAction = rep.getSellerAction();
@@ -393,25 +395,10 @@ public class RequestServiceImpl implements RequestService {
 
                                 var ret = orderReturnService.getReturnByOrderId(o.getId());
                                 if (ret != null) {
+                                    orderReturnDto = ret;
                                     targetInfo += " | Kiện hoàn: " + ret.getStatus()
                                             + (ret.getConditionStatus() != null ? " (" + ret.getConditionStatus() + ")"
                                                     : "");
-
-                                    // Fallback nạp ảnh và chứng từ khiếu nại của Shop từ kiện hoàn nếu trên Report chưa lưu
-                                    if ((sellerEvidenceUrl == null || sellerEvidenceUrl.isBlank())
-                                            && ret.getSellerEvidenceUrls() != null
-                                            && !ret.getSellerEvidenceUrls().isBlank()) {
-                                        sellerEvidenceUrl = ret.getSellerEvidenceUrls();
-                                    }
-                                    if ((sellerResponse == null || sellerResponse.isBlank())
-                                            && ret.getConditionNote() != null
-                                            && !ret.getConditionNote().isBlank()) {
-                                        sellerResponse = (ret.getConditionStatus() != null ? "[" + ret.getConditionStatus() + "] " : "")
-                                                + ret.getConditionNote();
-                                    }
-                                    if (sellerAction == null && ret.getStatus() == ReturnStatus.DISPUTED) {
-                                        sellerAction = DisputeSellerAction.REJECT_AND_ESCALATE;
-                                    }
                                 }
 
                                 var escOpt = escrowRepository.findByOrderId(o.getId());
@@ -424,6 +411,8 @@ public class RequestServiceImpl implements RequestService {
                 }
 
                 yield ReportDetailsResponse.builder()
+                        .id(rep.getId())
+                        .requestId(r.getId())
                         .targetId(rep.getTargetId())
                         .targetType(rep.getTargetType() != null ? TargetType.valueOf(rep.getTargetType().name()) : null)
                         .evidenceUrl(rep.getEvidenceUrl())
@@ -437,7 +426,14 @@ public class RequestServiceImpl implements RequestService {
                         .sellerAction(sellerAction)
                         .escalatedAt(rep.getEscalatedAt())
                         .escalationReason(rep.getEscalationReason())
+                        .resolutionType(rep.getResolutionType())
+                        .status(r.getStatus() != null ? r.getStatus().name() : null)
+                        .description(r.getDescription())
+                        .response(r.getResponse())
+                        .createdAt(r.getCreatedAt())
+                        .reviewedAt(r.getReviewedAt())
                         .escrow(escrowDto)
+                        .orderReturn(orderReturnDto)
                         .build();
             }
 

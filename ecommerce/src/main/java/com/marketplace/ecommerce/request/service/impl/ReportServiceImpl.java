@@ -28,12 +28,15 @@ import com.marketplace.ecommerce.request.valueObjects.TargetType;
 import com.marketplace.ecommerce.review.entity.Review;
 import com.marketplace.ecommerce.review.repository.ReviewRepository;
 import com.marketplace.ecommerce.review.valueObjects.ReviewStatus;
+import com.marketplace.ecommerce.order.dto.response.OrderReturnResponse;
 import com.marketplace.ecommerce.order.entity.Order;
+import com.marketplace.ecommerce.order.entity.OrderReturn;
 import com.marketplace.ecommerce.order.repository.OrderRepository;
 import com.marketplace.ecommerce.order.repository.OrderReturnRepository;
 import com.marketplace.ecommerce.order.valueObjects.OrderStatus;
 import com.marketplace.ecommerce.order.valueObjects.ReturnStatus;
 import com.marketplace.ecommerce.payment.dto.EscrowAdminResponse;
+import com.marketplace.ecommerce.payment.entity.Escrow;
 import com.marketplace.ecommerce.payment.repository.EscrowRepository;
 import com.marketplace.ecommerce.payment.service.EscrowService;
 import com.marketplace.ecommerce.payment.valueObjects.EscrowStatus;
@@ -88,30 +91,52 @@ public class ReportServiceImpl implements ReportService {
         if (r == null)
             throw new CustomException("Request not found");
 
-        if (r.getStatus() == RequestStatus.APPROVED || r.getStatus() == RequestStatus.REJECTED) {
-            throw new CustomException("Request already handled");
-        }
-
         LocalDateTime now = LocalDateTime.now();
 
-        // Kiểm tra xem đây có phải là khiếu nại kiện hoàn từ Shop (Seller return
-        // dispute / counter-report)
+        // Lấy thông tin OrderReturn (nếu có)
+        Optional<OrderReturn> returnOpt = Optional.empty();
+        if (report.getTargetType() == TargetType.ORDER && report.getTargetId() != null) {
+            returnOpt = orderReturnRepository.findByOrderIdForUpdate(report.getTargetId());
+        }
+
+        // Case 3: Xác định khiếu nại kiện hoàn từ Shop (Seller return dispute)
         boolean isSellerReturnDispute = report.getTargetType() == TargetType.ORDER
-                && (report.getViolationReportId() != null
+                && ((returnOpt.isPresent() && returnOpt.get().getStatus() == ReturnStatus.DISPUTED)
+                        || report.getViolationReportId() != null
+                        || (report.getEscalationReason() != null
+                                && report.getEscalationReason().contains("kiện hàng hoàn"))
                         || (r.getDescription() != null
                                 && r.getDescription().contains("Shop khiếu nại kiện hàng hoàn")));
 
-        if (report.getTargetType() == TargetType.ORDER
-                && !isSellerReturnDispute
-                && report.getStage() != ReportStage.ESCALATED_TO_ADMIN) {
-            throw new CustomException("Khiếu nại đơn hàng đang trong giai đoạn thương lượng trực tiếp hoặc xử lý đổi trả, Quản trị viên chưa thể can thiệp");
+        if (!isSellerReturnDispute) {
+            if (r.getStatus() == RequestStatus.APPROVED || r.getStatus() == RequestStatus.REJECTED
+                    || report.getStage() == ReportStage.CLOSED) {
+                throw new CustomException("Hồ sơ khiếu nại đã có phán quyết và được xử lý hoàn tất trước đó");
+            }
+            if (report.getTargetType() == TargetType.ORDER && report.getStage() != ReportStage.ESCALATED_TO_ADMIN) {
+                throw new CustomException(
+                        "Khiếu nại đơn hàng đang trong giai đoạn thương lượng trực tiếp hoặc xử lý đổi trả, Quản trị viên chưa thể can thiệp");
+            }
+        } else {
+            if (returnOpt.isPresent() && returnOpt.get().getStatus() != ReturnStatus.DISPUTED) {
+                throw new CustomException(
+                        "Tranh chấp kiện hàng hoàn đã có phán quyết và không còn ở trạng thái tranh chấp");
+            }
         }
 
         if (isSellerReturnDispute) {
-            if (req.getDecision() == ReportDecision.REJECT) {
-                handleRejectSellerReturnDispute(report, r, admin, now, req.getNote());
+            // Case 3: Xử lý tranh chấp kiện hàng hoàn do Seller khiếu nại
+            // TUYỆT ĐỐI không gọi handleReportOrder (không phạt Shop vì đây là khiếu nại
+            // tình trạng hàng hoàn)
+            // TUYỆT ĐỐI không gọi orderReturnService.createReturn (không tạo mới kiện hoàn)
+            boolean buyerWins = (req.getDecision() == ReportDecision.REJECT)
+                    || (req.getResolutionType() == ResolutionType.REFUND_ONLY)
+                    || (req.getResolutionType() == ResolutionType.RETURN_AND_REFUND);
+
+            if (buyerWins) {
+                handleSellerReturnDisputeBuyerWins(report, r, admin, now, req.getNote(), req.getDecision(), returnOpt);
             } else {
-                handleApproveSellerReturnDispute(report, r, admin, now, req.getNote());
+                handleSellerReturnDisputeSellerWins(report, r, admin, now, req.getNote(), req.getDecision(), returnOpt);
             }
             return;
         }
@@ -136,13 +161,23 @@ public class ReportServiceImpl implements ReportService {
         approveRequest(r, admin, now, req.getNote(), report, req.getResolutionType());
     }
 
-    private void handleApproveSellerReturnDispute(Report report, Request r, Account admin, LocalDateTime now,
-            String note) {
+    private void handleSellerReturnDisputeSellerWins(Report report, Request r, Account admin, LocalDateTime now,
+            String note, ReportDecision decision, Optional<OrderReturn> returnOpt) {
         UUID orderId = report.getTargetId();
         Order order = orderRepository.findByIdForUpdate(orderId)
                 .orElseThrow(() -> new CustomException("Order not found: " + orderId));
 
-        // 1. Phục hồi điểm vi phạm cho Shop nếu Shop từng bị phạt từ khiếu nại ban đầu
+        // 1. Kiểm tra Escrow tránh duplicate release hoặc release trên Escrow đã refund
+        Optional<Escrow> escrowOpt = escrowRepository.findByOrderIdForUpdate(orderId);
+        if (escrowOpt.isPresent() && (escrowOpt.get().getStatus() == EscrowStatus.RELEASED
+                || order.getStatus() == OrderStatus.COMPLETED)) {
+            throw new CustomException("Đơn hàng này đã được giải ngân hoàn tất trước đó");
+        }
+        if (escrowOpt.isPresent() && escrowOpt.get().getStatus() == EscrowStatus.REFUNDED) {
+            throw new CustomException("Ký quỹ đơn hàng đã được hoàn tiền trước đó, không thể giải ngân cho Shop");
+        }
+
+        // 2. Phục hồi điểm vi phạm cho Shop nếu Shop từng bị phạt từ khiếu nại ban đầu
         // của Buyer
         if (report.getViolationReportId() != null && order.getShop() != null && order.getShop().getUser() != null) {
             Account shopOwner = order.getShop().getUser().getAccount();
@@ -163,16 +198,19 @@ public class ReportServiceImpl implements ReportService {
             }
         }
 
-        // 2. Hủy kiện hàng hoàn (OrderReturn -> CANCELLED)
-        orderReturnRepository.findByOrderIdForUpdate(orderId).ifPresent(ret -> {
+        // 3. Hủy kiện hàng hoàn (OrderReturn -> CANCELLED)
+        OrderReturn ret = returnOpt.orElseGet(() -> orderReturnRepository.findByOrderIdForUpdate(orderId).orElse(null));
+        if (ret != null) {
             ret.setStatus(ReturnStatus.CANCELLED);
             ret.setConditionNote((ret.getConditionNote() != null ? ret.getConditionNote() + " | " : "")
-                    + "Admin chấp thuận khiếu nại của Shop: " + (note != null ? note : ""));
+                    + "Admin phán quyết Shop thắng: " + (note != null ? note : ""));
             orderReturnRepository.save(ret);
-        });
+        }
 
-        // 3. Phục hồi trạng thái Escrow về HELD nếu đang DISPUTED để release cho Shop
-        escrowRepository.findByOrderIdForUpdate(orderId).ifPresent(escrow -> {
+        // 4. Giải ngân cho Shop: CHỈ KHI Escrow cho phép
+        // Phục hồi trạng thái Escrow từ DISPUTED sang HELD (TUYỆT ĐỐI không thay đổi
+        // nếu đã RELEASED/REFUNDED)
+        escrowOpt.ifPresent(escrow -> {
             if (escrow.getStatus() == EscrowStatus.DISPUTED) {
                 escrow.setStatus(EscrowStatus.HELD);
                 escrow.setUpdatedAt(now);
@@ -180,58 +218,78 @@ public class ReportServiceImpl implements ReportService {
             }
         });
 
-        // 4. Giải ngân tiền ký quỹ cho Shop và hoàn tất đơn hàng
-        order.setReceivedByBuyer(true);
-        order.setReceivedAt(now);
-        order.setStatus(OrderStatus.DELIVERED);
-        orderRepository.save(order);
+        // Chỉ release khi Escrow là HELD hoặc DISPUTED
+        if (escrowOpt.isPresent() && (escrowOpt.get().getStatus() == EscrowStatus.HELD
+                || escrowOpt.get().getStatus() == EscrowStatus.DISPUTED)) {
+            order.setReceivedByBuyer(true);
+            order.setReceivedAt(now);
+            order.setStatus(OrderStatus.DELIVERED);
+            orderRepository.save(order);
 
-        escrowService.releaseByOrder(orderId);
+            escrowService.releaseByOrder(orderId);
 
-        order.setStatus(OrderStatus.COMPLETED);
-        orderRepository.save(order);
+            order.setStatus(OrderStatus.COMPLETED);
+            orderRepository.save(order);
+        }
 
         // 5. Cập nhật Request & Report
         r.setStatus(RequestStatus.APPROVED);
         r.setReviewedBy(admin);
         r.setReviewedAt(now);
         r.setResponse(note);
+
         report.setModeratorNote(note);
         report.setStage(ReportStage.CLOSED);
+
         requestRepository.save(r);
         reportRepository.save(report);
+
+        log.info("Admin resolved seller return dispute (Seller Wins) for orderId={}, released to shop", orderId);
     }
 
-    private void handleRejectSellerReturnDispute(Report report, Request r, Account admin, LocalDateTime now,
-            String note) {
+    private void handleSellerReturnDisputeBuyerWins(Report report, Request r, Account admin, LocalDateTime now,
+            String note, ReportDecision decision, Optional<OrderReturn> returnOpt) {
         UUID orderId = report.getTargetId();
         Order order = orderRepository.findByIdForUpdate(orderId)
                 .orElseThrow(() -> new CustomException("Order not found: " + orderId));
 
-        // 1. Hoàn tất kiện hoàn (OrderReturn -> COMPLETED)
-        orderReturnRepository.findByOrderIdForUpdate(orderId).ifPresent(ret -> {
+        // 1. Kiểm tra Escrow tránh duplicate refund
+        Optional<Escrow> escrowOpt = escrowRepository.findByOrderIdForUpdate(orderId);
+        if (escrowOpt.isPresent() && escrowOpt.get().getStatus() == EscrowStatus.REFUNDED) {
+            throw new CustomException("Đơn hàng này đã được hoàn tiền ký quỹ trước đó");
+        }
+
+        // 2. Hoàn tất kiện hoàn (OrderReturn -> COMPLETED)
+        OrderReturn ret = returnOpt.orElseGet(() -> orderReturnRepository.findByOrderIdForUpdate(orderId).orElse(null));
+        if (ret != null) {
             ret.setStatus(ReturnStatus.COMPLETED);
             ret.setConditionNote((ret.getConditionNote() != null ? ret.getConditionNote() + " | " : "")
-                    + "Admin bác bỏ khiếu nại của Shop: " + (note != null ? note : ""));
+                    + "Admin phán quyết Người mua thắng: " + (note != null ? note : ""));
             orderReturnRepository.save(ret);
-        });
+        }
 
-        // 2. Hoàn tiền Escrow về cho Người mua
+        // 3. Hoàn tiền Escrow về cho Người mua (nếu trạng thái Escrow chưa hoàn)
         escrowService.refundByOrder(orderId,
-                "Admin bác bỏ khiếu nại kiện hoàn của Shop: " + (note != null ? note : ""));
+                "Admin phán quyết bồi hoàn cho Người mua sau khi phân xử khiếu nại kiện hoàn: "
+                        + (note != null ? note : ""));
 
         order.setStatus(OrderStatus.REFUNDED);
         orderRepository.save(order);
 
-        // 3. Cập nhật Request & Report
-        r.setStatus(RequestStatus.REJECTED);
+        // 4. Cập nhật Request & Report
+        r.setStatus(decision == ReportDecision.REJECT ? RequestStatus.REJECTED : RequestStatus.APPROVED);
         r.setReviewedBy(admin);
         r.setReviewedAt(now);
         r.setResponse(note);
+
         report.setModeratorNote(note);
         report.setStage(ReportStage.CLOSED);
+        report.setResolutionType(ResolutionType.REFUND_ONLY);
+
         requestRepository.save(r);
         reportRepository.save(report);
+
+        log.info("Admin resolved seller return dispute (Buyer Wins) for orderId={}, refunded buyer", orderId);
     }
 
     private void rejectRequest(Request r, Account admin, LocalDateTime now, String note, Report report) {
@@ -306,9 +364,26 @@ public class ReportServiceImpl implements ReportService {
                 });
                 log.info("Admin approved buyer dispute, refunded orderId={}", orderId);
             } else if (finalResolution == ResolutionType.RETURN_AND_REFUND) {
-                orderReturnService.createReturn(orderId, report.getId());
-                report.setStage(ReportStage.RETURN_IN_PROGRESS);
-                log.info("Admin approved buyer dispute, initiated return for orderId={}", orderId);
+                Optional<OrderReturn> existingReturn = orderReturnRepository.findByOrderIdForUpdate(orderId);
+                if (existingReturn.isEmpty()) {
+                    // Case 1: Chưa có kiện hoàn -> Khởi tạo kiện hoàn mới qua OrderReturnService
+                    // (thời hạn chuẩn 3 ngày)
+                    orderReturnService.createReturn(orderId, report.getId());
+                    report.setStage(ReportStage.RETURN_IN_PROGRESS);
+                    log.info("Admin approved buyer dispute (Case 1), initiated return for orderId={}", orderId);
+                } else {
+                    // Case 2: Đã có kiện hoàn đang diễn ra -> Tái sử dụng, không tạo trùng, không
+                    // reset trạng thái hay deadline
+                    OrderReturn ret = existingReturn.get();
+                    if (ret.getReport() == null) {
+                        ret.setReport(report);
+                        orderReturnRepository.save(ret);
+                    }
+                    report.setStage(ReportStage.RETURN_IN_PROGRESS);
+                    log.info(
+                            "Admin approved buyer dispute (Case 2), reusing existing returnId={} status={} for orderId={}",
+                            ret.getId(), ret.getStatus(), orderId);
+                }
             }
         }
         requestRepository.save(r);
@@ -737,16 +812,7 @@ public class ReportServiceImpl implements ReportService {
         String sellerEvidenceUrl = report.getSellerEvidenceUrl();
         DisputeSellerAction sellerAction = report.getSellerAction();
 
-        var ret = orderReturnService.getReturnByOrderId(orderId);
-        if (ret != null && (ret.getStatus() == ReturnStatus.DISPUTED || ret.getConditionStatus() != null)) {
-            if (ret.getSellerEvidenceUrls() != null && !ret.getSellerEvidenceUrls().isBlank()) {
-                sellerEvidenceUrl = ret.getSellerEvidenceUrls();
-            }
-            if (ret.getConditionNote() != null && !ret.getConditionNote().isBlank()) {
-                sellerResponse = ret.getConditionNote();
-            }
-            sellerAction = DisputeSellerAction.REJECT_AND_ESCALATE;
-        }
+        OrderReturnResponse orderReturnDto = orderReturnService.getReturnByOrderId(orderId);
 
         return ReportDetailsResponse.builder()
                 .id(report.getId())
@@ -754,6 +820,7 @@ public class ReportServiceImpl implements ReportService {
                 .targetType(report.getTargetType())
                 .targetId(report.getTargetId())
                 .evidenceUrl(report.getEvidenceUrl())
+                .moderatorNote(report.getModeratorNote())
                 .resolutionType(report.getResolutionType())
                 .stage(report.getStage())
                 .sellerResponseDeadline(report.getSellerResponseDeadline())
@@ -768,11 +835,13 @@ public class ReportServiceImpl implements ReportService {
                 .createdAt(req != null ? req.getCreatedAt() : null)
                 .reviewedAt(req != null ? req.getReviewedAt() : null)
                 .escrow(escrowDto)
+                .orderReturn(orderReturnDto)
                 .build();
     }
 
     private boolean isOrderSeller(UUID orderId, UUID accountId) {
-        if (orderId == null || accountId == null) return false;
+        if (orderId == null || accountId == null)
+            return false;
 
         // 1. Kiểm tra qua quan hệ Order -> Shop -> User -> Account
         Optional<Order> orderOpt = orderRepository.findById(orderId);

@@ -69,6 +69,8 @@ const ORDER_REPORT_REASONS = [
   },
 ];
 
+import { isVideoUrl, isVideoFile } from '../lib/mediaUtils';
+
 export default function OrderReportModal({ isOpen, onClose, order, onSuccess }) {
   const isDark = useThemeStore((s) => s.theme) === 'dark';
   const [loading, setLoading] = useState(false);
@@ -83,37 +85,55 @@ export default function OrderReportModal({ isOpen, onClose, order, onSuccess }) 
 
   if (!order) return null;
 
-  const handleImageUpload = async (e) => {
+  const currentImages = formData.evidenceUrls.filter((u) => !isVideoUrl(u));
+  const currentVideos = formData.evidenceUrls.filter((u) => isVideoUrl(u));
+  const imageCount = currentImages.length;
+  const videoCount = currentVideos.length;
+
+  const handleFileUpload = async (e) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
 
-    const MAX_IMAGES = 4;
-    const remainingSlots = MAX_IMAGES - formData.evidenceUrls.length;
+    let availableImageSlots = 4 - imageCount;
+    let availableVideoSlots = 1 - videoCount;
 
-    if (remainingSlots <= 0) {
-      toast.error('Chỉ được tải lên tối đa 4 hình ảnh bằng chứng!');
+    if (availableImageSlots <= 0 && availableVideoSlots <= 0) {
+      toast.error('Đã đạt giới hạn tối đa (4 ảnh và 1 video bằng chứng)!');
       if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
 
-    const validFiles = [];
+    const filesToUpload = [];
     for (const file of files) {
-      if (file.size > 10 * 1024 * 1024) {
-        toast.error(`Ảnh "${file.name}" vượt quá dung lượng tối đa 10MB!`);
+      const isVid = isVideoFile(file);
+      if (isVid) {
+        if (availableVideoSlots <= 0) {
+          toast.error(`Chỉ được tải lên tối đa 1 video bằng chứng! Đã bỏ qua "${file.name}"`);
+          continue;
+        }
+        if (file.size > 50 * 1024 * 1024) {
+          toast.error(`Video "${file.name}" vượt quá dung lượng tối đa 50MB!`);
+          continue;
+        }
+        filesToUpload.push(file);
+        availableVideoSlots--;
       } else {
-        validFiles.push(file);
+        if (availableImageSlots <= 0) {
+          toast.error(`Chỉ được tải lên tối đa 4 hình ảnh bằng chứng! Đã bỏ qua "${file.name}"`);
+          continue;
+        }
+        if (file.size > 10 * 1024 * 1024) {
+          toast.error(`Ảnh "${file.name}" vượt quá dung lượng tối đa 10MB!`);
+          continue;
+        }
+        filesToUpload.push(file);
+        availableImageSlots--;
       }
     }
 
-    if (!validFiles.length) {
+    if (!filesToUpload.length) {
       if (fileInputRef.current) fileInputRef.current.value = '';
       return;
-    }
-
-    let filesToUpload = validFiles;
-    if (validFiles.length > remainingSlots) {
-      toast.error(`Chỉ được tải tối đa ${MAX_IMAGES} ảnh. Hệ thống sẽ xử lý ${remainingSlots} ảnh hợp lệ đầu tiên.`);
-      filesToUpload = validFiles.slice(0, remainingSlots);
     }
 
     try {
@@ -132,13 +152,13 @@ export default function OrderReportModal({ isOpen, onClose, order, onSuccess }) 
           ...prev,
           evidenceUrls: [...prev.evidenceUrls, ...uploaded],
         }));
-        toast.success(`Đã thêm ${uploaded.length} ảnh bằng chứng thành công!`);
+        toast.success(`Đã thêm ${uploaded.length} tệp bằng chứng thành công!`);
       } else {
-        toast.error('Không nhận được đường dẫn ảnh từ máy chủ.');
+        toast.error('Không nhận được đường dẫn tệp từ máy chủ.');
       }
     } catch (err) {
-      console.error('Upload image error:', err);
-      toast.error(err?.message || 'Lỗi khi tải ảnh lên.');
+      console.error('Upload evidence error:', err);
+      toast.error(err?.message || 'Lỗi khi tải tệp lên.');
     } finally {
       setUploadingImage(false);
       if (fileInputRef.current) {
@@ -456,72 +476,88 @@ export default function OrderReportModal({ isOpen, onClose, order, onSuccess }) 
                 </p>
               </div>
 
-              {/* Evidence Images */}
+              {/* Evidence Images & Video */}
               <div className="space-y-2.5">
                 <div className="flex items-center justify-between">
                   <div>
                     <label className="text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-slate-400">
-                      3. Bằng chứng hình ảnh / Biên bản (Tối đa 4 ảnh)
+                      3. Bằng chứng hình ảnh & video (Tối đa 4 ảnh & 1 video)
                     </label>
                     <p className="text-[11px] text-stone-400 dark:text-slate-500 mt-0.5">
-                      Ảnh chụp kiện hàng, hóa đơn gửi, ảnh hư hại hoặc ảnh chụp màn hình tin nhắn
+                      Ảnh chụp kiện hàng/hư hại (≤ 10MB/ảnh) và video mở hộp/thực tế (≤ 50MB)
                     </p>
                   </div>
                   <span className={cn(
                     'text-xs font-bold px-2 py-0.5 rounded-full border font-mono',
-                    formData.evidenceUrls.length === 4
+                    imageCount === 4 && videoCount === 1
                       ? 'bg-amber-500/10 text-amber-500 border-amber-500/30'
                       : 'bg-stone-100 dark:bg-slate-800 text-stone-500 dark:text-slate-400 border-stone-200 dark:border-slate-700'
                   )}>
-                    {formData.evidenceUrls.length}/4
+                    {imageCount}/4 ảnh • {videoCount}/1 video
                   </span>
                 </div>
 
                 {/* Grid 4 columns preview */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                  {formData.evidenceUrls.map((url, idx) => (
-                    <motion.div
-                      key={idx}
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="relative group rounded-2xl overflow-hidden border dark:border-slate-700/80 border-stone-200 h-24 sm:h-28 bg-stone-100 dark:bg-slate-800 shadow-sm"
-                    >
-                      <img
-                        src={url}
-                        alt={`Evidence ${idx + 1}`}
-                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                      />
-                      
-                      {/* Image index badge */}
-                      <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-black/60 text-white backdrop-blur-sm">
-                        #{idx + 1}
-                      </span>
+                  {formData.evidenceUrls.map((url, idx) => {
+                    const isVid = isVideoUrl(url)
+                    return (
+                      <motion.div
+                        key={idx}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="relative group rounded-2xl overflow-hidden border dark:border-slate-700/80 border-stone-200 h-24 sm:h-28 bg-stone-100 dark:bg-slate-800 shadow-sm"
+                      >
+                        {isVid ? (
+                          <>
+                            <video
+                              src={url}
+                              className="w-full h-full object-cover"
+                              muted
+                            />
+                            <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-rose-600 text-white shadow-sm flex items-center gap-1 z-10">
+                              VIDEO
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <img
+                              src={url}
+                              alt={`Evidence ${idx + 1}`}
+                              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                            />
+                            <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-black/60 text-white backdrop-blur-sm">
+                              #{idx + 1}
+                            </span>
+                          </>
+                        )}
 
-                      {/* Hover action overlay */}
-                      <div className="absolute inset-0 bg-stone-950/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                        <a
-                          href={url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="p-1.5 rounded-xl bg-white/20 text-white hover:bg-white/40 backdrop-blur-sm transition-all"
-                          title="Xem ảnh phóng to"
-                        >
-                          <HiOutlineExternalLink className="h-4 w-4" />
-                        </a>
-                        <button
-                          type="button"
-                          onClick={() => removeImage(idx)}
-                          className="p-1.5 rounded-xl bg-rose-500/90 text-white hover:bg-rose-600 transition-all shadow-sm"
-                          title="Gỡ ảnh này"
-                        >
-                          <HiOutlineTrash className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </motion.div>
-                  ))}
+                        {/* Hover action overlay */}
+                        <div className="absolute inset-0 bg-stone-950/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                          <a
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-1.5 rounded-xl bg-white/20 text-white hover:bg-white/40 backdrop-blur-sm transition-all"
+                            title={isVid ? 'Xem video' : 'Xem ảnh phóng to'}
+                          >
+                            <HiOutlineExternalLink className="h-4 w-4" />
+                          </a>
+                          <button
+                            type="button"
+                            onClick={() => removeImage(idx)}
+                            className="p-1.5 rounded-xl bg-rose-500/90 text-white hover:bg-rose-600 transition-all shadow-sm"
+                            title="Gỡ tệp này"
+                          >
+                            <HiOutlineTrash className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </motion.div>
+                    )
+                  })}
 
                   {/* Dropzone button */}
-                  {formData.evidenceUrls.length < 4 && (
+                  {(imageCount < 4 || videoCount < 1) && (
                     <button
                       type="button"
                       disabled={uploadingImage}
@@ -545,10 +581,10 @@ export default function OrderReportModal({ isOpen, onClose, order, onSuccess }) 
                             <HiOutlineUpload className="h-4 w-4" />
                           </div>
                           <span className="text-[11px] font-bold text-stone-600 dark:text-slate-300 group-hover:text-rose-500 transition-colors">
-                            Thêm hình ảnh
+                            Thêm tệp
                           </span>
                           <span className="text-[9px] text-stone-400 dark:text-slate-500">
-                            Tối đa 10MB
+                            Ảnh ≤10MB • Video ≤50MB
                           </span>
                         </>
                       )}
@@ -559,9 +595,9 @@ export default function OrderReportModal({ isOpen, onClose, order, onSuccess }) 
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept="image/*"
+                  accept="image/*,video/*"
                   multiple
-                  onChange={handleImageUpload}
+                  onChange={handleFileUpload}
                   className="hidden"
                 />
               </div>

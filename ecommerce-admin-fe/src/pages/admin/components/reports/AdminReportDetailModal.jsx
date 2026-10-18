@@ -35,11 +35,26 @@ export default function AdminReportDetailModal({
     (detailModal.data?.detail?.escrow ? 'ORDER' : null)
   const isOrderReport = targetType === 'ORDER' || Boolean(detailModal.data?.detail?.escrow)
 
+  const orderReturn = detailModal.data?.detail?.orderReturn
+  const isReturnDisputed = orderReturn?.status === 'DISPUTED' || Boolean(orderReturn?.conditionStatus)
+
+  // Kiểm tra xem đây có phải là vụ việc Shop khiếu nại kiện hàng hoàn (Seller return dispute)
+  const isSellerReturnDispute = isOrderReport && Boolean(
+    isReturnDisputed ||
+    detailModal.data?.detail?.targetInfo?.includes('DISPUTED') ||
+    detailModal.data?.detail?.escalationReason?.includes('kiện hàng hoàn') ||
+    detailModal.rawItem?.description?.includes('Shop khiếu nại kiện hàng hoàn') ||
+    detailModal.data?.description?.includes('Shop khiếu nại kiện hàng hoàn')
+  )
+
+  const canTakeAction = isPending || (isSellerReturnDispute && orderReturn?.status === 'DISPUTED')
+
   // Kiểm tra xem đây có phải là vụ việc tranh chấp đơn hàng có phản hồi/đối chất từ phía Người bán hay không
   const hasSellerResponse = Boolean(
     detailModal.data?.detail?.sellerResponse ||
     detailModal.data?.detail?.sellerAction ||
     detailModal.data?.detail?.sellerEvidenceUrl ||
+    isReturnDisputed ||
     detailModal.data?.detail?.stage === 'ESCALATED_TO_ADMIN' ||
     detailModal.data?.detail?.stage === 'DIRECT_NEGOTIATION'
   )
@@ -68,6 +83,7 @@ export default function AdminReportDetailModal({
         ...(detailModal.data || {}),
         targetType: detailModal.data?.detail?.targetType || detailModal.rawItem?.targetType,
         detail: detailModal.data?.detail,
+        isSellerReturnDispute,
       },
       note: '',
     })
@@ -116,22 +132,28 @@ export default function AdminReportDetailModal({
                   >
                     {isReport ? 'Báo Cáo Vi Phạm' : 'Đơn Kháng Cáo'}
                   </span>
-                  <span
-                    className={cn(
-                      'px-2.5 py-0.5 rounded-full text-xs font-bold border tracking-wide uppercase',
-                      isApproved
-                        ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30'
+                  {isSellerReturnDispute && orderReturn?.status === 'DISPUTED' ? (
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-bold border tracking-wide uppercase bg-rose-500/10 text-rose-500 border-rose-500/30">
+                      Khiếu nại kiện hoàn (Chờ BQT phân xử)
+                    </span>
+                  ) : (
+                    <span
+                      className={cn(
+                        'px-2.5 py-0.5 rounded-full text-xs font-bold border tracking-wide uppercase',
+                        isApproved
+                          ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30'
+                          : isRejected
+                            ? 'bg-rose-500/10 text-rose-500 border-rose-500/30'
+                            : 'bg-amber-500/10 text-amber-500 border-amber-500/30',
+                      )}
+                    >
+                      {isApproved
+                        ? 'Đã duyệt'
                         : isRejected
-                          ? 'bg-rose-500/10 text-rose-500 border-rose-500/30'
-                          : 'bg-amber-500/10 text-amber-500 border-amber-500/30',
-                    )}
-                  >
-                    {isApproved
-                      ? 'Đã duyệt'
-                      : isRejected
-                        ? 'Từ chối / Bác bỏ'
-                        : 'Chờ thẩm định'}
-                  </span>
+                          ? 'Từ chối / Bác bỏ'
+                          : 'Chờ thẩm định'}
+                    </span>
+                  )}
                   {detailModal.data?.detail?.stage && (
                     <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold uppercase border bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/30">
                       Giai đoạn: {translateReportStage(detailModal.data.detail.stage)}
@@ -221,8 +243,8 @@ export default function AdminReportDetailModal({
                     />
                   )}
 
-                  {/* Khối 3: Kết quả thẩm định của Quản trị viên (nếu đã xử lý) */}
-                  {!isPending && (
+                  {/* Khối 3: Kết quả thẩm định của Quản trị viên (nếu đã xử lý hoặc có phán quyết vòng 1) */}
+                  {(Boolean(detailModal.data?.detail?.moderatorNote) || !isPending) && (
                     <div
                       className={cn(
                         'rounded-2xl border p-4 space-y-2',
@@ -233,7 +255,7 @@ export default function AdminReportDetailModal({
                     >
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-bold text-stone-700 dark:text-slate-300">
-                          Kết quả thẩm định của Quản trị viên:
+                          {isSellerReturnDispute ? 'Phán quyết Giai đoạn 1 của Quản trị viên (Yêu cầu trả hàng):' : 'Kết quả thẩm định của Quản trị viên:'}
                         </span>
                         <span className="text-xs text-stone-400">
                           {detailModal.data?.reviewedAt
@@ -268,29 +290,51 @@ export default function AdminReportDetailModal({
                 Đóng
               </button>
 
-              {/* Các nút hành động nếu hồ sơ đang chờ duyệt */}
-              {isPending && (
+              {/* Các nút hành động nếu hồ sơ đang chờ duyệt hoặc kiện hoàn đang tranh chấp */}
+              {canTakeAction && (
                 <div className="flex items-center gap-2.5">
                   {isReport ? (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => handleAction('REPORT_REJECT')}
-                        className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold border border-stone-300 dark:border-slate-700 text-stone-700 dark:text-slate-200 hover:bg-stone-100 dark:hover:bg-slate-800 active:scale-95 transition-all shadow-xs"
-                      >
-                        <HiOutlineX className="h-4 w-4" />
-                        Bác bỏ (Bảo vệ Shop)
-                      </button>
+                    isSellerReturnDispute ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => handleAction('REPORT_APPROVE')}
+                          className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold border border-emerald-500/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 active:scale-95 transition-all shadow-xs"
+                        >
+                          <HiOutlineCheck className="h-4 w-4" />
+                          Chấp thuận Shop khiếu nại (Giải ngân Shop)
+                        </button>
 
-                      <button
-                        type="button"
-                        onClick={() => handleAction('REPORT_APPROVE')}
-                        className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 active:scale-95 shadow-md shadow-rose-600/20 transition-all"
-                      >
-                        <HiOutlineCheck className="h-4 w-4" />
-                        Xác nhận vi phạm (Phạt Shop)
-                      </button>
-                    </>
+                        <button
+                          type="button"
+                          onClick={() => handleAction('REPORT_REJECT')}
+                          className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 active:scale-95 shadow-md shadow-rose-600/20 transition-all"
+                        >
+                          <HiOutlineX className="h-4 w-4" />
+                          Bác bỏ Shop khiếu nại (Bồi hoàn Buyer)
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => handleAction('REPORT_REJECT')}
+                          className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold border border-stone-300 dark:border-slate-700 text-stone-700 dark:text-slate-200 hover:bg-stone-100 dark:hover:bg-slate-800 active:scale-95 transition-all shadow-xs"
+                        >
+                          <HiOutlineX className="h-4 w-4" />
+                          Bác bỏ (Bảo vệ Shop)
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleAction('REPORT_APPROVE')}
+                          className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 active:scale-95 shadow-md shadow-rose-600/20 transition-all"
+                        >
+                          <HiOutlineCheck className="h-4 w-4" />
+                          Xác nhận vi phạm (Phạt Shop)
+                        </button>
+                      </>
+                    )
                   ) : (
                     <>
                       <button

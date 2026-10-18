@@ -329,6 +329,22 @@ public class OrderReturnServiceTest {
     }
 
     @Test
+    @DisplayName("CASE 9b: Kiện hoàn đã ở trạng thái DISPUTED -> Cron inspection timeout tuyệt đối KHÔNG tự động hoàn tiền")
+    void processExpiredSellerInspections_DisputedReturn_NotAutoRefunded() {
+        orderReturn.setStatus(ReturnStatus.DISPUTED);
+        orderReturn.setSellerInspectionDeadline(LocalDateTime.now().minusHours(1));
+
+        when(orderReturnRepository.findExpiredSellerInspections(eq(ReturnStatus.RETURNED), any()))
+                .thenReturn(List.of(orderReturn));
+        when(orderReturnRepository.findByIdForUpdate(returnId)).thenReturn(Optional.of(orderReturn));
+
+        orderReturnService.processExpiredSellerInspections();
+
+        assertEquals(ReturnStatus.DISPUTED, orderReturn.getStatus());
+        verify(escrowService, never()).refundByOrder(any(), any());
+    }
+
+    @Test
     @DisplayName("CASE 10: Customer quá 3 ngày không nộp tracking (Cron) -> CANCELLED, giải ngân cho Shop")
     void processExpiredBuyerShipments_AutoCancelsAndReleasesEscrow() {
         orderReturn.setStatus(ReturnStatus.WAITING_FOR_SHIPMENT);

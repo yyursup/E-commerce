@@ -7,6 +7,7 @@ export default function AdminActionQuickTags({
   onSelectTag,
   isDark,
   targetTypeLabel,
+  isSellerDispute,
 }) {
   const getReportApproveTags = (type) => {
     switch (type) {
@@ -76,6 +77,46 @@ export default function AdminActionQuickTags({
       ))}
     </div>
   )
+
+  // Nhánh chuyên biệt: Giai đoạn 2 - Khiếu nại kiện hàng hoàn từ Shop
+  if (isSellerDispute) {
+    if (actionType === 'REPORT_APPROVE') {
+      const sellerWinTags = [
+        'Kiện hàng hoàn bị bể vỡ / trầy xước nặng do Người mua đóng gói sơ sài',
+        'Người mua gửi sai sản phẩm / tráo đổi linh kiện khác',
+        'Hộp kiện hàng hoàn rỗng / thiếu sản phẩm chính',
+        'Kiện hàng hoàn bị thiếu linh phụ kiện / quà tặng kèm theo',
+        'Sản phẩm hoàn trả có dấu hiệu bị cạy mở / rách tem niêm phong',
+        'Video/ảnh mở hộp của Shop chứng minh hàng hoàn không đúng hiện trạng',
+      ]
+      return (
+        <div className="mb-3">
+          <span className="text-[11px] font-bold text-emerald-500 block mb-1.5">
+            Gợi ý căn cứ chấp thuận Shop khiếu nại (Giải ngân Shop):
+          </span>
+          {renderTagButtons(sellerWinTags, 'bg-emerald-600 border-emerald-600')}
+        </div>
+      )
+    }
+
+    if (actionType === 'REPORT_REJECT') {
+      const sellerLoseTags = [
+        'Hàng hoàn đúng tình trạng lỗi ban đầu như Người mua đã báo cáo',
+        'Shop không cung cấp được video/ảnh mở hộp đồng kiểm rõ nét',
+        'Bao bì đóng gói còn nguyên niêm phong GHN, không có dấu hiệu tráo đổi',
+        'Kiện hàng hoàn đúng quy cách và đầy đủ linh phụ kiện theo đơn',
+        'Hư hại phát sinh do quá trình vận chuyển ngược của đơn vị bưu cục',
+      ]
+      return (
+        <div className="mb-3">
+          <span className="text-[11px] font-bold text-rose-500 block mb-1.5">
+            Gợi ý căn cứ bác bỏ Shop khiếu nại (Bồi hoàn Người mua):
+          </span>
+          {renderTagButtons(sellerLoseTags, 'bg-rose-600 border-rose-600')}
+        </div>
+      )
+    }
+  }
 
   if (actionType === 'REPORT_APPROVE') {
     return (

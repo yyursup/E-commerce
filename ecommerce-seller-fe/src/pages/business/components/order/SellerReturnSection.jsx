@@ -67,39 +67,53 @@ export default function SellerReturnSection({ returnInfo, order, isDark: isDarkP
     return /\.(mp4|webm|mov|mkv)(\?.*)?$/i.test(url)
   }
 
+  const currentImages = evidenceUrls.filter((u) => !isVideoUrl(u))
+  const currentVideos = evidenceUrls.filter((u) => isVideoUrl(u))
+
   const handleImageUpload = async (e) => {
     const files = Array.from(e.target.files || [])
     if (!files.length) return
 
-    const MAX_FILES = 4
-    const remainingSlots = MAX_FILES - evidenceUrls.length
+    let availableImageSlots = 4 - currentImages.length
+    let availableVideoSlots = 1 - currentVideos.length
 
-    if (remainingSlots <= 0) {
-      toast.error('Chỉ được tải lên tối đa 4 tệp bằng chứng (ảnh / video)!')
+    if (availableImageSlots <= 0 && availableVideoSlots <= 0) {
+      toast.error('Đã đạt giới hạn tối đa (4 ảnh và 1 video bằng chứng)!')
       if (fileInputRef.current) fileInputRef.current.value = ''
       return
     }
 
-    const validFiles = []
+    const filesToUpload = []
     for (const file of files) {
       const isVid = isVideoFile(file)
-      const maxSize = isVid ? 50 * 1024 * 1024 : 10 * 1024 * 1024
-      if (file.size > maxSize) {
-        toast.error(`Tệp "${file.name}" vượt quá dung lượng tối đa (${isVid ? '50MB cho video' : '10MB cho ảnh'})!`)
+      if (isVid) {
+        if (availableVideoSlots <= 0) {
+          toast.error(`Chỉ được tải lên tối đa 1 video bằng chứng! Đã bỏ qua "${file.name}"`)
+          continue
+        }
+        if (file.size > 50 * 1024 * 1024) {
+          toast.error(`Video "${file.name}" vượt quá dung lượng tối đa 50MB!`)
+          continue
+        }
+        filesToUpload.push(file)
+        availableVideoSlots--
       } else {
-        validFiles.push(file)
+        if (availableImageSlots <= 0) {
+          toast.error(`Chỉ được tải lên tối đa 4 hình ảnh bằng chứng! Đã bỏ qua "${file.name}"`)
+          continue
+        }
+        if (file.size > 10 * 1024 * 1024) {
+          toast.error(`Ảnh "${file.name}" vượt quá dung lượng tối đa 10MB!`)
+          continue
+        }
+        filesToUpload.push(file)
+        availableImageSlots--
       }
     }
 
-    if (!validFiles.length) {
+    if (!filesToUpload.length) {
       if (fileInputRef.current) fileInputRef.current.value = ''
       return
-    }
-
-    let filesToUpload = validFiles
-    if (validFiles.length > remainingSlots) {
-      toast.error(`Chỉ được tải tối đa ${MAX_FILES} tệp. Hệ thống sẽ xử lý ${remainingSlots} tệp hợp lệ đầu tiên.`)
-      filesToUpload = validFiles.slice(0, remainingSlots)
     }
 
     try {
@@ -107,7 +121,7 @@ export default function SellerReturnSection({ returnInfo, order, isDark: isDarkP
       const uploaded = []
       for (const file of filesToUpload) {
         const res = await fileService.uploadFile(file, 'returns')
-        const uploadedUrl = res?.url || res?.data?.url
+        const uploadedUrl = res?.url || res?.data?.url || (res?.fileName ? `/files/view/${res.fileName}` : null)
         if (uploadedUrl) {
           uploaded.push(uploadedUrl)
         }
@@ -323,6 +337,7 @@ export default function SellerReturnSection({ returnInfo, order, isDark: isDarkP
         setEvidenceUrls={setEvidenceUrls}
         uploadingImage={uploadingImage}
         fileInputRef={fileInputRef}
+        onImageUpload={handleImageUpload}
         handleImageUpload={handleImageUpload}
         onSubmit={handleSubmitDispute}
         isDark={isDark}

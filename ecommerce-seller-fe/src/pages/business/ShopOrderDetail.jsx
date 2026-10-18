@@ -6,6 +6,7 @@ import {
   HiOutlineRefresh,
   HiOutlineCheckCircle,
   HiOutlineExclamation,
+  HiOutlineScale,
 } from 'react-icons/hi'
 import { useThemeStore } from '../../store/useThemeStore'
 import { useAuthStore } from '../../store/useAuthStore'
@@ -249,10 +250,16 @@ export default function ShopOrderDetail() {
                 returnInfo={returnInfo || order.returnInfo}
                 className="px-3 py-1 text-xs"
               />
-              {order.hasActiveDispute && (
+              {order.hasActiveDispute && !returnInfo && !order.returnInfo && order.disputeStatus === 'DIRECT_NEGOTIATION' && (
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400 animate-pulse">
                   <HiOutlineExclamation className="h-3.5 w-3.5 text-amber-500" />
                   <span>Đang có khiếu nại (Thương lượng 1:1)</span>
+                </span>
+              )}
+              {order.hasActiveDispute && !returnInfo && !order.returnInfo && order.disputeStatus === 'ESCALATED_TO_ADMIN' && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border border-purple-500/40 bg-purple-500/10 text-purple-600 dark:text-purple-400 animate-pulse">
+                  <HiOutlineScale className="h-3.5 w-3.5 text-purple-500" />
+                  <span>Khiếu nại: BQT đang phân xử</span>
                 </span>
               )}
             </div>
@@ -360,21 +367,70 @@ export default function ShopOrderDetail() {
           />
 
           {/* 
-            PHÂN ĐỊNH HIỂN THỊ CHUẨN XÁC GIỮA HỒ SƠ KHIẾU NẠI & TIẾN TRÌNH TRẢ HÀNG:
-            1. Khi vụ việc là TRANH CHẤP ĐÃ ĐƯỢC ADMIN PHÂN XỬ hoặc ĐANG CHỜ BQT PHÂN XỬ:
-               -> Hiển thị DUY NHẤT "Hồ Sơ Khiếu Nại" (SellerDisputeSection) với 2 cột đối chất và phán quyết chính thức của BQT.
-            2. Khi đơn hàng đang trong tiến trình đổi trả hàng thông thường (khách đang gửi GHN / Shop chưa kiểm hàng):
-               -> Hiển thị "Xử Lý Yêu Cầu Trả Hàng & Hoàn Tiền" (SellerReturnSection) để Shop theo dõi vận đơn và thao tác kiểm hàng.
+            ĐIỀU PHỐI HIỂN THỊ CHUẨN XÁC GIỮA TIẾN TRÌNH TRẢ HÀNG & HỒ SƠ KHIẾU NẠI:
+            1. Khi đơn hàng có tiến trình đổi trả hàng (WAITING_FOR_SHIPMENT, SHIPPED, RETURNED):
+               -> BẮT BUỘC hiển thị SellerReturnSection trước để Shop theo dõi mã GHN, nhận hàng hoàn và có nút "Xác nhận hàng đạt & Hoàn tiền" / "Khiếu nại kiện hàng" trong 72h.
+               -> Hiển thị SellerDisputeSection bên dưới (nếu có khiếu nại) để Shop xem chứng từ đối chất.
+            2. Khi có tranh chấp kiện hoàn (DISPUTED):
+               -> Hiển thị cả SellerReturnSection (banner tranh chấp) và SellerDisputeSection.
+            3. Khi có khiếu nại chưa có kiện hoàn (DIRECT_NEGOTIATION, ESCALATED_TO_ADMIN):
+               -> Hiển thị SellerDisputeSection để thương lượng 1:1 hoặc chờ BQT xử lý.
+            4. Khi đơn đã hoàn tất đổi trả / hoàn tiền:
+               -> Hiển thị kết quả hoàn tất.
           */}
           {(() => {
             const currentReturn = returnInfo || order?.returnInfo
-            const isDisputeOrSettledByAdmin =
-              order?.hasActiveDispute ||
-              order?.status === 'REFUNDED' ||
-              currentReturn?.status === 'DISPUTED' ||
-              ['REPORT_PENDING', 'DISPUTED'].includes(order?.disputeStatus)
+            const hasReturnInProgress =
+              currentReturn &&
+              ['WAITING_FOR_SHIPMENT', 'SHIPPED', 'RETURNED'].includes(currentReturn.status)
 
-            if (isDisputeOrSettledByAdmin) {
+            if (hasReturnInProgress) {
+              return (
+                <div className="space-y-6">
+                  <SellerReturnSection
+                    returnInfo={currentReturn}
+                    order={order}
+                    isDark={isDark}
+                    onRefresh={fetchOrder}
+                  />
+                  {order?.hasActiveDispute && (
+                    <SellerDisputeSection
+                      orderId={order.id}
+                      order={order}
+                      returnInfo={currentReturn}
+                      isDark={isDark}
+                      onRefresh={fetchOrder}
+                    />
+                  )}
+                </div>
+              )
+            }
+
+            if (currentReturn && currentReturn.status === 'DISPUTED') {
+              return (
+                <div className="space-y-6">
+                  <SellerReturnSection
+                    returnInfo={currentReturn}
+                    order={order}
+                    isDark={isDark}
+                    onRefresh={fetchOrder}
+                  />
+                  <SellerDisputeSection
+                    orderId={order.id}
+                    order={order}
+                    returnInfo={currentReturn}
+                    isDark={isDark}
+                    onRefresh={fetchOrder}
+                  />
+                </div>
+              )
+            }
+
+            const isDisputeWithoutReturn =
+              order?.hasActiveDispute ||
+              ['REPORT_PENDING', 'DISPUTED', 'DIRECT_NEGOTIATION', 'ESCALATED_TO_ADMIN'].includes(order?.disputeStatus)
+
+            if (isDisputeWithoutReturn) {
               return (
                 <SellerDisputeSection
                   orderId={order.id}
@@ -386,14 +442,27 @@ export default function ShopOrderDetail() {
               )
             }
 
-            if (currentReturn) {
+            if (currentReturn || order?.status === 'REFUNDED') {
               return (
-                <SellerReturnSection
-                  returnInfo={currentReturn}
-                  order={order}
-                  isDark={isDark}
-                  onRefresh={fetchOrder}
-                />
+                <div className="space-y-6">
+                  {currentReturn && (
+                    <SellerReturnSection
+                      returnInfo={currentReturn}
+                      order={order}
+                      isDark={isDark}
+                      onRefresh={fetchOrder}
+                    />
+                  )}
+                  {order?.hasActiveDispute && (
+                    <SellerDisputeSection
+                      orderId={order.id}
+                      order={order}
+                      returnInfo={currentReturn}
+                      isDark={isDark}
+                      onRefresh={fetchOrder}
+                    />
+                  )}
+                </div>
               )
             }
 

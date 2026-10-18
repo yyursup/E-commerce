@@ -72,12 +72,14 @@ export default function ShopOrderCard({ order, isDark, onQuickStatusUpdate, acti
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          {order.hasActiveDispute &&
-            order.status !== 'REFUNDED' &&
-            order.returnInfo?.status !== 'COMPLETED' &&
-            !['RESOLVED', 'CANCELLED', 'REFUNDED', 'NONE'].includes(order.disputeStatus) && (
+          {order.hasActiveDispute && !order.returnInfo && order.disputeStatus === 'DIRECT_NEGOTIATION' && (
             <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold border border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400">
               Đang khiếu nại (1:1)
+            </span>
+          )}
+          {order.hasActiveDispute && !order.returnInfo && order.disputeStatus === 'ESCALATED_TO_ADMIN' && (
+            <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold border border-purple-500/40 bg-purple-500/10 text-purple-600 dark:text-purple-400">
+              BQT đang phân xử
             </span>
           )}
           <OrderStatusBadge status={order.status} returnInfo={order.returnInfo} />

@@ -1,5 +1,6 @@
 import { HiOutlineX, HiOutlineUpload, HiOutlineCheck } from 'react-icons/hi'
 import { cn } from '../../../../lib/cn'
+import { isVideoUrl } from '../../../../lib/mediaUtils'
 
 export default function SellerDisputeActionModal({
   activeModal,
@@ -16,6 +17,9 @@ export default function SellerDisputeActionModal({
   onSubmit,
 }) {
   if (!activeModal) return null
+
+  const imageCount = evidenceUrls.filter((u) => !isVideoUrl(u)).length
+  const videoCount = evidenceUrls.filter((u) => isVideoUrl(u)).length
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
@@ -92,9 +96,9 @@ export default function SellerDisputeActionModal({
           <div className="space-y-2 pt-1">
             <div className="flex items-center justify-between">
               <span className="font-bold text-stone-700 dark:text-slate-300">
-                Ảnh bằng chứng của Shop ({evidenceUrls.length}/4):
+                Tệp bằng chứng của Shop ({imageCount}/4 ảnh • {videoCount}/1 video):
               </span>
-              {evidenceUrls.length < 4 && (
+              {(imageCount < 4 || videoCount < 1) && (
                 <button
                   type="button"
                   disabled={uploadingImage}
@@ -102,7 +106,7 @@ export default function SellerDisputeActionModal({
                   className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-600 hover:text-amber-700"
                 >
                   <HiOutlineUpload className="h-3.5 w-3.5" />
-                  <span>{uploadingImage ? 'Đang tải...' : 'Tải ảnh seal/đóng gói'}</span>
+                  <span>{uploadingImage ? 'Đang tải...' : 'Tải ảnh seal / video đóng gói'}</span>
                 </button>
               )}
             </div>
@@ -112,24 +116,36 @@ export default function SellerDisputeActionModal({
               ref={fileInputRef}
               onChange={handleFileSelect}
               multiple
-              accept="image/*"
+              accept="image/*,video/*"
               className="hidden"
             />
 
             {evidenceUrls.length > 0 && (
               <div className="grid grid-cols-4 gap-2">
-                {evidenceUrls.map((url, idx) => (
-                  <div key={idx} className="relative group aspect-square rounded-xl overflow-hidden border border-stone-200 dark:border-slate-700">
-                    <img src={url} alt={`Chứng cứ ${idx + 1}`} className="h-full w-full object-cover" />
-                    <button
-                      type="button"
-                      onClick={() => removeEvidence(idx)}
-                      className="absolute top-1 right-1 rounded-full bg-black/60 p-1 text-white hover:bg-rose-600"
-                    >
-                      <HiOutlineX className="h-3 w-3" />
-                    </button>
-                  </div>
-                ))}
+                {evidenceUrls.map((url, idx) => {
+                  const isVid = isVideoUrl(url)
+                  return (
+                    <div key={idx} className="relative group aspect-square rounded-xl overflow-hidden border border-stone-200 dark:border-slate-700 bg-black">
+                      {isVid ? (
+                        <>
+                          <video src={url} className="h-full w-full object-cover" muted />
+                          <span className="absolute bottom-1 left-1 px-1 py-0.5 rounded text-[8px] font-bold bg-rose-600 text-white uppercase pointer-events-none">
+                            Video
+                          </span>
+                        </>
+                      ) : (
+                        <img src={url} alt={`Chứng cứ ${idx + 1}`} className="h-full w-full object-cover" />
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => removeEvidence(idx)}
+                        className="absolute top-1 right-1 rounded-full bg-black/60 p-1 text-white hover:bg-rose-600 transition z-10"
+                      >
+                        <HiOutlineX className="h-3 w-3" />
+                      </button>
+                    </div>
+                  )
+                })}
               </div>
             )}
           </div>

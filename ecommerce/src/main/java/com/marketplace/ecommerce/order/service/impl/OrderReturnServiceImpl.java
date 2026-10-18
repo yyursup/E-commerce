@@ -26,6 +26,7 @@ import com.marketplace.ecommerce.product.service.InventoryHistoryService;
 import com.marketplace.ecommerce.product.valueObjects.InventoryActionType;
 import com.marketplace.ecommerce.request.entity.Report;
 import com.marketplace.ecommerce.request.repository.ReportRepository;
+import com.marketplace.ecommerce.request.repository.RequestRepository;
 import com.marketplace.ecommerce.request.valueObjects.DisputeSellerAction;
 import com.marketplace.ecommerce.request.valueObjects.ReportStage;
 import com.marketplace.ecommerce.request.valueObjects.RequestStatus;
@@ -52,6 +53,7 @@ public class OrderReturnServiceImpl implements OrderReturnService {
     private final OrderReturnRepository orderReturnRepository;
     private final OrderRepository orderRepository;
     private final ReportRepository reportRepository;
+    private final RequestRepository requestRepository;
     private final EscrowRepository escrowRepository;
     private final EscrowService escrowService;
     private final ProductRepository productRepository;
@@ -290,6 +292,7 @@ public class OrderReturnServiceImpl implements OrderReturnService {
         }
 
         returnObj.setStatus(ReturnStatus.DISPUTED);
+        returnObj.setSellerInspectionDeadline(null); // Vô hiệu hóa hạn thẩm định khi Shop đã khiếu nại kiện hoàn
         returnObj.setConditionStatus(request.getConditionStatus());
         returnObj.setConditionNote(request.getConditionNote());
         returnObj.setSellerEvidenceUrls(request.getSellerEvidenceUrls());
@@ -309,11 +312,12 @@ public class OrderReturnServiceImpl implements OrderReturnService {
             rep.setStage(ReportStage.ESCALATED_TO_ADMIN);
             rep.setEscalationReason("Người bán khiếu nại kiện hàng hoàn: " + request.getConditionNote());
             rep.setEscalatedAt(LocalDateTime.now());
-            rep.setSellerEvidenceUrl(request.getSellerEvidenceUrls());
-            rep.setSellerResponse(
-                    (request.getConditionStatus() != null ? "[" + request.getConditionStatus() + "] " : "")
-                            + (request.getConditionNote() != null ? request.getConditionNote() : ""));
-            rep.setSellerAction(DisputeSellerAction.REJECT_AND_ESCALATE);
+            // TUYỆT ĐỐI KHÔNG ghi đè sellerEvidenceUrl và sellerResponse ban đầu của Shop.
+            // Bằng chứng và mô tả kiện hàng hoàn được lưu trữ toàn vẹn trong OrderReturn.
+            if (rep.getRequest() != null) {
+                rep.getRequest().setStatus(RequestStatus.PENDING);
+                requestRepository.save(rep.getRequest());
+            }
             reportRepository.save(rep);
         }
 
@@ -359,26 +363,27 @@ public class OrderReturnServiceImpl implements OrderReturnService {
                             + "Admin bác bỏ hoàn hàng: " + request.getAdminNote());
             orderReturnRepository.save(returnObj);
 
-            // Phục hồi Escrow về HELD rồi release tiền cho Seller
+            // Phục hồi Escrow về HELD rồi release tiền cho Seller chỉ khi trạng thái cho phép
             escrowRepository.findByOrderIdForUpdate(order.getId()).ifPresent(escrow -> {
                 if (escrow.getStatus() == EscrowStatus.DISPUTED) {
                     escrow.setStatus(EscrowStatus.HELD);
                     escrowRepository.save(escrow);
                 }
+                if (escrow.getStatus() == EscrowStatus.HELD) {
+                    order.setReceivedByBuyer(true);
+                    order.setReceivedAt(LocalDateTime.now());
+                    escrowService.releaseByOrder(order.getId());
+                    order.setStatus(OrderStatus.COMPLETED);
+                    orderRepository.save(order);
+                }
             });
-
-            order.setReceivedByBuyer(true);
-            order.setReceivedAt(LocalDateTime.now());
-            escrowService.releaseByOrder(order.getId());
-            order.setStatus(OrderStatus.COMPLETED);
-            orderRepository.save(order);
 
             if (returnObj.getReport() != null) {
                 returnObj.getReport().setStage(ReportStage.CLOSED);
                 reportRepository.save(returnObj.getReport());
             }
 
-            log.info("Admin rejected return dispute for returnId={}, released money to shop for orderId={}", returnId,
+            log.info("Admin rejected return dispute for returnId={}, resolved for orderId={}", returnId,
                     order.getId());
         }
 
@@ -490,8 +495,14 @@ public class OrderReturnServiceImpl implements OrderReturnService {
         for (OrderReturn r : expired) {
             try {
                 Optional<OrderReturn> lockedOpt = orderReturnRepository.findByIdForUpdate(r.getId());
-                if (lockedOpt.isPresent() && lockedOpt.get().getStatus() == ReturnStatus.RETURNED) {
+                if (lockedOpt.isPresent()) {
                     OrderReturn ret = lockedOpt.get();
+                    if (ret.getStatus() != ReturnStatus.RETURNED
+                            || ret.getStatus() == ReturnStatus.DISPUTED
+                            || ret.getSellerInspectionDeadline() == null
+                            || (ret.getReport() != null && ret.getReport().getStage() == ReportStage.ESCALATED_TO_ADMIN)) {
+                        continue;
+                    }
                     ret.setStatus(ReturnStatus.COMPLETED);
                     ret.setIsRestocked(false); // Tuyệt đối không auto-restock khi seller không phản hồi
                     ret.setConditionNote("Hệ thống tự động nghiệm thu do Người bán không kiểm tra hàng trong 72 giờ");

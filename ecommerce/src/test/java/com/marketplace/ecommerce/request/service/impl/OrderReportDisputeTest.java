@@ -32,7 +32,9 @@ import com.marketplace.ecommerce.request.valueObjects.RequestType;
 import com.marketplace.ecommerce.request.valueObjects.ResolutionType;
 import com.marketplace.ecommerce.request.valueObjects.TargetType;
 import com.marketplace.ecommerce.shop.entity.Shop;
+import com.marketplace.ecommerce.shop.repository.ShopRepository;
 import com.marketplace.ecommerce.shop.valueObjects.ShopStatus;
+import com.marketplace.ecommerce.product.repository.ProductRepository;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -87,6 +89,12 @@ class OrderReportDisputeTest {
 
         @Mock
         private OrderReturnRepository orderReturnRepository;
+
+        @Mock
+        private ShopRepository shopRepository;
+
+        @Mock
+        private ProductRepository productRepository;
 
         @InjectMocks
         private ReportServiceImpl reportService;
@@ -344,6 +352,218 @@ class OrderReportDisputeTest {
                 assertEquals(RequestStatus.REJECTED, disputeReq.getStatus());
                 assertEquals(ReturnStatus.COMPLETED, orderReturn.getStatus());
                 verify(escrowService).refundByOrder(eq(orderId), anyString());
+                verify(escrowService, never()).releaseByOrder(any());
+        }
+
+        @Test
+        @DisplayName("Case 1: Admin duyệt RETURN_AND_REFUND khi chưa có kiện hoàn -> Tạo kiện hoàn mới qua createReturn")
+        void handleReport_Case1_AdminAuthorizesReturn_WhenNoOrderReturnExists() {
+                Request reportReq = Request.builder()
+                                .id(reportRequestId)
+                                .type(RequestType.REPORT)
+                                .status(RequestStatus.PENDING)
+                                .description("Hàng không đúng mô tả")
+                                .build();
+
+                Report report = Report.builder()
+                                .id(reportRequestId)
+                                .request(reportReq)
+                                .targetType(TargetType.ORDER)
+                                .targetId(orderId)
+                                .stage(ReportStage.ESCALATED_TO_ADMIN)
+                                .build();
+
+                when(accountRepository.findById(adminAccountId)).thenReturn(Optional.of(adminAccount));
+                when(reportRepository.findByRequestId(reportRequestId)).thenReturn(report);
+                when(orderRepository.findByIdForUpdate(orderId)).thenReturn(Optional.of(deliveredOrder));
+                when(requestValidation.resolveTargetAccountId(TargetType.ORDER, orderId)).thenReturn(buyerAccountId);
+                when(accountRepository.findByIdForUpdate(buyerAccountId)).thenReturn(Optional.of(buyerAccount));
+                when(orderReturnRepository.findByOrderIdForUpdate(orderId)).thenReturn(Optional.empty());
+
+                HandleReportRequest req = HandleReportRequest.builder()
+                                .decision(ReportDecision.APPROVE)
+                                .resolutionType(ResolutionType.RETURN_AND_REFUND)
+                                .note("Admin yêu cầu Người mua gửi trả hàng")
+                                .build();
+
+                reportService.handleReport(adminAccountId, reportRequestId, req);
+
+                assertEquals(RequestStatus.APPROVED, reportReq.getStatus());
+                assertEquals(ReportStage.RETURN_IN_PROGRESS, report.getStage());
+                verify(orderReturnService).createReturn(orderId, report.getId());
+                verify(requestRepository).save(reportReq);
+                verify(reportRepository).save(report);
+        }
+
+        @Test
+        @DisplayName("Case 2: Admin xử lý khi kiện hoàn đã đang diễn ra -> Tái sử dụng, KHÔNG tạo trùng, KHÔNG reset trạng thái")
+        void handleReport_Case2_AdminHandlesReturn_WhenReturnAlreadyInProgress() {
+                Request reportReq = Request.builder()
+                                .id(reportRequestId)
+                                .type(RequestType.REPORT)
+                                .status(RequestStatus.PENDING)
+                                .description("Hàng lỗi, yêu cầu đổi trả")
+                                .build();
+
+                Report report = Report.builder()
+                                .id(reportRequestId)
+                                .request(reportReq)
+                                .targetType(TargetType.ORDER)
+                                .targetId(orderId)
+                                .stage(ReportStage.ESCALATED_TO_ADMIN)
+                                .build();
+
+                LocalDateTime fixedDeadline = LocalDateTime.now().plusDays(2);
+                OrderReturn inProgressReturn = OrderReturn.builder()
+                                .id(UUID.randomUUID())
+                                .order(deliveredOrder)
+                                .status(ReturnStatus.WAITING_FOR_SHIPMENT)
+                                .buyerShipmentDeadline(fixedDeadline)
+                                .build();
+
+                when(accountRepository.findById(adminAccountId)).thenReturn(Optional.of(adminAccount));
+                when(reportRepository.findByRequestId(reportRequestId)).thenReturn(report);
+                when(orderRepository.findByIdForUpdate(orderId)).thenReturn(Optional.of(deliveredOrder));
+                when(requestValidation.resolveTargetAccountId(TargetType.ORDER, orderId)).thenReturn(buyerAccountId);
+                when(accountRepository.findByIdForUpdate(buyerAccountId)).thenReturn(Optional.of(buyerAccount));
+                when(orderReturnRepository.findByOrderIdForUpdate(orderId)).thenReturn(Optional.of(inProgressReturn));
+
+                HandleReportRequest req = HandleReportRequest.builder()
+                                .decision(ReportDecision.APPROVE)
+                                .resolutionType(ResolutionType.RETURN_AND_REFUND)
+                                .note("Tiếp tục quy trình đổi trả hàng")
+                                .build();
+
+                reportService.handleReport(adminAccountId, reportRequestId, req);
+
+                assertEquals(RequestStatus.APPROVED, reportReq.getStatus());
+                assertEquals(ReportStage.RETURN_IN_PROGRESS, report.getStage());
+                assertEquals(ReturnStatus.WAITING_FOR_SHIPMENT, inProgressReturn.getStatus(), "Trạng thái không được reset");
+                assertEquals(fixedDeadline, inProgressReturn.getBuyerShipmentDeadline(), "Deadline không bị khởi động lại");
+                verify(orderReturnService, never()).createReturn(any(), any());
+        }
+
+        @Test
+        @DisplayName("Case 3: Admin phân xử khiếu nại kiện hoàn (Seller return dispute) -> Giải quyết kiện hoàn, KHÔNG tạo mới return")
+        void handleReport_Case3_AdminResolvesDispute_WithoutCreatingAnotherReturn() {
+                Request reportReq = Request.builder()
+                                .id(reportRequestId)
+                                .type(RequestType.REPORT)
+                                .status(RequestStatus.PENDING)
+                                .description("Hàng lỗi vỡ")
+                                .build();
+
+                Report report = Report.builder()
+                                .id(reportRequestId)
+                                .request(reportReq)
+                                .targetType(TargetType.ORDER)
+                                .targetId(orderId)
+                                .stage(ReportStage.ESCALATED_TO_ADMIN)
+                                .escalationReason("Người bán khiếu nại kiện hàng hoàn: Hàng bị tráo")
+                                .build();
+
+                OrderReturn disputedReturn = OrderReturn.builder()
+                                .id(UUID.randomUUID())
+                                .order(deliveredOrder)
+                                .status(ReturnStatus.DISPUTED)
+                                .build();
+
+                when(accountRepository.findById(adminAccountId)).thenReturn(Optional.of(adminAccount));
+                when(reportRepository.findByRequestId(reportRequestId)).thenReturn(report);
+                when(orderRepository.findByIdForUpdate(orderId)).thenReturn(Optional.of(deliveredOrder));
+                when(orderReturnRepository.findByOrderIdForUpdate(orderId)).thenReturn(Optional.of(disputedReturn));
+                when(escrowRepository.findByOrderIdForUpdate(orderId)).thenReturn(Optional.of(heldEscrow));
+                heldEscrow.setStatus(EscrowStatus.DISPUTED);
+
+                // Admin gửi generic RETURN_AND_REFUND nhưng đây là Seller Return Dispute -> Không tạo return mới mà bồi hoàn Buyer
+                HandleReportRequest req = HandleReportRequest.builder()
+                                .decision(ReportDecision.APPROVE)
+                                .resolutionType(ResolutionType.RETURN_AND_REFUND)
+                                .note("Bác bỏ lý do của Shop, hoàn tiền cho Buyer")
+                                .build();
+
+                reportService.handleReport(adminAccountId, reportRequestId, req);
+
+                assertEquals(ReturnStatus.COMPLETED, disputedReturn.getStatus());
+                assertEquals(ReportStage.CLOSED, report.getStage());
+                verify(orderReturnService, never()).createReturn(any(), any());
+                verify(escrowService).refundByOrder(eq(orderId), anyString());
+        }
+
+        @Test
+        @DisplayName("Safeguard: Admin gửi quyết định trùng lặp trên hồ sơ đã đóng -> Ném CustomException, chặn settlement kép")
+        void handleReport_RepeatedDecisions_ThrowsException() {
+                Request closedReq = Request.builder()
+                                .id(reportRequestId)
+                                .type(RequestType.REPORT)
+                                .status(RequestStatus.APPROVED)
+                                .build();
+
+                Report closedReport = Report.builder()
+                                .id(reportRequestId)
+                                .request(closedReq)
+                                .targetType(TargetType.ORDER)
+                                .targetId(orderId)
+                                .stage(ReportStage.CLOSED)
+                                .build();
+
+                when(accountRepository.findById(adminAccountId)).thenReturn(Optional.of(adminAccount));
+                when(reportRepository.findByRequestId(reportRequestId)).thenReturn(closedReport);
+
+                HandleReportRequest req = HandleReportRequest.builder()
+                                .decision(ReportDecision.APPROVE)
+                                .note("Thử submit lại phán quyết")
+                                .build();
+
+                assertThrows(com.marketplace.ecommerce.common.exception.CustomException.class,
+                                () -> reportService.handleReport(adminAccountId, reportRequestId, req));
+                verify(escrowService, never()).refundByOrder(any(), any());
+                verify(escrowService, never()).releaseByOrder(any());
+        }
+
+        @Test
+        @DisplayName("Safeguard: Escrow đã được settled (REFUNDED) -> Tuyệt đối không cho phép release hoặc refund trùng lặp")
+        void handleReport_SettledEscrow_PreventsDuplicateSettlement() {
+                Request disputeReq = Request.builder()
+                                .id(reportRequestId)
+                                .type(RequestType.REPORT)
+                                .status(RequestStatus.PENDING)
+                                .description("[Shop khiếu nại kiện hàng hoàn - DAMAGED] Hàng bị tráo")
+                                .build();
+
+                Report disputeReport = Report.builder()
+                                .id(reportRequestId)
+                                .request(disputeReq)
+                                .targetType(TargetType.ORDER)
+                                .targetId(orderId)
+                                .violationReportId(UUID.randomUUID())
+                                .stage(ReportStage.ESCALATED_TO_ADMIN)
+                                .build();
+
+                OrderReturn orderReturn = OrderReturn.builder()
+                                .id(UUID.randomUUID())
+                                .order(deliveredOrder)
+                                .status(ReturnStatus.DISPUTED)
+                                .build();
+
+                Escrow refundedEscrow = Escrow.builder()
+                                .id(UUID.randomUUID())
+                                .status(EscrowStatus.REFUNDED)
+                                .build();
+
+                when(accountRepository.findById(adminAccountId)).thenReturn(Optional.of(adminAccount));
+                when(reportRepository.findByRequestId(reportRequestId)).thenReturn(disputeReport);
+                when(orderRepository.findByIdForUpdate(orderId)).thenReturn(Optional.of(deliveredOrder));
+                when(orderReturnRepository.findByOrderIdForUpdate(orderId)).thenReturn(Optional.of(orderReturn));
+                when(escrowRepository.findByOrderIdForUpdate(orderId)).thenReturn(Optional.of(refundedEscrow));
+
+                HandleReportRequest req = HandleReportRequest.builder()
+                                .decision(ReportDecision.APPROVE)
+                                .note("Duyệt cho Shop")
+                                .build();
+
+                assertThrows(com.marketplace.ecommerce.common.exception.CustomException.class,
+                                () -> reportService.handleReport(adminAccountId, reportRequestId, req));
                 verify(escrowService, never()).releaseByOrder(any());
         }
 }

@@ -15,8 +15,7 @@ import SellerDisputeHeader from './SellerDisputeHeader'
 import SellerDisputeAdminBanner from './SellerDisputeAdminBanner'
 import SellerDisputeSideBySide from './SellerDisputeSideBySide'
 import SellerDisputeActionModal from './SellerDisputeActionModal'
-
-const MAX_IMAGES = 4
+import { isVideoUrl, isVideoFile } from '../../../../lib/mediaUtils'
 
 export default function SellerDisputeSection({ orderId, order, returnInfo, isDark, onRefresh }) {
   const [report, setReport] = useState(null)
@@ -63,28 +62,55 @@ export default function SellerDisputeSection({ orderId, order, returnInfo, isDar
     return `${hours} giờ ${minutes} phút`
   }, [report?.sellerResponseDeadline])
 
-  // Handle image upload for Rejection
+  // Handle media upload for Rejection (tối đa 4 ảnh 10MB + 1 video 50MB)
+  const currentImages = evidenceUrls.filter((u) => !isVideoUrl(u))
+  const currentVideos = evidenceUrls.filter((u) => isVideoUrl(u))
+
   const handleFileUpload = async (e) => {
     const files = Array.from(e.target.files || [])
     if (!files.length) return
 
-    const remainingSlots = MAX_IMAGES - evidenceUrls.length
-    if (remainingSlots <= 0) {
-      toast.error(`Chỉ được tải tối đa ${MAX_IMAGES} ảnh bằng chứng!`)
+    let availableImageSlots = 4 - currentImages.length
+    let availableVideoSlots = 1 - currentVideos.length
+
+    if (availableImageSlots <= 0 && availableVideoSlots <= 0) {
+      toast.error('Đã đạt giới hạn tối đa (4 ảnh và 1 video bằng chứng)!')
+      if (fileInputRef.current) fileInputRef.current.value = ''
       return
     }
 
-    const validFiles = []
+    const filesToUpload = []
     for (const file of files) {
-      if (file.size > 10 * 1024 * 1024) {
-        toast.error(`Ảnh "${file.name}" vượt quá dung lượng 10MB!`)
+      const isVid = isVideoFile(file)
+      if (isVid) {
+        if (availableVideoSlots <= 0) {
+          toast.error(`Chỉ được tải lên tối đa 1 video bằng chứng! Đã bỏ qua "${file.name}"`)
+          continue
+        }
+        if (file.size > 50 * 1024 * 1024) {
+          toast.error(`Video "${file.name}" vượt quá dung lượng tối đa 50MB!`)
+          continue
+        }
+        filesToUpload.push(file)
+        availableVideoSlots--
       } else {
-        validFiles.push(file)
+        if (availableImageSlots <= 0) {
+          toast.error(`Chỉ được tải lên tối đa 4 hình ảnh bằng chứng! Đã bỏ qua "${file.name}"`)
+          continue
+        }
+        if (file.size > 10 * 1024 * 1024) {
+          toast.error(`Ảnh "${file.name}" vượt quá dung lượng tối đa 10MB!`)
+          continue
+        }
+        filesToUpload.push(file)
+        availableImageSlots--
       }
     }
 
-    const filesToUpload = validFiles.slice(0, remainingSlots)
-    if (!filesToUpload.length) return
+    if (!filesToUpload.length) {
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      return
+    }
 
     try {
       setUploadingImage(true)
@@ -96,10 +122,10 @@ export default function SellerDisputeSection({ orderId, order, returnInfo, isDar
       }
       if (uploaded.length) {
         setEvidenceUrls((prev) => [...prev, ...uploaded])
-        toast.success(`Đã tải lên ${uploaded.length} ảnh`)
+        toast.success(`Đã tải lên ${uploaded.length} tệp chứng từ`)
       }
     } catch (err) {
-      toast.error('Lỗi khi tải ảnh lên máy chủ')
+      toast.error('Lỗi khi tải tệp lên máy chủ')
     } finally {
       setUploadingImage(false)
       if (fileInputRef.current) fileInputRef.current.value = ''

@@ -33,6 +33,74 @@ export default function AdminActionModal({
 
   const targetTypeLabel = getTargetTypeLabel(targetType)
 
+  const isSellerDispute = Boolean(
+    actionModal.item?.isSellerReturnDispute ||
+    actionModal.item?.detail?.targetInfo?.includes('DISPUTED') ||
+    actionModal.item?.detail?.escalationReason?.includes('kiện hàng hoàn') ||
+    actionModal.item?.description?.includes('Shop khiếu nại kiện hàng hoàn')
+  )
+
+  const getSubmitButtonConfig = () => {
+    if (submitting) {
+      return { text: 'Đang xử lý...', className: 'bg-amber-500 hover:bg-amber-600' }
+    }
+
+    if (isSellerDispute) {
+      if (actionModal.type === 'REPORT_APPROVE') {
+        return {
+          text: 'Xác nhận Giải ngân cho Shop',
+          className: 'bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 text-white',
+        }
+      }
+      if (actionModal.type === 'REPORT_REJECT') {
+        return {
+          text: 'Xác nhận Bồi hoàn cho Người mua',
+          className: 'bg-rose-600 hover:bg-rose-700 shadow-md shadow-rose-600/20 text-white',
+        }
+      }
+    }
+
+    switch (actionModal.type) {
+      case 'REPORT_APPROVE':
+        return {
+          text: targetType === 'ORDER' ? 'Xác nhận vi phạm & Bồi hoàn' : 'Xác nhận vi phạm (Phạt Shop)',
+          className: 'bg-rose-600 hover:bg-rose-700 shadow-md shadow-rose-600/20 text-white',
+        }
+      case 'REPORT_REJECT':
+        return {
+          text: 'Bác bỏ báo cáo (Bảo vệ Shop)',
+          className: 'bg-stone-600 hover:bg-stone-700 shadow-md shadow-stone-600/20 text-white',
+        }
+      case 'APPEAL_APPROVE':
+        return {
+          text: 'Chấp thuận gỡ phạt',
+          className: 'bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 text-white',
+        }
+      case 'APPEAL_REJECT':
+        return {
+          text: 'Từ chối đơn kháng cáo',
+          className: 'bg-rose-600 hover:bg-rose-700 shadow-md shadow-rose-600/20 text-white',
+        }
+      case 'ESCROW_REFUND':
+        return {
+          text: 'Xác nhận hoàn tiền 100% cho Buyer',
+          className: 'bg-rose-600 hover:bg-rose-700 shadow-md shadow-rose-600/20 text-white',
+        }
+      case 'ESCROW_RELEASE':
+        return {
+          text: 'Xác nhận giải ngân 100% cho Shop',
+          className: 'bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 text-white',
+        }
+      default:
+        return {
+          text: 'Xác nhận xử lý',
+          className: 'bg-amber-500 hover:bg-amber-600 text-white',
+        }
+    }
+  }
+
+  const submitBtnConfig = getSubmitButtonConfig()
+
   return (
     <AnimatePresence>
       {actionModal.isOpen && (
@@ -49,8 +117,8 @@ export default function AdminActionModal({
             {/* Header */}
             <div className="flex items-center gap-2 mb-1 flex-wrap">
               <h2 className="text-base font-bold">
-                {actionModal.type === 'REPORT_APPROVE' && 'Phán Quyết: Xác Nhận Vi Phạm & Áp Chế Tài'}
-                {actionModal.type === 'REPORT_REJECT' && 'Phán Quyết: Bác Bỏ Báo Cáo Vi Phạm'}
+                {actionModal.type === 'REPORT_APPROVE' && (isSellerDispute ? 'Phán Quyết: Chấp Thuận Shop Khiếu Nại (Giải Ngân Shop)' : 'Phán Quyết: Xác Nhận Vi Phạm & Áp Chế Tài')}
+                {actionModal.type === 'REPORT_REJECT' && (isSellerDispute ? 'Phán Quyết: Bác Bỏ Shop Khiếu Nại (Bồi Hoàn Cho Người Mua)' : 'Phán Quyết: Bác Bỏ Báo Cáo Vi Phạm')}
                 {actionModal.type === 'APPEAL_APPROVE' && 'Phán Quyết: Chấp Thuận Kháng Cáo (Gỡ Phạt)'}
                 {actionModal.type === 'APPEAL_REJECT' && 'Phán Quyết: Bác Bỏ Đơn Kháng Cáo'}
                 {actionModal.type === 'ESCROW_REFUND' && 'Phân Xử Ký Quỹ: Hoàn Tiền 100% Cho Người Mua'}
@@ -59,7 +127,7 @@ export default function AdminActionModal({
               </h2>
               {targetTypeLabel && (
                 <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500 border border-amber-500/30">
-                  {targetTypeLabel}
+                  {isSellerDispute ? 'Khiếu nại kiện hoàn' : targetTypeLabel}
                 </span>
               )}
             </div>
@@ -78,10 +146,11 @@ export default function AdminActionModal({
               onSelectTag={(tag) => setActionModal((prev) => ({ ...prev, note: tag }))}
               isDark={isDark}
               targetTypeLabel={targetTypeLabel}
+              isSellerDispute={isSellerDispute}
             />
 
-            {/* Phương án bồi hoàn đơn hàng (Chỉ hiển thị khi đối tượng là ORDER) */}
-            {actionModal.type === 'REPORT_APPROVE' && targetType === 'ORDER' && (
+            {/* Phương án bồi hoàn đơn hàng (Chỉ hiển thị khi đối tượng là ORDER và không phải khiếu nại kiện hoàn) */}
+            {actionModal.type === 'REPORT_APPROVE' && targetType === 'ORDER' && !isSellerDispute && (
               <AdminActionOrderResolution
                 resolutionType={actionModal.resolutionType}
                 onChangeResolution={(resType) =>
@@ -126,9 +195,12 @@ export default function AdminActionModal({
                 type="button"
                 onClick={handleActionConfirm}
                 disabled={submitting}
-                className="px-4.5 py-2 rounded-xl text-xs font-bold text-white bg-amber-500 hover:bg-amber-600 active:scale-95 disabled:opacity-50"
+                className={cn(
+                  'px-4.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 disabled:opacity-50',
+                  submitBtnConfig.className,
+                )}
               >
-                {submitting ? 'Đang xử lý...' : 'Xác nhận xử lý'}
+                {submitBtnConfig.text}
               </button>
             </div>
           </motion.div>

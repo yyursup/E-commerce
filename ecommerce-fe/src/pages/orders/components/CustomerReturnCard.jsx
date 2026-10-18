@@ -7,11 +7,15 @@ import {
   HiOutlineXCircle,
   HiOutlineShieldCheck,
   HiOutlineExclamation,
+  HiOutlineExternalLink,
+  HiOutlinePhotograph,
+  HiOutlineVideoCamera,
 } from 'react-icons/hi'
 import toast from 'react-hot-toast'
 import { cn } from '../../../lib/cn'
 import returnService from '../../../services/returnService'
 import { useThemeStore } from '../../../store/useThemeStore'
+import { isVideoUrl } from '../../../lib/mediaUtils'
 import {
   getReturnStatusBadge,
   getReturnStatusLabel,
@@ -36,6 +40,60 @@ export default function CustomerReturnCard({ returnInfo, order, isDark: isDarkPr
   const defaultCarrier = returnInfo.carrierName || 'Giao Hàng Nhanh (GHN)'
   const defaultTracking =
     returnInfo.returnTrackingCode || `GHN-RET-${returnInfo.id?.substring(0, 8).toUpperCase()}`
+
+  const parseEvidenceUrls = (str) => {
+    if (!str || typeof str !== 'string') return []
+    return str.split(',').map((s) => s.trim()).filter(Boolean)
+  }
+
+  const renderEvidenceGrid = (urlsString, title = 'Ảnh / Video bằng chứng từ Người bán:') => {
+    const list = parseEvidenceUrls(urlsString)
+    if (!list.length) return null
+
+    return (
+      <div className="pt-2.5 space-y-1.5 border-t border-stone-200/80 dark:border-slate-700/60">
+        <span className="text-[11px] font-bold text-rose-600 dark:text-rose-400 flex items-center gap-1.5">
+          <HiOutlinePhotograph className="h-4 w-4" />
+          {title} ({list.length} tệp)
+        </span>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {list.map((url, i) => {
+            const isVid = isVideoUrl(url)
+            return isVid ? (
+              <div
+                key={i}
+                className="relative rounded-xl border border-rose-300 dark:border-rose-800 overflow-hidden h-24 bg-black flex flex-col justify-center shadow-xs"
+              >
+                <video src={url} controls className="w-full h-full object-cover" />
+                <div className="absolute top-1 left-1 px-1.5 py-0.5 rounded text-[8px] font-bold bg-rose-600 text-white uppercase pointer-events-none flex items-center gap-0.5">
+                  <HiOutlineVideoCamera className="h-2.5 w-2.5" />
+                  Video
+                </div>
+              </div>
+            ) : (
+              <a
+                key={i}
+                href={url}
+                target="_blank"
+                rel="noreferrer"
+                className="relative rounded-xl border border-rose-300 dark:border-rose-800/80 overflow-hidden h-24 bg-stone-900/10 block group shadow-xs"
+                title="Bấm để xem ảnh phóng to"
+              >
+                <img
+                  src={url}
+                  alt={`Bằng chứng Shop ${i + 1}`}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                />
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <HiOutlineExternalLink className="h-4 w-4 text-white" />
+                </div>
+              </a>
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
 
   // Nếu đơn hàng đã có phán quyết cuối cùng hoàn tiền, hiển thị trạng thái hoàn tất thành công (xanh)
   const returnBadge = isOrderRefunded
@@ -137,21 +195,38 @@ export default function CustomerReturnCard({ returnInfo, order, isDark: isDarkPr
             </div>
           </div>
 
-          {returnInfo.conditionNote ? (
-            <div className="p-3.5 rounded-xl bg-white dark:bg-slate-800/90 border border-stone-200 dark:border-slate-700/80 shadow-sm space-y-1.5">
-              <p className="text-[11px] font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider flex items-center gap-1.5">
-                <HiOutlineExclamation className="h-4 w-4" />
-                Lý do & Phán quyết từ Ban Quản Trị / Hệ thống:
+          <div className="p-3.5 rounded-xl bg-white dark:bg-slate-800/90 border border-stone-200 dark:border-slate-700/80 shadow-sm space-y-2">
+            {returnInfo.conditionStatus && (
+              <div className="flex items-center gap-2 pb-1.5 border-b border-stone-100 dark:border-slate-700/60">
+                <span className="text-[11px] font-medium text-stone-500 dark:text-slate-400">Tình trạng Shop ghi nhận:</span>
+                <span className="px-2 py-0.5 rounded-lg text-xs font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+                  {getConditionStatusLabel(returnInfo.conditionStatus)}
+                </span>
+              </div>
+            )}
+
+            {returnInfo.conditionNote ? (
+              <div className="space-y-1">
+                <p className="text-[11px] font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <HiOutlineExclamation className="h-4 w-4" />
+                  Lý do & Phán quyết từ Ban Quản Trị / Hệ thống:
+                </p>
+                <p className="text-xs font-semibold text-stone-800 dark:text-slate-200 leading-relaxed pl-5 whitespace-pre-line">
+                  {returnInfo.conditionNote}
+                </p>
+              </div>
+            ) : (
+              <p className="text-[11px] text-stone-500 dark:text-slate-400 leading-relaxed">
+                Yêu cầu trả hàng của bạn đã bị hủy hoặc không được chấp thuận.
               </p>
-              <p className="text-xs font-semibold text-stone-800 dark:text-slate-200 leading-relaxed pl-5 whitespace-pre-line">
-                {returnInfo.conditionNote}
-              </p>
-            </div>
-          ) : (
-            <p className="text-[11px] text-stone-500 dark:text-slate-400 leading-relaxed">
-              Yêu cầu trả hàng của bạn đã bị hủy hoặc không được chấp thuận.
-            </p>
-          )}
+            )}
+
+            {/* Bằng chứng Shop đưa ra - Dù shop thắng khách hàng vẫn xem được đầy đủ */}
+            {returnInfo.sellerEvidenceUrls && renderEvidenceGrid(
+              returnInfo.sellerEvidenceUrls,
+              'Bằng chứng đối soát do Shop cung cấp (Ảnh / Video mở hộp kiện hoàn):'
+            )}
+          </div>
         </div>
       )}
 
@@ -297,23 +372,9 @@ export default function CustomerReturnCard({ returnInfo, order, isDark: isDarkPr
                     ✓ Ban Quản Trị đã thẩm định và bác bỏ khiếu nại của Shop do không đủ cơ sở đối soát. Toàn bộ tiền đơn hàng đã được giải phóng về Ví của Quý khách.
                   </p>
                 </div>
-                {returnInfo.sellerEvidenceUrls && (
-                  <div className="pt-1.5 space-y-1.5 border-t border-stone-100 dark:border-slate-700/60">
-                    <span className="text-[10px] font-medium text-stone-400 dark:text-slate-500">Ảnh / Video bằng chứng Shop đã gửi đối soát:</span>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                      {returnInfo.sellerEvidenceUrls.split(',').filter(Boolean).map((url, i) => (
-                        <a
-                          key={i}
-                          href={url.trim()}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="relative rounded-xl border border-stone-200 dark:border-slate-700 overflow-hidden h-20 bg-stone-900/10 block group shadow-xs"
-                        >
-                          <img src={url.trim()} alt={`Bằng chứng ${i + 1}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                        </a>
-                      ))}
-                    </div>
-                  </div>
+                {returnInfo.sellerEvidenceUrls && renderEvidenceGrid(
+                  returnInfo.sellerEvidenceUrls,
+                  'Ảnh / Video bằng chứng Shop đã gửi đối soát:'
                 )}
               </div>
             )}
@@ -324,23 +385,9 @@ export default function CustomerReturnCard({ returnInfo, order, isDark: isDarkPr
             <p className="text-[11px] text-stone-500 dark:text-slate-400 leading-relaxed">
               Shop báo cáo hàng hoàn có vấn đề (Tình trạng: <strong>{getConditionStatusLabel(returnInfo.conditionStatus)}</strong>{returnInfo.conditionNote ? ` — Ghi chú của Shop: "${returnInfo.conditionNote}"` : ''}). Ban Quản Trị đang can thiệp phân xử và sẽ ra phán quyết hoàn tiền hoặc bồi thường sớm nhất.
             </p>
-            {returnInfo.sellerEvidenceUrls && (
-              <div className="pt-1 space-y-1">
-                <span className="text-[11px] font-semibold text-rose-500">Ảnh bằng chứng do Shop cung cấp:</span>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {returnInfo.sellerEvidenceUrls.split(',').filter(Boolean).map((url, i) => (
-                    <a
-                      key={i}
-                      href={url.trim()}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="relative rounded-xl border border-rose-300 dark:border-rose-900/50 overflow-hidden h-20 bg-stone-900/10 block group"
-                    >
-                      <img src={url.trim()} alt={`Bằng chứng ${i + 1}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                    </a>
-                  ))}
-                </div>
-              </div>
+            {returnInfo.sellerEvidenceUrls && renderEvidenceGrid(
+              returnInfo.sellerEvidenceUrls,
+              'Ảnh / Video bằng chứng do Shop cung cấp:'
             )}
           </div>
         )

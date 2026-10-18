@@ -7,6 +7,7 @@ import {
   HiOutlineClipboardCopy,
   HiOutlineCheckCircle,
   HiOutlineExclamation,
+  HiOutlineScale,
 } from 'react-icons/hi'
 import toast from 'react-hot-toast'
 import { cn } from '../../../../lib/cn'
@@ -79,7 +80,7 @@ export default function SellerOrderActions({
         </div>
       )}
 
-      {order?.hasActiveDispute && (
+      {order?.hasActiveDispute && !order?.returnInfo && order?.disputeStatus === 'DIRECT_NEGOTIATION' && (
         <div
           className={cn(
             'p-4 rounded-2xl border text-xs sm:text-sm flex items-start gap-3',
@@ -91,6 +92,23 @@ export default function SellerOrderActions({
             <p className="font-bold">Đơn hàng đang có yêu cầu khiếu nại (Thương lượng trực tiếp 1:1)</p>
             <p className="text-[11px] opacity-90 mt-0.5">
               Khách hàng đã nộp khiếu nại. Vui lòng xem chi tiết hình ảnh, lý do và phản hồi xử lý ở mục <strong>Yêu Cầu Khiếu Nại</strong> ngay bên dưới.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {order?.hasActiveDispute && !order?.returnInfo && order?.disputeStatus === 'ESCALATED_TO_ADMIN' && (
+        <div
+          className={cn(
+            'p-4 rounded-2xl border text-xs sm:text-sm flex items-start gap-3',
+            isDark ? 'border-purple-500/40 bg-purple-500/10 text-purple-300' : 'border-purple-300 bg-purple-50 text-purple-800'
+          )}
+        >
+          <HiOutlineScale className="h-5 w-5 text-purple-500 shrink-0 mt-0.5" />
+          <div>
+            <p className="font-bold">Tranh chấp đang chờ Ban Quản Trị sàn phán quyết</p>
+            <p className="text-[11px] opacity-90 mt-0.5">
+              Hồ sơ khiếu nại đã được chuyển lên Ban Quản Trị sàn để xem xét đối soát và ban hành phán quyết cuối cùng.
             </p>
           </div>
         </div>

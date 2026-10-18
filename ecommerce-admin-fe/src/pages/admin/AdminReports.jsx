@@ -173,10 +173,19 @@ export default function AdminReports() {
       const requestId = item.requestId || item.id
       const targetType = item.targetType || item.detail?.targetType
 
+      const isSellerDispute = Boolean(
+        item.isSellerReturnDispute ||
+        item.detail?.targetInfo?.includes('DISPUTED') ||
+        item.detail?.escalationReason?.includes('kiện hàng hoàn') ||
+        item.description?.includes('Shop khiếu nại kiện hàng hoàn')
+      )
+
       if (type === 'REPORT_APPROVE') {
-        const resolution = targetType === 'ORDER' ? (actionModal.resolutionType || 'REFUND_ONLY') : null
+        const resolution = (targetType === 'ORDER' && !isSellerDispute) ? (actionModal.resolutionType || 'REFUND_ONLY') : null
         await reportService.handleReport(requestId, 'APPROVE', trimmedNote, resolution)
-        if (targetType === 'ORDER') {
+        if (isSellerDispute) {
+          toast.success('Đã chấp thuận khiếu nại của Shop! Đã hoàn tất và giải ngân tiền cho Shop.')
+        } else if (targetType === 'ORDER') {
           toast.success('Đã xác nhận vi phạm đơn hàng! Hệ thống đã thực thi phán quyết bồi hoàn ngay lập tức.')
         } else if (targetType === 'USER') {
           toast.success('Đã xác nhận vi phạm! Hệ thống đã áp dụng chế tài kỷ luật cộng gậy cho tài khoản người dùng.')
@@ -189,7 +198,11 @@ export default function AdminReports() {
         }
       } else if (type === 'REPORT_REJECT') {
         await reportService.handleReport(requestId, 'REJECT', trimmedNote)
-        toast.success('Đã bác bỏ báo cáo vi phạm.')
+        if (isSellerDispute) {
+          toast.success('Đã bác bỏ khiếu nại của Shop! Đã phân xử bồi hoàn tiền cho Người mua.')
+        } else {
+          toast.success('Đã bác bỏ báo cáo vi phạm.')
+        }
       } else if (type === 'APPEAL_APPROVE') {
         await requestService.approveRequest(requestId, trimmedNote)
         toast.success('Đã chấp thuận kháng cáo! Đã khôi phục trạng thái và điều chỉnh điểm vi phạm về an toàn.')

@@ -464,6 +464,108 @@ public class EscrowServiceImpl implements EscrowService {
 
     }
 
+    @Override
+    @Transactional
+    public void refundMerchandiseOnly(UUID orderId, String reason) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new CustomException("Order not found: " + orderId));
+
+        Escrow escrow = escrowRepository.findByOrderIdForUpdate(orderId)
+                .orElseThrow(() -> new CustomException("Escrow not found for order: " + orderId));
+
+        if (escrow.getStatus() == EscrowStatus.REFUNDED) {
+            return;
+        }
+
+        if (escrow.getStatus() != EscrowStatus.HELD && escrow.getStatus() != EscrowStatus.DISPUTED) {
+            throw new CustomException("Escrow status không hợp lệ để hoàn tiền: " + escrow.getStatus());
+        }
+
+        Wallet escrowWallet = escrow.getEscrowWallet();
+        Wallet buyerWallet = escrow.getBuyerWallet();
+
+        if (escrowWallet == null)
+            throw new CustomException("Escrow wallet missing");
+        if (buyerWallet == null)
+            throw new CustomException("Buyer wallet missing");
+
+        BigDecimal totalAmount = escrow.getAmount();
+        if (totalAmount == null || totalAmount.signum() <= 0) {
+            throw new CustomException("Escrow amount invalid");
+        }
+
+        // Tiền ship chiều đi sàn giữ lại để thanh toán cước GHN vì chuyến giao hàng đã thành công
+        BigDecimal shippingFee = order.getShippingFee() != null ? order.getShippingFee() : BigDecimal.ZERO;
+        BigDecimal shippingRetained = shippingFee.min(totalAmount);
+
+        // Tiền hàng thực tế hoàn về cho Buyer (subtotal - discountAmount)
+        BigDecimal merchandiseRefund = totalAmount.subtract(shippingRetained);
+
+        if (escrowWallet.getLockedBalance().compareTo(totalAmount) < 0) {
+            escrowWallet.setLockedBalance(totalAmount);
+        }
+
+        // Mở khóa toàn bộ số tiền ký quỹ của đơn hàng
+        escrowWallet.subLocked(totalAmount);
+
+        // 1. Hoàn tiền hàng về cho Buyer
+        if (merchandiseRefund.signum() > 0) {
+            buyerWallet.addAvailable(merchandiseRefund);
+        }
+
+        // 2. Chuyển phí ship chiều đi vào số dư khả dụng của Sàn để thanh toán cước GHN
+        if (shippingRetained.signum() > 0) {
+            escrowWallet.addAvailable(shippingRetained);
+        }
+
+        walletRepository.saveAll(List.of(escrowWallet, buyerWallet));
+
+        // Hạch toán sổ cái hoàn tiền hàng cho Buyer
+        String refundDedupe = "ESCROW_MERCHANDISE_REFUND:" + order.getId();
+        if (!transactionRepository.existsByDedupeKey(refundDedupe) && merchandiseRefund.signum() > 0) {
+            Transaction txRefund = Transaction.builder()
+                    .fromWallet(escrowWallet)
+                    .toWallet(buyerWallet)
+                    .amount(merchandiseRefund)
+                    .type(TransactionType.REFUND)
+                    .status(TransactionStatus.SUCCESS)
+                    .referenceType(ReferenceType.ESCROW)
+                    .referenceId(escrow.getId())
+                    .createdAt(LocalDateTime.now())
+                    .dedupeKey(refundDedupe)
+                    .note(reason != null ? reason
+                            : ("Hoàn tiền hàng (khách giữ hàng) cho đơn " + order.getOrderNumber()))
+                    .build();
+            transactionRepository.save(txRefund);
+        }
+
+        // Hạch toán sổ cái phí ship sàn giữ lại để trả GHN
+        String shipRetainedDedupe = "ESCROW_SHIP_RETAINED:" + order.getId();
+        if (!transactionRepository.existsByDedupeKey(shipRetainedDedupe) && shippingRetained.signum() > 0) {
+            Transaction txShipRetained = Transaction.builder()
+                    .fromWallet(escrowWallet)
+                    .toWallet(escrowWallet)
+                    .amount(shippingRetained)
+                    .type(TransactionType.RELEASE)
+                    .status(TransactionStatus.SUCCESS)
+                    .referenceType(ReferenceType.ESCROW)
+                    .referenceId(escrow.getId())
+                    .createdAt(LocalDateTime.now())
+                    .dedupeKey(shipRetainedDedupe)
+                    .note("Giữ lại cước vận chuyển chiều đi trả GHN cho đơn hoàn tiền khách giữ hàng "
+                            + order.getOrderNumber())
+                    .build();
+            transactionRepository.save(txShipRetained);
+        }
+
+        escrow.setStatus(EscrowStatus.REFUNDED);
+        escrow.setUpdatedAt(LocalDateTime.now());
+        escrowRepository.save(escrow);
+
+        order.setStatus(OrderStatus.REFUNDED);
+        orderRepository.save(order);
+    }
+
     /**
      * Phân chia ký quỹ theo tỷ lệ phần trăm giữa Người mua và Người bán (Escrow Split Settlement).
      * QUY TẮC NGHIỆP VỤ BẢN QUYỀN CỦA SÀN (BUSINESS RULE):

@@ -19,6 +19,8 @@ public interface EscrowService {
 
     void refundByOrder(UUID orderId, String reason);
 
+    void refundMerchandiseOnly(UUID orderId, String reason);
+
     void splitSettleByOrder(UUID orderId, Integer buyerPercentage, Integer sellerPercentage, String note);
 
     Page<EscrowAdminResponse> adminList(EscrowStatus status, Pageable pageable);

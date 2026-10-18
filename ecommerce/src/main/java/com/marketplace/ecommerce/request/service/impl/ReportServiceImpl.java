@@ -524,7 +524,7 @@ public class ReportServiceImpl implements ReportService {
                         + (req.getResponseNote() != null ? req.getResponseNote() : ""));
                 report.getRequest().setReviewedAt(now);
 
-                escrowService.refundByOrder(orderId, "Shop chấp nhận hoàn tiền trong thương lượng 1:1");
+                escrowService.refundMerchandiseOnly(orderId, "Shop chấp nhận hoàn tiền trong thương lượng 1:1 (khách giữ hàng)");
                 order.setStatus(OrderStatus.REFUNDED);
                 orderRepository.save(order);
 

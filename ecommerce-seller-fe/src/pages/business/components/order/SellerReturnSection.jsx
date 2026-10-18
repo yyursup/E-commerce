@@ -14,6 +14,7 @@ import fileService from '../../../../services/fileService'
 import {
   getReturnStatusBadge,
   getReturnStatusLabel,
+  formatOrderCurrency,
 } from '../../../../lib/orderStatus'
 import SellerReturnTimeline from './SellerReturnTimeline'
 import SellerReturnDisputeBanner from './SellerReturnDisputeBanner'
@@ -266,6 +267,39 @@ export default function SellerReturnSection({ returnInfo, order, isDark: isDarkP
         isDark={isDark}
       />
 
+      {/* 3.1 Chi phí vận chuyển 2 chiều Shop chịu do phát sinh đổi trả */}
+      {returnInfo.status !== 'CANCELLED' && (
+        <div
+          className={cn(
+            'p-3.5 rounded-xl border text-xs space-y-1.5 shadow-2xs',
+            isDark ? 'border-slate-800 bg-slate-800/40 text-slate-300' : 'border-stone-200 bg-white text-stone-700'
+          )}
+        >
+          <div className="flex items-center justify-between font-bold">
+            <span className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
+              <HiOutlineTruck className="h-4 w-4" />
+              Chi phí vận chuyển 2 chiều (Shop chịu do phát sinh đổi trả):
+            </span>
+            <span className="font-mono text-sm text-rose-600 dark:text-rose-400">
+              {formatOrderCurrency(Number(order?.shippingFee || 0) + Number(returnInfo?.shippingFee || order?.shippingFee || 0))}
+            </span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 border-t border-stone-100 dark:border-slate-800 text-[11px] font-mono">
+            <div className="flex justify-between">
+              <span className="font-sans text-stone-500 dark:text-slate-400">• Cước chiều đi ban đầu:</span>
+              <span>{formatOrderCurrency(order?.shippingFee || 0)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="font-sans text-stone-500 dark:text-slate-400">• Cước chiều về thu gom tận nhà:</span>
+              <span>{formatOrderCurrency(returnInfo?.shippingFee || order?.shippingFee || 0)}</span>
+            </div>
+          </div>
+          <p className="text-[10px] text-stone-400 dark:text-slate-500 italic pt-0.5">
+            * Khoản cước này được tự động trích từ Quỹ Ký Quỹ Gian Hàng (ShopEscrowFund) nộp về Sàn để thanh toán cho đơn vị vận chuyển GHN khi hoàn tất.
+          </p>
+        </div>
+      )}
+
       {/* 4. Hành động kiểm tra kiện hàng hoàn khi RETURNED */}
       {returnInfo.status === 'RETURNED' && !isSettled && (
         <div className="p-4 rounded-2xl border border-purple-500/30 bg-purple-500/5 space-y-3">
@@ -322,6 +356,8 @@ export default function SellerReturnSection({ returnInfo, order, isDark: isDarkP
         setIsRestocked={setIsRestocked}
         onSubmit={handleSubmitComplete}
         isDark={isDark}
+        order={order}
+        returnInfo={returnInfo}
       />
 
       {/* 8. Modal Khiếu nại kiện hàng hoàn */}

@@ -1,5 +1,6 @@
 package com.marketplace.ecommerce.shop.service;
 
+import com.marketplace.ecommerce.order.entity.OrderReturn;
 import com.marketplace.ecommerce.shop.dto.request.AdminAdjustEscrowFundRequest;
 import com.marketplace.ecommerce.shop.dto.request.AdminDeductCompensationRequest;
 import com.marketplace.ecommerce.shop.dto.request.TopUpEscrowFundRequest;
@@ -45,4 +46,6 @@ public interface ShopEscrowFundService {
     String createVnpayPaymentUrl(UUID shopId, TopUpEscrowFundRequest request, String clientIp);
 
     void processVnpayCallback(java.util.Map<String, String> params, String rawQueryString);
+
+    void deductReturnDisputeShippingFees(OrderReturn orderReturn);
 }

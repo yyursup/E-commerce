@@ -299,7 +299,7 @@ export default function SellerDisputeSection({ orderId, order, returnInfo, isDar
               className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition-all duration-150 active:scale-[0.98]"
             >
               <HiOutlineCheck className="h-4 w-4" />
-              <span>Đồng ý Hoàn Tiền (Không trừ uy tín)</span>
+              <span>Đồng ý Hoàn Tiền</span>
             </button>
 
             <button
@@ -340,6 +340,7 @@ export default function SellerDisputeSection({ orderId, order, returnInfo, isDar
           fileInputRef={fileInputRef}
           submitting={submitting}
           onSubmit={handleSellerAction}
+          order={order}
         />
       </div>
     </div>

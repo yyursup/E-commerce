@@ -3,8 +3,10 @@ import {
   HiOutlineCheckCircle,
   HiOutlineX,
   HiOutlineArchive,
+  HiOutlineTruck,
 } from 'react-icons/hi'
 import { cn } from '../../../../lib/cn'
+import { formatOrderCurrency } from '../../../../lib/orderStatus'
 
 export default function SellerReturnCompleteModal({
   isOpen,
@@ -16,7 +18,13 @@ export default function SellerReturnCompleteModal({
   isRestocked,
   setIsRestocked,
   onSubmit,
+  order,
+  returnInfo,
 }) {
+  const outboundFee = Number(order?.shippingFee || 0)
+  const returnFee = Number(returnInfo?.shippingFee || outboundFee)
+  const totalShippingFee = outboundFee + returnFee
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -49,6 +57,35 @@ export default function SellerReturnCompleteModal({
             <p className={cn('text-xs leading-relaxed', isDark ? 'text-slate-400' : 'text-stone-600')}>
               Bạn xác nhận đã nhận lại sản phẩm hoàn trả trong tình trạng nguyên vẹn. Hệ thống sẽ hoàn tiền cho Khách hàng từ tài khoản ký quỹ sàn (Escrow).
             </p>
+
+            {/* Chi tiết cước vận chuyển 2 chiều trích từ Quỹ Shop */}
+            <div className={cn(
+              'p-3.5 rounded-xl border text-xs space-y-2',
+              isDark ? 'bg-amber-500/10 border-amber-500/25 text-amber-300' : 'bg-amber-50 border-amber-200 text-amber-900'
+            )}>
+              <div className="flex items-center justify-between font-bold">
+                <span className="flex items-center gap-1.5">
+                  <HiOutlineTruck className="h-4 w-4 text-amber-500" />
+                  Cước vận chuyển 2 chiều (Shop chịu):
+                </span>
+                <span className="font-mono text-sm text-amber-600 dark:text-amber-400">
+                  {formatOrderCurrency(totalShippingFee)}
+                </span>
+              </div>
+              <div className="text-[11px] space-y-0.5 text-stone-600 dark:text-slate-300 font-mono pl-1">
+                <div className="flex justify-between">
+                  <span className="font-sans">• Cước chiều đi ban đầu:</span>
+                  <span>{formatOrderCurrency(outboundFee)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-sans">• Cước chiều về thu gom tận nhà:</span>
+                  <span>{formatOrderCurrency(returnFee)}</span>
+                </div>
+              </div>
+              <p className="text-[10px] text-stone-500 dark:text-slate-400 italic pt-1 border-t border-amber-500/20 leading-normal">
+                * Khoản cước này sẽ được tự động trích từ Quỹ Ký Quỹ Bảo Chứng Gian Hàng (ShopEscrowFund) để thanh toán cho đơn vị vận chuyển GHN.
+              </p>
+            </div>
 
             <div className="space-y-3 text-xs">
               <div>

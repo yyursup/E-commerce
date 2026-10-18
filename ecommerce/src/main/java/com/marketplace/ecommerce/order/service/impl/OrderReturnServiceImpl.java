@@ -31,6 +31,7 @@ import com.marketplace.ecommerce.request.valueObjects.DisputeSellerAction;
 import com.marketplace.ecommerce.request.valueObjects.ReportStage;
 import com.marketplace.ecommerce.request.valueObjects.RequestStatus;
 import com.marketplace.ecommerce.shop.entity.Shop;
+import com.marketplace.ecommerce.shop.service.ShopEscrowFundService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -60,6 +61,7 @@ public class OrderReturnServiceImpl implements OrderReturnService {
     private final ProductVariantRepository productVariantRepository;
     private final InventoryHistoryService inventoryHistoryService;
     private final UserRepository userRepository;
+    private final ShopEscrowFundService shopEscrowFundService;
 
     @Override
     @Transactional
@@ -257,6 +259,8 @@ public class OrderReturnServiceImpl implements OrderReturnService {
         escrowService.refundByOrder(order.getId(),
                 "Hoàn tiền cho người mua sau khi người bán nghiệm thu hoàn hàng thành công");
 
+        shopEscrowFundService.deductReturnDisputeShippingFees(returnObj);
+
         if (returnObj.getReport() != null) {
             Report rep = returnObj.getReport();
             rep.setStage(ReportStage.RESOLVED);
@@ -349,6 +353,8 @@ public class OrderReturnServiceImpl implements OrderReturnService {
             escrowService.refundByOrder(order.getId(),
                     "Admin chấp thuận hoàn tiền cho người mua sau khi phân xử khiếu nại hoàn hàng: "
                             + (request.getAdminNote() != null ? request.getAdminNote() : ""));
+
+            shopEscrowFundService.deductReturnDisputeShippingFees(returnObj);
 
             if (returnObj.getReport() != null) {
                 returnObj.getReport().setStage(ReportStage.CLOSED);
@@ -511,6 +517,8 @@ public class OrderReturnServiceImpl implements OrderReturnService {
                     Order order = ret.getOrder();
                     escrowService.refundByOrder(order.getId(),
                             "Tự động hoàn tiền do Người bán quá hạn 72h kiểm tra hàng hoàn");
+
+                    shopEscrowFundService.deductReturnDisputeShippingFees(ret);
 
                     if (ret.getReport() != null) {
                         ret.getReport().setStage(ReportStage.RESOLVED);

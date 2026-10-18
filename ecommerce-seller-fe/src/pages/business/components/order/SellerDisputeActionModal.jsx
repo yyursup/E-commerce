@@ -1,6 +1,7 @@
 import { HiOutlineX, HiOutlineUpload, HiOutlineCheck } from 'react-icons/hi'
 import { cn } from '../../../../lib/cn'
 import { isVideoUrl } from '../../../../lib/mediaUtils'
+import { formatOrderCurrency } from '../../../../lib/orderStatus'
 
 export default function SellerDisputeActionModal({
   activeModal,
@@ -15,11 +16,17 @@ export default function SellerDisputeActionModal({
   fileInputRef,
   submitting,
   onSubmit,
+  order,
 }) {
   if (!activeModal) return null
 
   const imageCount = evidenceUrls.filter((u) => !isVideoUrl(u)).length
   const videoCount = evidenceUrls.filter((u) => isVideoUrl(u)).length
+
+  const outboundShippingFee = Number(order?.shippingFee || 0)
+  const orderTotal = Number(order?.total || 0)
+  const merchandiseRefund = Math.max(0, orderTotal - outboundShippingFee)
+  const roundtripShippingFee = outboundShippingFee * 2
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
@@ -31,7 +38,7 @@ export default function SellerDisputeActionModal({
       >
         <div className="flex items-center justify-between border-b pb-3 border-stone-100 dark:border-slate-800">
           <h4 className="text-base font-bold">
-            {activeModal === 'REFUND' && 'Xác Nhận Đồng Ý Hoàn Tiền'}
+            {activeModal === 'REFUND' && 'Xác Nhận Đồng Ý Hoàn Tiền (Khách Giữ Hàng)'}
             {activeModal === 'RETURN' && 'Xác Nhận Nhận Lại Hàng Đổi Trả'}
             {activeModal === 'REJECT' && 'Từ Chối & Chuyển Ban Quản Trị Sàn'}
           </h4>
@@ -46,20 +53,64 @@ export default function SellerDisputeActionModal({
 
         <div className="space-y-3 text-xs leading-relaxed">
           {activeModal === 'REFUND' && (
-            <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-3 text-emerald-800 dark:text-emerald-300">
-              <p className="font-bold">Lợi ích thương lượng thành công:</p>
-              <p className="mt-1">
-                Hệ thống sẽ hoàn 100% tiền ký quỹ về ví của Người mua. <strong>Shop KHÔNG bị trừ điểm uy tín</strong> và không bị ghi nhận vi phạm gian hàng.
-              </p>
+            <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-3 text-emerald-800 dark:text-emerald-300 space-y-2">
+              <div>
+                <p className="font-bold">Lợi ích thương lượng thành công (Khách giữ hàng):</p>
+                <p className="mt-1">
+                  Hệ thống sẽ hoàn <strong>tiền hàng</strong> về ví của Người mua. Cước ship chiều đi được chuyển cho Sàn thanh toán cho GHN vì chuyến giao hàng đã hoàn thành. <strong>Shop KHÔNG bị trừ điểm uy tín</strong> và <strong>KHÔNG bị trích Quỹ ký quỹ</strong>.
+                </p>
+              </div>
+
+              {order && (
+                <div className="pt-2 border-t border-emerald-500/20 space-y-1 font-mono text-[11px]">
+                  <div className="flex justify-between">
+                    <span className="font-sans">Tiền hàng hoàn cho Người mua:</span>
+                    <strong className="text-emerald-700 dark:text-emerald-300">
+                      {formatOrderCurrency(merchandiseRefund)}
+                    </strong>
+                  </div>
+                  <div className="flex justify-between text-stone-500 dark:text-slate-400">
+                    <span className="font-sans">Cước ship chiều đi (chuyển Sàn trả GHN):</span>
+                    <span>{formatOrderCurrency(outboundShippingFee)}</span>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
           {activeModal === 'RETURN' && (
-            <div className="rounded-xl bg-sky-500/10 border border-sky-500/20 p-3 text-sky-800 dark:text-sky-300">
-              <p className="font-bold">Quy trình đổi trả hàng:</p>
-              <p className="mt-1">
-                Yêu cầu trả hàng sẽ được khởi tạo. Khách hàng có 3 ngày để nộp mã vận đơn gửi hàng về kho của bạn. Tiền ký quỹ tiếp tục được bảo lưu an toàn.
-              </p>
+            <div className="rounded-xl bg-sky-500/10 border border-sky-500/20 p-3 text-sky-800 dark:text-sky-300 space-y-2">
+              <div>
+                <p className="font-bold">Quy trình đổi trả hàng tận nơi (Chuẩn TMĐT):</p>
+                <p className="mt-1">
+                  Yêu cầu trả hàng sẽ được khởi tạo. Bưu tá GHN sẽ đến tận địa chỉ lấy hàng hoàn từ Người mua (Người mua trả hàng 0 đồng). Tiền ký quỹ tiếp tục được bảo lưu an toàn.
+                </p>
+              </div>
+
+              {order && (
+                <div className="pt-2 border-t border-sky-500/20 space-y-1.5 text-[11px]">
+                  <p className="font-bold font-sans text-sky-900 dark:text-sky-200">
+                    Chi phí vận chuyển 2 chiều (Shop chịu do phát sinh đổi trả):
+                  </p>
+                  <div className="space-y-0.5 font-mono text-stone-600 dark:text-slate-300 pl-1">
+                    <div className="flex justify-between">
+                      <span className="font-sans">• Cước chiều đi ban đầu:</span>
+                      <span>{formatOrderCurrency(outboundShippingFee)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-sans">• Cước chiều về thu gom tận nhà:</span>
+                      <span>{formatOrderCurrency(outboundShippingFee)}</span>
+                    </div>
+                    <div className="flex justify-between font-bold pt-1 border-t border-sky-500/20 text-sky-700 dark:text-sky-300">
+                      <span className="font-sans">Tổng cước 2 chiều trích từ Quỹ Ký Quỹ:</span>
+                      <span>{formatOrderCurrency(roundtripShippingFee)}</span>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-stone-500 dark:text-slate-400 italic">
+                    * Khoản cước này chỉ được trích khi hoàn tất nhận hàng trả, để Sàn thanh toán cho GHN.
+                  </p>
+                </div>
+              )}
             </div>
           )}
 

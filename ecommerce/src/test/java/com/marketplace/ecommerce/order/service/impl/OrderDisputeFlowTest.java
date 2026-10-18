@@ -12,6 +12,7 @@ import com.marketplace.ecommerce.payment.entity.Escrow;
 import com.marketplace.ecommerce.payment.repository.EscrowRepository;
 import com.marketplace.ecommerce.payment.service.EscrowService;
 import com.marketplace.ecommerce.payment.valueObjects.EscrowStatus;
+import com.marketplace.ecommerce.product.repository.ProductRepository;
 import com.marketplace.ecommerce.request.dto.response.OrderDisputeResponse;
 import com.marketplace.ecommerce.request.entity.Report;
 import com.marketplace.ecommerce.request.entity.Request;
@@ -43,7 +44,6 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -74,7 +74,7 @@ class OrderDisputeFlowTest {
     private ShopRepository shopRepository;
 
     @Mock
-    private com.marketplace.ecommerce.product.repository.ProductRepository productRepository;
+    private ProductRepository productRepository;
 
     @Mock
     private OrderDisputeService orderDisputeService;
@@ -179,7 +179,7 @@ class OrderDisputeFlowTest {
         // Given
         RequestServiceImpl requestService = new RequestServiceImpl(
                 requestRepository, reportRepository, null, accountRepository, null,
-                null, null, productRepository, shopRepository, null, orderRepository, escrowRepository, escrowService, null, null
+                null, null, productRepository, shopRepository, null, orderRepository, escrowRepository, null, null
         );
 
         UUID requestId = UUID.randomUUID();
@@ -221,7 +221,7 @@ class OrderDisputeFlowTest {
         // Given
         RequestServiceImpl requestService = new RequestServiceImpl(
                 requestRepository, reportRepository, null, accountRepository, null,
-                null, null, null, shopRepository, null, orderRepository, escrowRepository, escrowService, null, null
+                null, null, null, shopRepository, null, orderRepository, escrowRepository, null, null
         );
 
         UUID requestId = UUID.randomUUID();

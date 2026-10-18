@@ -43,12 +43,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -89,12 +86,6 @@ class OrderReportDisputeTest {
 
         @Mock
         private OrderReturnRepository orderReturnRepository;
-
-        @Mock
-        private ShopRepository shopRepository;
-
-        @Mock
-        private ProductRepository productRepository;
 
         @InjectMocks
         private ReportServiceImpl reportService;
@@ -241,8 +232,7 @@ class OrderReportDisputeTest {
                 // Given
                 RequestServiceImpl requestServiceImpl = new RequestServiceImpl(
                                 requestRepository, reportRepository, null, accountRepository, null,
-                                requestValidation, null, null, null, null, orderRepository, escrowRepository,
-                                escrowService, orderReturnService, null);
+                                requestValidation, null, null, null, null, orderRepository, escrowRepository, orderReturnService, null);
 
                 // When
                 requestServiceImpl.autoRefundExpiredDisputedOrders();
@@ -258,8 +248,7 @@ class OrderReportDisputeTest {
                 // Given
                 RequestServiceImpl requestServiceImpl = new RequestServiceImpl(
                                 requestRepository, reportRepository, null, accountRepository, null,
-                                requestValidation, null, null, null, null, orderRepository, escrowRepository,
-                                escrowService, orderReturnService, null);
+                                requestValidation, null, null, null, null, orderRepository, escrowRepository, orderReturnService, null);
 
                 // When
                 requestServiceImpl.autoRefundExpiredDisputedOrders();

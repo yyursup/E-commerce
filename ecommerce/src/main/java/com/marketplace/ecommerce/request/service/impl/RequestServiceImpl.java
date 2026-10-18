@@ -34,28 +34,20 @@ import com.marketplace.ecommerce.shop.repository.ShopRepository;
 import com.marketplace.ecommerce.shop.service.ShopService;
 import com.marketplace.ecommerce.shop.valueObjects.ShopStatus;
 import com.marketplace.ecommerce.order.dto.response.OrderReturnResponse;
-import com.marketplace.ecommerce.order.entity.Order;
 import com.marketplace.ecommerce.order.repository.OrderRepository;
-import com.marketplace.ecommerce.order.valueObjects.OrderStatus;
-import com.marketplace.ecommerce.order.valueObjects.ReturnStatus;
 import com.marketplace.ecommerce.order.service.OrderReturnService;
 import com.marketplace.ecommerce.payment.dto.EscrowAdminResponse;
 import com.marketplace.ecommerce.payment.repository.EscrowRepository;
-import com.marketplace.ecommerce.payment.service.EscrowService;
-import com.marketplace.ecommerce.payment.valueObjects.EscrowStatus;
 import com.marketplace.ecommerce.request.valueObjects.DisputeSellerAction;
-import com.marketplace.ecommerce.request.valueObjects.ResolutionType;
 import com.marketplace.ecommerce.shop.service.ShopEscrowFundService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -83,12 +75,8 @@ public class RequestServiceImpl implements RequestService {
     private final ReviewRepository reviewRepository;
     private final OrderRepository orderRepository;
     private final EscrowRepository escrowRepository;
-    private final EscrowService escrowService;
     private final OrderReturnService orderReturnService;
     private final ShopEscrowFundService shopEscrowFundService;
-
-    @Value("${marketplace.dispute.appeal-window-hours}")
-    private long appealWindowHours;
 
     @Transactional
     public RequestResponse approveSellerRegistration(UUID requestId, UUID adminAccountId, String response) {

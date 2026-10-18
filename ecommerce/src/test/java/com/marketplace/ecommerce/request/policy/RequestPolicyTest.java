@@ -1,14 +1,10 @@
 package com.marketplace.ecommerce.request.policy;
 
 import com.marketplace.ecommerce.common.exception.CustomException;
-import com.marketplace.ecommerce.order.repository.OrderRepository;
 import com.marketplace.ecommerce.request.dto.request.CreateAppealRequest;
 import com.marketplace.ecommerce.request.entity.Report;
 import com.marketplace.ecommerce.request.repository.ReportRepository;
-import com.marketplace.ecommerce.request.repository.SellerRepository;
 import com.marketplace.ecommerce.request.valueObjects.TargetType;
-import com.marketplace.ecommerce.shop.repository.ShopRepository;
-import com.marketplace.ecommerce.auth.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,18 +24,6 @@ class RequestPolicyTest {
 
     @Mock
     private ReportRepository reportRepository;
-
-    @Mock
-    private SellerRepository sellerRepository;
-
-    @Mock
-    private ShopRepository shopRepository;
-
-    @Mock
-    private UserRepository userRepository;
-
-    @Mock
-    private OrderRepository orderRepository;
 
     @InjectMocks
     private RequestPolicy requestPolicy;

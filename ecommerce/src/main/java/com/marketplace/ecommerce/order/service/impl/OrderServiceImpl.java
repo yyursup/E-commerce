@@ -239,10 +239,7 @@ public class OrderServiceImpl implements OrderService {
 
         if (newStatus == OrderStatus.CANCELLED) {
 
-            if (order.getPaymentMethod() == PaymentMethod.COD) {
-                escrowService.cancelCodEscrow(order);
-            } else if (order.getPaymentMethod() == PaymentMethod.WALLET
-                    || (order.getPaymentMethod() == PaymentMethod.VNPAY && currentStatus == OrderStatus.CONFIRMED)) {
+            if (order.getPaymentMethod() == PaymentMethod.WALLET || (order.getPaymentMethod() == PaymentMethod.VNPAY && currentStatus == OrderStatus.CONFIRMED)) {
                 escrowService.refundByOrder(order.getId(), "Hủy đơn hàng " + order.getOrderNumber());
             }
 

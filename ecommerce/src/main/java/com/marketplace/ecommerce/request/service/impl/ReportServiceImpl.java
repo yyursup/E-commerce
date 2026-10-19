@@ -58,6 +58,7 @@ import com.marketplace.ecommerce.notification.repository.NotificationRepository;
 import com.marketplace.ecommerce.notification.valueObjects.NotificationChannelType;
 import com.marketplace.ecommerce.notification.valueObjects.NotificationStatus;
 import com.marketplace.ecommerce.notification.valueObjects.NotificationType;
+import com.marketplace.ecommerce.chat.service.ChatService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -91,6 +92,7 @@ public class ReportServiceImpl implements ReportService {
     private final ShopEscrowFundService shopEscrowFundService;
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
+    private final ChatService chatService;
 
     @Override
     @Transactional
@@ -202,7 +204,7 @@ public class ReportServiceImpl implements ReportService {
         }
 
         // 2. Quyết định của Admin về việc xóa gậy hay giữ nguyên cho Shop:
-        boolean shouldPardonShop = removeShopPenalty == null || Boolean.TRUE.equals(removeShopPenalty);
+        boolean shouldPardonShop = removeShopPenalty == null || removeShopPenalty;
         if (shouldPardonShop && order.getShop() != null && order.getShop().getUser() != null) {
             Account shopOwner = order.getShop().getUser().getAccount();
             if (shopOwner != null && shopOwner.getViolationCount() > 0) {
@@ -279,6 +281,10 @@ public class ReportServiceImpl implements ReportService {
         requestRepository.save(r);
         reportRepository.save(report);
 
+        if (r != null) {
+            chatService.closeDisputeThread(r.getId(), "Admin giải quyết khiếu nại kiện hoàn: chấp thuận giải trình từ phía gian hàng");
+        }
+
         // Gửi thông báo In-App cho Người bán và Người mua
         String orderCodeSellerWins = order.getOrderNumber() != null ? order.getOrderNumber() : orderId.toString();
         User buyerSellerWins = getOrderBuyerUser(order, report);
@@ -337,6 +343,10 @@ public class ReportServiceImpl implements ReportService {
 
         requestRepository.save(r);
         reportRepository.save(report);
+
+        if (r != null) {
+            chatService.closeDisputeThread(r.getId(), "Admin phán quyết bồi hoàn cho Người mua sau khiếu nại kiện hoàn");
+        }
 
         // Gửi thông báo In-App cho Người mua và Người bán
         String orderCodeBuyerWins = order.getOrderNumber() != null ? order.getOrderNumber() : orderId.toString();
@@ -409,6 +419,10 @@ public class ReportServiceImpl implements ReportService {
                             "Ban Quản Trị đã bác bỏ khiếu nại của người mua cho đơn hàng #" + orderCode + "" + clauseInfo + ". Tiền thanh toán đã được giải ngân cho gian hàng.",
                             order.getId(), report.getId());
                 }
+
+                if (report.getRequest() != null) {
+                    chatService.closeDisputeThread(report.getRequest().getId(), "Admin bác bỏ khiếu nại và giải ngân cho Shop");
+                }
             }
         }
     }
@@ -439,6 +453,9 @@ public class ReportServiceImpl implements ReportService {
                             + "Admin chấp thuận hoàn tiền cho người mua: " + (note != null ? note : ""));
                     orderReturnRepository.save(ret);
                 });
+                if (report.getRequest() != null) {
+                    chatService.closeDisputeThread(report.getRequest().getId(), "Admin phê duyệt hoàn tiền cho Người mua");
+                }
                 log.info("Admin approved buyer dispute, refunded orderId={}", orderId);
             } else if (finalResolution == ResolutionType.RETURN_AND_REFUND) {
                 Optional<OrderReturn> existingReturn = orderReturnRepository.findByOrderIdForUpdate(orderId);
@@ -461,6 +478,11 @@ public class ReportServiceImpl implements ReportService {
                             "Admin approved buyer dispute (Case 2), reusing existing returnId={} status={} for orderId={}",
                             ret.getId(), ret.getStatus(), orderId);
                 }
+                if (report.getRequest() != null) {
+                    chatService.closeDisputeThread(
+                            report.getRequest().getId(),
+                            "Ban Quản Trị đã chấp thuận yêu cầu trả hàng - hoàn tiền. Quy trình đổi trả tiếp tục qua hệ thống vận chuyển chính thức, phòng chat 1:1 đã khóa.");
+                }
             }
 
             orderRepository.findById(orderId).ifPresent(order -> {
@@ -471,20 +493,20 @@ public class ReportServiceImpl implements ReportService {
                 if (finalResolution == ResolutionType.REFUND_ONLY) {
                     sendDisputeNotification(buyer,
                             "Khiếu nại được chấp thuận - Hoàn tiền thành công",
-                            "Ban Quản Trị đã chấp thuận khiếu nại đơn hàng #" + orderCode + "" + clauseInfo + ". Tiền thanh toán đã được hoàn trả lại cho bạn.",
+                            "Ban Quản Trị đã chấp thuận khiếu nại đơn hàng #" + orderCode + " " + clauseInfo + ". Tiền thanh toán đã được hoàn trả lại cho bạn.",
                             order.getId(), report.getId());
                     sendDisputeNotification(seller,
                             "Phán quyết khiếu nại: Chấp thuận hoàn tiền cho người mua",
-                            "Ban Quản Trị đã chấp thuận khiếu nại của người mua cho đơn hàng #" + orderCode + "" + clauseInfo + ". Tiền ký quỹ được hoàn trả cho người mua.",
+                            "Ban Quản Trị đã chấp thuận khiếu nại của người mua cho đơn hàng #" + orderCode + " " + clauseInfo + ". Tiền ký quỹ được hoàn trả cho người mua.",
                             order.getId(), report.getId());
                 } else if (finalResolution == ResolutionType.RETURN_AND_REFUND) {
                     sendDisputeNotification(buyer,
                             "Khiếu nại được chấp thuận - Hướng dẫn gửi trả hàng",
-                            "Ban Quản Trị đã chấp thuận khiếu nại đơn hàng #" + orderCode + "" + clauseInfo + ". Vui lòng đóng gói và gửi hàng hoàn theo hướng dẫn trên hệ thống.",
+                            "Ban Quản Trị đã chấp thuận khiếu nại đơn hàng #" + orderCode + " " + clauseInfo + ". Vui lòng đóng gói và gửi hàng hoàn theo hướng dẫn trên hệ thống.",
                             order.getId(), report.getId());
                     sendDisputeNotification(seller,
                             "Phán quyết khiếu nại: Yêu cầu trả hàng hoàn tiền",
-                            "Ban Quản Trị đã chấp thuận khiếu nại của người mua cho đơn hàng #" + orderCode + "" + clauseInfo + ". Quy trình gửi trả hàng đã được khởi tạo.",
+                            "Ban Quản Trị đã chấp thuận khiếu nại của người mua cho đơn hàng #" + orderCode + " " + clauseInfo + ". Quy trình gửi trả hàng đã được khởi tạo.",
                             order.getId(), report.getId());
                 }
             });
@@ -547,6 +569,16 @@ public class ReportServiceImpl implements ReportService {
         if (targetType == TargetType.ORDER) {
             orderRepository.findById(request.getTargetId()).ifPresent(order -> {
                 String orderCode = order.getOrderNumber() != null ? order.getOrderNumber() : order.getId().toString();
+                UUID buyerAccountId = acc.getId();
+                UUID shopId = order.getShop() != null ? order.getShop().getId() : null;
+                if (shopId != null) {
+                    try {
+                        chatService.getOrCreateDisputeThread(order.getId(), r.getId(), buyerAccountId, shopId, orderCode);
+                    } catch (Exception ex) {
+                        log.error("Lỗi khi tự động khởi tạo phòng chat tranh chấp cho reportId={}: {}", re.getId(), ex.getMessage(), ex);
+                    }
+                }
+
                 User buyer = getOrderBuyerUser(order, re);
                 User seller = getOrderSellerUser(order);
                 sendDisputeNotification(seller,
@@ -604,6 +636,10 @@ public class ReportServiceImpl implements ReportService {
 
         reportRepository.save(report);
         requestRepository.save(req);
+
+        if (report.getTargetType() == TargetType.ORDER) {
+            chatService.closeDisputeThread(req.getId(), "Người mua tự nguyện rút khiếu nại");
+        }
 
         if (report.getTargetType() == TargetType.ORDER && report.getTargetId() != null) {
             orderRepository.findById(report.getTargetId()).ifPresent(order -> {
@@ -668,6 +704,10 @@ public class ReportServiceImpl implements ReportService {
                 order.setStatus(OrderStatus.REFUNDED);
                 orderRepository.save(order);
 
+                if (report.getRequest() != null) {
+                    chatService.closeDisputeThread(report.getRequest().getId(), "Shop chấp thuận hoàn tiền");
+                }
+
                 String orderCode = order.getOrderNumber() != null ? order.getOrderNumber() : orderId.toString();
                 User buyer = getOrderBuyerUser(order, report);
                 sendDisputeNotification(buyer,
@@ -686,6 +726,12 @@ public class ReportServiceImpl implements ReportService {
                 report.getRequest().setReviewedAt(now);
 
                 orderReturnService.createReturn(orderId, report.getId());
+
+                if (report.getRequest() != null) {
+                    chatService.closeDisputeThread(
+                            report.getRequest().getId(),
+                            "Người bán đồng ý nhận hàng đổi trả. Quy trình đổi trả tiếp tục qua hệ thống vận chuyển chính thức, phòng chat 1:1 đã khóa.");
+                }
 
                 orderRepository.findById(orderId).ifPresent(order -> {
                     String orderCode = order.getOrderNumber() != null ? order.getOrderNumber() : orderId.toString();
@@ -708,6 +754,12 @@ public class ReportServiceImpl implements ReportService {
                 if (report.getEscalationReason() == null || report.getEscalationReason().isBlank()) {
                     report.setEscalationReason(
                             "Người bán từ chối khiếu nại: " + (req.getResponseNote() != null ? req.getResponseNote() : ""));
+                }
+
+                if (report.getRequest() != null) {
+                    chatService.closeDisputeThread(
+                            report.getRequest().getId(),
+                            "Người bán từ chối phương án giải quyết và chuyển hồ sơ lên Ban Quản Trị sàn phân xử. Khung chat 1:1 đã khóa để bảo lưu hồ sơ đối soát.");
                 }
 
                 orderRepository.findById(orderId).ifPresent(order -> {
@@ -761,6 +813,12 @@ public class ReportServiceImpl implements ReportService {
                 : "Hai bên không thống nhất được phương án giải quyết trong thương lượng 1:1");
 
         reportRepository.save(report);
+
+        if (report.getRequest() != null) {
+            chatService.closeDisputeThread(
+                    report.getRequest().getId(),
+                    "Khiếu nại đã chuyển lên Ban Quản Trị sàn can thiệp phân xử. Khung chat 1:1 đã khóa để bảo lưu hồ sơ đối soát.");
+        }
 
         orderRepository.findById(orderId).ifPresent(order -> {
             String orderCode = order.getOrderNumber() != null ? order.getOrderNumber() : orderId.toString();
@@ -1115,6 +1173,12 @@ public class ReportServiceImpl implements ReportService {
                                 "Hệ thống tự động chuyển Ban Quản Trị sàn phân xử do Người bán quá hạn 48 giờ không phản hồi thương lượng.");
                         reportRepository.save(report);
                         log.info("Auto escalated expired dispute reportId={} to Admin queue", report.getId());
+
+                        if (report.getRequest() != null) {
+                            chatService.closeDisputeThread(
+                                    report.getRequest().getId(),
+                                    "Hết thời hạn 48 giờ thương lượng trực tiếp, hệ thống tự động chuyển hồ sơ lên Ban Quản Trị sàn phân xử. Khung chat 1:1 đã khóa để bảo lưu hồ sơ đối soát.");
+                        }
 
                         if (report.getTargetType() == TargetType.ORDER && report.getTargetId() != null) {
                             orderRepository.findById(report.getTargetId()).ifPresent(order -> {

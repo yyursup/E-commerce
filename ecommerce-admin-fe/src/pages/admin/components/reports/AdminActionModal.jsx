@@ -1,3 +1,4 @@
+import React, { useRef, useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '../../../../lib/cn'
 import AdminActionQuickTags from './AdminActionQuickTags'
@@ -15,6 +16,17 @@ export default function AdminActionModal({
   policyClauses = [],
 }) {
   const targetType = actionModal.item?.targetType || actionModal.item?.detail?.targetType
+
+  const lastAutoFilledNoteRef = useRef('')
+  const [noteMismatchWarning, setNoteMismatchWarning] = useState(null)
+
+  // Reset trạng thái theo dõi ghi chú khi mở modal mới hoặc đổi mục xử lý
+  useEffect(() => {
+    if (actionModal.isOpen) {
+      lastAutoFilledNoteRef.current = ''
+      setNoteMismatchWarning(null)
+    }
+  }, [actionModal.isOpen, actionModal.item?.id, actionModal.item?.requestId])
 
   const getTargetTypeLabel = (type) => {
     switch (type) {
@@ -47,12 +59,34 @@ export default function AdminActionModal({
 
   const handleClauseSelect = (clauseCode) => {
     const clauseInfo = policyClauses.find((c) => c.code === clauseCode)
+    const newTemplateNote = clauseInfo ? `${clauseInfo.title}: ${clauseInfo.description}` : ''
+
     setActionModal((prev) => {
-      const nextNote = !prev.note?.trim() && clauseInfo ? `${clauseInfo.title}: ${clauseInfo.description}` : prev.note
+      const currentNote = prev.note || ''
+      const trimmedCurrent = currentNote.trim()
+      const lastAuto = lastAutoFilledNoteRef.current?.trim() || ''
+
+      // Cập nhật tự động nếu note đang trống HOẶC note trùng khớp với nội dung auto-fill trước đó
+      const canAutoUpdate = !trimmedCurrent || (lastAuto && trimmedCurrent === lastAuto)
+
+      if (canAutoUpdate) {
+        lastAutoFilledNoteRef.current = newTemplateNote
+        setNoteMismatchWarning(null)
+        return {
+          ...prev,
+          policyClauseCode: clauseCode,
+          note: newTemplateNote,
+        }
+      }
+
+      // Nếu admin đã chỉnh sửa thủ công: không tự ý ghi đè, hiển thị cảnh báo giao diện
+      setNoteMismatchWarning({
+        newClauseTitle: clauseInfo?.title || clauseCode,
+        suggestedNote: newTemplateNote,
+      })
       return {
         ...prev,
         policyClauseCode: clauseCode,
-        note: nextNote,
       }
     })
   }
@@ -203,7 +237,7 @@ export default function AdminActionModal({
                     onClick={() => setActionModal((prev) => ({ ...prev, removeShopPenalty: true }))}
                     className={cn(
                       'flex items-center gap-2.5 p-2.5 rounded-xl border cursor-pointer transition select-none',
-                      actionModal.removeShopPenalty !== false
+                      actionModal.removeShopPenalty === true
                         ? 'border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-bold shadow-xs'
                         : isDark
                           ? 'border-slate-800 bg-slate-800/60 text-slate-400 hover:border-slate-700'
@@ -213,7 +247,7 @@ export default function AdminActionModal({
                     <input
                       type="radio"
                       name="removeShopPenalty"
-                      checked={actionModal.removeShopPenalty !== false}
+                      checked={actionModal.removeShopPenalty === true}
                       onChange={() => setActionModal((prev) => ({ ...prev, removeShopPenalty: true }))}
                       className="text-emerald-600 focus:ring-emerald-500"
                     />
@@ -252,6 +286,12 @@ export default function AdminActionModal({
                   </label>
                 </div>
 
+                {(actionModal.removeShopPenalty === null || actionModal.removeShopPenalty === undefined) && (
+                  <p className="mt-2 text-[10.5px] font-medium text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                    <span>⚠️ Vui lòng chọn 1 trong 2 phương án kỷ luật để tiếp tục</span>
+                  </p>
+                )}
+
                 <div className="mt-2.5 pt-2 border-t border-amber-500/20 flex items-start gap-1.5 text-[10.5px] leading-relaxed text-stone-600 dark:text-slate-300">
                   <span className="shrink-0 text-amber-500 font-bold">⚠️ Chế tài Người mua:</span>
                   <span>
@@ -282,12 +322,42 @@ export default function AdminActionModal({
               />
             )}
 
+            {/* Cảnh báo khi đổi điều khoản nhưng ghi chú đã được chỉnh sửa thủ công */}
+            {noteMismatchWarning && (
+              <div className="mb-2.5 p-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300 text-xs flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="shrink-0 text-amber-500 font-bold">⚠️</span>
+                  <span className="truncate">
+                    Đã đổi sang <strong>{noteMismatchWarning.newClauseTitle}</strong>. Ghi chú đã sửa thủ công được giữ nguyên.
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActionModal((prev) => ({ ...prev, note: noteMismatchWarning.suggestedNote }))
+                    lastAutoFilledNoteRef.current = noteMismatchWarning.suggestedNote
+                    setNoteMismatchWarning(null)
+                  }}
+                  className="shrink-0 px-2.5 py-1 rounded-lg bg-amber-500 text-white font-bold hover:bg-amber-600 text-[11px] transition shadow-xs"
+                >
+                  Dùng mẫu mới
+                </button>
+              </div>
+            )}
+
             {/* Input ghi chú phán quyết */}
             <textarea
               rows={3}
               placeholder="Nhập chi tiết phán quyết của Ban Quản Trị (bắt buộc)..."
               value={actionModal.note}
-              onChange={(e) => setActionModal({ ...actionModal, note: e.target.value })}
+              onChange={(e) => {
+                const val = e.target.value
+                setActionModal({ ...actionModal, note: val })
+                if (noteMismatchWarning && val.trim() === noteMismatchWarning.suggestedNote.trim()) {
+                  setNoteMismatchWarning(null)
+                  lastAutoFilledNoteRef.current = noteMismatchWarning.suggestedNote
+                }
+              }}
               className={cn(
                 'w-full rounded-2xl px-3.5 py-2.5 text-xs border outline-none mb-4',
                 isDark ? 'border-slate-800 bg-slate-800 text-white' : 'border-stone-200 bg-white text-stone-900',
@@ -298,7 +368,11 @@ export default function AdminActionModal({
             <div className="flex items-center justify-end gap-3">
               <button
                 type="button"
-                onClick={() => setActionModal({ isOpen: false, type: '', item: null, note: '' })}
+                onClick={() => {
+                  lastAutoFilledNoteRef.current = ''
+                  setNoteMismatchWarning(null)
+                  setActionModal({ isOpen: false, type: '', item: null, note: '' })
+                }}
                 className="px-4 py-2 rounded-xl text-xs font-bold text-stone-400 hover:bg-stone-100 dark:hover:bg-slate-800"
               >
                 Hủy

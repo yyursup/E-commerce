@@ -28,7 +28,7 @@ public class ChatMessage {
     @JoinColumn(name = "thread_id", nullable = false)
     private ChatThread thread;
 
-    @Column(name = "sender_id", nullable = false)
+    @Column(name = "sender_id")
     private UUID senderId;
 
     @Column(name = "sender_name", nullable = false, length = 100)

@@ -147,6 +147,12 @@ export default function OrderItemCard({
           <p className={cn('mt-1 text-xs', isDark ? 'text-slate-400' : 'text-stone-500')}>
             {order.items?.length || 0} sản phẩm • Đặt ngày {formatDate(order.createdAt)}
           </p>
+          {(order.policyClauseTitle || order.policyClauseCode) && (
+            <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-purple-500/10 border border-purple-500/20 text-[11px] font-semibold text-purple-700 dark:text-purple-300">
+              <span>⚖️ Căn cứ Điều khoản:</span>
+              <span className="font-bold line-clamp-1">{order.policyClauseTitle || order.policyClauseCode}</span>
+            </div>
+          )}
           <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-500 dark:text-amber-400 mt-2 hover:underline">
             Xem chi tiết kiện hàng <HiOutlineChevronRight className="h-3 w-3" />
           </span>

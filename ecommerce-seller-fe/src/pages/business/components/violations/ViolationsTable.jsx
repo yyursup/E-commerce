@@ -151,9 +151,15 @@ export default function ViolationsTable({
                     </td>
 
                     <td className="py-4 px-4 align-top min-w-[180px] max-w-xs">
-                      <span className={cn('text-[11px] leading-relaxed', isDark ? 'text-slate-400' : 'text-stone-600')}>
+                      {(v.policyClauseTitle || v.policyClauseCode) && (
+                        <div className="inline-flex items-center gap-1 mb-1.5 px-2 py-0.5 rounded-lg bg-purple-500/15 border border-purple-500/25 text-[10px] font-bold text-purple-600 dark:text-purple-300">
+                          <span>⚖️</span>
+                          <span className="line-clamp-1">{v.policyClauseTitle || v.policyClauseCode}</span>
+                        </div>
+                      )}
+                      <p className={cn('text-[11px] leading-relaxed', isDark ? 'text-slate-400' : 'text-stone-600')}>
                         {v.adminNote || 'Đã được Ban Quản Trị xác minh và áp dụng chế tài'}
-                      </span>
+                      </p>
                     </td>
 
                     <td className="py-4 px-4 align-top whitespace-nowrap text-stone-400 min-w-[100px]">

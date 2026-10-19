@@ -73,6 +73,23 @@ public class ChatThread {
     @Builder.Default
     private ThreadStatus status = ThreadStatus.OPEN;
 
+    @Column(name = "order_id", columnDefinition = "uuid")
+    private UUID orderId;
+
+    @Column(name = "request_id", columnDefinition = "uuid")
+    private UUID requestId;
+
+    @Column(name = "closed_at")
+    private LocalDateTime closedAt;
+
+    @Column(name = "close_reason", length = 255)
+    private String closeReason;
+
+    @Transient
+    public boolean isLocked() {
+        return this.status == ThreadStatus.CLOSED;
+    }
+
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

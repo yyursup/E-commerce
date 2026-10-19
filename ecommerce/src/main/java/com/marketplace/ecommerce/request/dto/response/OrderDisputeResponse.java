@@ -13,4 +13,6 @@ public class OrderDisputeResponse {
     private boolean hasActiveDispute;
     private String disputeStatus; // NONE, REPORT_PENDING, REPORT_APPROVED, APPEAL_PENDING, APPEAL_APPROVED, REFUNDED
     private String disputeReason;
+    private String policyClauseCode;
+    private String policyClauseTitle;
 }

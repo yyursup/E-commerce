@@ -16,17 +16,19 @@ import { useChatStore } from '../store/useChatStore'
 import { useAuthStore } from '../store/useAuthStore'
 import { cn } from '../lib/cn'
 import Footer from '../components/Footer'
-import shopService, { FALLBACK_SHOPS } from '../services/shop'
+import shopService from '../services/shop'
+import categoryService from '../services/category'
 
 const cityFilters = ['Tất cả', 'Hà Nội', 'Hồ Chí Minh', 'Đà Nẵng']
-const categoryFilters = [
+const defaultCategoryFilters = [
   'Tất cả',
-  'Điện Tử & Công Nghệ',
-  'Thời Trang & Phụ Kiện',
-  'Sách & Văn Phòng Phẩm',
-  'Nhà Cửa & Đời Sống',
-  'Sức Khỏe & Sắc Đẹp',
-  'Thể Thao & Dã Ngoại',
+  'Điện Thoại & Máy Tính Bảng',
+  'Laptop & Máy Tính Để Bàn',
+  'Âm Thanh & Tai Nghe',
+  'Đồng Hồ & Thiết Bị Đeo',
+  'Linh Kiện & Ngoại Vi',
+  'Phụ Kiện Công Nghệ & Cáp Sạc',
+  'Nhà Thông Minh & Mạng',
 ]
 
 export default function Marketplace() {
@@ -36,17 +38,35 @@ export default function Marketplace() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCity, setSelectedCity] = useState('Tất cả')
+  const [categoryFilters, setCategoryFilters] = useState(defaultCategoryFilters)
   const [selectedCategory, setSelectedCategory] = useState('Tất cả')
+
+  useEffect(() => {
+    // Load dynamic categories from backend
+    categoryService
+      .getAllCategories()
+      .then((res) => {
+        if (Array.isArray(res) && res.length > 0) {
+          const rootCats = res
+            .filter((c) => !c.parentCategory && !c.parentId && !c.parent)
+            .map((c) => c.name)
+          if (rootCats.length > 0) {
+            setCategoryFilters(['Tất cả', ...rootCats])
+          }
+        }
+      })
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     const fetchShops = async () => {
       try {
         setLoading(true)
         const data = await shopService.getAllShops()
-        setShops(Array.isArray(data) && data.length > 0 ? data : FALLBACK_SHOPS)
+        setShops(Array.isArray(data) ? data : [])
       } catch (err) {
-        console.warn('Could not load shops from backend, using fallback:', err)
-        setShops(FALLBACK_SHOPS)
+        console.warn('Could not load shops from backend:', err)
+        setShops([])
       } finally {
         setLoading(false)
       }

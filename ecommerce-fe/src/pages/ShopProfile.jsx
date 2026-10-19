@@ -127,26 +127,11 @@ export default function ShopProfile() {
           })
           setSavedVouchers(saved)
         } else {
-          // Fallback demo vouchers for shop
-          const fallbackList = [
-            { code: 'SHOP15K', title: 'Giảm 15k đơn từ 150k', minOrderAmount: 150000, discountValue: 15000, validTo: null },
-            { code: 'SHOP30K', title: 'Giảm 30k đơn từ 300k', minOrderAmount: 300000, discountValue: 30000, validTo: null },
-            { code: 'VIP10', title: 'Giảm 10% tối đa 100k', minOrderAmount: 200000, discountValue: 10, validTo: null },
-          ]
-          setShopVouchers(fallbackList)
-          const saved = {}
-          fallbackList.forEach((v) => {
-            if (mySavedCodes.has(v.code)) saved[v.code] = true
-          })
-          setSavedVouchers(saved)
+          setShopVouchers([])
         }
       } catch (err) {
-        console.warn('Could not load shop vouchers, using fallback', err)
-        setShopVouchers([
-          { code: 'SHOP15K', title: 'Giảm 15k đơn từ 150k', minOrderAmount: 150000, discountValue: 15000, validTo: null },
-          { code: 'SHOP30K', title: 'Giảm 30k đơn từ 300k', minOrderAmount: 300000, discountValue: 30000, validTo: null },
-          { code: 'VIP10', title: 'Giảm 10% tối đa 100k', minOrderAmount: 200000, discountValue: 10, validTo: null },
-        ])
+        console.warn('Could not load shop vouchers:', err)
+        setShopVouchers([])
       } finally {
         setLoadingVouchers(false)
       }

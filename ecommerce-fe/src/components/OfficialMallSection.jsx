@@ -5,70 +5,33 @@ import { useThemeStore } from '../store/useThemeStore'
 import shopService from '../services/shop'
 import { cn } from '../lib/cn'
 
-const officialShops = [
-  {
-    id: 'apple',
-    name: 'Apple Authorised Reseller',
-    category: 'Điện Thoại & Máy Tính Bảng',
-    rating: 4.9,
-    location: 'TP. Hồ Chí Minh',
-    logo: 'https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?w=200&h=200&fit=crop',
-    badge: 'Official Mall',
-    sample: 'iPhone 16 Pro Max, MacBook M3, iPad Pro...',
-  },
-  {
-    id: 'samsung',
-    name: 'Samsung Flagship Store',
-    category: 'Điện Thoại & Thiết Bị Số',
-    rating: 4.9,
-    location: 'Hà Nội',
-    logo: 'https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=200&h=200&fit=crop',
-    badge: 'Official Mall',
-    sample: 'Galaxy S24 Ultra, Z Fold6, Tab S9, Galaxy Watch...',
-  },
-  {
-    id: 'gearvn',
-    name: 'GearVN PC & Gaming Gear',
-    category: 'Linh Kiện & Máy Tính Gaming',
-    rating: 4.9,
-    location: 'TP. Hồ Chí Minh',
-    logo: 'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=200&h=200&fit=crop',
-    badge: 'Shop Yêu Thích',
-    sample: 'VGA RTX 4090, PC Custom, Màn hình 240Hz, Phím cơ...',
-  },
-  {
-    id: 'sony',
-    name: 'Sony Vietnam Official',
-    category: 'Âm Thanh & Máy Ảnh Chuyên Nghiệp',
-    rating: 4.8,
-    location: 'Đà Nẵng',
-    logo: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=200&h=200&fit=crop',
-    badge: 'Official Mall',
-    sample: 'Tai nghe WH-1000XM5, Loa SRS, Máy ảnh Alpha...',
-  },
-]
-
 export default function OfficialMallSection() {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
-  const [shops, setShops] = useState(officialShops)
+  const [shops, setShops] = useState([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     let isMounted = true
-    shopService.getAllShops().then((res) => {
-      if (isMounted && Array.isArray(res) && res.length > 0) {
-        const mapped = res.slice(0, 4).map((s, idx) => ({
-          ...officialShops[idx % officialShops.length],
-          ...s,
-          id: s.id,
-          name: s.name,
-          logo: s.logo || officialShops[idx % officialShops.length].logo,
-          location: s.city || s.location || 'TP. Hồ Chí Minh',
-        }))
-        setShops(mapped)
-      }
-    }).catch(() => {})
-    return () => { isMounted = false }
+    shopService
+      .getAllShops()
+      .then((res) => {
+        if (isMounted && Array.isArray(res)) {
+          const mallShops = res.filter((s) => s.mallBadge)
+          setShops(mallShops.length > 0 ? mallShops.slice(0, 4) : res.slice(0, 4))
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (isMounted) setLoading(false)
+      })
+    return () => {
+      isMounted = false
+    }
   }, [])
+
+  if (!loading && shops.length === 0) {
+    return null
+  }
 
   return (
     <section className="py-8">
@@ -158,12 +121,12 @@ export default function OfficialMallSection() {
                 </div>
 
                 <div className="mt-4 pt-3 border-t border-stone-200/70 dark:border-slate-700/70 flex items-center justify-between text-xs text-stone-500 dark:text-slate-400">
-                  <span className="font-medium text-amber-500">★ {shop.rating}</span>
-                  <span>{shop.location}</span>
+                  <span className="font-medium text-amber-500">★ {shop.rating ? Number(shop.rating).toFixed(1) : '5.0'}</span>
+                  <span>{shop.location || shop.city || 'Toàn quốc'}</span>
                 </div>
 
                 <p className="mt-2 text-[11px] text-stone-400 dark:text-slate-500 italic line-clamp-1">
-                  Mặt hàng: {shop.sample}
+                  {shop.description || 'Gian hàng chính hãng phân phối ủy quyền'}
                 </p>
               </Link>
             ))}

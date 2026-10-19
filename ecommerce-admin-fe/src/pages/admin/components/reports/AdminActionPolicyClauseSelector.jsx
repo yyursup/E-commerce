@@ -13,7 +13,7 @@ import {
 } from 'react-icons/hi'
 import { FALLBACK_CLAUSES } from './policyClauseConstants'
 
-export default function AdminActionPolicyClauseSelector({
+function OrderPolicyClauseSelectorContent({
   policyClauses = [],
   selectedClause,
   onChangeClause,
@@ -22,8 +22,6 @@ export default function AdminActionPolicyClauseSelector({
   isSellerDispute = false,
   isDark = false,
 }) {
-  if (targetType !== 'ORDER') return null
-
   // Danh mục 12 điều khoản đầy đủ (fallback an toàn chống crash)
   const allClauses = useMemo(() => {
     return Array.isArray(policyClauses) && policyClauses.length > 0 ? policyClauses : FALLBACK_CLAUSES
@@ -377,4 +375,10 @@ export default function AdminActionPolicyClauseSelector({
       )}
     </div>
   )
+}
+
+export default function AdminActionPolicyClauseSelector(props) {
+  if (props.targetType !== 'ORDER') return null
+
+  return <OrderPolicyClauseSelectorContent {...props} />
 }

@@ -4,12 +4,13 @@ import axiosClient from '../api/axiosClient';
 const authService = {
     register: async (data) => {
         try {
-            // Backend expects: username, password, email, phoneNumber
+            // Backend expects: username, password, email, phoneNumber, agreeToTerms
             const response = await api.post('/api/v1/auth/register', {
                 username: data.username,
                 email: data.email,
                 password: data.password,
                 phoneNumber: data.phoneNumber,
+                agreeToTerms: data.agreeToTerms ?? true,
             });
             return response.data;
         } catch (error) {

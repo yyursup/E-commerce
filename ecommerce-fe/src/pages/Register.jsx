@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { motion } from 'framer-motion'
@@ -11,17 +12,24 @@ import {
 import { useThemeStore } from '../store/useThemeStore'
 import { cn } from '../lib/cn'
 import authService from '../services/auth'
+import TermsModal from '../components/TermsModal'
 
 export default function Register() {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
   const navigate = useNavigate()
+  const [showTermsModal, setShowTermsModal] = useState(false)
   const {
     register,
     handleSubmit,
     watch,
+    setValue,
     setError,
     formState: { errors, isSubmitting },
-  } = useForm()
+  } = useForm({
+    defaultValues: {
+      agreeToTerms: false,
+    },
+  })
   const password = watch('password')
 
   const onSubmit = async (data) => {
@@ -314,6 +322,46 @@ export default function Register() {
               )}
             </div>
 
+            {/* Terms of Service & Privacy Policy Agreement */}
+            <div className="pt-1">
+              <div className="flex items-start gap-3">
+                <input
+                  id="agreeToTerms"
+                  type="checkbox"
+                  className={cn(
+                    'mt-1 h-4 w-4 rounded border text-amber-500 focus:ring-amber-500 focus:ring-offset-0 transition cursor-pointer',
+                    isDark ? 'border-slate-600 bg-slate-800' : 'border-stone-300 bg-white',
+                    errors.agreeToTerms && 'border-red-500 ring-1 ring-red-500'
+                  )}
+                  {...register('agreeToTerms', {
+                    required: 'Bạn phải đồng ý với Điều khoản dịch vụ và Chính sách sàn để tạo tài khoản',
+                  })}
+                />
+                <label
+                  htmlFor="agreeToTerms"
+                  className={cn(
+                    'text-xs leading-relaxed select-none cursor-pointer',
+                    isDark ? 'text-slate-300' : 'text-stone-600'
+                  )}
+                >
+                  Tôi đã đọc và đồng ý với{' '}
+                  <button
+                    type="button"
+                    onClick={() => setShowTermsModal(true)}
+                    className="font-semibold text-amber-600 hover:text-amber-500 underline underline-offset-2 dark:text-amber-400"
+                  >
+                    Điều khoản dịch vụ & Chính sách vận hành
+                  </button>{' '}
+                  của sàn OmniMarket.
+                </label>
+              </div>
+              {errors.agreeToTerms && (
+                <p className="mt-1.5 text-xs text-red-500 font-medium">
+                  {errors.agreeToTerms.message}
+                </p>
+              )}
+            </div>
+
             <button
               type="submit"
               disabled={isSubmitting}
@@ -344,6 +392,13 @@ export default function Register() {
           </p>
         </div>
       </motion.div>
+
+      {/* Interactive Terms & Policies Modal */}
+      <TermsModal
+        open={showTermsModal}
+        onClose={() => setShowTermsModal(false)}
+        onAccept={() => setValue('agreeToTerms', true, { shouldValidate: true })}
+      />
     </div>
   )
 }

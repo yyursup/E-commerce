@@ -97,15 +97,14 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
       @Param("statuses") List<OrderStatus> statuses);
 
   /**
-   * Doanh thu từ đơn đã giao/hoàn thành: tổng tiền hàng (subtotal), không bao gồm
+   * Doanh thu từ đơn đã giao/hoàn thành: tổng tiền hàng sau khi trừ voucher shop (subtotal - shopDiscount), không bao gồm
    * phí ship.
    */
   @Query("""
-      SELECT COALESCE(SUM(o.subtotal), 0)
+      SELECT COALESCE(SUM(o.subtotal - COALESCE(o.shopDiscountAmount, 0)), 0)
       FROM Order o
       WHERE o.shop.id = :shopId
         AND o.status IN :revenueStatuses
-        AND o.deliveredAt IS NOT NULL
       """)
   BigDecimal getRevenueByShop(
       @Param("shopId") UUID shopId,

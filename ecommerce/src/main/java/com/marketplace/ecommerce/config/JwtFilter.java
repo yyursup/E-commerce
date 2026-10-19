@@ -24,94 +24,45 @@ import java.util.List;
 
 @Component
 public class JwtFilter extends OncePerRequestFilter {
-
     private final TokenService tokenService;
     private final HandlerExceptionResolver resolver;
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
-    /**
-     * Public endpoints that don't require authentication.
-     * These match the SecurityConfig permitAll() rules.
-     * 
-     * IMPORTANT: Keep this in sync with SecurityConfig.java!
-     */
     private final List<String> publicEndpoints = List.of(
-        // Error & Static
-        "/error",
-        "/favicon.ico",
-        "/static/**",
-        "/uploads/**",
-        
-        // Authentication
-        "/api/v1/auth/login",
-        "/api/v1/auth/refresh-token",
-        "/api/v1/auth/register",
-        "/api/v1/auth/verify",
-        "/api/v1/auth/forgot-password/send-otp",
-        "/api/v1/auth/forgot-password/reset",
-        "/api/v1/auth/oauth2/**",
-        
-        // Products (public read)
-        "/api/v1/product",
-        "/api/v1/product/**",
-        
-        // Categories (public read)
-        "/api/v1/category",
-        "/api/v1/category/**",
-        
-        // Shops (public read)
-        "/api/v1/shop",
-        "/api/v1/shop/**",
-        
-        // Reviews (public read)
-        "/api/v1/review/products/**",
-        
-        // Social (public read)
-        "/api/v1/social/shop/follow-status/**",
-        
-        // Wishlist (public check)
-        "/api/v1/wishlist/status/**",
-        
-        // Livestreams (public view)
-        "/api/v1/livestreams/active",
-        "/api/v1/livestreams",
-        "/api/v1/livestreams/*",
-        "/api/v1/livestreams/*/join",
-        "/api/v1/livestreams/*/like",
-        
-        // Vouchers (public read)
-        "/api/v1/vouchers",
-        "/api/v1/vouchers/**",
-        
-        // Statistics (public read)
-        "/api/v1/statistics/platform",
-        
-        // Third-party Webhooks
-        "/payments/vnpay/callback",
-        "/api/v1/webhook/ghn/**",
-        
-        // File reads
-        "/api/v1/file/**",
-        
-        // Swagger / OpenAPI
-        "/swagger-ui/**",
-        "/v3/api-docs/**",
-        "/swagger-ui.html",
-        
-        // Actuator
-        "/actuator/health",
-        "/actuator/info",
-        
-        // WebSocket (handled separately in SecurityConfig)
-        "/api/v1/ws/chat",
-        "/api/v1/ws/chat/**",
-        "/api/v1/ws-chat",
-        "/api/v1/ws-chat/**",
-        "/ws/chat",
-        "/ws/chat/**",
-        
-        // Chat API (permitted but JWT validated in filter)
-        "/api/v1/chat/**"
+            "/error",
+            "/favicon.ico",
+            "/static/**",
+            "/uploads/**",
+            "/api/v1/auth/login",
+            "/api/v1/auth/refresh-token",
+            "/api/v1/payment/vnpay/**",
+            "/payments/vnpay/callback",
+            "/api/v1/product",
+            "/api/v1/product/**",
+            "/api/v1/category",
+            "/api/v1/category/**",
+            "/api/v1/shop",
+            "/api/v1/shop/**",
+            "/api/v1/review/products/**",
+            "/api/v1/wishlist/status/**",
+            "/api/v1/social/shop/follow-status/**",
+            "/api/v1/auth/register",
+            "/api/v1/auth/verify",
+            "/api/v1/auth/forgot-password/send-otp",
+            "/api/v1/auth/forgot-password/reset",
+            "/api/v1/auth/oauth2/**",
+            "/api/v1/chat/**",
+            "/api/v1/ws/chat",
+            "/api/v1/ws/chat/**",
+            "/api/v1/ws-chat",
+            "/api/v1/ws-chat/**",
+            "/ws/chat",
+            "/ws/chat/**",
+            "/api/v1/livestreams/active",
+            "/api/v1/livestreams/*",
+            "/api/v1/livestreams/*/join",
+            "/api/v1/livestreams/*/like",
+            "/api/v1/vouchers"
     );
 
     public JwtFilter(
@@ -120,15 +71,6 @@ public class JwtFilter extends OncePerRequestFilter {
     ) {
         this.tokenService = tokenService;
         this.resolver = resolver;
-    }
-
-    /**
-     * Check if the request URI is a public endpoint.
-     */
-    @Override
-    protected boolean shouldNotFilter(HttpServletRequest request) {
-        String uri = request.getRequestURI();
-        return isPublicAPI(uri);
     }
 
     private boolean isPublicAPI(String uri) {
@@ -151,14 +93,8 @@ public class JwtFilter extends OncePerRequestFilter {
     ) throws ServletException, IOException {
 
         String uri = request.getRequestURI();
-        
-        // If public endpoint, skip JWT validation
-        if (isPublicAPI(uri)) {
-            filterChain.doFilter(request, response);
-            return;
-        }
+        boolean isPublic = isPublicAPI(uri);
 
-        // Already authenticated, continue
         if (SecurityContextHolder.getContext().getAuthentication() != null) {
             filterChain.doFilter(request, response);
             return;
@@ -167,8 +103,12 @@ public class JwtFilter extends OncePerRequestFilter {
         String token = extractJwtFromRequest(request);
 
         if (token == null) {
-            resolver.resolveException(request, response, null,
-                    new InvalidCredentialsException("Missing Authorization Bearer token"));
+            if (isPublic) {
+                filterChain.doFilter(request, response);
+            } else {
+                resolver.resolveException(request, response, null,
+                        new InvalidCredentialsException("Missing Authorization Bearer token"));
+            }
             return;
         }
 
@@ -182,8 +122,8 @@ public class JwtFilter extends OncePerRequestFilter {
 
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(
-                            info,
-                            null,
+                            info, // <= inject vào @CurrentUser
+                            null, // NEVER put token here
                             account.getAuthorities()
                     );
 
@@ -195,11 +135,21 @@ public class JwtFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
 
         } catch (ExpiredJwtException ex) {
-            resolver.resolveException(request, response, null,
-                    new InvalidCredentialsException("Token expired"));
+            if (isPublic) {
+                filterChain.doFilter(request, response);
+            } else {
+                resolver.resolveException(request, response, null,
+                        new InvalidCredentialsException("Token expired"));
+            }
+
         } catch (Exception ex) {
-            resolver.resolveException(request, response, null,
-                    new InvalidCredentialsException("Invalid token"));
+            if (isPublic) {
+                filterChain.doFilter(request, response);
+            } else {
+                resolver.resolveException(request, response, null,
+                        new InvalidCredentialsException("Invalid token"));
+            }
         }
     }
+
 }

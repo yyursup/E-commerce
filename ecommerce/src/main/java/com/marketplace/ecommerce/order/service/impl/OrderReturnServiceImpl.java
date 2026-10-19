@@ -30,6 +30,7 @@ import com.marketplace.ecommerce.request.repository.RequestRepository;
 import com.marketplace.ecommerce.request.valueObjects.ReportStage;
 import com.marketplace.ecommerce.request.valueObjects.RequestStatus;
 import com.marketplace.ecommerce.shop.entity.Shop;
+import com.marketplace.ecommerce.chat.service.ChatService;
 import com.marketplace.ecommerce.shop.service.ShopEscrowFundService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -61,6 +62,7 @@ public class OrderReturnServiceImpl implements OrderReturnService {
     private final InventoryHistoryService inventoryHistoryService;
     private final UserRepository userRepository;
     private final ShopEscrowFundService shopEscrowFundService;
+    private final ChatService chatService;
 
     @Override
     @Transactional
@@ -267,6 +269,7 @@ public class OrderReturnServiceImpl implements OrderReturnService {
                 rep.getRequest().setStatus(RequestStatus.APPROVED);
                 rep.getRequest().setResponse("Đã hoàn tất đổi trả và hoàn tiền sau khi người bán nghiệm thu hoàn hàng thành công.");
                 rep.getRequest().setReviewedAt(LocalDateTime.now());
+                chatService.closeDisputeThread(rep.getRequest().getId(), "Đã hoàn tất đổi trả và hoàn tiền sau khi người bán nghiệm thu hoàn hàng thành công");
             }
             reportRepository.save(rep);
         }
@@ -320,6 +323,9 @@ public class OrderReturnServiceImpl implements OrderReturnService {
             if (rep.getRequest() != null) {
                 rep.getRequest().setStatus(RequestStatus.PENDING);
                 requestRepository.save(rep.getRequest());
+                chatService.closeDisputeThread(
+                        rep.getRequest().getId(),
+                        "Người bán khiếu nại tình trạng kiện hàng hoàn. Vụ việc được chuyển lên Ban Quản Trị sàn phân xử, phòng chat 1:1 đã khóa để bảo lưu hồ sơ đối soát.");
             }
             reportRepository.save(rep);
         }
@@ -358,6 +364,9 @@ public class OrderReturnServiceImpl implements OrderReturnService {
             if (returnObj.getReport() != null) {
                 returnObj.getReport().setStage(ReportStage.CLOSED);
                 reportRepository.save(returnObj.getReport());
+                if (returnObj.getReport().getRequest() != null) {
+                    chatService.closeDisputeThread(returnObj.getReport().getRequest().getId(), "Admin chấp thuận hoàn tiền sau khi phân xử khiếu nại hoàn hàng");
+                }
             }
 
             log.info("Admin approved return dispute for returnId={}, refunded orderId={}", returnId, order.getId());
@@ -386,6 +395,9 @@ public class OrderReturnServiceImpl implements OrderReturnService {
             if (returnObj.getReport() != null) {
                 returnObj.getReport().setStage(ReportStage.CLOSED);
                 reportRepository.save(returnObj.getReport());
+                if (returnObj.getReport().getRequest() != null) {
+                    chatService.closeDisputeThread(returnObj.getReport().getRequest().getId(), "Admin bác bỏ hoàn hàng và giải ngân cho gian hàng");
+                }
             }
 
             log.info("Admin rejected return dispute for returnId={}, resolved for orderId={}", returnId,
@@ -439,6 +451,9 @@ public class OrderReturnServiceImpl implements OrderReturnService {
                     ret.setConditionNote((ret.getConditionNote() != null ? ret.getConditionNote() + " | " : "") + note);
                 }
                 orderReturnRepository.save(ret);
+                if (ret.getReport() != null && ret.getReport().getRequest() != null) {
+                    chatService.closeDisputeThread(ret.getReport().getRequest().getId(), note != null ? note : "Đổi trả kết thúc do quyết toán ký quỹ");
+                }
                 log.info("Closed returnId={} with status={} on escrow settlement for orderId={}", ret.getId(), finalStatus, orderId);
             }
         });
@@ -479,6 +494,9 @@ public class OrderReturnServiceImpl implements OrderReturnService {
                     if (ret.getReport() != null) {
                         ret.getReport().setStage(ReportStage.CLOSED);
                         reportRepository.save(ret.getReport());
+                        if (ret.getReport().getRequest() != null) {
+                            chatService.closeDisputeThread(ret.getReport().getRequest().getId(), "Hệ thống tự động hủy đổi trả do Người mua không nộp mã vận đơn trong 3 ngày");
+                        }
                     }
 
                     log.info("Auto cancelled expired returnId={} due to 3-day buyer deadline, released orderId={}",
@@ -522,6 +540,9 @@ public class OrderReturnServiceImpl implements OrderReturnService {
                     if (ret.getReport() != null) {
                         ret.getReport().setStage(ReportStage.RESOLVED);
                         reportRepository.save(ret.getReport());
+                        if (ret.getReport().getRequest() != null) {
+                            chatService.closeDisputeThread(ret.getReport().getRequest().getId(), "Tự động hoàn tiền do Người bán quá hạn 72h kiểm tra hàng hoàn");
+                        }
                     }
 
                     log.info("Auto completed expired inspection for returnId={}, refunded orderId={}", ret.getId(),

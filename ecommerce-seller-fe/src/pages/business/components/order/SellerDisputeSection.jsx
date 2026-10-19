@@ -7,6 +7,7 @@ import {
   HiOutlineArrowNarrowRight,
   HiOutlineRefresh,
   HiOutlineUpload,
+  HiOutlineChatAlt2,
 } from 'react-icons/hi'
 import { cn } from '../../../../lib/cn'
 import toast from 'react-hot-toast'
@@ -16,6 +17,7 @@ import SellerDisputeHeader from './SellerDisputeHeader'
 import SellerDisputeAdminBanner from './SellerDisputeAdminBanner'
 import SellerDisputeSideBySide from './SellerDisputeSideBySide'
 import SellerDisputeActionModal from './SellerDisputeActionModal'
+import DisputeChatModal from './DisputeChatModal'
 import { isVideoUrl, isVideoFile } from '../../../../lib/mediaUtils'
 
 export default function SellerDisputeSection({ orderId, order, returnInfo, isDark, onRefresh }) {
@@ -23,6 +25,7 @@ export default function SellerDisputeSection({ orderId, order, returnInfo, isDar
   const [loading, setLoading] = useState(true)
   const [fetchError, setFetchError] = useState(null)
   const [submitting, setSubmitting] = useState(false)
+  const [isChatOpen, setIsChatOpen] = useState(false)
 
   // Modals state
   const [activeModal, setActiveModal] = useState(null) // 'REFUND' | 'RETURN' | 'REJECT'
@@ -291,6 +294,7 @@ export default function SellerDisputeSection({ orderId, order, returnInfo, isDar
           slaRemaining={slaRemaining}
           isNegotiating={isNegotiating}
           isDark={isDark}
+          onOpenChat={() => setIsChatOpen(true)}
         />
 
         {/* 2. Banner Phán Quyết Của Admin */}
@@ -318,6 +322,15 @@ export default function SellerDisputeSection({ orderId, order, returnInfo, isDar
               isDark ? 'border-slate-800 bg-slate-800/30' : 'border-stone-200 bg-stone-50'
             )}
           >
+            <button
+              type="button"
+              onClick={() => setIsChatOpen(true)}
+              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-700 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition-all duration-150 active:scale-[0.98]"
+            >
+              <HiOutlineChatAlt2 className="h-4 w-4" />
+              <span>Phòng Thương Lượng Trực Tiếp</span>
+            </button>
+
             <button
               type="button"
               onClick={() => setActiveModal('REFUND')}
@@ -425,6 +438,16 @@ export default function SellerDisputeSection({ orderId, order, returnInfo, isDar
           order={order}
           isEscalated={isEscalated}
           isUpdating={hasSellerResponded}
+        />
+
+        {/* Dispute Chat Modal */}
+        <DisputeChatModal
+          isOpen={isChatOpen}
+          onClose={() => setIsChatOpen(false)}
+          orderId={orderId}
+          requestId={report?.id}
+          orderNumber={order?.displayCode || order?.orderCode || order?.code}
+          isDark={isDark}
         />
       </div>
     </div>

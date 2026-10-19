@@ -39,4 +39,12 @@ public interface ChatService {
     void closeThread(CurrentUserInfo principal, UUID threadId);
 
     void handleTyping(CurrentUserInfo principal, UUID threadId, boolean isTyping);
+
+    ChatThreadResponse getOrCreateDisputeThread(UUID orderId, UUID requestId, UUID buyerAccountId, UUID shopId, String orderNumber);
+
+    ChatThreadResponse getDisputeThreadByRequestId(CurrentUserInfo principal, UUID requestId);
+
+    ChatThreadResponse getDisputeThreadByOrderId(CurrentUserInfo principal, UUID orderId);
+
+    void closeDisputeThread(UUID requestId, String reason);
 }

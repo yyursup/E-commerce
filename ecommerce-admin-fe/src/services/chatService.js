@@ -72,6 +72,16 @@ export const chatService = {
     const res = await axiosClient.put(`/api/v1/chat/threads/${threadId}/close`)
     return res.data
   },
+
+  getDisputeThreadByRequestId: async (requestId) => {
+    const res = await axiosClient.get(`/api/v1/chat/threads/dispute/by-request/${requestId}`)
+    return res.data
+  },
+
+  getDisputeThreadByOrderId: async (orderId) => {
+    const res = await axiosClient.get(`/api/v1/chat/threads/dispute/by-order/${orderId}`)
+    return res.status === 204 ? null : res.data
+  },
 }
 
 export default chatService

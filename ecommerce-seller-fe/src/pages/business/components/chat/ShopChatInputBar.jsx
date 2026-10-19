@@ -91,6 +91,8 @@ export default function ShopChatInputBar({
             ref={fileInputRef}
             onChange={handleImageUpload}
             accept="image/*"
+            tabIndex={-1}
+            aria-hidden="true"
             className="hidden"
           />
           <input
@@ -98,6 +100,8 @@ export default function ShopChatInputBar({
             ref={videoInputRef}
             onChange={handleVideoUpload}
             accept="video/*"
+            tabIndex={-1}
+            aria-hidden="true"
             className="hidden"
           />
 

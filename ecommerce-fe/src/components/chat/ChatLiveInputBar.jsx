@@ -83,6 +83,8 @@ export default function ChatLiveInputBar({
             ref={fileInputRef}
             onChange={handleImageUpload}
             accept="image/*"
+            tabIndex={-1}
+            aria-hidden="true"
             className="hidden"
           />
           <input
@@ -90,6 +92,8 @@ export default function ChatLiveInputBar({
             ref={videoInputRef}
             onChange={handleVideoUpload}
             accept="video/*"
+            tabIndex={-1}
+            aria-hidden="true"
             className="hidden"
           />
 

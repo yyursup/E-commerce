@@ -1034,21 +1034,14 @@ public class ChatServiceImpl implements ChatService {
 
         UUID customerAccountId = thread.getCustomer() != null ? thread.getCustomer().getId() : null;
         UUID shopOwnerAccountId = null;
-        if (thread.getShop() != null) {
-            try {
-                if (thread.getShop().getUser() != null && thread.getShop().getUser().getAccount() != null) {
-                    shopOwnerAccountId = thread.getShop().getUser().getAccount().getId();
-                }
-            } catch (Exception e) {
-                log.debug("Proxy lazy loading shop owner account, resolving via shopId: {}", e.getMessage());
-            }
-            if (shopOwnerAccountId == null && thread.getShop().getId() != null) {
-                shopOwnerAccountId = shopRepository.findById(thread.getShop().getId())
-                        .map(Shop::getUser)
-                        .map(User::getAccount)
-                        .map(Account::getId)
-                        .orElse(null);
-            }
+        if (thread.getShop() != null && thread.getShop().getUser() != null && thread.getShop().getUser().getAccount() != null) {
+            shopOwnerAccountId = thread.getShop().getUser().getAccount().getId();
+        } else if (thread.getShop() != null && thread.getShop().getId() != null) {
+            shopOwnerAccountId = shopRepository.findById(thread.getShop().getId())
+                    .map(Shop::getUser)
+                    .map(User::getAccount)
+                    .map(Account::getId)
+                    .orElse(null);
         }
 
         ChatMessageResponse closeMsgResponse = ChatMessageResponse.from(closeMsg);

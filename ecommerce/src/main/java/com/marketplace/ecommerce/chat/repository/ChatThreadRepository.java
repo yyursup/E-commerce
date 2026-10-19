@@ -4,6 +4,7 @@ import com.marketplace.ecommerce.chat.entity.ChatThread;
 import com.marketplace.ecommerce.chat.enums.ThreadStatus;
 import com.marketplace.ecommerce.chat.enums.ThreadType;
 import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
@@ -43,6 +44,7 @@ public interface ChatThreadRepository extends JpaRepository<ChatThread, UUID> {
     Optional<ChatThread> findFirstByOrderIdAndType(UUID orderId, ThreadType type);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @EntityGraph(attributePaths = {"shop.user.account", "customer"})
     @Query("SELECT t FROM ChatThread t WHERE t.requestId = :requestId AND t.type = com.marketplace.ecommerce.chat.enums.ThreadType.DISPUTE")
     Optional<ChatThread> findByRequestIdForUpdate(@Param("requestId") UUID requestId);
 

@@ -72,13 +72,20 @@ public class OrderDisputeServiceImpl implements OrderDisputeService {
         return resultMap;
     }
 
+    private OrderDisputeResponse buildResponse(boolean hasActiveDispute, String disputeStatus, String disputeReason, Report report) {
+        return OrderDisputeResponse.builder()
+                .hasActiveDispute(hasActiveDispute)
+                .disputeStatus(disputeStatus)
+                .disputeReason(disputeReason)
+                .policyClauseCode(report != null ? report.getPolicyClauseCode() : null)
+                .policyClauseTitle(report != null ? report.getPolicyClauseTitle() : null)
+                .build();
+    }
+
     private OrderDisputeResponse computeDisputeInfo(List<Report> reports, Escrow escrow) {
         if (reports == null || reports.isEmpty()) {
             boolean isDisputed = escrow != null && escrow.getStatus() == EscrowStatus.DISPUTED;
-            return OrderDisputeResponse.builder()
-                    .hasActiveDispute(isDisputed)
-                    .disputeStatus(isDisputed ? "REPORT_PENDING" : "NONE")
-                    .build();
+            return buildResponse(isDisputed, isDisputed ? "REPORT_PENDING" : "NONE", null, null);
         }
 
         // Lọc các báo cáo gốc (Type == REPORT)
@@ -88,10 +95,7 @@ public class OrderDisputeServiceImpl implements OrderDisputeService {
 
         if (initialReports.isEmpty()) {
             boolean isDisputed = escrow != null && escrow.getStatus() == EscrowStatus.DISPUTED;
-            return OrderDisputeResponse.builder()
-                    .hasActiveDispute(isDisputed)
-                    .disputeStatus(isDisputed ? "REPORT_PENDING" : "NONE")
-                    .build();
+            return buildResponse(isDisputed, isDisputed ? "REPORT_PENDING" : "NONE", null, null);
         }
 
         Report latestReport = initialReports.get(0);
@@ -102,72 +106,40 @@ public class OrderDisputeServiceImpl implements OrderDisputeService {
 
         // 1. Tiền đã hoàn tất hoàn lại cho Buyer
         if (escrow != null && escrow.getStatus() == EscrowStatus.REFUNDED) {
-            return OrderDisputeResponse.builder()
-                    .hasActiveDispute(false)
-                    .disputeStatus("REFUNDED")
-                    .disputeReason(disputeReason)
-                    .build();
+            return buildResponse(false, "REFUNDED", disputeReason, latestReport);
         }
 
         // 2. Đang trong tiến trình đổi trả hàng -> BẮT BUỘC có active dispute để chặn Buyer bấm nhận hàng hoặc auto-release
         if (stage == ReportStage.RETURN_IN_PROGRESS) {
-            return OrderDisputeResponse.builder()
-                    .hasActiveDispute(true)
-                    .disputeStatus("RETURN_IN_PROGRESS")
-                    .disputeReason(disputeReason)
-                    .build();
+            return buildResponse(true, "RETURN_IN_PROGRESS", disputeReason, latestReport);
         }
 
         // 3. Đang trong giai đoạn thương lượng 1:1 Buyer - Seller
         if (stage == ReportStage.DIRECT_NEGOTIATION) {
-            return OrderDisputeResponse.builder()
-                    .hasActiveDispute(true)
-                    .disputeStatus("DIRECT_NEGOTIATION")
-                    .disputeReason(disputeReason)
-                    .build();
+            return buildResponse(true, "DIRECT_NEGOTIATION", disputeReason, latestReport);
         }
 
         // 4. Nếu khiếu nại đã bị hủy (CANCELLED)
         if (stage == ReportStage.CANCELLED) {
-            return OrderDisputeResponse.builder()
-                    .hasActiveDispute(isDisputed)
-                    .disputeStatus("CANCELLED")
-                    .disputeReason(disputeReason)
-                    .build();
+            return buildResponse(isDisputed, "CANCELLED", disputeReason, latestReport);
         }
 
         // 5. Nếu vụ việc đã kết thúc (RESOLVED, CLOSED)
         if (stage == ReportStage.RESOLVED || stage == ReportStage.CLOSED) {
             if (reportStatus == RequestStatus.REJECTED) {
-                return OrderDisputeResponse.builder()
-                        .hasActiveDispute(false)
-                        .disputeStatus("NONE")
-                        .disputeReason(disputeReason)
-                        .build();
+                return buildResponse(false, "NONE", disputeReason, latestReport);
             }
-            return OrderDisputeResponse.builder()
-                    .hasActiveDispute(isDisputed)
-                    .disputeStatus(isDisputed ? "REPORT_APPROVED" : "RESOLVED")
-                    .disputeReason(disputeReason)
-                    .build();
+            return buildResponse(isDisputed, isDisputed ? "REPORT_APPROVED" : "RESOLVED", disputeReason, latestReport);
         }
 
         // 6. Đang chờ Quản trị viên xử lý (ESCALATED_TO_ADMIN hoặc PENDING)
         if (stage == ReportStage.ESCALATED_TO_ADMIN || reportStatus == RequestStatus.PENDING) {
-            return OrderDisputeResponse.builder()
-                    .hasActiveDispute(true)
-                    .disputeStatus("REPORT_PENDING")
-                    .disputeReason(disputeReason)
-                    .build();
+            return buildResponse(true, "REPORT_PENDING", disputeReason, latestReport);
         }
 
         if (reportStatus == RequestStatus.REJECTED) {
             // Admin đã bác bỏ khiếu nại của Buyer
-            return OrderDisputeResponse.builder()
-                    .hasActiveDispute(false)
-                    .disputeStatus("NONE")
-                    .disputeReason(disputeReason)
-                    .build();
+            return buildResponse(false, "NONE", disputeReason, latestReport);
         }
 
         if (reportStatus == RequestStatus.APPROVED) {
@@ -180,22 +152,14 @@ public class OrderDisputeServiceImpl implements OrderDisputeService {
             boolean hasApprovedAppeal = appeals.stream()
                     .anyMatch(a -> a.getRequest().getStatus() == RequestStatus.APPROVED);
             if (hasApprovedAppeal) {
-                return OrderDisputeResponse.builder()
-                        .hasActiveDispute(false)
-                        .disputeStatus("APPEAL_APPROVED")
-                        .disputeReason(latestReport.getRequest().getDescription())
-                        .build();
+                return buildResponse(false, "APPEAL_APPROVED", latestReport.getRequest().getDescription(), latestReport);
             }
 
             // 2. Nếu có Appeal PENDING -> Shop đang kháng cáo, chờ Admin phân xử
             boolean hasPendingAppeal = appeals.stream()
                     .anyMatch(a -> a.getRequest().getStatus() == RequestStatus.PENDING);
             if (hasPendingAppeal) {
-                return OrderDisputeResponse.builder()
-                        .hasActiveDispute(true)
-                        .disputeStatus("APPEAL_PENDING")
-                        .disputeReason(latestReport.getRequest().getDescription())
-                        .build();
+                return buildResponse(true, "APPEAL_PENDING", latestReport.getRequest().getDescription(), latestReport);
             }
 
             // 3. Nếu có Appeal REJECTED -> Kháng cáo bị bác bỏ
@@ -203,30 +167,15 @@ public class OrderDisputeServiceImpl implements OrderDisputeService {
                     .anyMatch(a -> a.getRequest().getStatus() == RequestStatus.REJECTED);
             if (hasRejectedAppeal) {
                 if (escrow != null && escrow.getStatus() == EscrowStatus.REFUNDED) {
-                    return OrderDisputeResponse.builder()
-                            .hasActiveDispute(false)
-                            .disputeStatus("REFUNDED")
-                            .disputeReason(latestReport.getRequest().getDescription())
-                            .build();
+                    return buildResponse(false, "REFUNDED", latestReport.getRequest().getDescription(), latestReport);
                 }
-                return OrderDisputeResponse.builder()
-                        .hasActiveDispute(isDisputed)
-                        .disputeStatus(isDisputed ? "REPORT_APPROVED" : "REFUNDED")
-                        .disputeReason(latestReport.getRequest().getDescription())
-                        .build();
+                return buildResponse(isDisputed, isDisputed ? "REPORT_APPROVED" : "REFUNDED", latestReport.getRequest().getDescription(), latestReport);
             }
 
             // 4. Nếu không có Appeal
-            return OrderDisputeResponse.builder()
-                    .hasActiveDispute(isDisputed)
-                    .disputeStatus(isDisputed ? "REPORT_APPROVED" : "NONE")
-                    .disputeReason(latestReport.getRequest().getDescription())
-                    .build();
+            return buildResponse(isDisputed, isDisputed ? "REPORT_APPROVED" : "NONE", latestReport.getRequest().getDescription(), latestReport);
         }
 
-        return OrderDisputeResponse.builder()
-                .hasActiveDispute(false)
-                .disputeStatus("NONE")
-                .build();
+        return buildResponse(false, "NONE", null, latestReport);
     }
 }

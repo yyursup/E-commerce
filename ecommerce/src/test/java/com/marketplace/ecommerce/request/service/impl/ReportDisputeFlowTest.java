@@ -2,7 +2,13 @@ package com.marketplace.ecommerce.request.service.impl;
 
 import com.marketplace.ecommerce.auth.entity.Account;
 import com.marketplace.ecommerce.auth.repository.AccountRepository;
+import com.marketplace.ecommerce.auth.repository.UserRepository;
 import com.marketplace.ecommerce.common.exception.CustomException;
+import com.marketplace.ecommerce.notification.repository.NotificationRepository;
+import com.marketplace.ecommerce.product.repository.ProductRepository;
+import com.marketplace.ecommerce.review.repository.ReviewRepository;
+import com.marketplace.ecommerce.shop.repository.ShopRepository;
+import com.marketplace.ecommerce.shop.service.ShopEscrowFundService;
 import com.marketplace.ecommerce.order.entity.Order;
 import com.marketplace.ecommerce.order.repository.OrderRepository;
 import com.marketplace.ecommerce.order.repository.OrderReturnRepository;
@@ -64,6 +70,18 @@ class ReportDisputeFlowTest {
     private EscrowService escrowService;
     @Mock
     private OrderReturnService orderReturnService;
+    @Mock
+    private UserRepository userRepository;
+    @Mock
+    private NotificationRepository notificationRepository;
+    @Mock
+    private ShopEscrowFundService shopEscrowFundService;
+    @Mock
+    private ShopRepository shopRepository;
+    @Mock
+    private ReviewRepository reviewRepository;
+    @Mock
+    private ProductRepository productRepository;
 
     @InjectMocks
     private ReportServiceImpl reportService;

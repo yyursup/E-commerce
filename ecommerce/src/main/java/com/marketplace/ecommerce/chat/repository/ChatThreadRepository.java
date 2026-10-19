@@ -26,9 +26,6 @@ public interface ChatThreadRepository extends JpaRepository<ChatThread, UUID> {
     @Query("SELECT t FROM ChatThread t ORDER BY COALESCE(t.lastMessageAt, t.createdAt) DESC")
     List<ChatThread> findAllOrderByLastMessageAtDesc();
 
-    @Query("SELECT t FROM ChatThread t WHERE t.status = :status ORDER BY COALESCE(t.lastMessageAt, t.createdAt) DESC")
-    List<ChatThread> findByStatusOrderByLastMessageAtDesc(@Param("status") ThreadStatus status);
-
     @Query("SELECT t FROM ChatThread t WHERE t.shop.id = :shopId ORDER BY COALESCE(t.lastMessageAt, t.createdAt) DESC")
     List<ChatThread> findByShopId(@Param("shopId") UUID shopId);
 
@@ -41,8 +38,6 @@ public interface ChatThreadRepository extends JpaRepository<ChatThread, UUID> {
 
     Optional<ChatThread> findFirstByRequestIdAndType(UUID requestId, ThreadType type);
 
-    Optional<ChatThread> findFirstByOrderIdAndType(UUID orderId, ThreadType type);
-
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @EntityGraph(attributePaths = {"shop.user.account", "customer"})
     @Query("SELECT t FROM ChatThread t WHERE t.requestId = :requestId AND t.type = com.marketplace.ecommerce.chat.enums.ThreadType.DISPUTE")
@@ -51,7 +46,7 @@ public interface ChatThreadRepository extends JpaRepository<ChatThread, UUID> {
     @Modifying
     @Query(value = """
         INSERT INTO chat_threads (
-            id, type, customer_account_id, shop_id, order_id, request_id, 
+            id, type, customer_account_id, shop_id, order_id, request_id,
             customer_name, customer_avatar, title, status, unread_customer, unread_admin, 
             created_at, updated_at
         )

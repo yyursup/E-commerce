@@ -12,7 +12,6 @@ import java.util.UUID;
 
 public interface ChatService {
 
-    List<ChatThreadResponse> getThreads(CurrentUserInfo principal);
     List<ChatThreadResponse> getThreads(CurrentUserInfo principal, String type);
 
     ChatThreadResponse getOrCreateSupportThread(CurrentUserInfo principal);

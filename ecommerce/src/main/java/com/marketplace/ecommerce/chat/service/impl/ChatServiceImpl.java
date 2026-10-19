@@ -54,12 +54,6 @@ public class ChatServiceImpl implements ChatService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ChatThreadResponse> getThreads(CurrentUserInfo principal) {
-        return getThreads(principal, null);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
     public List<ChatThreadResponse> getThreads(CurrentUserInfo principal, String type) {
         if (principal == null || principal.getAccountId() == null) {
             throw new CustomException("Vui lòng đăng nhập để xem danh sách chat");
@@ -168,7 +162,7 @@ public class ChatServiceImpl implements ChatService {
             throw new CustomException("Mã Shop không hợp lệ");
         }
 
-        UUID resolvedShopId = null;
+        UUID resolvedShopId;
         try {
             resolvedShopId = UUID.fromString(shopIdStr);
         } catch (IllegalArgumentException e) {
@@ -882,8 +876,7 @@ public class ChatServiceImpl implements ChatService {
                     .senderId(null)
                     .senderName("Hệ Thống Tranh Chấp")
                     .senderRole("SYSTEM")
-                    .content(
-                            "Phòng thương lượng tranh chấp tự động kích hoạt. Người mua và Người bán vui lòng trao đổi, cung cấp bằng chứng và phương án xử lý trong vòng 48 giờ trước khi hệ thống chuyển hồ sơ lên Quản trị viên.")
+                    .content("Phòng thương lượng tranh chấp tự động kích hoạt. Người mua và Người bán vui lòng trao đổi, cung cấp bằng chứng và phương án xử lý trong vòng 48 giờ trước khi hệ thống chuyển hồ sơ lên Quản trị viên.")
                     .messageType(ChatMessageType.SYSTEM)
                     .createdAt(now)
                     .build();
@@ -893,24 +886,22 @@ public class ChatServiceImpl implements ChatService {
             thread.setLastMessageAt(now);
             chatThreadRepository.save(thread);
 
-            ChatThreadResponse response = ChatThreadResponse.from(thread, buyerAccountId, false);
-
             if (TransactionSynchronizationManager.isActualTransactionActive()) {
                 TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                     @Override
                     public void afterCommit() {
-                        dispatchNewDisputeThreadEvents(thread, response);
+                        dispatchNewDisputeThreadEvents(thread);
                     }
                 });
             } else {
-                dispatchNewDisputeThreadEvents(thread, response);
+                dispatchNewDisputeThreadEvents(thread);
             }
         }
 
         return ChatThreadResponse.from(thread, buyerAccountId, false);
     }
 
-    private void dispatchNewDisputeThreadEvents(ChatThread thread, ChatThreadResponse response) {
+    private void dispatchNewDisputeThreadEvents(ChatThread thread) {
         UUID customerAccountId = thread.getCustomer() != null ? thread.getCustomer().getId() : null;
         UUID shopOwnerAccountId = null;
         if (thread.getShop() != null && thread.getShop().getUser() != null

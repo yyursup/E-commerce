@@ -204,7 +204,7 @@ public class ReportServiceImpl implements ReportService {
         }
 
         // 2. Quyết định của Admin về việc xóa gậy hay giữ nguyên cho Shop:
-        boolean shouldPardonShop = removeShopPenalty == null || Boolean.TRUE.equals(removeShopPenalty);
+        boolean shouldPardonShop = removeShopPenalty == null || removeShopPenalty;
         if (shouldPardonShop && order.getShop() != null && order.getShop().getUser() != null) {
             Account shopOwner = order.getShop().getUser().getAccount();
             if (shopOwner != null && shopOwner.getViolationCount() > 0) {
@@ -493,20 +493,20 @@ public class ReportServiceImpl implements ReportService {
                 if (finalResolution == ResolutionType.REFUND_ONLY) {
                     sendDisputeNotification(buyer,
                             "Khiếu nại được chấp thuận - Hoàn tiền thành công",
-                            "Ban Quản Trị đã chấp thuận khiếu nại đơn hàng #" + orderCode + "" + clauseInfo + ". Tiền thanh toán đã được hoàn trả lại cho bạn.",
+                            "Ban Quản Trị đã chấp thuận khiếu nại đơn hàng #" + orderCode + " " + clauseInfo + ". Tiền thanh toán đã được hoàn trả lại cho bạn.",
                             order.getId(), report.getId());
                     sendDisputeNotification(seller,
                             "Phán quyết khiếu nại: Chấp thuận hoàn tiền cho người mua",
-                            "Ban Quản Trị đã chấp thuận khiếu nại của người mua cho đơn hàng #" + orderCode + "" + clauseInfo + ". Tiền ký quỹ được hoàn trả cho người mua.",
+                            "Ban Quản Trị đã chấp thuận khiếu nại của người mua cho đơn hàng #" + orderCode + " " + clauseInfo + ". Tiền ký quỹ được hoàn trả cho người mua.",
                             order.getId(), report.getId());
                 } else if (finalResolution == ResolutionType.RETURN_AND_REFUND) {
                     sendDisputeNotification(buyer,
                             "Khiếu nại được chấp thuận - Hướng dẫn gửi trả hàng",
-                            "Ban Quản Trị đã chấp thuận khiếu nại đơn hàng #" + orderCode + "" + clauseInfo + ". Vui lòng đóng gói và gửi hàng hoàn theo hướng dẫn trên hệ thống.",
+                            "Ban Quản Trị đã chấp thuận khiếu nại đơn hàng #" + orderCode + " " + clauseInfo + ". Vui lòng đóng gói và gửi hàng hoàn theo hướng dẫn trên hệ thống.",
                             order.getId(), report.getId());
                     sendDisputeNotification(seller,
                             "Phán quyết khiếu nại: Yêu cầu trả hàng hoàn tiền",
-                            "Ban Quản Trị đã chấp thuận khiếu nại của người mua cho đơn hàng #" + orderCode + "" + clauseInfo + ". Quy trình gửi trả hàng đã được khởi tạo.",
+                            "Ban Quản Trị đã chấp thuận khiếu nại của người mua cho đơn hàng #" + orderCode + " " + clauseInfo + ". Quy trình gửi trả hàng đã được khởi tạo.",
                             order.getId(), report.getId());
                 }
             });
@@ -637,7 +637,7 @@ public class ReportServiceImpl implements ReportService {
         reportRepository.save(report);
         requestRepository.save(req);
 
-        if (report.getTargetType() == TargetType.ORDER && req != null) {
+        if (report.getTargetType() == TargetType.ORDER) {
             chatService.closeDisputeThread(req.getId(), "Người mua tự nguyện rút khiếu nại");
         }
 

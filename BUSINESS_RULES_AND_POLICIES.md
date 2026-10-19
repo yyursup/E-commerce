@@ -1,5 +1,5 @@
 # QUY CHẾ HOẠT ĐỘNG, QUY TẮC NGHIỆP VỤ & ĐIỀU KHOẢN CHÍNH SÁCH
-## SÀN THƯƠNG MẠI ĐIỆN TỬ ĐA NGÀNH OMNIMARKET (E-COMMERCE)
+## SÀN THƯƠNG MẠI ĐIỆN TỬ NGÀNH HÀNG ĐỒ ĐIỆN TỬ & THIẾT BỊ CÔNG NGHỆ E-COMMERCE
 
 *Tài liệu ban hành căn cứ theo Nghị định số 52/2013/NĐ-CP, Nghị định số 85/2021/NĐ-CP, Nghị định số 13/2023/NĐ-CP và Luật Bảo vệ quyền lợi người tiêu dùng Việt Nam.*
 
@@ -19,8 +19,8 @@
 ---
 
 ## 1. NGUYÊN TẮC CHUNG VÀ ĐỊNH NGHĨA
-- **Sàn Giao Dịch TMĐT OmniMarket (E-commerce)**: Là nền tảng thương mại điện tử đa ngành hàng tích hợp mô hình B2C và C2C, cung cấp hạ tầng giao dịch, cổng thanh toán trung gian ký quỹ (Escrow), tích hợp vận chuyển tự động và cơ chế giải quyết tranh chấp bảo vệ quyền lợi người dùng.
-- **Người Mua (Buyer / Customer)**: Tổ chức hoặc cá nhân đăng ký tài khoản hợp lệ để mua sắm hàng hóa trên sàn.
+- **Sàn Giao Dịch TMĐT E-commerce**: Là nền tảng thương mại điện tử chuyên sâu ngành hàng đồ điện tử, thiết bị số và công nghệ thông minh, tích hợp mô hình B2C và C2C, cung cấp hạ tầng giao dịch, cổng thanh toán trung gian ký quỹ (Escrow), tích hợp vận chuyển tự động và cơ chế giải quyết tranh chấp bảo vệ quyền lợi người dùng.
+- **Người Mua (Buyer / Customer)**: Tổ chức hoặc cá nhân đăng ký tài khoản hợp lệ để mua sắm thiết bị, phụ kiện điện tử và sản phẩm công nghệ trên sàn.
 - **Người Bán (Seller / Merchant)**: Thương nhân, tổ chức, hộ kinh doanh hoặc cá nhân đã hoàn thành thủ tục đăng ký gian hàng và xác thực định danh điện tử (eKYC) trên sàn.
 - **Ban Quản Trị (BQT / Platform Admin)**: Đơn vị quản lý, giám sát vận hành, kiểm duyệt nội dung, điều phối tài chính và phán quyết tranh chấp độc lập.
 - **Tài Khoản Ký Quỹ Escrow (Escrow Account)**: Hệ thống tài khoản ký quỹ trung gian độc lập giữ tiền thanh toán của Người mua cho đến khi giao dịch hoàn tất hoặc có phán quyết tranh chấp cuối cùng.
@@ -31,7 +31,7 @@
 
 ### 2.1. Đăng ký Tài khoản Người Dùng
 - **BR-USR-01**: Người dùng phải từ đủ 15 tuổi trở lên hoặc có sự đồng ý của người giám hộ theo quy định pháp luật.
-- **BR-USR-02 (Bắt buộc chấp thuận Điều khoản)**: Mọi cá nhân, tổ chức khi đăng ký tài khoản tại OmniMarket bắt buộc phải tích chọn xác nhận đã đọc, hiểu rõ và cam kết tuân thủ Điều khoản Dịch vụ và Chính sách Bảo mật này. Hệ thống từ chối khởi tạo tài khoản nếu không có sự đồng thuận.
+- **BR-USR-02 (Bắt buộc chấp thuận Điều khoản)**: Mọi cá nhân, tổ chức khi đăng ký tài khoản tại Sàn E-commerce bắt buộc phải tích chọn xác nhận đã đọc, hiểu rõ và cam kết tuân thủ Điều khoản Dịch vụ và Chính sách Bảo mật này. Hệ thống từ chối khởi tạo tài khoản nếu không có sự đồng thuận.
 - **BR-USR-03 (Xác thực 2 bước qua OTP)**: Đăng ký yêu cầu địa chỉ email chính chủ duy nhất. Hệ thống sẽ phát hành mã xác thực OTP 6 số qua email có hiệu lực trong vòng 15 phút.
 
 ### 2.2. Tiêu chuẩn Mở Gian Hàng & Định Danh eKYC
@@ -45,26 +45,32 @@
 
 ## 3. QUY CHẾ ĐĂNG BÁN SẢN PHẨM VÀ DANH MỤC HÀNG CẤM
 
-### 3.1. Phân loại 8 Ngành Hàng Chính
-Hệ thống hỗ trợ 8 đại ngành hàng lớn theo mô hình Shopee/Tiki:
-1. *Điện Tử & Công Nghệ*
-2. *Thời Trang & Phụ Kiện*
-3. *Sách & Văn Phòng Phẩm*
-4. *Nhà Cửa & Đời Sống*
-5. *Sức Khỏe & Sắc Đẹp*
-6. *Thể Thao & Dã Ngoại*
-7. *Mẹ & Bé*
-8. *Bách Hóa Online*
+### 3.1. Phân loại 8 Ngành Hàng Đồ Điện Tử & Thiết Bị Công Nghệ
+Hệ thống chuẩn hóa 8 ngành hàng chuyên sâu trong hệ sinh thái thiết bị công nghệ & điện tử:
+1. *Điện Thoại & Máy Tính Bảng (Smartphones & Tablets)*: Điện thoại thông minh, máy tính bảng, bút cảm ứng, máy đọc sách điện tử.
+2. *Laptop & Máy Tính Để Bàn (Laptops & Desktops)*: Laptop văn phòng, laptop gaming, máy trạm workstation, PC đồng bộ, màn hình máy tính.
+3. *Âm Thanh & Tai Nghe (Audio & Headphones)*: Tai nghe True Wireless (TWS), tai nghe chụp tai (Over-ear), loa bluetooth, loa để bàn, DAC/Amp, micro thu âm.
+4. *Đồng Hồ & Thiết Bị Đeo Thông Minh (Smartwatches & Wearables)*: Smartwatch thể thao, vòng đeo tay theo dõi sức khỏe, kính thực tế ảo VR/AR.
+5. *Máy Ảnh & Thiết Bị Số (Cameras & Digital Imaging)*: Máy ảnh Mirrorless/DSLR, máy quay vlog, action camera, flycam (drone), thiết bị chống rung gimbal.
+6. *Linh Kiện & Phần Cứng Máy Tính (Computer Hardware & Components)*: CPU, Card màn hình (GPU/VGA), RAM, ổ cứng SSD/HDD, Mainboard, bộ nguồn PSU, tản nhiệt.
+7. *Phụ Kiện Công Nghệ & Thiết Bị Ngoại Vi (Tech Accessories & Peripherals)*: Củ cáp sạc nhanh, pin sạc dự phòng, bàn phím cơ, chuột gaming, hub chuyển đổi, giá đỡ công thái học.
+8. *Thiết Bị Nhà Thông Minh & Mạng (Smart Home & Networking)*: Router Wi-Fi 6/Mesh, camera an ninh giám sát gia đình, khóa cửa điện tử thông minh, cảm biến IoT.
 
-### 3.2. Tiêu chuẩn Phân Hạng Tình Trạng Sản Phẩm (Condition Grade)
-- **BRAND_NEW (Chính hãng nguyên seal 100%)**: Còn nguyên tem niêm phong nhà sản xuất, bảo hành chính hãng.
-- **GRADE_LIKE_NEW (Như mới 99%)**: Đã mở hộp, không trầy xước hoặc xước dăm siêu nhỏ, đầy đủ phụ kiện.
-- **GRADE_VERY_GOOD (Rất tốt 95%)**: Có dấu hiệu sử dụng nhẹ, không ảnh hưởng thẩm mỹ và chức năng.
-- **GRADE_GOOD (Tốt 90%)**: Cấn xước nhẹ, chức năng hoạt động hoàn hảo 100%.
-- **GRADE_FAIR (Khá 80%)**: Ngoại hình trầy xước rõ, các tính năng chính ổn định.
-- **GRADE_AS_IS (Thanh lý / Linh kiện)**: Bán theo hiện trạng, mô tả rõ lỗi hoặc bán xác linh kiện.
+### 3.2. Tiêu chuẩn Phân Hạng Tình Trạng Thiết Bị Điện Tử (Condition Grade)
+Đặc thù ngành thiết bị công nghệ yêu cầu Người bán phân loại chính xác tình trạng thực tế để bảo vệ Người mua:
+- **BRAND_NEW (Chính hãng nguyên seal 100%)**: Còn nguyên seal hộp của nhà sản xuất, chưa kích hoạt bảo hành điện tử (chưa active) hoặc mới active trong vòng 7 ngày, đầy đủ hóa đơn/tem ủy quyền chính hãng.
+- **GRADE_LIKE_NEW (Như mới 99%)**: Đã mở hộp trải nghiệm lướt, không trầy xước hoặc xước dăm siêu nhỏ mắt thường khó thấy, dung lượng pin từ 95% - 100%, đầy đủ phụ kiện chính hãng kèm máy.
+- **GRADE_VERY_GOOD (Rất tốt 95%)**: Ngoại hình cấn nhẹ hoặc phẩy nhẹ không đáng kể ở viền/góc, màn hình sáng đẹp không trầy xước hay ám ố, các tính năng phần cứng (Face ID, vân tay, camera, loa) hoạt động hoàn hảo 100%, pin từ 88% - 94%.
+- **GRADE_GOOD (Tốt 90%)**: Thân máy có trầy xước dăm hoặc mòn nhẹ qua thời gian, mọi linh kiện bên trong nguyên bản chưa qua sửa chữa mainboard, pin từ 80% - 87%, tính năng hoàn chỉnh.
+- **GRADE_FAIR (Khá 80%)**: Ngoại hình trầy xước rõ rệt hoặc có vết cấn móp nhẹ, pin đã có dấu hiệu chai (cần sạc nhiều lần), các chức năng cơ bản vận hành ổn định.
+- **GRADE_AS_IS (Thanh lý / Xác máy / Bán theo linh kiện)**: Thiết bị có lỗi chức năng cụ thể (màn hình sọc, hỏng cảm biến, mất nguồn) hoặc dùng để lấy linh kiện thay thế, người bán bắt buộc phải ghi chú công khai mọi lỗi hỏng trong phần mô tả.
 
-### 3.3. Danh Mục Hàng Hóa Cấm Kinh Doanh Tuyệt Đối
+### 3.3. Quy Định Bắt Buộc Về Serial Number / IMEI & Bảo Hành Thiết Bị
+- **Minh bạch mã định danh**: Với các mặt hàng có giá trị cao (Điện thoại, Laptop, Tablet, Máy ảnh), Người bán bắt buộc phải ghi nhận hoặc chụp rõ Số Serial / IMEI trên sản phẩm hoặc phiếu xuất kho khi đóng gói gửi đi.
+- **Cam kết nguồn gốc**: Tuyệt đối nghiêm cấm sản phẩm dính tài khoản iCloud/Knox ẩn, máy khóa mạng (lock) câu SIM ghép trá hình máy quốc tế, hàng dựng vỏ thay ruột giả danh hãng nổi tiếng.
+- **Chính sách bảo hành tối thiểu**: Mọi sản phẩm công nghệ (kể cả máy Like New) phải có chính sách bảo hành tối thiểu 7 ngày bao test (đổi trả nếu lỗi nguồn, màn hình do nhà sản xuất).
+
+### 3.4. Danh Mục Hàng Hóa Cấm Kinh Doanh Tuyệt Đối
 - Vũ khí quân dụng, súng đạn, vũ khí thô sơ, công cụ hỗ trợ.
 - Chất ma túy, tiền chất ma túy, chất kích thích, thuốc lá điện tử, shisha.
 - Hàng giả, hàng nhái, hàng vi phạm quyền sở hữu trí tuệ, phần mềm bẻ khóa.
@@ -184,4 +190,4 @@ Hệ thống áp dụng cơ chế cộng dồn điểm vi phạm (Strikes Count)
 4. **Quyền Của Người Dùng**: Người dùng có quyền truy cập, chỉnh sửa, yêu cầu trích xuất hoặc yêu cầu xóa dữ liệu tài khoản bất kỳ lúc nào bằng cách liên hệ Ban Quản Trị sàn.
 
 ---
-*Bản Quy chế này có hiệu lực kể từ ngày ban hành và được cập nhật công khai trên toàn hệ thống OmniMarket.*
+*Bản Quy chế này có hiệu lực kể từ ngày ban hành và được cập nhật công khai trên toàn hệ thống E-commerce.*

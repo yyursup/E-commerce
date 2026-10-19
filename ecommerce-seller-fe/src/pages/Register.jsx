@@ -351,7 +351,7 @@ export default function Register() {
                   >
                     Quy chế hoạt động & Điều khoản Kênh Người Bán
                   </button>{' '}
-                  của sàn OmniMarket.
+                  của sàn E-commerce.
                 </label>
               </div>
               {errors.agreeToTerms && (

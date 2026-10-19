@@ -27,7 +27,7 @@ export default function TermsModal({ open, onClose, onAccept }) {
     <Modal
       open={open}
       onClose={onClose}
-      title="Quy Chế Hoạt Động & Điều Khoản Kênh Người Bán OmniMarket"
+      title="Quy Chế Hoạt Động & Điều Khoản Kênh Người Bán Sàn E-commerce"
       size="2xl"
     >
       <div className="flex flex-col h-[70vh]">

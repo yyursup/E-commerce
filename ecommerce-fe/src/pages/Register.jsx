@@ -352,7 +352,7 @@ export default function Register() {
                   >
                     Điều khoản dịch vụ & Chính sách vận hành
                   </button>{' '}
-                  của sàn OmniMarket.
+                  của sàn E-commerce.
                 </label>
               </div>
               {errors.agreeToTerms && (

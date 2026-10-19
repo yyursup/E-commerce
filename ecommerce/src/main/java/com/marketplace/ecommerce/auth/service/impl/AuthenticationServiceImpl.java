@@ -176,7 +176,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     public void createMailBody(Account account, String otp) {
         MailBody mailBody = new MailBody();
         mailBody.setTo(account);
-        mailBody.setSubject("MÃ XÁC THỰC OTP ĐĂNG KÝ TÀI KHOẢN OMNIMARKET");
+        mailBody.setSubject("MÃ XÁC THỰC OTP ĐĂNG KÝ TÀI KHOẢN E-COMMERCE");
         mailBody.setOtp(otp);
         emailService.sendOtpForVerifyAccount(mailBody, otp);
     }

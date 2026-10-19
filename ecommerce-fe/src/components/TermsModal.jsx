@@ -27,7 +27,7 @@ export default function TermsModal({ open, onClose, onAccept }) {
     <Modal
       open={open}
       onClose={onClose}
-      title="Điều Khoản Dịch Vụ & Chính Sách Vận Hành Sàn OmniMarket"
+      title="Điều Khoản Dịch Vụ & Chính Sách Vận Hành Sàn E-commerce"
       size="2xl"
     >
       <div className="flex flex-col h-[70vh]">
@@ -64,7 +64,7 @@ export default function TermsModal({ open, onClose, onAccept }) {
                   <HiOutlineScale className="h-5 w-5" /> 1. Chấp Thuận Điều Khoản Dịch Vụ
                 </h4>
                 <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">
-                  Chào mừng bạn đến với Sàn Thương Mại Điện Tử OmniMarket. Khi tạo tài khoản hoặc sử dụng dịch vụ trên hệ thống, bạn cam kết rằng đã đọc, hiểu và đồng ý hoàn toàn với toàn bộ quy chế và điều khoản hoạt động của chúng tôi.
+                  Chào mừng bạn đến với Sàn Thương Mại Điện Tử Chuyên Ngành Đồ Điện Tử & Thiết Bị Công Nghệ E-commerce. Khi tạo tài khoản hoặc sử dụng dịch vụ trên hệ thống, bạn cam kết rằng đã đọc, hiểu và đồng ý hoàn toàn với toàn bộ quy chế và điều khoản hoạt động của chúng tôi.
                 </p>
               </div>
 
@@ -72,13 +72,13 @@ export default function TermsModal({ open, onClose, onAccept }) {
               <ul className="list-disc pl-5 space-y-1.5 text-xs text-stone-600 dark:text-slate-400">
                 <li>Người dùng phải cung cấp thông tin cá nhân chính xác, đầy đủ và duy nhất (Email, SĐT, Tên đăng nhập).</li>
                 <li>Có trách nhiệm tự bảo mật mật khẩu tài khoản và mã xác thực OTP gửi về thiết bị cá nhân.</li>
-                <li>Tuyệt đối không sử dụng tài khoản để phát tán mã độc, lừa đảo, giả mạo danh tính cá nhân/tổ chức khác hoặc thực hiện các hành vi rửa tiền.</li>
-                <li>Mỗi cá nhân chỉ được đăng ký một tài khoản chính thức để mua sắm hoặc nâng cấp mở gian hàng kinh doanh.</li>
+                <li>Tuyệt đối không sử dụng tài khoản để phát tán mã độc, lừa đảo, giả mạo danh tính cá nhân/tổ chức khác hoặc thực hiện các hành vi gian lận thương mại.</li>
+                <li>Mỗi cá nhân chỉ được đăng ký một tài khoản chính thức để mua sắm hoặc nâng cấp mở gian hàng kinh doanh thiết bị công nghệ.</li>
               </ul>
 
               <h4 className="font-bold text-base text-stone-900 dark:text-white">3. Giới hạn Trách nhiệm của Sàn</h4>
               <p className="text-xs text-stone-600 dark:text-slate-400 leading-relaxed">
-                OmniMarket hoạt động với tư cách là sàn giao dịch TMĐT trung gian, cung cấp hạ tầng kết nối kỹ thuật, cổng thanh toán ký quỹ Escrow bảo vệ và giải quyết khiếu nại. Sàn không trực tiếp sở hữu hoặc phân phối hàng hóa của người bán ngoại trừ các gian hàng Official Mall do đối tác ủy quyền chính thức.
+                E-commerce hoạt động với tư cách là sàn giao dịch TMĐT trung gian chuyên ngành thiết bị công nghệ & điện tử, cung cấp hạ tầng kết nối kỹ thuật, cổng thanh toán ký quỹ Escrow bảo vệ và giải quyết khiếu nại. Sàn không trực tiếp sở hữu hoặc phân phối hàng hóa của người bán ngoại trừ các gian hàng Official Mall do đối tác ủy quyền chính thức.
               </p>
             </div>
           )}

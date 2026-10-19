@@ -1,11 +1,15 @@
+import { useState } from 'react'
 import {
   HiOutlineTag,
   HiOutlineTruck,
   HiOutlineLockClosed,
   HiOutlineShieldCheck,
   HiOutlineScale,
+  HiOutlineDocumentText,
+  HiOutlinePrinter,
 } from 'react-icons/hi'
 import { cn } from '../../../lib/cn'
+import OrderInvoiceSlipModal from './OrderInvoiceSlipModal'
 
 export default function OrderSummaryCard({
   order,
@@ -14,10 +18,19 @@ export default function OrderSummaryCard({
   formatCurrency,
   onPayNow,
 }) {
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false)
+
   if (!order) return null
 
-  const hasShopDiscount = Number(order.shopDiscountAmount) > 0
-  const hasPlatformDiscount = Number(order.platformDiscountAmount) > 0
+  const breakdown = order.settlementBreakdown
+  const subtotal = Number(breakdown?.merchandiseSubtotal ?? order.subtotal ?? 0)
+  const shippingFee = Number(breakdown?.shippingFee ?? order.shippingFee ?? 0)
+  const shopDiscount = Number(breakdown?.shopDiscount ?? order.shopDiscountAmount ?? 0)
+  const platformDiscount = Number(breakdown?.platformDiscount ?? order.platformDiscountAmount ?? 0)
+  const total = Number(breakdown?.buyerTotalPaid ?? order.total ?? 0)
+
+  const hasShopDiscount = shopDiscount > 0
+  const hasPlatformDiscount = platformDiscount > 0
   const hasGeneralDiscount =
     Number(order.discountAmount) > 0 && !hasShopDiscount && !hasPlatformDiscount
 
@@ -121,6 +134,16 @@ export default function OrderSummaryCard({
               </div>
             )
           })()}
+
+          {/* Invoice Slip Trigger Button */}
+          <button
+            type="button"
+            onClick={() => setShowInvoiceModal(true)}
+            className="w-full mt-2 inline-flex items-center justify-center gap-2 py-2 px-3 rounded-xl border border-stone-200 dark:border-slate-700 bg-stone-50 dark:bg-slate-800/80 hover:bg-stone-100 dark:hover:bg-slate-700 text-xs font-bold text-stone-700 dark:text-slate-200 transition-all active:scale-[0.98]"
+          >
+            <HiOutlineDocumentText className="h-4 w-4 text-amber-500" />
+            Xem & In Phiếu Hóa Đơn Đối Soát (Invoice Slip)
+          </button>
         </div>
 
         {/* Payment Status / Escrow Protection Section */}
@@ -278,6 +301,15 @@ export default function OrderSummaryCard({
           </div>
         )}
       </div>
+
+      {/* Printable Invoice Slip Modal */}
+      <OrderInvoiceSlipModal
+        isOpen={showInvoiceModal}
+        onClose={() => setShowInvoiceModal(false)}
+        order={order}
+        isDark={isDark}
+        formatCurrency={formatCurrency}
+      />
     </div>
   )
 }

@@ -89,6 +89,24 @@ export default function AdminDashboard() {
     }).format(amount || 0)
   }
 
+  const renderCurrency = (amount, colorClass) => {
+    const formatted = formatCurrency(amount)
+    const match = formatted.match(/^(.*?)[\s\u00a0]*([₫VND]+)$/)
+    if (match) {
+      return (
+        <span className={cn('inline-flex items-baseline whitespace-nowrap font-black tracking-tight', colorClass)}>
+          <span className="text-xl sm:text-2xl xl:text-[18px] 2xl:text-[21px]">{match[1]}</span>
+          <span className="ml-1 text-xs sm:text-sm font-bold opacity-80">{match[2]}</span>
+        </span>
+      )
+    }
+    return (
+      <span className={cn('whitespace-nowrap font-black tracking-tight text-xl sm:text-2xl xl:text-[18px] 2xl:text-[21px]', colorClass)}>
+        {formatted}
+      </span>
+    )
+  }
+
   // Calculate timeline max for SVG Bar height
   const dailyList = analytics?.dailyTimeline || []
   const maxGmvVal = Math.max(...dailyList.map((d) => Number(d.gmv || 0)), 1000000)
@@ -135,30 +153,27 @@ export default function AdminDashboard() {
         </div>
 
         {/* 1. KHỐI TÀI CHÍNH CỐT LÕI (4 FINANCIAL STAT CARDS) */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {/* Card 1: Tổng GMV */}
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             className={cn(
-              'relative min-w-0 overflow-hidden rounded-2xl border p-4 sm:p-5 shadow-sm',
+              'relative rounded-2xl border p-4 sm:p-5 shadow-sm',
               isDark ? 'border-slate-800 bg-slate-900/90' : 'border-stone-200 bg-white',
             )}
           >
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
               <span className={cn('text-xs font-semibold uppercase tracking-wider', isDark ? 'text-slate-400' : 'text-stone-500')}>
                 Tổng GMV Toàn Sàn
               </span>
-              <div className="rounded-xl bg-blue-500/10 p-2 sm:p-2.5 text-blue-500 shrink-0">
+              <div className="rounded-xl bg-blue-500/10 p-2 text-blue-500 shrink-0">
                 <HiOutlineTrendingUp className="h-5 w-5" />
               </div>
             </div>
-            <div className="mt-3 min-w-0">
-              <p
-                className="text-xl sm:text-2xl lg:text-[18px] xl:text-[21px] 2xl:text-2xl font-black tracking-tight text-blue-500 truncate"
-                title={formatCurrency(analytics?.totalGmv)}
-              >
-                {formatCurrency(analytics?.totalGmv)}
+            <div className="mt-3">
+              <p>
+                {renderCurrency(analytics?.totalGmv, 'text-blue-500')}
               </p>
               <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs font-medium text-emerald-500">
                 <span>↑ {analytics?.gmvGrowthRate || 12.8}%</span>
@@ -173,24 +188,21 @@ export default function AdminDashboard() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.05 }}
             className={cn(
-              'relative min-w-0 overflow-hidden rounded-2xl border p-4 sm:p-5 shadow-sm',
+              'relative rounded-2xl border p-4 sm:p-5 shadow-sm',
               isDark ? 'border-slate-800 bg-slate-900/90' : 'border-stone-200 bg-white',
             )}
           >
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
               <span className={cn('text-xs font-semibold uppercase tracking-wider', isDark ? 'text-slate-400' : 'text-stone-500')}>
                 Doanh Thu Đã Quyết Toán
               </span>
-              <div className="rounded-xl bg-emerald-500/10 p-2 sm:p-2.5 text-emerald-500 shrink-0">
+              <div className="rounded-xl bg-emerald-500/10 p-2 text-emerald-500 shrink-0">
                 <HiOutlineCheckCircle className="h-5 w-5" />
               </div>
             </div>
-            <div className="mt-3 min-w-0">
-              <p
-                className="text-xl sm:text-2xl lg:text-[18px] xl:text-[21px] 2xl:text-2xl font-black tracking-tight text-emerald-500 truncate"
-                title={formatCurrency(analytics?.settledRevenue)}
-              >
-                {formatCurrency(analytics?.settledRevenue)}
+            <div className="mt-3">
+              <p>
+                {renderCurrency(analytics?.settledRevenue, 'text-emerald-500')}
               </p>
               <div className={cn("mt-1 flex flex-wrap items-center gap-1.5 text-xs font-medium", isDark ? 'text-slate-400' : 'text-stone-500')}>
                 <span>{analytics?.completedOrders || 0} đơn đã giao thành công</span>
@@ -204,24 +216,21 @@ export default function AdminDashboard() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
             className={cn(
-              'relative min-w-0 overflow-hidden rounded-2xl border p-4 sm:p-5 shadow-sm',
+              'relative rounded-2xl border p-4 sm:p-5 shadow-sm',
               isDark ? 'border-slate-800 bg-slate-900/90' : 'border-stone-200 bg-white',
             )}
           >
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
               <span className={cn('text-xs font-semibold uppercase tracking-wider', isDark ? 'text-slate-400' : 'text-stone-500')}>
                 Quỹ Ký Quỹ Escrow
               </span>
-              <div className="rounded-xl bg-purple-500/10 p-2 sm:p-2.5 text-purple-500 shrink-0">
+              <div className="rounded-xl bg-purple-500/10 p-2 text-purple-500 shrink-0">
                 <HiOutlineShieldCheck className="h-5 w-5" />
               </div>
             </div>
-            <div className="mt-3 min-w-0">
-              <p
-                className="text-xl sm:text-2xl lg:text-[18px] xl:text-[21px] 2xl:text-2xl font-black tracking-tight text-purple-500 truncate"
-                title={formatCurrency(analytics?.activeEscrowBalance)}
-              >
-                {formatCurrency(analytics?.activeEscrowBalance)}
+            <div className="mt-3">
+              <p>
+                {renderCurrency(analytics?.activeEscrowBalance, 'text-purple-500')}
               </p>
               <div className={cn("mt-1 flex flex-wrap items-center gap-1.5 text-xs font-medium", isDark ? 'text-purple-400' : 'text-purple-600')}>
                 <span>Bảo lãnh vận chuyển & 3 ngày đồng kiểm</span>
@@ -235,24 +244,21 @@ export default function AdminDashboard() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
             className={cn(
-              'relative min-w-0 overflow-hidden rounded-2xl border p-4 sm:p-5 shadow-sm',
+              'relative rounded-2xl border p-4 sm:p-5 shadow-sm',
               isDark ? 'border-slate-800 bg-slate-900/90' : 'border-stone-200 bg-white',
             )}
           >
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
               <span className={cn('text-xs font-semibold uppercase tracking-wider', isDark ? 'text-slate-400' : 'text-stone-500')}>
                 Hoa Hồng Sàn Thực Thu
               </span>
-              <div className="rounded-xl bg-amber-500/10 p-2 sm:p-2.5 text-amber-500 shrink-0">
+              <div className="rounded-xl bg-amber-500/10 p-2 text-amber-500 shrink-0">
                 <HiOutlineCurrencyDollar className="h-5 w-5" />
               </div>
             </div>
-            <div className="mt-3 min-w-0">
-              <p
-                className="text-xl sm:text-2xl lg:text-[18px] xl:text-[21px] 2xl:text-2xl font-black tracking-tight text-amber-500 truncate"
-                title={formatCurrency(analytics?.totalPlatformCommission)}
-              >
-                {formatCurrency(analytics?.totalPlatformCommission)}
+            <div className="mt-3">
+              <p>
+                {renderCurrency(analytics?.totalPlatformCommission, 'text-amber-500')}
               </p>
               <div className={cn("mt-1 flex flex-wrap items-center gap-1.5 text-xs font-medium", isDark ? 'text-amber-400' : 'text-amber-600')}>
                 <span>Tỷ lệ hoa hồng sàn trung bình: ~5.0%</span>

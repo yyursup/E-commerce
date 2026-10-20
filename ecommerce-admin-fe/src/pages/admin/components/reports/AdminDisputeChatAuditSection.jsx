@@ -35,16 +35,89 @@ export default function AdminDisputeChatAuditSection({
   const [error, setError] = useState(null)
   const messagesEndRef = useRef(null)
   const fullscreenMessagesEndRef = useRef(null)
+  const activeKeyRef = useRef('')
+
+  const safeOpenUrl = (url) => {
+    if (!url) return
+    window.open(url, '_blank', 'noopener,noreferrer')
+  }
+
+  const currentKey = `${requestId || ''}_${orderId || ''}`
 
   useEffect(() => {
-    if (!requestId && !orderId) return
-    loadThread()
-  }, [requestId, orderId])
+    activeKeyRef.current = currentKey
+    let isCancelled = false
 
-  const loadThread = async () => {
+    if (!requestId && !orderId) {
+      setThread(null)
+      setMessages([])
+      setLoading(false)
+      setError(null)
+      return
+    }
+
+    const fetchThreadData = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        setThread(null)
+        setMessages([])
+
+        let currentThread = null
+        if (requestId) {
+          currentThread = await chatService.getDisputeThreadByRequestId(requestId)
+        } else if (orderId) {
+          currentThread = await chatService.getDisputeThreadByOrderId(orderId)
+        }
+
+        if (isCancelled || activeKeyRef.current !== currentKey) return
+
+        setThread(currentThread)
+        if (currentThread?.id) {
+          const msgPage = await chatService.getMessages(currentThread.id, 0, 100)
+          if (isCancelled || activeKeyRef.current !== currentKey) return
+
+          const content = msgPage?.content || []
+          const history = [...content].reverse()
+
+          // Merge an toàn: bảo toàn tin nhắn realtime đến qua WebSocket trong lúc đang tải history
+          setMessages((prev) => {
+            if (!prev || prev.length === 0) return history
+            const historyIds = new Set(history.map((m) => m.id))
+            const realtimePending = prev.filter((m) => m.id && !historyIds.has(m.id))
+            return [...history, ...realtimePending]
+          })
+        }
+      } catch (err) {
+        if (isCancelled || activeKeyRef.current !== currentKey) return
+        if (err?.response?.status === 404 || err?.response?.status === 204) {
+          setThread(null)
+          setError(null)
+        } else {
+          console.warn('Lỗi tải phòng chat đối soát:', err)
+          setError(err?.response?.data?.message || err?.message || 'Không thể tải phòng chat đối soát')
+        }
+      } finally {
+        if (!isCancelled && activeKeyRef.current === currentKey) {
+          setLoading(false)
+        }
+      }
+    }
+
+    fetchThreadData()
+
+    return () => {
+      isCancelled = true
+    }
+  }, [requestId, orderId, currentKey])
+
+  const refreshThread = async () => {
+    if (!requestId && !orderId) return
+    const targetKey = `${requestId || ''}_${orderId || ''}`
     try {
       setLoading(true)
       setError(null)
+
       let currentThread = null
       if (requestId) {
         currentThread = await chatService.getDisputeThreadByRequestId(requestId)
@@ -52,21 +125,36 @@ export default function AdminDisputeChatAuditSection({
         currentThread = await chatService.getDisputeThreadByOrderId(orderId)
       }
 
+      if (activeKeyRef.current !== targetKey) return
+
       setThread(currentThread)
       if (currentThread?.id) {
         const msgPage = await chatService.getMessages(currentThread.id, 0, 100)
+        if (activeKeyRef.current !== targetKey) return
+
         const content = msgPage?.content || []
-        setMessages([...content].reverse())
+        const history = [...content].reverse()
+
+        setMessages((prev) => {
+          if (!prev || prev.length === 0) return history
+          const historyIds = new Set(history.map((m) => m.id))
+          const realtimePending = prev.filter((m) => m.id && !historyIds.has(m.id))
+          return [...history, ...realtimePending]
+        })
       }
     } catch (err) {
+      if (activeKeyRef.current !== targetKey) return
       if (err?.response?.status === 404 || err?.response?.status === 204) {
         setThread(null)
+        setError(null)
       } else {
         console.warn('Lỗi tải phòng chat đối soát:', err)
         setError(err?.response?.data?.message || err?.message || 'Không thể tải phòng chat đối soát')
       }
     } finally {
-      setLoading(false)
+      if (activeKeyRef.current === targetKey) {
+        setLoading(false)
+      }
     }
   }
 
@@ -137,6 +225,39 @@ export default function AdminDisputeChatAuditSection({
       return true
     })
   }, [messages, filterType, searchQuery, thread?.customerId])
+
+  if (error && !thread && !loading) {
+    return (
+      <div
+        className={cn(
+          'rounded-2xl border p-4 mb-3 transition-all shadow-xs',
+          isDark
+            ? 'border-rose-900/50 bg-rose-950/20 text-rose-300'
+            : 'border-rose-200 bg-rose-50 text-rose-800'
+        )}
+      >
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-2.5">
+            <div className="p-1.5 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400">
+              <HiOutlineInformationCircle className="h-5 w-5 shrink-0" />
+            </div>
+            <div className="text-xs">
+              <p className="font-bold">Không thể tải dữ liệu phòng đối soát thương lượng</p>
+              <p className="text-[11px] opacity-90 mt-0.5">{error}</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={refreshThread}
+            className="px-3 py-1.5 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white transition-colors inline-flex items-center gap-1.5 shadow-xs"
+          >
+            <HiOutlineRefresh className="h-3.5 w-3.5" />
+            <span>Thử tải lại</span>
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   if (!loading && !thread) {
     return null
@@ -213,7 +334,7 @@ export default function AdminDisputeChatAuditSection({
               <img
                 src={msg.imageUrl}
                 alt="Ảnh đối chất"
-                onClick={() => (setPreviewImage ? setPreviewImage(msg.imageUrl) : window.open(msg.imageUrl, '_blank'))}
+                onClick={() => (setPreviewImage ? setPreviewImage(msg.imageUrl) : safeOpenUrl(msg.imageUrl))}
                 className="max-h-52 rounded-xl object-cover cursor-pointer hover:opacity-90 transition-opacity border border-black/10"
               />
               {msg.content && msg.content !== '[Hình ảnh]' && (
@@ -235,7 +356,7 @@ export default function AdminDisputeChatAuditSection({
                 />
                 <button
                   type="button"
-                  onClick={() => (setPreviewImage ? setPreviewImage(msg.videoUrl) : window.open(msg.videoUrl, '_blank'))}
+                  onClick={() => (setPreviewImage ? setPreviewImage(msg.videoUrl) : safeOpenUrl(msg.videoUrl))}
                   className="absolute top-2 right-2 px-2 py-1 rounded-lg bg-black/70 hover:bg-black text-white text-[10px] font-bold inline-flex items-center gap-1 backdrop-blur-xs transition-colors"
                   title="Xem phóng to video"
                 >
@@ -311,6 +432,17 @@ export default function AdminDisputeChatAuditSection({
           </div>
 
           <div className="flex items-center gap-1.5 shrink-0">
+            {/* Nút Làm mới dữ liệu */}
+            <button
+              type="button"
+              onClick={refreshThread}
+              disabled={loading}
+              title="Tải lại dữ liệu đối soát"
+              className="p-1.5 rounded-xl border border-stone-200 dark:border-slate-700 hover:bg-stone-100 dark:hover:bg-slate-800 text-stone-600 dark:text-slate-300 transition-colors"
+            >
+              <HiOutlineRefresh className={cn('h-4 w-4', loading && 'animate-spin')} />
+            </button>
+
             {/* Nút Phóng to Toàn Màn hình để đối soát dài không bị gò bó */}
             <button
               type="button"
@@ -418,7 +550,7 @@ export default function AdminDisputeChatAuditSection({
               <div className="flex items-center gap-2 shrink-0">
                 <button
                   type="button"
-                  onClick={loadThread}
+                  onClick={refreshThread}
                   disabled={loading}
                   title="Tải lại dữ liệu đối soát"
                   className="p-2 rounded-xl border border-stone-200 dark:border-slate-700 hover:bg-stone-100 dark:hover:bg-slate-800 text-stone-600 dark:text-slate-300 transition-colors"

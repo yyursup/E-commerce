@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { cn } from '../../../../lib/cn'
 import {
   HiOutlineBookOpen,
@@ -33,7 +33,7 @@ function OrderPolicyClauseSelectorContent({
   const [activeTab, setActiveTab] = useState('RECOMMENDED') // 'RECOMMENDED' | 'ALL' | 'SELLER_FAULT' | 'BUYER_FAULT' | 'RETURN_DISPUTE'
 
   // Kiểm tra điều khoản có hợp lệ với phán quyết hiện tại không
-  const checkClauseAllowed = React.useCallback((clause) => {
+  const checkClauseAllowed = useCallback((clause) => {
     if (isSellerDispute) {
       if (actionType === 'REPORT_APPROVE') {
         return clause.category === 'RETURN_DISPUTE' || clause.category === 'BUYER_FAULT'

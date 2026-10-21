@@ -38,8 +38,9 @@ export default function AdminReportDisputeSideBySide({
       case 'WRONG_ITEM':
         return 'Gửi sai sản phẩm / tráo hàng khác'
       case 'INCOMPLETE':
+      case 'MISSING_PARTS':
         return 'Thiếu phụ kiện / quà tặng kèm theo'
-      case 'NOT_RETURNED':
+      case 'EMPTY_BOX':
         return 'Hộp rỗng / không có sản phẩm bên trong'
       default:
         return status || 'Hàng hoàn có vấn đề'

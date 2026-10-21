@@ -593,6 +593,49 @@ export default function ShopProfile() {
         </div>
       </section>
 
+      {/* CẢNH BÁO GIAN HÀNG TẠM NGƯNG HOẠT ĐỘNG HOẶC BỊ KHÓA */}
+      {(shop?.status === 'SUSPENDED' || (shop?.suspendedUntil && new Date(shop.suspendedUntil) > new Date())) && (
+        <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-6">
+          <div className="rounded-2xl border border-rose-500/40 bg-rose-500/10 p-5 shadow-lg backdrop-blur-sm flex items-start gap-4 text-rose-500 dark:text-rose-400">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-500 text-white font-black text-xl shadow-md">
+              !
+            </span>
+            <div>
+              <h3 className="text-base font-black uppercase tracking-wide">
+                Gian hàng đang trong thời hạn tạm ngưng hoạt động (Đình chỉ 14 ngày)
+              </h3>
+              <p className="mt-1 text-xs text-rose-600 dark:text-rose-300">
+                Gian hàng hiện đang trong thời gian chấp hành quyết định xử phạt vi phạm chính sách của sàn.
+                Toàn bộ sản phẩm tạm thời được ẩn khỏi hệ thống và không thể đặt mua cho tới khi kết thúc thời hạn kỷ luật.
+              </p>
+              {shop?.suspendedUntil && (
+                <p className="mt-2 text-xs font-semibold">
+                  Thời hạn dự kiến hoàn tất: <strong>{new Date(shop.suspendedUntil).toLocaleString('vi-VN')}</strong>
+                </p>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {shop?.status === 'BANNED' && (
+        <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-6">
+          <div className="rounded-2xl border border-rose-600/50 bg-rose-600/15 p-5 shadow-lg flex items-start gap-4 text-rose-600 dark:text-rose-300">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-600 text-white font-black text-xl shadow-md">
+              ✕
+            </span>
+            <div>
+              <h3 className="text-base font-black uppercase tracking-wide">
+                Gian hàng đã bị chấm dứt hoạt động vĩnh viễn (BANNED)
+              </h3>
+              <p className="mt-1 text-xs">
+                Gian hàng này đã bị khóa vĩnh viễn do vi phạm nghiêm trọng Bộ Quy tắc Hoạt động của sàn. Mọi sản phẩm đã bị hủy niêm yết vĩnh viễn.
+              </p>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* 2. SHOP VOUCHERS STRIP */}
       <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 -mt-4 relative z-20">
         <div
@@ -769,9 +812,19 @@ export default function ShopProfile() {
             ) : filteredProducts.length === 0 ? (
               <div className="py-20 text-center rounded-3xl border border-dashed border-stone-300 dark:border-slate-800 p-8">
                 <HiOutlineShoppingBag className="mx-auto h-12 w-12 text-stone-300 dark:text-slate-600 mb-3" />
-                <h3 className="text-base font-bold text-stone-700 dark:text-slate-300">Không tìm thấy sản phẩm nào</h3>
+                <h3 className="text-base font-bold text-stone-700 dark:text-slate-300">
+                  {shop?.status === 'SUSPENDED' || (shop?.suspendedUntil && new Date(shop.suspendedUntil) > new Date())
+                    ? 'Gian hàng đang trong thời gian tạm ngưng hoạt động'
+                    : shop?.status === 'BANNED'
+                    ? 'Gian hàng đã bị chấm dứt hoạt động'
+                    : 'Không tìm thấy sản phẩm nào'}
+                </h3>
                 <p className="mt-1 text-xs text-stone-500 dark:text-slate-400">
-                  Thử tìm kiếm với từ khóa khác hoặc xóa bộ lọc để xem toàn bộ gian hàng.
+                  {shop?.status === 'SUSPENDED' || (shop?.suspendedUntil && new Date(shop.suspendedUntil) > new Date())
+                    ? 'Toàn bộ sản phẩm của gian hàng tạm thời được ẩn khỏi sàn theo quyết định đình chỉ 14 ngày.'
+                    : shop?.status === 'BANNED'
+                    ? 'Gian hàng này đã bị cấm vĩnh viễn do vi phạm chính sách sàn.'
+                    : 'Thử tìm kiếm với từ khóa khác hoặc xóa bộ lọc để xem toàn bộ gian hàng.'}
                 </p>
                 {searchInShop && (
                   <button

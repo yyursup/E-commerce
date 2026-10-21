@@ -129,11 +129,13 @@ export default function SellerLayout() {
     const syncShopStatus = async () => {
       try {
         const profile = await shopService.getMyShop()
-        if (isMounted && profile?.status && profile.status !== user?.shopStatus) {
+        if (isMounted && profile) {
           useAuthStore.getState().updateUser({
-            shopStatus: profile.status,
-            violationCount: profile.violationCount != null ? profile.violationCount : user?.violationCount,
+            shopStatus: profile.status || user?.shopStatus,
+            violationCount: profile.violationCount != null ? profile.violationCount : 0,
+            shopViolationCount: profile.violationCount != null ? profile.violationCount : 0,
             shopName: profile.name || user?.shopName,
+            suspendedUntil: profile.suspendedUntil || null,
           })
         }
       } catch (err) {
@@ -320,10 +322,10 @@ export default function SellerLayout() {
             )}
 
             {/* Top Banner cảnh báo vi phạm tinh gọn chuẩn Responsive */}
-            {Boolean(user?.shopStatus === 'WARNED' || user?.shopStatus === 'SUSPENDED' || (Number(user?.violationCount || 0) >= 3)) && (
+            {Boolean(user?.shopStatus === 'WARNED' || user?.shopStatus === 'SUSPENDED' || (Number(user?.shopViolationCount ?? user?.violationCount ?? 0) >= 3)) && (
               <div className="mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 rounded-2xl border border-amber-500/35 bg-amber-500/10 px-4 py-3 text-xs text-amber-600 dark:text-amber-400">
                 <span>
-                  Gian hàng đang ở trạng thái <strong>{user?.shopStatus === 'SUSPENDED' ? 'Tạm ngưng hoạt động' : 'Cảnh báo vi phạm'}</strong> ({user?.violationCount || 3}/7 vi phạm). Sản phẩm có thể bị tạm ẩn và tiền ký quỹ Escrow được tạm giữ để đảm bảo an toàn.
+                  Gian hàng đang ở trạng thái <strong>{user?.shopStatus === 'SUSPENDED' ? 'Tạm ngưng hoạt động' : 'Cảnh báo vi phạm'}</strong> ({user?.shopViolationCount ?? user?.violationCount ?? 0}/7 vi phạm). Sản phẩm có thể bị tạm ẩn và tiền ký quỹ Escrow được tạm giữ để đảm bảo an toàn.
                 </span>
                 <NavLink to="/violations" className="font-bold underline hover:text-amber-500 shrink-0 self-end sm:self-auto">
                   Xem chi tiết & Kháng cáo &rarr;

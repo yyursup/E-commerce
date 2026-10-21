@@ -93,7 +93,44 @@ export default function AdminReports() {
       const reportList = reportRes?.content || (Array.isArray(reportRes) ? reportRes : [])
       const appealList = appealRes?.content || (Array.isArray(appealRes) ? appealRes : [])
 
-      setReports(reportList)
+      // Enrich chi tiết cho các vụ việc Đơn hàng để nhận diện chính xác Khiếu nại kiện hoàn (Giai đoạn 2)
+      const enrichedReports = await Promise.all(
+        reportList.map(async (item) => {
+          if (item.targetType === 'ORDER' || !item.targetType) {
+            try {
+              const requestId = item.requestId || item.id
+              const details = await requestService.getRequestDetails(requestId)
+              const orderReturn = details?.detail?.orderReturn
+              const isReturnDisputed = orderReturn?.status === 'DISPUTED' || Boolean(orderReturn?.conditionStatus)
+              const isSellerReturnDispute = Boolean(
+                item.isSellerReturnDispute ||
+                isReturnDisputed ||
+                details?.detail?.targetInfo?.includes('DISPUTED') ||
+                details?.detail?.escalationReason?.includes('kiện hàng hoàn') ||
+                item.description?.includes('Shop khiếu nại kiện hàng hoàn') ||
+                details?.description?.includes('Shop khiếu nại kiện hàng hoàn')
+              )
+              return {
+                ...item,
+                targetType: details?.detail?.targetType || item.targetType || 'ORDER',
+                targetName: details?.detail?.targetName || item.targetName,
+                detail: details?.detail,
+                orderReturn,
+                orderReturnStatus: orderReturn?.status,
+                conditionStatus: orderReturn?.conditionStatus,
+                sellerComplaint: orderReturn?.sellerComplaint,
+                escalationReason: details?.detail?.escalationReason,
+                isSellerReturnDispute,
+              }
+            } catch {
+              return item
+            }
+          }
+          return item
+        })
+      )
+
+      setReports(enrichedReports)
       setAppeals(appealList)
       setPolicyClauses(clauseRes || [])
     } catch (err) {
@@ -118,15 +155,29 @@ export default function AdminReports() {
     })
     try {
       const details = await requestService.getRequestDetails(requestId)
+      const orderReturn = details?.detail?.orderReturn
+      const isReturnDisputed = orderReturn?.status === 'DISPUTED' || Boolean(orderReturn?.conditionStatus)
+      const isSellerReturnDispute = Boolean(
+        item.isSellerReturnDispute ||
+        isReturnDisputed ||
+        details?.detail?.targetInfo?.includes('DISPUTED') ||
+        details?.detail?.escalationReason?.includes('kiện hàng hoàn') ||
+        item.description?.includes('Shop khiếu nại kiện hàng hoàn') ||
+        details?.description?.includes('Shop khiếu nại kiện hàng hoàn')
+      )
       setDetailModal({
         isOpen: true,
         loading: false,
         data: details,
         rawItem: {
           ...item,
-          targetType: details?.detail?.targetType,
-          targetName: details?.detail?.targetName,
+          targetType: details?.detail?.targetType || item.targetType,
+          targetName: details?.detail?.targetName || item.targetName,
           detail: details?.detail,
+          orderReturn,
+          orderReturnStatus: orderReturn?.status,
+          conditionStatus: orderReturn?.conditionStatus,
+          isSellerReturnDispute,
         },
       })
     } catch (err) {
@@ -138,15 +189,31 @@ export default function AdminReports() {
 
   const handleOpenActionModal = async (type, item) => {
     let resolvedItem = item
-    if (!resolvedItem.targetType && !resolvedItem.detail?.targetType) {
+    if (!resolvedItem.detail || (!resolvedItem.orderReturn && resolvedItem.targetType === 'ORDER')) {
       try {
         const requestId = item.requestId || item.id
         const details = await requestService.getRequestDetails(requestId)
+        const orderReturn = details?.detail?.orderReturn
+        const isReturnDisputed = orderReturn?.status === 'DISPUTED' || Boolean(orderReturn?.conditionStatus)
+        const isSellerReturnDispute = Boolean(
+          item.isSellerReturnDispute ||
+          isReturnDisputed ||
+          details?.detail?.targetInfo?.includes('DISPUTED') ||
+          details?.detail?.escalationReason?.includes('kiện hàng hoàn') ||
+          item.description?.includes('Shop khiếu nại kiện hàng hoàn') ||
+          details?.description?.includes('Shop khiếu nại kiện hàng hoàn')
+        )
         resolvedItem = {
           ...item,
-          targetType: details?.detail?.targetType,
-          targetName: details?.detail?.targetName,
+          targetType: details?.detail?.targetType || item.targetType || 'ORDER',
+          targetName: details?.detail?.targetName || item.targetName,
           detail: details?.detail,
+          orderReturn,
+          orderReturnStatus: orderReturn?.status,
+          conditionStatus: orderReturn?.conditionStatus,
+          sellerComplaint: orderReturn?.sellerComplaint,
+          escalationReason: details?.detail?.escalationReason,
+          isSellerReturnDispute,
         }
       } catch (e) {
         console.warn('Could not prefetch details for action modal:', e)
@@ -188,9 +255,14 @@ export default function AdminReports() {
 
       const isSellerDispute = Boolean(
         item.isSellerReturnDispute ||
+        item.orderReturnStatus === 'DISPUTED' ||
+        item.orderReturn?.status === 'DISPUTED' ||
+        Boolean(item.conditionStatus) ||
+        Boolean(item.orderReturn?.conditionStatus) ||
         item.detail?.targetInfo?.includes('DISPUTED') ||
         item.detail?.escalationReason?.includes('kiện hàng hoàn') ||
-        item.description?.includes('Shop khiếu nại kiện hàng hoàn')
+        item.description?.includes('Shop khiếu nại kiện hàng hoàn') ||
+        item.detail?.orderReturn?.status === 'DISPUTED'
       )
 
       // Bắt buộc chọn phương án kỷ luật Shop khi Shop thắng khiếu nại kiện hoàn

@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '../../../../lib/cn'
+import { isSellerReturnDisputeItem } from '../../../../lib/reportHelpers'
 import AdminActionQuickTags from './AdminActionQuickTags'
 import AdminActionOrderResolution from './AdminActionOrderResolution'
 import AdminActionEscrowSplit from './AdminActionEscrowSplit'
@@ -47,12 +48,7 @@ export default function AdminActionModal({
 
   const targetTypeLabel = getTargetTypeLabel(targetType)
 
-  const isSellerDispute = Boolean(
-    actionModal.item?.isSellerReturnDispute ||
-    actionModal.item?.detail?.targetInfo?.includes('DISPUTED') ||
-    actionModal.item?.detail?.escalationReason?.includes('kiện hàng hoàn') ||
-    actionModal.item?.description?.includes('Shop khiếu nại kiện hàng hoàn')
-  )
+  const isSellerDispute = isSellerReturnDisputeItem(actionModal.item)
 
   const isOrderDispute = targetType === 'ORDER' && ['REPORT_APPROVE', 'REPORT_REJECT'].includes(actionModal.type)
   const isClauseMissing = isOrderDispute && !actionModal.policyClauseCode
@@ -186,7 +182,11 @@ export default function AdminActionModal({
             <p className={cn('text-xs mb-3', isDark ? 'text-slate-400' : 'text-stone-500')}>
               {actionModal.type === 'ESCROW_SPLIT'
                 ? 'Thiết lập tỷ lệ % chia số tiền ký quỹ giữa Người mua và Người bán (sau khi đã trừ hoa hồng sàn):'
-                : 'Vui lòng nhập lý do / phán quyết chính thức từ Ban Quản Trị. Thông tin này sẽ được lưu trữ vào hồ sơ đối soát:'}
+                : isSellerDispute && actionModal.type === 'REPORT_APPROVE'
+                  ? 'Chấp thuận khiếu nại của Shop về kiện hàng hoàn. Tiền ký quỹ Escrow sẽ được giải ngân cho Shop. Người mua bị xử phạt +1 gậy vi phạm gian lận kiện hoàn (không thể kháng cáo):'
+                  : isSellerDispute && actionModal.type === 'REPORT_REJECT'
+                    ? 'Bác bỏ khiếu nại của Shop về kiện hàng hoàn. Tiền ký quỹ Escrow sẽ được bồi hoàn cho Người mua. Người mua không bị xử phạt:'
+                    : 'Vui lòng nhập lý do / phán quyết chính thức từ Ban Quản Trị. Thông tin này sẽ được lưu trữ vào hồ sơ đối soát:'}
             </p>
 
             {/* Quick tags gợi ý lý do nhanh (Chỉ áp dụng khi không phải tranh chấp Đơn hàng có Căn Cứ Điều Khoản chuẩn hóa) */}

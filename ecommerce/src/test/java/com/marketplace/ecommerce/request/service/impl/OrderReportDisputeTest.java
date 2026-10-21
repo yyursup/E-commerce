@@ -380,9 +380,10 @@ class OrderReportDisputeTest {
         @Test
         @DisplayName("Admin duyệt khiếu nại kiện hoàn: Tùy chọn removeShopPenalty = true -> Xóa 1 gậy của Shop, phạt Buyer")
         void handleReport_SellerReturnDispute_Approve_RemoveShopPenalty() {
+                shop.setViolationCount(2);
                 Account shopOwner = Account.builder()
                                 .id(UUID.randomUUID())
-                                .violationCount(2)
+                                .violationCount(0)
                                 .disciplineLevel(DisciplineLevel.NONE)
                                 .status(AccountStatus.ACTIVE)
                                 .build();
@@ -424,7 +425,7 @@ class OrderReportDisputeTest {
                 reportService.handleReport(adminAccountId, reportRequestId, req);
 
                 // Shop được giảm 1 gậy từ 2 xuống 1
-                assertEquals(1, shopOwner.getViolationCount());
+                assertEquals(1, shop.getViolationCount());
                 // Buyer bị phạt 1 gậy vi phạm
                 assertEquals(1, buyerAccount.getViolationCount());
                 assertEquals(RequestStatus.APPROVED, disputeReq.getStatus());
@@ -469,6 +470,7 @@ class OrderReportDisputeTest {
 
                 assertEquals(RequestStatus.REJECTED, disputeReq.getStatus());
                 assertEquals(ReturnStatus.COMPLETED, orderReturn.getStatus());
+                assertEquals(1, shop.getViolationCount());
                 verify(escrowService).refundByOrder(eq(orderId), anyString());
                 verify(escrowService, never()).releaseByOrder(any());
                 verify(shopEscrowFundService).deductReturnDisputeShippingFees(orderReturn);
@@ -495,8 +497,6 @@ class OrderReportDisputeTest {
                 when(accountRepository.findById(adminAccountId)).thenReturn(Optional.of(adminAccount));
                 when(reportRepository.findByRequestId(reportRequestId)).thenReturn(report);
                 when(orderRepository.findByIdForUpdate(orderId)).thenReturn(Optional.of(deliveredOrder));
-                when(requestValidation.resolveTargetAccountId(TargetType.ORDER, orderId)).thenReturn(buyerAccountId);
-                when(accountRepository.findByIdForUpdate(buyerAccountId)).thenReturn(Optional.of(buyerAccount));
                 when(orderReturnRepository.findByOrderIdForUpdate(orderId)).thenReturn(Optional.empty());
 
                 HandleReportRequest req = HandleReportRequest.builder()
@@ -543,8 +543,6 @@ class OrderReportDisputeTest {
                 when(accountRepository.findById(adminAccountId)).thenReturn(Optional.of(adminAccount));
                 when(reportRepository.findByRequestId(reportRequestId)).thenReturn(report);
                 when(orderRepository.findByIdForUpdate(orderId)).thenReturn(Optional.of(deliveredOrder));
-                when(requestValidation.resolveTargetAccountId(TargetType.ORDER, orderId)).thenReturn(buyerAccountId);
-                when(accountRepository.findByIdForUpdate(buyerAccountId)).thenReturn(Optional.of(buyerAccount));
                 when(orderReturnRepository.findByOrderIdForUpdate(orderId)).thenReturn(Optional.of(inProgressReturn));
 
                 HandleReportRequest req = HandleReportRequest.builder()
@@ -719,8 +717,6 @@ class OrderReportDisputeTest {
                 when(requestValidation.validateDisputePolicyClause(eq(TargetType.ORDER),
                                 eq("CLAUSE_9_1_HARDWARE_FAULT"), eq(ReportDecision.APPROVE), anyBoolean()))
                                 .thenReturn(com.marketplace.ecommerce.request.valueObjects.DisputePolicyClause.CLAUSE_9_1_HARDWARE_FAULT);
-                when(requestValidation.resolveTargetAccountId(TargetType.ORDER, orderId)).thenReturn(buyerAccountId);
-                when(accountRepository.findByIdForUpdate(buyerAccountId)).thenReturn(Optional.of(buyerAccount));
 
                 reportService.handleReport(adminAccountId, reportRequestId, req);
 

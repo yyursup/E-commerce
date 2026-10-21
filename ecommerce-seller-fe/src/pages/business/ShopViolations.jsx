@@ -83,7 +83,6 @@ export default function ShopViolations() {
           const vCount = myShop.violationCount ?? 0
           const sStatus = myShop.status || 'ACTIVE'
           const dLevel = myShop.disciplineLevel || 'NONE'
-          const bUntil = myShop.bannedUntil || null
           const sUntil = myShop.suspendedUntil || null
           const lastV = myShop.lastViolationAt || null
 
@@ -91,7 +90,6 @@ export default function ShopViolations() {
             violationCount: vCount,
             shopStatus: sStatus,
             disciplineLevel: dLevel,
-            bannedUntil: bUntil,
             suspendedUntil: sUntil,
             lastViolationAt: lastV,
           })
@@ -101,7 +99,6 @@ export default function ShopViolations() {
             shopViolationCount: vCount,
             shopStatus: sStatus,
             disciplineLevel: dLevel,
-            bannedUntil: bUntil,
             suspendedUntil: sUntil,
             shopId: myShop.id || user?.shopId,
           })

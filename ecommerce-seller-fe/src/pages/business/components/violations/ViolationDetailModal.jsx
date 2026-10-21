@@ -211,7 +211,7 @@ export default function ViolationDetailModal({
 
               {detailViolation.appealStatus === 'FINAL_RULING' && (
                 <span className="text-xs font-semibold text-blue-500 bg-blue-500/10 px-3 py-1.5 rounded-xl border border-blue-500/20">
-                  Phán quyết cuối cùng (Không áp dụng kháng cáo)
+                  Phán quyết cuối cùng
                 </span>
               )}
 

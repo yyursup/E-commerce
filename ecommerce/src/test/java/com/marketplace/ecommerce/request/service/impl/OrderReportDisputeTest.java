@@ -470,6 +470,7 @@ class OrderReportDisputeTest {
 
                 assertEquals(RequestStatus.REJECTED, disputeReq.getStatus());
                 assertEquals(ReturnStatus.COMPLETED, orderReturn.getStatus());
+                assertEquals(1, shop.getViolationCount());
                 verify(escrowService).refundByOrder(eq(orderId), anyString());
                 verify(escrowService, never()).releaseByOrder(any());
                 verify(shopEscrowFundService).deductReturnDisputeShippingFees(orderReturn);

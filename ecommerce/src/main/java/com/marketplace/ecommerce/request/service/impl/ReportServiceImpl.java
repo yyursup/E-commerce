@@ -294,7 +294,17 @@ public class ReportServiceImpl implements ReportService {
             throw new CustomException("Đơn hàng này đã được hoàn tiền ký quỹ trước đó");
         }
 
-        // 2. Hoàn tất kiện hoàn (OrderReturn -> COMPLETED)
+        // 2. Xử phạt Shop nếu ở Giai đoạn 1 Shop chưa từng bị phạt (do tự thương lượng ACCEPT_RETURN hoặc chưa qua Admin xử phạt)
+        boolean shouldPenalizeShop = (report.getSellerAction() == DisputeSellerAction.ACCEPT_RETURN || r.getReviewedBy() == null);
+        if (shouldPenalizeShop && order.getShop() != null) {
+            Shop shop = shopRepository.findByIdForUpdate(order.getShop().getId())
+                    .orElse(order.getShop());
+            punishShop(shop, now);
+            log.info("Penalized shop on seller return dispute rejection (Buyer Wins): orderId={}, shopId={}, newViolationCount={}",
+                    orderId, shop.getId(), shop.getViolationCount());
+        }
+
+        // 3. Hoàn tất kiện hoàn (OrderReturn -> COMPLETED)
         OrderReturn ret = returnOpt.orElseGet(() -> orderReturnRepository.findByOrderIdForUpdate(orderId).orElse(null));
         if (ret != null) {
             ret.setStatus(ReturnStatus.COMPLETED);

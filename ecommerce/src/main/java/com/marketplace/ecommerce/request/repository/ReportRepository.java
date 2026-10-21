@@ -203,16 +203,6 @@ public interface ReportRepository extends JpaRepository<Report, UUID> {
     @Query("""
         select r from Report r
         join fetch r.request req
-        where req.type = 'REPORT'
-          and req.status = 'APPROVED'
-          and r.targetType = 'ORDER'
-          and req.reviewedAt <= :threshold
-    """)
-    List<Report> findApprovedOrderReportsReviewedBefore(@Param("threshold") java.time.LocalDateTime threshold);
-
-    @Query("""
-        select r from Report r
-        join fetch r.request req
         where r.targetType = :targetType
           and r.targetId = :targetId
         order by req.createdAt desc

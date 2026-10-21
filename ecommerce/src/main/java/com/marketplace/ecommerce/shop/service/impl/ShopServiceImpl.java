@@ -218,7 +218,7 @@ public class ShopServiceImpl implements ShopService {
     @Transactional
     public List<ShopProfileResponse> getAllActiveShops() {
         LocalDateTime now = LocalDateTime.now();
-        return shopRepository.findAll().stream()
+        return shopRepository.findEligibleActiveShops(now).stream()
                 .map(this::reconcileShopDisciplineState)
                 .filter(s -> (s.getStatus() == ShopStatus.ACTIVE || s.getStatus() == ShopStatus.WARNED)
                         && (s.getSuspendedUntil() == null || !s.getSuspendedUntil().isAfter(now)))

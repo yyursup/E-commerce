@@ -5,21 +5,9 @@ import {
   HiOutlineExternalLink,
 } from 'react-icons/hi'
 import { cn } from '../../../../lib/cn'
+import { isSellerReturnDisputeItem } from '../../../../lib/reportHelpers'
 
-// Helper nhận diện vụ việc Khiếu nại kiện hoàn từ Shop (Giai đoạn 2)
-export const isSellerReturnDisputeItem = (item) => {
-  return Boolean(
-    item?.isSellerReturnDispute ||
-    item?.orderReturnStatus === 'DISPUTED' ||
-    item?.orderReturn?.status === 'DISPUTED' ||
-    Boolean(item?.conditionStatus) ||
-    Boolean(item?.orderReturn?.conditionStatus) ||
-    item?.targetInfo?.includes('DISPUTED') ||
-    item?.escalationReason?.includes('kiện hàng hoàn') ||
-    item?.description?.includes('kiện hàng hoàn') ||
-    item?.description?.includes('Shop khiếu nại')
-  )
-}
+export { isSellerReturnDisputeItem }
 
 export default function AdminReportsTab({
   reports,

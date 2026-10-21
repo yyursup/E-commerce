@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '../../../../lib/cn'
+import { isSellerReturnDisputeItem } from '../../../../lib/reportHelpers'
 import AdminActionQuickTags from './AdminActionQuickTags'
 import AdminActionOrderResolution from './AdminActionOrderResolution'
 import AdminActionEscrowSplit from './AdminActionEscrowSplit'
@@ -47,17 +48,7 @@ export default function AdminActionModal({
 
   const targetTypeLabel = getTargetTypeLabel(targetType)
 
-  const isSellerDispute = Boolean(
-    actionModal.item?.isSellerReturnDispute ||
-    actionModal.item?.orderReturnStatus === 'DISPUTED' ||
-    actionModal.item?.orderReturn?.status === 'DISPUTED' ||
-    Boolean(actionModal.item?.conditionStatus) ||
-    Boolean(actionModal.item?.orderReturn?.conditionStatus) ||
-    actionModal.item?.detail?.targetInfo?.includes('DISPUTED') ||
-    actionModal.item?.detail?.escalationReason?.includes('kiện hàng hoàn') ||
-    actionModal.item?.description?.includes('Shop khiếu nại kiện hàng hoàn') ||
-    actionModal.item?.detail?.orderReturn?.status === 'DISPUTED'
-  )
+  const isSellerDispute = isSellerReturnDisputeItem(actionModal.item)
 
   const isOrderDispute = targetType === 'ORDER' && ['REPORT_APPROVE', 'REPORT_REJECT'].includes(actionModal.type)
   const isClauseMissing = isOrderDispute && !actionModal.policyClauseCode

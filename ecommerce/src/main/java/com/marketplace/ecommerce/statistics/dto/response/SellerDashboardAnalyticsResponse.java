@@ -45,4 +45,9 @@ public class SellerDashboardAnalyticsResponse {
 
     // 6. Low Stock Alerts (< 3 items)
     private List<LowStockAlertDTO> lowStockAlerts;
+
+    // 7. Filter Window Metadata
+    private String selectedPeriod;
+    private String startDate;
+    private String endDate;
 }

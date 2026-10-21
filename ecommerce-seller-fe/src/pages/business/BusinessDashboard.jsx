@@ -42,14 +42,24 @@ export default function BusinessDashboard() {
   const [editingProduct, setEditingProduct] = useState(null)
   const [selectedProduct, setSelectedProduct] = useState(null)
   const [error, setError] = useState(null)
+  const [timelineFilter, setTimelineFilter] = useState('14d')
+  const [customStartDate, setCustomStartDate] = useState('')
+  const [customEndDate, setCustomEndDate] = useState('')
+  const [isCustomDateOpen, setIsCustomDateOpen] = useState(false)
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = async (filter = timelineFilter, start = customStartDate, end = customEndDate) => {
     try {
       setLoading(true)
       setError(null)
 
+      const params = { period: filter }
+      if (filter === 'custom' && start && end) {
+        params.startDate = start
+        params.endDate = end
+      }
+
       const [analyticsData, walletData, productsData] = await Promise.all([
-        statisticsService.getSellerDashboardAnalytics().catch((err) => {
+        statisticsService.getSellerDashboardAnalytics(params).catch((err) => {
           console.warn('Analytics API error fallback:', err)
           return null
         }),
@@ -87,6 +97,28 @@ export default function BusinessDashboard() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handlePeriodChange = (newPeriod) => {
+    setTimelineFilter(newPeriod)
+    if (newPeriod === 'custom') {
+      setIsCustomDateOpen(true)
+    } else {
+      setIsCustomDateOpen(false)
+      fetchDashboardData(newPeriod)
+    }
+  }
+
+  const handleApplyCustomDate = () => {
+    if (!customStartDate || !customEndDate) {
+      toast.error('Vui lòng chọn đầy đủ từ ngày và đến ngày')
+      return
+    }
+    if (new Date(customStartDate) > new Date(customEndDate)) {
+      toast.error('Từ ngày không được lớn hơn đến ngày')
+      return
+    }
+    fetchDashboardData('custom', customStartDate, customEndDate)
   }
 
   useEffect(() => {
@@ -399,26 +431,93 @@ export default function BusinessDashboard() {
         </div>
       </div>
 
-      {/* 3. BIỂU ĐỒ DOANH THU 14 NGÀY QUA */}
+      {/* 3. BIỂU ĐỒ DOANH THU THEO CHU KỲ */}
       <div
         className={cn(
           'rounded-2xl border p-6 shadow-sm',
           isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white',
         )}
       >
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b pb-4 mb-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b pb-4 mb-6">
           <div>
-            <h2 className={cn('text-lg font-bold', isDark ? 'text-white' : 'text-stone-900')}>
-              Doanh Số Bán Hàng 14 Ngày Gần Nhất
-            </h2>
-            <p className={cn('text-xs', isDark ? 'text-slate-400' : 'text-stone-500')}>
+            <div className="flex items-center gap-2">
+              <h2 className={cn('text-lg font-bold', isDark ? 'text-white' : 'text-stone-900')}>
+                Doanh Số Bán Hàng Theo Chu Kỳ
+              </h2>
+              {analytics?.startDate && analytics?.endDate && (
+                <span className={cn('text-[11px] px-2 py-0.5 rounded-md font-semibold', isDark ? 'bg-slate-800 text-slate-300' : 'bg-stone-100 text-stone-600')}>
+                  {analytics.startDate} → {analytics.endDate}
+                </span>
+              )}
+            </div>
+            <p className={cn('text-xs mt-0.5', isDark ? 'text-slate-400' : 'text-stone-500')}>
               Theo dõi biến động dòng tiền bán lẻ thiết bị công nghệ
             </p>
           </div>
-          <span className="text-xs font-semibold text-emerald-400 flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-emerald-500"></span> Doanh thu theo ngày
-          </span>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <div className={cn('flex items-center rounded-xl p-1 border text-xs font-semibold', isDark ? 'border-slate-800 bg-slate-800/60' : 'border-stone-200 bg-stone-100')}>
+              {[
+                { id: '7d', label: '7 ngày' },
+                { id: '14d', label: '14 ngày' },
+                { id: '30d', label: '30 ngày' },
+                { id: 'this_month', label: 'Tháng này' },
+                { id: 'last_month', label: 'Tháng trước' },
+                { id: 'custom', label: 'Tùy chọn' },
+              ].map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => handlePeriodChange(p.id)}
+                  className={cn(
+                    'px-2.5 py-1 rounded-lg transition-all',
+                    timelineFilter === p.id
+                      ? 'bg-emerald-600 text-white shadow-sm'
+                      : isDark
+                      ? 'text-slate-400 hover:text-white'
+                      : 'text-stone-600 hover:text-stone-900'
+                  )}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+
+            <span className="hidden sm:flex text-xs font-semibold text-emerald-400 items-center gap-1.5 ml-2">
+              <span className="h-2.5 w-2.5 rounded-full bg-emerald-500"></span> Doanh thu
+            </span>
+          </div>
         </div>
+
+        {/* Ô nhập ngày tùy chọn */}
+        {isCustomDateOpen && (
+          <div className={cn('mb-6 p-3 rounded-xl border flex flex-wrap items-center gap-3 text-xs', isDark ? 'border-slate-800 bg-slate-800/40' : 'border-stone-200 bg-stone-50')}>
+            <span className="font-semibold text-slate-400">Khoảng thời gian:</span>
+            <div className="flex items-center gap-2">
+              <span>Từ:</span>
+              <input
+                type="date"
+                value={customStartDate}
+                onChange={(e) => setCustomStartDate(e.target.value)}
+                className={cn('px-2.5 py-1 rounded-lg border text-xs', isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-stone-300 text-stone-800')}
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <span>Đến:</span>
+              <input
+                type="date"
+                value={customEndDate}
+                onChange={(e) => setCustomEndDate(e.target.value)}
+                className={cn('px-2.5 py-1 rounded-lg border text-xs', isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-stone-300 text-stone-800')}
+              />
+            </div>
+            <button
+              onClick={handleApplyCustomDate}
+              className="px-3 py-1 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition"
+            >
+              Áp dụng
+            </button>
+          </div>
+        )}
 
         {salesTimeline.length === 0 ? (
           <div className="py-12 text-center text-sm text-slate-500">Chưa có giao dịch phát sinh trong 14 ngày qua</div>

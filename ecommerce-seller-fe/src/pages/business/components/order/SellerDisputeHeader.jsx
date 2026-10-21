@@ -6,6 +6,7 @@ import {
   HiOutlineScale,
   HiOutlineCheckCircle,
   HiOutlineX,
+  HiOutlineChatAlt2,
 } from 'react-icons/hi'
 import { cn } from '../../../../lib/cn'
 
@@ -77,7 +78,7 @@ export const getStageConfig = (stage) => {
   }
 }
 
-export default function SellerDisputeHeader({ report, slaRemaining, isNegotiating, isDark }) {
+export default function SellerDisputeHeader({ report, slaRemaining, isNegotiating, isDark, onOpenChat }) {
   const stageConfig = getStageConfig(report?.stage)
   const StageIcon = stageConfig.icon
 
@@ -117,13 +118,27 @@ export default function SellerDisputeHeader({ report, slaRemaining, isNegotiatin
         </div>
       </div>
 
-      {/* SLA Countdown Badge */}
-      {isNegotiating && slaRemaining && (
-        <div className="flex items-center gap-2 rounded-2xl bg-amber-500/15 border border-amber-500/30 px-3.5 py-2 text-xs font-bold text-amber-600 dark:text-amber-400 shrink-0 self-start sm:self-center shadow-xs">
-          <HiOutlineClock className="h-4 w-4 text-amber-500 animate-pulse" />
-          <span>SLA phản hồi: {slaRemaining}</span>
-        </div>
-      )}
+      {/* Hành động & SLA Countdown */}
+      <div className="flex items-center gap-2.5 flex-wrap shrink-0 self-start sm:self-center">
+        {onOpenChat && (
+          <button
+            type="button"
+            onClick={onOpenChat}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-purple-500/40 bg-purple-500/10 hover:bg-purple-500/20 text-purple-700 dark:text-purple-300 px-3.5 py-2 text-xs font-bold transition-all shadow-xs"
+          >
+            <HiOutlineChatAlt2 className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+            <span>Phòng Thương Lượng</span>
+          </button>
+        )}
+
+        {isNegotiating && slaRemaining && (
+          <div className="flex items-center gap-2 rounded-2xl bg-amber-500/15 border border-amber-500/30 px-3.5 py-2 text-xs font-bold text-amber-600 dark:text-amber-400 shadow-xs">
+            <HiOutlineClock className="h-4 w-4 text-amber-500 animate-pulse" />
+            <span>SLA phản hồi: {slaRemaining}</span>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
+

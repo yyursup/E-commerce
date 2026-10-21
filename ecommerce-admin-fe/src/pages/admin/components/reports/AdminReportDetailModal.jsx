@@ -11,6 +11,7 @@ import AdminReportEscrowSection from './AdminReportEscrowSection'
 import AdminReportDisputeSideBySide from './AdminReportDisputeSideBySide'
 import AdminReportSingleClaim from './AdminReportSingleClaim'
 import AdminReportImageLightbox from './AdminReportImageLightbox'
+import AdminDisputeChatAuditSection from './AdminDisputeChatAuditSection'
 
 export default function AdminReportDetailModal({
   detailModal,
@@ -238,6 +239,16 @@ export default function AdminReportDetailModal({
                       isReport={isReport}
                       evImgs={evImgs}
                       covImgs={covImgs}
+                      isDark={isDark}
+                      setPreviewImage={setPreviewImage}
+                    />
+                  )}
+
+                  {/* Khối 2.5: DÒNG THỜI GIAN ĐỐI CHẤT THƯƠNG LƯỢNG 1:1 (AUDIT TRAIL — READ-ONLY) */}
+                  {isOrderReport && (
+                    <AdminDisputeChatAuditSection
+                      requestId={detailModal.data?.requestId || detailModal.rawItem?.requestId || detailModal.data?.id}
+                      orderId={detailModal.data?.detail?.orderId || detailModal.data?.detail?.order?.id}
                       isDark={isDark}
                       setPreviewImage={setPreviewImage}
                     />

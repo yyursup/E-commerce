@@ -23,7 +23,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.time.temporal.ChronoUnit;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -85,9 +85,7 @@ public class RequestPolicy {
         // hệ thống tự động giải ngân)
         if (order.getStatus() == OrderStatus.DELIVERED) {
             if (order.getDeliveredAt() != null) {
-                long daysSinceDelivered = ChronoUnit.DAYS.between(order.getDeliveredAt(),
-                        java.time.LocalDateTime.now());
-                if (daysSinceDelivered > 3) {
+                if (LocalDateTime.now().isAfter(order.getDeliveredAt().plusDays(3))) {
                     throw new CustomException(
                             "Đã quá thời hạn 3 ngày khiếu nại kể từ khi đơn hàng được giao thành công.");
                 }
@@ -156,7 +154,8 @@ public class RequestPolicy {
         if (req.getReportId() != null) {
             Report report = reportRepository.findById(req.getReportId())
                     .orElseThrow(() -> new CustomException("Không tìm thấy khiếu nại vi phạm gốc"));
-            if (report.getTargetType() == TargetType.ORDER || (report.getPolicyClauseCode() != null && report.getPolicyClauseCode().startsWith("CLAUSE_15_"))) {
+            if (report.getTargetType() == TargetType.ORDER || (report.getPolicyClauseCode() != null
+                    && report.getPolicyClauseCode().startsWith("CLAUSE_15_"))) {
                 throw new CustomException(
                         "Phán quyết của Quản trị viên đối với khiếu nại đơn hàng và kiện hàng hoàn là quyết định cuối cùng của Ban Quản Trị, không áp dụng kháng cáo.");
             }

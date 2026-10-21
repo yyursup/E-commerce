@@ -62,6 +62,8 @@ public class OrderResponse {
         private Boolean hasActiveDispute;
         private String disputeStatus;
         private String disputeReason;
+        private String policyClauseCode;
+        private String policyClauseTitle;
         private OrderReturnResponse returnInfo;
         private OrderSettlementBreakdownDTO settlementBreakdown;
         private BigDecimal sellerNetIncome;
@@ -189,6 +191,8 @@ public class OrderResponse {
                         res.setHasActiveDispute(disputeInfo.isHasActiveDispute());
                         res.setDisputeStatus(disputeInfo.getDisputeStatus());
                         res.setDisputeReason(disputeInfo.getDisputeReason());
+                        res.setPolicyClauseCode(disputeInfo.getPolicyClauseCode());
+                        res.setPolicyClauseTitle(disputeInfo.getPolicyClauseTitle());
                 }
                 populateSettlement(res, order, disputeInfo, null);
                 return res;

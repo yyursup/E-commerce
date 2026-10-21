@@ -250,6 +250,8 @@ public class ShopServiceImpl implements ShopService {
                     .appealStatus(appealStatus)
                     .appealRequestId(appealRequestId)
                     .appealResponse(appealResponse)
+                    .policyClauseCode(rep.getPolicyClauseCode())
+                    .policyClauseTitle(rep.getPolicyClauseTitle())
                     .build());
         }
 

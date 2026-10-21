@@ -20,16 +20,19 @@ const reportService = {
     note = null,
     resolutionType = null,
     policyClauseCode = null,
-    removeShopPenalty = true
+    removeShopPenalty = null
   ) => {
     try {
-      const response = await axiosClient.put(`${REPORT_BASE}/${requestId}/handle`, {
+      const payload = {
         decision,
         note,
         resolutionType,
         policyClauseCode,
-        removeShopPenalty,
-      })
+      }
+      if (removeShopPenalty !== null && removeShopPenalty !== undefined) {
+        payload.removeShopPenalty = Boolean(removeShopPenalty)
+      }
+      const response = await axiosClient.put(`${REPORT_BASE}/${requestId}/handle`, payload)
       return response.data
     } catch (error) {
       throw error.response ? error.response.data : error

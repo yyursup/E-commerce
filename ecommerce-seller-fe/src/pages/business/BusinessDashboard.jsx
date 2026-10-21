@@ -527,10 +527,14 @@ export default function BusinessDashboard() {
             {(analytics?.conditionSalesBreakdown || []).map((grade) => (
               <div key={grade.conditionGrade} className="space-y-1.5">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-medium text-slate-300">{grade.label}</span>
-                  <span className="font-bold text-emerald-400">{formatCurrency(grade.totalRevenue)} ({grade.percentage || 0}%)</span>
+                  <span className={cn('font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>
+                    {grade.label}
+                  </span>
+                  <span className={cn('font-bold', isDark ? 'text-emerald-400' : 'text-emerald-600')}>
+                    {formatCurrency(grade.totalRevenue)} ({grade.percentage || 0}%)
+                  </span>
                 </div>
-                <div className="h-2 w-full rounded-full bg-slate-800 overflow-hidden">
+                <div className={cn('h-2 w-full rounded-full overflow-hidden', isDark ? 'bg-slate-800' : 'bg-stone-200')}>
                   <div
                     className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-amber-500 transition-all duration-500"
                     style={{ width: `${Math.min(grade.percentage || 0, 100)}%` }}

@@ -82,6 +82,15 @@ export default function ViolationDetailModal({
               <label className="text-xs font-bold text-stone-400 uppercase tracking-wider">
                 Kết luận & Phán quyết của Ban Quản Trị:
               </label>
+              {(detailViolation.policyClauseTitle || detailViolation.policyClauseCode) && (
+                <div className={cn(
+                  'p-2.5 rounded-xl border text-xs font-bold flex items-center gap-2 mb-2',
+                  isDark ? 'border-purple-500/30 bg-purple-500/10 text-purple-300' : 'border-purple-200 bg-purple-50 text-purple-900'
+                )}>
+                  <span className="text-sm">⚖️</span>
+                  <span>Căn cứ Điều khoản: {detailViolation.policyClauseTitle || detailViolation.policyClauseCode}</span>
+                </div>
+              )}
               <div className={cn(
                 'p-3.5 rounded-2xl border text-xs leading-relaxed',
                 isDark ? 'border-amber-500/20 bg-amber-500/5 text-amber-300' : 'border-amber-200 bg-amber-50/50 text-amber-800'

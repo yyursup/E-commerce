@@ -158,12 +158,12 @@ export default function AdminReports() {
       item: resolvedItem,
       note: '',
       policyClauseCode: '',
-      removeShopPenalty: true,
+      removeShopPenalty: null,
     })
   }
 
   const handleActionConfirm = async () => {
-    const { type, item, note, policyClauseCode, removeShopPenalty = true } = actionModal
+    const { type, item, note, policyClauseCode, removeShopPenalty } = actionModal
     if (!item) return
 
     const trimmedNote = note?.trim() || ''
@@ -192,6 +192,15 @@ export default function AdminReports() {
         item.detail?.escalationReason?.includes('kiện hàng hoàn') ||
         item.description?.includes('Shop khiếu nại kiện hàng hoàn')
       )
+
+      // Bắt buộc chọn phương án kỷ luật Shop khi Shop thắng khiếu nại kiện hoàn
+      if (isSellerDispute && type === 'REPORT_APPROVE') {
+        if (removeShopPenalty !== true && removeShopPenalty !== false) {
+          toast.error('Vui lòng chọn quyết định kỷ luật đối với Shop: Xóa gậy hay Giữ nguyên gậy!')
+          setSubmitting(false)
+          return
+        }
+      }
 
       if (type === 'REPORT_APPROVE') {
         const resolution = (targetType === 'ORDER' && !isSellerDispute) ? (actionModal.resolutionType || 'REFUND_ONLY') : null

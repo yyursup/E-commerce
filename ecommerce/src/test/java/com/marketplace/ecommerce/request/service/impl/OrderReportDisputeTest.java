@@ -36,6 +36,7 @@ import com.marketplace.ecommerce.shop.repository.ShopRepository;
 import com.marketplace.ecommerce.shop.service.ShopEscrowFundService;
 import com.marketplace.ecommerce.shop.valueObjects.ShopStatus;
 import com.marketplace.ecommerce.product.repository.ProductRepository;
+import com.marketplace.ecommerce.chat.service.ChatService;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -97,6 +98,9 @@ class OrderReportDisputeTest {
 
         @Mock
         private ProductRepository productRepository;
+
+        @Mock
+        private ChatService chatService;
 
         @InjectMocks
         private ReportServiceImpl reportService;

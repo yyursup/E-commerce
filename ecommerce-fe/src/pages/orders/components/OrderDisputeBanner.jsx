@@ -7,10 +7,12 @@ import {
   HiOutlineScale,
   HiOutlineArrowNarrowRight,
   HiOutlineCheck,
+  HiOutlineChatAlt2,
 } from 'react-icons/hi'
 import { cn } from '../../../lib/cn'
 import toast from 'react-hot-toast'
 import reportService from '../../../services/report'
+import DisputeChatModal from './DisputeChatModal'
 
 export default function OrderDisputeBanner({ order, returnInfo, report: reportProp, isDark, onRefresh }) {
   const [internalReport, setInternalReport] = useState(null)
@@ -18,6 +20,7 @@ export default function OrderDisputeBanner({ order, returnInfo, report: reportPr
   const [loading, setLoading] = useState(false)
   const [showCancelModal, setShowCancelModal] = useState(false)
   const [showEscalateModal, setShowEscalateModal] = useState(false)
+  const [showChatModal, setShowChatModal] = useState(false)
   const [escalateReason, setEscalateReason] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
@@ -227,28 +230,39 @@ export default function OrderDisputeBanner({ order, returnInfo, report: reportPr
             </div>
           )}
 
-          {/* Action buttons for Buyer during DIRECT_NEGOTIATION */}
-          {isNegotiating && (
-            <div className="flex flex-wrap items-center gap-2.5 pt-1">
-              <button
-                type="button"
-                onClick={() => setShowCancelModal(true)}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-stone-300 dark:border-slate-700 bg-white/80 dark:bg-slate-800/80 hover:bg-stone-100 dark:hover:bg-slate-700 px-3.5 py-2 text-xs font-bold transition-all shadow-xs"
-              >
-                <HiOutlineX className="h-4 w-4 text-stone-500" />
-                <span>Rút / Hủy khiếu nại này</span>
-              </button>
+          {/* Action buttons for Buyer */}
+          <div className="flex flex-wrap items-center gap-2.5 pt-1">
+            <button
+              type="button"
+              onClick={() => setShowChatModal(true)}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-orange-500/30 bg-orange-500/10 hover:bg-orange-500/20 px-3.5 py-2 text-xs font-bold text-orange-700 dark:text-orange-300 transition-all shadow-xs"
+            >
+              <HiOutlineChatAlt2 className="h-4 w-4 text-orange-500" />
+              <span>Phòng thương lượng trực tiếp</span>
+            </button>
 
-              <button
-                type="button"
-                onClick={() => setShowEscalateModal(true)}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 px-3.5 py-2 text-xs font-bold text-purple-700 dark:text-purple-300 transition-all shadow-xs"
-              >
-                <HiOutlineScale className="h-4 w-4 text-purple-500" />
-                <span>Yêu cầu Ban Quản Trị can thiệp</span>
-              </button>
-            </div>
-          )}
+            {isNegotiating && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setShowCancelModal(true)}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-stone-300 dark:border-slate-700 bg-white/80 dark:bg-slate-800/80 hover:bg-stone-100 dark:hover:bg-slate-700 px-3.5 py-2 text-xs font-bold transition-all shadow-xs"
+                >
+                  <HiOutlineX className="h-4 w-4 text-stone-500" />
+                  <span>Rút / Hủy khiếu nại này</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setShowEscalateModal(true)}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 px-3.5 py-2 text-xs font-bold text-purple-700 dark:text-purple-300 transition-all shadow-xs"
+                >
+                  <HiOutlineScale className="h-4 w-4 text-purple-500" />
+                  <span>Yêu cầu Ban Quản Trị can thiệp</span>
+                </button>
+              </>
+            )}
+          </div>
         </div>
       )}
 
@@ -373,6 +387,17 @@ export default function OrderDisputeBanner({ order, returnInfo, report: reportPr
             </div>
           </div>
         </div>
+      )}
+
+      {showChatModal && (
+        <DisputeChatModal
+          isOpen={showChatModal}
+          onClose={() => setShowChatModal(false)}
+          orderId={order?.id}
+          requestId={report?.request?.id || report?.requestId}
+          orderNumber={order?.orderNumber}
+          isDark={isDark}
+        />
       )}
     </>
   )

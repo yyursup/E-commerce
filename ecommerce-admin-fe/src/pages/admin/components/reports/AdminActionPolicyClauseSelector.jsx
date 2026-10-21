@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { cn } from '../../../../lib/cn'
 import {
   HiOutlineBookOpen,
@@ -13,7 +13,7 @@ import {
 } from 'react-icons/hi'
 import { FALLBACK_CLAUSES } from './policyClauseConstants'
 
-export default function AdminActionPolicyClauseSelector({
+function OrderPolicyClauseSelectorContent({
   policyClauses = [],
   selectedClause,
   onChangeClause,
@@ -22,8 +22,6 @@ export default function AdminActionPolicyClauseSelector({
   isSellerDispute = false,
   isDark = false,
 }) {
-  if (targetType !== 'ORDER') return null
-
   // Danh mục 12 điều khoản đầy đủ (fallback an toàn chống crash)
   const allClauses = useMemo(() => {
     return Array.isArray(policyClauses) && policyClauses.length > 0 ? policyClauses : FALLBACK_CLAUSES
@@ -35,7 +33,7 @@ export default function AdminActionPolicyClauseSelector({
   const [activeTab, setActiveTab] = useState('RECOMMENDED') // 'RECOMMENDED' | 'ALL' | 'SELLER_FAULT' | 'BUYER_FAULT' | 'RETURN_DISPUTE'
 
   // Kiểm tra điều khoản có hợp lệ với phán quyết hiện tại không
-  const checkClauseAllowed = (clause) => {
+  const checkClauseAllowed = useCallback((clause) => {
     if (isSellerDispute) {
       if (actionType === 'REPORT_APPROVE') {
         return clause.category === 'RETURN_DISPUTE' || clause.category === 'BUYER_FAULT'
@@ -55,7 +53,7 @@ export default function AdminActionPolicyClauseSelector({
     }
 
     return true
-  }
+  }, [isSellerDispute, actionType])
 
   // Danh sách điều khoản sau khi lọc theo Tab và Search
   const displayClauses = useMemo(() => {
@@ -82,9 +80,11 @@ export default function AdminActionPolicyClauseSelector({
     }
 
     return list
-  }, [allClauses, activeTab, searchQuery, actionType, isSellerDispute])
+  }, [allClauses, activeTab, searchQuery, checkClauseAllowed])
 
-  const activeClauseInfo = allClauses.find((c) => c.code === selectedClause)
+  const activeClauseInfo = useMemo(() => {
+    return allClauses.find((c) => c.code === selectedClause) || null
+  }, [allClauses, selectedClause])
 
   const getCategoryBadge = (category) => {
     switch (category) {
@@ -377,4 +377,10 @@ export default function AdminActionPolicyClauseSelector({
       )}
     </div>
   )
+}
+
+export default function AdminActionPolicyClauseSelector(props) {
+  if (props.targetType !== 'ORDER') return null
+
+  return <OrderPolicyClauseSelectorContent {...props} />
 }

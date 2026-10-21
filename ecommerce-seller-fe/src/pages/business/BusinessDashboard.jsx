@@ -46,6 +46,7 @@ export default function BusinessDashboard() {
   const [customStartDate, setCustomStartDate] = useState('')
   const [customEndDate, setCustomEndDate] = useState('')
   const [isCustomDateOpen, setIsCustomDateOpen] = useState(false)
+  const [hoveredPoint, setHoveredPoint] = useState(null)
 
   const fetchDashboardData = async (filter = timelineFilter, start = customStartDate, end = customEndDate) => {
     try {
@@ -519,36 +520,127 @@ export default function BusinessDashboard() {
           </div>
         )}
 
+        {/* Thanh hiển thị chi tiết số liệu khi rê chuột */}
+        <div className="mb-4">
+          {hoveredPoint ? (
+            <div
+              className={cn(
+                'flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 rounded-xl border text-xs shadow-sm transition-all',
+                isDark
+                  ? 'bg-emerald-950/40 border-emerald-800/60 text-white'
+                  : 'bg-emerald-50/90 border-emerald-200 text-stone-900',
+              )}
+            >
+              <div className="flex items-center gap-2 font-bold text-emerald-500">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span>Chi tiết ngày: {hoveredPoint.date}</span>
+              </div>
+              <div className="flex flex-wrap items-center gap-4">
+                <span className="flex items-center gap-1.5">
+                  <span className={cn(isDark ? 'text-slate-400' : 'text-stone-500')}>Doanh số bán:</span>
+                  <strong className="text-sm font-black text-emerald-500">{formatCurrency(Number(hoveredPoint.revenue || 0))}</strong>
+                </span>
+                <span className={cn('h-3 w-px', isDark ? 'bg-slate-700' : 'bg-stone-300')}></span>
+                <span className="flex items-center gap-1.5">
+                  <span className={cn(isDark ? 'text-slate-400' : 'text-stone-500')}>Số đơn hoàn thành:</span>
+                  <strong className="text-sm font-black text-blue-500">{hoveredPoint.orderCount || 0} đơn</strong>
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div
+              className={cn(
+                'flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 rounded-xl border text-xs transition-all',
+                isDark ? 'bg-slate-800/40 border-slate-800 text-slate-400' : 'bg-stone-50 border-stone-200 text-stone-600',
+              )}
+            >
+              <div className="flex items-center gap-2">
+                <span>💡</span>
+                <span>Rê chuột vào bất kỳ cột nào để xem chi tiết doanh thu và số lượng đơn hàng hoàn thành</span>
+              </div>
+              <div className="flex items-center gap-3 font-semibold">
+                <span>
+                  Tổng doanh thu chu kỳ:{' '}
+                  <strong className={cn('font-bold', isDark ? 'text-white' : 'text-stone-900')}>
+                    {formatCurrency(salesTimeline.reduce((acc, d) => acc + Number(d.revenue || 0), 0))}
+                  </strong>
+                </span>
+                <span>•</span>
+                <span>{salesTimeline.reduce((acc, d) => acc + Number(d.orderCount || 0), 0)} đơn</span>
+              </div>
+            </div>
+          )}
+        </div>
+
         {salesTimeline.length === 0 ? (
           <div className="py-12 text-center text-sm text-slate-500">Chưa có giao dịch phát sinh trong 14 ngày qua</div>
         ) : (
-          <div className="flex h-52 items-stretch gap-2 overflow-x-auto pb-2">
+          <div className="relative flex h-60 items-stretch gap-2 overflow-x-auto pt-14 pb-2">
             {salesTimeline.map((item, idx) => {
               const height = Math.max((Number(item.revenue || 0) / maxSalesVal) * 100, 4)
               const shortDate = item.date ? item.date.slice(5) : ''
+              const isHovered = hoveredPoint?.date === item.date
 
               return (
-                <div key={idx} className="group relative flex h-full min-w-[42px] flex-1 flex-col items-center justify-end gap-1.5">
-                  {/* Tooltip */}
+                <div
+                  key={idx}
+                  onMouseEnter={() => setHoveredPoint(item)}
+                  onMouseLeave={() => setHoveredPoint(null)}
+                  className={cn(
+                    'group relative flex h-full min-w-[44px] flex-1 flex-col items-center justify-end gap-1.5 cursor-pointer rounded-xl px-1 py-1 transition-all duration-200',
+                    isHovered
+                      ? isDark
+                        ? 'bg-slate-800/80 shadow-md ring-1 ring-emerald-500/40'
+                        : 'bg-emerald-50/80 shadow-md ring-1 ring-emerald-400/40'
+                      : hoveredPoint
+                      ? 'opacity-40 hover:opacity-100'
+                      : 'hover:bg-slate-500/5',
+                  )}
+                >
+                  {/* Tooltip nổi phía trên cột - nằm an toàn trong vùng đệm padding-top */}
                   <div
                     className={cn(
-                      'pointer-events-none absolute bottom-full mb-2 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs opacity-0 shadow-xl transition group-hover:opacity-100',
-                      isDark ? 'bg-slate-800 text-white border border-slate-700' : 'bg-stone-900 text-white',
+                      'pointer-events-none absolute -top-12 left-1/2 z-30 -translate-x-1/2 whitespace-nowrap rounded-xl px-3 py-2 text-xs shadow-2xl transition-all duration-200 border',
+                      isHovered
+                        ? 'opacity-100 scale-100 translate-y-0'
+                        : 'opacity-0 scale-95 pointer-events-none translate-y-2',
+                      isDark
+                        ? 'bg-slate-900/95 text-white border-slate-700 backdrop-blur-md'
+                        : 'bg-stone-900/95 text-white border-stone-800 backdrop-blur-md',
                     )}
                   >
-                    <div className="font-semibold text-emerald-400">{formatCurrency(Number(item.revenue || 0))}</div>
-                    <div className="mt-0.5 text-[10px] text-slate-300">
-                      {item.date} ({item.orderCount || 0} đơn)
+                    <div className="font-bold text-[11px] text-slate-300 mb-1 border-b border-white/10 pb-1 flex items-center justify-between gap-3">
+                      <span>{item.date}</span>
+                      <span className="text-blue-400 font-semibold">{item.orderCount || 0} đơn</span>
                     </div>
+                    <div className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-emerald-400"></span>
+                      <span className="text-slate-300">Doanh thu:</span>
+                      <span className="font-bold text-emerald-400">{formatCurrency(Number(item.revenue || 0))}</span>
+                    </div>
+                    {/* Mũi tên chỉ xuống cột */}
+                    <div className="absolute left-1/2 -bottom-1 -translate-x-1/2 border-4 border-transparent border-t-stone-900 dark:border-t-slate-900" />
                   </div>
 
                   <div className="flex w-full flex-1 items-end justify-center">
                     <div
-                      className="w-full max-w-[28px] rounded-t-md bg-gradient-to-t from-emerald-600 to-emerald-400 transition-all duration-300 group-hover:from-emerald-500 group-hover:to-teal-300"
+                      className={cn(
+                        'w-full max-w-[28px] rounded-t-md bg-gradient-to-t from-emerald-600 to-emerald-400 transition-all duration-300',
+                        isHovered ? 'from-emerald-500 to-teal-200 shadow-lg shadow-emerald-500/30' : 'group-hover:from-emerald-500 group-hover:to-teal-300',
+                      )}
                       style={{ height: `${height}%` }}
                     />
                   </div>
-                  <span className={cn('text-[10px] font-medium truncate', isDark ? 'text-slate-400' : 'text-stone-500')}>
+                  <span
+                    className={cn(
+                      'text-[10px] font-medium truncate transition-colors',
+                      isHovered
+                        ? 'font-bold text-emerald-500'
+                        : isDark
+                        ? 'text-slate-400'
+                        : 'text-stone-500',
+                    )}
+                  >
                     {shortDate}
                   </span>
                 </div>

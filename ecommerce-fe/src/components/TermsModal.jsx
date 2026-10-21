@@ -90,7 +90,7 @@ export default function TermsModal({ open, onClose, onAccept }) {
                   <HiOutlineShieldCheck className="h-5 w-5" /> Cơ Chế Bảo Vệ Thanh Toán Ký Quỹ Escrow 100%
                 </h4>
                 <p className="mt-1 text-xs text-emerald-700 dark:text-emerald-300">
-                  Toàn bộ tiền thanh toán đơn hàng của Người mua được tạm giữ an toàn trong tài khoản trung gian ký quỹ (Escrow) của Sàn và chỉ giải ngân cho Người bán khi đơn hàng được giao thành công và không phát sinh khiếu nại.
+                  Toàn bộ tiền thanh toán đơn hàng của Người mua được tạm giữ an toàn trong tài khoản trung gian ký quỹ (Escrow) của Sàn và chỉ giải ngân cho Người bán khi đơn hàng được giao thành công và không phát sinh khiếu nại sau 72h.
                 </p>
               </div>
 
@@ -194,8 +194,8 @@ export default function TermsModal({ open, onClose, onAccept }) {
 
               <h4 className="font-bold text-base text-stone-900 dark:text-white">Thu Thập và Sử Dụng Dữ Liệu</h4>
               <ul className="list-disc pl-5 space-y-1.5 text-xs text-stone-600 dark:text-slate-400">
-                <li>Mật khẩu người dùng được băm mã hóa một chiều bất biến bằng thuật toán BCrypt.</li>
-                <li>Dữ liệu giấy tờ tùy thân eKYC được lưu trữ an toàn trong Private Bucket với chữ ký số bảo mật, không công khai ra bên ngoài.</li>
+                <li>Mật khẩu người dùng được mã hóa 1 chiều.</li>
+                <li>Dữ liệu giấy tờ tùy thân eKYC được lưu trữ an toàn với chữ ký số bảo mật, không công khai ra bên ngoài.</li>
                 <li>Sàn chỉ chia sẻ địa chỉ và số điện thoại người nhận cho đối tác vận chuyển GHN Express để phục vụ mục đích giao hàng tận nơi.</li>
                 <li>Người dùng có quyền tra cứu, chỉnh sửa thông tin cá nhân hoặc yêu cầu khóa vĩnh viễn tài khoản trong trang Quản lý Hồ sơ.</li>
               </ul>

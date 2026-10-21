@@ -24,15 +24,15 @@ export default function ShopHealthOverview({
         color: 'bg-rose-500/10 text-rose-400 border-rose-500/30',
       }
     }
-    if (shopStatus === 'SUSPENDED' || reputationScore < 40) {
+    if (shopStatus === 'SUSPENDED') {
       return {
-        label: 'Nguy cơ đình chỉ',
+        label: 'Đình chỉ 14 ngày',
         color: 'bg-rose-500/10 text-rose-400 border-rose-500/30',
       }
     }
     if (shopStatus === 'WARNED' || reputationScore < 70) {
       return {
-        label: 'Cảnh báo giảm uy tín',
+        label: violationCount >= 5 ? 'Cảnh báo rủi ro cao' : 'Cảnh báo giảm uy tín',
         color: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
       }
     }
@@ -53,7 +53,7 @@ export default function ShopHealthOverview({
   return (
     <div className="space-y-6">
       {/* Cảnh báo kỷ luật cấp độ 2: Tạm ngưng 14 ngày & Giữ Escrow */}
-      {(shopStatus === 'SUSPENDED' || violationCount >= 5) && (
+      {shopStatus === 'SUSPENDED' && (
         <div className="rounded-3xl border border-rose-500/30 bg-rose-500/10 p-6 shadow-sm backdrop-blur-sm">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-start gap-4">
@@ -66,13 +66,19 @@ export default function ShopHealthOverview({
                     Kỷ luật cấp 2 (Điểm uy tín: {reputationScore}/100 - {violationCount}/7 vi phạm)
                   </span>
                   <h3 className="text-base font-bold text-rose-500 dark:text-rose-400">
-                    Gian hàng đang bị tạm ngưng hoạt động 14 ngày
+                    Gian hàng đang trong thời hạn tạm ngưng hoạt động 14 ngày
                   </h3>
                 </div>
                 <p className={cn('text-xs leading-relaxed', isDark ? 'text-slate-300' : 'text-stone-700')}>
                   Do điểm uy tín sụt giảm nghiêm trọng (tích lũy <strong>{violationCount} lần vi phạm</strong>), toàn bộ sản phẩm của gian hàng đã được tạm ẩn khỏi sàn và gian hàng bị đình chỉ kinh doanh tạm thời. Khoản tiền ký quỹ Escrow đang được tạm giữ để bảo vệ quyền lợi người mua.
                 </p>
-                <p className="text-[11px] text-rose-500 dark:text-rose-400 font-medium">
+                {shopHealth?.suspendedUntil && (
+                  <p className="text-xs font-semibold text-rose-600 dark:text-rose-300 flex items-center gap-1.5 pt-1">
+                    <HiOutlineClock className="h-4 w-4 shrink-0" />
+                    Thời hạn đình chỉ dự kiến kết thúc: <strong>{new Date(shopHealth.suspendedUntil).toLocaleString('vi-VN')}</strong>
+                  </p>
+                )}
+                <p className="text-[11px] text-rose-500/80 dark:text-rose-400/80 font-medium">
                   • Các đơn hàng đã phát sinh trước đó vẫn được tiếp tục vận chuyển bình thường đến tay khách hàng.
                 </p>
               </div>
@@ -93,7 +99,7 @@ export default function ShopHealthOverview({
       )}
 
       {/* Cảnh báo kỷ luật cấp độ 1: Cảnh báo gian hàng */}
-      {shopStatus === 'WARNED' && violationCount < 5 && (
+      {shopStatus === 'WARNED' && (
         <div className="rounded-3xl border border-amber-500/30 bg-amber-500/10 p-6 shadow-sm backdrop-blur-sm">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-start gap-4">

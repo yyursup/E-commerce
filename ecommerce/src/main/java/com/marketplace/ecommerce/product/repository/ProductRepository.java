@@ -64,6 +64,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
                 where p.id = :id
                   and p.status = 'PUBLISHED'
                   and s.status in ('ACTIVE', 'WARNED')
+                  and (s.suspendedUntil is null or s.suspendedUntil <= CURRENT_TIMESTAMP)
                   and s.user.account.isActive = true
                   and p.deleted = false
             """)
@@ -77,6 +78,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
                 where p.id <> :excludeId
                   and p.status = 'PUBLISHED'
                   and p.shop.status in ('ACTIVE', 'WARNED')
+                  and (p.shop.suspendedUntil is null or p.shop.suspendedUntil <= CURRENT_TIMESTAMP)
                   and p.shop.user.account.isActive = true
                   and p.deleted = false
                   and (:categoryId is null or p.productCategory.id = :categoryId)
@@ -91,6 +93,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
                 from Product p
                 where p.status = 'PUBLISHED'
                   and p.shop.status in ('ACTIVE', 'WARNED')
+                  and (p.shop.suspendedUntil is null or p.shop.suspendedUntil <= CURRENT_TIMESTAMP)
                   and p.shop.user.account.isActive = true
                   and p.deleted = false
                   and (:categoryId is null or p.productCategory.id = :categoryId)
@@ -162,6 +165,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
                 left join fetch p.images i
                 where s.id = :shopId
                   and s.status in ('ACTIVE', 'WARNED')
+                  and (s.suspendedUntil is null or s.suspendedUntil <= CURRENT_TIMESTAMP)
                   and s.user.account.isActive = true
                   and p.featured = true
                   and p.status = 'PUBLISHED'
@@ -190,6 +194,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
         left join fetch p.images i
         where p.status = 'PUBLISHED'
           and p.shop.status in ('ACTIVE', 'WARNED')
+          and (p.shop.suspendedUntil is null or p.shop.suspendedUntil <= CURRENT_TIMESTAMP)
           and p.shop.user.account.isActive = true
           and p.deleted = false
         order by p.featured desc, p.createdAt desc
@@ -204,6 +209,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
         left join fetch p.images i
         where p.status = 'PUBLISHED'
           and p.shop.status in ('ACTIVE', 'WARNED')
+          and (p.shop.suspendedUntil is null or p.shop.suspendedUntil <= CURRENT_TIMESTAMP)
           and p.shop.user.account.isActive = true
           and p.deleted = false
           and p.id <> :excludeId

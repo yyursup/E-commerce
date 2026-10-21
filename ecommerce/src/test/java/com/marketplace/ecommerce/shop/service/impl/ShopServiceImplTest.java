@@ -8,6 +8,12 @@ import com.marketplace.ecommerce.request.valueObjects.SellerType;
 import com.marketplace.ecommerce.shop.entity.Shop;
 import com.marketplace.ecommerce.shop.repository.ShopRepository;
 import com.marketplace.ecommerce.shop.valueObjects.ShopStatus;
+import com.marketplace.ecommerce.auth.entity.Account;
+import com.marketplace.ecommerce.auth.repository.AccountRepository;
+import com.marketplace.ecommerce.auth.valueObjects.AccountStatus;
+import com.marketplace.ecommerce.auth.valueObjects.DisciplineLevel;
+import com.marketplace.ecommerce.product.repository.ProductRepository;
+import com.marketplace.ecommerce.product.valueObjects.ProductStatus;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,11 +22,16 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -29,6 +40,12 @@ class ShopServiceImplTest {
 
     @Mock
     private ShopRepository shopRepository;
+
+    @Mock
+    private ProductRepository productRepository;
+
+    @Mock
+    private AccountRepository accountRepository;
 
     @InjectMocks
     private ShopServiceImpl shopService;
@@ -120,5 +137,49 @@ class ShopServiceImplTest {
         assertEquals("Techcombank", result.getBankName());
 
         verify(shopRepository).save(any(Shop.class));
+    }
+
+    @Test
+    @DisplayName("Tự động khôi phục Shop hết hạn 14 ngày đình chỉ sang WARNED và mở lại sản phẩm")
+    void processExpiredSuspensions_Success() {
+        UUID shopId = UUID.randomUUID();
+        Account owner = Account.builder()
+                .status(AccountStatus.SUSPENDED)
+                .disciplineLevel(DisciplineLevel.SUSPENDED)
+                .violationCount(5)
+                .build();
+
+        User user = new User();
+        user.setAccount(owner);
+
+        Shop suspendedShop = Shop.builder()
+                .id(shopId)
+                .name("Shop Đang Bị Đình Chỉ")
+                .status(ShopStatus.SUSPENDED)
+                .suspendedUntil(LocalDateTime.now().minusHours(1)) // Đã quá hạn 14 ngày
+                .violationCount(5)
+                .user(user)
+                .build();
+
+        when(shopRepository.findExpiredSuspensions(eq(ShopStatus.SUSPENDED), any(LocalDateTime.class)))
+                .thenReturn(List.of(suspendedShop));
+        when(shopRepository.findByIdForUpdate(shopId))
+                .thenReturn(Optional.of(suspendedShop));
+
+        shopService.processExpiredSuspensions();
+
+        // 1. Shop phải chuyển sang WARNED và xóa suspendedUntil
+        assertEquals(ShopStatus.WARNED, suspendedShop.getStatus());
+        assertNull(suspendedShop.getSuspendedUntil());
+        assertEquals(5, suspendedShop.getViolationCount()); // Số gậy vẫn được bảo lưu!
+
+        // 2. Sản phẩm phải được mở lại PUBLISHED
+        verify(productRepository).updateStatusByShopId(shopId, ProductStatus.PUBLISHED);
+
+        // 3. Tài khoản chủ shop phải chuyển sang WARNED / ACTIVE
+        assertEquals(DisciplineLevel.WARNED, owner.getDisciplineLevel());
+        assertEquals(AccountStatus.ACTIVE, owner.getStatus());
+        verify(accountRepository).save(owner);
+        verify(shopRepository).save(suspendedShop);
     }
 }

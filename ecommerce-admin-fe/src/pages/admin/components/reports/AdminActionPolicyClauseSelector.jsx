@@ -39,7 +39,7 @@ function OrderPolicyClauseSelectorContent({
         return clause.category === 'RETURN_DISPUTE' || clause.category === 'BUYER_FAULT'
       }
       if (actionType === 'REPORT_REJECT') {
-        return clause.category === 'SELLER_FAULT' || clause.category === 'RETURN_DISPUTE'
+        return clause.category === 'BUYER_FAULT' || clause.category === 'SELLER_FAULT' || clause.category === 'RETURN_DISPUTE'
       }
       return true
     }
@@ -61,6 +61,24 @@ function OrderPolicyClauseSelectorContent({
 
     if (activeTab === 'RECOMMENDED') {
       list = list.filter((c) => checkClauseAllowed(c))
+      // Sắp xếp ưu tiên theo ngữ cảnh phán quyết
+      if (isSellerDispute) {
+        if (actionType === 'REPORT_APPROVE') {
+          // Ưu tiên nhóm Tranh Chấp Kiện Hoàn (15.1, 15.2, 15.3) lên trên cùng
+          list = [...list].sort((a, b) => {
+            if (a.category === 'RETURN_DISPUTE' && b.category !== 'RETURN_DISPUTE') return -1
+            if (b.category === 'RETURN_DISPUTE' && a.category !== 'RETURN_DISPUTE') return 1
+            return 0
+          })
+        } else if (actionType === 'REPORT_REJECT') {
+          // Ưu tiên điều khoản không đủ căn cứ (14.1) hoặc quá hạn (14.3) lên trước
+          list = [...list].sort((a, b) => {
+            if (a.code === 'CLAUSE_14_1_INSUFFICIENT_EVIDENCE') return -1
+            if (b.code === 'CLAUSE_14_1_INSUFFICIENT_EVIDENCE') return 1
+            return 0
+          })
+        }
+      }
     } else if (activeTab === 'SELLER_FAULT') {
       list = list.filter((c) => c.category === 'SELLER_FAULT')
     } else if (activeTab === 'BUYER_FAULT') {
@@ -80,7 +98,7 @@ function OrderPolicyClauseSelectorContent({
     }
 
     return list
-  }, [allClauses, activeTab, searchQuery, checkClauseAllowed])
+  }, [allClauses, activeTab, searchQuery, checkClauseAllowed, isSellerDispute, actionType])
 
   const activeClauseInfo = useMemo(() => {
     return allClauses.find((c) => c.code === selectedClause) || null

@@ -41,4 +41,9 @@ public class AdminDashboardAnalyticsResponse {
     private List<DailyPlatformTimelineDTO> dailyTimeline;
     private List<TopShopAnalyticsDTO> topShops;
     private List<TopCategoryAnalyticsDTO> topCategories;
+
+    // 5. Filter Window Metadata
+    private String selectedPeriod;
+    private String startDate;
+    private String endDate;
 }

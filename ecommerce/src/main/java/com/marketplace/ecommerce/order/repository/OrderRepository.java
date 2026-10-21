@@ -150,6 +150,20 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
   List<Object[]> getDailyPlatformGmvSince(@Param("startDate") LocalDateTime startDate);
 
   @Query("""
+      SELECT CAST(o.createdAt as LocalDate), COALESCE(SUM(o.total), 0), COUNT(o)
+      FROM Order o
+      WHERE o.createdAt >= :startDate
+        AND o.createdAt <= :endDate
+        AND o.status <> com.marketplace.ecommerce.order.valueObjects.OrderStatus.CANCELLED
+      GROUP BY CAST(o.createdAt as LocalDate)
+      ORDER BY CAST(o.createdAt as LocalDate) ASC
+  """)
+  List<Object[]> getDailyPlatformGmvBetween(
+      @Param("startDate") LocalDateTime startDate,
+      @Param("endDate") LocalDateTime endDate
+  );
+
+  @Query("""
       SELECT CAST(o.createdAt as LocalDate), COALESCE(SUM(o.subtotal), 0), COUNT(o)
       FROM Order o
       WHERE o.shop.id = :shopId
@@ -159,6 +173,22 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
       ORDER BY CAST(o.createdAt as LocalDate) ASC
   """)
   List<Object[]> getShopDailySalesSince(@Param("shopId") UUID shopId, @Param("startDate") LocalDateTime startDate);
+
+  @Query("""
+      SELECT CAST(o.createdAt as LocalDate), COALESCE(SUM(o.subtotal), 0), COUNT(o)
+      FROM Order o
+      WHERE o.shop.id = :shopId
+        AND o.createdAt >= :startDate
+        AND o.createdAt <= :endDate
+        AND o.status <> com.marketplace.ecommerce.order.valueObjects.OrderStatus.CANCELLED
+      GROUP BY CAST(o.createdAt as LocalDate)
+      ORDER BY CAST(o.createdAt as LocalDate) ASC
+  """)
+  List<Object[]> getShopDailySalesBetween(
+      @Param("shopId") UUID shopId,
+      @Param("startDate") LocalDateTime startDate,
+      @Param("endDate") LocalDateTime endDate
+  );
 
   @Query("""
       SELECT COALESCE(SUM(o.total), 0)

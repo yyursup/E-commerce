@@ -31,6 +31,8 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 @Slf4j
@@ -47,8 +49,82 @@ public class StatisticsAnalyticsServiceImpl implements StatisticsAnalyticsServic
     private final ShopRepository shopRepository;
     private final UserRepository userRepository;
 
+    public record DateRange(String period, LocalDate startDate, LocalDate endDate) {
+        public LocalDateTime startDateTime() {
+            return startDate.atStartOfDay();
+        }
+        public LocalDateTime endDateTime() {
+            return endDate.atTime(LocalTime.MAX);
+        }
+    }
+
+    private DateRange resolveDateRange(String period, LocalDate reqStart, LocalDate reqEnd) {
+        String p = (period != null && !period.isBlank()) ? period.trim().toLowerCase() : "14d";
+        LocalDate today = LocalDate.now();
+
+        LocalDate start;
+        LocalDate end = today;
+
+        switch (p) {
+            case "7d":
+                start = today.minusDays(6);
+                break;
+            case "30d":
+                start = today.minusDays(29);
+                break;
+            case "90d":
+                start = today.minusDays(89);
+                break;
+            case "this_month":
+                start = today.withDayOfMonth(1);
+                end = today;
+                break;
+            case "last_month":
+                LocalDate prevMonth = today.minusMonths(1);
+                start = prevMonth.withDayOfMonth(1);
+                end = prevMonth.withDayOfMonth(prevMonth.lengthOfMonth());
+                break;
+            case "custom":
+                if (reqStart != null && reqEnd != null) {
+                    if (reqStart.isAfter(reqEnd)) {
+                        start = reqEnd;
+                        end = reqStart;
+                    } else {
+                        start = reqStart;
+                        end = reqEnd;
+                    }
+                    if (ChronoUnit.DAYS.between(start, end) > 365) {
+                        start = end.minusDays(365);
+                    }
+                } else if (reqStart != null) {
+                    start = reqStart;
+                    end = reqStart.plusDays(13);
+                } else if (reqEnd != null) {
+                    end = reqEnd;
+                    start = reqEnd.minusDays(13);
+                } else {
+                    p = "14d";
+                    start = today.minusDays(13);
+                }
+                break;
+            case "14d":
+            default:
+                p = "14d";
+                start = today.minusDays(13);
+                break;
+        }
+
+        return new DateRange(p, start, end);
+    }
+
     @Override
     public AdminDashboardAnalyticsResponse getAdminDashboardAnalytics() {
+        return getAdminDashboardAnalytics("14d", null, null);
+    }
+
+    @Override
+    public AdminDashboardAnalyticsResponse getAdminDashboardAnalytics(String period, LocalDate startDate, LocalDate endDate) {
+        DateRange range = resolveDateRange(period, startDate, endDate);
         // 1. Financial KPIs
         BigDecimal totalGmv = orderRepository.getPlatformTotalGmv();
         BigDecimal settledRevenue = orderRepository.getPlatformSettledRevenue();
@@ -90,20 +166,22 @@ public class StatisticsAnalyticsServiceImpl implements StatisticsAnalyticsServic
                 ? Math.round((verifiedKycShops * 100.0 / totalShops) * 10.0) / 10.0
                 : 0.0;
 
-        // 4. Daily Timeline (30 days)
-        LocalDateTime thirtyDaysAgo = LocalDateTime.now().minusDays(30);
-        List<Object[]> rawDailyGmv = orderRepository.getDailyPlatformGmvSince(thirtyDaysAgo);
+        // 4. Daily Timeline based on date range
+        List<Object[]> rawDailyGmv = (range.endDate().isEqual(LocalDate.now()))
+                ? orderRepository.getDailyPlatformGmvSince(range.startDateTime())
+                : orderRepository.getDailyPlatformGmvBetween(range.startDateTime(), range.endDateTime());
         Map<String, DailyPlatformTimelineDTO> timelineMap = new LinkedHashMap<>();
 
-        // Initialize last 14 days by default for smoother chart display
-        for (int i = 13; i >= 0; i--) {
-            String dateStr = LocalDate.now().minusDays(i).format(DateTimeFormatter.ISO_LOCAL_DATE);
+        LocalDate curAdmin = range.startDate();
+        while (!curAdmin.isAfter(range.endDate())) {
+            String dateStr = curAdmin.format(DateTimeFormatter.ISO_LOCAL_DATE);
             timelineMap.put(dateStr, DailyPlatformTimelineDTO.builder()
                     .date(dateStr)
                     .gmv(BigDecimal.ZERO)
                     .commission(BigDecimal.ZERO)
                     .orderCount(0L)
                     .build());
+            curAdmin = curAdmin.plusDays(1);
         }
 
         for (Object[] row : rawDailyGmv) {
@@ -114,12 +192,14 @@ public class StatisticsAnalyticsServiceImpl implements StatisticsAnalyticsServic
                 // Ước tính hoa hồng sàn ~5% của GMV mỗi ngày
                 BigDecimal commVal = gmvVal.multiply(BigDecimal.valueOf(0.05)).setScale(0, RoundingMode.HALF_UP);
 
-                timelineMap.put(dStr, DailyPlatformTimelineDTO.builder()
-                        .date(dStr)
-                        .gmv(gmvVal)
-                        .commission(commVal)
-                        .orderCount(oCount)
-                        .build());
+                if (timelineMap.containsKey(dStr)) {
+                    timelineMap.put(dStr, DailyPlatformTimelineDTO.builder()
+                            .date(dStr)
+                            .gmv(gmvVal)
+                            .commission(commVal)
+                            .orderCount(oCount)
+                            .build());
+                }
             }
         }
         List<DailyPlatformTimelineDTO> dailyTimeline = new ArrayList<>(timelineMap.values());
@@ -194,11 +274,22 @@ public class StatisticsAnalyticsServiceImpl implements StatisticsAnalyticsServic
                 .dailyTimeline(dailyTimeline)
                 .topShops(topShops)
                 .topCategories(topCategories)
+                .selectedPeriod(range.period())
+                .startDate(range.startDate().toString())
+                .endDate(range.endDate().toString())
                 .build();
     }
 
     @Override
     public SellerDashboardAnalyticsResponse getSellerDashboardAnalytics(UUID sellerAccountId) {
+        return getSellerDashboardAnalytics(sellerAccountId, "14d", null, null);
+    }
+
+    @Override
+    public SellerDashboardAnalyticsResponse getSellerDashboardAnalytics(
+            UUID sellerAccountId, String period, LocalDate startDate, LocalDate endDate
+    ) {
+        DateRange range = resolveDateRange(period, startDate, endDate);
         User user = userRepository.findByAccountId(sellerAccountId)
                 .orElseThrow(() -> new CustomException("Không tìm thấy thông tin tài khoản người bán."));
         Shop shop = shopRepository.findByUserId(user.getId())
@@ -249,18 +340,21 @@ public class StatisticsAnalyticsServiceImpl implements StatisticsAnalyticsServic
             orderCountByStatus.put(st.name(), orderRepository.countByShopIdAndStatus(shop.getId(), st));
         }
 
-        // 3. Daily Sales Timeline (14 days)
-        LocalDateTime fourteenDaysAgo = LocalDateTime.now().minusDays(14);
-        List<Object[]> rawShopSales = orderRepository.getShopDailySalesSince(shop.getId(), fourteenDaysAgo);
+        // 3. Daily Sales Timeline based on date range
+        List<Object[]> rawShopSales = (range.endDate().isEqual(LocalDate.now()))
+                ? orderRepository.getShopDailySalesSince(shop.getId(), range.startDateTime())
+                : orderRepository.getShopDailySalesBetween(shop.getId(), range.startDateTime(), range.endDateTime());
         Map<String, DailySalesPointDTO> salesMap = new LinkedHashMap<>();
 
-        for (int i = 13; i >= 0; i--) {
-            String dStr = LocalDate.now().minusDays(i).format(DateTimeFormatter.ISO_LOCAL_DATE);
+        LocalDate curSeller = range.startDate();
+        while (!curSeller.isAfter(range.endDate())) {
+            String dStr = curSeller.format(DateTimeFormatter.ISO_LOCAL_DATE);
             salesMap.put(dStr, DailySalesPointDTO.builder()
                     .date(dStr)
                     .revenue(BigDecimal.ZERO)
                     .orderCount(0L)
                     .build());
+            curSeller = curSeller.plusDays(1);
         }
 
         for (Object[] row : rawShopSales) {
@@ -268,11 +362,13 @@ public class StatisticsAnalyticsServiceImpl implements StatisticsAnalyticsServic
                 String dStr = row[0].toString();
                 BigDecimal rev = castBigDecimal(row[1]);
                 Long cnt = castLong(row[2]);
-                salesMap.put(dStr, DailySalesPointDTO.builder()
-                        .date(dStr)
-                        .revenue(rev)
-                        .orderCount(cnt)
-                        .build());
+                if (salesMap.containsKey(dStr)) {
+                    salesMap.put(dStr, DailySalesPointDTO.builder()
+                            .date(dStr)
+                            .revenue(rev)
+                            .orderCount(cnt)
+                            .build());
+                }
             }
         }
         List<DailySalesPointDTO> salesTimeline = new ArrayList<>(salesMap.values());
@@ -351,6 +447,9 @@ public class StatisticsAnalyticsServiceImpl implements StatisticsAnalyticsServic
                 .topProducts(topProducts)
                 .conditionSalesBreakdown(conditionSalesBreakdown)
                 .lowStockAlerts(lowStockAlerts)
+                .selectedPeriod(range.period())
+                .startDate(range.startDate().toString())
+                .endDate(range.endDate().toString())
                 .build();
     }
 

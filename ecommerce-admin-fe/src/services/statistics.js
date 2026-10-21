@@ -6,9 +6,9 @@ const statisticsService = {
     /**
      * Get full platform dashboard analytics for Admin
      */
-    getAdminDashboardAnalytics: async () => {
+    getAdminDashboardAnalytics: async (params = {}) => {
         try {
-            const response = await axiosClient.get(`${STATISTICS_BASE}/admin/dashboard`);
+            const response = await axiosClient.get(`${STATISTICS_BASE}/admin/dashboard`, { params });
             return response.data;
         } catch (error) {
             throw error.response ? error.response.data : error;

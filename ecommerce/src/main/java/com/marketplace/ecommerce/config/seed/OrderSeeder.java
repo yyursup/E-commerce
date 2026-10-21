@@ -31,16 +31,18 @@ import com.marketplace.ecommerce.shop.valueObjects.ShopStatus;
 import com.marketplace.ecommerce.wallet.entity.Wallet;
 import com.marketplace.ecommerce.wallet.repository.WalletRepository;
 import com.marketplace.ecommerce.wallet.valueObjects.WalletType;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
@@ -50,7 +52,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class OrderSeeder {
 
-    private static final int TARGET_ORDER_COUNT = 260;
+    private static final int TARGET_ORDER_COUNT = 242;
 
     private final OrderRepository orderRepository;
     private final OrderItemsRepository orderItemsRepository;
@@ -63,18 +65,20 @@ public class OrderSeeder {
     private final EscrowRepository escrowRepository;
     private final PaymentRepository paymentRepository;
     private final WalletRepository walletRepository;
+    private final JdbcTemplate jdbcTemplate;
+    private final EntityManager entityManager;
 
     private final Random random = new Random();
 
     public void seed() {
-        log.info("Starting progressive multi-vendor order seeding...");
+        log.info("Starting progressive multi-vendor order seeding (14-day backwards distribution)...");
 
-        // 1. Chuẩn hóa và đồng bộ các đơn hàng đã tồn tại (nếu có từ lần seed trước)
+        // 1. Chuẩn hóa và đồng bộ các đơn hàng đã tồn tại (nếu có từ trước mà bị lệch ngày hoặc chưa đủ)
         normalizeExistingOrders();
 
         long currentCount = orderRepository.count();
         if (currentCount >= TARGET_ORDER_COUNT) {
-            log.info("Order seed already satisfied: {} orders present (target: {})", currentCount, TARGET_ORDER_COUNT);
+            log.info("Order seed satisfied: {} orders present (target: {})", currentCount, TARGET_ORDER_COUNT);
             return;
         }
 
@@ -92,7 +96,7 @@ public class OrderSeeder {
             return;
         }
 
-        // Cache products by shop to avoid querying inside tight loops
+        // Cache products theo từng shop để tối ưu tốc độ seeding
         Map<UUID, List<Product>> shopProductsMap = new HashMap<>();
         for (Shop s : shops) {
             List<Product> prods = productRepository.findAll().stream()
@@ -115,22 +119,14 @@ public class OrderSeeder {
             return;
         }
 
-        int disputedOrdersRemaining = 2; // Tạo 2 đơn tranh chấp mẫu trên dashboard
+        int disputedOrdersRemaining = 2; // Gắn 2 đơn tranh chấp mẫu trên dashboard
 
-        // 2. Tạo đơn hàng trải dài theo dòng thời gian từ 75 ngày trước đến hôm nay
-        // Phân bổ mật độ hình phễu tăng trưởng (Growth Curve)
-        for (int daysAgo = 75; daysAgo >= 0; daysAgo--) {
-            if (orderRepository.count() >= TARGET_ORDER_COUNT) {
-                break;
-            }
-
+        // 2. Chạy từ 28 ngày trước trở ngược về thời điểm chạy dự án hiện tại (Day 0)
+        // Trong đó 14 ngày gần nhất (Day 0 -> Day 14) được ưu tiên tối đa với nhiều đơn hoàn thành (COMPLETED)
+        for (int daysAgo = 28; daysAgo >= 0; daysAgo--) {
             int ordersToCreateToday = getTargetOrdersForDay(daysAgo);
 
             for (int orderIdx = 0; orderIdx < ordersToCreateToday; orderIdx++) {
-                if (orderRepository.count() >= TARGET_ORDER_COUNT) {
-                    break;
-                }
-
                 User customer = customers.get(random.nextInt(customers.size()));
                 Shop shop = availableShops.get(random.nextInt(availableShops.size()));
 
@@ -149,14 +145,14 @@ public class OrderSeeder {
                     continue;
                 }
 
-                // Thời điểm tạo đơn: rải đều trong các khung giờ mua sắm cao điểm
+                // Thời điểm tạo đơn: lùi về đúng ngày daysAgo
                 LocalDateTime createdAt = buildRealisticTimestamp(daysAgo);
 
-                // Trạng thái đơn hàng phù hợp hoàn hảo với độ tuổi của đơn
+                // Trạng thái đơn hàng: đa số là COMPLETED theo yêu cầu "thêm nhiều đơn đã hoàn thành"
                 OrderStatus status = determineStatusForDay(daysAgo, orderIdx);
 
                 boolean isDisputed = false;
-                if (disputedOrdersRemaining > 0 && (daysAgo == 1 || daysAgo == 2) && status == OrderStatus.DELIVERED) {
+                if (disputedOrdersRemaining > 0 && (daysAgo == 2 || daysAgo == 3) && status == OrderStatus.DELIVERED) {
                     isDisputed = true;
                     disputedOrdersRemaining--;
                 }
@@ -166,7 +162,7 @@ public class OrderSeeder {
                         shop,
                         address,
                         status,
-                        "Đơn hàng công nghệ #" + (orderIdx + 1),
+                        "Đơn hàng #" + (orderIdx + 1),
                         createdAt);
 
                 // Thêm 1 - 3 sản phẩm điện tử
@@ -199,6 +195,12 @@ public class OrderSeeder {
 
                 // 4. Khởi tạo Payment và Escrow
                 initializePaymentAndEscrow(order, isDisputed);
+
+                // Bắt buộc flush Hibernate Session để ghi nhận row trước khi dùng JDBC trực tiếp
+                orderRepository.flush();
+
+                // 5. Ghi đè chính xác ngày giờ vào PostgreSQL bằng JDBC (bỏ qua JPA Auditing và updatable=false)
+                syncOrderTimestampsDirectly(order, createdAt, status);
             }
         }
 
@@ -206,114 +208,109 @@ public class OrderSeeder {
     }
 
     /**
-     * Chuẩn hóa và đồng bộ các đơn hàng cũ nếu đã tồn tại từ các đợt seed trước:
-     * - Chuyển các đơn > 7 ngày cũ đang bị kẹt ở SHIPPING/PROCESSING sang COMPLETED
-     * - Bổ sung Payment & Escrow còn thiếu để dữ liệu kế toán và thống kê khớp 100%
+     * Chuẩn hóa và đồng bộ các đơn hàng đã tồn tại:
+     * - Nếu phát hiện các đơn hàng bị dồn cục vào 1 ngày (do lỗi JPA Auditing ghi đè ngày chạy dự án),
+     *   tự động phân bổ đều ngược về 14 ngày trước và cập nhật lại timestamp thực tế.
+     * - Đảm bảo đơn cũ có trạng thái COMPLETED (thêm nhiều đơn hoàn thành) và có đầy đủ Payment/Escrow/Commission.
      */
     private void normalizeExistingOrders() {
         List<Order> allOrders = orderRepository.findAll();
         if (allOrders.isEmpty()) return;
 
-        LocalDateTime now = LocalDateTime.now();
-        int fixedCount = 0;
+        Map<LocalDate, Long> countByDate = allOrders.stream()
+                .filter(o -> o.getCreatedAt() != null)
+                .collect(Collectors.groupingBy(o -> o.getCreatedAt().toLocalDate(), Collectors.counting()));
 
-        for (Order o : allOrders) {
-            long daysAgo = o.getCreatedAt() != null ? ChronoUnit.DAYS.between(o.getCreatedAt(), now) : 0;
+        long maxCountOnDate = countByDate.values().stream().mapToLong(Long::longValue).max().orElse(0L);
+        boolean isClustered = maxCountOnDate > (allOrders.size() * 0.35);
 
-            // Đơn > 7 ngày không thể còn SHIPPING hoặc PROCESSING
-            if (daysAgo > 7) {
-                if (o.getStatus() == OrderStatus.SHIPPING || o.getStatus() == OrderStatus.PROCESSING
-                        || o.getStatus() == OrderStatus.CONFIRMED) {
-                    o.setStatus(OrderStatus.COMPLETED);
-                    o.setReceivedByBuyer(true);
-                    LocalDateTime del = o.getCreatedAt().plusDays(2);
-                    o.setDeliveredAt(del);
-                    o.setReceivedAt(del.plusHours(6));
-                    orderRepository.save(o);
-                    fixedCount++;
-                } else if (o.getStatus() == OrderStatus.PENDING_PAYMENT) {
-                    o.setStatus(OrderStatus.CANCELLED);
-                    orderRepository.save(o);
-                    fixedCount++;
-                }
-            }
+        if (isClustered) {
+            log.info("Detected {}/{} orders clustered on a single date. Auto-redistributing across 14-day timeline...",
+                    maxCountOnDate, allOrders.size());
+            for (int i = 0; i < allOrders.size(); i++) {
+                Order o = allOrders.get(i);
+                int daysAgo = (i % 15); // Rải đều 0 -> 14 ngày trước
+                LocalDateTime createdAt = buildRealisticTimestamp(daysAgo);
+                OrderStatus status = determineStatusForDay(daysAgo, i);
 
-            // Đảm bảo đơn DELIVERED / COMPLETED có Commission
-            if (o.getStatus() == OrderStatus.DELIVERED || o.getStatus() == OrderStatus.COMPLETED) {
-                if (o.getPlatformCommission() == null || o.getPlatformCommission().compareTo(BigDecimal.ZERO) <= 0) {
+                o.setStatus(status);
+                o.setReceivedByBuyer(status == OrderStatus.COMPLETED);
+                orderRepository.save(o);
+
+                if (status == OrderStatus.DELIVERED || status == OrderStatus.COMPLETED) {
                     Commission c = initializeCommission(o);
                     if (c != null) {
                         o.setPlatformCommission(c.getTotalCommission());
                         orderRepository.save(o);
                     }
                 }
-            }
+                if (status != OrderStatus.PENDING_PAYMENT && status != OrderStatus.CANCELLED) {
+                    initializePaymentAndEscrow(o, false);
+                }
 
-            // Đảm bảo các đơn đã thanh toán đều có Payment và Escrow
-            if (o.getStatus() != OrderStatus.PENDING_PAYMENT && o.getStatus() != OrderStatus.CANCELLED) {
-                initializePaymentAndEscrow(o, false);
+                orderRepository.flush();
+                syncOrderTimestampsDirectly(o, createdAt, status);
             }
-        }
-
-        if (fixedCount > 0) {
-            log.info("Normalized {} legacy orders to realistic completed statuses", fixedCount);
+            log.info("Successfully redistributed {} existing orders across 14 days backwards.", allOrders.size());
         }
     }
 
     /**
-     * Số lượng đơn mục tiêu theo từng ngày:
-     * - 14 ngày gần nhất: 6 - 12 đơn/ngày (để biểu đồ luôn đầy đủ và sinh động)
-     * - 15 - 30 ngày trước: 4 đơn/ngày
-     * - 31 - 75 ngày trước: 1 - 2 đơn/ngày
+     * Số lượng đơn mục tiêu phân bổ ngược về 14 ngày trước:
+     * - Day 0 (Hôm nay): 14 đơn
+     * - Day 1 (Hôm qua): 15 đơn
+     * - Day 2: 14 đơn
+     * - Day 3: 14 đơn
+     * - Day 4 -> Day 14 (11 ngày): 13 đơn/ngày (~143 đơn)
+     * => Tổng cộng 14 ngày gần nhất có ~200 đơn với hơn 150 đơn COMPLETED!
+     * - Day 15 -> Day 28: 3 đơn/ngày (~42 đơn dữ liệu lịch sử)
      */
     private int getTargetOrdersForDay(int daysAgo) {
-        if (daysAgo == 0) return 12;
-        if (daysAgo == 1) return 12;
-        if (daysAgo <= 3) return 10;
-        if (daysAgo <= 7) return 9;
-        if (daysAgo <= 14) return 7;
-        if (daysAgo <= 30) return 4;
-        return (daysAgo % 2 == 0) ? 2 : 1;
+        if (daysAgo == 0) return 14;
+        if (daysAgo == 1) return 15;
+        if (daysAgo == 2) return 14;
+        if (daysAgo == 3) return 14;
+        if (daysAgo <= 14) return 13;
+        if (daysAgo <= 28) return 3;
+        return 0;
     }
 
     /**
-     * Xác định trạng thái đơn hàng dựa trên tuổi của đơn theo logic TMĐT thực tế:
+     * Xác định trạng thái đơn hàng theo số ngày tuổi (tối ưu số đơn COMPLETED):
+     * - >= 4 ngày trước: 88% COMPLETED, 6% CANCELLED, 6% REFUNDED.
+     * - 3 ngày trước: 85% COMPLETED, 10% DELIVERED, 5% CANCELLED.
+     * - 2 ngày trước: 75% COMPLETED, 15% DELIVERED, 10% SHIPPING.
+     * - 1 ngày trước: 60% COMPLETED, 20% DELIVERED, 15% SHIPPING, 5% PROCESSING.
+     * - Hôm nay (0 ngày): 35% COMPLETED (hỏa tốc), 25% DELIVERED, 25% SHIPPING, 15% CONFIRMED.
      */
     private OrderStatus determineStatusForDay(int daysAgo, int orderIdx) {
-        if (daysAgo >= 14) {
-            // Lịch sử xa: 88% Hoàn thành, 7% Hủy, 5% Trả hàng hoàn tiền
-            int r = (orderIdx * 17 + daysAgo) % 100;
+        if (daysAgo >= 4) {
+            int r = (orderIdx * 19 + daysAgo * 7) % 100;
             if (r < 88) return OrderStatus.COMPLETED;
-            if (r < 95) return OrderStatus.CANCELLED;
+            if (r < 94) return OrderStatus.CANCELLED;
             return OrderStatus.REFUNDED;
-        } else if (daysAgo >= 4) {
-            // 4 - 13 ngày trước: 80% Hoàn thành, 10% Vừa giao (DELIVERED), 5% Hủy, 5% Hoàn tiền
-            int r = (orderIdx * 19 + daysAgo) % 100;
-            if (r < 80) return OrderStatus.COMPLETED;
-            if (r < 90) return OrderStatus.DELIVERED;
-            if (r < 95) return OrderStatus.CANCELLED;
-            return OrderStatus.REFUNDED;
-        } else if (daysAgo >= 2) {
-            // 2 - 3 ngày trước: Đang giao hoặc vừa đến nơi đang đợi 72h nghiệm thu
-            int r = (orderIdx * 23 + daysAgo) % 100;
-            if (r < 40) return OrderStatus.DELIVERED;
-            if (r < 75) return OrderStatus.SHIPPING;
-            if (r < 90) return OrderStatus.COMPLETED;
+        } else if (daysAgo == 3) {
+            int r = (orderIdx * 23) % 100;
+            if (r < 85) return OrderStatus.COMPLETED;
+            if (r < 95) return OrderStatus.DELIVERED;
             return OrderStatus.CANCELLED;
-        } else if (daysAgo == 1) {
-            // Hôm qua: Đang bưu tá giao GHN hoặc shop đang chuẩn bị
-            int r = (orderIdx * 29) % 100;
-            if (r < 50) return OrderStatus.SHIPPING;
-            if (r < 80) return OrderStatus.PROCESSING;
-            if (r < 90) return OrderStatus.CONFIRMED;
-            return OrderStatus.CANCELLED;
-        } else {
-            // Hôm nay: Mới đặt, đang xác nhận hoặc vừa lấy hàng
+        } else if (daysAgo == 2) {
             int r = (orderIdx * 31) % 100;
-            if (r < 35) return OrderStatus.CONFIRMED;
-            if (r < 70) return OrderStatus.PROCESSING;
+            if (r < 75) return OrderStatus.COMPLETED;
+            if (r < 90) return OrderStatus.DELIVERED;
+            return OrderStatus.SHIPPING;
+        } else if (daysAgo == 1) {
+            int r = (orderIdx * 37) % 100;
+            if (r < 60) return OrderStatus.COMPLETED;
+            if (r < 80) return OrderStatus.DELIVERED;
+            if (r < 95) return OrderStatus.SHIPPING;
+            return OrderStatus.PROCESSING;
+        } else {
+            int r = (orderIdx * 41) % 100;
+            if (r < 35) return OrderStatus.COMPLETED;
+            if (r < 60) return OrderStatus.DELIVERED;
             if (r < 85) return OrderStatus.SHIPPING;
-            return OrderStatus.PENDING_PAYMENT;
+            return OrderStatus.CONFIRMED;
         }
     }
 
@@ -322,18 +319,23 @@ public class OrderSeeder {
 
         int hour;
         if (daysAgo == 0) {
-            int maxHour = Math.max(9, LocalDateTime.now().getHour());
-            hour = ThreadLocalRandom.current().nextInt(8, maxHour + 1);
+            int currentHour = LocalDateTime.now().getHour();
+            int maxHour = Math.max(8, Math.min(currentHour, 22));
+            int minHour = Math.min(8, maxHour);
+            hour = ThreadLocalRandom.current().nextInt(minHour, maxHour + 1);
         } else {
-            // Khung giờ mua sắm cao điểm
-            int[] peakHours = {9, 10, 11, 14, 15, 16, 19, 20, 21, 22};
+            int[] peakHours = {8, 9, 10, 11, 13, 14, 15, 16, 17, 19, 20, 21, 22};
             hour = peakHours[random.nextInt(peakHours.length)];
         }
 
         int minute = ThreadLocalRandom.current().nextInt(0, 60);
         int second = ThreadLocalRandom.current().nextInt(0, 60);
 
-        return date.atTime(hour, minute, second);
+        LocalDateTime ldt = date.atTime(hour, minute, second);
+        if (ldt.isAfter(LocalDateTime.now())) {
+            ldt = LocalDateTime.now().minusMinutes(ThreadLocalRandom.current().nextInt(5, 30));
+        }
+        return ldt;
     }
 
     private Order initializeOrder(User user, Shop shop, UserAddress address,
@@ -363,33 +365,13 @@ public class OrderSeeder {
                 .subtotal(BigDecimal.ZERO)
                 .shippingFee(randomShippingFee())
                 .total(BigDecimal.ZERO)
-                .receivedByBuyer(false)
-                .stockDeducted(false)
+                .receivedByBuyer(status == OrderStatus.COMPLETED)
+                .stockDeducted(status != OrderStatus.PENDING_PAYMENT && status != OrderStatus.CANCELLED)
                 .items(new HashSet<>())
                 .build();
 
         order.setCreatedAt(createdAt);
         order.setUpdatedAt(createdAt);
-
-        boolean pastPayment = status != OrderStatus.PENDING_PAYMENT
-                && status != OrderStatus.CANCELLED;
-
-        order.setStockDeducted(pastPayment);
-
-        if (status == OrderStatus.DELIVERED) {
-            order.setDeliveredAt(LocalDateTime.now().minusHours(ThreadLocalRandom.current().nextInt(2, 48)));
-            order.setReceivedByBuyer(false);
-        } else if (status == OrderStatus.COMPLETED) {
-            LocalDateTime delivered = createdAt.plusDays(ThreadLocalRandom.current().nextInt(1, 3));
-            order.setDeliveredAt(delivered);
-            order.setReceivedByBuyer(true);
-            order.setReceivedAt(delivered.plusHours(ThreadLocalRandom.current().nextInt(1, 24)));
-        } else if (status == OrderStatus.REFUNDED) {
-            LocalDateTime delivered = createdAt.plusDays(ThreadLocalRandom.current().nextInt(1, 3));
-            order.setDeliveredAt(delivered);
-            order.setReceivedByBuyer(true);
-            order.setReceivedAt(delivered.plusHours(ThreadLocalRandom.current().nextInt(1, 12)));
-        }
 
         return orderRepository.save(order);
     }
@@ -425,20 +407,26 @@ public class OrderSeeder {
     }
 
     private void initializePaymentAndEscrow(Order order, boolean isDisputed) {
-        if (order == null || order.getId() == null || order.getTotal() == null) return;
-        if (order.getStatus() == OrderStatus.PENDING_PAYMENT || order.getStatus() == OrderStatus.CANCELLED) return;
+        if (order == null || order.getId() == null) return;
+        if (order.getStatus() == OrderStatus.PENDING_PAYMENT || order.getStatus() == OrderStatus.CANCELLED) {
+            return;
+        }
 
         User customer = order.getUser();
         Shop shop = order.getShop();
-        if (customer == null || shop == null || shop.getUser() == null) return;
+        if (customer == null || shop == null || shop.getUser() == null) {
+            return;
+        }
 
         // 1. Payment Record
         Payment payment = paymentRepository.findByOrderId(order.getId())
                 .orElseGet(() -> {
-                    PaymentMethod method = (order.getId().hashCode() % 3 == 0)
+                    PaymentMethod method = (order.getId().hashCode() % 2 == 0)
                             ? PaymentMethod.WALLET
                             : PaymentMethod.VNPAY;
-                    LocalDateTime payTime = order.getCreatedAt().plusMinutes(ThreadLocalRandom.current().nextInt(2, 12));
+                    LocalDateTime payTime = order.getCreatedAt() != null
+                            ? order.getCreatedAt().plusMinutes(ThreadLocalRandom.current().nextInt(2, 12))
+                            : LocalDateTime.now();
 
                     Payment p = Payment.builder()
                             .order(order)
@@ -570,5 +558,102 @@ public class OrderSeeder {
 
                     return commissionRepository.save(commission);
                 });
+    }
+
+    /**
+     * Bỏ qua cơ chế JPA Auditing (@CreatedDate và updatable=false) để ghi thẳng các mốc thời gian
+     * quá khứ từ 14 ngày trước vào PostgreSQL. Đảm bảo toàn bộ Order, Payment, Escrow, Commission
+     * và OrderItems có thời điểm diễn ra khớp hoàn hảo theo dòng thời gian thực tế.
+     */
+    private void syncOrderTimestampsDirectly(Order order, LocalDateTime createdAt, OrderStatus status) {
+        if (order == null || order.getId() == null) return;
+
+        LocalDateTime deliveredAt = null;
+        LocalDateTime receivedAt = null;
+        LocalDateTime updatedAt = null;
+
+        if (status == OrderStatus.COMPLETED) {
+            deliveredAt = createdAt.plusHours(ThreadLocalRandom.current().nextInt(12, 36));
+            if (deliveredAt.isAfter(LocalDateTime.now())) {
+                deliveredAt = LocalDateTime.now().minusMinutes(ThreadLocalRandom.current().nextInt(10, 30));
+            }
+            receivedAt = deliveredAt.plusHours(ThreadLocalRandom.current().nextInt(2, 8));
+            if (receivedAt.isAfter(LocalDateTime.now())) {
+                receivedAt = LocalDateTime.now().minusMinutes(ThreadLocalRandom.current().nextInt(1, 5));
+            }
+            updatedAt = receivedAt;
+        } else if (status == OrderStatus.DELIVERED) {
+            deliveredAt = createdAt.plusHours(ThreadLocalRandom.current().nextInt(12, 36));
+            if (deliveredAt.isAfter(LocalDateTime.now())) {
+                deliveredAt = LocalDateTime.now().minusMinutes(ThreadLocalRandom.current().nextInt(10, 30));
+            }
+            updatedAt = deliveredAt;
+        } else if (status == OrderStatus.CANCELLED) {
+            updatedAt = createdAt.plusHours(ThreadLocalRandom.current().nextInt(1, 4));
+            if (updatedAt.isAfter(LocalDateTime.now())) {
+                updatedAt = LocalDateTime.now().minusMinutes(ThreadLocalRandom.current().nextInt(5, 20));
+            }
+        } else if (status == OrderStatus.REFUNDED) {
+            deliveredAt = createdAt.plusHours(ThreadLocalRandom.current().nextInt(12, 36));
+            if (deliveredAt.isAfter(LocalDateTime.now())) {
+                deliveredAt = LocalDateTime.now().minusMinutes(ThreadLocalRandom.current().nextInt(10, 30));
+            }
+            receivedAt = deliveredAt.plusHours(ThreadLocalRandom.current().nextInt(2, 8));
+            if (receivedAt.isAfter(LocalDateTime.now())) {
+                receivedAt = LocalDateTime.now().minusMinutes(ThreadLocalRandom.current().nextInt(1, 5));
+            }
+            updatedAt = receivedAt.plusDays(1);
+            if (updatedAt.isAfter(LocalDateTime.now())) {
+                updatedAt = LocalDateTime.now();
+            }
+        } else {
+            updatedAt = createdAt.plusMinutes(ThreadLocalRandom.current().nextInt(15, 60));
+            if (updatedAt.isAfter(LocalDateTime.now())) {
+                updatedAt = LocalDateTime.now();
+            }
+        }
+
+        Timestamp createdTs = Timestamp.valueOf(createdAt);
+        Timestamp updatedTs = Timestamp.valueOf(updatedAt);
+        Timestamp deliveredTs = deliveredAt != null ? Timestamp.valueOf(deliveredAt) : null;
+        Timestamp receivedTs = receivedAt != null ? Timestamp.valueOf(receivedAt) : null;
+
+        // 1. Cập nhật Orders
+        jdbcTemplate.update("""
+            UPDATE orders
+            SET created_at = ?, updated_at = ?, delivered_at = ?, received_at = ?
+            WHERE id = ?
+        """, createdTs, updatedTs, deliveredTs, receivedTs, order.getId());
+
+        // 2. Cập nhật OrderItems
+        jdbcTemplate.update("""
+            UPDATE order_items
+            SET created_at = ?, updated_at = ?
+            WHERE order_id = ?
+        """, createdTs, updatedTs, order.getId());
+
+        // 3. Cập nhật Payments
+        LocalDateTime payTime = createdAt.plusMinutes(ThreadLocalRandom.current().nextInt(2, 10));
+        Timestamp payTs = Timestamp.valueOf(payTime);
+        jdbcTemplate.update("""
+            UPDATE payments
+            SET created_at = ?, updated_at = ?
+            WHERE order_id = ?
+        """, payTs, payTs, order.getId());
+
+        // 4. Cập nhật Escrows
+        Timestamp escrowUpdatedTs = (status == OrderStatus.COMPLETED && receivedTs != null) ? receivedTs : payTs;
+        jdbcTemplate.update("""
+            UPDATE escrows
+            SET created_at = ?, updated_at = ?
+            WHERE order_id = ?
+        """, payTs, escrowUpdatedTs, order.getId());
+
+        // 5. Cập nhật Commissions
+        jdbcTemplate.update("""
+            UPDATE commissions
+            SET created_at = ?
+            WHERE order_id = ?
+        """, updatedTs, order.getId());
     }
 }

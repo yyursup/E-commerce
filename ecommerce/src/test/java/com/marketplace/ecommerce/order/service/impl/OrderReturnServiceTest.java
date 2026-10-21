@@ -318,6 +318,29 @@ public class OrderReturnServiceTest {
         }
 
         @Test
+        @DisplayName("CASE 8b: Seller dispute với tình trạng INCOMPLETE (thiếu phụ kiện) -> Xử lý thành công")
+        void disputeReturn_IncompleteCondition_Success() {
+                orderReturn.setStatus(ReturnStatus.RETURNED);
+
+                SellerDisputeReturnRequest req = SellerDisputeReturnRequest.builder()
+                                .conditionStatus(ReturnConditionStatus.INCOMPLETE)
+                                .conditionNote("Thiếu phụ kiện sạc và sách hướng dẫn")
+                                .sellerEvidenceUrls("http://minio/missing_accessories.jpg")
+                                .build();
+
+                when(orderReturnRepository.findByIdForUpdate(returnId)).thenReturn(Optional.of(orderReturn));
+                when(userRepository.findByAccountId(sellerAccountId)).thenReturn(Optional.of(seller));
+                when(orderReturnRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+                when(escrowRepository.findByOrderIdForUpdate(orderId)).thenReturn(Optional.empty());
+
+                OrderReturnResponse res = orderReturnService.disputeReturn(sellerAccountId, returnId, req);
+
+                assertEquals(ReturnStatus.DISPUTED, res.getStatus());
+                assertEquals(ReturnConditionStatus.INCOMPLETE, res.getConditionStatus());
+                verify(reportRepository).save(argThat(r -> r.getStage() == ReportStage.ESCALATED_TO_ADMIN));
+        }
+
+        @Test
         @DisplayName("CASE 9: Seller không xử lý sau 72h (Cron) -> Auto complete, refund Buyer, KHÔNG restock")
         void processExpiredSellerInspections_AutoCompletesWithoutRestock() {
                 orderReturn.setStatus(ReturnStatus.RETURNED);

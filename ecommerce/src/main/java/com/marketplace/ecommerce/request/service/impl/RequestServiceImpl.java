@@ -135,27 +135,31 @@ public class RequestServiceImpl implements RequestService {
                     case SHOP -> {
                         Shop shop = shopRepository.findById(targetId)
                                 .orElseThrow(() -> new CustomException("Shop not found: " + targetId));
+                        int newViolationCount = Math.max(0, (shop.getViolationCount() != null ? shop.getViolationCount() : 0) - 1);
+                        shop.setViolationCount(newViolationCount);
 
-                        if (shop.getUser() != null && shop.getUser().getAccount() != null) {
-                            Account owner = shop.getUser().getAccount();
-                            // Mỗi lần duyệt kháng cáo thành công chỉ giảm trừ đúng 1 lần vi phạm tương ứng
-                            int newViolationCount = Math.max(0, owner.getViolationCount() - 1);
-                            owner.setViolationCount(newViolationCount);
-
-                            // Cập nhật lại trạng thái tương ứng với số điểm vi phạm mới
-                            if (newViolationCount < 5) {
-                                // Đã giảm xuống dưới ngưỡng 5 -> Thoát đình chỉ SUSPENDED, khôi phục sản phẩm
-                                shop.setStatus(newViolationCount >= 3 ? ShopStatus.WARNED : ShopStatus.ACTIVE);
-                                productRepository.updateStatusByShopId(shop.getId(), ProductStatus.PUBLISHED);
-                                owner.setStatus(AccountStatus.ACTIVE);
-                                owner.setIsActive(true);
-                                owner.setBannedUntil(null);
-                                owner.setDisciplineLevel(
-                                        newViolationCount >= 3 ? DisciplineLevel.WARNED : DisciplineLevel.NONE);
+                        LocalDateTime now = LocalDateTime.now();
+                        if (newViolationCount >= 7) {
+                            shop.setStatus(ShopStatus.BANNED);
+                            shop.setSuspendedUntil(null);
+                            productRepository.updateStatusByShopId(shop.getId(), ProductStatus.DELETED);
+                        } else if (newViolationCount >= 5) {
+                            shop.setStatus(ShopStatus.SUSPENDED);
+                            if (shop.getSuspendedUntil() == null || shop.getSuspendedUntil().isBefore(now)) {
+                                shop.setSuspendedUntil(now.plusDays(14));
                             }
-                            accountRepository.save(owner);
-                            shopRepository.save(shop);
+                            productRepository.updateStatusByShopId(shop.getId(), ProductStatus.INACTIVE);
+                        } else if (newViolationCount >= 3) {
+                            shop.setStatus(ShopStatus.WARNED);
+                            shop.setSuspendedUntil(null);
+                            productRepository.updateStatusByShopId(shop.getId(), ProductStatus.PUBLISHED);
+                        } else {
+                            shop.setStatus(ShopStatus.ACTIVE);
+                            shop.setSuspendedUntil(null);
+                            productRepository.updateStatusByShopId(shop.getId(), ProductStatus.PUBLISHED);
                         }
+
+                        shopRepository.save(shop);
                     }
                     case PRODUCT -> {
                         Product product = productRepository.findById(targetId)

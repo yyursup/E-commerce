@@ -79,7 +79,7 @@ export default function SellerReturnDisputeModal({
                   <option value="DAMAGED">Hàng bị vỡ / trầy xước / hư hại nặng</option>
                   <option value="WRONG_ITEM">Gửi sai sản phẩm / không đúng hàng của Shop</option>
                   <option value="INCOMPLETE">Thiếu phụ kiện / quà tặng kèm theo</option>
-                  <option value="NOT_RETURNED">Hộp rỗng / không có hàng bên trong</option>
+                  <option value="EMPTY_BOX">Hộp rỗng / không có hàng bên trong</option>
                 </select>
               </div>
 

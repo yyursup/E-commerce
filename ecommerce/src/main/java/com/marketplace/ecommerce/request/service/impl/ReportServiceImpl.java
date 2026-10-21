@@ -66,6 +66,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -205,24 +206,14 @@ public class ReportServiceImpl implements ReportService {
 
         // 2. Quyết định của Admin về việc xóa gậy hay giữ nguyên cho Shop:
         boolean shouldPardonShop = removeShopPenalty == null || removeShopPenalty;
-        if (shouldPardonShop && order.getShop() != null && order.getShop().getUser() != null) {
-            Account shopOwner = order.getShop().getUser().getAccount();
-            if (shopOwner != null && shopOwner.getViolationCount() > 0) {
-                int newViolationCount = Math.max(0, shopOwner.getViolationCount() - 1);
-                shopOwner.setViolationCount(newViolationCount);
-                if (newViolationCount < 5) {
-                    order.getShop().setStatus(newViolationCount >= 3 ? ShopStatus.WARNED : ShopStatus.ACTIVE);
-                    productRepository.updateStatusByShopId(order.getShop().getId(), ProductStatus.PUBLISHED);
-                    shopOwner.setStatus(AccountStatus.ACTIVE);
-                    shopOwner.setIsActive(true);
-                    shopOwner.setBannedUntil(null);
-                    shopOwner
-                            .setDisciplineLevel(newViolationCount >= 3 ? DisciplineLevel.WARNED : DisciplineLevel.NONE);
-                }
-                accountRepository.save(shopOwner);
-                shopRepository.save(order.getShop());
-                log.info("Admin decided to PARDON shop penalty: orderId={}, newViolationCount={}", orderId, newViolationCount);
+        if (shouldPardonShop && order.getShop() != null) {
+            Shop shop = order.getShop();
+            if (shop.getViolationCount() != null && shop.getViolationCount() > 0) {
+                shop.setViolationCount(Math.max(0, shop.getViolationCount() - 1));
+                restoreShopIfEligible(shop);
+                shopRepository.save(shop);
             }
+            log.info("Admin decided to PARDON shop penalty: orderId={}, newViolationCount={}", orderId, shop.getViolationCount());
         } else {
             log.info("Admin decided to KEEP shop penalty: orderId={}, removeShopPenalty={}", orderId, removeShopPenalty);
         }
@@ -258,15 +249,7 @@ public class ReportServiceImpl implements ReportService {
         // Chỉ release khi Escrow là HELD hoặc DISPUTED
         if (escrowOpt.isPresent() && (escrowOpt.get().getStatus() == EscrowStatus.HELD
                 || escrowOpt.get().getStatus() == EscrowStatus.DISPUTED)) {
-            order.setReceivedByBuyer(true);
-            order.setReceivedAt(now);
-            order.setStatus(OrderStatus.DELIVERED);
-            orderRepository.save(order);
-
-            escrowService.releaseByOrder(orderId);
-
-            order.setStatus(OrderStatus.COMPLETED);
-            orderRepository.save(order);
+            releaseDeliveredOrderToShop(order, now);
         }
 
         // 5. Cập nhật Request & Report
@@ -281,9 +264,7 @@ public class ReportServiceImpl implements ReportService {
         requestRepository.save(r);
         reportRepository.save(report);
 
-        if (r != null) {
-            chatService.closeDisputeThread(r.getId(), "Admin giải quyết khiếu nại kiện hoàn: chấp thuận giải trình từ phía gian hàng");
-        }
+        chatService.closeDisputeThread(r.getId(), "Admin giải quyết khiếu nại kiện hoàn: chấp thuận giải trình từ phía gian hàng");
 
         // Gửi thông báo In-App cho Người bán và Người mua
         String orderCodeSellerWins = order.getOrderNumber() != null ? order.getOrderNumber() : orderId.toString();
@@ -313,7 +294,17 @@ public class ReportServiceImpl implements ReportService {
             throw new CustomException("Đơn hàng này đã được hoàn tiền ký quỹ trước đó");
         }
 
-        // 2. Hoàn tất kiện hoàn (OrderReturn -> COMPLETED)
+        // 2. Xử phạt Shop nếu ở Giai đoạn 1 Shop chưa từng bị phạt (do tự thương lượng ACCEPT_RETURN hoặc chưa qua Admin xử phạt)
+        boolean shouldPenalizeShop = (report.getSellerAction() == DisputeSellerAction.ACCEPT_RETURN || r.getReviewedBy() == null);
+        if (shouldPenalizeShop && order.getShop() != null) {
+            Shop shop = shopRepository.findByIdForUpdate(order.getShop().getId())
+                    .orElse(order.getShop());
+            punishShop(shop, now);
+            log.info("Penalized shop on seller return dispute rejection (Buyer Wins): orderId={}, shopId={}, newViolationCount={}",
+                    orderId, shop.getId(), shop.getViolationCount());
+        }
+
+        // 3. Hoàn tất kiện hoàn (OrderReturn -> COMPLETED)
         OrderReturn ret = returnOpt.orElseGet(() -> orderReturnRepository.findByOrderIdForUpdate(orderId).orElse(null));
         if (ret != null) {
             ret.setStatus(ReturnStatus.COMPLETED);
@@ -344,9 +335,7 @@ public class ReportServiceImpl implements ReportService {
         requestRepository.save(r);
         reportRepository.save(report);
 
-        if (r != null) {
-            chatService.closeDisputeThread(r.getId(), "Admin phán quyết bồi hoàn cho Người mua sau khiếu nại kiện hoàn");
-        }
+        chatService.closeDisputeThread(r.getId(), "Admin phán quyết bồi hoàn cho Người mua sau khiếu nại kiện hoàn");
 
         // Gửi thông báo In-App cho Người mua và Người bán
         String orderCodeBuyerWins = order.getOrderNumber() != null ? order.getOrderNumber() : orderId.toString();
@@ -385,24 +374,10 @@ public class ReportServiceImpl implements ReportService {
 
                 Order order = orderRepository.findByIdForUpdate(orderId).orElse(null);
                 if (order != null && !hasActiveReturn && order.getStatus() == OrderStatus.DELIVERED) {
-                    order.setReceivedByBuyer(true);
-                    order.setReceivedAt(now);
-                    orderRepository.save(order);
-                    escrowService.releaseByOrder(orderId);
-                    order.setStatus(OrderStatus.COMPLETED);
-                    orderRepository.save(order);
+                    releaseDeliveredOrderToShop(order, now);
                     log.info("Admin rejected buyer report, released orderId={} to shop", orderId);
                 } else {
-                    escrowRepository.findByOrderIdForUpdate(orderId).ifPresent(escrow -> {
-                        if (escrow.getStatus() == EscrowStatus.DISPUTED) {
-                            boolean hasOtherDispute = reportRepository.hasActiveOrderDispute(orderId);
-                            if (!hasOtherDispute) {
-                                escrow.setStatus(EscrowStatus.HELD);
-                                escrow.setUpdatedAt(now);
-                                escrowRepository.save(escrow);
-                            }
-                        }
-                    });
+                    restoreEscrowToHeldIfNoActiveDispute(orderId, now);
                 }
 
                 if (order != null) {
@@ -416,7 +391,7 @@ public class ReportServiceImpl implements ReportService {
                             order.getId(), report.getId());
                     sendDisputeNotification(seller,
                             "Khiếu nại đơn hàng được bác bỏ - Giải ngân thành công",
-                            "Ban Quản Trị đã bác bỏ khiếu nại của người mua cho đơn hàng #" + orderCode + "" + clauseInfo + ". Tiền thanh toán đã được giải ngân cho gian hàng.",
+                            "Ban Quản Trị đã bác bỏ khiếu nại của người mua cho đơn hàng #" + orderCode + " " + clauseInfo + ". Tiền thanh toán đã được giải ngân cho gian hàng.",
                             order.getId(), report.getId());
                 }
 
@@ -621,17 +596,7 @@ public class ReportServiceImpl implements ReportService {
         req.setReviewedAt(now);
 
         if (report.getTargetType() == TargetType.ORDER && report.getTargetId() != null) {
-            UUID orderId = report.getTargetId();
-            escrowRepository.findByOrderIdForUpdate(orderId).ifPresent(escrow -> {
-                if (escrow.getStatus() == EscrowStatus.DISPUTED) {
-                    boolean hasOtherDispute = reportRepository.hasActiveOrderDispute(orderId);
-                    if (!hasOtherDispute) {
-                        escrow.setStatus(EscrowStatus.HELD);
-                        escrow.setUpdatedAt(now);
-                        escrowRepository.save(escrow);
-                    }
-                }
-            });
+            restoreEscrowToHeldIfNoActiveDispute(report.getTargetId(), now);
         }
 
         reportRepository.save(report);
@@ -841,28 +806,10 @@ public class ReportServiceImpl implements ReportService {
         Order order = orderRepository.findByIdForUpdate(orderId)
                 .orElseThrow(() -> new CustomException("Không tìm thấy đơn hàng: " + orderId));
 
-        UUID ownerAccountId = requestPolicy.resolveTargetAccountId(TargetType.ORDER, orderId);
-        if (ownerAccountId == null) {
-            throw new CustomException("Không tìm thấy tài khoản chủ gian hàng của đơn hàng: " + orderId);
-        }
-
-        // Phạt tài khoản chủ Shop
-        DisciplineLevel level = punishAccount(ownerAccountId, now);
-
         if (order.getShop() != null) {
-            Shop shop = order.getShop();
-            if (level == DisciplineLevel.WARNED) {
-                if (shop.getStatus() == ShopStatus.ACTIVE) {
-                    shop.setStatus(ShopStatus.WARNED);
-                }
-            } else if (level == DisciplineLevel.SUSPENDED) {
-                shop.setStatus(ShopStatus.SUSPENDED);
-                productRepository.updateStatusByShopId(shop.getId(), ProductStatus.INACTIVE);
-            } else if (level == DisciplineLevel.BANNED) {
-                shop.setStatus(ShopStatus.BANNED);
-                productRepository.updateStatusByShopId(shop.getId(), ProductStatus.DELETED);
-            }
-            shopRepository.save(shop);
+            Shop shop = shopRepository.findByIdForUpdate(order.getShop().getId())
+                    .orElse(order.getShop());
+            punishShop(shop, now);
         }
 
         // Đảm bảo Escrow ở trạng thái DISPUTED
@@ -890,16 +837,10 @@ public class ReportServiceImpl implements ReportService {
             throw new CustomException("Product is already deleted");
         }
 
-        if (product.getLastReportedAt() != null && product.getReportCount() > 0) {
-            long daysPassed = java.time.temporal.ChronoUnit.DAYS.between(product.getLastReportedAt(), now);
-            long decayCycles = daysPassed / 30;
-            if (decayCycles > 0) {
-                int decayedCount = Math.max(0, product.getReportCount() - (int) decayCycles);
-                product.setReportCount(decayedCount);
-                if (decayedCount < 3) {
-                    product.setFlagged(false);
-                }
-            }
+        int decayedProductReports = calculateMonthlyDecay(product.getLastReportedAt(), product.getReportCount(), now);
+        product.setReportCount(decayedProductReports);
+        if (decayedProductReports < 3) {
+            product.setFlagged(false);
         }
 
         int nextCount = product.getReportCount() + 1;
@@ -914,10 +855,13 @@ public class ReportServiceImpl implements ReportService {
             product.setStatus(ProductStatus.INACTIVE);
         }
 
-        UUID accountId = requestPolicy.resolveTargetAccountId(TargetType.PRODUCT, targetId);
-        if (accountId == null)
-            throw new CustomException("Cannot resolve PRODUCT owner accountId");
-        punishAccount(accountId, now);
+        productRepository.save(product);
+
+        if (product.getShop() != null) {
+            Shop shop = shopRepository.findByIdForUpdate(product.getShop().getId())
+                    .orElse(product.getShop());
+            punishShop(shop, now);
+        }
     }
 
     private void handleReportReview(UUID reviewId, LocalDateTime now) {
@@ -957,16 +901,9 @@ public class ReportServiceImpl implements ReportService {
         }
 
         // Thuật toán Hoàn lương (30-Day Monthly Decay):
-        // Cứ mỗi 30 ngày liên tục không có vi phạm mới, số lần vi phạm được trừ đi 1
-        // lần cho đến khi về 0.
-        if (target.getLastViolationAt() != null && target.getViolationCount() > 0) {
-            long daysPassed = java.time.temporal.ChronoUnit.DAYS.between(target.getLastViolationAt(), now);
-            long decayCycles = daysPassed / 30;
-            if (decayCycles > 0) {
-                int decayedCount = Math.max(0, target.getViolationCount() - (int) decayCycles);
-                target.setViolationCount(decayedCount);
-            }
-        }
+        // Cứ mỗi 30 ngày liên tục không có vi phạm mới, số lần vi phạm được trừ đi 1 lần cho đến khi về 0.
+        int decayedAccountViolations = calculateMonthlyDecay(target.getLastViolationAt(), target.getViolationCount(), now);
+        target.setViolationCount(decayedAccountViolations);
 
         int next = target.getViolationCount() + 1;
         target.setViolationCount(next);
@@ -996,35 +933,49 @@ public class ReportServiceImpl implements ReportService {
         return finalLevel;
     }
 
-    private void handleReportShop(UUID shopId, LocalDateTime now) {
-
-        Shop shop = shopRepository.findByIdForUpdate(shopId)
-                .orElseThrow(() -> new CustomException("Shop not found: " + shopId));
-
+    private void punishShop(Shop shop, LocalDateTime now) {
         if (shop.getStatus() == ShopStatus.BANNED) {
             throw new CustomException("Shop is already banned");
         }
 
-        UUID ownerAccountId = requestPolicy.resolveTargetAccountId(TargetType.SHOP, shopId);
-        if (ownerAccountId == null) {
-            throw new CustomException("Cannot resolve SHOP owner accountId");
-        }
+        // Thuật toán Hoàn Lương 30 Ngày (Monthly Decay) cho Shop
+        int currentViolations = shop.getViolationCount() != null ? shop.getViolationCount() : 0;
+        int decayedShopViolations = calculateMonthlyDecay(shop.getLastViolationAt(), currentViolations, now);
+        shop.setViolationCount(decayedShopViolations);
 
-        DisciplineLevel level = punishAccount(ownerAccountId, now);
+        int nextCount = (shop.getViolationCount() != null ? shop.getViolationCount() : 0) + 1;
+        shop.setViolationCount(nextCount);
+        shop.setLastViolationAt(now);
 
-        if (level == DisciplineLevel.WARNED) {
+        ShopStatus finalStatus;
+        if (nextCount >= 7) {
+            finalStatus = ShopStatus.BANNED;
+            shop.setStatus(ShopStatus.BANNED);
+            shop.setSuspendedUntil(null);
+            productRepository.updateStatusByShopId(shop.getId(), ProductStatus.DELETED);
+        } else if (nextCount >= 5) {
+            finalStatus = ShopStatus.SUSPENDED;
+            shop.setStatus(ShopStatus.SUSPENDED);
+            shop.setSuspendedUntil(now.plusDays(14));
+            productRepository.updateStatusByShopId(shop.getId(), ProductStatus.INACTIVE);
+        } else if (nextCount >= 3) {
+            finalStatus = ShopStatus.WARNED;
             if (shop.getStatus() == ShopStatus.ACTIVE) {
                 shop.setStatus(ShopStatus.WARNED);
             }
-        } else if (level == DisciplineLevel.SUSPENDED) {
-            shop.setStatus(ShopStatus.SUSPENDED);
-            productRepository.updateStatusByShopId(shopId, ProductStatus.INACTIVE);
-        } else if (level == DisciplineLevel.BANNED) {
-            shop.setStatus(ShopStatus.BANNED);
-            productRepository.updateStatusByShopId(shopId, ProductStatus.DELETED);
+        } else {
+            finalStatus = shop.getStatus() != null ? shop.getStatus() : ShopStatus.ACTIVE;
         }
 
         shopRepository.save(shop);
+        log.info("Penalized shop: shopId={}, newViolationCount={}, finalStatus={}, suspendedUntil={}",
+                shop.getId(), nextCount, finalStatus, shop.getSuspendedUntil());
+    }
+
+    private void handleReportShop(UUID shopId, LocalDateTime now) {
+        Shop shop = shopRepository.findByIdForUpdate(shopId)
+                .orElseThrow(() -> new CustomException("Shop not found: " + shopId));
+        punishShop(shop, now);
     }
 
     @Override
@@ -1200,6 +1151,62 @@ public class ReportServiceImpl implements ReportService {
             } catch (Exception e) {
                 log.error("Failed to auto-escalate expired dispute reportId={}", r.getId(), e);
             }
+        }
+    }
+
+    private int calculateMonthlyDecay(LocalDateTime lastViolationAt, int currentViolations, LocalDateTime now) {
+        if (lastViolationAt == null || currentViolations <= 0) {
+            return currentViolations;
+        }
+        long daysPassed = ChronoUnit.DAYS.between(lastViolationAt, now);
+        long decayCycles = daysPassed / 30;
+        return decayCycles > 0 ? Math.max(0, currentViolations - (int) decayCycles) : currentViolations;
+    }
+
+    private void restoreEscrowToHeldIfNoActiveDispute(UUID orderId, LocalDateTime now) {
+        escrowRepository.findByOrderIdForUpdate(orderId).ifPresent(escrow -> {
+            if (escrow.getStatus() == EscrowStatus.DISPUTED) {
+                boolean hasOtherDispute = reportRepository.hasActiveOrderDispute(orderId);
+                if (!hasOtherDispute) {
+                    escrow.setStatus(EscrowStatus.HELD);
+                    escrow.setUpdatedAt(now);
+                    escrowRepository.save(escrow);
+                }
+            }
+        });
+    }
+
+    private void releaseDeliveredOrderToShop(Order order, LocalDateTime now) {
+        order.setReceivedByBuyer(true);
+        order.setReceivedAt(now);
+        order.setStatus(OrderStatus.DELIVERED);
+        orderRepository.save(order);
+        escrowService.releaseByOrder(order.getId());
+        order.setStatus(OrderStatus.COMPLETED);
+        orderRepository.save(order);
+    }
+
+    private void restoreShopIfEligible(Shop shop) {
+        int violationCount = shop.getViolationCount() != null ? shop.getViolationCount() : 0;
+        LocalDateTime now = LocalDateTime.now();
+        if (violationCount >= 7) {
+            shop.setStatus(ShopStatus.BANNED);
+            shop.setSuspendedUntil(null);
+            productRepository.updateStatusByShopId(shop.getId(), ProductStatus.DELETED);
+        } else if (violationCount >= 5) {
+            shop.setStatus(ShopStatus.SUSPENDED);
+            if (shop.getSuspendedUntil() == null || shop.getSuspendedUntil().isBefore(now)) {
+                shop.setSuspendedUntil(now.plusDays(14));
+            }
+            productRepository.updateStatusByShopId(shop.getId(), ProductStatus.INACTIVE);
+        } else if (violationCount >= 3) {
+            shop.setStatus(ShopStatus.WARNED);
+            shop.setSuspendedUntil(null);
+            productRepository.updateStatusByShopId(shop.getId(), ProductStatus.PUBLISHED);
+        } else {
+            shop.setStatus(ShopStatus.ACTIVE);
+            shop.setSuspendedUntil(null);
+            productRepository.updateStatusByShopId(shop.getId(), ProductStatus.PUBLISHED);
         }
     }
 }

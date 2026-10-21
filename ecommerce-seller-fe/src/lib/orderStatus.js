@@ -157,8 +157,9 @@ export const CONDITION_STATUS_LABEL_MAP = {
   INTACT: 'Hàng nguyên vẹn / Đạt yêu cầu',
   DAMAGED: 'Hàng bị hư hỏng / bể vỡ',
   WRONG_ITEM: 'Hàng bị tráo / Sai sản phẩm',
-  EMPTY_BOX: 'Kiện hàng rỗng / Mất ruột',
+  INCOMPLETE: 'Thiếu phụ kiện / quà tặng kèm theo',
   MISSING_PARTS: 'Thiếu phụ kiện / linh kiện',
+  EMPTY_BOX: 'Hộp rỗng / không có hàng bên trong',
 }
 
 export const getConditionStatusLabel = (status) =>

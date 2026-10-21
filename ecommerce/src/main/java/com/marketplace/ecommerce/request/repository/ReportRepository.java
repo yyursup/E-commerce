@@ -176,11 +176,16 @@ public interface ReportRepository extends JpaRepository<Report, UUID> {
     @Query("""
         select r from Report r
         join fetch r.request req
-        join Order o on o.id = r.targetId
-        where req.type = 'REPORT'
-          and req.status = 'APPROVED'
-          and r.targetType = 'ORDER'
-          and o.shop.id = :shopId
+        where req.type = com.marketplace.ecommerce.request.valueObjects.RequestType.REPORT
+          and r.targetType = com.marketplace.ecommerce.request.valueObjects.TargetType.ORDER
+          and r.targetId in (select o.id from Order o where o.shop.id = :shopId)
+          and (
+               (req.status = com.marketplace.ecommerce.request.valueObjects.RequestStatus.APPROVED
+                and r.targetId not in (select o1.id from Order o1 where o1.status = com.marketplace.ecommerce.order.valueObjects.OrderStatus.COMPLETED))
+            or (r.stage = com.marketplace.ecommerce.request.valueObjects.ReportStage.CLOSED
+                and req.reviewedBy is not null
+                and r.targetId in (select o2.id from Order o2 where o2.status = com.marketplace.ecommerce.order.valueObjects.OrderStatus.REFUNDED))
+          )
         order by req.createdAt desc
     """)
     List<Report> findApprovedReportsByShopIdForOrders(@Param("shopId") UUID shopId);
@@ -194,16 +199,6 @@ public interface ReportRepository extends JpaRepository<Report, UUID> {
           and req.status = 'PENDING'
     """)
     boolean existsPendingReportByOrderId(@Param("orderId") UUID orderId);
-
-    @Query("""
-        select r from Report r
-        join fetch r.request req
-        where req.type = 'REPORT'
-          and req.status = 'APPROVED'
-          and r.targetType = 'ORDER'
-          and req.reviewedAt <= :threshold
-    """)
-    List<Report> findApprovedOrderReportsReviewedBefore(@Param("threshold") java.time.LocalDateTime threshold);
 
     @Query("""
         select r from Report r

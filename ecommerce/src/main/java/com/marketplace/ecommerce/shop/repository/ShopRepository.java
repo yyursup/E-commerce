@@ -8,6 +8,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.marketplace.ecommerce.shop.valueObjects.ShopStatus;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -27,4 +30,9 @@ public interface ShopRepository extends JpaRepository<Shop, UUID> {
     @Query("select s from Shop s where s.id = :id")
     Optional<Shop> findByIdForUpdate(@Param("id") UUID id);
 
+    @Query("select s from Shop s where s.status = :status and s.suspendedUntil is not null and s.suspendedUntil <= :now")
+    List<Shop> findExpiredSuspensions(@Param("status") ShopStatus status, @Param("now") LocalDateTime now);
+
+    @Query("select s from Shop s where s.status in ('ACTIVE', 'WARNED') and (s.suspendedUntil is null or s.suspendedUntil <= :now)")
+    List<Shop> findEligibleActiveShops(@Param("now") LocalDateTime now);
 }

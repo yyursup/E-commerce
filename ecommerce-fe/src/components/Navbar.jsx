@@ -299,7 +299,10 @@ export default function Navbar() {
                       </span>
                     )}
                   </div>
-                  <span className="max-w-[130px] truncate">{user?.fullName || user?.name || user?.email || 'Tài khoản'}</span>
+                  <span className="max-w-[110px] truncate">{user?.fullName || user?.name || user?.email || 'Tài khoản'}</span>
+                  <span className="hidden lg:inline-flex items-center text-[10px] font-bold px-1.5 py-0.2 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                    🛡️ {user?.reputationScore ?? 100}đ
+                  </span>
                 </>
               ) : (
                 'Tài khoản'
@@ -360,11 +363,27 @@ export default function Navbar() {
                       <p className={cn("truncate text-xs text-stone-400 dark:text-slate-400", isDark ? "text-slate-400" : "text-stone-500")}>
                         {user?.email}
                       </p>
-                      {userRole && (
-                        <p className="text-[10px] font-semibold text-amber-500 mt-0.5">
-                          {userRole === 'ADMIN' ? 'Quản trị viên' : userRole === 'BUSINESS' ? 'Doanh nghiệp' : 'Khách hàng'}
-                        </p>
-                      )}
+                      <div className="flex items-center gap-2 mt-1">
+                        {userRole && (
+                          <span className="text-[10px] font-semibold text-amber-500">
+                            {userRole === 'ADMIN' ? 'Quản trị viên' : userRole === 'BUSINESS' ? 'Doanh nghiệp' : 'Khách hàng'}
+                          </span>
+                        )}
+                        <span className="text-stone-300 dark:text-slate-600 text-[10px]">•</span>
+                        <Link
+                          to="/profile"
+                          className={cn(
+                            "inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.2 rounded-md hover:underline",
+                            (user?.reputationScore ?? 100) >= 100
+                              ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                              : (user?.reputationScore ?? 100) >= 70
+                              ? "bg-blue-500/15 text-blue-600 dark:text-blue-400"
+                              : "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                          )}
+                        >
+                          🛡️ {user?.reputationScore ?? 100}đ Uy tín
+                        </Link>
+                      </div>
                     </div>
                   </div>
                   {/* Seller Portal Link */}

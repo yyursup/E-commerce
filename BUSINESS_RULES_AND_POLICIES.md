@@ -173,15 +173,34 @@ Phán quyết của Quản trị viên bắt buộc phải gắn mã Điều kho
 
 ---
 
-## 8. THANG PHẠT VI PHẠM VÀ HỆ THỐNG KỶ LUẬT LŨY TIẾN
+## 8. THANG PHẠT VI PHẠM VÀ HỆ THỐNG KỶ LUẬT LŨY TIẾN 2 CHIỀU (TRUST & SAFETY)
 
-Hệ thống áp dụng cơ chế cộng dồn điểm vi phạm (Strikes Count) bất biến:
+Hệ thống bảo vệ thị trường (Trust & Safety) áp dụng cơ chế đánh giá uy tín và kỷ luật lũy tiến cho cả hai phía Người Bán và Người Mua.
+
+### 8.1. Thang Phạt & Điểm Uy Tín Gian Hàng (Shop Reputation)
 - **Từ 1 - 2 vi phạm**: Gửi cảnh báo hệ thống In-App, trừ 10 điểm uy tín.
 - **Đạt 3 vi phạm (WARNED - Cảnh cáo)**: Gắn nhãn cảnh báo vàng trên hồ sơ gian hàng, giảm thứ hạng hiển thị sản phẩm trên thanh tìm kiếm.
-- **Đạt 5 vi phạm (SUSPENDED - Đình chỉ tạm thời)**: Đình chỉ hoạt động tài khoản và gian hàng trong 14 ngày; toàn bộ sản phẩm bị ẩn khỏi sàn; tạm dừng tính năng rút tiền.
+- **Đạt 5 vi phạm (SUSPENDED - Đình chỉ tạm thời)**: Đình chỉ hoạt động gian hàng trong 14 ngày; toàn bộ sản phẩm bị ẩn khỏi sàn; tạm dừng tính năng rút tiền.
 - **Đạt 7 vi phạm (BANNED - Khóa vĩnh viễn)**: Đóng vĩnh viễn gian hàng, tịch thu số dư quỹ ký quỹ bồi thường cho các bên bị hại; chuyển hồ sơ sang cơ quan chức năng có thẩm quyền nếu có dấu hiệu lừa đảo hình sự.
-- **Tính chất phán quyết cuối cùng & Miễn trừ kháng cáo**: Toàn bộ điểm phạt gậy và chế tài kỷ luật do Ban Quản Trị ban hành là quyết định cuối cùng, không mở kênh khiếu nại hay kháng cáo.
-- **Cơ chế hồi phục (Decay Rule)**: Sau 30 ngày liên tục hoạt động chuẩn mực không phát sinh bất kỳ vi phạm nào, hệ thống tự động giảm trừ 1 điểm gậy vi phạm. Đây là cơ chế chuẩn mực duy nhất để phục hồi điểm uy tín cho tài khoản và gian hàng.
+
+### 8.2. Điểm Uy Tín Người Mua Hàng (Buyer Credibility Score)
+Hệ thống tính điểm uy tín người mua trên thang điểm 100 bất biến:
+$$\text{reputationScore} = \max(0, 100 - \text{violationCount} \times 15)$$
+
+| Điểm Uy Tín | Số Gậy Vi Phạm | Xếp Hạng & Huy Hiệu | Quyền Lợi & Chế Tài |
+| :--- | :--- | :--- | :--- |
+| **100 điểm** | 0 gậy | 🛡️ **Chuẩn Mực (Diamond Trust)** | Mở toàn bộ phương thức COD; ưu tiên duyệt khiếu nại hoàn tiền trong 24h. |
+| **70 - 85 điểm** | 1 - 2 gậy | 🔷 **Uy Tín Tốt (Good Standing)** | Giao dịch và đổi trả theo quy trình tiêu chuẩn; ghi nhận cảnh cáo nhẹ. |
+| **40 - 55 điểm** | 3 - 4 gậy | ⚠️ **Cảnh Báo (Warned)** | Diện giám sát giao dịch; yêu cầu cung cấp video bằng chứng unbox bắt buộc khi khiếu nại. |
+| **15 - 25 điểm** | 5 - 6 gậy | 🛑 **Rủi Ro Cao (Suspended)** | Tạm khóa phương thức thanh toán khi nhận hàng (COD), yêu cầu thanh toán trả trước VNPay. |
+| **0 điểm** | ≥ 7 gậy | ❌ **Khóa Tài Khoản (Banned)** | Vô hiệu hóa tài khoản người mua vĩnh viễn; chặn đăng ký tài khoản mới cùng thông tin. |
+
+### 8.3. Cơ Chế Tự Động Hồi Phục (Monthly Decay Rule)
+- Sau **30 ngày liên tục** tài khoản (người bán hoặc người mua) hoạt động chuẩn mực không phát sinh bất kỳ vi phạm mới nào, hệ thống tự động giảm trừ **1 điểm gậy vi phạm (-1 strike)** và hồi phục **+15 điểm uy tín** cho người mua (hoặc phục hồi tương ứng cho người bán) cho đến khi đạt mức tối đa 100 điểm.
+- Đây là cơ chế chuẩn mực duy nhất để phục hồi điểm uy tín và xóa gậy vi phạm.
+
+### 8.4. Tính Chất Phán Quyết Cuối Cùng & Miễn Trừ Kháng Cáo
+- Toàn bộ điểm phạt gậy và quyết định kỷ luật do Ban Quản Trị ban hành sau quá trình xác minh bằng chứng là phán quyết cuối cùng, không mở kênh kháng cáo hành chính nhằm đảm bảo tính răn đe và bảo vệ tính công bằng toàn hệ sinh thái.
 
 ---
 

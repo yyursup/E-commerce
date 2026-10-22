@@ -104,16 +104,32 @@ export default function Profile() {
                                 <span className={cn("font-bold text-sm truncate", isDark ? "text-slate-100" : "text-stone-800")}>
                                     {user?.fullName || user?.name || user?.email?.split('@')[0] || 'User'}
                                 </span>
-                                <button
-                                    type="button"
-                                    onClick={() => setActiveTab('profile')}
-                                    className={cn(
-                                        "flex items-center gap-1.5 text-xs mt-0.5 font-medium transition-colors cursor-pointer",
-                                        isDark ? "text-slate-400 hover:text-amber-400" : "text-stone-500 hover:text-amber-600"
-                                    )}
-                                >
-                                    <FiEdit2 size={12} className="text-amber-500" /> Sửa Hồ Sơ
-                                </button>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                    <span
+                                        title={`Điểm uy tín người mua: ${user?.reputationScore ?? 100}/100đ (${user?.violationCount || 0} gậy)`}
+                                        className={cn(
+                                            "inline-flex items-center gap-1 px-1.5 py-0.2 rounded-md text-[10px] font-bold",
+                                            (user?.reputationScore ?? 100) >= 100
+                                                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+                                                : (user?.reputationScore ?? 100) >= 70
+                                                ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20"
+                                                : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
+                                        )}
+                                    >
+                                        🛡️ {user?.reputationScore ?? 100}đ
+                                    </span>
+                                    <span className="text-stone-300 dark:text-slate-700 text-xs">•</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => setActiveTab('profile')}
+                                        className={cn(
+                                            "flex items-center gap-1 text-xs font-medium transition-colors cursor-pointer",
+                                            isDark ? "text-slate-400 hover:text-amber-400" : "text-stone-500 hover:text-amber-600"
+                                        )}
+                                    >
+                                        <FiEdit2 size={11} className="text-amber-500" /> Sửa
+                                    </button>
+                                </div>
                             </div>
                         </div>
 

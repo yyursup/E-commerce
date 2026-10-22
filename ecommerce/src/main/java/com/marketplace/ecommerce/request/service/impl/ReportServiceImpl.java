@@ -156,9 +156,21 @@ public class ReportServiceImpl implements ReportService {
             // TUYỆT ĐỐI không gọi handleReportOrder (không phạt Shop vì đây là khiếu nại
             // tình trạng hàng hoàn)
             // TUYỆT ĐỐI không gọi orderReturnService.createReturn (không tạo mới kiện hoàn)
+
+            // Bảo vệ nghiệp vụ: Trong tranh chấp kiện hoàn do Shop khiếu nại:
+            // - REJECT: Bác bỏ khiếu nại của Shop -> Buyer thắng (Bồi hoàn Escrow cho Buyer)
+            // - RETURN_AND_REFUND: Nhánh generic bồi hoàn không tạo return trùng -> Buyer thắng
+            // - APPROVE: Chấp thuận khiếu nại của Shop -> Shop thắng (Giải ngân Escrow cho Shop)
+            // BẢO VỆ ESCROW: Khi Admin chọn APPROVE, nếu payload vô tình kẹp resolutionType=REFUND_ONLY
+            // (do fallback mặc định của FE hoặc modal chung), hệ thống TUYỆT ĐỐI KHÔNG coi là Buyer thắng,
+            // bảo đảm giải ngân cho Shop, không hoàn tiền cho Buyer và không phạt Shop.
+            if (req.getDecision() == ReportDecision.APPROVE && req.getResolutionType() == ResolutionType.REFUND_ONLY) {
+                log.warn("Cảnh báo mâu thuẫn payload: Khiếu nại kiện hoàn Shop có decision=APPROVE nhưng kèm resolutionType=REFUND_ONLY. Bỏ qua resolutionType để bảo toàn phán quyết giải ngân cho Shop.");
+            }
+
             boolean buyerWins = (req.getDecision() == ReportDecision.REJECT)
-                    || (req.getResolutionType() == ResolutionType.REFUND_ONLY)
-                    || (req.getResolutionType() == ResolutionType.RETURN_AND_REFUND);
+                    || (req.getDecision() != ReportDecision.APPROVE && req.getResolutionType() == ResolutionType.REFUND_ONLY)
+                    || (req.getResolutionType() == ResolutionType.RETURN_AND_REFUND && req.getRemoveShopPenalty() == null);
 
             if (buyerWins) {
                 handleSellerReturnDisputeBuyerWins(report, r, admin, now, req.getNote(), req.getDecision(), returnOpt);

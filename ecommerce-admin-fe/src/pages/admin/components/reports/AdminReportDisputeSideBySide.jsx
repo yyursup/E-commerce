@@ -265,7 +265,7 @@ export default function AdminReportDisputeSideBySide({
               </span>
               <div>
                 <h4 className="text-xs font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400">
-                  Giai Đoạn 2: Khiếu Nại Kiện Hàng Hoàn Trả Từ Phía Shop
+                  Khiếu Nại Kiện Hàng Hoàn Trả Từ Phía Shop
                 </h4>
                 <p className="text-[11px] text-stone-500 dark:text-slate-400">
                   Phát sinh sau khi Buyer gửi hàng hoàn về kho và Shop kiểm tra kiện hàng.

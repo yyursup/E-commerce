@@ -324,6 +324,61 @@ class OrderReportDisputeTest {
         }
 
         @Test
+        @DisplayName("Bảo vệ Escrow: Shop thắng (APPROVE) nhưng payload vô tình có resolutionType = REFUND_ONLY -> Vẫn giải ngân cho Shop, không hoàn tiền cho Buyer và không phạt Shop")
+        void handleReport_SellerReturnDispute_Approve_WithConflictingRefundResolution_ReleasesToShopAndNeverRefundsBuyer() {
+                Request disputeReq = Request.builder()
+                                .id(reportRequestId)
+                                .type(RequestType.REPORT)
+                                .status(RequestStatus.PENDING)
+                                .description("[Shop khiếu nại kiện hàng hoàn - DAMAGED] Hàng bị tráo")
+                                .build();
+
+                Report disputeReport = Report.builder()
+                                .id(reportRequestId)
+                                .request(disputeReq)
+                                .targetType(TargetType.ORDER)
+                                .targetId(orderId)
+                                .violationReportId(UUID.randomUUID())
+                                .build();
+
+                OrderReturn orderReturn = OrderReturn.builder()
+                                .id(UUID.randomUUID())
+                                .order(deliveredOrder)
+                                .status(ReturnStatus.DISPUTED)
+                                .build();
+
+                when(accountRepository.findById(adminAccountId)).thenReturn(Optional.of(adminAccount));
+                when(reportRepository.findByRequestId(reportRequestId)).thenReturn(disputeReport);
+                when(orderRepository.findByIdForUpdate(orderId)).thenReturn(Optional.of(deliveredOrder));
+                when(orderReturnRepository.findByOrderIdForUpdate(orderId)).thenReturn(Optional.of(orderReturn));
+                when(escrowRepository.findByOrderIdForUpdate(orderId)).thenReturn(Optional.of(heldEscrow));
+                heldEscrow.setStatus(EscrowStatus.DISPUTED);
+
+                // Payload mâu thuẫn từ phía Client / FE: Admin bấm APPROVE nhưng kẹp resolutionType = REFUND_ONLY
+                HandleReportRequest req = HandleReportRequest.builder()
+                                .decision(ReportDecision.APPROVE)
+                                .resolutionType(ResolutionType.REFUND_ONLY)
+                                .note("Xác nhận khách tráo hàng, duyệt cho Shop thắng")
+                                .build();
+
+                reportService.handleReport(adminAccountId, reportRequestId, req);
+
+                // 1. Phán quyết Request được duyệt, kiện hoàn bị hủy
+                assertEquals(RequestStatus.APPROVED, disputeReq.getStatus());
+                assertEquals(ReturnStatus.CANCELLED, orderReturn.getStatus());
+
+                // 2. Buyer bị phạt gậy vì gian lận hàng hoàn
+                assertEquals(1, buyerAccount.getViolationCount());
+
+                // 3. Shop không bị phạt cộng gậy
+                assertEquals(0, shop.getViolationCount());
+
+                // 4. Tiền Escrow được giải ngân cho Shop, TUYỆT ĐỐI không hoàn tiền cho Buyer
+                verify(escrowService).releaseByOrder(orderId);
+                verify(escrowService, never()).refundByOrder(any(), any());
+        }
+
+        @Test
         @DisplayName("Admin duyệt khiếu nại kiện hoàn: Tùy chọn removeShopPenalty = false -> Giữ nguyên gậy của Shop, vẫn phạt Buyer")
         void handleReport_SellerReturnDispute_Approve_KeepShopPenalty() {
                 Account shopOwner = Account.builder()

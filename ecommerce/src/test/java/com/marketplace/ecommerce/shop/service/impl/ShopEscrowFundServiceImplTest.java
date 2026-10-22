@@ -321,8 +321,6 @@ class ShopEscrowFundServiceImplTest {
                 when(escrowRepository.existsByOrderShopIdAndStatusIn(eq(shopId), any())).thenReturn(false);
                 when(orderReturnRepository.existsByOrderShopIdAndStatusIn(eq(shopId), any())).thenReturn(false);
                 when(reportRepository.existsPendingReportsForShop(shopId)).thenReturn(false);
-                when(requestRepository.existsByAccountIdAndTypeAndStatus(any(), eq(RequestType.APPEAL),
-                                eq(RequestStatus.PENDING))).thenReturn(false);
 
                 ShopEscrowFundResponse res = shopEscrowFundService.requestCloseShopAndRefund(shopId);
 
@@ -349,8 +347,6 @@ class ShopEscrowFundServiceImplTest {
                 when(escrowRepository.existsByOrderShopIdAndStatusIn(eq(shopId), any())).thenReturn(false);
                 when(orderReturnRepository.existsByOrderShopIdAndStatusIn(eq(shopId), any())).thenReturn(false);
                 when(reportRepository.existsPendingReportsForShop(shopId)).thenReturn(false);
-                when(requestRepository.existsByAccountIdAndTypeAndStatus(any(), eq(RequestType.APPEAL),
-                                eq(RequestStatus.PENDING))).thenReturn(false);
 
                 ShopEscrowFundResponse res = shopEscrowFundService.adminApproveCloseShopRefund(shopId);
 

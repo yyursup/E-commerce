@@ -18,7 +18,6 @@ import requestService from '../../services/request'
 import toast from 'react-hot-toast'
 
 import AdminReportsTab from './components/reports/AdminReportsTab'
-import AdminAppealsTab from './components/reports/AdminAppealsTab'
 import AdminReportDetailModal from './components/reports/AdminReportDetailModal'
 import AdminActionModal from './components/reports/AdminActionModal'
 
@@ -38,13 +37,13 @@ export const parseImages = (...sources) => {
   return urls
 }
 
-const VALID_TABS = ['REPORTS', 'APPEALS']
+const VALID_TABS = ['REPORTS']
 
 export default function AdminReports() {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
   const [searchParams, setSearchParams] = useSearchParams()
   const tabParam = searchParams.get('tab')?.toUpperCase()
-  const [activeTab, setActiveTab] = useState(VALID_TABS.includes(tabParam) ? tabParam : 'REPORTS')
+  const [activeTab, setActiveTab] = useState('REPORTS')
   const [loading, setLoading] = useState(true)
 
   // Đồng bộ activeTab khi query param trên URL thay đổi (Back / Forward)
@@ -61,13 +60,12 @@ export default function AdminReports() {
 
   // Data states
   const [reports, setReports] = useState([])
-  const [appeals, setAppeals] = useState([])
   const [policyClauses, setPolicyClauses] = useState([])
 
   // Modal actions (xác nhận/từ chối kèm ghi chú)
   const [actionModal, setActionModal] = useState({
     isOpen: false,
-    type: '', // 'REPORT_APPROVE', 'REPORT_REJECT', 'APPEAL_APPROVE', 'APPEAL_REJECT'
+    type: '', // 'REPORT_APPROVE', 'REPORT_REJECT'
     item: null,
     note: '',
     policyClauseCode: '',
@@ -85,13 +83,11 @@ export default function AdminReports() {
   const fetchData = useCallback(async () => {
     try {
       setLoading(true)
-      const [reportRes, appealRes, clauseRes] = await Promise.all([
+      const [reportRes, clauseRes] = await Promise.all([
         requestService.getAdminRequests({ type: 'REPORT' }),
-        requestService.getAdminRequests({ type: 'APPEAL' }),
         reportService.getPolicyClauses().catch(() => []),
       ])
       const reportList = reportRes?.content || (Array.isArray(reportRes) ? reportRes : [])
-      const appealList = appealRes?.content || (Array.isArray(appealRes) ? appealRes : [])
 
       // Enrich chi tiết cho các vụ việc Đơn hàng để nhận diện chính xác Khiếu nại kiện hoàn (Giai đoạn 2)
       const enrichedReports = await Promise.all(
@@ -131,7 +127,6 @@ export default function AdminReports() {
       )
 
       setReports(enrichedReports)
-      setAppeals(appealList)
       setPolicyClauses(clauseRes || [])
     } catch (err) {
       console.error('Lỗi tải dữ liệu kiểm duyệt:', err)
@@ -235,8 +230,8 @@ export default function AdminReports() {
 
     const trimmedNote = note?.trim() || ''
 
-    // Bắt buộc nhập lý do phán quyết đối với duyệt / từ chối report hoặc kháng cáo
-    if (!trimmedNote && ['REPORT_APPROVE', 'REPORT_REJECT', 'APPEAL_APPROVE', 'APPEAL_REJECT'].includes(type)) {
+    // Bắt buộc nhập lý do phán quyết đối với duyệt / từ chối report
+    if (!trimmedNote && ['REPORT_APPROVE', 'REPORT_REJECT'].includes(type)) {
       toast.error('Vui lòng nhập hoặc chọn lý do / phán quyết của Ban Quản Trị!')
       return
     }
@@ -299,12 +294,6 @@ export default function AdminReports() {
         } else {
           toast.success('Đã bác bỏ báo cáo vi phạm.')
         }
-      } else if (type === 'APPEAL_APPROVE') {
-        await requestService.approveRequest(requestId, trimmedNote)
-        toast.success('Đã chấp thuận kháng cáo! Đã khôi phục trạng thái và điều chỉnh điểm vi phạm về an toàn.')
-      } else if (type === 'APPEAL_REJECT') {
-        await requestService.rejectRequest(requestId, trimmedNote)
-        toast.success('Đã từ chối kháng cáo.')
       } else if (type === 'ESCROW_REFUND') {
         const orderId = item.orderId || item.order?.id
         await escrowService.refundByOrder(orderId, trimmedNote || 'Admin phân xử hoàn tiền 100% cho người mua do Shop vi phạm')
@@ -395,10 +384,10 @@ export default function AdminReports() {
           </div>
           <div>
             <h1 className={cn('text-2xl font-bold tracking-tight', isDark ? 'text-white' : 'text-stone-900')}>
-              Kiểm Soát An Toàn, Vi Phạm & Kháng Cáo (Trust & Safety)
+              Kiểm Soát An Toàn, Vi Phạm & Tranh Chấp (Trust & Safety)
             </h1>
             <p className={cn('text-xs mt-0.5', isDark ? 'text-slate-400' : 'text-stone-500')}>
-              Thẩm định báo cáo vi phạm, xét duyệt kháng cáo và phân xử ký quỹ Escrow bảo vệ người mua
+              Thẩm định báo cáo vi phạm, phân xử tranh chấp đơn hàng và ký quỹ Escrow bảo vệ quyền lợi
             </p>
           </div>
         </div>
@@ -425,30 +414,14 @@ export default function AdminReports() {
           isDark ? 'border-slate-800 bg-slate-900/90' : 'border-stone-200 bg-stone-100/90',
         )}
       >
-        {[
-          { key: 'REPORTS', label: `Báo Cáo Vi Phạm (${reports.length})`, icon: HiOutlineExclamationCircle },
-          { key: 'APPEALS', label: `Hàng Đợi Kháng Cáo (${appeals.length})`, icon: HiOutlineScale },
-        ].map((tab) => {
-          const isActive = activeTab === tab.key
-          const Icon = tab.icon
-          return (
-            <button
-              key={tab.key}
-              onClick={() => handleTabChange(tab.key)}
-              className={cn(
-                'flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all',
-                isActive
-                  ? 'bg-amber-500 text-white shadow-md shadow-amber-500/25'
-                  : isDark
-                    ? 'text-slate-300 hover:text-white hover:bg-slate-800'
-                    : 'text-stone-600 hover:text-stone-900 hover:bg-white',
-              )}
-            >
-              <Icon className="h-4 w-4" />
-              {tab.label}
-            </button>
-          )
-        })}
+        <button
+          className={cn(
+            'flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all bg-amber-500 text-white shadow-md shadow-amber-500/25',
+          )}
+        >
+          <HiOutlineExclamationCircle className="h-4 w-4" />
+          Báo Cáo Vi Phạm & Tranh Chấp ({reports.length})
+        </button>
       </div>
 
       {/* Content Container */}
@@ -463,18 +436,9 @@ export default function AdminReports() {
             <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-r-transparent" />
             <p className="mt-3 text-xs text-stone-400">Đang tải dữ liệu kiểm duyệt...</p>
           </div>
-        ) : activeTab === 'REPORTS' ? (
+        ) : (
           <AdminReportsTab
             reports={reports}
-            isDark={isDark}
-            handleOpenDetail={handleOpenDetail}
-            setActionModal={setActionModal}
-            handleOpenActionModal={handleOpenActionModal}
-            parseImages={parseImages}
-          />
-        ) : (
-          <AdminAppealsTab
-            appeals={appeals}
             isDark={isDark}
             handleOpenDetail={handleOpenDetail}
             setActionModal={setActionModal}

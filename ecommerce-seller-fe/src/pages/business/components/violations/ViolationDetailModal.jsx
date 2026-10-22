@@ -11,7 +11,6 @@ export default function ViolationDetailModal({
   setDetailViolation,
   isDark,
   parseImages,
-  handleOpenAppealModal,
 }) {
   return (
     <AnimatePresence>
@@ -198,6 +197,10 @@ export default function ViolationDetailModal({
 
             {/* Trạng thái và nút thao tác */}
             <div className="flex items-center justify-between pt-4 border-t border-stone-100 dark:border-slate-800">
+              <span className="text-xs font-semibold text-blue-500 bg-blue-500/10 px-3 py-1.5 rounded-xl border border-blue-500/20">
+                Phán quyết cuối cùng của Ban Quản Trị
+              </span>
+
               <button
                 type="button"
                 onClick={() => setDetailViolation(null)}
@@ -208,27 +211,6 @@ export default function ViolationDetailModal({
               >
                 Đóng
               </button>
-
-              {detailViolation.appealStatus === 'FINAL_RULING' && (
-                <span className="text-xs font-semibold text-blue-500 bg-blue-500/10 px-3 py-1.5 rounded-xl border border-blue-500/20">
-                  Phán quyết cuối cùng
-                </span>
-              )}
-
-              {detailViolation.appealStatus === 'NONE' && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    const v = detailViolation
-                    setDetailViolation(null)
-                    handleOpenAppealModal(v)
-                  }}
-                  className="px-5 py-2.5 rounded-2xl text-xs font-bold text-white bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 active:scale-95 shadow-md shadow-amber-500/25 transition-all flex items-center gap-1.5"
-                >
-                  <HiOutlineDocumentText className="h-4 w-4" />
-                  Kháng cáo phục hồi uy tín
-                </button>
-              )}
             </div>
           </motion.div>
         </div>

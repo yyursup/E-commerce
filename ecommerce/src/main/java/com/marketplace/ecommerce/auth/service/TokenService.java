@@ -8,8 +8,4 @@ public interface TokenService {
     public Account getAccountFromToken(String token);
 
     public String refreshToken(Account account);
-    
-    public String createAppealToken(Account account);
-    
-    public Account getAccountFromAppealToken(String token);
 }

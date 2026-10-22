@@ -618,7 +618,7 @@ export default function OrderReportModal({ isOpen, onClose, order, onSuccess }) 
                       Bảo Chứng Thanh Toán Ký Quỹ (Escrow Protection)
                     </p>
                     <p className="leading-relaxed text-[11px] opacity-90">
-                      Khi gửi khiếu nại, tiền đơn hàng sẽ được <strong>tạm khóa an toàn</strong> trong tài khoản ký quỹ của sàn. Người bán có tối đa <strong>72 giờ</strong> để phản hồi hoặc giải trình. Nếu không có kháng cáo hợp lệ, toàn bộ <strong>100% số tiền</strong> sẽ được tự động hoàn trả vào Ví của bạn.
+                      Khi gửi khiếu nại, tiền đơn hàng sẽ được <strong>tạm khóa an toàn</strong> trong tài khoản ký quỹ của sàn. Người bán có tối đa <strong>72 giờ</strong> để phản hồi hoặc giải trình. Nếu không có phản hồi giải trình hợp lệ, toàn bộ <strong>100% số tiền</strong> sẽ được tự động hoàn trả vào Ví của bạn.
                     </p>
                   </div>
                 </div>

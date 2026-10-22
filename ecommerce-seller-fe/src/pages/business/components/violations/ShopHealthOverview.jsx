@@ -11,8 +11,6 @@ export default function ShopHealthOverview({
   shopHealth,
   violationCount,
   shopStatus,
-  hasAppealableViolations,
-  onOpenAppealModal,
 }) {
   // Thang điểm uy tín chuẩn 100 điểm, mỗi lần vi phạm trừ 15 điểm
   const reputationScore = Math.max(0, 100 - violationCount * 15)
@@ -83,17 +81,6 @@ export default function ShopHealthOverview({
                 </p>
               </div>
             </div>
-
-            {hasAppealableViolations && (
-              <button
-                type="button"
-                onClick={onOpenAppealModal}
-                className="w-full sm:w-auto shrink-0 flex items-center justify-center gap-2 rounded-2xl bg-rose-600 px-5 py-2.5 text-xs font-bold text-white hover:bg-rose-700 active:scale-95 shadow-md shadow-rose-600/30 transition-all"
-              >
-                <HiOutlineDocumentText className="h-4 w-4" />
-                Nộp đơn kháng cáo phục hồi uy tín
-              </button>
-            )}
           </div>
         </div>
       )}
@@ -120,17 +107,6 @@ export default function ShopHealthOverview({
                 </p>
               </div>
             </div>
-
-            {hasAppealableViolations && (
-              <button
-                type="button"
-                onClick={onOpenAppealModal}
-                className="w-full sm:w-auto shrink-0 flex items-center justify-center gap-2 rounded-2xl bg-amber-600 px-5 py-2.5 text-xs font-bold text-white hover:bg-amber-700 active:scale-95 shadow-md shadow-amber-600/30 transition-all"
-              >
-                <HiOutlineDocumentText className="h-4 w-4" />
-                Kháng cáo gỡ cảnh báo uy tín
-              </button>
-            )}
           </div>
         </div>
       )}
@@ -219,8 +195,8 @@ export default function ShopHealthOverview({
               </div>
               <p>• <strong>Ưu tiên hiển thị:</strong> Sản phẩm của gian hàng có điểm uy tín cao được ưu tiên đề xuất trên trang chủ và kết quả tìm kiếm.</p>
               <p>• <strong>Khắc phục sai sót:</strong> Giúp các gian hàng có cơ hội sửa đổi và phục hồi toàn diện điểm số theo thời gian mà không bị trừ điểm vĩnh viễn.</p>
-              <p>• <strong>Kháng cáo phục hồi điểm:</strong> Khi nộp đơn giải trình và được Ban Quản Trị chấp thuận, điểm uy tín của sự vụ đó sẽ được khôi phục ngay lập tức (+15 điểm).</p>
-              <p>• <strong>Tính công bằng:</strong> Quyết định thẩm định của Ban Quản Trị là phán quyết cuối cùng để bảo đảm tính nghiêm minh và quyền lợi người mua.</p>
+              <p>• <strong>Phán quyết nghiêm minh:</strong> Mọi phán quyết xử lý vi phạm của Ban Quản Trị là phán quyết cuối cùng, không áp dụng kháng cáo.</p>
+              <p>• <strong>Tính công bằng:</strong> Cơ chế tự động phục hồi điểm sau 30 ngày giúp các gian hàng sửa đổi chuẩn mực và khôi phục hoạt động.</p>
             </div>
           </div>
 

@@ -11,7 +11,6 @@ import com.marketplace.ecommerce.product.entity.Product;
 import com.marketplace.ecommerce.product.repository.ProductRepository;
 import com.marketplace.ecommerce.product.valueObjects.ProductStatus;
 import com.marketplace.ecommerce.request.constant.RequestConstant;
-import com.marketplace.ecommerce.request.dto.request.CreateAppealRequest;
 import com.marketplace.ecommerce.request.dto.request.CreateSendRequest;
 import com.marketplace.ecommerce.request.dto.response.*;
 import com.marketplace.ecommerce.request.entity.Report;
@@ -122,81 +121,6 @@ public class RequestServiceImpl implements RequestService {
             return approveSellerRegistration(requestId, adminAccountId, response);
         }
 
-        if (req.getType() == RequestType.APPEAL) {
-            Account admin = accountRepository.findById(adminAccountId)
-                    .orElseThrow(() -> new CustomException("Admin account not found: " + adminAccountId));
-
-            Report report = reportRepository.findByRequestId(requestId);
-            if (report != null && report.getTargetType() != null && report.getTargetId() != null) {
-                TargetType targetType = report.getTargetType();
-                UUID targetId = report.getTargetId();
-
-                switch (targetType) {
-                    case SHOP -> {
-                        Shop shop = shopRepository.findById(targetId)
-                                .orElseThrow(() -> new CustomException("Shop not found: " + targetId));
-                        int newViolationCount = Math.max(0, (shop.getViolationCount() != null ? shop.getViolationCount() : 0) - 1);
-                        shop.setViolationCount(newViolationCount);
-
-                        LocalDateTime now = LocalDateTime.now();
-                        if (newViolationCount >= 7) {
-                            shop.setStatus(ShopStatus.BANNED);
-                            shop.setSuspendedUntil(null);
-                            productRepository.updateStatusByShopId(shop.getId(), ProductStatus.DELETED);
-                        } else if (newViolationCount >= 5) {
-                            shop.setStatus(ShopStatus.SUSPENDED);
-                            if (shop.getSuspendedUntil() == null || shop.getSuspendedUntil().isBefore(now)) {
-                                shop.setSuspendedUntil(now.plusDays(14));
-                            }
-                            productRepository.updateStatusByShopId(shop.getId(), ProductStatus.INACTIVE);
-                        } else if (newViolationCount >= 3) {
-                            shop.setStatus(ShopStatus.WARNED);
-                            shop.setSuspendedUntil(null);
-                            productRepository.updateStatusByShopId(shop.getId(), ProductStatus.PUBLISHED);
-                        } else {
-                            shop.setStatus(ShopStatus.ACTIVE);
-                            shop.setSuspendedUntil(null);
-                            productRepository.updateStatusByShopId(shop.getId(), ProductStatus.PUBLISHED);
-                        }
-
-                        shopRepository.save(shop);
-                    }
-                    case PRODUCT -> {
-                        Product product = productRepository.findById(targetId)
-                                .orElseThrow(() -> new CustomException("Product not found: " + targetId));
-                        product.setStatus(ProductStatus.PUBLISHED);
-                        product.setFlagged(false);
-                        product.setReportCount(0);
-                        product.setDeleted(false);
-                        productRepository.save(product);
-                    }
-                    case REVIEW -> {
-                        Review review = reviewRepository.findById(targetId)
-                                .orElseThrow(() -> new CustomException("Review not found: " + targetId));
-                        review.setStatus(ReviewStatus.ACTIVE);
-                        review.setFlagged(false);
-                        review.setReportCount(0);
-                        reviewRepository.save(review);
-                    }
-                    case USER -> {
-                        Account userAcc = accountRepository.findById(targetId)
-                                .orElseThrow(() -> new CustomException("Target user account not found: " + targetId));
-                        userAcc.setStatus(AccountStatus.ACTIVE);
-                        userAcc.setIsActive(true);
-                        userAcc.setDisciplineLevel(DisciplineLevel.NONE);
-                        userAcc.setViolationCount(0);
-                        userAcc.setBannedUntil(null);
-                        accountRepository.save(userAcc);
-                    }
-                    case ORDER -> throw new CustomException(
-                            "Kháng cáo không còn áp dụng đối với đơn hàng. Phán quyết của Quản trị viên là quyết định cuối cùng.");
-                }
-            }
-
-            markApprovedRequest(req, admin, response);
-            return RequestResponse.from(req);
-        }
-
         throw new CustomException("Unsupported request type for approve: " + req.getType());
     }
 
@@ -210,99 +134,12 @@ public class RequestServiceImpl implements RequestService {
 
     @Override
     @Transactional
-    public CreateRequestResponse createAppeal(UUID accountId, CreateAppealRequest req) {
-        requestValidation.validateAppealRequest(req);
-
-        Account acc = accountRepository.findById(accountId)
-                .orElseThrow(() -> new CustomException("Account not found: " + accountId));
-
-        // Kiểm tra lịch sử kháng cáo của vi phạm này để tuân thủ quy tắc kháng cáo
-        // chuẩn
-        if (req.getReportId() != null) {
-            List<Report> existingAppeals = reportRepository.findAppealsByViolationReportId(req.getReportId());
-            for (Report appeal : existingAppeals) {
-                if (appeal.getRequest() != null) {
-                    RequestStatus st = appeal.getRequest().getStatus();
-                    if (st == RequestStatus.PENDING) {
-                        throw new CustomException(
-                                "Bạn đã có đơn kháng cáo đang chờ quản trị viên xử lý cho vi phạm này.");
-                    } else if (st == RequestStatus.REJECTED) {
-                        throw new CustomException(
-                                "Đơn kháng cáo cho vi phạm này đã bị từ chối. Quyết định của Quản trị viên là quyết định cuối cùng.");
-                    } else if (st == RequestStatus.APPROVED) {
-                        throw new CustomException("Đơn kháng cáo cho vi phạm này đã được chấp thuận trước đó.");
-                    }
-                }
-            }
-        } else {
-            List<Report> existingAppeals = reportRepository.findAppealsByAccountIdAndTargetId(accountId,
-                    req.getTargetId());
-            for (Report appeal : existingAppeals) {
-                if (appeal.getRequest() != null) {
-                    RequestStatus st = appeal.getRequest().getStatus();
-                    if (st == RequestStatus.PENDING) {
-                        throw new CustomException("Bạn đã có đơn kháng cáo đang chờ quản trị viên xử lý cho mục này.");
-                    } else if (st == RequestStatus.REJECTED) {
-                        throw new CustomException(
-                                "Đơn kháng cáo cho vi phạm này đã bị từ chối. Quyết định của Quản trị viên là quyết định cuối cùng.");
-                    } else if (st == RequestStatus.APPROVED) {
-                        throw new CustomException("Đơn kháng cáo cho vi phạm này đã được chấp thuận trước đó.");
-                    }
-                }
-            }
-        }
-
-        Request r = Request.builder()
-                .account(acc)
-                .type(RequestType.APPEAL)
-                .status(RequestStatus.PENDING)
-                .description(req.getDescription())
-                .coverImageUrl(req.getEvidenceUrl())
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
-                .build();
-
-        r = requestRepository.save(r);
-
-        Report appealReport = Report.builder()
-                .request(r)
-                .targetType(req.getTargetType())
-                .targetId(req.getTargetId())
-                .violationReportId(req.getReportId())
-                .evidenceUrl(req.getEvidenceUrl())
-                .moderatorNote(null)
-                .build();
-        reportRepository.save(appealReport);
-
-        return CreateRequestResponse.from(r);
-    }
-
-    @Override
-    @Transactional
     public RequestResponse rejectRequest(UUID adminAccountId, UUID requestId, String response) {
         Account acc = accountRepository.findById(adminAccountId)
                 .orElseThrow(() -> new CustomException("Account not found"));
 
         Request request = requestRepository.findById(requestId)
                 .orElseThrow(() -> new CustomException("Request not found"));
-
-        if (request.getType() == RequestType.APPEAL) {
-            Report report = reportRepository.findByRequestId(requestId);
-            if (report != null && report.getTargetType() == TargetType.ORDER) {
-                throw new CustomException(
-                        "Kháng cáo không còn áp dụng đối với đơn hàng. Phán quyết của Quản trị viên là quyết định cuối cùng.");
-            }
-            if (report != null && report.getTargetType() == TargetType.PRODUCT && report.getTargetId() != null) {
-                // Nếu bác đơn kháng cáo sản phẩm vi phạm -> Chuyển sang DELETED với flagged =
-                // true
-                productRepository.findById(report.getTargetId()).ifPresent(p -> {
-                    p.setStatus(ProductStatus.DELETED);
-                    p.setFlagged(true);
-                    p.setDeleted(true);
-                    productRepository.save(p);
-                });
-            }
-        }
 
         request.setStatus(RequestStatus.REJECTED);
         request.setResponse(response);
@@ -323,7 +160,7 @@ public class RequestServiceImpl implements RequestService {
 
         Object detail = switch (r.getType()) {
 
-            case REPORT, APPEAL -> {
+            case REPORT -> {
                 Report rep = reportRepository.findByRequestId(requestId);
                 if (rep == null) {
                     yield null;

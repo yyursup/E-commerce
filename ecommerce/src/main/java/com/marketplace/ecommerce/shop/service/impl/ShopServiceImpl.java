@@ -245,17 +245,6 @@ public class ShopServiceImpl implements ShopService {
         }
         reports.addAll(reportRepository.findApprovedReportsByShopIdForOrders(shop.getId()));
 
-        // Lấy danh sách appeal do account này gửi
-        List<Report> appeals = reportRepository.findAllAppealsByAccountId(accountId);
-        java.util.Map<UUID, Report> appealByReportIdMap = new java.util.HashMap<>();
-        java.util.Set<UUID> usedLegacyAppealIds = new java.util.HashSet<>();
-
-        for (Report a : appeals) {
-            if (a.getViolationReportId() != null && !appealByReportIdMap.containsKey(a.getViolationReportId())) {
-                appealByReportIdMap.put(a.getViolationReportId(), a);
-            }
-        }
-
         java.util.Map<UUID, String> productNameMap = products.stream()
                 .collect(Collectors.toMap(Product::getId, Product::getName, (existing, replacement) -> existing));
 
@@ -272,36 +261,10 @@ public class ShopServiceImpl implements ShopService {
                 targetName = productNameMap.getOrDefault(rep.getTargetId(), "Sản phẩm vi phạm");
             }
 
-            String appealStatus = "NONE";
+            // Mọi phán quyết của Quản trị viên đối với vi phạm là quyết định cuối cùng, không áp dụng kháng cáo
+            String appealStatus = "FINAL_RULING";
             UUID appealRequestId = null;
             String appealResponse = null;
-
-            // Đối với vi phạm đơn hàng (ORDER), phán quyết của Quản trị viên là quyết định cuối cùng, không áp dụng kháng cáo
-            if (rep.getTargetType() == TargetType.ORDER) {
-                appealStatus = "FINAL_RULING";
-            } else {
-                // 1. Khớp chính xác theo vi phạm cụ thể (violationReportId)
-                Report appeal = appealByReportIdMap.get(rep.getId());
-
-                // 2. Fallback cho appeal cũ chưa có violationReportId: chỉ gán tối đa 1-1 cho 1 report vi phạm duy nhất
-                if (appeal == null) {
-                    for (Report a : appeals) {
-                        if (a.getViolationReportId() == null && !usedLegacyAppealIds.contains(a.getId())) {
-                            if (a.getTargetId() != null && a.getTargetId().equals(rep.getTargetId())) {
-                                appeal = a;
-                                usedLegacyAppealIds.add(a.getId());
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                if (appeal != null && appeal.getRequest() != null) {
-                    appealStatus = appeal.getRequest().getStatus().name();
-                    appealRequestId = appeal.getRequest().getId();
-                    appealResponse = appeal.getRequest().getResponse();
-                }
-            }
 
             results.add(ShopViolationResponse.builder()
                     .reportId(rep.getId())

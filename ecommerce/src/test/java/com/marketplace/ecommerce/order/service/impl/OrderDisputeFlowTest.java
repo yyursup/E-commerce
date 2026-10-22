@@ -173,84 +173,6 @@ class OrderDisputeFlowTest {
         verify(escrowService, never()).releaseByOrder(any());
     }
 
-    @Test
-    @DisplayName("Test 6: Seller Appeal ACCEPTED -> Tranh chấp giải quyết theo hướng Shop thắng -> Tự động release Escrow & Order COMPLETED")
-    void approveAppeal_OrderTarget_ReleasesEscrowAndCompletesOrder() {
-        // Given
-        RequestServiceImpl requestService = new RequestServiceImpl(
-                requestRepository, reportRepository, null, accountRepository, null,
-                null, null, productRepository, shopRepository, null, orderRepository, escrowRepository, null, null
-        );
-
-        UUID requestId = UUID.randomUUID();
-        UUID adminId = UUID.randomUUID();
-        Account admin = Account.builder().id(adminId).build();
-
-        Shop shop = Shop.builder().id(UUID.randomUUID()).user(buyerUser).build();
-        deliveredOrder.setShop(shop);
-
-        Request appealReq = Request.builder()
-                .id(requestId)
-                .account(admin)
-                .type(RequestType.APPEAL)
-                .status(RequestStatus.PENDING)
-                .build();
-
-        Report appealReport = Report.builder()
-                .id(requestId)
-                .request(appealReq)
-                .targetType(TargetType.ORDER)
-                .targetId(orderId)
-                .build();
-
-        heldEscrow.setStatus(EscrowStatus.DISPUTED);
-
-        when(requestRepository.findById(requestId)).thenReturn(Optional.of(appealReq));
-        when(accountRepository.findById(adminId)).thenReturn(Optional.of(admin));
-        when(reportRepository.findByRequestId(requestId)).thenReturn(appealReport);
-
-        // When & Then
-        CustomException ex = assertThrows(CustomException.class, () ->
-                requestService.approveRequest(requestId, adminId, "Kháng cáo hợp lệ, gỡ phạt Shop"));
-        assertTrue(ex.getMessage().contains("Kháng cáo không còn áp dụng đối với đơn hàng"));
-    }
-
-    @Test
-    @DisplayName("Test 7: Chặn kháng cáo đối với đơn hàng khi rejectRequest -> Ném CustomException")
-    void rejectAppeal_OrderTarget_RefundsEscrowToBuyer() {
-        // Given
-        RequestServiceImpl requestService = new RequestServiceImpl(
-                requestRepository, reportRepository, null, accountRepository, null,
-                null, null, null, shopRepository, null, orderRepository, escrowRepository, null, null
-        );
-
-        UUID requestId = UUID.randomUUID();
-        UUID adminId = UUID.randomUUID();
-        Account admin = Account.builder().id(adminId).build();
-
-        Request appealReq = Request.builder()
-                .id(requestId)
-                .account(admin)
-                .type(RequestType.APPEAL)
-                .status(RequestStatus.PENDING)
-                .build();
-
-        Report appealReport = Report.builder()
-                .id(requestId)
-                .request(appealReq)
-                .targetType(TargetType.ORDER)
-                .targetId(orderId)
-                .build();
-
-        when(accountRepository.findById(adminId)).thenReturn(Optional.of(admin));
-        when(requestRepository.findById(requestId)).thenReturn(Optional.of(appealReq));
-        when(reportRepository.findByRequestId(requestId)).thenReturn(appealReport);
-
-        // When & Then
-        CustomException ex = assertThrows(CustomException.class, () ->
-                requestService.rejectRequest(adminId, requestId, "Bác bỏ kháng cáo"));
-        assertTrue(ex.getMessage().contains("Kháng cáo không còn áp dụng đối với đơn hàng"));
-    }
 
     @Test
     @DisplayName("OrderDisputeServiceImpl: Phân tích đúng mọi trạng thái State Machine")
@@ -290,29 +212,7 @@ class OrderDisputeFlowTest {
         assertTrue(info3.isHasActiveDispute());
         assertEquals("REPORT_APPROVED", info3.getDisputeStatus());
 
-        // Case 4: Report APPROVED, có Appeal PENDING
-        Request aPending = Request.builder().type(RequestType.APPEAL).status(RequestStatus.PENDING).build();
-        Report appealPending = Report.builder().request(aPending).targetType(TargetType.ORDER).targetId(orderId).build();
-
-        when(reportRepository.findReportsByTargetTypeAndTargetId(TargetType.ORDER, orderId))
-                .thenReturn(List.of(repApproved, appealPending));
-
-        OrderDisputeResponse info4 = disputeService.getDisputeInfo(orderId);
-        assertTrue(info4.isHasActiveDispute());
-        assertEquals("APPEAL_PENDING", info4.getDisputeStatus());
-
-        // Case 5: Report APPROVED, có Appeal APPROVED
-        Request aApproved = Request.builder().type(RequestType.APPEAL).status(RequestStatus.APPROVED).build();
-        Report appealApproved = Report.builder().request(aApproved).targetType(TargetType.ORDER).targetId(orderId).build();
-
-        when(reportRepository.findReportsByTargetTypeAndTargetId(TargetType.ORDER, orderId))
-                .thenReturn(List.of(repApproved, appealApproved));
-
-        OrderDisputeResponse info5 = disputeService.getDisputeInfo(orderId);
-        assertFalse(info5.isHasActiveDispute());
-        assertEquals("APPEAL_APPROVED", info5.getDisputeStatus());
-
-        // Case 6: Report REJECTED
+        // Case 4: Report REJECTED
         Request rRejected = Request.builder().type(RequestType.REPORT).status(RequestStatus.REJECTED).build();
         Report repRejected = Report.builder().request(rRejected).targetType(TargetType.ORDER).targetId(orderId).build();
 

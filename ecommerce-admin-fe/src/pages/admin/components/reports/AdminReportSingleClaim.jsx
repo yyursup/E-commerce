@@ -4,7 +4,6 @@ import { isVideoUrl } from '../../../../lib/mediaUtils'
 
 export default function AdminReportSingleClaim({
   detailModal,
-  isReport,
   evImgs = [],
   covImgs = [],
   isDark,
@@ -55,9 +54,7 @@ export default function AdminReportSingleClaim({
     <div className="space-y-4">
       <div className="space-y-1.5">
         <label className="text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-slate-400">
-          {isReport
-            ? 'Mô tả vi phạm từ người tố cáo:'
-            : 'Nội dung trần tình & giải trình kháng cáo:'}
+          Mô tả vi phạm từ người tố cáo:
         </label>
         <div
           className={cn(

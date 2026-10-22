@@ -143,34 +143,5 @@ export default function AdminActionQuickTags({
       </div>
     )
   }
-
-  if (actionType === 'APPEAL_APPROVE') {
-    const appealApproveTags = [
-      'Chấp thuận: Giấy tờ chứng từ hóa đơn hợp lệ và rõ ràng',
-      'Chấp thuận: Xác nhận nhầm lẫn trong quá trình kiểm duyệt',
-      'Chấp thuận: Đã cung cấp đầy đủ căn cứ giải trình minh oan',
-    ]
-    return (
-      <div className="mb-3">
-        <span className="text-[11px] font-bold text-emerald-500 block mb-1.5">Gợi ý lý do chấp thuận nhanh:</span>
-        {renderTagButtons(appealApproveTags, 'bg-emerald-600 border-emerald-600')}
-      </div>
-    )
-  }
-
-  if (actionType === 'APPEAL_REJECT') {
-    const appealRejectTags = [
-      'Từ chối: Hóa đơn chứng từ không có giá trị pháp lý / mờ không rõ',
-      'Từ chối: Bằng chứng giải trình không làm rõ được vi phạm',
-      'Từ chối: Không cung cấp được ủy quyền phân phối chính hãng',
-    ]
-    return (
-      <div className="mb-3">
-        <span className="text-[11px] font-bold text-rose-400 block mb-1.5">Gợi ý lý do từ chối nhanh:</span>
-        {renderTagButtons(appealRejectTags, 'bg-rose-600 border-rose-600')}
-      </div>
-    )
-  }
-
   return null
 }

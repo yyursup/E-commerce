@@ -118,16 +118,6 @@ export default function AdminActionModal({
           text: 'Bác bỏ báo cáo (Bảo vệ Shop)',
           className: 'bg-stone-600 hover:bg-stone-700 shadow-md shadow-stone-600/20 text-white',
         }
-      case 'APPEAL_APPROVE':
-        return {
-          text: 'Chấp thuận gỡ phạt',
-          className: 'bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 text-white',
-        }
-      case 'APPEAL_REJECT':
-        return {
-          text: 'Từ chối đơn kháng cáo',
-          className: 'bg-rose-600 hover:bg-rose-700 shadow-md shadow-rose-600/20 text-white',
-        }
       case 'ESCROW_REFUND':
         return {
           text: 'Xác nhận hoàn tiền 100% cho Buyer',
@@ -166,8 +156,6 @@ export default function AdminActionModal({
               <h2 className="text-base font-bold">
                 {actionModal.type === 'REPORT_APPROVE' && (isSellerDispute ? 'Phán Quyết: Chấp Thuận Shop Khiếu Nại (Giải Ngân Shop)' : 'Phán Quyết: Xác Nhận Vi Phạm & Áp Chế Tài')}
                 {actionModal.type === 'REPORT_REJECT' && (isSellerDispute ? 'Phán Quyết: Bác Bỏ Shop Khiếu Nại (Bồi Hoàn Cho Người Mua)' : 'Phán Quyết: Bác Bỏ Báo Cáo Vi Phạm')}
-                {actionModal.type === 'APPEAL_APPROVE' && 'Phán Quyết: Chấp Thuận Kháng Cáo (Gỡ Phạt)'}
-                {actionModal.type === 'APPEAL_REJECT' && 'Phán Quyết: Bác Bỏ Đơn Kháng Cáo'}
                 {actionModal.type === 'ESCROW_REFUND' && 'Phân Xử Ký Quỹ: Hoàn Tiền 100% Cho Người Mua'}
                 {actionModal.type === 'ESCROW_RELEASE' && 'Phân Xử Ký Quỹ: Giải Ngân 100% Cho Người Bán'}
                 {actionModal.type === 'ESCROW_SPLIT' && 'Phân Xử Ký Quỹ: Phân Chia Tỷ Lệ Hoàn Tiền (%)'}

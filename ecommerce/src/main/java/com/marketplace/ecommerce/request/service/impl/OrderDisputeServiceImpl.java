@@ -143,37 +143,10 @@ public class OrderDisputeServiceImpl implements OrderDisputeService {
         }
 
         if (reportStatus == RequestStatus.APPROVED) {
-            // Khiếu nại đã được Admin chấp thuận, tìm xem có Appeal nào không
-            List<Report> appeals = reports.stream()
-                    .filter(r -> r.getRequest() != null && r.getRequest().getType() == RequestType.APPEAL)
-                    .toList();
-
-            // 1. Nếu có Appeal APPROVED -> Shop đã kháng cáo thành công (Shop thắng)
-            boolean hasApprovedAppeal = appeals.stream()
-                    .anyMatch(a -> a.getRequest().getStatus() == RequestStatus.APPROVED);
-            if (hasApprovedAppeal) {
-                return buildResponse(false, "APPEAL_APPROVED", latestReport.getRequest().getDescription(), latestReport);
+            if (escrow != null && escrow.getStatus() == EscrowStatus.REFUNDED) {
+                return buildResponse(false, "REFUNDED", disputeReason, latestReport);
             }
-
-            // 2. Nếu có Appeal PENDING -> Shop đang kháng cáo, chờ Admin phân xử
-            boolean hasPendingAppeal = appeals.stream()
-                    .anyMatch(a -> a.getRequest().getStatus() == RequestStatus.PENDING);
-            if (hasPendingAppeal) {
-                return buildResponse(true, "APPEAL_PENDING", latestReport.getRequest().getDescription(), latestReport);
-            }
-
-            // 3. Nếu có Appeal REJECTED -> Kháng cáo bị bác bỏ
-            boolean hasRejectedAppeal = appeals.stream()
-                    .anyMatch(a -> a.getRequest().getStatus() == RequestStatus.REJECTED);
-            if (hasRejectedAppeal) {
-                if (escrow != null && escrow.getStatus() == EscrowStatus.REFUNDED) {
-                    return buildResponse(false, "REFUNDED", latestReport.getRequest().getDescription(), latestReport);
-                }
-                return buildResponse(isDisputed, isDisputed ? "REPORT_APPROVED" : "REFUNDED", latestReport.getRequest().getDescription(), latestReport);
-            }
-
-            // 4. Nếu không có Appeal
-            return buildResponse(isDisputed, isDisputed ? "REPORT_APPROVED" : "NONE", latestReport.getRequest().getDescription(), latestReport);
+            return buildResponse(isDisputed, isDisputed ? "REPORT_APPROVED" : "NONE", disputeReason, latestReport);
         }
 
         return buildResponse(false, "NONE", null, latestReport);

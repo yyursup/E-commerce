@@ -25,7 +25,6 @@ export default function AdminReportDetailModal({
 }) {
   const [previewImage, setPreviewImage] = useState(null)
 
-  const isReport = (detailModal.data?.type || detailModal.rawItem?.type) === 'REPORT'
   const isPending = (detailModal.data?.status || detailModal.rawItem?.status) === 'PENDING'
   const isApproved = (detailModal.data?.status || detailModal.rawItem?.status) === 'APPROVED'
   const isRejected = (detailModal.data?.status || detailModal.rawItem?.status) === 'REJECTED'
@@ -126,12 +125,10 @@ export default function AdminReportDetailModal({
                   <span
                     className={cn(
                       'px-2.5 py-0.5 rounded-full text-xs font-bold border tracking-wide uppercase',
-                      isReport
-                        ? 'bg-rose-500/10 text-rose-500 border-rose-500/30'
-                        : 'bg-indigo-500/10 text-indigo-500 border-indigo-500/30',
+                      'bg-rose-500/10 text-rose-500 border-rose-500/30',
                     )}
                   >
-                    {isReport ? 'Báo Cáo Vi Phạm' : 'Đơn Kháng Cáo'}
+                    Báo Cáo Vi Phạm
                   </span>
                   {isSellerReturnDispute && orderReturn?.status === 'DISPUTED' ? (
                     <span className="px-2.5 py-0.5 rounded-full text-xs font-bold border tracking-wide uppercase bg-rose-500/10 text-rose-500 border-rose-500/30">
@@ -233,10 +230,9 @@ export default function AdminReportDetailModal({
                       setPreviewImage={setPreviewImage}
                     />
                   ) : (
-                    /* TRƯỜNG HỢP HỒ SƠ THƯỜNG (Báo cáo sản phẩm, gian hàng, hoặc đơn kháng cáo) */
+                    /* TRƯỜNG HỢP HỒ SƠ THƯỜNG (Báo cáo sản phẩm, gian hàng, người dùng...) */
                     <AdminReportSingleClaim
                       detailModal={detailModal}
-                      isReport={isReport}
                       evImgs={evImgs}
                       covImgs={covImgs}
                       isDark={isDark}
@@ -312,66 +308,44 @@ export default function AdminReportDetailModal({
               {/* Các nút hành động nếu hồ sơ đang chờ duyệt hoặc kiện hoàn đang tranh chấp */}
               {canTakeAction && (
                 <div className="flex items-center gap-2.5">
-                  {isReport ? (
-                    isSellerReturnDispute ? (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => handleAction('REPORT_APPROVE')}
-                          className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold border border-emerald-500/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 active:scale-95 transition-all shadow-xs"
-                        >
-                          <HiOutlineCheck className="h-4 w-4" />
-                          Chấp thuận Shop khiếu nại (Giải ngân Shop)
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => handleAction('REPORT_REJECT')}
-                          className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 active:scale-95 shadow-md shadow-rose-600/20 transition-all"
-                        >
-                          <HiOutlineX className="h-4 w-4" />
-                          Bác bỏ Shop khiếu nại (Bồi hoàn Buyer)
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => handleAction('REPORT_REJECT')}
-                          className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold border border-stone-300 dark:border-slate-700 text-stone-700 dark:text-slate-200 hover:bg-stone-100 dark:hover:bg-slate-800 active:scale-95 transition-all shadow-xs"
-                        >
-                          <HiOutlineX className="h-4 w-4" />
-                          Bác bỏ (Bảo vệ Shop)
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => handleAction('REPORT_APPROVE')}
-                          className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 active:scale-95 shadow-md shadow-rose-600/20 transition-all"
-                        >
-                          <HiOutlineCheck className="h-4 w-4" />
-                          Xác nhận vi phạm (Phạt Shop)
-                        </button>
-                      </>
-                    )
-                  ) : (
+                  {isSellerReturnDispute ? (
                     <>
                       <button
                         type="button"
-                        onClick={() => handleAction('APPEAL_REJECT')}
-                        className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold border border-rose-500/40 text-rose-500 hover:bg-rose-500/10 active:scale-95 transition-all shadow-xs"
+                        onClick={() => handleAction('REPORT_APPROVE')}
+                        className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold border border-emerald-500/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 active:scale-95 transition-all shadow-xs"
                       >
-                        <HiOutlineX className="h-4 w-4" />
-                        Từ chối kháng cáo
+                        <HiOutlineCheck className="h-4 w-4" />
+                        Chấp thuận Shop khiếu nại (Giải ngân Shop)
                       </button>
 
                       <button
                         type="button"
-                        onClick={() => handleAction('APPEAL_APPROVE')}
-                        className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:scale-95 shadow-md shadow-emerald-600/20 transition-all"
+                        onClick={() => handleAction('REPORT_REJECT')}
+                        className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 active:scale-95 shadow-md shadow-rose-600/20 transition-all"
+                      >
+                        <HiOutlineX className="h-4 w-4" />
+                        Bác bỏ Shop khiếu nại (Bồi hoàn Buyer)
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => handleAction('REPORT_REJECT')}
+                        className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold border border-stone-300 dark:border-slate-700 text-stone-700 dark:text-slate-200 hover:bg-stone-100 dark:hover:bg-slate-800 active:scale-95 transition-all shadow-xs"
+                      >
+                        <HiOutlineX className="h-4 w-4" />
+                        Bác bỏ (Bảo vệ Shop)
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleAction('REPORT_APPROVE')}
+                        className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 active:scale-95 shadow-md shadow-rose-600/20 transition-all"
                       >
                         <HiOutlineCheck className="h-4 w-4" />
-                        Chấp thuận gỡ phạt
+                        Xác nhận vi phạm (Phạt Shop)
                       </button>
                     </>
                   )}

@@ -78,33 +78,6 @@ public interface ReportRepository extends JpaRepository<Report, UUID> {
     """)
     List<Report> findApprovedReportsByProductIds(@Param("productIds") List<UUID> productIds);
 
-    @Query("""
-        select r from Report r
-        join fetch r.request req
-        where req.type = 'APPEAL'
-          and req.account.id = :accountId
-        order by req.createdAt desc
-    """)
-    List<Report> findAllAppealsByAccountId(@Param("accountId") UUID accountId);
-
-    @Query("""
-        select r from Report r
-        join fetch r.request req
-        where req.type = 'APPEAL'
-          and req.account.id = :accountId
-          and r.targetId = :targetId
-        order by req.createdAt desc
-    """)
-    List<Report> findAppealsByAccountIdAndTargetId(@Param("accountId") UUID accountId, @Param("targetId") UUID targetId);
-
-    @Query("""
-        select r from Report r
-        join fetch r.request req
-        where req.type = 'APPEAL'
-          and r.violationReportId = :reportId
-        order by req.createdAt desc
-    """)
-    List<Report> findAppealsByViolationReportId(@Param("reportId") UUID reportId);
 
 
     @Query(value = """

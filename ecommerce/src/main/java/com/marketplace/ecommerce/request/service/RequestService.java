@@ -1,7 +1,6 @@
 package com.marketplace.ecommerce.request.service;
 
 import com.marketplace.ecommerce.auth.entity.Account;
-import com.marketplace.ecommerce.request.dto.request.CreateAppealRequest;
 import com.marketplace.ecommerce.request.dto.request.CreateSendRequest;
 import com.marketplace.ecommerce.request.dto.response.CreateRequestResponse;
 import com.marketplace.ecommerce.request.dto.response.RequestResponse;
@@ -30,7 +29,6 @@ public interface RequestService {
 
     RequestResponse approveRequest(UUID requestId, UUID adminAccountId, String response);
 
-    CreateRequestResponse createAppeal(UUID accountId, CreateAppealRequest req);
 
     void autoRefundExpiredDisputedOrders();
 }

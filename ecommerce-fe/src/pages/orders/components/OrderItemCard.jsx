@@ -84,7 +84,6 @@ export default function OrderItemCard({
               <HiOutlineExclamationCircle className="h-3.5 w-3.5" />
               {order.disputeStatus === 'REPORT_PENDING' && 'Đang khiếu nại'}
               {order.disputeStatus === 'REPORT_APPROVED' && 'Khiếu nại được duyệt'}
-              {order.disputeStatus === 'APPEAL_PENDING' && 'Shop đang kháng cáo'}
             </span>
           )}
 
@@ -214,7 +213,6 @@ export default function OrderItemCard({
               <HiOutlineExclamationCircle className="h-4 w-4 text-amber-500" />
               {order.disputeStatus === 'REPORT_PENDING' && 'Đang đối soát khiếu nại'}
               {order.disputeStatus === 'REPORT_APPROVED' && 'Khiếu nại được chấp thuận'}
-              {order.disputeStatus === 'APPEAL_PENDING' && 'Shop đang kháng cáo'}
             </span>
           )}
 

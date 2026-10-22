@@ -1,10 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { HiStar, HiOutlineScale, HiOutlineExclamationCircle, HiOutlineCheckCircle, HiOutlineRefresh } from 'react-icons/hi'
+import { HiStar, HiOutlineExclamationCircle, HiOutlineCheckCircle, HiOutlineRefresh } from 'react-icons/hi'
 import { Link } from 'react-router-dom'
 import { cn } from '../../lib/cn'
 import reviewService from '../../services/review'
-import ReviewAppealModal from '../../components/ReviewAppealModal'
 import toast from 'react-hot-toast'
 
 export default function ProfileMyReviews({ isDark }) {
@@ -13,7 +12,6 @@ export default function ProfileMyReviews({ isDark }) {
   const [page, setPage] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
   const [totalElements, setTotalElements] = useState(0)
-  const [appealModal, setAppealModal] = useState({ isOpen: false, review: null })
 
   const fetchReviews = useCallback(async () => {
     try {
@@ -187,7 +185,7 @@ export default function ProfileMyReviews({ isDark }) {
                   )}
                 </div>
 
-                {/* Banner cảnh báo & Nút Kháng Cáo nếu bị ẩn hoặc cảnh báo */}
+                {/* Banner cảnh báo nếu bị ẩn hoặc cảnh báo */}
                 {(isHidden || isWarning) && (
                   <div
                     className={cn(
@@ -200,22 +198,13 @@ export default function ProfileMyReviews({ isDark }) {
                     <div className="text-xs space-y-0.5">
                       <p className={cn('font-bold', isHidden ? 'text-rose-500' : 'text-amber-500')}>
                         {isHidden
-                          ? 'Đánh giá này đã bị ẩn khỏi hiển thị công khai do nhận nhiều tố cáo.'
-                          : 'Đánh giá này đang nhận tố cáo từ cộng đồng. Bạn có thể giải trình để bảo vệ quyền lợi.'}
+                          ? 'Đánh giá này đã bị ẩn khỏi hiển thị công khai do vi phạm tiêu chuẩn cộng đồng.'
+                          : 'Đánh giá này đang được Ban Quản Trị xem xét kiểm duyệt.'}
                       </p>
                       <p className="text-stone-400 text-[11px]">
-                        Nếu bạn cho rằng đánh giá bị báo cáo sai, hãy nộp hồ sơ kháng cáo kèm chứng từ để Quản trị viên phục hồi.
+                        Quyết định xử lý của Ban Quản Trị là phán quyết cuối cùng theo quy định cộng đồng.
                       </p>
                     </div>
-
-                    <button
-                      type="button"
-                      onClick={() => setAppealModal({ isOpen: true, review: rev })}
-                      className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-amber-500 hover:bg-amber-600 active:scale-95 transition shrink-0 shadow-sm"
-                    >
-                      <HiOutlineScale className="h-4 w-4" />
-                      Kháng cáo đánh giá
-                    </button>
                   </div>
                 )}
               </motion.div>
@@ -260,14 +249,6 @@ export default function ProfileMyReviews({ isDark }) {
           </button>
         </div>
       )}
-
-      {/* Modal Kháng cáo */}
-      <ReviewAppealModal
-        isOpen={appealModal.isOpen}
-        onClose={() => setAppealModal({ isOpen: false, review: null })}
-        review={appealModal.review}
-        onSuccess={fetchReviews}
-      />
     </div>
   )
 }

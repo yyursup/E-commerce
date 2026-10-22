@@ -2,8 +2,7 @@ package com.marketplace.ecommerce.request.controller;
 
 import com.marketplace.ecommerce.common.CurrentUserInfo;
 import com.marketplace.ecommerce.config.CurrentUser;
-import com.marketplace.ecommerce.request.dto.request.CreateAppealRequest;
-import com.marketplace.ecommerce.request.dto.request.CreatePublicAppealRequest;
+
 import com.marketplace.ecommerce.request.dto.request.RegisterSellerRequest;
 import com.marketplace.ecommerce.request.dto.response.CreateRequestResponse;
 import com.marketplace.ecommerce.request.dto.response.RequestResponse;
@@ -43,32 +42,6 @@ public class RequestController {
         return registerSellerService.createSellerRegistration(u.getAccountId(), request);
     }
 
-    @PostMapping("/appeal")
-    public CreateRequestResponse createAppeal(
-            @CurrentUser CurrentUserInfo u,
-            @Valid @RequestBody CreateAppealRequest request) {
-        return requestService.createAppeal(u.getAccountId(), request);
-    }
-
-    @PostMapping("/appeal/public")
-    public CreateRequestResponse createAppealPublic(
-            @RequestHeader("Authorization") String authHeader,
-            @Valid @RequestBody CreatePublicAppealRequest request) {
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            throw new com.marketplace.ecommerce.common.exception.CustomException("Missing or invalid authorization header");
-        }
-        String token = authHeader.substring(7);
-        Account account = tokenService.getAccountFromAppealToken(token);
-        
-        CreateAppealRequest fullRequest = CreateAppealRequest.builder()
-                .targetId(account.getId())
-                .targetType(TargetType.USER)
-                .description(request.getDescription())
-                .evidenceUrl(request.getEvidenceUrl())
-                .build();
-                
-        return requestService.createAppeal(account.getId(), fullRequest);
-    }
 
 
     @PutMapping("reject")

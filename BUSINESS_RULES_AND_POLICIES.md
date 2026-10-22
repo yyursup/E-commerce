@@ -142,8 +142,10 @@ Phán quyết của Quản trị viên bắt buộc phải gắn mã Điều kho
   - *Điều khoản 15.2*: Kiện hàng hoàn bị đánh tráo sang sản phẩm khác.
   - *Điều khoản 15.3*: Hàng hoàn về bị đập vỡ, biến dạng nặng do đóng gói ẩu.
 
-### Bước 4: Thực Thi Chế Tài & Trừ Quỹ Ký Quỹ
-- Trường hợp Người mua thắng: Hoàn tiền ngay vào ví người mua. Người bán phải chịu toàn bộ chi phí vận chuyển chiều trả hàng (khấu trừ trực tiếp vào Quỹ ký quỹ gian hàng `ShopEscrowFund`).
+### Bước 4: Thực Thi Chế Tài & Trừ Quỹ Ký Quỹ (Phán Quyết Cuối Cùng)
+- **Hiệu lực thi hành tức thì & Không kháng cáo**: Phán quyết của Ban Quản Trị đối với mọi báo cáo vi phạm và tranh chấp đơn hàng là **phán quyết tối cao cuối cùng (Final Ruling)**. Hệ thống **tuyệt đối không áp dụng cơ chế kháng cáo** sau khi Ban Quản Trị đã ban hành quyết định xử phạt vi phạm hoặc phân xử giải ngân/bồi hoàn ký quỹ.
+- **Trường hợp Người mua thắng**: Hoàn tiền ngay vào ví người mua. Người bán phải chịu toàn bộ chi phí vận chuyển chiều trả hàng (khấu trừ trực tiếp vào Quỹ ký quỹ gian hàng `ShopEscrowFund`).
+- **Trường hợp Người bán thắng kiện hoàn**: Giải ngân toàn bộ tiền hàng ký quỹ cho Người bán; Người mua bị phạt 1 gậy vi phạm gian lận hoàn hàng (phán quyết cuối cùng, không thể kháng cáo). Ban Quản Trị đồng thời có thẩm quyền xóa gậy phục hồi uy tín cho Người bán nếu xác định Người bán không có lỗi.
 
 ---
 
@@ -178,7 +180,8 @@ Hệ thống áp dụng cơ chế cộng dồn điểm vi phạm (Strikes Count)
 - **Đạt 3 vi phạm (WARNED - Cảnh cáo)**: Gắn nhãn cảnh báo vàng trên hồ sơ gian hàng, giảm thứ hạng hiển thị sản phẩm trên thanh tìm kiếm.
 - **Đạt 5 vi phạm (SUSPENDED - Đình chỉ tạm thời)**: Đình chỉ hoạt động tài khoản và gian hàng trong 14 ngày; toàn bộ sản phẩm bị ẩn khỏi sàn; tạm dừng tính năng rút tiền.
 - **Đạt 7 vi phạm (BANNED - Khóa vĩnh viễn)**: Đóng vĩnh viễn gian hàng, tịch thu số dư quỹ ký quỹ bồi thường cho các bên bị hại; chuyển hồ sơ sang cơ quan chức năng có thẩm quyền nếu có dấu hiệu lừa đảo hình sự.
-- **Cơ chế hồi phục (Decay Rule)**: Sau 30 ngày liên tục hoạt động chuẩn mực không phát sinh bất kỳ vi phạm nào, hệ thống tự động giảm trừ 1 điểm gậy vi phạm.
+- **Tính chất phán quyết cuối cùng & Miễn trừ kháng cáo**: Toàn bộ điểm phạt gậy và chế tài kỷ luật do Ban Quản Trị ban hành là quyết định cuối cùng, không mở kênh khiếu nại hay kháng cáo.
+- **Cơ chế hồi phục (Decay Rule)**: Sau 30 ngày liên tục hoạt động chuẩn mực không phát sinh bất kỳ vi phạm nào, hệ thống tự động giảm trừ 1 điểm gậy vi phạm. Đây là cơ chế chuẩn mực duy nhất để phục hồi điểm uy tín cho tài khoản và gian hàng.
 
 ---
 

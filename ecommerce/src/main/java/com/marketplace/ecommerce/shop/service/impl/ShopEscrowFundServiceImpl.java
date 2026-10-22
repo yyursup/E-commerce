@@ -688,14 +688,6 @@ public class ShopEscrowFundServiceImpl implements ShopEscrowFundService {
             throw new CustomException("Gian hàng còn báo cáo vi phạm hoặc khiếu nại đang chờ xử lý.");
         }
 
-        // 7. Không có Appeal/Request đang PENDING
-        if (shop.getUser() != null && shop.getUser().getAccount() != null) {
-            UUID ownerAccountId = shop.getUser().getAccount().getId();
-            if (requestRepository.existsByAccountIdAndTypeAndStatus(ownerAccountId, RequestType.APPEAL,
-                    RequestStatus.PENDING)) {
-                throw new CustomException("Gian hàng đang có đơn khiếu nại/kháng cáo (APPEAL) chờ giải quyết.");
-            }
-        }
     }
 
     @Override

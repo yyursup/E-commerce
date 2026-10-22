@@ -21,6 +21,7 @@ import AdminReportsTab from './components/reports/AdminReportsTab'
 import AdminAppealsTab from './components/reports/AdminAppealsTab'
 import AdminReportDetailModal from './components/reports/AdminReportDetailModal'
 import AdminActionModal from './components/reports/AdminActionModal'
+import { isSellerReturnDisputeItem } from '../../lib/reportHelpers'
 
 // Helper tách và gom tất cả link ảnh từ các nguồn (hỗ trợ nhiều ảnh phân cách bằng dấu phẩy)
 export const parseImages = (...sources) => {
@@ -102,14 +103,12 @@ export default function AdminReports() {
               const details = await requestService.getRequestDetails(requestId)
               const orderReturn = details?.detail?.orderReturn
               const isReturnDisputed = orderReturn?.status === 'DISPUTED' || Boolean(orderReturn?.conditionStatus)
-              const isSellerReturnDispute = Boolean(
-                item.isSellerReturnDispute ||
-                isReturnDisputed ||
-                details?.detail?.targetInfo?.includes('DISPUTED') ||
-                details?.detail?.escalationReason?.includes('kiện hàng hoàn') ||
-                item.description?.includes('Shop khiếu nại kiện hàng hoàn') ||
-                details?.description?.includes('Shop khiếu nại kiện hàng hoàn')
-              )
+              const isSellerReturnDispute = isSellerReturnDisputeItem({
+                ...item,
+                ...details,
+                detail: details?.detail,
+                orderReturn,
+              })
               return {
                 ...item,
                 targetType: details?.detail?.targetType || item.targetType || 'ORDER',
@@ -253,17 +252,7 @@ export default function AdminReports() {
         return
       }
 
-      const isSellerDispute = Boolean(
-        item.isSellerReturnDispute ||
-        item.orderReturnStatus === 'DISPUTED' ||
-        item.orderReturn?.status === 'DISPUTED' ||
-        Boolean(item.conditionStatus) ||
-        Boolean(item.orderReturn?.conditionStatus) ||
-        item.detail?.targetInfo?.includes('DISPUTED') ||
-        item.detail?.escalationReason?.includes('kiện hàng hoàn') ||
-        item.description?.includes('Shop khiếu nại kiện hàng hoàn') ||
-        item.detail?.orderReturn?.status === 'DISPUTED'
-      )
+      const isSellerDispute = isSellerReturnDisputeItem(item)
 
       // Bắt buộc chọn phương án kỷ luật Shop khi Shop thắng khiếu nại kiện hoàn
       if (isSellerDispute && type === 'REPORT_APPROVE') {

@@ -266,7 +266,7 @@ export default function AdminReportDetailModal({
                     >
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-bold text-stone-700 dark:text-slate-300">
-                          {isSellerReturnDispute ? 'Phán quyết Giai đoạn 1 của Quản trị viên (Yêu cầu trả hàng):' : 'Kết quả thẩm định của Quản trị viên:'}
+                          {isSellerReturnDispute ? 'Phán quyết Quản trị viên:' : 'Kết quả thẩm định của Quản trị viên:'}
                         </span>
                         <span className="text-xs text-stone-400">
                           {detailModal.data?.reviewedAt

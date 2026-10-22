@@ -26,6 +26,11 @@ export default function Layout() {
               email: profile.email || user?.email,
               role: profile.role || user?.role,
               shopId: profile.shopId,
+              violationCount: profile.violationCount ?? 0,
+              reputationScore: profile.reputationScore ?? 100,
+              disciplineLevel: profile.disciplineLevel ?? 'NONE',
+              lastViolationAt: profile.lastViolationAt || null,
+              bannedUntil: profile.bannedUntil || null,
             })
           }
         })

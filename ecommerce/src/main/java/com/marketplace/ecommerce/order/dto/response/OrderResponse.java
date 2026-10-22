@@ -4,6 +4,7 @@ import com.marketplace.ecommerce.order.entity.Order;
 import com.marketplace.ecommerce.order.valueObjects.OrderStatus;
 import com.marketplace.ecommerce.order.valueObjects.ReturnStatus;
 
+import com.marketplace.ecommerce.auth.entity.Account;
 import com.marketplace.ecommerce.request.dto.response.OrderDisputeResponse;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -70,6 +71,11 @@ public class OrderResponse {
         private BigDecimal platformNetRevenue;
         private String settlementStatus;
 
+        // Chỉ số Điểm Uy Tín Người Mua Hàng
+        private Integer buyerReputationScore;
+        private Integer buyerViolationCount;
+        private String buyerDisciplineLevel;
+
         public static OrderResponse from(Order order) {
                 List<OrderItemResponse> items = order.getItems().stream()
                                 .map(OrderItemResponse::fromOrderItem)
@@ -135,9 +141,19 @@ public class OrderResponse {
                         }
                 }
 
+                Account buyerAccount = (order.getUser() != null) ? order.getUser().getAccount() : null;
+                int buyerVCount = (buyerAccount != null) ? buyerAccount.getViolationCount() : 0;
+                int buyerRepScore = Math.max(0, 100 - buyerVCount * 15);
+                String buyerDiscLevel = (buyerAccount != null && buyerAccount.getDisciplineLevel() != null)
+                                ? buyerAccount.getDisciplineLevel().name()
+                                : "NONE";
+
                 OrderResponse res = OrderResponse.builder()
                                 .id(order.getId())
                                 .orderNumber(order.getOrderNumber())
+                                .buyerReputationScore(buyerRepScore)
+                                .buyerViolationCount(buyerVCount)
+                                .buyerDisciplineLevel(buyerDiscLevel)
                                 .userId(order.getUser() != null ? order.getUser().getId() : null)
                                 .userName(order.getUser() != null ? order.getUser().getFullName() : null)
                                 .userEmail(userEmail)

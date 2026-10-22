@@ -103,8 +103,28 @@ export default function OrderAddressSection({ order, isDark }) {
             </p>
           </div>
 
-          <div className="pt-2 text-[11px] text-stone-400">
-            Tài khoản mua hàng: <span className="font-semibold text-stone-600 dark:text-slate-300">{order.userName || '-'}</span>
+          <div className="pt-2 text-[11px] text-stone-400 flex flex-wrap items-center justify-between gap-2 border-t border-dashed border-stone-200 dark:border-slate-700">
+            <div>
+              Tài khoản mua hàng: <span className="font-semibold text-stone-600 dark:text-slate-300">{order.userName || '-'}</span>
+            </div>
+            {order.buyerReputationScore !== undefined && order.buyerReputationScore !== null && (
+              <span
+                title={`Điểm uy tín người mua: ${order.buyerReputationScore}/100đ (${order.buyerViolationCount || 0} gậy vi phạm)`}
+                className={cn(
+                  'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border',
+                  order.buyerReputationScore >= 100
+                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
+                    : order.buyerReputationScore >= 70
+                    ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30'
+                    : order.buyerReputationScore >= 40
+                    ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30'
+                    : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30'
+                )}
+              >
+                🛡️ Uy tín người mua: {order.buyerReputationScore}đ
+                {order.buyerViolationCount > 0 && ` (${order.buyerViolationCount} gậy)`}
+              </span>
+            )}
           </div>
         </div>
       </div>

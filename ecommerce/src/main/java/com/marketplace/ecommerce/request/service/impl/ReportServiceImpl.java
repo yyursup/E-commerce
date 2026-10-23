@@ -53,6 +53,7 @@ import com.marketplace.ecommerce.request.valueObjects.DisputePolicyClause;
 import com.marketplace.ecommerce.request.dto.response.DisputePolicyClauseResponse;
 import com.marketplace.ecommerce.auth.entity.User;
 import com.marketplace.ecommerce.auth.repository.UserRepository;
+import com.marketplace.ecommerce.auth.service.AccountDisciplineService;
 import com.marketplace.ecommerce.notification.entity.Notification;
 import com.marketplace.ecommerce.notification.repository.NotificationRepository;
 import com.marketplace.ecommerce.notification.valueObjects.NotificationChannelType;
@@ -94,21 +95,22 @@ public class ReportServiceImpl implements ReportService {
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
     private final ChatService chatService;
+    private final AccountDisciplineService accountDisciplineService;
 
     @Override
     @Transactional
     public void handleReport(UUID adminAccountId, UUID requestId, HandleReportRequest req) {
 
         Account admin = accountRepository.findById(adminAccountId)
-                .orElseThrow(() -> new CustomException("Admin account not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy tài khoản quản trị viên"));
 
         Report report = reportRepository.findByRequestId(requestId);
         if (report == null)
-            throw new CustomException("Report not found for requestId: " + requestId);
+            throw new CustomException("Không tìm thấy báo cáo khiếu nại cho mã yêu cầu: " + requestId);
 
         Request r = report.getRequest();
         if (r == null)
-            throw new CustomException("Request not found");
+            throw new CustomException("Không tìm thấy yêu cầu");
 
         LocalDateTime now = LocalDateTime.now();
 
@@ -143,7 +145,8 @@ public class ReportServiceImpl implements ReportService {
             }
         }
 
-        // Validate và lưu Căn cứ Điều khoản Chính sách bắt buộc đối với tranh chấp Đơn hàng
+        // Validate và lưu Căn cứ Điều khoản Chính sách bắt buộc đối với tranh chấp Đơn
+        // hàng
         DisputePolicyClause policyClause = requestPolicy.validateDisputePolicyClause(
                 report.getTargetType(), req.getPolicyClauseCode(), req.getDecision(), isSellerReturnDispute);
         if (policyClause != null) {
@@ -506,11 +509,16 @@ public class ReportServiceImpl implements ReportService {
     @Transactional
     public CreateRequestResponse createReport(UUID accountId, CreateReportRequest request) {
 
-        Account acc = accountRepository.findById(accountId)
-                .orElseThrow(() -> new CustomException("Account not found"));
+        Account rawAcc = accountRepository.findById(accountId)
+                .orElseThrow(() -> new CustomException("Không tìm thấy tài khoản người dùng."));
 
-        if (acc.getDisciplineLevel() == DisciplineLevel.SUSPENDED || acc.getStatus() == AccountStatus.BANNED) {
-            throw new CustomException("You can not create report because you got suspended or banned");
+        Account acc = accountDisciplineService.checkAndReconcileSuspension(rawAcc, LocalDateTime.now());
+
+        if (acc.getDisciplineLevel() == DisciplineLevel.SUSPENDED
+                || acc.getStatus() == AccountStatus.SUSPENDED
+                || acc.getDisciplineLevel() == DisciplineLevel.BANNED
+                || acc.getStatus() == AccountStatus.BANNED) {
+            throw new CustomException("Bạn không thể gửi báo cáo khiếu nại do tài khoản đang bị tạm ngưng hoặc đã bị khóa vĩnh viễn.");
         }
 
         TargetType targetType = requestPolicy.resolve(request.getTargetId());
@@ -837,16 +845,16 @@ public class ReportServiceImpl implements ReportService {
     private void handleReportUser(UUID targetId, LocalDateTime now) {
         UUID accountId = requestPolicy.resolveTargetAccountId(TargetType.USER, targetId);
         if (accountId == null)
-            throw new CustomException("Cannot resolve USER accountId");
+            throw new CustomException("Không thể xác định tài khoản người dùng được báo cáo");
         punishAccount(accountId, now);
     }
 
     private void handleReportProduct(UUID targetId, LocalDateTime now) {
         Product product = productRepository.findByIdForUpdate(targetId)
-                .orElseThrow(() -> new CustomException("Product not found: " + targetId));
+                .orElseThrow(() -> new CustomException("Không tìm thấy sản phẩm: " + targetId));
 
         if (product.getStatus() == ProductStatus.DELETED) {
-            throw new CustomException("Product is already deleted");
+            throw new CustomException("Sản phẩm đã bị xóa trước đó");
         }
 
         int decayedProductReports = calculateMonthlyDecay(product.getLastReportedAt(), product.getReportCount(), now);
@@ -879,10 +887,10 @@ public class ReportServiceImpl implements ReportService {
     private void handleReportReview(UUID reviewId, LocalDateTime now) {
 
         Review review = reviewRepository.findByIdForUpdate(reviewId)
-                .orElseThrow(() -> new CustomException("Review not found: " + reviewId));
+                .orElseThrow(() -> new CustomException("Không tìm thấy đánh giá: " + reviewId));
 
         if (review.getStatus() == ReviewStatus.HIDDEN) {
-            throw new CustomException("Review is already hidden");
+            throw new CustomException("Đánh giá đã bị ẩn trước đó");
         }
 
         int nextCount = review.getReportCount() + 1;
@@ -898,7 +906,7 @@ public class ReportServiceImpl implements ReportService {
 
         UUID accountId = requestPolicy.resolveTargetAccountId(TargetType.REVIEW, reviewId);
         if (accountId == null)
-            throw new CustomException("Cannot resolve REVIEW owner accountId");
+            throw new CustomException("Không thể xác định tài khoản sở hữu đánh giá");
 
         punishAccount(accountId, now);
     }
@@ -906,10 +914,10 @@ public class ReportServiceImpl implements ReportService {
     private DisciplineLevel punishAccount(UUID targetAccountId, LocalDateTime now) {
 
         Account target = accountRepository.findByIdForUpdate(targetAccountId)
-                .orElseThrow(() -> new CustomException("Target account not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy tài khoản đối tượng"));
 
         if (target.getDisciplineLevel() == DisciplineLevel.BANNED || target.getStatus() == AccountStatus.BANNED) {
-            throw new CustomException("Account is already banned");
+            throw new CustomException("Tài khoản đã bị khóa vĩnh viễn trước đó");
         }
 
         // Thuật toán Hoàn lương (30-Day Monthly Decay):
@@ -932,6 +940,7 @@ public class ReportServiceImpl implements ReportService {
             target.setDisciplineLevel(DisciplineLevel.SUSPENDED);
             target.setStatus(AccountStatus.SUSPENDED);
             target.setIsActive(true);
+            target.setSuspendedUntil(now.plusDays(14));
             finalLevel = DisciplineLevel.SUSPENDED;
         } else if (next >= 3) {
             target.setDisciplineLevel(DisciplineLevel.WARNED);
@@ -947,7 +956,7 @@ public class ReportServiceImpl implements ReportService {
 
     private void punishShop(Shop shop, LocalDateTime now) {
         if (shop.getStatus() == ShopStatus.BANNED) {
-            throw new CustomException("Shop is already banned");
+            throw new CustomException("Gian hàng đã bị cấm trước đó");
         }
 
         // Thuật toán Hoàn Lương 30 Ngày (Monthly Decay) cho Shop
@@ -1061,8 +1070,7 @@ public class ReportServiceImpl implements ReportService {
                     .content(content)
                     .payload(Map.of(
                             "orderId", orderId != null ? orderId.toString() : "",
-                            "reportId", reportId != null ? reportId.toString() : ""
-                    ))
+                            "reportId", reportId != null ? reportId.toString() : ""))
                     .createdAt(LocalDateTime.now())
                     .build();
             notificationRepository.save(notif);

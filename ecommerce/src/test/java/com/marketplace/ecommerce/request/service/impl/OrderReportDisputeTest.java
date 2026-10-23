@@ -3,6 +3,7 @@ package com.marketplace.ecommerce.request.service.impl;
 import com.marketplace.ecommerce.auth.entity.Account;
 import com.marketplace.ecommerce.auth.entity.User;
 import com.marketplace.ecommerce.auth.repository.AccountRepository;
+import com.marketplace.ecommerce.auth.service.AccountDisciplineService;
 import com.marketplace.ecommerce.auth.valueObjects.AccountStatus;
 import com.marketplace.ecommerce.auth.valueObjects.DisciplineLevel;
 import com.marketplace.ecommerce.order.entity.Order;
@@ -102,6 +103,9 @@ class OrderReportDisputeTest {
         @Mock
         private ChatService chatService;
 
+        @Mock
+        private AccountDisciplineService accountDisciplineService;
+
         @InjectMocks
         private ReportServiceImpl reportService;
 
@@ -142,6 +146,10 @@ class OrderReportDisputeTest {
                                 .id(adminAccountId)
                                 .username("admin_test")
                                 .build();
+
+                lenient().when(accountDisciplineService.checkAndReconcileSuspension(any(Account.class),
+                                any(LocalDateTime.class)))
+                                .thenAnswer(i -> i.getArgument(0));
 
                 shop = Shop.builder()
                                 .id(shopId)
@@ -354,7 +362,8 @@ class OrderReportDisputeTest {
                 when(escrowRepository.findByOrderIdForUpdate(orderId)).thenReturn(Optional.of(heldEscrow));
                 heldEscrow.setStatus(EscrowStatus.DISPUTED);
 
-                // Payload mâu thuẫn từ phía Client / FE: Admin bấm APPROVE nhưng kẹp resolutionType = REFUND_ONLY
+                // Payload mâu thuẫn từ phía Client / FE: Admin bấm APPROVE nhưng kẹp
+                // resolutionType = REFUND_ONLY
                 HandleReportRequest req = HandleReportRequest.builder()
                                 .decision(ReportDecision.APPROVE)
                                 .resolutionType(ResolutionType.REFUND_ONLY)

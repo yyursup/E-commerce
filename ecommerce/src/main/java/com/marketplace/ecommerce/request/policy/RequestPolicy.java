@@ -40,16 +40,16 @@ public class RequestPolicy {
         List<String> types = reportRepository.resolveTargetTypes(targetId);
 
         if (types == null || types.isEmpty()) {
-            throw new CustomException("Target not found: " + targetId);
+            throw new CustomException("Không tìm thấy đối tượng báo cáo: " + targetId);
         }
         if (types.size() > 1) {
-            throw new CustomException("Target is ambiguous (matches multiple types): " + targetId);
+            throw new CustomException("Đối tượng báo cáo không rõ ràng (trùng khớp nhiều loại đối tượng): " + targetId);
         }
 
         try {
             return TargetType.valueOf(types.get(0));
         } catch (IllegalArgumentException ex) {
-            throw new CustomException("Invalid target type returned from DB: " + types.get(0));
+            throw new CustomException("Loại đối tượng báo cáo không hợp lệ từ hệ thống: " + types.get(0));
         }
     }
 
@@ -102,31 +102,31 @@ public class RequestPolicy {
     public ApproveSellerContext validateApproveSellerRequest(Request req, UUID requestId) {
 
         if (req.getStatus() != RequestStatus.PENDING) {
-            throw new CustomException("Only PENDING request can be approved");
+            throw new CustomException("Chỉ yêu cầu ở trạng thái PENDING mới có thể được phê duyệt");
         }
 
         Account ownerAccount = req.getAccount();
         if (ownerAccount == null) {
-            throw new CustomException("Request has no owner account");
+            throw new CustomException("Yêu cầu không có thông tin tài khoản sở hữu");
         }
 
         User user = userRepository.findByAccountId(ownerAccount.getId())
-                .orElseThrow(() -> new CustomException("User profile not found for account: " + ownerAccount.getId()));
+                .orElseThrow(() -> new CustomException("Không tìm thấy hồ sơ người dùng cho tài khoản: " + ownerAccount.getId()));
 
         if (shopRepository.existsByUserId(user.getId())) {
-            throw new CustomException("This user already has a shop");
+            throw new CustomException("Người dùng này đã sở hữu một gian hàng");
         }
 
         Seller sellerDetail = sellerRepository.findById(requestId)
-                .orElseThrow(() -> new CustomException("Seller detail not found: " + requestId));
+                .orElseThrow(() -> new CustomException("Không tìm thấy thông tin đăng ký người bán: " + requestId));
 
         String shopName = sellerDetail.getShopName();
         if (shopName == null || shopName.trim().isEmpty()) {
-            throw new CustomException("Shop name is required");
+            throw new CustomException("Tên gian hàng là bắt buộc");
         }
 
         if (shopRepository.existsByNameIgnoreCase(shopName)) {
-            throw new CustomException("Shop name already exists: " + shopName);
+            throw new CustomException("Tên gian hàng đã tồn tại: " + shopName);
         }
 
         String taxCode = sellerDetail.getTaxCode();

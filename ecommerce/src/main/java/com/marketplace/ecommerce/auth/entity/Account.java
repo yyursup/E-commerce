@@ -2,6 +2,7 @@ package com.marketplace.ecommerce.auth.entity;
 
 
 import com.marketplace.ecommerce.auth.valueObjects.AccountStatus;
+import com.marketplace.ecommerce.auth.valueObjects.AuthProvider;
 import com.marketplace.ecommerce.auth.valueObjects.DisciplineLevel;
 import com.marketplace.ecommerce.common.BaseEntity;
 import jakarta.persistence.*;
@@ -46,7 +47,7 @@ public class Account extends BaseEntity implements UserDetails, Serializable {
     @Enumerated(EnumType.STRING)
     @Column(name = "auth_provider")
     @Builder.Default
-    private com.marketplace.ecommerce.auth.valueObjects.AuthProvider authProvider = com.marketplace.ecommerce.auth.valueObjects.AuthProvider.LOCAL;
+    private AuthProvider authProvider = AuthProvider.LOCAL;
 
     @Column(name = "provider_id")
     private String providerId;
@@ -78,6 +79,9 @@ public class Account extends BaseEntity implements UserDetails, Serializable {
     @Column(name = "banned_until")
     private LocalDateTime bannedUntil;
 
+    @Column(name = "suspended_until")
+    private LocalDateTime suspendedUntil;
+
     @Override
     public String getPassword() {
         return passwordHash;
@@ -96,9 +100,6 @@ public class Account extends BaseEntity implements UserDetails, Serializable {
     @Override
     public boolean isAccountNonLocked() {
         if (status == AccountStatus.BANNED || disciplineLevel == DisciplineLevel.BANNED) {
-            if (bannedUntil != null && LocalDateTime.now().isAfter(bannedUntil)) {
-                return true;
-            }
             return false;
         }
         if (status == AccountStatus.DELETED) {
@@ -117,7 +118,7 @@ public class Account extends BaseEntity implements UserDetails, Serializable {
         if (status == AccountStatus.INACTIVE || status == AccountStatus.DELETED) {
             return false;
         }
-        if (status == AccountStatus.BANNED && (bannedUntil == null || LocalDateTime.now().isBefore(bannedUntil))) {
+        if (status == AccountStatus.BANNED || disciplineLevel == DisciplineLevel.BANNED) {
             return false;
         }
         return isActive != null && isActive;

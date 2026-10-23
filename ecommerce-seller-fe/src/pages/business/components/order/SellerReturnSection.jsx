@@ -228,6 +228,31 @@ export default function SellerReturnSection({ returnInfo, order, report, isDark:
         </span>
       </div>
 
+      {/* 1.0 Chỉ số Điểm Uy Tín Người Mua Hàng */}
+      {order?.buyerReputationScore !== undefined && order?.buyerReputationScore !== null && (
+        <div
+          className={cn(
+            'flex flex-wrap items-center justify-between gap-2 p-2.5 px-3.5 rounded-xl border text-xs',
+            order.buyerReputationScore >= 100
+              ? isDark ? 'border-emerald-500/30 bg-emerald-950/20 text-emerald-300' : 'border-emerald-200 bg-emerald-50 text-emerald-800'
+              : order.buyerReputationScore >= 70
+              ? isDark ? 'border-blue-500/30 bg-blue-950/20 text-blue-300' : 'border-blue-200 bg-blue-50 text-blue-800'
+              : isDark ? 'border-amber-500/30 bg-amber-950/20 text-amber-300' : 'border-amber-200 bg-amber-50 text-amber-800'
+          )}
+        >
+          <div className="flex items-center gap-2">
+            <span className="text-base">🛡️</span>
+            <span>
+              Uy tín người mua: <strong>{order.buyerReputationScore}/100đ</strong>
+              {order.buyerViolationCount > 0 ? ` (Ghi nhận ${order.buyerViolationCount} gậy vi phạm)` : ' (Tài khoản chuẩn mực)'}
+            </span>
+          </div>
+          <span className="font-semibold text-[11px] opacity-80">
+            {order.buyerReputationScore >= 100 ? 'Độ tin cậy cao' : order.buyerReputationScore >= 70 ? 'Tin cậy tốt' : 'Lưu ý kiểm tra kỹ kiện hàng hoàn về'}
+          </span>
+        </div>
+      )}
+
       {/* 1.1 Lý do ban đầu khách yêu cầu đổi trả */}
       {order?.disputeReason && (
         <div

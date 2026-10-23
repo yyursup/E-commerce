@@ -42,6 +42,11 @@ export default function Login() {
           email: profile.email || email,
           role: profile.role || role,
           shopId: profile.shopId,
+          violationCount: profile.violationCount ?? 0,
+          reputationScore: profile.reputationScore ?? 100,
+          disciplineLevel: profile.disciplineLevel ?? 'NONE',
+          lastViolationAt: profile.lastViolationAt || null,
+          bannedUntil: profile.bannedUntil || null,
         })
       }
     } catch (e) {

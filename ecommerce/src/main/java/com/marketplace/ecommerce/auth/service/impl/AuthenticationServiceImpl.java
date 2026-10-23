@@ -185,9 +185,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     public void forgotPasswordSendOtp(String email) {
         Account account = accountRepository.findByEmail(email)
                 .orElseThrow(() -> new CustomException("Email not found"));
-        
+
         String otp = emailService.generateOTP();
-        
+
         MailBody mailBody = new MailBody();
         mailBody.setTo(account);
         mailBody.setSubject("Password Reset Request");
@@ -207,23 +207,19 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
         account.setPasswordHash(passwordEncoder.encode(newPassword));
         accountRepository.save(account);
-        
+
         emailService.clearOtp(email);
     }
 
 
     @Override
     public LoginResponse login(LoginRequest request) {
-        // 1. Kiểm tra tài khoản để xử lý tự động gỡ ban nếu đã hết hạn thời gian phạt
+        // 1. Kiểm tra tài khoản: nếu đang bị khóa vĩnh viễn (BANNED) thì từ chối đăng nhập ngay lập tức
         Optional<Account> accountOpt = accountRepository.findByUsername(request.getUsername());
         if (accountOpt.isPresent()) {
             Account acc = accountOpt.get();
-            if (acc.getBannedUntil() != null && LocalDateTime.now().isAfter(acc.getBannedUntil())) {
-                acc.setStatus(AccountStatus.ACTIVE);
-                acc.setDisciplineLevel(DisciplineLevel.NONE);
-                acc.setIsActive(true);
-                acc.setBannedUntil(null);
-                accountRepository.save(acc);
+            if (acc.getStatus() == AccountStatus.BANNED || acc.getDisciplineLevel() == DisciplineLevel.BANNED) {
+                throw new CustomException("Tài khoản của bạn đã bị khóa vĩnh viễn do vi phạm quy định cộng đồng.");
             }
         }
 
@@ -277,13 +273,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         } catch (LockedException e) {
             Account acc = accountOpt.orElse(null);
             if (acc != null && (acc.getStatus() == AccountStatus.BANNED || acc.getDisciplineLevel() == DisciplineLevel.BANNED)) {
-                if (acc.getBannedUntil() != null) {
-                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm 'ngày' dd/MM/yyyy");
-                    throw new com.marketplace.ecommerce.common.exception.AccountLockedException(
-                            "Tài khoản của bạn đã bị khóa đến " + acc.getBannedUntil().format(formatter) + " do vi phạm quy định cộng đồng.", 
-                            acc.getBannedUntil()
-                    );
-                }
                 throw new CustomException("Tài khoản của bạn đã bị khóa vĩnh viễn do vi phạm quy định cộng đồng.");
             }
             throw new CustomException("Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên để được hỗ trợ.");
@@ -414,11 +403,13 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             String name = (String) response.get("name");
             String picture = (String) response.get("picture");
             String providerId = (String) response.get("sub");
-            
+
             return processOAuth2User(email, name, picture, providerId, com.marketplace.ecommerce.auth.valueObjects.AuthProvider.GOOGLE);
+        } catch (CustomException ce) {
+            throw ce;
         } catch (Exception e) {
             log.error("Google Auth Error", e);
-            throw new CustomException("Failed to verify Google token: " + e.getMessage());
+            throw new CustomException("Xác thực Google thất bại: " + e.getMessage());
         }
     }
 
@@ -457,11 +448,13 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                     picture = (String) picData.get("url");
                 }
             }
-            
+
             return processOAuth2User(email, name, picture, providerId, com.marketplace.ecommerce.auth.valueObjects.AuthProvider.FACEBOOK);
+        } catch (CustomException ce) {
+            throw ce;
         } catch (Exception e) {
             log.error("Facebook Auth Error", e);
-            throw new CustomException("Failed to verify Facebook token: " + e.getMessage());
+            throw new CustomException("Xác thực Facebook thất bại: " + e.getMessage());
         }
     }
 
@@ -508,6 +501,12 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                     .build();
             cartRepository.save(cart);
         } else {
+            if (account.getStatus() == AccountStatus.BANNED || account.getDisciplineLevel() == DisciplineLevel.BANNED) {
+                throw new CustomException("Tài khoản của bạn đã bị khóa vĩnh viễn do vi phạm quy định cộng đồng.");
+            }
+            if (account.getStatus() == AccountStatus.INACTIVE || account.getStatus() == AccountStatus.DELETED || !Boolean.TRUE.equals(account.getIsActive())) {
+                throw new CustomException("Tài khoản chưa được kích hoạt hoặc đã ngừng hoạt động.");
+            }
             if (account.getAuthProvider() == com.marketplace.ecommerce.auth.valueObjects.AuthProvider.LOCAL) {
                 account.setAuthProvider(provider);
                 account.setProviderId(providerId);
@@ -522,7 +521,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .refreshToken(tokenService.refreshToken(account))
                 .role(account.getRole().getRoleName())
                 .build();
-        
+
         populateShopAndSellerStatus(response, account.getId());
         return response;
     }
@@ -537,8 +536,11 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             if (account == null) {
                 throw new InvalidCredentialsException("Tài khoản không tồn tại.");
             }
-            if (account.getStatus() == AccountStatus.BANNED || !Boolean.TRUE.equals(account.getIsActive())) {
-                throw new CustomException("Tài khoản đã bị khóa hoặc ngừng hoạt động.");
+            if (account.getStatus() == AccountStatus.BANNED || account.getDisciplineLevel() == DisciplineLevel.BANNED) {
+                throw new CustomException("Tài khoản của bạn đã bị khóa vĩnh viễn do vi phạm quy định cộng đồng.");
+            }
+            if (!Boolean.TRUE.equals(account.getIsActive()) || account.getStatus() == AccountStatus.INACTIVE || account.getStatus() == AccountStatus.DELETED) {
+                throw new CustomException("Tài khoản chưa được kích hoạt hoặc đã ngừng hoạt động.");
             }
 
             LoginResponse response = LoginResponse.builder()

@@ -932,7 +932,8 @@ public class ReportServiceImpl implements ReportService {
         DisciplineLevel finalLevel;
         if (next >= 7) {
             target.setDisciplineLevel(DisciplineLevel.BANNED);
-            target.setBannedUntil(now.plusDays(7));
+            target.setBannedUntil(null);
+            target.setSuspendedUntil(null);
             target.setStatus(AccountStatus.BANNED);
             target.setIsActive(false);
             finalLevel = DisciplineLevel.BANNED;

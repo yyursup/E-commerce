@@ -5,6 +5,7 @@ import com.marketplace.ecommerce.auth.service.TokenService;
 import com.marketplace.ecommerce.common.CurrentUserInfo;
 import com.marketplace.ecommerce.config.ApiVersioningConfig;
 import com.marketplace.ecommerce.config.CurrentUserArgumentResolver;
+import com.marketplace.ecommerce.config.WebMvcConfig;
 
 import com.marketplace.ecommerce.request.dto.request.RegisterSellerRequest;
 import com.marketplace.ecommerce.request.dto.response.CreateRequestResponse;
@@ -17,7 +18,6 @@ import com.marketplace.ecommerce.request.valueObjects.BusinessType;
 import com.marketplace.ecommerce.request.valueObjects.RequestStatus;
 import com.marketplace.ecommerce.request.valueObjects.RequestType;
 import com.marketplace.ecommerce.request.valueObjects.SellerType;
-import com.marketplace.ecommerce.request.valueObjects.TargetType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

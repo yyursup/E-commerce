@@ -399,10 +399,22 @@ public class ShopServiceImpl implements ShopService {
 
                         if (shop.getUser() != null && shop.getUser().getAccount() != null) {
                             Account owner = shop.getUser().getAccount();
-                            if (owner.getDisciplineLevel() == DisciplineLevel.SUSPENDED) {
-                                owner.setDisciplineLevel(DisciplineLevel.WARNED);
-                                owner.setStatus(AccountStatus.ACTIVE);
-                                accountRepository.save(owner);
+                            boolean isBannedOrInactive = owner.getStatus() == AccountStatus.BANNED
+                                    || owner.getDisciplineLevel() == DisciplineLevel.BANNED
+                                    || owner.getStatus() == AccountStatus.INACTIVE
+                                    || owner.getStatus() == AccountStatus.DELETED;
+
+                            if (!isBannedOrInactive && (owner.getDisciplineLevel() == DisciplineLevel.SUSPENDED || owner.getStatus() == AccountStatus.SUSPENDED)) {
+                                if (owner.getSuspendedUntil() == null) {
+                                    log.warn("Shop expired but owner account has legacy suspension without suspendedUntil: accountId={}", owner.getId());
+                                } else if (owner.getSuspendedUntil().isAfter(now)) {
+                                    log.info("Preserved active user suspension for shop owner accountId={}", owner.getId());
+                                } else {
+                                    owner.setDisciplineLevel(DisciplineLevel.WARNED);
+                                    owner.setStatus(AccountStatus.ACTIVE);
+                                    owner.setSuspendedUntil(null);
+                                    accountRepository.save(owner);
+                                }
                             }
                         }
                         log.info("Auto reinstated expired suspended shop: shopId={}, newStatus=WARNED, violationCount={}",

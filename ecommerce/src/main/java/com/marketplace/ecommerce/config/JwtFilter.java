@@ -2,6 +2,8 @@ package com.marketplace.ecommerce.config;
 
 import com.marketplace.ecommerce.auth.entity.Account;
 import com.marketplace.ecommerce.auth.service.TokenService;
+import com.marketplace.ecommerce.auth.valueObjects.AccountStatus;
+import com.marketplace.ecommerce.auth.valueObjects.DisciplineLevel;
 import com.marketplace.ecommerce.common.CurrentUserInfo;
 import com.marketplace.ecommerce.common.exception.InvalidCredentialsException;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -10,6 +12,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -114,6 +118,30 @@ public class JwtFilter extends OncePerRequestFilter {
 
         try {
             Account account = tokenService.getAccountFromToken(token);
+
+            if (account.getStatus() == AccountStatus.BANNED || account.getDisciplineLevel() == DisciplineLevel.BANNED) {
+                SecurityContextHolder.clearContext();
+                if (isPublic) {
+                    filterChain.doFilter(request, response);
+                } else {
+                    resolver.resolveException(request, response, null,
+                            new LockedException("Tài khoản của bạn đã bị khóa vĩnh viễn do vi phạm quy định cộng đồng."));
+                }
+                return;
+            }
+
+            if (account.getStatus() == AccountStatus.INACTIVE
+                    || account.getStatus() == AccountStatus.DELETED
+                    || !Boolean.TRUE.equals(account.getIsActive())) {
+                SecurityContextHolder.clearContext();
+                if (isPublic) {
+                    filterChain.doFilter(request, response);
+                } else {
+                    resolver.resolveException(request, response, null,
+                            new DisabledException("Tài khoản chưa được kích hoạt hoặc đã ngừng hoạt động."));
+                }
+                return;
+            }
 
             CurrentUserInfo info = new CurrentUserInfo();
             info.setAccountId(account.getId());

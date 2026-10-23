@@ -2,6 +2,7 @@ package com.marketplace.ecommerce.product.service.impl;
 
 import com.marketplace.ecommerce.auth.entity.User;
 import com.marketplace.ecommerce.auth.repository.UserRepository;
+import com.marketplace.ecommerce.auth.valueObjects.AccountStatus;
 import com.marketplace.ecommerce.auth.valueObjects.DisciplineLevel;
 import com.marketplace.ecommerce.common.exception.CustomException;
 import com.marketplace.ecommerce.product.dto.request.CreateProductRequest;
@@ -27,7 +28,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -51,7 +51,7 @@ public class ProductServiceImpl implements ProductService {
         Shop shop = getShopByAccountId(accountId);
         int updated = productRepository.softDeleteByAccountId(productId, shop.getUser().getAccount().getId());
         if (updated == 0) {
-            throw new CustomException("Product can not found or you don't have permission to delete this product");
+            throw new CustomException("Không tìm thấy sản phẩm hoặc bạn không có quyền xóa sản phẩm này");
         }
     }
 
@@ -63,11 +63,11 @@ public class ProductServiceImpl implements ProductService {
         productValidation.validateVariants(request.getVariants());
 
         if (productRepository.existsBySkuAndDeletedFalse(request.getSku())) {
-            throw new CustomException("SKU already exists: " + request.getSku());
+            throw new CustomException("Mã SKU đã tồn tại: " + request.getSku());
         }
 
         ProductCategory category = productCategoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() -> new CustomException("Category not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy danh mục sản phẩm"));
 
         ProductStatus initialStatus = determineInitialProductStatus(shop, category, request);
 
@@ -124,7 +124,7 @@ public class ProductServiceImpl implements ProductService {
         Shop shop = getShopByAccountId(accountId);
 
         Product product = productRepository.findByIdAndDeletedFalse(productId)
-                .orElseThrow(() -> new CustomException("Product not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy sản phẩm"));
 
         assertOwner(shop, product);
 
@@ -155,16 +155,21 @@ public class ProductServiceImpl implements ProductService {
 
     private Shop getShopByAccountId(UUID accountId) {
         User user = userRepository.findByAccountId(accountId)
-                .orElseThrow(() -> new CustomException("User not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy người dùng"));
 
-        if (user.getAccount().getDisciplineLevel() == DisciplineLevel.SUSPENDED
-                || user.getAccount().getDisciplineLevel() == DisciplineLevel.BANNED) {
+        if (user.getAccount().getDisciplineLevel() == DisciplineLevel.BANNED
+                || user.getAccount().getStatus() == AccountStatus.BANNED) {
             throw new CustomException(
-                    "You do not have permission to manage products because your account is suspended or banned.");
+                    "Bạn không có quyền quản lý sản phẩm do tài khoản đã bị khóa vĩnh viễn.");
         }
 
         Shop shop = shopRepository.findByUserId(user.getId())
-                .orElseThrow(() -> new CustomException("Shop not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy gian hàng"));
+
+        if (shop.getStatus() == ShopStatus.SUSPENDED || shop.getStatus() == ShopStatus.BANNED) {
+            throw new CustomException(
+                    "Gian hàng của bạn đang bị tạm dừng hoạt động hoặc bị cấm. Không thể thực hiện thao tác quản lý hay đăng bán sản phẩm.");
+        }
 
         if (shop.getStatus() == ShopStatus.CLOSED) {
             throw new CustomException(
@@ -181,7 +186,7 @@ public class ProductServiceImpl implements ProductService {
 
     private void assertOwner(Shop shop, Product product) {
         if (!product.getShop().getId().equals(shop.getId())) {
-            throw new CustomException("You don't have permission to update this product");
+            throw new CustomException("Bạn không có quyền cập nhật sản phẩm này");
         }
     }
 
@@ -230,7 +235,7 @@ public class ProductServiceImpl implements ProductService {
 
         if (!newSku.equals(product.getSku())
                 && productRepository.existsBySkuAndDeletedFalse(newSku)) {
-            throw new CustomException("SKU already exists: " + newSku);
+            throw new CustomException("Mã SKU đã tồn tại: " + newSku);
         }
 
         product.setSku(newSku);
@@ -243,7 +248,7 @@ public class ProductServiceImpl implements ProductService {
         try {
             product.setStatus(ProductStatus.valueOf(req.getStatus().trim().toUpperCase()));
         } catch (IllegalArgumentException ex) {
-            throw new CustomException("Invalid status: " + req.getStatus());
+            throw new CustomException("Trạng thái sản phẩm không hợp lệ: " + req.getStatus());
         }
     }
 
@@ -252,7 +257,7 @@ public class ProductServiceImpl implements ProductService {
             return;
 
         ProductCategory category = productCategoryRepository.findById(req.getCategoryId())
-                .orElseThrow(() -> new CustomException("Category not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy danh mục sản phẩm"));
 
         product.setProductCategory(category);
     }
@@ -266,7 +271,7 @@ public class ProductServiceImpl implements ProductService {
                 .count();
 
         if (thumbnailCount > 1) {
-            throw new CustomException("Only one thumbnail image is allowed");
+            throw new CustomException("Chỉ cho phép tối đa một ảnh đại diện (thumbnail)");
         }
 
         product.getImages().clear();

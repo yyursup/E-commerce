@@ -32,6 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -146,6 +147,7 @@ class ShopServiceImplTest {
         Account owner = Account.builder()
                 .status(AccountStatus.SUSPENDED)
                 .disciplineLevel(DisciplineLevel.SUSPENDED)
+                .suspendedUntil(LocalDateTime.now().minusHours(1)) // User suspension cũng đã hết hạn
                 .violationCount(5)
                 .build();
 
@@ -179,7 +181,119 @@ class ShopServiceImplTest {
         // 3. Tài khoản chủ shop phải chuyển sang WARNED / ACTIVE
         assertEquals(DisciplineLevel.WARNED, owner.getDisciplineLevel());
         assertEquals(AccountStatus.ACTIVE, owner.getStatus());
+        assertNull(owner.getSuspendedUntil());
         verify(accountRepository).save(owner);
         verify(shopRepository).save(suspendedShop);
+    }
+
+    @Test
+    @DisplayName("Hết hạn đình chỉ Shop: Nếu chủ shop đang có án kỷ luật User riêng còn hiệu lực thì KHÔNG được xóa án User")
+    void processExpiredSuspensions_PreservesActiveUserSuspension() {
+        UUID shopId = UUID.randomUUID();
+        LocalDateTime userSuspensionExpiry = LocalDateTime.now().plusDays(10); // User suspension còn 10 ngày
+        Account owner = Account.builder()
+                .status(AccountStatus.SUSPENDED)
+                .disciplineLevel(DisciplineLevel.SUSPENDED)
+                .suspendedUntil(userSuspensionExpiry)
+                .violationCount(5)
+                .build();
+
+        User user = new User();
+        user.setAccount(owner);
+
+        Shop suspendedShop = Shop.builder()
+                .id(shopId)
+                .name("Shop Đang Bị Đình Chỉ")
+                .status(ShopStatus.SUSPENDED)
+                .suspendedUntil(LocalDateTime.now().minusHours(1)) // Shop đã hết hạn 14 ngày
+                .violationCount(5)
+                .user(user)
+                .build();
+
+        when(shopRepository.findExpiredSuspensions(eq(ShopStatus.SUSPENDED), any(LocalDateTime.class)))
+                .thenReturn(List.of(suspendedShop));
+        when(shopRepository.findByIdForUpdate(shopId))
+                .thenReturn(Optional.of(suspendedShop));
+
+        shopService.processExpiredSuspensions();
+
+        // 1. Shop vẫn được mở lại bình thường
+        assertEquals(ShopStatus.WARNED, suspendedShop.getStatus());
+        assertNull(suspendedShop.getSuspendedUntil());
+        verify(shopRepository).save(suspendedShop);
+
+        // 2. NHƯNG tài khoản chủ shop PHẢI GIỮ NGUYÊN án kỷ luật User (SUSPENDED), không được save cập nhật
+        assertEquals(DisciplineLevel.SUSPENDED, owner.getDisciplineLevel(), "DisciplineLevel của User phải giữ nguyên SUSPENDED");
+        assertEquals(AccountStatus.SUSPENDED, owner.getStatus(), "Status của User phải giữ nguyên SUSPENDED");
+        assertEquals(userSuspensionExpiry, owner.getSuspendedUntil(), "suspendedUntil của User phải giữ nguyên");
+        verify(accountRepository, never()).save(owner);
+    }
+
+    @Test
+    @DisplayName("Hết hạn đình chỉ Shop: Nếu chủ shop SUSPENDED với suspendedUntil == null (legacy) thì KHÔNG được tự ý gỡ")
+    void processExpiredSuspensions_LegacyNullSuspendedUntil_PreservesSuspension() {
+        UUID shopId = UUID.randomUUID();
+        Account owner = Account.builder()
+                .status(AccountStatus.SUSPENDED)
+                .disciplineLevel(DisciplineLevel.SUSPENDED)
+                .suspendedUntil(null) // Legacy null
+                .violationCount(5)
+                .build();
+
+        User user = new User();
+        user.setAccount(owner);
+
+        Shop suspendedShop = Shop.builder()
+                .id(shopId)
+                .name("Shop Đang Bị Đình Chỉ")
+                .status(ShopStatus.SUSPENDED)
+                .suspendedUntil(LocalDateTime.now().minusHours(1))
+                .user(user)
+                .build();
+
+        when(shopRepository.findExpiredSuspensions(eq(ShopStatus.SUSPENDED), any(LocalDateTime.class)))
+                .thenReturn(List.of(suspendedShop));
+        when(shopRepository.findByIdForUpdate(shopId))
+                .thenReturn(Optional.of(suspendedShop));
+
+        shopService.processExpiredSuspensions();
+
+        assertEquals(ShopStatus.WARNED, suspendedShop.getStatus());
+        assertEquals(AccountStatus.SUSPENDED, owner.getStatus(), "Owner có suspendedUntil=null không được tự ý mở khóa");
+        verify(accountRepository, never()).save(owner);
+    }
+
+    @Test
+    @DisplayName("Hết hạn đình chỉ Shop: Nếu chủ shop BANNED hoặc INACTIVE thì KHÔNG bao giờ bị kích hoạt lại")
+    void processExpiredSuspensions_BannedOrInactiveOwner_NeverReactivated() {
+        UUID shopId = UUID.randomUUID();
+        Account owner = Account.builder()
+                .status(AccountStatus.BANNED)
+                .disciplineLevel(DisciplineLevel.BANNED)
+                .suspendedUntil(LocalDateTime.now().minusDays(10))
+                .isActive(false)
+                .build();
+
+        User user = new User();
+        user.setAccount(owner);
+
+        Shop suspendedShop = Shop.builder()
+                .id(shopId)
+                .name("Shop Đang Bị Đình Chỉ")
+                .status(ShopStatus.SUSPENDED)
+                .suspendedUntil(LocalDateTime.now().minusHours(1))
+                .user(user)
+                .build();
+
+        when(shopRepository.findExpiredSuspensions(eq(ShopStatus.SUSPENDED), any(LocalDateTime.class)))
+                .thenReturn(List.of(suspendedShop));
+        when(shopRepository.findByIdForUpdate(shopId))
+                .thenReturn(Optional.of(suspendedShop));
+
+        shopService.processExpiredSuspensions();
+
+        assertEquals(ShopStatus.WARNED, suspendedShop.getStatus());
+        assertEquals(AccountStatus.BANNED, owner.getStatus(), "Owner BANNED không bao giờ được chuyển sang ACTIVE");
+        verify(accountRepository, never()).save(owner);
     }
 }

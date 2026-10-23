@@ -3,6 +3,7 @@ package com.marketplace.ecommerce.request.service.impl;
 import com.marketplace.ecommerce.auth.entity.Account;
 import com.marketplace.ecommerce.auth.repository.AccountRepository;
 import com.marketplace.ecommerce.auth.repository.UserRepository;
+import com.marketplace.ecommerce.auth.service.AccountDisciplineService;
 import com.marketplace.ecommerce.chat.service.ChatService;
 import com.marketplace.ecommerce.common.exception.CustomException;
 import com.marketplace.ecommerce.notification.repository.NotificationRepository;
@@ -86,6 +87,9 @@ class ReportDisputeFlowTest {
         @Mock
         private ChatService chatService;
 
+        @Mock
+        private AccountDisciplineService accountDisciplineService;
+
         @InjectMocks
         private ReportServiceImpl reportService;
 
@@ -138,6 +142,10 @@ class ReportDisputeFlowTest {
                                 .id(orderId)
                                 .status(OrderStatus.DELIVERED)
                                 .build();
+
+                lenient().when(accountDisciplineService.checkAndReconcileSuspension(any(Account.class),
+                                any(LocalDateTime.class)))
+                                .thenAnswer(i -> i.getArgument(0));
         }
 
         @Test

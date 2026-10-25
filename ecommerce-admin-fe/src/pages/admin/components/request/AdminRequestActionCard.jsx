@@ -219,32 +219,41 @@ export default function AdminRequestActionCard({
               <div key={label} className="space-y-1">
                 <p className="text-xs uppercase tracking-wide text-stone-500 dark:text-slate-400">{label}</p>
                 {label === 'Evidence' || label === 'Bằng chứng vi phạm' || label === 'Ảnh minh chứng' ? (
-                  value && value !== '-' ? (
-                    <div className="space-y-2 pt-1">
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                        {String(value).split(',').map((imgUrl, idx) => (
-                          <a
-                            key={idx}
-                            href={imgUrl.trim()}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="group relative block rounded-lg overflow-hidden border border-stone-200 dark:border-slate-700 bg-stone-100 dark:bg-slate-800 h-24 hover:opacity-95 transition"
-                          >
-                            <img
-                              src={imgUrl.trim()}
-                              alt={`Ảnh ${idx + 1}`}
-                              className="w-full h-full object-cover group-hover:scale-105 transition duration-200"
-                            />
-                            <span className="absolute bottom-1 right-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded flex items-center gap-1">
-                              <HiOutlineExternalLink className="h-3 w-3" /> Ảnh {idx + 1}
-                            </span>
-                          </a>
-                        ))}
+                  (() => {
+                    const validUrls = String(value || '')
+                      .split(',')
+                      .map((imgUrl) => imgUrl.trim())
+                      .filter((url) => url && (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/')))
+
+                    if (validUrls.length === 0) {
+                      return <p className="text-sm break-all font-medium text-stone-500 dark:text-slate-400">-</p>
+                    }
+
+                    return (
+                      <div className="space-y-2 pt-1">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                          {validUrls.map((validUrl, idx) => (
+                            <a
+                              key={idx}
+                              href={validUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="group relative block rounded-lg overflow-hidden border border-stone-200 dark:border-slate-700 bg-stone-100 dark:bg-slate-800 h-24 hover:opacity-95 transition"
+                            >
+                              <img
+                                src={validUrl}
+                                alt={`Ảnh ${idx + 1}`}
+                                className="w-full h-full object-cover group-hover:scale-105 transition duration-200"
+                              />
+                              <span className="absolute bottom-1 right-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded flex items-center gap-1">
+                                <HiOutlineExternalLink className="h-3 w-3" /> Ảnh {idx + 1}
+                              </span>
+                            </a>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  ) : (
-                    '-'
-                  )
+                    )
+                  })()
                 ) : isUUID(value) ? (
                   <div className="flex items-center gap-2">
                     <p className="text-sm font-medium font-mono" title={value}>{shortUUID(value)}</p>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   HiOutlineExclamationCircle,
@@ -27,6 +27,22 @@ export default function BannedAccount() {
   // Form state
   const [description, setDescription] = useState('')
   const [selectedFiles, setSelectedFiles] = useState([])
+  const selectedFilesRef = useRef(selectedFiles)
+
+  useEffect(() => {
+    selectedFilesRef.current = selectedFiles
+  }, [selectedFiles])
+
+  // Dọn dẹp toàn bộ blob object URLs khi component unmount để chống rò rỉ bộ nhớ
+  useEffect(() => {
+    return () => {
+      selectedFilesRef.current.forEach((item) => {
+        if (item?.previewUrl) {
+          URL.revokeObjectURL(item.previewUrl)
+        }
+      })
+    }
+  }, [])
 
   const fetchStatus = async () => {
     try {

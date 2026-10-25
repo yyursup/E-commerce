@@ -14,6 +14,10 @@ import org.springframework.stereotype.Component;
 public class AuthValidation {
     private final AccountRepository accountRepository;
     public void validate(AccountCreateRequest request){
+        if (request.getAgreeToTerms() == null || !request.getAgreeToTerms()) {
+            throw new CustomException("Bạn phải đọc và đồng ý với Điều khoản dịch vụ và Chính sách bảo mật của sàn để tiếp tục đăng ký");
+        }
+
         long startTime = System.currentTimeMillis();
 
         String validationResult = accountRepository.validateAccountUniqueness(

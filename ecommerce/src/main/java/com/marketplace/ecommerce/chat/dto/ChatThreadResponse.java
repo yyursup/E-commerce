@@ -1,6 +1,7 @@
 package com.marketplace.ecommerce.chat.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.marketplace.ecommerce.chat.entity.ChatThread;
 import com.marketplace.ecommerce.chat.enums.ThreadStatus;
 import com.marketplace.ecommerce.chat.enums.ThreadType;
@@ -36,6 +37,22 @@ public class ChatThreadResponse {
     private int unreadCount;
     private ThreadStatus status;
 
+    private UUID orderId;
+    private UUID requestId;
+
+    @JsonProperty("isLocked")
+    private boolean isLocked;
+
+    @JsonProperty("locked")
+    public boolean isLockedAlias() {
+        return isLocked;
+    }
+
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    private LocalDateTime closedAt;
+
+    private String closeReason;
+
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime createdAt;
 
@@ -61,6 +78,11 @@ public class ChatThreadResponse {
                 .lastMessageAt(thread.getLastMessageAt() != null ? thread.getLastMessageAt() : thread.getCreatedAt())
                 .unreadCount(unread)
                 .status(thread.getStatus())
+                .orderId(thread.getOrderId())
+                .requestId(thread.getRequestId())
+                .isLocked(thread.isLocked())
+                .closedAt(thread.getClosedAt())
+                .closeReason(thread.getCloseReason())
                 .createdAt(thread.getCreatedAt())
                 .build();
     }

@@ -436,10 +436,10 @@ class ChatServiceImplTest {
 
         Report report = Report.builder()
                 .id(requestId)
-                .stage(com.marketplace.ecommerce.request.valueObjects.ReportStage.DIRECT_NEGOTIATION)
+                .targetId(orderId)
                 .request(com.marketplace.ecommerce.request.entity.Request.builder().id(requestId).build())
                 .build();
-        when(reportRepository.findByOrderIdOrderByCreatedAtDesc(orderId)).thenReturn(List.of(report));
+        when(reportRepository.findReportsByTargetTypeAndTargetId(com.marketplace.ecommerce.request.valueObjects.TargetType.ORDER, orderId)).thenReturn(List.of(report));
 
         ChatThreadResponse res2 = chatService.getDisputeThreadByOrderId(buyerPrincipal, orderId);
         assertNotNull(res2);
@@ -675,13 +675,13 @@ class ChatServiceImplTest {
         assertThrows(CustomException.class, () -> chatService.getDisputeThreadByOrderId(buyerPrincipal, null));
 
         UUID orderId = UUID.randomUUID();
-        when(reportRepository.findByOrderIdOrderByCreatedAtDesc(orderId)).thenReturn(List.of());
+        when(reportRepository.findReportsByTargetTypeAndTargetId(com.marketplace.ecommerce.request.valueObjects.TargetType.ORDER, orderId)).thenReturn(List.of());
         assertNull(chatService.getDisputeThreadByOrderId(buyerPrincipal, orderId));
 
         // Report request null -> returns null
         com.marketplace.ecommerce.request.entity.Report r = new com.marketplace.ecommerce.request.entity.Report();
         r.setRequest(null);
-        when(reportRepository.findByOrderIdOrderByCreatedAtDesc(orderId)).thenReturn(List.of(r));
+        when(reportRepository.findReportsByTargetTypeAndTargetId(com.marketplace.ecommerce.request.valueObjects.TargetType.ORDER, orderId)).thenReturn(List.of(r));
         assertNull(chatService.getDisputeThreadByOrderId(buyerPrincipal, orderId));
 
         // Thread not found -> returns null
@@ -966,7 +966,7 @@ class ChatServiceImplTest {
         assertThrows(CustomException.class, () -> chatService.getDisputeThreadByOrderId(null, ordId));
         assertThrows(CustomException.class, () -> chatService.getDisputeThreadByOrderId(buyerPrincipal, null));
 
-        when(reportRepository.findByOrderIdOrderByCreatedAtDesc(ordId)).thenReturn(List.of());
+        when(reportRepository.findReportsByTargetTypeAndTargetId(com.marketplace.ecommerce.request.valueObjects.TargetType.ORDER, ordId)).thenReturn(List.of());
         assertNull(chatService.getDisputeThreadByOrderId(buyerPrincipal, ordId));
 
         Report rep = new Report();
@@ -975,7 +975,7 @@ class ChatServiceImplTest {
         baseReq.setId(reqId);
         rep.setRequest(baseReq);
 
-        when(reportRepository.findByOrderIdOrderByCreatedAtDesc(ordId)).thenReturn(List.of(rep));
+        when(reportRepository.findReportsByTargetTypeAndTargetId(com.marketplace.ecommerce.request.valueObjects.TargetType.ORDER, ordId)).thenReturn(List.of(rep));
         ChatThreadResponse resOrd = chatService.getDisputeThreadByOrderId(buyerPrincipal, ordId);
         assertNotNull(resOrd);
     }

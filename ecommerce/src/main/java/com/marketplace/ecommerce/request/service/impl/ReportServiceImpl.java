@@ -1277,11 +1277,21 @@ public class ReportServiceImpl implements ReportService {
         } else if (violationCount >= 3) {
             shop.setStatus(ShopStatus.WARNED);
             shop.setSuspendedUntil(null);
-            productRepository.updateStatusByShopId(shop.getId(), ProductStatus.PUBLISHED);
+            productRepository.updateStatusByShopId(
+                    shop.getId(),
+                    List.of(ProductStatus.INACTIVE),
+                    ProductStatus.PUBLISHED,
+                    now
+            );
         } else {
             shop.setStatus(ShopStatus.ACTIVE);
             shop.setSuspendedUntil(null);
-            productRepository.updateStatusByShopId(shop.getId(), ProductStatus.PUBLISHED);
+            productRepository.updateStatusByShopId(
+                    shop.getId(),
+                    List.of(ProductStatus.INACTIVE),
+                    ProductStatus.PUBLISHED,
+                    now
+            );
         }
     }
 }

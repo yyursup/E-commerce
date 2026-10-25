@@ -169,7 +169,7 @@ export default function AdminDashboard() {
 
           <div className="flex items-center gap-3">
             <button
-              onClick={fetchDashboardData}
+              onClick={() => fetchDashboardData()}
               disabled={loading}
               className={cn(
                 'inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-sm font-medium transition shadow-sm',
@@ -184,6 +184,111 @@ export default function AdminDashboard() {
           </div>
         </div>
 
+        {/* BỘ LỌC KỲ THỜI GIAN TOÀN DIỆN CHO DASHBOARD */}
+        <div
+          className={cn(
+            'flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-2xl border p-4 shadow-sm',
+            isDark ? 'border-slate-800 bg-slate-900/90' : 'border-stone-200 bg-white',
+          )}
+        >
+          <div className="flex flex-wrap items-center gap-2.5">
+            <span className={cn('text-xs font-semibold', isDark ? 'text-slate-400' : 'text-stone-500')}>
+              Kỳ thống kê:
+            </span>
+            <div
+              className={cn(
+                'flex items-center rounded-xl p-1 border text-xs font-semibold',
+                isDark ? 'border-slate-800 bg-slate-800/60' : 'border-stone-200 bg-stone-100',
+              )}
+            >
+              {[
+                { id: '7d', label: '7 ngày' },
+                { id: '14d', label: '14 ngày' },
+                { id: '30d', label: '30 ngày' },
+                { id: 'this_month', label: 'Tháng này' },
+                { id: 'last_month', label: 'Tháng trước' },
+                { id: 'custom', label: 'Tùy chọn' },
+              ].map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => handlePeriodChange(p.id)}
+                  className={cn(
+                    'px-2.5 py-1 rounded-lg transition-all',
+                    timelineFilter === p.id
+                      ? 'bg-blue-600 text-white shadow-sm'
+                      : isDark
+                      ? 'text-slate-400 hover:text-white'
+                      : 'text-stone-600 hover:text-stone-900',
+                  )}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+
+            {analytics?.startDate && analytics?.endDate && (
+              <span
+                className={cn(
+                  'text-[11px] px-2.5 py-1 rounded-lg font-semibold border',
+                  isDark
+                    ? 'bg-slate-800/80 border-slate-700 text-slate-300'
+                    : 'bg-stone-50 border-stone-200 text-stone-600',
+                )}
+              >
+                {analytics.startDate} → {analytics.endDate}
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 text-xs text-slate-400">
+            <span>Dữ liệu KPI & biểu đồ được tính toán theo kỳ đã chọn</span>
+          </div>
+        </div>
+
+        {/* Ô nhập ngày tùy chọn */}
+        {isCustomDateOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            className={cn(
+              'p-4 rounded-xl border flex flex-wrap items-center gap-3 text-xs',
+              isDark ? 'border-slate-800 bg-slate-900/60' : 'border-stone-200 bg-stone-50',
+            )}
+          >
+            <span className="font-semibold text-slate-400">Chọn khoảng ngày:</span>
+            <div className="flex items-center gap-2">
+              <span>Từ:</span>
+              <input
+                type="date"
+                value={customStartDate}
+                onChange={(e) => setCustomStartDate(e.target.value)}
+                className={cn(
+                  'px-2.5 py-1 rounded-lg border text-xs',
+                  isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-stone-300 text-stone-800',
+                )}
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <span>Đến:</span>
+              <input
+                type="date"
+                value={customEndDate}
+                onChange={(e) => setCustomEndDate(e.target.value)}
+                className={cn(
+                  'px-2.5 py-1 rounded-lg border text-xs',
+                  isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-stone-300 text-stone-800',
+                )}
+              />
+            </div>
+            <button
+              onClick={handleApplyCustomDate}
+              className="px-3.5 py-1.5 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition"
+            >
+              Áp dụng
+            </button>
+          </motion.div>
+        )}
+
         {/* 1. KHỐI TÀI CHÍNH CỐT LÕI (4 FINANCIAL STAT CARDS) */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {/* Card 1: Tổng GMV */}
@@ -196,9 +301,14 @@ export default function AdminDashboard() {
             )}
           >
             <div className="flex items-center justify-between gap-2">
-              <span className={cn('text-xs font-semibold uppercase tracking-wider', isDark ? 'text-slate-400' : 'text-stone-500')}>
-                Tổng GMV Toàn Sàn
-              </span>
+              <div className="flex items-center gap-1.5">
+                <span className={cn('text-xs font-semibold uppercase tracking-wider', isDark ? 'text-slate-400' : 'text-stone-500')}>
+                  Tổng GMV
+                </span>
+                <span className="rounded bg-blue-500/10 px-1.5 py-0.5 text-[10px] font-bold text-blue-500 border border-blue-500/20">
+                  Trong kỳ
+                </span>
+              </div>
               <div className="rounded-xl bg-blue-500/10 p-2 text-blue-500 shrink-0">
                 <HiOutlineTrendingUp className="h-5 w-5" />
               </div>
@@ -207,10 +317,17 @@ export default function AdminDashboard() {
               <p>
                 {renderCurrency(analytics?.totalGmv, 'text-blue-500')}
               </p>
-              <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs font-medium text-emerald-500">
-                <span>↑ {analytics?.gmvGrowthRate || 12.8}%</span>
-                <span className={isDark ? 'text-slate-500' : 'text-stone-400'}>so với tháng trước</span>
+              <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs font-medium">
+                <span className={analytics?.gmvGrowthRate >= 0 ? 'text-emerald-500 font-bold' : 'text-rose-500 font-bold'}>
+                  {analytics?.gmvGrowthRate >= 0 ? `↑ +${analytics?.gmvGrowthRate || 0}%` : `↓ ${analytics?.gmvGrowthRate || 0}%`}
+                </span>
+                <span className={isDark ? 'text-slate-500' : 'text-stone-400'}>so với cùng kỳ trước</span>
               </div>
+              {analytics?.allTimeGmv != null && (
+                <p className={cn("text-[11px] mt-1.5 truncate", isDark ? "text-slate-400" : "text-stone-500")}>
+                  Lũy kế toàn sàn: <span className="font-semibold">{formatCurrency(analytics.allTimeGmv)}</span>
+                </p>
+              )}
             </div>
           </motion.div>
 
@@ -225,9 +342,14 @@ export default function AdminDashboard() {
             )}
           >
             <div className="flex items-center justify-between gap-2">
-              <span className={cn('text-xs font-semibold uppercase tracking-wider', isDark ? 'text-slate-400' : 'text-stone-500')}>
-                Doanh Thu Đã Quyết Toán
-              </span>
+              <div className="flex items-center gap-1.5">
+                <span className={cn('text-xs font-semibold uppercase tracking-wider', isDark ? 'text-slate-400' : 'text-stone-500')}>
+                  Doanh Thu Quyết Toán
+                </span>
+                <span className="rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-bold text-emerald-500 border border-emerald-500/20">
+                  Trong kỳ
+                </span>
+              </div>
               <div className="rounded-xl bg-emerald-500/10 p-2 text-emerald-500 shrink-0">
                 <HiOutlineCheckCircle className="h-5 w-5" />
               </div>
@@ -237,8 +359,13 @@ export default function AdminDashboard() {
                 {renderCurrency(analytics?.settledRevenue, 'text-emerald-500')}
               </p>
               <div className={cn("mt-1 flex flex-wrap items-center gap-1.5 text-xs font-medium", isDark ? 'text-slate-400' : 'text-stone-500')}>
-                <span>{analytics?.completedOrders || 0} đơn đã giao thành công</span>
+                <span>{analytics?.completedOrders || 0} đơn đã giao trong kỳ</span>
               </div>
+              {analytics?.allTimeSettledRevenue != null && (
+                <p className={cn("text-[11px] mt-1.5 truncate", isDark ? "text-slate-400" : "text-stone-500")}>
+                  Lũy kế quyết toán: <span className="font-semibold">{formatCurrency(analytics.allTimeSettledRevenue)}</span>
+                </p>
+              )}
             </div>
           </motion.div>
 
@@ -253,9 +380,14 @@ export default function AdminDashboard() {
             )}
           >
             <div className="flex items-center justify-between gap-2">
-              <span className={cn('text-xs font-semibold uppercase tracking-wider', isDark ? 'text-slate-400' : 'text-stone-500')}>
-                Quỹ Ký Quỹ Escrow
-              </span>
+              <div className="flex items-center gap-1.5">
+                <span className={cn('text-xs font-semibold uppercase tracking-wider', isDark ? 'text-slate-400' : 'text-stone-500')}>
+                  Quỹ Ký Quỹ Escrow
+                </span>
+                <span className="rounded bg-purple-500/10 px-1.5 py-0.5 text-[10px] font-bold text-purple-400 border border-purple-500/20">
+                  Thời gian thực
+                </span>
+              </div>
               <div className="rounded-xl bg-purple-500/10 p-2 text-purple-500 shrink-0">
                 <HiOutlineShieldCheck className="h-5 w-5" />
               </div>
@@ -267,6 +399,9 @@ export default function AdminDashboard() {
               <div className={cn("mt-1 flex flex-wrap items-center gap-1.5 text-xs font-medium", isDark ? 'text-purple-400' : 'text-purple-600')}>
                 <span>Bảo lãnh vận chuyển & 3 ngày đồng kiểm</span>
               </div>
+              <p className={cn("text-[11px] mt-1.5 truncate text-purple-400/80")}>
+                Đang tạm giữ chờ giải ngân
+              </p>
             </div>
           </motion.div>
 
@@ -281,9 +416,14 @@ export default function AdminDashboard() {
             )}
           >
             <div className="flex items-center justify-between gap-2">
-              <span className={cn('text-xs font-semibold uppercase tracking-wider', isDark ? 'text-slate-400' : 'text-stone-500')}>
-                Hoa Hồng Sàn Thực Thu
-              </span>
+              <div className="flex items-center gap-1.5">
+                <span className={cn('text-xs font-semibold uppercase tracking-wider', isDark ? 'text-slate-400' : 'text-stone-500')}>
+                  Hoa Hồng Sàn Thực Thu
+                </span>
+                <span className="rounded bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-bold text-amber-500 border border-amber-500/20">
+                  Trong kỳ
+                </span>
+              </div>
               <div className="rounded-xl bg-amber-500/10 p-2 text-amber-500 shrink-0">
                 <HiOutlineCurrencyDollar className="h-5 w-5" />
               </div>
@@ -295,6 +435,9 @@ export default function AdminDashboard() {
               <div className={cn("mt-1 flex flex-wrap items-center gap-1.5 text-xs font-medium", isDark ? 'text-amber-400' : 'text-amber-600')}>
                 <span>Tỷ lệ hoa hồng sàn trung bình: ~5.0%</span>
               </div>
+              <p className={cn("text-[11px] mt-1.5 truncate", isDark ? "text-slate-400" : "text-stone-500")}>
+                Phí dịch vụ sàn thu từ người bán
+              </p>
             </div>
           </motion.div>
         </div>
@@ -307,30 +450,42 @@ export default function AdminDashboard() {
           )}
         >
           <div>
-            <p className={cn('text-xs font-medium', isDark ? 'text-slate-400' : 'text-stone-500')}>
-              Tỷ lệ hoàn thành đơn
-            </p>
+            <div className="flex items-center gap-1.5">
+              <p className={cn('text-xs font-medium', isDark ? 'text-slate-400' : 'text-stone-500')}>
+                Tỷ lệ hoàn thành đơn
+              </p>
+              <span className="rounded bg-emerald-500/10 px-1 py-0.2 text-[9px] font-bold text-emerald-500 border border-emerald-500/20">Trong kỳ</span>
+            </div>
             <p className="mt-1 text-xl font-bold text-emerald-500">{analytics?.fulfillmentRate || 0}%</p>
-            <p className="text-[11px] text-slate-500">{analytics?.totalOrders || 0} đơn phát sinh</p>
+            <p className="text-[11px] text-slate-500">{analytics?.totalOrders || 0} đơn phát sinh trong kỳ</p>
           </div>
           <div>
-            <p className={cn('text-xs font-medium', isDark ? 'text-slate-400' : 'text-stone-500')}>
-              Tỷ lệ hoàn hàng / lỗi
-            </p>
+            <div className="flex items-center gap-1.5">
+              <p className={cn('text-xs font-medium', isDark ? 'text-slate-400' : 'text-stone-500')}>
+                Tỷ lệ hoàn hàng / lỗi
+              </p>
+              <span className="rounded bg-amber-500/10 px-1 py-0.2 text-[9px] font-bold text-amber-500 border border-amber-500/20">Trong kỳ</span>
+            </div>
             <p className="mt-1 text-xl font-bold text-amber-500">{analytics?.returnRate || 0}%</p>
             <p className="text-[11px] text-slate-500">{analytics?.returnedOrders || 0} đơn đã hoàn tiền</p>
           </div>
           <div>
-            <p className={cn('text-xs font-medium', isDark ? 'text-slate-400' : 'text-stone-500')}>
-              Tranh chấp đang xử lý
-            </p>
+            <div className="flex items-center gap-1.5">
+              <p className={cn('text-xs font-medium', isDark ? 'text-slate-400' : 'text-stone-500')}>
+                Tranh chấp đang xử lý
+              </p>
+              <span className="rounded bg-rose-500/10 px-1 py-0.2 text-[9px] font-bold text-rose-400 border border-rose-500/20">Thời gian thực</span>
+            </div>
             <p className="mt-1 text-xl font-bold text-rose-500">{analytics?.pendingDisputesCount || 0} vụ</p>
             <p className="text-[11px] text-slate-500">Tỷ lệ: {analytics?.disputeRate || 0}%</p>
           </div>
           <div>
-            <p className={cn('text-xs font-medium', isDark ? 'text-slate-400' : 'text-stone-500')}>
-              Shop đã định danh eKYC
-            </p>
+            <div className="flex items-center gap-1.5">
+              <p className={cn('text-xs font-medium', isDark ? 'text-slate-400' : 'text-stone-500')}>
+                Shop đã định danh eKYC
+              </p>
+              <span className="rounded bg-blue-500/10 px-1 py-0.2 text-[9px] font-bold text-blue-400 border border-blue-500/20">Mạng lưới</span>
+            </div>
             <p className="mt-1 text-xl font-bold text-blue-500">{analytics?.kycVerificationRate || 0}%</p>
             <p className="text-[11px] text-slate-500">
               {analytics?.verifiedKycShops || 0} / {analytics?.totalShops || 0} gian hàng
@@ -362,75 +517,15 @@ export default function AdminDashboard() {
               </p>
             </div>
 
-            {/* Bộ lọc thời gian */}
-            <div className="flex flex-wrap items-center gap-2">
-              <div className={cn('flex items-center rounded-xl p-1 border text-xs font-semibold', isDark ? 'border-slate-800 bg-slate-800/60' : 'border-stone-200 bg-stone-100')}>
-                {[
-                  { id: '7d', label: '7 ngày' },
-                  { id: '14d', label: '14 ngày' },
-                  { id: '30d', label: '30 ngày' },
-                  { id: 'this_month', label: 'Tháng này' },
-                  { id: 'last_month', label: 'Tháng trước' },
-                  { id: 'custom', label: 'Tùy chọn' },
-                ].map((p) => (
-                  <button
-                    key={p.id}
-                    onClick={() => handlePeriodChange(p.id)}
-                    className={cn(
-                      'px-2.5 py-1 rounded-lg transition-all',
-                      timelineFilter === p.id
-                        ? 'bg-blue-600 text-white shadow-sm'
-                        : isDark
-                        ? 'text-slate-400 hover:text-white'
-                        : 'text-stone-600 hover:text-stone-900'
-                    )}
-                  >
-                    {p.label}
-                  </button>
-                ))}
-              </div>
-
-              <div className="hidden lg:flex items-center gap-3 text-xs font-medium ml-2">
-                <span className="flex items-center gap-1.5">
-                  <span className="h-3 w-3 rounded-sm bg-blue-500"></span> GMV
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="h-3 w-3 rounded-sm bg-amber-500"></span> Hoa hồng
-                </span>
-              </div>
+            <div className="flex items-center gap-4 text-xs font-medium">
+              <span className="flex items-center gap-1.5">
+                <span className="h-3 w-3 rounded-sm bg-blue-500"></span> GMV Trong Kỳ
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="h-3 w-3 rounded-sm bg-amber-500"></span> Hoa Hồng Thực Thu (~5%)
+              </span>
             </div>
           </div>
-
-          {/* Ô nhập ngày tùy chọn */}
-          {isCustomDateOpen && (
-            <div className={cn('mb-6 p-3 rounded-xl border flex flex-wrap items-center gap-3 text-xs', isDark ? 'border-slate-800 bg-slate-800/40' : 'border-stone-200 bg-stone-50')}>
-              <span className="font-semibold text-slate-400">Khoảng thời gian:</span>
-              <div className="flex items-center gap-2">
-                <span>Từ:</span>
-                <input
-                  type="date"
-                  value={customStartDate}
-                  onChange={(e) => setCustomStartDate(e.target.value)}
-                  className={cn('px-2.5 py-1 rounded-lg border text-xs', isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-stone-300 text-stone-800')}
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <span>Đến:</span>
-                <input
-                  type="date"
-                  value={customEndDate}
-                  onChange={(e) => setCustomEndDate(e.target.value)}
-                  className={cn('px-2.5 py-1 rounded-lg border text-xs', isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-stone-300 text-stone-800')}
-                />
-              </div>
-              <button
-                onClick={handleApplyCustomDate}
-                className="px-3 py-1 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition"
-              >
-                Áp dụng
-              </button>
-            </div>
-          )}
 
           {/* Thanh hiển thị chi tiết số liệu khi rê chuột - CỐ ĐỊNH CHIỀU CAO 44px KHÔNG BAO GIỜ THAY ĐỔI */}
           <div

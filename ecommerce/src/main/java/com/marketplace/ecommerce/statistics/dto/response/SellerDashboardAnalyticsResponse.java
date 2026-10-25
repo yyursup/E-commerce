@@ -24,6 +24,8 @@ public class SellerDashboardAnalyticsResponse {
     private BigDecimal estimatedRevenue;        // Doanh số ước tính (tất cả đơn active)
     private BigDecimal totalCommissionPaid;     // Hoa hồng đã trả sàn
     private BigDecimal averageOrderValue;       // AOV = Doanh thu / Số đơn hoàn thành
+    private Double revenueGrowthRate;           // Tỷ lệ tăng trưởng doanh thu so với cùng kỳ trước
+    private BigDecimal allTimeRevenue;          // Tổng doanh số lũy kế toàn thời gian
 
     // 2. Fulfillment Metrics
     private Long totalOrders;

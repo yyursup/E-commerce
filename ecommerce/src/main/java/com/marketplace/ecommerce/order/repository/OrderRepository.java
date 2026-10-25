@@ -134,10 +134,90 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
   @Query("""
       SELECT COALESCE(SUM(o.total), 0)
       FROM Order o
+      WHERE o.createdAt >= :startDate
+        AND o.createdAt <= :endDate
+        AND o.status <> com.marketplace.ecommerce.order.valueObjects.OrderStatus.CANCELLED
+  """)
+  BigDecimal getPlatformGmvBetween(
+      @Param("startDate") LocalDateTime startDate,
+      @Param("endDate") LocalDateTime endDate
+  );
+
+  @Query("""
+      SELECT COALESCE(SUM(o.total), 0)
+      FROM Order o
       WHERE o.status = com.marketplace.ecommerce.order.valueObjects.OrderStatus.DELIVERED
          OR o.status = com.marketplace.ecommerce.order.valueObjects.OrderStatus.COMPLETED
   """)
   BigDecimal getPlatformSettledRevenue();
+
+  @Query("""
+      SELECT COALESCE(SUM(o.total), 0)
+      FROM Order o
+      WHERE o.createdAt >= :startDate
+        AND o.createdAt <= :endDate
+        AND (o.status = com.marketplace.ecommerce.order.valueObjects.OrderStatus.DELIVERED
+          OR o.status = com.marketplace.ecommerce.order.valueObjects.OrderStatus.COMPLETED)
+  """)
+  BigDecimal getPlatformSettledRevenueBetween(
+      @Param("startDate") LocalDateTime startDate,
+      @Param("endDate") LocalDateTime endDate
+  );
+
+  @Query("""
+      SELECT o.shop.id, o.shop.name, COALESCE(SUM(o.total), 0), COUNT(o)
+      FROM Order o
+      WHERE o.createdAt >= :startDate
+        AND o.createdAt <= :endDate
+        AND (o.status = com.marketplace.ecommerce.order.valueObjects.OrderStatus.DELIVERED
+          OR o.status = com.marketplace.ecommerce.order.valueObjects.OrderStatus.COMPLETED)
+      GROUP BY o.shop.id, o.shop.name
+      ORDER BY SUM(o.total) DESC
+  """)
+  List<Object[]> getShopRankingByRevenueBetween(
+      @Param("startDate") LocalDateTime startDate,
+      @Param("endDate") LocalDateTime endDate
+  );
+
+  long countByCreatedAtBetween(LocalDateTime startDate, LocalDateTime endDate);
+
+  long countByStatusAndCreatedAtBetween(OrderStatus status, LocalDateTime startDate, LocalDateTime endDate);
+
+  long countByStatusInAndCreatedAtBetween(Collection<OrderStatus> statuses, LocalDateTime startDate, LocalDateTime endDate);
+
+  @Query("""
+      SELECT COALESCE(SUM(o.subtotal - COALESCE(o.shopDiscountAmount, 0)), 0)
+      FROM Order o
+      WHERE o.shop.id = :shopId
+        AND o.status IN :revenueStatuses
+        AND o.createdAt >= :startDate
+        AND o.createdAt <= :endDate
+      """)
+  BigDecimal getRevenueByShopBetween(
+      @Param("shopId") UUID shopId,
+      @Param("revenueStatuses") List<OrderStatus> revenueStatuses,
+      @Param("startDate") LocalDateTime startDate,
+      @Param("endDate") LocalDateTime endDate);
+
+  @Query("""
+      SELECT COALESCE(SUM(o.subtotal - COALESCE(o.shopDiscountAmount, 0)), 0)
+      FROM Order o
+      WHERE o.shop.id = :shopId
+        AND o.status IN :statuses
+        AND o.createdAt >= :startDate
+        AND o.createdAt <= :endDate
+      """)
+  BigDecimal getEstimatedRevenueByShopBetween(
+      @Param("shopId") UUID shopId,
+      @Param("statuses") List<OrderStatus> statuses,
+      @Param("startDate") LocalDateTime startDate,
+      @Param("endDate") LocalDateTime endDate);
+
+  long countByShopIdAndCreatedAtBetween(UUID shopId, LocalDateTime startDate, LocalDateTime endDate);
+
+  long countByShopIdAndStatusAndCreatedAtBetween(UUID shopId, OrderStatus status, LocalDateTime startDate, LocalDateTime endDate);
+
+  long countByShopIdAndStatusInAndCreatedAtBetween(UUID shopId, Collection<OrderStatus> statuses, LocalDateTime startDate, LocalDateTime endDate);
 
   @Query("""
       SELECT CAST(o.createdAt as LocalDate), COALESCE(SUM(o.total), 0), COUNT(o)

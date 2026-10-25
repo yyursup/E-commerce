@@ -13,12 +13,14 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AdminDashboardAnalyticsResponse {
-    // 1. Financial Metrics
+    // 1. Financial Metrics (trong kỳ được chọn)
     private BigDecimal totalGmv;
     private BigDecimal settledRevenue;
     private BigDecimal activeEscrowBalance;
     private BigDecimal totalPlatformCommission;
     private Double gmvGrowthRate;
+    private BigDecimal allTimeGmv;
+    private BigDecimal allTimeSettledRevenue;
 
     // 2. Operational & Risk Metrics
     private Long totalOrders;

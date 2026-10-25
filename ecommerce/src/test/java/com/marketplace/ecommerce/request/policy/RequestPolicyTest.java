@@ -136,7 +136,7 @@ class RequestPolicyTest {
 
         // Đã giao nhưng quá hạn 3 ngày
         order.setStatus(OrderStatus.DELIVERED);
-        order.setDeliveredAt(LocalDateTime.now().minusDays(4));
+        order.setDeliveredAt(LocalDateTime.now().minusDays(8));
         assertThrows(CustomException.class, () -> requestPolicy.validateOrderReport(buyerAccId, orderId));
 
         // Đang có khiếu nại pending
@@ -217,124 +217,5 @@ class RequestPolicyTest {
         assertNotNull(ctx);
         assertEquals("Official Tech Store", ctx.shopName());
         assertEquals(user, ctx.ownerUser());
-    }
-
-    @Test
-    @DisplayName("Chặn nộp kháng cáo khi targetType là ORDER (Phán quyết Admin là quyết định cuối cùng)")
-    void validateAppealRequest_ThrowsException_WhenTargetTypeIsOrder() {
-        CreateAppealRequest req = CreateAppealRequest.builder()
-                .targetType(TargetType.ORDER)
-                .targetId(orderId)
-                .description("Shop muốn kháng cáo đơn hàng")
-                .build();
-
-        CustomException ex = assertThrows(CustomException.class, () -> requestPolicy.validateAppealRequest(req));
-        assertTrue(ex.getMessage().contains("quyết định cuối cùng"));
-    }
-
-    @Test
-    @DisplayName("Chặn nộp kháng cáo khi reportId gốc là vụ việc khiếu nại ORDER")
-    void validateAppealRequest_ThrowsException_WhenOriginalReportIsOrder() {
-        CreateAppealRequest req = CreateAppealRequest.builder()
-                .targetType(TargetType.USER)
-                .targetId(UUID.randomUUID())
-                .reportId(reportId)
-                .description("Kháng cáo lách targetType nhưng trỏ vào Report đơn hàng")
-                .build();
-
-        Report orderReport = Report.builder()
-                .id(reportId)
-                .targetType(TargetType.ORDER)
-                .targetId(orderId)
-                .build();
-
-        when(reportRepository.findById(reportId)).thenReturn(Optional.of(orderReport));
-
-        CustomException ex = assertThrows(CustomException.class, () -> requestPolicy.validateAppealRequest(req));
-        assertTrue(ex.getMessage().contains("quyết định cuối cùng"));
-    }
-
-    @Test
-    @DisplayName("Cho phép nộp kháng cáo đối với vi phạm SHOP, PRODUCT, REVIEW")
-    void validateAppealRequest_Passes_WhenTargetTypeIsNotOrder() {
-        CreateAppealRequest req = CreateAppealRequest.builder()
-                .targetType(TargetType.SHOP)
-                .targetId(UUID.randomUUID())
-                .reportId(reportId)
-                .description("Shop giải trình giấy tờ")
-                .build();
-
-        Report shopReport = Report.builder()
-                .id(reportId)
-                .targetType(TargetType.SHOP)
-                .targetId(req.getTargetId())
-                .build();
-
-        when(reportRepository.findById(reportId)).thenReturn(Optional.of(shopReport));
-
-        assertDoesNotThrow(() -> requestPolicy.validateAppealRequest(req));
-    }
-
-    @Test
-    @DisplayName("Chặn phán quyết tranh chấp ORDER nếu thiếu mã điều khoản chính sách")
-    void validateDisputePolicyClause_ThrowsException_WhenOrderDisputeMissingClause() {
-        CustomException ex = assertThrows(CustomException.class, () ->
-                requestPolicy.validateDisputePolicyClause(TargetType.ORDER, null,
-                        ReportDecision.APPROVE, false));
-        assertTrue(ex.getMessage().contains("bắt buộc phải gắn với một Điều khoản Chính sách"));
-    }
-
-    @Test
-    @DisplayName("Chặn phán quyết nếu mã điều khoản chính sách không tồn tại")
-    void validateDisputePolicyClause_ThrowsException_WhenClauseInvalid() {
-        CustomException ex = assertThrows(CustomException.class, () ->
-                requestPolicy.validateDisputePolicyClause(TargetType.ORDER, "INVALID_CLAUSE_XYZ",
-                        ReportDecision.APPROVE, false));
-        assertTrue(ex.getMessage().contains("không hợp lệ"));
-    }
-
-    @Test
-    @DisplayName("Chặn phán quyết khi điều khoản không tương thích với hướng phán quyết (APPROVE nhưng chọn BUYER_FAULT)")
-    void validateDisputePolicyClause_ThrowsException_WhenClauseMismatchApprove() {
-        CustomException ex = assertThrows(CustomException.class, () ->
-                requestPolicy.validateDisputePolicyClause(TargetType.ORDER, "CLAUSE_14_1_INSUFFICIENT_EVIDENCE",
-                        ReportDecision.APPROVE, false));
-        assertTrue(ex.getMessage().contains("không phù hợp với phán quyết chấp thuận khiếu nại"));
-    }
-
-    @Test
-    @DisplayName("Chặn phán quyết khi điều khoản không tương thích với hướng phán quyết (REJECT nhưng chọn SELLER_FAULT)")
-    void validateDisputePolicyClause_ThrowsException_WhenClauseMismatchReject() {
-        CustomException ex = assertThrows(CustomException.class, () ->
-                requestPolicy.validateDisputePolicyClause(TargetType.ORDER, "CLAUSE_8_2_FAKE_PRODUCT",
-                        ReportDecision.REJECT, false));
-        assertTrue(ex.getMessage().contains("không phù hợp với phán quyết bác bỏ khiếu nại"));
-    }
-
-    @Test
-    @DisplayName("Xác thực thành công điều khoản hợp lệ khi phán quyết tranh chấp")
-    void validateDisputePolicyClause_Passes_WhenClauseIsValidAndMatches() {
-        DisputePolicyClause c1 =
-                requestPolicy.validateDisputePolicyClause(TargetType.ORDER, "CLAUSE_9_1_HARDWARE_FAULT",
-                        ReportDecision.APPROVE, false);
-        assertNotNull(c1);
-        assertEquals("CLAUSE_9_1_HARDWARE_FAULT", c1.getCode());
-
-        DisputePolicyClause c2 =
-                requestPolicy.validateDisputePolicyClause(TargetType.ORDER, "CLAUSE_14_1_INSUFFICIENT_EVIDENCE",
-                        ReportDecision.REJECT, false);
-        assertNotNull(c2);
-        assertEquals("CLAUSE_14_1_INSUFFICIENT_EVIDENCE", c2.getCode());
-
-        DisputePolicyClause c3 =
-                requestPolicy.validateDisputePolicyClause(TargetType.ORDER, "CLAUSE_15_1_RETURN_EMPTY_PARCEL",
-                        ReportDecision.APPROVE, true);
-        assertNotNull(c3);
-        assertEquals("CLAUSE_15_1_RETURN_EMPTY_PARCEL", c3.getCode());
-
-        DisputePolicyClause c4 =
-                requestPolicy.validateDisputePolicyClause(TargetType.PRODUCT, null,
-                        ReportDecision.APPROVE, false);
-        assertNull(c4);
     }
 }

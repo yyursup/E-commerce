@@ -56,6 +56,17 @@ const shopService = {
     }
   },
 
+  getRawShopById: async (shopId) => {
+    if (!shopId) return null
+    try {
+      const response = await axiosClient.get(`${SHOP_BASE}/${shopId}`)
+      return response.data
+    } catch (err) {
+      console.warn('API fetch raw shop failed:', err)
+      return null
+    }
+  },
+
   // Lấy danh sách tất cả các shop từ API backend thật
   getAllShops: async () => {
     try {

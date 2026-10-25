@@ -81,10 +81,12 @@ const orderService = {
     }
   },
 
-  // Admin: List all orders
-  getAllOrders: async (status = null) => {
+  // Admin: List all orders (supports optional status and shopId filters)
+  getAllOrders: async (status = null, shopId = null) => {
     try {
-      const params = status ? { status } : {};
+      const params = {};
+      if (status) params.status = status;
+      if (shopId) params.shopId = shopId;
       const response = await axiosClient.get(ORDER_BASE, { params });
       return response.data;
     } catch (error) {

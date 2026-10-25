@@ -24,7 +24,7 @@ const navItems = [
   { to: '/dashboard', label: 'Tổng quan Sàn', icon: HiOutlineViewGrid },
   { to: '/requests', label: 'Duyệt Yêu Cầu & Mở Shop', icon: HiOutlineClipboardCheck },
   { to: '/moderation', label: 'Kiểm duyệt Sản phẩm', icon: HiOutlineShieldCheck },
-  { to: '/orders', label: 'Quản lý Đơn hàng', icon: HiOutlineShoppingBag },
+  { to: '/orders', label: 'Gian Hàng & Đơn Hàng', icon: HiOutlineShoppingBag },
   { to: '/vouchers', label: 'Voucher Toàn Sàn', icon: HiOutlineTicket },
   { to: '/commissions', label: 'Hoa Hồng & Biểu Phí', icon: HiOutlineChartBar },
   { to: '/trust-config', label: 'Quỹ Ký Quỹ & Bậc Sao', icon: HiOutlineCash },

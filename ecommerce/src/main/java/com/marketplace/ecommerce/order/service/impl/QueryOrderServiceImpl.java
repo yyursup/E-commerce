@@ -46,11 +46,23 @@ public class QueryOrderServiceImpl implements QueryOrderService {
 
     @Override
     public List<OrderResponse> adminListOrders(UUID accountId, OrderStatus statusOpt) {
+        return adminListOrders(accountId, statusOpt, null);
+    }
+
+    @Override
+    public List<OrderResponse> adminListOrders(UUID accountId, OrderStatus statusOpt, UUID shopId) {
         requireUserByAccountId(accountId);
 
-        List<Order> orders = (statusOpt == null)
-                ? orderRepository.findAllByOrderByCreatedAtDesc()
-                : orderRepository.findByStatusOrderByCreatedAtDesc(statusOpt);
+        List<Order> orders;
+        if (shopId != null) {
+            orders = (statusOpt == null)
+                    ? orderRepository.findByShopIdOrderByCreatedAtDesc(shopId)
+                    : orderRepository.findByShopIdAndStatusOrderByCreatedAtDesc(shopId, statusOpt);
+        } else {
+            orders = (statusOpt == null)
+                    ? orderRepository.findAllByOrderByCreatedAtDesc()
+                    : orderRepository.findByStatusOrderByCreatedAtDesc(statusOpt);
+        }
 
         List<UUID> ids = orders.stream().map(Order::getId).toList();
         var disputeMap = orderDisputeService.getDisputeInfoBatch(ids);

@@ -18,4 +18,8 @@ public interface StatisticsAnalyticsService {
     SellerDashboardAnalyticsResponse getSellerDashboardAnalytics(UUID sellerAccountId, String period, LocalDate startDate, LocalDate endDate);
 
     BuyerSpendingAnalyticsResponse getBuyerSpendingAnalytics(UUID buyerAccountId);
+
+    java.util.List<com.marketplace.ecommerce.statistics.dto.response.AdminShopPerformanceDTO> getAdminShopsPerformance(String period, LocalDate startDate, LocalDate endDate, String search);
+
+    SellerDashboardAnalyticsResponse getAdminShopAnalytics(UUID shopId, String period, LocalDate startDate, LocalDate endDate);
 }

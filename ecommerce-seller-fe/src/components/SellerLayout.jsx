@@ -17,6 +17,7 @@ import {
   HiOutlineCash,
   HiOutlineClock,
   HiOutlineExclamation,
+  HiOutlineDocumentText,
 } from 'react-icons/hi'
 import { useAuthStore } from '../store/useAuthStore'
 import { useThemeStore } from '../store/useThemeStore'
@@ -43,6 +44,7 @@ const navItems = [
   { to: '/escrow-fund', label: 'Quỹ Ký Quỹ & Uy Tín', icon: HiOutlineCash },
   { to: '/violations', label: 'Điểm uy tín Shop', icon: HiOutlineShieldCheck },
   { to: '/chat', label: 'Tin nhắn (Chat CSKH)', icon: HiOutlineChat, isChat: true },
+  { to: '/policy', label: 'Chính sách & Quy định', icon: HiOutlineDocumentText },
   { to: '/settings', label: 'Cài đặt Kho & Gian hàng', icon: HiOutlineCog },
 ]
 

@@ -60,6 +60,9 @@ import com.marketplace.ecommerce.notification.valueObjects.NotificationChannelTy
 import com.marketplace.ecommerce.notification.valueObjects.NotificationStatus;
 import com.marketplace.ecommerce.notification.valueObjects.NotificationType;
 import com.marketplace.ecommerce.chat.service.ChatService;
+import com.marketplace.ecommerce.platform.policy.entity.DisputePolicyClauseEntity;
+import com.marketplace.ecommerce.platform.policy.repository.DisputePolicyClauseRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -96,6 +99,8 @@ public class ReportServiceImpl implements ReportService {
     private final UserRepository userRepository;
     private final ChatService chatService;
     private final AccountDisciplineService accountDisciplineService;
+    @Autowired(required = false)
+    private DisputePolicyClauseRepository disputePolicyClauseRepository;
 
     @Override
     @Transactional
@@ -1126,6 +1131,20 @@ public class ReportServiceImpl implements ReportService {
 
     @Override
     public List<DisputePolicyClauseResponse> getDisputePolicyClauses() {
+        if (disputePolicyClauseRepository != null) {
+            List<DisputePolicyClauseEntity> dynamicClauses =
+                    disputePolicyClauseRepository.findByIsActiveTrueOrderByDisplayOrderAscCreatedAtAsc();
+            if (dynamicClauses != null && !dynamicClauses.isEmpty()) {
+                return dynamicClauses.stream()
+                        .map(c -> DisputePolicyClauseResponse.builder()
+                                .code(c.getCode())
+                                .title(c.getTitle())
+                                .description(c.getDescription())
+                                .category(c.getCategory())
+                                .build())
+                        .toList();
+            }
+        }
         return Arrays.stream(DisputePolicyClause.values())
                 .map(DisputePolicyClauseResponse::from)
                 .toList();

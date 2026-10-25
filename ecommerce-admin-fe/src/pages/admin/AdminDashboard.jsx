@@ -318,10 +318,16 @@ export default function AdminDashboard() {
                 {renderCurrency(analytics?.totalGmv, 'text-blue-500')}
               </p>
               <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs font-medium">
-                <span className={analytics?.gmvGrowthRate >= 0 ? 'text-emerald-500 font-bold' : 'text-rose-500 font-bold'}>
-                  {analytics?.gmvGrowthRate >= 0 ? `↑ +${analytics?.gmvGrowthRate || 0}%` : `↓ ${analytics?.gmvGrowthRate || 0}%`}
-                </span>
-                <span className={isDark ? 'text-slate-500' : 'text-stone-400'}>so với cùng kỳ trước</span>
+                {analytics?.gmvGrowthRate != null ? (
+                  <>
+                    <span className={analytics.gmvGrowthRate >= 0 ? 'text-emerald-500 font-bold' : 'text-rose-500 font-bold'}>
+                      {analytics.gmvGrowthRate >= 0 ? `↑ +${analytics.gmvGrowthRate}%` : `↓ ${analytics.gmvGrowthRate}%`}
+                    </span>
+                    <span className={isDark ? 'text-slate-500' : 'text-stone-400'}>so với cùng kỳ trước</span>
+                  </>
+                ) : (
+                  <span className="text-emerald-500 font-semibold">Mới phát sinh trong kỳ</span>
+                )}
               </div>
               {analytics?.allTimeGmv != null && (
                 <p className={cn("text-[11px] mt-1.5 truncate", isDark ? "text-slate-400" : "text-stone-500")}>
@@ -586,8 +592,10 @@ export default function AdminDashboard() {
           ) : (
             <div className="relative flex h-60 min-h-[240px] max-h-[240px] items-stretch gap-2 overflow-x-auto overflow-y-hidden pt-12 pb-2">
               {dailyList.map((item, idx) => {
-                const gmvHeight = Math.max((Number(item.gmv || 0) / maxGmvVal) * 100, 4)
-                const commHeight = Math.max((Number(item.commission || 0) / maxGmvVal) * 100, 2)
+                const gmvNum = Number(item.gmv || 0)
+                const commNum = Number(item.commission || 0)
+                const gmvHeight = gmvNum > 0 ? Math.max((gmvNum / maxGmvVal) * 100, 3) : 0
+                const commHeight = commNum > 0 ? Math.max((commNum / maxGmvVal) * 100, 2) : 0
                 const shortDate = item.date ? item.date.slice(5) : ''
                 const isHovered = hoveredPoint?.date === item.date
 

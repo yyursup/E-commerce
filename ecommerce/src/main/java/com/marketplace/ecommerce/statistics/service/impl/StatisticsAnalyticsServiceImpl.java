@@ -136,12 +136,12 @@ public class StatisticsAnalyticsServiceImpl implements StatisticsAnalyticsServic
         BigDecimal prevGmv = orderRepository.getPlatformGmvBetween(prevStartDateTime, prevEndDateTime);
         BigDecimal allTimeGmv = orderRepository.getPlatformTotalGmv();
 
-        Double gmvGrowthRate = 0.0;
+        Double gmvGrowthRate = null;
         if (prevGmv != null && prevGmv.compareTo(BigDecimal.ZERO) > 0) {
             double rate = ((totalGmv.doubleValue() - prevGmv.doubleValue()) / prevGmv.doubleValue()) * 100.0;
             gmvGrowthRate = Math.round(rate * 10.0) / 10.0;
-        } else if (totalGmv != null && totalGmv.compareTo(BigDecimal.ZERO) > 0) {
-            gmvGrowthRate = 100.0;
+        } else if (totalGmv == null || totalGmv.compareTo(BigDecimal.ZERO) == 0) {
+            gmvGrowthRate = 0.0;
         }
 
         BigDecimal settledRevenue = orderRepository.getPlatformSettledRevenueBetween(range.startDateTime(), range.endDateTime());
@@ -150,12 +150,13 @@ public class StatisticsAnalyticsServiceImpl implements StatisticsAnalyticsServic
         // Quỹ ký quỹ Escrow: Thời gian thực (Snapshot)
         BigDecimal activeEscrowBalance = escrowRepository.sumAmountByStatus(EscrowStatus.HELD);
 
-        // Hoa hồng sàn trong kỳ: Lấy từ bảng Commission hoặc tính 5% doanh thu kỳ
+        // Hoa hồng sàn trong kỳ: Lấy thực tế từ bảng Commission hoặc tổng trên Order
         BigDecimal totalPlatformCommission = commissionRepository.getTotalCommissionBetween(range.startDateTime(), range.endDateTime());
         if (totalPlatformCommission == null || totalPlatformCommission.compareTo(BigDecimal.ZERO) == 0) {
-            totalPlatformCommission = (settledRevenue != null && settledRevenue.compareTo(BigDecimal.ZERO) > 0)
-                    ? settledRevenue.multiply(BigDecimal.valueOf(0.05)).setScale(0, RoundingMode.HALF_UP)
-                    : totalGmv.multiply(BigDecimal.valueOf(0.05)).setScale(0, RoundingMode.HALF_UP);
+            totalPlatformCommission = orderRepository.getTotalPlatformCommissionBetween(range.startDateTime(), range.endDateTime());
+        }
+        if (totalPlatformCommission == null) {
+            totalPlatformCommission = BigDecimal.ZERO;
         }
 
         // 2. Operational & Risk Metrics (Tính theo kỳ)
@@ -166,15 +167,9 @@ public class StatisticsAnalyticsServiceImpl implements StatisticsAnalyticsServic
         long returnedOrders = orderRepository.countByStatusAndCreatedAtBetween(OrderStatus.REFUNDED, range.startDateTime(), range.endDateTime());
         long pendingDisputes = escrowRepository.countByStatus(EscrowStatus.DISPUTED); // Realtime
 
-        double fulfillmentRate = totalOrders > 0
-                ? Math.round((completedOrders * 100.0 / totalOrders) * 10.0) / 10.0
-                : 0.0;
-        double returnRate = totalOrders > 0
-                ? Math.round((returnedOrders * 100.0 / totalOrders) * 10.0) / 10.0
-                : 0.0;
-        double disputeRate = totalOrders > 0
-                ? Math.round((pendingDisputes * 100.0 / totalOrders) * 10.0) / 10.0
-                : 0.0;
+        double fulfillmentRate = calculateFulfillmentRate(completedOrders, totalOrders);
+        double returnRate = calculateOperationalRate(returnedOrders, totalOrders);
+        double disputeRate = calculateOperationalRate(pendingDisputes, totalOrders);
 
         // 3. User & Merchant Growth (Realtime Network Status)
         long totalBuyers = userRepository.count();
@@ -184,9 +179,7 @@ public class StatisticsAnalyticsServiceImpl implements StatisticsAnalyticsServic
                         && s.getUser().getIdentityCardNumber() != null
                         && !s.getUser().getIdentityCardNumber().isBlank())
                 .count();
-        double kycVerificationRate = totalShops > 0
-                ? Math.round((verifiedKycShops * 100.0 / totalShops) * 10.0) / 10.0
-                : 0.0;
+        double kycVerificationRate = calculateSafeRate(verifiedKycShops, totalShops);
 
         // 4. Daily Timeline based on date range
         List<Object[]> rawDailyGmv = (range.endDate().isEqual(LocalDate.now()))
@@ -211,8 +204,7 @@ public class StatisticsAnalyticsServiceImpl implements StatisticsAnalyticsServic
                 String dStr = row[0].toString();
                 BigDecimal gmvVal = castBigDecimal(row[1]);
                 Long oCount = castLong(row[2]);
-                // Ước tính hoa hồng sàn ~5% của GMV mỗi ngày
-                BigDecimal commVal = gmvVal.multiply(BigDecimal.valueOf(0.05)).setScale(0, RoundingMode.HALF_UP);
+                BigDecimal commVal = row.length > 3 ? castBigDecimal(row[3]) : BigDecimal.ZERO;
 
                 if (timelineMap.containsKey(dStr)) {
                     timelineMap.put(dStr, DailyPlatformTimelineDTO.builder()
@@ -241,7 +233,12 @@ public class StatisticsAnalyticsServiceImpl implements StatisticsAnalyticsServic
                     String sName = (String) row[1];
                     BigDecimal rev = castBigDecimal(row[2]);
                     Long oCnt = castLong(row[3]);
-                    BigDecimal comm = rev.multiply(BigDecimal.valueOf(0.05)).setScale(0, RoundingMode.HALF_UP);
+                    BigDecimal comm = row.length > 4 ? castBigDecimal(row[4]) : BigDecimal.ZERO;
+
+                    long sTotal = orderRepository.countByShopId(sId);
+                    long sCompleted = orderRepository.countByShopIdAndStatus(sId, OrderStatus.COMPLETED)
+                            + orderRepository.countByShopIdAndStatus(sId, OrderStatus.DELIVERED);
+                    double sFulfillmentRate = calculateFulfillmentRate(sCompleted, sTotal);
 
                     return TopShopAnalyticsDTO.builder()
                             .shopId(sId)
@@ -250,29 +247,52 @@ public class StatisticsAnalyticsServiceImpl implements StatisticsAnalyticsServic
                             .totalRevenue(rev)
                             .orderCount(oCnt)
                             .commissionContributed(comm)
-                            .fulfillmentRate(96.5)
+                            .fulfillmentRate(sFulfillmentRate)
                             .build();
                 })
                 .toList();
 
-        // 7. Top Categories
+        // 7. Top Categories (Số liệu bán & doanh thu thực tế từ OrderItems)
         List<Object[]> rawCatList = productRepository.getTopCategoriesByProductCount(PageRequest.of(0, 5));
         long totalProductsInTopCats = rawCatList.stream().mapToLong(r -> castLong(r[2])).sum();
+
+        List<Object[]> catSalesMetrics = orderItemsRepository.getCategorySalesMetrics();
+        Map<UUID, Object[]> salesMapByCat = new HashMap<>();
+        for (Object[] row : catSalesMetrics) {
+            if (row[0] != null) {
+                salesMapByCat.put((UUID) row[0], row);
+            }
+        }
+
+        BigDecimal totalSalesRevenueAllCats = catSalesMetrics.stream()
+                .map(r -> castBigDecimal(r[2]))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
         List<TopCategoryAnalyticsDTO> topCategories = rawCatList.stream()
                 .map(row -> {
                     UUID cId = (UUID) row[0];
                     String cName = (String) row[1];
                     Long pCount = castLong(row[2]);
-                    double share = totalProductsInTopCats > 0
-                            ? Math.round((pCount * 100.0 / totalProductsInTopCats) * 10.0) / 10.0
-                            : 0.0;
+
+                    Object[] salesRow = salesMapByCat.get(cId);
+                    Long soldQty = salesRow != null ? castLong(salesRow[1]) : 0L;
+                    BigDecimal catRev = salesRow != null ? castBigDecimal(salesRow[2]) : BigDecimal.ZERO;
+
+                    double share = 0.0;
+                    if (totalSalesRevenueAllCats.compareTo(BigDecimal.ZERO) > 0) {
+                        double rawShare = (catRev.doubleValue() * 100.0) / totalSalesRevenueAllCats.doubleValue();
+                        share = (catRev.compareTo(totalSalesRevenueAllCats) < 0 && rawShare >= 99.95)
+                                ? 99.9 : Math.round(rawShare * 10.0) / 10.0;
+                    } else if (totalProductsInTopCats > 0) {
+                        share = Math.round((pCount * 100.0 / totalProductsInTopCats) * 10.0) / 10.0;
+                    }
 
                     return TopCategoryAnalyticsDTO.builder()
                             .categoryId(cId)
                             .categoryName(cName)
                             .productCount(pCount)
-                            .orderItemsSold(pCount * 4) // synthetic aggregate demo
-                            .totalRevenue(BigDecimal.valueOf(pCount * 15_000_000L))
+                            .orderItemsSold(soldQty)
+                            .totalRevenue(catRev)
                             .revenueShare(share)
                             .build();
                 })
@@ -335,12 +355,12 @@ public class StatisticsAnalyticsServiceImpl implements StatisticsAnalyticsServic
         BigDecimal prevRevenue = orderRepository.getRevenueByShopBetween(shop.getId(), revenueStatuses, prevStartDateTime, prevEndDateTime);
         BigDecimal allTimeRevenue = orderRepository.getRevenueByShop(shop.getId(), revenueStatuses);
 
-        Double revenueGrowthRate = 0.0;
+        Double revenueGrowthRate = null;
         if (prevRevenue != null && prevRevenue.compareTo(BigDecimal.ZERO) > 0) {
             double rate = ((totalRevenue.doubleValue() - prevRevenue.doubleValue()) / prevRevenue.doubleValue()) * 100.0;
             revenueGrowthRate = Math.round(rate * 10.0) / 10.0;
-        } else if (totalRevenue != null && totalRevenue.compareTo(BigDecimal.ZERO) > 0) {
-            revenueGrowthRate = 100.0;
+        } else if (totalRevenue == null || totalRevenue.compareTo(BigDecimal.ZERO) == 0) {
+            revenueGrowthRate = 0.0;
         }
 
         List<OrderStatus> estimatedStatuses = List.of(
@@ -348,11 +368,15 @@ public class StatisticsAnalyticsServiceImpl implements StatisticsAnalyticsServic
                 OrderStatus.DELIVERED, OrderStatus.PENDING_PAYMENT, OrderStatus.PENDING);
         BigDecimal estimatedRevenue = orderRepository.getEstimatedRevenueByShopBetween(shop.getId(), estimatedStatuses, range.startDateTime(), range.endDateTime());
 
-        BigDecimal totalCommissionPaid = commissionRepository.getTotalCommissionBySellerBetween(sellerAccountId, range.startDateTime(), range.endDateTime());
+        // Lấy phí hoa hồng thực tế: theo user.getId() từ bảng Commission hoặc tổng trên Order
+        BigDecimal totalCommissionPaid = commissionRepository.getTotalCommissionBySellerBetween(user.getId(), range.startDateTime(), range.endDateTime());
         if (totalCommissionPaid == null || totalCommissionPaid.compareTo(BigDecimal.ZERO) == 0) {
-            totalCommissionPaid = totalRevenue.multiply(BigDecimal.valueOf(0.05)).setScale(0, RoundingMode.HALF_UP);
+            totalCommissionPaid = orderRepository.getTotalPlatformCommissionByShopBetween(shop.getId(), range.startDateTime(), range.endDateTime());
         }
-        BigDecimal settledNetIncome = totalRevenue.subtract(totalCommissionPaid != null ? totalCommissionPaid : BigDecimal.ZERO);
+        if (totalCommissionPaid == null) {
+            totalCommissionPaid = BigDecimal.ZERO;
+        }
+        BigDecimal settledNetIncome = totalRevenue.subtract(totalCommissionPaid);
         if (settledNetIncome.compareTo(BigDecimal.ZERO) < 0) {
             settledNetIncome = BigDecimal.ZERO;
         }
@@ -372,12 +396,8 @@ public class StatisticsAnalyticsServiceImpl implements StatisticsAnalyticsServic
         long returnedOrders = orderRepository.countByShopIdAndStatusAndCreatedAtBetween(shop.getId(), OrderStatus.REFUNDED, range.startDateTime(), range.endDateTime());
         long cancelledOrders = orderRepository.countByShopIdAndStatusAndCreatedAtBetween(shop.getId(), OrderStatus.CANCELLED, range.startDateTime(), range.endDateTime());
 
-        double fulfillmentRate = totalOrders > 0
-                ? Math.round((completedOrders * 100.0 / totalOrders) * 10.0) / 10.0
-                : 0.0;
-        double returnRate = totalOrders > 0
-                ? Math.round((returnedOrders * 100.0 / totalOrders) * 10.0) / 10.0
-                : 0.0;
+        double fulfillmentRate = calculateFulfillmentRate(completedOrders, totalOrders);
+        double returnRate = calculateOperationalRate(returnedOrders, totalOrders);
 
         BigDecimal aov = completedOrders > 0
                 ? totalRevenue.divide(BigDecimal.valueOf(completedOrders), 0, RoundingMode.HALF_UP)
@@ -620,9 +640,12 @@ public class StatisticsAnalyticsServiceImpl implements StatisticsAnalyticsServic
             Long pCount = match != null ? castLong(match[1]) : 0L;
             Long soldQty = match != null ? castLong(match[2]) : 0L;
             BigDecimal rev = match != null ? castBigDecimal(match[3]) : BigDecimal.ZERO;
-            double pct = totalRevenue.compareTo(BigDecimal.ZERO) > 0
-                    ? Math.round(rev.doubleValue() * 1000.0 / totalRevenue.doubleValue()) / 10.0
-                    : 0.0;
+            double pct = 0.0;
+            if (totalRevenue.compareTo(BigDecimal.ZERO) > 0) {
+                double rawPct = (rev.doubleValue() * 100.0) / totalRevenue.doubleValue();
+                pct = (rev.compareTo(totalRevenue) < 0 && rawPct >= 99.95)
+                        ? 99.9 : Math.round(rawPct * 10.0) / 10.0;
+            }
 
             result.add(TechConditionBreakdownDTO.builder()
                     .conditionGrade(grade.name())
@@ -634,6 +657,37 @@ public class StatisticsAnalyticsServiceImpl implements StatisticsAnalyticsServic
                     .build());
         }
         return result;
+    }
+
+    private double calculateFulfillmentRate(long completed, long total) {
+        if (total <= 0 || completed <= 0) return 0.0;
+        if (completed >= total) return 100.0;
+        double raw = (completed * 100.0) / total;
+        double rounded = Math.round(raw * 10.0) / 10.0;
+        if (rounded >= 100.0 && completed < total) {
+            return 99.9;
+        }
+        return rounded;
+    }
+
+    private double calculateOperationalRate(long count, long total) {
+        if (total <= 0 || count <= 0) return 0.0;
+        double raw = (count * 100.0) / total;
+        if (raw < 0.1) {
+            return Math.round(raw * 100.0) / 100.0;
+        }
+        return Math.round(raw * 10.0) / 10.0;
+    }
+
+    private double calculateSafeRate(long count, long total) {
+        if (total <= 0 || count <= 0) return 0.0;
+        if (count >= total) return 100.0;
+        double raw = (count * 100.0) / total;
+        double rounded = Math.round(raw * 10.0) / 10.0;
+        if (rounded >= 100.0 && count < total) {
+            return 99.9;
+        }
+        return rounded;
     }
 
     private BigDecimal castBigDecimal(Object val) {

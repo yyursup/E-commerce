@@ -113,7 +113,7 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
   long countByShop_IdAndCreatedAtAfter(UUID shopId, LocalDateTime createdAt);
 
   @Query("""
-      SELECT o.shop.id, o.shop.name, COALESCE(SUM(o.total), 0), COUNT(o)
+      SELECT o.shop.id, o.shop.name, COALESCE(SUM(o.total), 0), COUNT(o), COALESCE(SUM(o.platformCommission), 0)
       FROM Order o
       WHERE o.status = com.marketplace.ecommerce.order.valueObjects.OrderStatus.DELIVERED
       OR o.status = com.marketplace.ecommerce.order.valueObjects.OrderStatus.COMPLETED
@@ -165,7 +165,7 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
   );
 
   @Query("""
-      SELECT o.shop.id, o.shop.name, COALESCE(SUM(o.total), 0), COUNT(o)
+      SELECT o.shop.id, o.shop.name, COALESCE(SUM(o.total), 0), COUNT(o), COALESCE(SUM(o.platformCommission), 0)
       FROM Order o
       WHERE o.createdAt >= :startDate
         AND o.createdAt <= :endDate
@@ -220,7 +220,7 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
   long countByShopIdAndStatusInAndCreatedAtBetween(UUID shopId, Collection<OrderStatus> statuses, LocalDateTime startDate, LocalDateTime endDate);
 
   @Query("""
-      SELECT CAST(o.createdAt as LocalDate), COALESCE(SUM(o.total), 0), COUNT(o)
+      SELECT CAST(o.createdAt as LocalDate), COALESCE(SUM(o.total), 0), COUNT(o), COALESCE(SUM(o.platformCommission), 0)
       FROM Order o
       WHERE o.createdAt >= :startDate
         AND o.status <> com.marketplace.ecommerce.order.valueObjects.OrderStatus.CANCELLED
@@ -230,7 +230,7 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
   List<Object[]> getDailyPlatformGmvSince(@Param("startDate") LocalDateTime startDate);
 
   @Query("""
-      SELECT CAST(o.createdAt as LocalDate), COALESCE(SUM(o.total), 0), COUNT(o)
+      SELECT CAST(o.createdAt as LocalDate), COALESCE(SUM(o.total), 0), COUNT(o), COALESCE(SUM(o.platformCommission), 0)
       FROM Order o
       WHERE o.createdAt >= :startDate
         AND o.createdAt <= :endDate
@@ -239,6 +239,34 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
       ORDER BY CAST(o.createdAt as LocalDate) ASC
   """)
   List<Object[]> getDailyPlatformGmvBetween(
+      @Param("startDate") LocalDateTime startDate,
+      @Param("endDate") LocalDateTime endDate
+  );
+
+  @Query("""
+      SELECT COALESCE(SUM(o.platformCommission), 0)
+      FROM Order o
+      WHERE o.createdAt >= :startDate
+        AND o.createdAt <= :endDate
+        AND (o.status = com.marketplace.ecommerce.order.valueObjects.OrderStatus.DELIVERED
+          OR o.status = com.marketplace.ecommerce.order.valueObjects.OrderStatus.COMPLETED)
+  """)
+  BigDecimal getTotalPlatformCommissionBetween(
+      @Param("startDate") LocalDateTime startDate,
+      @Param("endDate") LocalDateTime endDate
+  );
+
+  @Query("""
+      SELECT COALESCE(SUM(o.platformCommission), 0)
+      FROM Order o
+      WHERE o.shop.id = :shopId
+        AND o.createdAt >= :startDate
+        AND o.createdAt <= :endDate
+        AND (o.status = com.marketplace.ecommerce.order.valueObjects.OrderStatus.DELIVERED
+          OR o.status = com.marketplace.ecommerce.order.valueObjects.OrderStatus.COMPLETED)
+  """)
+  BigDecimal getTotalPlatformCommissionByShopBetween(
+      @Param("shopId") UUID shopId,
       @Param("startDate") LocalDateTime startDate,
       @Param("endDate") LocalDateTime endDate
   );

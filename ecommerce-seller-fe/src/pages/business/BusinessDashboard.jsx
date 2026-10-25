@@ -349,10 +349,16 @@ export default function BusinessDashboard() {
               {formatCurrency(analytics?.settledNetIncome)}
             </p>
             <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs font-medium">
-              <span className={analytics?.revenueGrowthRate >= 0 ? 'text-emerald-500 font-bold' : 'text-rose-500 font-bold'}>
-                {analytics?.revenueGrowthRate >= 0 ? `↑ +${analytics?.revenueGrowthRate || 0}%` : `↓ ${analytics?.revenueGrowthRate || 0}%`}
-              </span>
-              <span className={isDark ? 'text-slate-500' : 'text-stone-400'}>so với cùng kỳ trước</span>
+              {analytics?.revenueGrowthRate != null ? (
+                <>
+                  <span className={analytics.revenueGrowthRate >= 0 ? 'text-emerald-500 font-bold' : 'text-rose-500 font-bold'}>
+                    {analytics.revenueGrowthRate >= 0 ? `↑ +${analytics.revenueGrowthRate}%` : `↓ ${analytics.revenueGrowthRate}%`}
+                  </span>
+                  <span className={isDark ? 'text-slate-500' : 'text-stone-400'}>so với cùng kỳ trước</span>
+                </>
+              ) : (
+                <span className="text-emerald-500 font-semibold">Mới phát sinh trong kỳ</span>
+              )}
             </div>
             {analytics?.allTimeRevenue != null && (
               <p className={cn("text-[11px] mt-1.5 truncate", isDark ? "text-slate-400" : "text-stone-500")}>
@@ -653,7 +659,8 @@ export default function BusinessDashboard() {
         ) : (
           <div className="relative flex h-60 min-h-[240px] max-h-[240px] items-stretch gap-2 overflow-x-auto overflow-y-hidden pt-12 pb-2">
             {salesTimeline.map((item, idx) => {
-              const height = Math.max((Number(item.revenue || 0) / maxSalesVal) * 100, 4)
+              const revNum = Number(item.revenue || 0)
+              const height = revNum > 0 ? Math.max((revNum / maxSalesVal) * 100, 3) : 0
               const shortDate = item.date ? item.date.slice(5) : ''
               const isHovered = hoveredPoint?.date === item.date
 

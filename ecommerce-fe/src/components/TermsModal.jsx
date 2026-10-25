@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import Modal from './Modal'
+import HorizontalScrollContainer from './HorizontalScrollContainer'
 import {
   HiOutlineShieldCheck,
   HiOutlineScale,
@@ -288,27 +289,32 @@ export default function TermsModal({ open, onClose, onAccept }) {
       <div className="flex flex-col h-[75vh]">
         {/* Navigation Tabs - Generated Dynamically from Backend Policies */}
         {tabs.length > 0 && (
-          <div className="flex items-center gap-1.5 border-b border-stone-200 dark:border-slate-800 px-4 sm:px-6 py-2.5 overflow-x-auto shrink-0 bg-stone-100/70 dark:bg-slate-900/80 scrollbar-thin">
-            {tabs.map((tab) => {
-              const Icon = tab.icon
-              const isActive = currentPolicy?.policyKey === tab.key
-              return (
-                <button
-                  key={tab.key}
-                  type="button"
-                  onClick={() => setActiveKey(tab.key)}
-                  className={cn(
-                    'flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all select-none',
-                    isActive
-                      ? 'bg-amber-500 text-white shadow-sm shadow-amber-500/25 font-bold'
-                      : 'text-stone-700 dark:text-slate-300 hover:text-stone-950 dark:hover:text-white hover:bg-stone-200/70 dark:hover:bg-slate-800'
-                  )}
-                >
-                  <Icon className={cn('h-4 w-4 shrink-0', isActive ? 'text-white' : 'text-stone-500 dark:text-slate-400')} />
-                  {tab.label}
-                </button>
-              )
-            })}
+          <div className="border-b border-stone-200 dark:border-slate-800 shrink-0 bg-stone-100/70 dark:bg-slate-900/80">
+            <HorizontalScrollContainer
+              isDark={isDark}
+              className="gap-1.5 px-4 sm:px-6 py-2.5"
+            >
+              {tabs.map((tab) => {
+                const Icon = tab.icon
+                const isActive = currentPolicy?.policyKey === tab.key
+                return (
+                  <button
+                    key={tab.key}
+                    type="button"
+                    onClick={() => setActiveKey(tab.key)}
+                    className={cn(
+                      'flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all select-none shrink-0',
+                      isActive
+                        ? 'bg-amber-500 text-white shadow-sm shadow-amber-500/25 font-bold'
+                        : 'text-stone-700 dark:text-slate-300 hover:text-stone-950 dark:hover:text-white hover:bg-stone-200/70 dark:hover:bg-slate-800'
+                    )}
+                  >
+                    <Icon className={cn('h-4 w-4 shrink-0', isActive ? 'text-white' : 'text-stone-500 dark:text-slate-400')} />
+                    {tab.label}
+                  </button>
+                )
+              })}
+            </HorizontalScrollContainer>
           </div>
         )}
 

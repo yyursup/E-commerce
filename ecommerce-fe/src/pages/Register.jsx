@@ -341,14 +341,14 @@ export default function Register() {
                   htmlFor="agreeToTerms"
                   className={cn(
                     'text-xs leading-relaxed select-none cursor-pointer',
-                    isDark ? 'text-slate-300' : 'text-stone-600'
+                    isDark ? 'text-slate-300' : 'text-stone-700 font-medium'
                   )}
                 >
                   Tôi đã đọc và đồng ý với{' '}
                   <button
                     type="button"
                     onClick={() => setShowTermsModal(true)}
-                    className="font-semibold text-amber-600 hover:text-amber-500 underline underline-offset-2 dark:text-amber-400"
+                    className="font-bold text-amber-600 hover:text-amber-700 underline underline-offset-2 dark:text-amber-400 dark:hover:text-amber-300"
                   >
                     Điều khoản dịch vụ & Chính sách vận hành
                   </button>{' '}

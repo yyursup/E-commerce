@@ -323,8 +323,8 @@ public class OrderReturnServiceImpl implements OrderReturnService {
             finalizeReportAndChatThread(
                     returnObj,
                     ReportStage.CLOSED,
-                    null,
-                    null,
+                    RequestStatus.APPROVED,
+                    request.getAdminNote(),
                     "Admin chấp thuận hoàn tiền sau khi phân xử khiếu nại hoàn hàng"
             );
 
@@ -341,8 +341,8 @@ public class OrderReturnServiceImpl implements OrderReturnService {
             finalizeReportAndChatThread(
                     returnObj,
                     ReportStage.CLOSED,
-                    null,
-                    null,
+                    RequestStatus.APPROVED,
+                    request.getAdminNote(),
                     "Admin bác bỏ hoàn hàng và giải ngân cho gian hàng"
             );
 
@@ -529,6 +529,9 @@ public class OrderReturnServiceImpl implements OrderReturnService {
         }
         Report rep = returnObj.getReport();
         rep.setStage(stage);
+        if (responseMessage != null && !responseMessage.isBlank()) {
+            rep.setModeratorNote(responseMessage);
+        }
         if (rep.getRequest() != null) {
             if (requestStatus != null) {
                 rep.getRequest().setStatus(requestStatus);

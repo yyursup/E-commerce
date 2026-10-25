@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -23,5 +24,8 @@ public class BanReviewDetailsResponse {
     private Integer currentViolationCount;
     private Integer oldViolationCount;
     private Integer newViolationCount;
+    private String description;
+    private String coverImageUrl;
     private List<CreateRequestResponse> priorAppeals;
+    private List<ViolationHistoryItemResponse> violationHistory;
 }

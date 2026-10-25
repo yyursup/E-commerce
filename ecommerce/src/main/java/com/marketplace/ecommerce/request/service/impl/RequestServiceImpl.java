@@ -10,7 +10,6 @@ import com.marketplace.ecommerce.common.exception.CustomException;
 import com.marketplace.ecommerce.product.repository.ProductRepository;
 import com.marketplace.ecommerce.request.constant.RequestConstant;
 import com.marketplace.ecommerce.request.dto.request.CreateSendRequest;
-import com.marketplace.ecommerce.request.dto.request.SubmitBanReviewRequest;
 import com.marketplace.ecommerce.request.dto.response.*;
 import com.marketplace.ecommerce.request.entity.Report;
 import com.marketplace.ecommerce.request.entity.Request;
@@ -35,7 +34,6 @@ import com.marketplace.ecommerce.payment.dto.EscrowAdminResponse;
 import com.marketplace.ecommerce.payment.repository.EscrowRepository;
 import com.marketplace.ecommerce.request.valueObjects.DisputeSellerAction;
 import com.marketplace.ecommerce.shop.service.ShopEscrowFundService;
-import com.marketplace.ecommerce.file.response.FileUploadResponse;
 import com.marketplace.ecommerce.file.service.FileService;
 import org.springframework.web.multipart.MultipartFile;
 import lombok.RequiredArgsConstructor;
@@ -159,36 +157,18 @@ public class RequestServiceImpl implements RequestService {
         if (oldViolations < 7) {
             throw new CustomException("Dữ liệu tài khoản không hợp lệ: Tài khoản BANNED nhưng có số gậy vi phạm nhỏ hơn 7 (" + oldViolations + ").");
         }
-        int newViolations = oldViolations - 1;
+
+        // Khi Admin phê duyệt đơn xem xét gỡ khóa vĩnh viễn:
+        // Bất kể tài khoản có bao nhiêu gậy (>= 7), hệ thống ân xá đưa về mức trần diện Tạm Đình Chỉ là 6 gậy
+        int newViolations = 6;
         LocalDateTime now = LocalDateTime.now();
 
         target.setViolationCount(newViolations);
-
-        if (newViolations >= 7) {
-            target.setStatus(AccountStatus.BANNED);
-            target.setDisciplineLevel(DisciplineLevel.BANNED);
-            target.setIsActive(false);
-            target.setBannedUntil(null);
-            target.setSuspendedUntil(null);
-        } else if (newViolations >= 5) {
-            target.setStatus(AccountStatus.SUSPENDED);
-            target.setDisciplineLevel(DisciplineLevel.SUSPENDED);
-            target.setIsActive(true);
-            target.setSuspendedUntil(now.plusDays(14));
-            target.setBannedUntil(null);
-        } else if (newViolations >= 3) {
-            target.setStatus(AccountStatus.ACTIVE);
-            target.setDisciplineLevel(DisciplineLevel.WARNED);
-            target.setIsActive(true);
-            target.setSuspendedUntil(null);
-            target.setBannedUntil(null);
-        } else {
-            target.setStatus(AccountStatus.ACTIVE);
-            target.setDisciplineLevel(DisciplineLevel.NONE);
-            target.setIsActive(true);
-            target.setSuspendedUntil(null);
-            target.setBannedUntil(null);
-        }
+        target.setStatus(AccountStatus.SUSPENDED);
+        target.setDisciplineLevel(DisciplineLevel.SUSPENDED);
+        target.setIsActive(true);
+        target.setSuspendedUntil(now.plusDays(14));
+        target.setBannedUntil(null);
 
         accountRepository.save(target);
 
@@ -372,6 +352,25 @@ public class RequestServiceImpl implements RequestService {
                         .map(CreateRequestResponse::from)
                         .toList();
 
+                List<Report> approvedReports = reportRepository.findApprovedViolationsByAccountId(r.getAccount().getId());
+                List<ViolationHistoryItemResponse> violationHistory = (approvedReports != null ? approvedReports : Collections.<Report>emptyList()).stream()
+                        .map(rep -> ViolationHistoryItemResponse.builder()
+                                .reportId(rep.getId())
+                                .displayCode(rep.getRequest() != null ? rep.getRequest().getDisplayCode() : null)
+                                .targetType(rep.getTargetType() != null ? rep.getTargetType().name() : null)
+                                .targetId(rep.getTargetId())
+                                .policyClauseCode(rep.getPolicyClauseCode())
+                                .policyClauseTitle(rep.getPolicyClauseTitle() != null ? rep.getPolicyClauseTitle()
+                                        : (rep.getTargetType() == TargetType.ORDER ? "Khiếu nại / tranh chấp đơn hàng"
+                                                : (rep.getTargetType() == TargetType.SHOP ? "Vi phạm quy chế gian hàng" : "Vi phạm chính sách sàn")))
+                                .description(rep.getRequest() != null ? rep.getRequest().getDescription() : null)
+                                .moderatorNote(rep.getModeratorNote() != null ? rep.getModeratorNote()
+                                        : (rep.getRequest() != null ? rep.getRequest().getResponse() : null))
+                                .createdAt(rep.getRequest() != null ? rep.getRequest().getCreatedAt() : null)
+                                .reviewedAt(rep.getRequest() != null ? rep.getRequest().getReviewedAt() : null)
+                                .build())
+                        .toList();
+
                 yield BanReviewDetailsResponse.builder()
                         .accountId(r.getAccount().getId())
                         .username(r.getAccount().getUsername())
@@ -381,7 +380,10 @@ public class RequestServiceImpl implements RequestService {
                         .currentViolationCount(r.getAccount().getViolationCount())
                         .oldViolationCount(r.getOldViolationCount())
                         .newViolationCount(r.getNewViolationCount())
+                        .description(r.getDescription())
+                        .coverImageUrl(r.getCoverImageUrl())
                         .priorAppeals(priorList)
+                        .violationHistory(violationHistory)
                         .build();
             }
 

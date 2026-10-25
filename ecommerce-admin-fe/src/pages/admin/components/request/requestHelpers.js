@@ -64,7 +64,7 @@ export const getRequestTypeBadge = (type, isDark) => {
   }
   if (t === 'APPEAL') {
     return {
-      label: 'Xem xét kỷ luật',
+      label: 'Kháng nghị khóa tài khoản',
       className: isDark
         ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
         : 'bg-amber-50 text-amber-700 border-amber-200',

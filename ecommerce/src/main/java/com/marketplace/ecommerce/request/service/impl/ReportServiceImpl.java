@@ -998,6 +998,13 @@ public class ReportServiceImpl implements ReportService {
         Shop shop = shopRepository.findByIdForUpdate(shopId)
                 .orElseThrow(() -> new CustomException("Shop not found: " + shopId));
         punishShop(shop, now);
+        if (shop.getUser() != null && shop.getUser().getAccount() != null) {
+            try {
+                punishAccount(shop.getUser().getAccount().getId(), now);
+            } catch (Exception ex) {
+                log.warn("Punish owner account on shop report ignored: {}", ex.getMessage());
+            }
+        }
     }
 
     @Override

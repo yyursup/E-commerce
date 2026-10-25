@@ -220,24 +220,27 @@ export default function AdminRequestActionCard({
                 <p className="text-xs uppercase tracking-wide text-stone-500 dark:text-slate-400">{label}</p>
                 {label === 'Evidence' || label === 'Bằng chứng vi phạm' || label === 'Ảnh minh chứng' ? (
                   value && value !== '-' ? (
-                    <div className="flex flex-wrap gap-2 pt-1">
-                      {String(value).split(',').map((imgUrl, idx) => (
-                        <a
-                          key={idx}
-                          href={imgUrl.trim()}
-                          className={cn(
-                            'inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-medium transition hover:shadow-sm',
-                            isDark
-                              ? 'border-amber-500/30 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20'
-                              : 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100',
-                          )}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          <HiOutlineExternalLink className="h-3.5 w-3.5" />
-                          Ảnh {idx + 1}
-                        </a>
-                      ))}
+                    <div className="space-y-2 pt-1">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        {String(value).split(',').map((imgUrl, idx) => (
+                          <a
+                            key={idx}
+                            href={imgUrl.trim()}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="group relative block rounded-lg overflow-hidden border border-stone-200 dark:border-slate-700 bg-stone-100 dark:bg-slate-800 h-24 hover:opacity-95 transition"
+                          >
+                            <img
+                              src={imgUrl.trim()}
+                              alt={`Ảnh ${idx + 1}`}
+                              className="w-full h-full object-cover group-hover:scale-105 transition duration-200"
+                            />
+                            <span className="absolute bottom-1 right-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded flex items-center gap-1">
+                              <HiOutlineExternalLink className="h-3 w-3" /> Ảnh {idx + 1}
+                            </span>
+                          </a>
+                        ))}
+                      </div>
                     </div>
                   ) : (
                     '-'
@@ -265,6 +268,73 @@ export default function AdminRequestActionCard({
                 )}
               </div>
             ))}
+          </div>
+        )}
+
+        {/* KHỐI LỊCH SỬ ĂN GẬY / VI PHẠM CỦA TÀI KHOẢN (KHI XEM XÉT KỶ LUẬT) */}
+        {requestType === 'APPEAL' && (
+          <div className="space-y-3 pt-3 border-t border-stone-200 dark:border-slate-800">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs uppercase tracking-wide font-semibold text-rose-600 dark:text-rose-400 flex items-center gap-1.5">
+                <HiOutlineExclamation className="h-4 w-4" />
+                Lịch sử ăn gậy / vi phạm của tài khoản
+                {detail?.detail?.violationHistory?.length > 0 && (
+                  <span className="px-2 py-0.5 text-[11px] rounded-full bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300 font-bold">
+                    {detail.detail.violationHistory.length} vi phạm
+                  </span>
+                )}
+              </h3>
+            </div>
+
+            {(!detail?.detail?.violationHistory || detail.detail.violationHistory.length === 0) ? (
+              <p className="text-xs text-stone-500 dark:text-slate-400 italic bg-stone-50 dark:bg-slate-800/40 p-3 rounded-xl border border-dashed border-stone-200 dark:border-slate-700">
+                Chưa có dữ liệu báo cáo vi phạm chi tiết trước đây trong hệ thống.
+              </p>
+            ) : (
+              <div className="space-y-2.5 max-h-80 overflow-y-auto pr-1">
+                {detail.detail.violationHistory.map((item, idx) => (
+                  <div
+                    key={item.reportId || idx}
+                    className={cn(
+                      'rounded-xl border p-3 text-xs space-y-1.5',
+                      isDark ? 'border-slate-700 bg-slate-800/60' : 'border-stone-200 bg-stone-50'
+                    )}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-mono font-bold text-rose-600 dark:text-rose-400">
+                        {item.displayCode || `REP-${shortUUID(item.reportId)}`}
+                      </span>
+                      <span className="text-[11px] text-stone-400 dark:text-slate-500">
+                        {item.reviewedAt ? new Date(item.reviewedAt).toLocaleDateString('vi-VN') : (item.createdAt ? new Date(item.createdAt).toLocaleDateString('vi-VN') : '-')}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className="px-1.5 py-0.5 rounded bg-stone-200 dark:bg-slate-700 text-[10px] font-semibold uppercase">
+                        {item.targetType || 'VI PHẠM'}
+                      </span>
+                      <span className="font-semibold text-stone-800 dark:text-slate-200">
+                        {item.policyClauseCode ? `[${item.policyClauseCode}] ` : ''}
+                        {item.policyClauseTitle || 'Vi phạm chính sách sàn'}
+                      </span>
+                    </div>
+
+                    {item.description && (
+                      <div className="text-stone-600 dark:text-slate-300 bg-white dark:bg-slate-900/60 p-2 rounded border border-stone-200/60 dark:border-slate-800">
+                        <span className="text-[10px] font-medium text-stone-400 dark:text-slate-400 block">Nội dung vi phạm / tố cáo:</span>
+                        {item.description}
+                      </div>
+                    )}
+
+                    {item.moderatorNote && (
+                      <div className="text-rose-800 dark:text-rose-300 text-[11px] bg-rose-50 dark:bg-rose-950/30 p-1.5 rounded border border-rose-200/60 dark:border-rose-900/40">
+                        <strong>Ghi chú xử phạt của Admin:</strong> {item.moderatorNote}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -351,15 +421,15 @@ export default function AdminRequestActionCard({
           <div className="p-3.5 rounded-2xl border border-amber-500/30 bg-amber-500/5 space-y-2">
             <div className="flex items-center gap-1.5 text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
               <HiOutlineExclamation className="h-4 w-4 shrink-0" />
-              <span>Quy tắc giảm đúng 1 gậy:</span>
+              <span>Quy tắc phê duyệt ân xá tài khoản BANNED:</span>
             </div>
             <p className="text-xs text-stone-600 dark:text-slate-300 leading-relaxed">
-              Khi Quản trị viên <strong>Phê duyệt</strong>, hệ thống sẽ <strong>tự động giảm đúng 1 gậy vi phạm</strong> của tài khoản. Tuyệt đối không cho phép nhập số gậy thủ công. Trạng thái tài khoản sau khi giảm phụ thuộc vào số gậy thực tế:
+              Khi Quản trị viên <strong>Phê duyệt</strong>, hệ thống sẽ <strong>tự động đưa tài khoản về 6 gậy vi phạm</strong> ở mức <strong>Tạm đình chỉ (SUSPENDED trong 14 ngày)</strong> để gỡ bỏ hoàn toàn lệnh cấm vĩnh viễn, không bắt người dùng gửi lại đơn nhiều lần.
             </p>
             <ul className="text-[11px] text-stone-500 dark:text-slate-400 list-disc list-inside space-y-0.5">
-              <li>Số gậy sau giảm ≥ 7: Tài khoản tiếp tục <strong>BANNED</strong> (không cấp quyền).</li>
-              <li>Số gậy sau giảm còn 5–6: Chuyển sang <strong>SUSPENDED</strong> trong 14 ngày.</li>
-              <li>Số gậy sau giảm còn 0–4: Khôi phục trạng thái <strong>ACTIVE</strong></li>
+              <li>Số gậy sau khi duyệt: Đưa về đúng <strong>6 gậy</strong>.</li>
+              <li>Trạng thái tài khoản: Chuyển sang <strong>SUSPENDED</strong> trong 14 ngày.</li>
+              <li>Tài khoản được gỡ cấm vĩnh viễn và có thể đăng nhập lại sau khi làm mới phiên.</li>
             </ul>
           </div>
         )}
@@ -400,7 +470,11 @@ export default function AdminRequestActionCard({
                   : 'bg-emerald-600 hover:bg-emerald-500 hover:shadow-emerald-600/25',
               )}
             >
-              {actionLoading ? 'Đang xử lý...' : '✓ Phê duyệt đơn'}
+              {actionLoading
+                ? 'Đang xử lý...'
+                : requestType === 'APPEAL'
+                  ? '✓ Phê duyệt'
+                  : '✓ Phê duyệt đơn'}
             </button>
             <button
               type="button"

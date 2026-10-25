@@ -23,13 +23,16 @@ import Checkout from './pages/checkout/Checkout'
 import LiveList from './pages/live/LiveList'
 import LiveRoom from './pages/live/LiveRoom'
 import BannedAccount from './pages/BannedAccount'
+import ThemeSync from './components/ThemeSync'
 import { useTokenLifecycle } from './hooks/useTokenLifecycle'
 
 export default function App() {
   useTokenLifecycle()
 
   return (
-    <Routes>
+    <>
+      <ThemeSync />
+      <Routes>
       {/* Standalone Fullscreen Live Room & Banned Screen */}
       <Route path="/live/:id" element={<LiveRoom />} />
       <Route path="/banned" element={<BannedAccount />} />
@@ -138,5 +141,6 @@ export default function App() {
         />
       </Route>
     </Routes>
+    </>
   )
 }

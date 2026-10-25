@@ -810,8 +810,8 @@ public class BanReviewAuthorizationEnforcementTest {
         }
 
         @Test
-        @DisplayName("15. APPROVED tự động giảm đúng 1 gậy (One-strike reduction), không nhận số gậy từ Admin")
-        void scenario15_approveBanReview_reducesExactlyOneStrike() {
+        @DisplayName("15. APPROVED tự động đưa tài khoản về 6 gậy ở mức SUSPENDED trong 14 ngày, không nhận số gậy từ Admin")
+        void scenario15_approveBanReview_reducesTo6StrikesSuspended() {
             UUID adminId = UUID.randomUUID();
             UUID requestId = UUID.randomUUID();
             UUID targetId = UUID.randomUUID();
@@ -836,11 +836,15 @@ public class BanReviewAuthorizationEnforcementTest {
             when(requestRepository.findById(requestId)).thenReturn(Optional.of(appeal));
             when(accountRepository.findByIdForUpdate(targetId)).thenReturn(Optional.of(target));
 
-            requestService.approveRequest(requestId, adminId, "Chấp thuận giảm 1 gậy.");
+            requestService.approveRequest(requestId, adminId, "Chấp thuận ân xá về 6 gậy.");
 
-            assertEquals(8, target.getViolationCount(), "9 gậy phải giảm đúng 1 còn 8 gậy");
+            assertEquals(6, target.getViolationCount(), "Tài khoản BANNED khi được duyệt luôn đưa về 6 gậy SUSPENDED");
+            assertEquals(AccountStatus.SUSPENDED, target.getStatus());
+            assertEquals(DisciplineLevel.SUSPENDED, target.getDisciplineLevel());
+            assertTrue(target.getIsActive());
+            assertNotNull(target.getSuspendedUntil());
             assertEquals(9, appeal.getOldViolationCount());
-            assertEquals(8, appeal.getNewViolationCount());
+            assertEquals(6, appeal.getNewViolationCount());
             assertEquals(RequestStatus.APPROVED, appeal.getStatus());
         }
 
@@ -886,8 +890,8 @@ public class BanReviewAuthorizationEnforcementTest {
         }
 
         @Test
-        @DisplayName("17. Từ 8 gậy xuống 7 gậy: Vẫn BANNED, không ép mở khóa tài khoản")
-        void scenario17_approveBanReview_8to7_remainsBanned() {
+        @DisplayName("17. Từ 8 gậy khi duyệt: Luôn chuyển sang SUSPENDED 14 ngày (về 6 gậy)")
+        void scenario17_approveBanReview_8to6_becomesSuspended() {
             UUID adminId = UUID.randomUUID();
             UUID requestId = UUID.randomUUID();
             UUID targetId = UUID.randomUUID();
@@ -912,19 +916,20 @@ public class BanReviewAuthorizationEnforcementTest {
             when(requestRepository.findById(requestId)).thenReturn(Optional.of(appeal));
             when(accountRepository.findByIdForUpdate(targetId)).thenReturn(Optional.of(target));
 
-            requestService.approveRequest(requestId, adminId, "Giảm từ 8 xuống 7 gậy");
+            requestService.approveRequest(requestId, adminId, "Giảm từ 8 xuống 6 gậy SUSPENDED");
 
-            assertEquals(7, target.getViolationCount());
-            assertEquals(AccountStatus.BANNED, target.getStatus(), "7 gậy vẫn tiếp tục BANNED");
-            assertEquals(DisciplineLevel.BANNED, target.getDisciplineLevel());
-            assertFalse(target.getIsActive());
+            assertEquals(6, target.getViolationCount());
+            assertEquals(AccountStatus.SUSPENDED, target.getStatus(), "8 gậy khi duyệt được ân xá về SUSPENDED");
+            assertEquals(DisciplineLevel.SUSPENDED, target.getDisciplineLevel());
+            assertTrue(target.getIsActive());
+            assertNotNull(target.getSuspendedUntil());
             assertEquals(8, appeal.getOldViolationCount());
-            assertEquals(7, appeal.getNewViolationCount());
+            assertEquals(6, appeal.getNewViolationCount());
         }
 
         @Test
-        @DisplayName("18. Với số gậy lớn hơn 7 (ví dụ 10 xuống 9): Mỗi lần chỉ giảm 1 gậy và tiếp tục BANNED")
-        void scenario18_approveBanReview_highStrikes_onlyReducesOne() {
+        @DisplayName("18. Với số gậy lớn hơn 7 (ví dụ 10 gậy): Khi duyệt đưa về 6 gậy SUSPENDED")
+        void scenario18_approveBanReview_highStrikes_reducesTo6StrikesSuspended() {
             UUID adminId = UUID.randomUUID();
             UUID requestId = UUID.randomUUID();
             UUID targetId = UUID.randomUUID();
@@ -949,12 +954,15 @@ public class BanReviewAuthorizationEnforcementTest {
             when(requestRepository.findById(requestId)).thenReturn(Optional.of(appeal));
             when(accountRepository.findByIdForUpdate(targetId)).thenReturn(Optional.of(target));
 
-            requestService.approveRequest(requestId, adminId, "Giảm từ 10 xuống 9");
+            requestService.approveRequest(requestId, adminId, "Giảm từ 10 xuống 6 gậy SUSPENDED");
 
-            assertEquals(9, target.getViolationCount());
-            assertEquals(AccountStatus.BANNED, target.getStatus());
-            assertEquals(DisciplineLevel.BANNED, target.getDisciplineLevel());
-            assertFalse(target.getIsActive());
+            assertEquals(6, target.getViolationCount());
+            assertEquals(AccountStatus.SUSPENDED, target.getStatus());
+            assertEquals(DisciplineLevel.SUSPENDED, target.getDisciplineLevel());
+            assertTrue(target.getIsActive());
+            assertNotNull(target.getSuspendedUntil());
+            assertEquals(10, appeal.getOldViolationCount());
+            assertEquals(6, appeal.getNewViolationCount());
         }
 
         @Test
@@ -1654,8 +1662,8 @@ public class BanReviewAuthorizationEnforcementTest {
         }
 
         @Test
-        @DisplayName("35. Phép trừ chính xác 8 - 1 = 7 gậy: Vẫn BANNED, không ép mở khóa")
-        void scenario35_exactReduction_8to7_remainsBanned() {
+        @DisplayName("35. Tài khoản 8 gậy khi Admin duyệt: Đưa về 6 gậy SUSPENDED trong 14 ngày")
+        void scenario35_exactReduction_8to6_becomesSuspended() {
             UUID adminId = UUID.randomUUID();
             UUID requestId = UUID.randomUUID();
             UUID targetId = UUID.randomUUID();
@@ -1680,12 +1688,13 @@ public class BanReviewAuthorizationEnforcementTest {
             when(requestRepository.findById(requestId)).thenReturn(Optional.of(appeal));
             when(accountRepository.findByIdForUpdate(targetId)).thenReturn(Optional.of(target));
 
-            requestService.approveRequest(requestId, adminId, "Giảm 1 gậy");
+            requestService.approveRequest(requestId, adminId, "Duyệt đơn ân xá về 6 gậy");
 
-            assertEquals(7, target.getViolationCount(), "8 - 1 phải bằng đúng 7");
-            assertEquals(AccountStatus.BANNED, target.getStatus());
-            assertEquals(DisciplineLevel.BANNED, target.getDisciplineLevel());
-            assertFalse(target.getIsActive());
+            assertEquals(6, target.getViolationCount(), "Khi duyệt đơn tài khoản BANNED luôn về 6 gậy SUSPENDED");
+            assertEquals(AccountStatus.SUSPENDED, target.getStatus());
+            assertEquals(DisciplineLevel.SUSPENDED, target.getDisciplineLevel());
+            assertTrue(target.getIsActive());
+            assertNotNull(target.getSuspendedUntil());
             verify(accountRepository, times(1)).save(target);
             verify(requestRepository, times(1)).save(appeal);
         }

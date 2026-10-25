@@ -3,7 +3,6 @@ package com.marketplace.ecommerce.config;
 import com.marketplace.ecommerce.auth.entity.Account;
 import com.marketplace.ecommerce.auth.service.TokenService;
 import com.marketplace.ecommerce.auth.valueObjects.AccountStatus;
-import com.marketplace.ecommerce.auth.valueObjects.DisciplineLevel;
 import com.marketplace.ecommerce.common.CurrentUserInfo;
 import com.marketplace.ecommerce.common.exception.InvalidCredentialsException;
 import io.jsonwebtoken.ExpiredJwtException;

@@ -66,7 +66,8 @@ public class JwtFilter extends OncePerRequestFilter {
             "/api/v1/livestreams/*",
             "/api/v1/livestreams/*/join",
             "/api/v1/livestreams/*/like",
-            "/api/v1/vouchers"
+            "/api/v1/vouchers",
+            "/api/v1/policies"
     );
 
     public JwtFilter(

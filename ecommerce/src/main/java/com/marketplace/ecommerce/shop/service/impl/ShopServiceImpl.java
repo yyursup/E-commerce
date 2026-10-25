@@ -169,7 +169,12 @@ public class ShopServiceImpl implements ShopService {
                 shop.setStatus(ShopStatus.WARNED);
                 changed = true;
                 try {
-                    productRepository.updateStatusByShopId(shop.getId(), ProductStatus.PUBLISHED);
+                    productRepository.updateStatusByShopId(
+                            shop.getId(),
+                            List.of(ProductStatus.INACTIVE),
+                            ProductStatus.PUBLISHED,
+                            now
+                    );
                 } catch (Exception ex) {
                     log.warn("Failed to restore products for reinstated shopId={}: {}", shop.getId(), ex.getMessage());
                 }
@@ -395,7 +400,12 @@ public class ShopServiceImpl implements ShopService {
                         shop.setSuspendedUntil(null);
                         shopRepository.save(shop);
 
-                        productRepository.updateStatusByShopId(shop.getId(), ProductStatus.PUBLISHED);
+                        productRepository.updateStatusByShopId(
+                                shop.getId(),
+                                List.of(ProductStatus.INACTIVE),
+                                ProductStatus.PUBLISHED,
+                                now
+                        );
 
                         if (shop.getUser() != null && shop.getUser().getAccount() != null) {
                             Account owner = shop.getUser().getAccount();

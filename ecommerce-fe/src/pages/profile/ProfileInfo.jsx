@@ -30,7 +30,12 @@ export default function ProfileInfo({ isDark }) {
                     bannedUntil: profile.bannedUntil || null,
                 });
             }
-        }).catch(() => {});
+        }).catch((err) => {
+            const msg = String(err?.message || err?.response?.data?.message || '').toLowerCase();
+            if (msg.includes('khóa') || msg.includes('locked')) {
+                toast.error(err?.response?.data?.message || 'Tài khoản của bạn đã bị khóa.');
+            }
+        });
     }, []);
 
     // Pre-populate form with existing user data

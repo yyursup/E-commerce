@@ -27,7 +27,7 @@ const processQueue = (error, token = null) => {
     failedQueue = []
 }
 
-export function handleCleanLogoutAndRedirect() {
+export function handleCleanLogoutAndRedirect(customMessage = null, redirectUrl = '/login') {
     useAuthStore.getState().logout()
     clearAccessToken()
 
@@ -41,12 +41,15 @@ export function handleCleanLogoutAndRedirect() {
     if (!isAuthPage && !window.__isRedirectingToLogin) {
         window.__isRedirectingToLogin = true
         try {
-            toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.', { id: 'session-expired' })
+            toast.error(
+                customMessage || 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.',
+                { id: customMessage ? 'account-locked-redirect' : 'session-expired', duration: 4000 }
+            )
         } catch (e) {}
         setTimeout(() => {
             window.__isRedirectingToLogin = false
-            window.location.href = '/login'
-        }, 350)
+            window.location.href = redirectUrl
+        }, 400)
     }
 }
 
@@ -67,6 +70,29 @@ axiosClient.interceptors.response.use(
     (response) => response,
     async (error) => {
         const originalRequest = error.config
+
+        // Xử lý tài khoản bị khóa vĩnh viễn hoặc vô hiệu hóa trong khi đang có phiên đăng nhập cũ
+        const currentPath = window.location.pathname
+        const isAlreadyInBanReview =
+            currentPath.includes('/banned') && useAuthStore.getState().user?.role === 'ROLE_BAN_REVIEW'
+
+        const errorMessage = String(error.response?.data?.message || '').toLowerCase()
+        const isAccountLocked =
+            error.response &&
+            error.response.status === 403 &&
+            (errorMessage.includes('khóa') ||
+                errorMessage.includes('vô hiệu hóa') ||
+                errorMessage.includes('locked') ||
+                errorMessage.includes('disabled') ||
+                errorMessage.includes('ngừng hoạt động'))
+
+        if (isAccountLocked && !isAlreadyInBanReview) {
+            const lockMessage =
+                error.response?.data?.message ||
+                'Tài khoản của bạn đã bị khóa. Vui lòng đăng nhập lại để xem xét kỷ luật.'
+            handleCleanLogoutAndRedirect(lockMessage, '/login')
+            return Promise.reject(error)
+        }
 
         // Check if error is 401 (or 403 when token invalid/expired)
         const isUnauthorized =

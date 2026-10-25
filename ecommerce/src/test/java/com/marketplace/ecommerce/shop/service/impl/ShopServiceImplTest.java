@@ -175,8 +175,13 @@ class ShopServiceImplTest {
         assertNull(suspendedShop.getSuspendedUntil());
         assertEquals(5, suspendedShop.getViolationCount()); // Số gậy vẫn được bảo lưu!
 
-        // 2. Sản phẩm phải được mở lại PUBLISHED
-        verify(productRepository).updateStatusByShopId(shopId, ProductStatus.PUBLISHED);
+        // 2. Sản phẩm phải được mở lại PUBLISHED (chỉ mở lại các sản phẩm INACTIVE)
+        verify(productRepository).updateStatusByShopId(
+                eq(shopId),
+                eq(List.of(ProductStatus.INACTIVE)),
+                eq(ProductStatus.PUBLISHED),
+                any(LocalDateTime.class)
+        );
 
         // 3. Tài khoản chủ shop phải chuyển sang WARNED / ACTIVE
         assertEquals(DisciplineLevel.WARNED, owner.getDisciplineLevel());

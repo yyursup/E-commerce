@@ -16,6 +16,7 @@ public class DatabaseSeeder implements CommandLineRunner {
     private final CategorySeeder categorySeeder;
     private final ShopSeeder shopSeeder;
     private final PlatformSettingSeeder platformSettingSeeder;
+    private final PolicySeeder policySeeder;
     private final WalletSeeder walletSeeder;
     private final CartSeeder cartSeeder;
     private final CustomerAddressSeeder customerAddressSeeder;
@@ -40,6 +41,7 @@ public class DatabaseSeeder implements CommandLineRunner {
 
             // 3. Platform Configuration & Financials
             platformSettingSeeder.seed();
+            policySeeder.seed();
             walletSeeder.seed();
 
             // 4. User Setup (Carts & Delivery Addresses)

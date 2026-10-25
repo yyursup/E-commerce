@@ -14,6 +14,7 @@ import {
   HiOutlineTicket,
   HiOutlineShieldCheck,
   HiOutlineCash,
+  HiOutlineDocumentText,
 } from 'react-icons/hi'
 import { useAuthStore } from '../../store/useAuthStore'
 import { useThemeStore } from '../../store/useThemeStore'
@@ -29,6 +30,7 @@ const navItems = [
   { to: '/trust-config', label: 'Quỹ Ký Quỹ & Bậc Sao', icon: HiOutlineCash },
   { to: '/platform-wallet', label: 'Tài Chính & Ví Sàn', icon: HiOutlineCreditCard },
   { to: '/reports', label: 'Khiếu Nại & Vi Phạm', icon: HiOutlineClipboardCheck },
+  { to: '/policies', label: 'Chính Sách & Quy Chế', icon: HiOutlineDocumentText },
   { to: '/live-chat', label: 'Live Chat CSKH', icon: HiOutlineChat },
 ]
 

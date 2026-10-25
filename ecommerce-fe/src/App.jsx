@@ -23,6 +23,7 @@ import Checkout from './pages/checkout/Checkout'
 import LiveList from './pages/live/LiveList'
 import LiveRoom from './pages/live/LiveRoom'
 import BannedAccount from './pages/BannedAccount'
+import Policy from './pages/Policy'
 import ThemeSync from './components/ThemeSync'
 import { useTokenLifecycle } from './hooks/useTokenLifecycle'
 
@@ -51,6 +52,19 @@ export default function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/verify" element={<Verify />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+
+        {/* Dynamic Platform Policies */}
+        <Route path="/policy" element={<Policy />} />
+        <Route path="/policies" element={<Policy />} />
+        <Route path="/escrow-policy" element={<Policy defaultKey="ESCROW_PAYMENT_PROTECTION" />} />
+        <Route path="/returns" element={<Policy defaultKey="RETURN_REFUND_POLICY" />} />
+        <Route path="/seller-policy" element={<Policy defaultKey="SELLER_OPERATING_REGULATIONS" />} />
+        <Route path="/shipping" element={<Policy defaultKey="SHIPPING_AND_DELIVERY" />} />
+        <Route path="/grading" element={<Policy defaultKey="SECOND_HAND_GRADING" />} />
+        <Route path="/privacy" element={<Policy defaultKey="PRIVACY_POLICY" />} />
+        <Route path="/privacy-policy" element={<Policy defaultKey="PRIVACY_POLICY" />} />
+        <Route path="/terms" element={<Policy defaultKey="TERMS_OF_SERVICE" />} />
+        <Route path="/seller/terms" element={<Policy defaultKey="SELLER_OPERATING_REGULATIONS" />} />
 
         {/* Redirect seller register to Seller Portal */}
         <Route

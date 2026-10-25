@@ -60,6 +60,9 @@ import com.marketplace.ecommerce.notification.valueObjects.NotificationChannelTy
 import com.marketplace.ecommerce.notification.valueObjects.NotificationStatus;
 import com.marketplace.ecommerce.notification.valueObjects.NotificationType;
 import com.marketplace.ecommerce.chat.service.ChatService;
+import com.marketplace.ecommerce.platform.policy.entity.DisputePolicyClauseEntity;
+import com.marketplace.ecommerce.platform.policy.repository.DisputePolicyClauseRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -96,6 +99,8 @@ public class ReportServiceImpl implements ReportService {
     private final UserRepository userRepository;
     private final ChatService chatService;
     private final AccountDisciplineService accountDisciplineService;
+    @Autowired(required = false)
+    private DisputePolicyClauseRepository disputePolicyClauseRepository;
 
     @Override
     @Transactional
@@ -145,13 +150,41 @@ public class ReportServiceImpl implements ReportService {
             }
         }
 
-        // Validate và lưu Căn cứ Điều khoản Chính sách bắt buộc đối với tranh chấp Đơn
-        // hàng
-        DisputePolicyClause policyClause = requestPolicy.validateDisputePolicyClause(
-                report.getTargetType(), req.getPolicyClauseCode(), req.getDecision(), isSellerReturnDispute);
-        if (policyClause != null) {
-            report.setPolicyClauseCode(policyClause.getCode());
-            report.setPolicyClauseTitle(policyClause.getTitle());
+        // Validate và lưu Căn cứ Điều khoản Chính sách bắt buộc đối với tranh chấp Đơn hàng (Hỗ trợ cả Dynamic DB và Enum)
+        if (report.getTargetType() == TargetType.ORDER) {
+            String code = req.getPolicyClauseCode() != null ? req.getPolicyClauseCode().trim() : null;
+            if (code == null || code.isEmpty()) {
+                throw new CustomException("Phán quyết tranh chấp đơn hàng bắt buộc phải gắn với một Điều khoản Chính sách (Policy Clause).");
+            }
+            if (disputePolicyClauseRepository != null) {
+                Optional<DisputePolicyClauseEntity> dynamicClauseOpt = disputePolicyClauseRepository.findByCode(code);
+                if (dynamicClauseOpt.isPresent()) {
+                    DisputePolicyClauseEntity dynamicClause = dynamicClauseOpt.get();
+                    if (!isSellerReturnDispute) {
+                        if (req.getDecision() == ReportDecision.APPROVE && !"SELLER_FAULT".equalsIgnoreCase(dynamicClause.getCategory())) {
+                            throw new CustomException("Điều khoản đã chọn không phù hợp với phán quyết chấp thuận khiếu nại của Người mua (Cần chọn điều khoản thuộc nhóm Lỗi Người bán).");
+                        } else if (req.getDecision() == ReportDecision.REJECT && !"BUYER_FAULT".equalsIgnoreCase(dynamicClause.getCategory())) {
+                            throw new CustomException("Điều khoản đã chọn không phù hợp với phán quyết bác bỏ khiếu nại (Cần chọn điều khoản thuộc nhóm Bác khiếu nại / Bảo vệ Người bán).");
+                        }
+                    }
+                    report.setPolicyClauseCode(dynamicClause.getCode());
+                    report.setPolicyClauseTitle(dynamicClause.getTitle());
+                } else {
+                    DisputePolicyClause policyClause = requestPolicy.validateDisputePolicyClause(
+                            report.getTargetType(), code, req.getDecision(), isSellerReturnDispute);
+                    if (policyClause != null) {
+                        report.setPolicyClauseCode(policyClause.getCode());
+                        report.setPolicyClauseTitle(policyClause.getTitle());
+                    }
+                }
+            } else {
+                DisputePolicyClause policyClause = requestPolicy.validateDisputePolicyClause(
+                        report.getTargetType(), code, req.getDecision(), isSellerReturnDispute);
+                if (policyClause != null) {
+                    report.setPolicyClauseCode(policyClause.getCode());
+                    report.setPolicyClauseTitle(policyClause.getTitle());
+                }
+            }
         }
 
         if (isSellerReturnDispute) {
@@ -1126,6 +1159,20 @@ public class ReportServiceImpl implements ReportService {
 
     @Override
     public List<DisputePolicyClauseResponse> getDisputePolicyClauses() {
+        if (disputePolicyClauseRepository != null) {
+            List<DisputePolicyClauseEntity> dynamicClauses =
+                    disputePolicyClauseRepository.findByIsActiveTrueOrderByDisplayOrderAscCreatedAtAsc();
+            if (dynamicClauses != null && !dynamicClauses.isEmpty()) {
+                return dynamicClauses.stream()
+                        .map(c -> DisputePolicyClauseResponse.builder()
+                                .code(c.getCode())
+                                .title(c.getTitle())
+                                .description(c.getDescription())
+                                .category(c.getCategory())
+                                .build())
+                        .toList();
+            }
+        }
         return Arrays.stream(DisputePolicyClause.values())
                 .map(DisputePolicyClauseResponse::from)
                 .toList();

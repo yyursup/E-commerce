@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
+@RequestMapping(version = "1")
 @RequiredArgsConstructor
 public class PlatformPolicyController {
 
@@ -24,21 +25,22 @@ public class PlatformPolicyController {
 
     // =========================================================================
     // PUBLIC APIS (Khách hàng, Người bán, Khách vãng lai, Toàn bộ người dùng)
+    // Resolves to: /api/v1/policies/**
     // =========================================================================
 
-    @GetMapping("/api/v1/policies")
+    @GetMapping("/policies")
     public ResponseEntity<List<PlatformPolicyResponse>> getActivePolicies(
             @RequestParam(required = false) String audience,
             @RequestParam(required = false) String category) {
         return ResponseEntity.ok(platformPolicyService.getActivePolicies(audience, category));
     }
 
-    @GetMapping("/api/v1/policies/{policyKey}")
+    @GetMapping("/policies/{policyKey}")
     public ResponseEntity<PlatformPolicyResponse> getPolicyByKey(@PathVariable String policyKey) {
         return ResponseEntity.ok(platformPolicyService.getPolicyByKey(policyKey));
     }
 
-    @GetMapping("/api/v1/policies/dispute-clauses")
+    @GetMapping("/policies/dispute-clauses")
     public ResponseEntity<List<DisputePolicyClauseResponse>> getActiveDisputeClauses(
             @RequestParam(required = false) String category) {
         return ResponseEntity.ok(platformPolicyService.getActiveDisputeClauses(category));
@@ -46,15 +48,16 @@ public class PlatformPolicyController {
 
     // =========================================================================
     // ADMIN MANAGEMENT APIS (Dành riêng cho Quản trị viên sàn)
+    // Resolves to: /api/v1/admin/policies/**
     // =========================================================================
 
-    @GetMapping("/api/v1/admin/policies")
+    @GetMapping("/admin/policies")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<PlatformPolicyResponse>> getAllPoliciesAdmin() {
         return ResponseEntity.ok(platformPolicyService.getAllPoliciesAdmin());
     }
 
-    @PostMapping("/api/v1/admin/policies")
+    @PostMapping("/admin/policies")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<PlatformPolicyResponse> createPolicy(
             @Valid @RequestBody PlatformPolicyRequest request,
@@ -63,7 +66,7 @@ public class PlatformPolicyController {
         return ResponseEntity.status(HttpStatus.CREATED).body(platformPolicyService.createPolicy(request, adminEmail));
     }
 
-    @PutMapping("/api/v1/admin/policies/{id}")
+    @PutMapping("/admin/policies/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<PlatformPolicyResponse> updatePolicy(
             @PathVariable UUID id,
@@ -73,7 +76,7 @@ public class PlatformPolicyController {
         return ResponseEntity.ok(platformPolicyService.updatePolicy(id, request, adminEmail));
     }
 
-    @DeleteMapping("/api/v1/admin/policies/{id}")
+    @DeleteMapping("/admin/policies/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deletePolicy(@PathVariable UUID id) {
         platformPolicyService.deletePolicy(id);
@@ -82,20 +85,20 @@ public class PlatformPolicyController {
 
     // --- Admin Dispute Clauses Management ---
 
-    @GetMapping("/api/v1/admin/policies/dispute-clauses")
+    @GetMapping("/admin/policies/dispute-clauses")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<DisputePolicyClauseResponse>> getAllDisputeClausesAdmin() {
         return ResponseEntity.ok(platformPolicyService.getAllDisputeClausesAdmin());
     }
 
-    @PostMapping("/api/v1/admin/policies/dispute-clauses")
+    @PostMapping("/admin/policies/dispute-clauses")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<DisputePolicyClauseResponse> createDisputeClause(
             @Valid @RequestBody DisputePolicyClauseRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(platformPolicyService.createDisputeClause(request));
     }
 
-    @PutMapping("/api/v1/admin/policies/dispute-clauses/{id}")
+    @PutMapping("/admin/policies/dispute-clauses/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<DisputePolicyClauseResponse> updateDisputeClause(
             @PathVariable UUID id,
@@ -103,7 +106,7 @@ public class PlatformPolicyController {
         return ResponseEntity.ok(platformPolicyService.updateDisputeClause(id, request));
     }
 
-    @DeleteMapping("/api/v1/admin/policies/dispute-clauses/{id}")
+    @DeleteMapping("/admin/policies/dispute-clauses/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteDisputeClause(@PathVariable UUID id) {
         platformPolicyService.deleteDisputeClause(id);

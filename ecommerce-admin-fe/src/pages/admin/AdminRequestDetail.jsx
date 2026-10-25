@@ -46,7 +46,10 @@ export default function AdminRequestDetail() {
 
   const handleApprove = async () => {
     // If admin didn't input response, provide default approval note to satisfy API
-    const note = responseText.trim() || 'Hồ sơ hợp lệ. Đã phê duyệt yêu cầu đăng ký người bán.'
+    const defaultNote = requestType === 'APPEAL'
+      ? 'Đã xem xét giải trình và chấp thuận giảm 1 gậy kỷ luật.'
+      : 'Hồ sơ hợp lệ. Đã phê duyệt yêu cầu đăng ký người bán.'
+    const note = responseText.trim() || defaultNote
     try {
       setActionLoading(true)
       if (requestType === 'REPORT') {

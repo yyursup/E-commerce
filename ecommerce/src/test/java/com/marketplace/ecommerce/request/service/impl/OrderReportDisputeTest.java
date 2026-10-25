@@ -259,7 +259,7 @@ class OrderReportDisputeTest {
                 RequestServiceImpl requestServiceImpl = new RequestServiceImpl(
                                 requestRepository, reportRepository, null, accountRepository, null,
                                 requestValidation, null, null, null, null, orderRepository, escrowRepository,
-                                orderReturnService, null);
+                                orderReturnService, null, null);
 
                 // When
                 requestServiceImpl.autoRefundExpiredDisputedOrders();
@@ -276,7 +276,7 @@ class OrderReportDisputeTest {
                 RequestServiceImpl requestServiceImpl = new RequestServiceImpl(
                                 requestRepository, reportRepository, null, accountRepository, null,
                                 requestValidation, null, null, null, null, orderRepository, escrowRepository,
-                                orderReturnService, null);
+                                orderReturnService, null, null);
 
                 // When
                 requestServiceImpl.autoRefundExpiredDisputedOrders();

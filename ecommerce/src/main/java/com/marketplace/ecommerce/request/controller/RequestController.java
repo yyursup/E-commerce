@@ -4,15 +4,18 @@ import com.marketplace.ecommerce.common.CurrentUserInfo;
 import com.marketplace.ecommerce.config.CurrentUser;
 
 import com.marketplace.ecommerce.request.dto.request.RegisterSellerRequest;
+import com.marketplace.ecommerce.request.dto.request.SubmitBanReviewRequest;
+import com.marketplace.ecommerce.request.dto.response.BanReviewStatusResponse;
 import com.marketplace.ecommerce.request.dto.response.CreateRequestResponse;
 import com.marketplace.ecommerce.request.dto.response.RequestResponse;
 import com.marketplace.ecommerce.request.dto.response.RequestDetailsResponse;
 import com.marketplace.ecommerce.request.service.RegisterSellerService;
 import com.marketplace.ecommerce.request.service.RequestService;
 import com.marketplace.ecommerce.request.valueObjects.RequestStatus;
-import com.marketplace.ecommerce.request.valueObjects.TargetType;
 import com.marketplace.ecommerce.auth.service.TokenService;
-import com.marketplace.ecommerce.auth.entity.Account;
+import com.marketplace.ecommerce.file.response.FileUploadResponse;
+import org.springframework.http.MediaType;
+import org.springframework.web.multipart.MultipartFile;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -22,6 +25,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -33,13 +37,27 @@ public class RequestController {
 
     private final RegisterSellerService registerSellerService;
     
-    private final TokenService tokenService;
-
     @PostMapping("regis-seller")
     public CreateRequestResponse register(
             @CurrentUser CurrentUserInfo u,
             @Valid @RequestBody RegisterSellerRequest request) {
         return registerSellerService.createSellerRegistration(u.getAccountId(), request);
+    }
+
+    @PostMapping(value = "/ban-review", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public CreateRequestResponse submitBanReview(
+            @CurrentUser CurrentUserInfo u,
+            @RequestParam("description") String description,
+            @RequestParam(value = "files", required = false) List<MultipartFile> files
+    ) {
+        return requestService.submitBanReview(u.getAccountId(), description, files);
+    }
+
+    @GetMapping("/ban-review/status")
+    public BanReviewStatusResponse getBanReviewStatus(
+            @CurrentUser CurrentUserInfo u
+    ) {
+        return requestService.getBanReviewStatus(u.getAccountId());
     }
 
 

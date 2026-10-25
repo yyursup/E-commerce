@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.LockedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
@@ -117,9 +118,42 @@ public class JwtFilter extends OncePerRequestFilter {
         }
 
         try {
+            boolean isBanReviewToken = tokenService.isBanReviewToken(token);
             Account account = tokenService.getAccountFromToken(token);
 
-            if (account.getStatus() == AccountStatus.BANNED || account.getDisciplineLevel() == DisciplineLevel.BANNED) {
+            if (isBanReviewToken) {
+                String method = request.getMethod();
+                boolean isAllowedBanReviewEndpoint =
+                        ("GET".equalsIgnoreCase(method) && "/api/v1/request/ban-review/status".equals(uri)) ||
+                        ("POST".equalsIgnoreCase(method) && "/api/v1/request/ban-review".equals(uri));
+
+                if (!isAllowedBanReviewEndpoint) {
+                    SecurityContextHolder.clearContext();
+                    resolver.resolveException(request, response, null,
+                            new LockedException("Phiên làm việc xem xét kỷ luật không có quyền truy cập tài nguyên này."));
+                    return;
+                }
+
+                CurrentUserInfo info = new CurrentUserInfo();
+                info.setAccountId(account.getId());
+                info.setUsername(account.getUsername());
+                info.setRole("ROLE_BAN_REVIEW");
+
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(
+                                info,
+                                null,
+                                List.of(new SimpleGrantedAuthority("ROLE_BAN_REVIEW"))
+                        );
+                authentication.setDetails(
+                        new WebAuthenticationDetailsSource().buildDetails(request)
+                );
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+                filterChain.doFilter(request, response);
+                return;
+            }
+
+            if (account.isBanned()) {
                 SecurityContextHolder.clearContext();
                 if (isPublic) {
                     filterChain.doFilter(request, response);

@@ -19,6 +19,7 @@ import com.marketplace.ecommerce.chat.service.ChatService;
 import com.marketplace.ecommerce.common.CurrentUserInfo;
 import com.marketplace.ecommerce.common.ErrorResponse;
 import com.marketplace.ecommerce.common.exception.CustomException;
+import com.marketplace.ecommerce.common.exception.InvalidCredentialsException;
 import com.marketplace.ecommerce.common.exception.GlobalExceptionHandler;
 import com.marketplace.ecommerce.config.JwtFilter;
 import com.marketplace.ecommerce.notification.repository.NotificationRepository;
@@ -329,12 +330,13 @@ public class PermanentBanAuthorizationEnforcementTest {
     class PasswordLoginBannedEnforcementTests {
 
         @Test
-        @DisplayName("6. Đăng nhập thất bại ngay khi status == BANNED, không cấp token, không tự động gỡ ban")
-        void login_bannedByStatus_ThrowsCustomException() {
+        @DisplayName("6. Đăng nhập với mật khẩu đúng khi status == BANNED: Cấp BAN_REVIEW token, không cấp token marketplace, không có refresh token")
+        void login_bannedByStatus_ReturnsBanReviewToken() {
             String username = "banned_user";
             Account account = Account.builder()
                     .id(UUID.randomUUID())
                     .username(username)
+                    .passwordHash("hashed_pwd")
                     .status(AccountStatus.BANNED)
                     .disciplineLevel(DisciplineLevel.NONE)
                     .bannedUntil(LocalDateTime.now().minusDays(10)) // Legacy expired timestamp
@@ -342,49 +344,87 @@ public class PermanentBanAuthorizationEnforcementTest {
                     .build();
 
             when(accountRepository.findByUsername(username)).thenReturn(Optional.of(account));
+            when(passwordEncoder.matches("Password123@", "hashed_pwd")).thenReturn(true);
+            when(tokenService.createBanReviewToken(account)).thenReturn("mock-ban-review-token");
 
             LoginRequest req = new LoginRequest();
             req.setUsername(username);
             req.setPassword("Password123@");
 
-            CustomException ex = assertThrows(CustomException.class, () -> authenticationService.login(req));
-            assertTrue(ex.getMessage().contains("Tài khoản của bạn đã bị khóa vĩnh viễn do vi phạm quy định cộng đồng"));
+            LoginResponse res = authenticationService.login(req);
+            assertEquals("mock-ban-review-token", res.getToken());
+            assertNull(res.getRefreshToken(), "Tài khoản BANNED tuyệt đối không được cấp refresh token");
+            assertEquals("ROLE_BAN_REVIEW", res.getRole());
+            assertEquals(DisciplineLevel.BANNED.name(), res.getDisciplineLevel());
             verify(accountRepository, never()).save(account); // Không được phép tự động gỡ ban
-            verify(tokenService, never()).createToken(any());
+            verify(tokenService, never()).createToken(any()); // Không cấp marketplace token
             verify(tokenService, never()).refreshToken(any());
         }
 
         @Test
-        @DisplayName("7. Đăng nhập thất bại ngay khi disciplineLevel == BANNED (status != BANNED), không cấp token")
-        void login_bannedByLevel_ThrowsCustomException() {
+        @DisplayName("6b. Đăng nhập với mật khẩu SAI khi tài khoản BANNED: Không tiết lộ trạng thái BANNED")
+        void login_bannedAccountWrongPassword_DoesNotRevealBanStatus() {
+            String username = "banned_user";
+            Account account = Account.builder()
+                    .id(UUID.randomUUID())
+                    .username(username)
+                    .passwordHash("hashed_pwd")
+                    .status(AccountStatus.BANNED)
+                    .disciplineLevel(DisciplineLevel.BANNED)
+                    .isActive(false)
+                    .build();
+
+            when(accountRepository.findByUsername(username)).thenReturn(Optional.of(account));
+            when(passwordEncoder.matches("WrongPassword", "hashed_pwd")).thenReturn(false);
+
+            LoginRequest req = new LoginRequest();
+            req.setUsername(username);
+            req.setPassword("WrongPassword");
+
+            InvalidCredentialsException ex = assertThrows(InvalidCredentialsException.class, () -> authenticationService.login(req));
+            assertTrue(ex.getMessage().contains("Tên đăng nhập hoặc mật khẩu không chính xác"));
+            assertFalse(ex.getMessage().contains("khóa") || ex.getMessage().contains("cấm"), "Password sai không được tiết lộ trạng thái BANNED");
+            verify(tokenService, never()).createToken(any());
+            verify(tokenService, never()).createBanReviewToken(any());
+        }
+
+        @Test
+        @DisplayName("7. Đăng nhập với mật khẩu đúng khi disciplineLevel == BANNED: Cấp BAN_REVIEW token, không cấp token marketplace")
+        void login_bannedByLevel_ReturnsBanReviewToken() {
             String username = "banned_by_level";
             Account account = Account.builder()
                     .id(UUID.randomUUID())
                     .username(username)
+                    .passwordHash("hashed_pwd")
                     .status(AccountStatus.ACTIVE)
                     .disciplineLevel(DisciplineLevel.BANNED)
                     .isActive(true)
                     .build();
 
             when(accountRepository.findByUsername(username)).thenReturn(Optional.of(account));
+            when(passwordEncoder.matches("Password123@", "hashed_pwd")).thenReturn(true);
+            when(tokenService.createBanReviewToken(account)).thenReturn("mock-ban-review-token-level");
 
             LoginRequest req = new LoginRequest();
             req.setUsername(username);
             req.setPassword("Password123@");
 
-            CustomException ex = assertThrows(CustomException.class, () -> authenticationService.login(req));
-            assertTrue(ex.getMessage().contains("Tài khoản của bạn đã bị khóa vĩnh viễn do vi phạm quy định cộng đồng"));
+            LoginResponse res = authenticationService.login(req);
+            assertEquals("mock-ban-review-token-level", res.getToken());
+            assertNull(res.getRefreshToken());
+            assertEquals("ROLE_BAN_REVIEW", res.getRole());
             verify(tokenService, never()).createToken(any());
             verify(tokenService, never()).refreshToken(any());
         }
 
         @Test
-        @DisplayName("8. Đăng nhập với bannedUntil == null (Permanent ban chuẩn): Vẫn bị từ chối, không thể gỡ ban")
-        void login_bannedAccountWithNullBannedUntil_ThrowsCustomException() {
+        @DisplayName("8. Đăng nhập với bannedUntil == null (Permanent ban chuẩn): Cấp BAN_REVIEW token khi mật khẩu đúng")
+        void login_bannedAccountWithNullBannedUntil_ReturnsBanReviewToken() {
             String username = "permanently_banned_user";
             Account account = Account.builder()
                     .id(UUID.randomUUID())
                     .username(username)
+                    .passwordHash("hashed_pwd")
                     .status(AccountStatus.BANNED)
                     .disciplineLevel(DisciplineLevel.BANNED)
                     .bannedUntil(null)
@@ -393,13 +433,17 @@ public class PermanentBanAuthorizationEnforcementTest {
                     .build();
 
             when(accountRepository.findByUsername(username)).thenReturn(Optional.of(account));
+            when(passwordEncoder.matches("Password123@", "hashed_pwd")).thenReturn(true);
+            when(tokenService.createBanReviewToken(account)).thenReturn("mock-ban-review-token-null-until");
 
             LoginRequest req = new LoginRequest();
             req.setUsername(username);
             req.setPassword("Password123@");
 
-            CustomException ex = assertThrows(CustomException.class, () -> authenticationService.login(req));
-            assertTrue(ex.getMessage().contains("Tài khoản của bạn đã bị khóa vĩnh viễn do vi phạm quy định cộng đồng"));
+            LoginResponse res = authenticationService.login(req);
+            assertEquals("mock-ban-review-token-null-until", res.getToken());
+            assertNull(res.getRefreshToken());
+            assertEquals("ROLE_BAN_REVIEW", res.getRole());
             verify(accountRepository, never()).save(any());
             verify(tokenService, never()).createToken(any());
         }
@@ -504,7 +548,7 @@ public class PermanentBanAuthorizationEnforcementTest {
     class OAuth2LoginBannedEnforcementTests {
 
         @Test
-        @DisplayName("12. OAuth2 Google: Tài khoản đã tồn tại bị BANNED (status==BANNED, disciplineLevel==BANNED) -> Từ chối, không cấp token")
+        @DisplayName("12. OAuth2 Google: Tài khoản đã tồn tại bị BANNED -> Trả về BAN_REVIEW token, không cấp token marketplace")
         void oauth2_existingBannedAccount_Rejected() throws Exception {
             String email = "banned_oauth2@gmail.com";
             Account account = Account.builder()
@@ -516,25 +560,22 @@ public class PermanentBanAuthorizationEnforcementTest {
                     .build();
 
             when(accountRepository.findByEmail(email)).thenReturn(Optional.of(account));
+            when(tokenService.createBanReviewToken(account)).thenReturn("mock-oauth2-ban-token");
 
             Method method = AuthenticationServiceImpl.class.getDeclaredMethod(
                     "processOAuth2User", String.class, String.class, String.class, String.class, AuthProvider.class);
             method.setAccessible(true);
 
-            java.lang.reflect.InvocationTargetException ite = assertThrows(
-                    java.lang.reflect.InvocationTargetException.class,
-                    () -> method.invoke(authenticationService, email, "Test User", "avatar.png", "google-sub-123", AuthProvider.GOOGLE)
-            );
-
-            Throwable cause = ite.getCause();
-            assertInstanceOf(CustomException.class, cause);
-            assertTrue(cause.getMessage().contains("Tài khoản của bạn đã bị khóa vĩnh viễn do vi phạm quy định cộng đồng"));
+            LoginResponse res = (LoginResponse) method.invoke(authenticationService, email, "Test User", "avatar.png", "google-sub-123", AuthProvider.GOOGLE);
+            assertEquals("mock-oauth2-ban-token", res.getToken());
+            assertNull(res.getRefreshToken());
+            assertEquals("ROLE_BAN_REVIEW", res.getRole());
             verify(tokenService, never()).createToken(any());
             verify(tokenService, never()).refreshToken(any());
         }
 
         @Test
-        @DisplayName("13. OAuth2: Tài khoản bị BANNED theo disciplineLevel (status!=BANNED) -> Từ chối, không cấp token")
+        @DisplayName("13. OAuth2: Tài khoản bị BANNED theo disciplineLevel (status!=BANNED) -> Trả về BAN_REVIEW token")
         void oauth2_existingBannedAccountByDisciplineLevelOnly_Rejected() throws Exception {
             String email = "banned_by_level@gmail.com";
             Account account = Account.builder()
@@ -546,24 +587,21 @@ public class PermanentBanAuthorizationEnforcementTest {
                     .build();
 
             when(accountRepository.findByEmail(email)).thenReturn(Optional.of(account));
+            when(tokenService.createBanReviewToken(account)).thenReturn("mock-oauth2-ban-token-level");
 
             Method method = AuthenticationServiceImpl.class.getDeclaredMethod(
                     "processOAuth2User", String.class, String.class, String.class, String.class, AuthProvider.class);
             method.setAccessible(true);
 
-            java.lang.reflect.InvocationTargetException ite = assertThrows(
-                    java.lang.reflect.InvocationTargetException.class,
-                    () -> method.invoke(authenticationService, email, "Test User", "avatar.png", "google-sub-789", AuthProvider.GOOGLE)
-            );
-
-            Throwable cause = ite.getCause();
-            assertInstanceOf(CustomException.class, cause);
-            assertTrue(cause.getMessage().contains("Tài khoản của bạn đã bị khóa vĩnh viễn do vi phạm quy định cộng đồng"));
+            LoginResponse res = (LoginResponse) method.invoke(authenticationService, email, "Test User", "avatar.png", "google-sub-789", AuthProvider.GOOGLE);
+            assertEquals("mock-oauth2-ban-token-level", res.getToken());
+            assertNull(res.getRefreshToken());
+            assertEquals("ROLE_BAN_REVIEW", res.getRole());
             verify(tokenService, never()).createToken(any());
         }
 
         @Test
-        @DisplayName("14. OAuth2 Facebook: Tài khoản đã tồn tại bị BANNED -> Từ chối qua handler Facebook dùng chung processOAuth2User")
+        @DisplayName("14. OAuth2 Facebook: Tài khoản đã tồn tại bị BANNED -> Trả về BAN_REVIEW token")
         void oauth2_facebookBannedAccount_Rejected() throws Exception {
             String email = "facebook_banned@facebook.com";
             Account account = Account.builder()
@@ -575,19 +613,16 @@ public class PermanentBanAuthorizationEnforcementTest {
                     .build();
 
             when(accountRepository.findByEmail(email)).thenReturn(Optional.of(account));
+            when(tokenService.createBanReviewToken(account)).thenReturn("mock-fb-ban-token");
 
             Method method = AuthenticationServiceImpl.class.getDeclaredMethod(
                     "processOAuth2User", String.class, String.class, String.class, String.class, AuthProvider.class);
             method.setAccessible(true);
 
-            java.lang.reflect.InvocationTargetException ite = assertThrows(
-                    java.lang.reflect.InvocationTargetException.class,
-                    () -> method.invoke(authenticationService, email, "FB User", "avatar.png", "fb-sub-123", AuthProvider.FACEBOOK)
-            );
-
-            Throwable cause = ite.getCause();
-            assertInstanceOf(CustomException.class, cause);
-            assertTrue(cause.getMessage().contains("Tài khoản của bạn đã bị khóa vĩnh viễn do vi phạm quy định cộng đồng"));
+            LoginResponse res = (LoginResponse) method.invoke(authenticationService, email, "FB User", "avatar.png", "fb-sub-123", AuthProvider.FACEBOOK);
+            assertEquals("mock-fb-ban-token", res.getToken());
+            assertNull(res.getRefreshToken());
+            assertEquals("ROLE_BAN_REVIEW", res.getRole());
             verify(tokenService, never()).createToken(any());
         }
 

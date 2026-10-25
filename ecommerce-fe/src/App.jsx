@@ -22,6 +22,7 @@ import Deals from './pages/deals/Deals'
 import Checkout from './pages/checkout/Checkout'
 import LiveList from './pages/live/LiveList'
 import LiveRoom from './pages/live/LiveRoom'
+import BannedAccount from './pages/BannedAccount'
 import { useTokenLifecycle } from './hooks/useTokenLifecycle'
 
 export default function App() {
@@ -29,8 +30,9 @@ export default function App() {
 
   return (
     <Routes>
-      {/* Standalone Fullscreen Live Room */}
+      {/* Standalone Fullscreen Live Room & Banned Screen */}
       <Route path="/live/:id" element={<LiveRoom />} />
+      <Route path="/banned" element={<BannedAccount />} />
 
       <Route element={<Layout />}>
         {/* Public routes */}

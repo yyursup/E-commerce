@@ -62,6 +62,14 @@ export const getRequestTypeBadge = (type, isDark) => {
         : 'bg-rose-50 text-rose-700 border-rose-200',
     }
   }
+  if (t === 'APPEAL') {
+    return {
+      label: 'Xem xét kỷ luật',
+      className: isDark
+        ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+        : 'bg-amber-50 text-amber-700 border-amber-200',
+    }
+  }
   return {
     label: type || '-',
     className: isDark ? 'bg-slate-800 text-slate-300' : 'bg-stone-100 text-stone-600',
@@ -111,17 +119,17 @@ export const buildSellerInfoSections = (detail) => {
   // 5. Quỹ Ký Quỹ & Bảo Chứng Cam Kết
   const escrowInfo = detail.isEscrowParticipated
     ? [
-        { label: 'Cam kết Quỹ ký quỹ', value: 'Có tham gia (Bảo chứng uy tín sàn)' },
-        {
-          label: 'Hạn mức ký quỹ đăng ký',
-          value: detail.initialDepositAmount
-            ? `${Number(detail.initialDepositAmount).toLocaleString('vi-VN')} ₫`
-            : '0 ₫',
-        },
-      ]
+      { label: 'Cam kết Quỹ ký quỹ', value: 'Có tham gia (Bảo chứng uy tín sàn)' },
+      {
+        label: 'Hạn mức ký quỹ đăng ký',
+        value: detail.initialDepositAmount
+          ? `${Number(detail.initialDepositAmount).toLocaleString('vi-VN')} ₫`
+          : '0 ₫',
+      },
+    ]
     : [
-        { label: 'Cam kết Quỹ ký quỹ', value: 'Không tham gia (Hạng 1★ Cơ bản)' },
-      ]
+      { label: 'Cam kết Quỹ ký quỹ', value: 'Không tham gia (Hạng 1★ Cơ bản)' },
+    ]
 
   return {
     isBusiness,
@@ -167,6 +175,22 @@ export const buildRequestDetailEntries = (requestType, requestDetail) => {
       ['Bằng chứng vi phạm', requestDetail.evidenceUrl],
       ['Ghi chú kiểm duyệt', requestDetail.moderatorNote],
     ]
+  }
+
+  if (requestType === 'APPEAL') {
+    const entries = [
+      ['Tài khoản khiếu nại', requestDetail.accountUsername || requestDetail.username || '-'],
+      ['Email tài khoản', requestDetail.accountEmail || requestDetail.email || '-'],
+      ['Số gậy vi phạm hiện tại', requestDetail.currentViolationCount != null ? `${requestDetail.currentViolationCount} gậy` : '-'],
+      ['Nội dung giải trình', requestDetail.description || '-'],
+    ]
+    if (requestDetail.oldViolationCount != null && requestDetail.newViolationCount != null) {
+      entries.push(['Kết quả giảm gậy', `${requestDetail.oldViolationCount} gậy ➔ ${requestDetail.newViolationCount} gậy`])
+    }
+    if (requestDetail.coverImageUrl) {
+      entries.push(['Ảnh minh chứng', requestDetail.coverImageUrl])
+    }
+    return entries
   }
 
   return Object.entries(requestDetail || {}).map(([key, value]) => [key, String(value || '-')])

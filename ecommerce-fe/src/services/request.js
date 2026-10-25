@@ -60,6 +60,28 @@ const requestService = {
       throw error.response ? error.response.data : error;
     }
   },
+
+  getBanReviewStatus: async () => {
+    try {
+      const response = await api.get(`${REQUEST_BASE}/ban-review/status`);
+      return response.data;
+    } catch (error) {
+      throw error.response ? error.response.data : error;
+    }
+  },
+
+  submitBanReview: async (formData) => {
+    try {
+      const response = await api.post(`${REQUEST_BASE}/ban-review`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response ? error.response.data : error;
+    }
+  },
 };
 
 export default requestService;

@@ -16,6 +16,11 @@ export default function ProtectedRoute({ children, allowedRoles = [], requireAut
     return <Navigate to="/login" replace />
   }
 
+  // Account is BANNED -> redirect to /banned review screen
+  if (user?.role === 'ROLE_BAN_REVIEW' || user?.disciplineLevel === 'BANNED') {
+    return <Navigate to="/banned" replace />
+  }
+
   // If roles are specified, check if user has required role
   if (allowedRoles.length > 0) {
     const userRole = user?.role?.toUpperCase()

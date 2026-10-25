@@ -218,16 +218,27 @@ export default function AdminRequestActionCard({
             {detailEntries.map(([label, value]) => (
               <div key={label} className="space-y-1">
                 <p className="text-xs uppercase tracking-wide text-stone-500 dark:text-slate-400">{label}</p>
-                {label === 'Evidence' || label === 'Bằng chứng vi phạm' ? (
-                  value ? (
-                    <a
-                      href={value}
-                      className={cn('text-sm font-semibold underline break-all', isDark ? 'text-amber-300' : 'text-amber-700')}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      Xem bằng chứng đính kèm
-                    </a>
+                {label === 'Evidence' || label === 'Bằng chứng vi phạm' || label === 'Ảnh minh chứng' ? (
+                  value && value !== '-' ? (
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      {String(value).split(',').map((imgUrl, idx) => (
+                        <a
+                          key={idx}
+                          href={imgUrl.trim()}
+                          className={cn(
+                            'inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-medium transition hover:shadow-sm',
+                            isDark
+                              ? 'border-amber-500/30 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20'
+                              : 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100',
+                          )}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          <HiOutlineExternalLink className="h-3.5 w-3.5" />
+                          Ảnh {idx + 1}
+                        </a>
+                      ))}
+                    </div>
                   ) : (
                     '-'
                   )
@@ -336,15 +347,34 @@ export default function AdminRequestActionCard({
           </div>
         )}
 
+        {requestType === 'APPEAL' && isPending && (
+          <div className="p-3.5 rounded-2xl border border-amber-500/30 bg-amber-500/5 space-y-2">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
+              <HiOutlineExclamation className="h-4 w-4 shrink-0" />
+              <span>Quy tắc giảm đúng 1 gậy:</span>
+            </div>
+            <p className="text-xs text-stone-600 dark:text-slate-300 leading-relaxed">
+              Khi Quản trị viên <strong>Phê duyệt</strong>, hệ thống sẽ <strong>tự động giảm đúng 1 gậy vi phạm</strong> của tài khoản. Tuyệt đối không cho phép nhập số gậy thủ công. Trạng thái tài khoản sau khi giảm phụ thuộc vào số gậy thực tế:
+            </p>
+            <ul className="text-[11px] text-stone-500 dark:text-slate-400 list-disc list-inside space-y-0.5">
+              <li>Số gậy sau giảm ≥ 7: Tài khoản tiếp tục <strong>BANNED</strong> (không cấp quyền).</li>
+              <li>Số gậy sau giảm còn 5–6: Chuyển sang <strong>SUSPENDED</strong> trong 14 ngày.</li>
+              <li>Số gậy sau giảm còn 0–4: Khôi phục trạng thái <strong>ACTIVE</strong></li>
+            </ul>
+          </div>
+        )}
+
         <textarea
           value={responseText}
           onChange={(e) => setResponseText(e.target.value)}
           placeholder={
             requestType === 'REPORT'
               ? 'Nhập ghi chú xử lý vi phạm (tùy chọn)...'
-              : isPending
-                ? 'Nhập lý do hoặc phản hồi cho người đăng ký (bắt buộc khi từ chối)...'
-                : 'Đơn này đã được xử lý.'
+              : requestType === 'APPEAL'
+                ? 'Nhập phản hồi kết quả xem xét cho người dùng (bắt buộc khi từ chối)...'
+                : isPending
+                  ? 'Nhập lý do hoặc phản hồi cho người đăng ký (bắt buộc khi từ chối)...'
+                  : 'Đơn này đã được xử lý.'
           }
           rows={3}
           disabled={!isPending || actionLoading}

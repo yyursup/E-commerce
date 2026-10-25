@@ -29,6 +29,10 @@ public class CreateRequestResponse {
     private String displayCode;
     private TargetType targetType;
     private ReportStage stage;
+    private Integer oldViolationCount;
+    private Integer newViolationCount;
+    private String accountUsername;
+    private String accountEmail;
 
     public static CreateRequestResponse from(Request request) {
         return CreateRequestResponse.builder()
@@ -42,6 +46,10 @@ public class CreateRequestResponse {
                 .reviewedAt(request.getReviewedAt())
                 .createdAt(request.getCreatedAt())
                 .displayCode(request.getDisplayCode())
+                .oldViolationCount(request.getOldViolationCount())
+                .newViolationCount(request.getNewViolationCount())
+                .accountUsername(request.getAccount() != null ? request.getAccount().getUsername() : null)
+                .accountEmail(request.getAccount() != null ? request.getAccount().getEmail() : null)
                 .build();
     }
 

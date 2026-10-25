@@ -66,4 +66,33 @@ public class TokenServiceImpl implements TokenService {
                 .signWith(getSignInKey())
                 .compact();
     }
+
+    @Override
+    public String createBanReviewToken(Account account) {
+        long currentTime = System.currentTimeMillis();
+        return Jwts.builder()
+                .subject(account.getUsername() + "")
+                .claim("type", "BAN_REVIEW")
+                .claim("role", "BAN_REVIEW")
+                .claim("accountId", account.getId())
+                .issuedAt(new Date(currentTime))
+                .expiration(new Date(currentTime + 1000L * 60 * 30)) // 30 minutes short-lived
+                .signWith(getSignInKey())
+                .compact();
+    }
+
+    @Override
+    public boolean isBanReviewToken(String token) {
+        if (token == null || token.isBlank()) {
+            return false;
+        }
+        try {
+            Claims claims = Jwts.parser()
+                    .verifyWith(getSignInKey())
+                    .build().parseSignedClaims(token).getPayload();
+            return "BAN_REVIEW".equals(claims.get("type"));
+        } catch (Exception e) {
+            return false;
+        }
+    }
 }

@@ -23,14 +23,16 @@ import policyService from '../services/policy'
 // Default route to policy key mapping
 const ROUTE_KEY_MAP = {
   '/escrow-policy': 'ESCROW_PAYMENT_PROTECTION',
-  '/returns': 'RETURN_REFUND_POLICY',
-  '/seller-policy': 'SELLER_OPERATING_REGULATIONS',
-  '/shipping': 'SHIPPING_AND_DELIVERY',
-  '/grading': 'SECOND_HAND_GRADING',
-  '/privacy': 'PRIVACY_POLICY',
-  '/privacy-policy': 'PRIVACY_POLICY',
-  '/terms': 'TERMS_OF_SERVICE',
-  '/terms-of-service': 'TERMS_OF_SERVICE',
+  '/returns': 'RETURN_REFUND_COMPLAINT_POLICY',
+  '/return-policy': 'RETURN_REFUND_COMPLAINT_POLICY',
+  '/seller-policy': 'SELLER_OPERATING_POLICY',
+  '/shipping': 'SHIPPING_AND_CO_INSPECTION_POLICY',
+  '/grading': 'PRODUCT_LISTING_AND_CONDITION_STANDARDS',
+  '/discipline': 'DISCIPLINE_AND_REPUTATION_SYSTEM',
+  '/privacy': 'PRIVACY_AND_DATA_PROTECTION',
+  '/privacy-policy': 'PRIVACY_AND_DATA_PROTECTION',
+  '/terms': 'PLATFORM_OPERATING_REGULATIONS',
+  '/terms-of-service': 'PLATFORM_OPERATING_REGULATIONS',
 }
 
 const CATEGORY_ICONS = {

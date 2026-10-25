@@ -10,113 +10,272 @@ import {
   HiOutlineExternalLink,
   HiOutlineCalendar,
   HiOutlineTag,
+  HiOutlineDocumentText,
+  HiOutlineExclamationCircle,
 } from 'react-icons/hi'
 import { Link } from 'react-router-dom'
 import { useThemeStore } from '../store/useThemeStore'
 import { cn } from '../lib/cn'
 import policyService from '../services/policy'
 
-const TABS = [
-  { id: 'general', key: 'TERMS_OF_SERVICE', label: 'Điều Khoản Chung', icon: HiOutlineScale },
-  { id: 'escrow', key: 'ESCROW_PAYMENT_PROTECTION', label: 'Ký Quỹ Escrow', icon: HiOutlineShieldCheck },
-  { id: 'returns', key: 'RETURN_REFUND_POLICY', label: 'Khiếu Nại & Đổi Trả', icon: HiOutlineTruck },
-  { id: 'seller', key: 'SELLER_OPERATING_REGULATIONS', label: 'Quy Chế Người Bán', icon: HiOutlineCash },
-  { id: 'privacy', key: 'PRIVACY_POLICY', label: 'Bảo Mật Dữ Liệu', icon: HiOutlineLockClosed },
-]
+// Metadata map for policies
+const POLICY_META_MAP = {
+  PLATFORM_OPERATING_REGULATIONS: {
+    label: 'Quy Chế Hoạt Động',
+    icon: HiOutlineScale,
+    aliases: ['TERMS_OF_SERVICE', 'GENERAL_TERMS'],
+  },
+  ESCROW_PAYMENT_PROTECTION: {
+    label: 'Ký Quỹ Escrow (72h)',
+    icon: HiOutlineShieldCheck,
+    aliases: ['ESCROW'],
+  },
+  RETURN_REFUND_COMPLAINT_POLICY: {
+    label: 'Khiếu Nại & Đổi Trả',
+    icon: HiOutlineTruck,
+    aliases: ['RETURN_REFUND_POLICY', 'RETURNS'],
+  },
+  PRODUCT_LISTING_AND_CONDITION_STANDARDS: {
+    label: 'Tiêu Chuẩn Đăng Bán',
+    icon: HiOutlineTag,
+    aliases: ['CONDITION_GRADE', 'SECOND_HAND_GRADING'],
+  },
+  SHIPPING_AND_CO_INSPECTION_POLICY: {
+    label: 'Vận Chuyển & Đồng Kiểm',
+    icon: HiOutlineTruck,
+    aliases: ['SHIPPING_AND_DELIVERY', 'SHIPPING'],
+  },
+  SELLER_OPERATING_POLICY: {
+    label: 'Quy Chế Người Bán & eKYC',
+    icon: HiOutlineCash,
+    aliases: ['SELLER_OPERATING_REGULATIONS', 'SELLER_POLICY'],
+  },
+  DISCIPLINE_AND_REPUTATION_SYSTEM: {
+    label: 'Kỷ Luật & Uy Tín',
+    icon: HiOutlineCheckCircle,
+    aliases: ['DISCIPLINE'],
+  },
+  PRIVACY_AND_DATA_PROTECTION: {
+    label: 'Bảo Mật Dữ Liệu',
+    icon: HiOutlineLockClosed,
+    aliases: ['PRIVACY_POLICY', 'PRIVACY'],
+  },
+}
 
 export default function TermsModal({ open, onClose, onAccept }) {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
-  const [activeTab, setActiveTab] = useState('general')
   const [policies, setPolicies] = useState([])
+  const [activeKey, setActiveKey] = useState('')
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
 
-  // Fetch dynamic policies when modal opens
-  useEffect(() => {
-    if (!open) return
-    let isMounted = true
-
-    const loadPolicies = async () => {
-      try {
-        setLoading(true)
-        const data = await policyService.getActivePolicies()
-        if (isMounted && Array.isArray(data)) {
-          setPolicies(data)
-        }
-      } catch (err) {
-        console.warn('Lỗi khi tải chính sách động cho TermsModal:', err)
-      } finally {
-        if (isMounted) setLoading(false)
+  // Fetch dynamic policies strictly from backend API
+  const loadPolicies = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const data = await policyService.getActivePolicies()
+      if (Array.isArray(data) && data.length > 0) {
+        setPolicies(data)
+        setActiveKey((prev) => {
+          if (prev && data.some((p) => p.policyKey === prev)) return prev
+          return data[0].policyKey
+        })
+      } else {
+        setPolicies([])
+        setError('Không tìm thấy dữ liệu điều khoản từ máy chủ.')
       }
+    } catch (err) {
+      console.error('Lỗi khi tải chính sách từ backend:', err)
+      setPolicies([])
+      setError(err?.response?.data?.message || err?.message || 'Không thể kết nối đến máy chủ để tải điều khoản.')
+    } finally {
+      setLoading(false)
     }
+  }
 
-    loadPolicies()
-    return () => {
-      isMounted = false
+  useEffect(() => {
+    if (open) {
+      loadPolicies()
     }
   }, [open])
 
-  // Get current active policy
-  const currentTabObj = TABS.find((t) => t.id === activeTab) || TABS[0]
-  const currentPolicy = useMemo(() => {
-    return policies.find((p) => p.policyKey === currentTabObj.key) || null
-  }, [policies, currentTabObj.key])
+  // Resolve metadata for any policy key
+  const getPolicyMeta = (key) => {
+    if (POLICY_META_MAP[key]) return POLICY_META_MAP[key]
+    for (const [pKey, meta] of Object.entries(POLICY_META_MAP)) {
+      if (meta.aliases?.includes(key)) {
+        return meta
+      }
+    }
+    return {
+      label: key.replace(/_/g, ' '),
+      icon: HiOutlineDocumentText,
+    }
+  }
 
-  // Simple Markdown renderer
+  // Dynamic Tabs generated 100% from backend policies
+  const tabs = useMemo(() => {
+    return policies.map((p) => {
+      const meta = getPolicyMeta(p.policyKey)
+      return {
+        key: p.policyKey,
+        label: meta.label || p.title,
+        icon: meta.icon,
+        policy: p,
+      }
+    })
+  }, [policies])
+
+  // Current active policy
+  const currentPolicy = useMemo(() => {
+    if (!activeKey) return policies[0] || null
+    return policies.find((p) => p.policyKey === activeKey) || policies[0] || null
+  }, [policies, activeKey])
+
+  // Parse inline formatting: **bold**, `code`
+  const formatInlineText = (text) => {
+    if (!text) return null
+    const parts = text.split(/(\*\*.*?\*\*|`.*?`)/g)
+    return parts.map((part, idx) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        return (
+          <strong key={idx} className="font-bold text-stone-900 dark:text-white">
+            {part.slice(2, -2)}
+          </strong>
+        )
+      }
+      if (part.startsWith('`') && part.endsWith('`')) {
+        return (
+          <code
+            key={idx}
+            className="rounded bg-stone-100 dark:bg-slate-800 px-1.5 py-0.5 font-mono text-[11px] font-semibold text-amber-700 dark:text-amber-300 border border-stone-200 dark:border-slate-700"
+          >
+            {part.slice(1, -1)}
+          </code>
+        )
+      }
+      return part
+    })
+  }
+
+  // Markdown renderer with high Light/Dark theme contrast
   const renderContent = (content) => {
     if (!content) return null
 
-    return content.split('\n').map((line, idx) => {
+    const lines = content.split('\n')
+    const elements = []
+    let inCodeBlock = false
+    let codeBuffer = []
+
+    lines.forEach((line, idx) => {
       const trimmed = line.trim()
-      if (!trimmed) return <div key={idx} className="h-2" />
+
+      if (trimmed.startsWith('```')) {
+        if (inCodeBlock) {
+          elements.push(
+            <pre
+              key={`code-${idx}`}
+              className="my-3 p-3.5 rounded-xl border border-stone-200 dark:border-slate-800 bg-stone-100/90 dark:bg-slate-950 font-mono text-[11px] text-stone-800 dark:text-slate-200 overflow-x-auto whitespace-pre leading-relaxed"
+            >
+              <code>{codeBuffer.join('\n')}</code>
+            </pre>
+          )
+          codeBuffer = []
+          inCodeBlock = false
+        } else {
+          inCodeBlock = true
+        }
+        return
+      }
+
+      if (inCodeBlock) {
+        codeBuffer.push(line)
+        return
+      }
+
+      if (!trimmed) {
+        elements.push(<div key={`gap-${idx}`} className="h-2" />)
+        return
+      }
 
       if (trimmed.startsWith('# ')) {
-        return (
-          <h3 key={idx} className="mt-4 mb-2 text-base font-bold text-amber-500">
+        elements.push(
+          <h3 key={`h1-${idx}`} className="mt-4 mb-2 text-base font-extrabold text-amber-700 dark:text-amber-400">
             {trimmed.replace('# ', '')}
           </h3>
         )
+        return
       }
+
       if (trimmed.startsWith('## ')) {
-        return (
-          <h4 key={idx} className="mt-3 mb-1 text-sm font-bold text-slate-200">
+        elements.push(
+          <h4 key={`h2-${idx}`} className="mt-3.5 mb-1.5 text-sm font-bold text-stone-900 dark:text-white flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-amber-500 inline-block" />
             {trimmed.replace('## ', '')}
           </h4>
         )
+        return
       }
+
       if (trimmed.startsWith('### ')) {
-        return (
-          <h5 key={idx} className="mt-2 mb-1 text-xs font-semibold text-amber-400">
+        elements.push(
+          <h5 key={`h3-${idx}`} className="mt-3 mb-1 text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wide">
             {trimmed.replace('### ', '')}
           </h5>
         )
+        return
       }
+
       if (trimmed.startsWith('> ')) {
-        return (
-          <blockquote key={idx} className="my-2 border-l-4 border-amber-500 bg-amber-500/10 px-3 py-2 rounded-r-lg text-xs text-amber-300">
-            {trimmed.replace('> ', '')}
+        elements.push(
+          <blockquote
+            key={`quote-${idx}`}
+            className="my-2.5 border-l-4 border-amber-500 bg-amber-50 dark:bg-amber-500/10 px-3.5 py-2 rounded-r-xl text-xs font-medium text-amber-950 dark:text-amber-200"
+          >
+            {formatInlineText(trimmed.replace('> ', ''))}
           </blockquote>
         )
+        return
       }
+
       if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
-        return (
-          <li key={idx} className="ml-4 list-disc text-xs leading-relaxed text-slate-300 my-0.5">
-            {trimmed.slice(2)}
+        elements.push(
+          <li key={`li-${idx}`} className="ml-4 list-disc text-xs leading-relaxed text-stone-800 dark:text-slate-200 my-0.5">
+            {formatInlineText(trimmed.slice(2))}
           </li>
         )
+        return
       }
+
       if (/^\d+\.\s/.test(trimmed)) {
-        return (
-          <li key={idx} className="ml-4 list-decimal text-xs leading-relaxed text-slate-300 my-0.5">
-            {trimmed.replace(/^\d+\.\s/, '')}
+        elements.push(
+          <li key={`num-${idx}`} className="ml-4 list-decimal text-xs leading-relaxed text-stone-800 dark:text-slate-200 my-0.5">
+            {formatInlineText(trimmed.replace(/^\d+\.\s/, ''))}
           </li>
         )
+        return
       }
-      return (
-        <p key={idx} className="my-1.5 text-xs text-slate-300 leading-relaxed">
-          {trimmed}
+
+      elements.push(
+        <p key={`p-${idx}`} className="my-1.5 text-xs text-stone-800 dark:text-slate-200 leading-relaxed">
+          {formatInlineText(trimmed)}
         </p>
       )
     })
+
+    if (inCodeBlock && codeBuffer.length > 0) {
+      elements.push(
+        <pre
+          key="code-final"
+          className="my-3 p-3.5 rounded-xl border border-stone-200 dark:border-slate-800 bg-stone-100/90 dark:bg-slate-950 font-mono text-[11px] text-stone-800 dark:text-slate-200 overflow-x-auto whitespace-pre leading-relaxed"
+        >
+          <code>{codeBuffer.join('\n')}</code>
+        </pre>
+      )
+    }
+
+    return elements
   }
 
   return (
@@ -126,51 +285,73 @@ export default function TermsModal({ open, onClose, onAccept }) {
       title="Điều Khoản Dịch Vụ & Chính Sách Vận Hành Sàn E-commerce"
       size="2xl"
     >
-      <div className="flex flex-col h-[70vh]">
-        {/* Navigation Tabs */}
-        <div className="flex items-center gap-2 border-b border-stone-200 dark:border-slate-800 px-6 py-3 overflow-x-auto shrink-0 bg-stone-50/50 dark:bg-slate-900/50">
-          {TABS.map((tab) => {
-            const Icon = tab.icon
-            const isActive = activeTab === tab.id
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveTab(tab.id)}
-                className={cn(
-                  'flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all',
-                  isActive
-                    ? 'bg-amber-500 text-white shadow-sm shadow-amber-500/20'
-                    : 'text-stone-600 dark:text-slate-400 hover:bg-stone-200/50 dark:hover:bg-slate-800'
-                )}
-              >
-                <Icon className="h-4 w-4" />
-                {tab.label}
-              </button>
-            )
-          })}
-        </div>
+      <div className="flex flex-col h-[75vh]">
+        {/* Navigation Tabs - Generated Dynamically from Backend Policies */}
+        {tabs.length > 0 && (
+          <div className="flex items-center gap-1.5 border-b border-stone-200 dark:border-slate-800 px-4 sm:px-6 py-2.5 overflow-x-auto shrink-0 bg-stone-100/70 dark:bg-slate-900/80 scrollbar-thin">
+            {tabs.map((tab) => {
+              const Icon = tab.icon
+              const isActive = currentPolicy?.policyKey === tab.key
+              return (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => setActiveKey(tab.key)}
+                  className={cn(
+                    'flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all select-none',
+                    isActive
+                      ? 'bg-amber-500 text-white shadow-sm shadow-amber-500/25 font-bold'
+                      : 'text-stone-700 dark:text-slate-300 hover:text-stone-950 dark:hover:text-white hover:bg-stone-200/70 dark:hover:bg-slate-800'
+                  )}
+                >
+                  <Icon className={cn('h-4 w-4 shrink-0', isActive ? 'text-white' : 'text-stone-500 dark:text-slate-400')} />
+                  {tab.label}
+                </button>
+              )
+            })}
+          </div>
+        )}
 
-        {/* Tab Content Body (Scrollable) */}
-        <div className="flex-1 overflow-y-auto px-6 py-5 text-sm text-stone-700 dark:text-slate-300 space-y-4">
+        {/* Tab Content Body (Scrollable, High Contrast in Both Modes) */}
+        <div className="flex-1 overflow-y-auto px-6 py-5 text-sm text-stone-800 dark:text-slate-200 space-y-4">
           {loading ? (
-            <div className="py-12 text-center text-xs text-stone-400">Đang tải chính sách cập nhật mới nhất từ hệ thống...</div>
+            <div className="py-24 flex flex-col items-center justify-center gap-3 text-stone-500 dark:text-slate-400">
+              <div className="h-8 w-8 animate-spin rounded-full border-3 border-amber-500 border-t-transparent" />
+              <p className="text-xs font-medium">Đang tải điều khoản dịch vụ từ máy chủ...</p>
+            </div>
+          ) : error ? (
+            <div className="py-20 text-center space-y-3">
+              <div className="mx-auto w-12 h-12 rounded-full bg-rose-500/10 text-rose-500 flex items-center justify-center">
+                <HiOutlineExclamationCircle className="h-6 w-6" />
+              </div>
+              <h4 className="font-bold text-sm text-stone-900 dark:text-white">Không thể tải điều khoản dịch vụ</h4>
+              <p className="text-xs text-stone-600 dark:text-slate-400 max-w-md mx-auto">{error}</p>
+              <button
+                type="button"
+                onClick={loadPolicies}
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-amber-500 hover:bg-amber-600 text-white shadow-sm transition"
+              >
+                Tải lại dữ liệu
+              </button>
+            </div>
           ) : currentPolicy ? (
             <div className="space-y-4">
               {/* Header Badge */}
               <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-stone-200 dark:border-slate-800">
                 <div>
-                  <h3 className="text-base font-bold text-stone-900 dark:text-white">
+                  <h3 className="text-base font-extrabold text-stone-900 dark:text-white">
                     {currentPolicy.title}
                   </h3>
-                  <span className="font-mono text-[10px] text-amber-500 font-bold">{currentPolicy.policyKey}</span>
+                  <span className="font-mono text-[10px] text-amber-700 dark:text-amber-400 font-bold">
+                    {currentPolicy.policyKey}
+                  </span>
                 </div>
-                <div className="flex items-center gap-2 text-[10px] text-stone-400">
-                  <span className="rounded bg-stone-100 dark:bg-slate-800 px-2 py-0.5 font-bold">
-                    v{currentPolicy.version || '1.0'}
+                <div className="flex items-center gap-2 text-[10px]">
+                  <span className="rounded bg-stone-100 dark:bg-slate-800 px-2 py-0.5 font-bold text-stone-700 dark:text-slate-300 border border-stone-200 dark:border-slate-700">
+                    Phiên bản {currentPolicy.version || '2.0'}
                   </span>
                   {currentPolicy.effectiveDate && (
-                    <span className="flex items-center gap-1">
+                    <span className="flex items-center gap-1 text-stone-500 dark:text-slate-400">
                       <HiOutlineCalendar className="h-3 w-3" />
                       {new Date(currentPolicy.effectiveDate).toLocaleDateString('vi-VN')}
                     </span>
@@ -180,8 +361,8 @@ export default function TermsModal({ open, onClose, onAccept }) {
 
               {/* Summary */}
               {currentPolicy.summary && (
-                <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 p-3.5 text-xs text-amber-700 dark:text-amber-300">
-                  <span className="font-bold flex items-center gap-1.5 mb-1">
+                <div className="rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 p-3.5 text-xs text-stone-800 dark:text-amber-200">
+                  <span className="font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1.5 mb-1">
                     <HiOutlineTag className="h-3.5 w-3.5" /> Tóm tắt điều khoản:
                   </span>
                   {currentPolicy.summary}
@@ -189,28 +370,23 @@ export default function TermsModal({ open, onClose, onAccept }) {
               )}
 
               {/* Content Body */}
-              <div className="text-xs leading-relaxed">
+              <div className="text-xs leading-relaxed space-y-1">
                 {renderContent(currentPolicy.content)}
               </div>
             </div>
           ) : (
-            <div className="rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 p-4">
-              <h4 className="font-bold text-amber-800 dark:text-amber-400 flex items-center gap-2">
-                <HiOutlineScale className="h-5 w-5" /> 1. Chấp Thuận Điều Khoản Dịch Vụ
-              </h4>
-              <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">
-                Chào mừng bạn đến với Sàn Thương Mại Điện Tử Chuyên Ngành Đồ Điện Tử & Thiết Bị Công Nghệ E-commerce. Khi tạo tài khoản hoặc sử dụng dịch vụ trên hệ thống, bạn cam kết rằng đã đọc, hiểu và đồng ý hoàn toàn với toàn bộ quy chế và điều khoản hoạt động của chúng tôi.
-              </p>
+            <div className="py-20 text-center text-xs text-stone-500 dark:text-slate-400">
+              Không có dữ liệu chính sách nào được kích hoạt trên hệ thống.
             </div>
           )}
         </div>
 
         {/* Modal Footer */}
-        <div className="border-t border-stone-200 dark:border-slate-800 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0 bg-stone-50/50 dark:bg-slate-900/50">
+        <div className="border-t border-stone-200 dark:border-slate-800 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0 bg-stone-100/70 dark:bg-slate-900/80">
           <Link
             to="/policy"
             onClick={onClose}
-            className="text-xs font-semibold text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1"
+            className="text-xs font-semibold text-amber-700 dark:text-amber-400 hover:underline flex items-center gap-1"
           >
             <HiOutlineExternalLink className="h-4 w-4" />
             Xem toàn bộ trung tâm chính sách nền tảng
@@ -220,7 +396,7 @@ export default function TermsModal({ open, onClose, onAccept }) {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 sm:flex-initial px-4 py-2 rounded-xl text-xs font-semibold border border-stone-300 dark:border-slate-700 hover:bg-stone-100 dark:hover:bg-slate-800 transition"
+              className="flex-1 sm:flex-initial px-4 py-2 rounded-xl text-xs font-semibold border border-stone-300 dark:border-slate-700 text-stone-700 dark:text-slate-300 hover:bg-stone-200/60 dark:hover:bg-slate-800 transition"
             >
               Đóng
             </button>

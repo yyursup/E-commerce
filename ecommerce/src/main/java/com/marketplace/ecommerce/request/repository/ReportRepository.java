@@ -202,5 +202,29 @@ public interface ReportRepository extends JpaRepository<Report, UUID> {
           )
     """)
     boolean existsPendingReportsForShop(@Param("shopId") UUID shopId);
+
+    @Query("""
+        select r from Report r
+        join fetch r.request req
+        where (req.status = com.marketplace.ecommerce.request.valueObjects.RequestStatus.APPROVED
+               or (r.stage = com.marketplace.ecommerce.request.valueObjects.ReportStage.CLOSED
+                   and (r.moderatorNote is not null or req.reviewedBy is not null or req.response is not null)))
+          and (
+               (r.targetType = com.marketplace.ecommerce.request.valueObjects.TargetType.USER
+                and (r.targetId = :accountId or r.targetId in (select u.id from User u where u.account.id = :accountId)))
+            or (r.targetType = com.marketplace.ecommerce.request.valueObjects.TargetType.SHOP
+                and (r.targetId in (select s.id from Shop s where s.user.account.id = :accountId or s.user.id in (select u.id from User u where u.account.id = :accountId))
+                     or r.targetId = :accountId
+                     or r.targetId in (select u.id from User u where u.account.id = :accountId)))
+            or (r.targetType = com.marketplace.ecommerce.request.valueObjects.TargetType.PRODUCT
+                and r.targetId in (select p.id from Product p where p.shop.user.account.id = :accountId or p.shop.user.id in (select u.id from User u where u.account.id = :accountId)))
+            or (r.targetType = com.marketplace.ecommerce.request.valueObjects.TargetType.ORDER
+                and r.targetId in (select o.id from Order o where o.shop.user.account.id = :accountId or o.user.account.id = :accountId or o.user.id in (select u.id from User u where u.account.id = :accountId)))
+            or (r.targetType = com.marketplace.ecommerce.request.valueObjects.TargetType.REVIEW
+                and r.targetId in (select rev.id from Review rev where rev.user.account.id = :accountId or rev.user.id in (select u.id from User u where u.account.id = :accountId)))
+          )
+        order by req.createdAt desc
+    """)
+    List<Report> findApprovedViolationsByAccountId(@Param("accountId") UUID accountId);
 }
 

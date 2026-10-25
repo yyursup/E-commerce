@@ -92,6 +92,10 @@ public class Account extends BaseEntity implements UserDetails, Serializable {
         return List.of(new SimpleGrantedAuthority("ROLE_" + role.getRoleName()));
     }
 
+    public boolean isBanned() {
+        return (status == AccountStatus.BANNED) || (disciplineLevel == DisciplineLevel.BANNED);
+    }
+
     @Override
     public boolean isAccountNonExpired() {
         return isActive != null && isActive;
@@ -99,7 +103,7 @@ public class Account extends BaseEntity implements UserDetails, Serializable {
 
     @Override
     public boolean isAccountNonLocked() {
-        if (status == AccountStatus.BANNED || disciplineLevel == DisciplineLevel.BANNED) {
+        if (isBanned()) {
             return false;
         }
         if (status == AccountStatus.DELETED) {
@@ -118,7 +122,7 @@ public class Account extends BaseEntity implements UserDetails, Serializable {
         if (status == AccountStatus.INACTIVE || status == AccountStatus.DELETED) {
             return false;
         }
-        if (status == AccountStatus.BANNED || disciplineLevel == DisciplineLevel.BANNED) {
+        if (isBanned()) {
             return false;
         }
         return isActive != null && isActive;

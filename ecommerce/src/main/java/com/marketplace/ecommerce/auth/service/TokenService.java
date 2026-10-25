@@ -8,4 +8,8 @@ public interface TokenService {
     public Account getAccountFromToken(String token);
 
     public String refreshToken(Account account);
+
+    public String createBanReviewToken(Account account);
+
+    public boolean isBanReviewToken(String token);
 }

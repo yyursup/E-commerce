@@ -214,12 +214,28 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     public LoginResponse login(LoginRequest request) {
-        // 1. Kiểm tra tài khoản: nếu đang bị khóa vĩnh viễn (BANNED) thì từ chối đăng nhập ngay lập tức
+        // 1. Kiểm tra tài khoản: nếu đang bị khóa vĩnh viễn (BANNED), xác minh mật khẩu trước khi cấp phiên BAN_REVIEW
         Optional<Account> accountOpt = accountRepository.findByUsername(request.getUsername());
         if (accountOpt.isPresent()) {
             Account acc = accountOpt.get();
-            if (acc.getStatus() == AccountStatus.BANNED || acc.getDisciplineLevel() == DisciplineLevel.BANNED) {
-                throw new CustomException("Tài khoản của bạn đã bị khóa vĩnh viễn do vi phạm quy định cộng đồng.");
+            if (acc.isBanned()) {
+                // Phải xác minh đúng mật khẩu trước khi tiết lộ trạng thái BANNED
+                if (!passwordEncoder.matches(request.getPassword(), acc.getPasswordHash())) {
+                    throw new InvalidCredentialsException("Tên đăng nhập hoặc mật khẩu không chính xác.");
+                }
+
+                // Cấp token riêng giới hạn BAN_REVIEW (không cấp refresh token, không quyền marketplace)
+                String banReviewToken = tokenService.createBanReviewToken(acc);
+                return LoginResponse.builder()
+                        .email(acc.getEmail())
+                        .username(acc.getUsername())
+                        .token(banReviewToken)
+                        .refreshToken(null)
+                        .role("ROLE_BAN_REVIEW")
+                        .disciplineLevel(DisciplineLevel.BANNED.name())
+                        .violationCount(acc.getViolationCount())
+                        .accountId(acc.getId())
+                        .build();
             }
         }
 
@@ -501,8 +517,18 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                     .build();
             cartRepository.save(cart);
         } else {
-            if (account.getStatus() == AccountStatus.BANNED || account.getDisciplineLevel() == DisciplineLevel.BANNED) {
-                throw new CustomException("Tài khoản của bạn đã bị khóa vĩnh viễn do vi phạm quy định cộng đồng.");
+            if (account.isBanned()) {
+                String banReviewToken = tokenService.createBanReviewToken(account);
+                return LoginResponse.builder()
+                        .email(account.getEmail())
+                        .username(account.getUsername())
+                        .token(banReviewToken)
+                        .refreshToken(null)
+                        .role("ROLE_BAN_REVIEW")
+                        .disciplineLevel(DisciplineLevel.BANNED.name())
+                        .violationCount(account.getViolationCount())
+                        .accountId(account.getId())
+                        .build();
             }
             if (account.getStatus() == AccountStatus.INACTIVE || account.getStatus() == AccountStatus.DELETED || !Boolean.TRUE.equals(account.getIsActive())) {
                 throw new CustomException("Tài khoản chưa được kích hoạt hoặc đã ngừng hoạt động.");

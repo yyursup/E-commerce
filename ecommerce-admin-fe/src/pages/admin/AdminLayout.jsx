@@ -21,7 +21,7 @@ import { cn } from '../../lib/cn'
 
 const navItems = [
   { to: '/dashboard', label: 'Tổng quan Sàn', icon: HiOutlineViewGrid },
-  { to: '/requests', label: 'Duyệt mở Gian hàng', icon: HiOutlineClipboardCheck },
+  { to: '/requests', label: 'Duyệt Yêu Cầu & Mở Shop', icon: HiOutlineClipboardCheck },
   { to: '/moderation', label: 'Kiểm duyệt Sản phẩm', icon: HiOutlineShieldCheck },
   { to: '/orders', label: 'Quản lý Đơn hàng', icon: HiOutlineShoppingBag },
   { to: '/vouchers', label: 'Voucher Toàn Sàn', icon: HiOutlineTicket },

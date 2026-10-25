@@ -60,6 +60,21 @@ export default function Login() {
       return
     }
 
+    if (res.role === 'ROLE_BAN_REVIEW' || res.disciplineLevel === 'BANNED') {
+      const userPayload = {
+        email: res.email,
+        username: res.username,
+        role: 'ROLE_BAN_REVIEW',
+        disciplineLevel: 'BANNED',
+        violationCount: res.violationCount,
+        accountId: res.accountId,
+      }
+      login(res.token, userPayload, null)
+      toast.error('Tài khoản của bạn đang bị khóa vĩnh viễn. Đang chuyển đến trang xem xét kỷ luật.')
+      navigate('/banned')
+      return
+    }
+
     const userPayload = { email: res.email, role: res.role }
     login(res.token, userPayload, res.refreshToken)
 
@@ -111,6 +126,21 @@ export default function Login() {
 
       if (res.role === 'ADMIN') {
         toast.error('Tài khoản Quản trị viên vui lòng đăng nhập tại Cổng Quản Trị (Port 3002).')
+        return
+      }
+
+      if (res.role === 'ROLE_BAN_REVIEW' || res.disciplineLevel === 'BANNED') {
+        const userPayload = {
+          email: res.email,
+          username: res.username,
+          role: 'ROLE_BAN_REVIEW',
+          disciplineLevel: 'BANNED',
+          violationCount: res.violationCount,
+          accountId: res.accountId,
+        }
+        login(res.token, userPayload, null)
+        toast.error('Tài khoản của bạn đang bị khóa vĩnh viễn. Đang chuyển đến trang xem xét kỷ luật.')
+        navigate('/banned')
         return
       }
 

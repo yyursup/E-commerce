@@ -103,7 +103,7 @@ export default function AdminRequestOverviewCard({ detail, isDark }) {
         )}
       </div>
 
-      {detail?.coverImageUrl && (
+      {detail?.type === 'SELLER_REGISTRATION' && detail?.coverImageUrl && (
         <div className="mt-6">
           <p className="text-xs uppercase tracking-wide text-stone-500 dark:text-slate-400">Ảnh bìa shop</p>
           <div className="mt-2 overflow-hidden rounded-xl border border-stone-200 dark:border-slate-700">

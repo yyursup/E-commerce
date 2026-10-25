@@ -47,7 +47,6 @@ export default function HorizontalScrollContainer({
         checkScrollability()
       })
       resizeObserver.observe(el)
-      Array.from(el.children).forEach((child) => resizeObserver.observe(child))
     }
 
     window.addEventListener('resize', checkScrollability)

@@ -2,66 +2,17 @@ import { useState, useEffect, useMemo } from 'react'
 import Modal from './Modal'
 import HorizontalScrollContainer from './HorizontalScrollContainer'
 import {
-  HiOutlineShieldCheck,
-  HiOutlineScale,
-  HiOutlineTruck,
-  HiOutlineCash,
-  HiOutlineLockClosed,
-  HiOutlineCheckCircle,
-  HiOutlineExternalLink,
   HiOutlineCalendar,
   HiOutlineTag,
-  HiOutlineDocumentText,
   HiOutlineExclamationCircle,
+  HiOutlineExternalLink,
+  HiOutlineCheckCircle
 } from 'react-icons/hi'
 import { Link } from 'react-router-dom'
 import { useThemeStore } from '../store/useThemeStore'
 import { cn } from '../lib/cn'
 import policyService from '../services/policy'
-
-// Metadata map for policies
-const POLICY_META_MAP = {
-  PLATFORM_OPERATING_REGULATIONS: {
-    label: 'Quy Chế Hoạt Động',
-    icon: HiOutlineScale,
-    aliases: ['TERMS_OF_SERVICE', 'GENERAL_TERMS'],
-  },
-  ESCROW_PAYMENT_PROTECTION: {
-    label: 'Ký Quỹ Escrow (72h)',
-    icon: HiOutlineShieldCheck,
-    aliases: ['ESCROW'],
-  },
-  RETURN_REFUND_COMPLAINT_POLICY: {
-    label: 'Khiếu Nại & Đổi Trả',
-    icon: HiOutlineTruck,
-    aliases: ['RETURN_REFUND_POLICY', 'RETURNS'],
-  },
-  PRODUCT_LISTING_AND_CONDITION_STANDARDS: {
-    label: 'Tiêu Chuẩn Đăng Bán',
-    icon: HiOutlineTag,
-    aliases: ['CONDITION_GRADE', 'SECOND_HAND_GRADING'],
-  },
-  SHIPPING_AND_CO_INSPECTION_POLICY: {
-    label: 'Vận Chuyển & Đồng Kiểm',
-    icon: HiOutlineTruck,
-    aliases: ['SHIPPING_AND_DELIVERY', 'SHIPPING'],
-  },
-  SELLER_OPERATING_POLICY: {
-    label: 'Quy Chế Người Bán & eKYC',
-    icon: HiOutlineCash,
-    aliases: ['SELLER_OPERATING_REGULATIONS', 'SELLER_POLICY'],
-  },
-  DISCIPLINE_AND_REPUTATION_SYSTEM: {
-    label: 'Kỷ Luật & Uy Tín',
-    icon: HiOutlineCheckCircle,
-    aliases: ['DISCIPLINE'],
-  },
-  PRIVACY_AND_DATA_PROTECTION: {
-    label: 'Bảo Mật Dữ Liệu',
-    icon: HiOutlineLockClosed,
-    aliases: ['PRIVACY_POLICY', 'PRIVACY'],
-  },
-}
+import { getPolicyMeta } from './policyMetaConstants'
 
 export default function TermsModal({ open, onClose, onAccept }) {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
@@ -100,20 +51,6 @@ export default function TermsModal({ open, onClose, onAccept }) {
       loadPolicies()
     }
   }, [open])
-
-  // Resolve metadata for any policy key
-  const getPolicyMeta = (key) => {
-    if (POLICY_META_MAP[key]) return POLICY_META_MAP[key]
-    for (const [pKey, meta] of Object.entries(POLICY_META_MAP)) {
-      if (meta.aliases?.includes(key)) {
-        return meta
-      }
-    }
-    return {
-      label: key.replace(/_/g, ' '),
-      icon: HiOutlineDocumentText,
-    }
-  }
 
   // Dynamic Tabs generated 100% from backend policies
   const tabs = useMemo(() => {

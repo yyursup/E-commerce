@@ -295,7 +295,15 @@ public class ShopSeeder {
 
         shopEscrowFundRepository.findByShopId(shop.getId())
                 .map(fund -> {
-                    fund.setBalance(depositAmount);
+                    if (fund.getCommittedAmount() == null || fund.getCommittedAmount().compareTo(BigDecimal.ZERO) == 0) {
+                        fund.setCommittedAmount(depositAmount);
+                    }
+                    if (Boolean.TRUE.equals(fund.getIsDeficit()) && fund.getDeficitAmount() != null
+                            && fund.getDeficitAmount().compareTo(BigDecimal.ZERO) > 0) {
+                        fund.setBalance(depositAmount.subtract(fund.getDeficitAmount()));
+                    } else if (fund.getBalance() == null) {
+                        fund.setBalance(depositAmount);
+                    }
                     fund.setCurrentTrustLevel(trustStar);
                     return shopEscrowFundRepository.save(fund);
                 })
@@ -303,7 +311,7 @@ public class ShopSeeder {
                     ShopEscrowFund fund = ShopEscrowFund.builder()
                             .shop(shop)
                             .balance(depositAmount)
-                            .committedAmount(BigDecimal.ZERO)
+                            .committedAmount(depositAmount)
                             .currentTrustLevel(trustStar)
                             .isDeficit(false)
                             .deficitAmount(BigDecimal.ZERO)

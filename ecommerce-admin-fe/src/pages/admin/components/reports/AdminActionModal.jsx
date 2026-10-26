@@ -50,8 +50,8 @@ export default function AdminActionModal({
 
   const isSellerDispute = isSellerReturnDisputeItem(actionModal.item)
 
-  const isOrderDispute = targetType === 'ORDER' && ['REPORT_APPROVE', 'REPORT_REJECT'].includes(actionModal.type)
-  const isClauseMissing = isOrderDispute && !actionModal.policyClauseCode
+  const isReportAction = ['REPORT_APPROVE', 'REPORT_REJECT'].includes(actionModal.type)
+  const isClauseMissing = isReportAction && !actionModal.policyClauseCode
 
   const handleClauseSelect = (clauseCode) => {
     const clauseInfo = policyClauses.find((c) => c.code === clauseCode)
@@ -177,21 +177,8 @@ export default function AdminActionModal({
                     : 'Vui lòng nhập lý do / phán quyết chính thức từ Ban Quản Trị. Thông tin này sẽ được lưu trữ vào hồ sơ đối soát:'}
             </p>
 
-            {/* Quick tags gợi ý lý do nhanh (Chỉ áp dụng khi không phải tranh chấp Đơn hàng có Căn Cứ Điều Khoản chuẩn hóa) */}
-            {!isOrderDispute && (
-              <AdminActionQuickTags
-                actionType={actionModal.type}
-                targetType={targetType}
-                currentNote={actionModal.note}
-                onSelectTag={(tag) => setActionModal((prev) => ({ ...prev, note: tag }))}
-                isDark={isDark}
-                targetTypeLabel={targetTypeLabel}
-                isSellerDispute={isSellerDispute}
-              />
-            )}
-
-            {/* Bộ chọn Căn Cứ Điều Khoản Chính Sách bắt buộc cho tranh chấp Đơn hàng */}
-            {isOrderDispute && (
+            {/* Bộ chọn Căn Cứ Điều Khoản Chính Sách chuẩn hóa bắt buộc cho toàn bộ báo cáo vi phạm (ORDER, PRODUCT, SHOP, REVIEW, USER) */}
+            {isReportAction && (
               <AdminActionPolicyClauseSelector
                 policyClauses={policyClauses}
                 selectedClause={actionModal.policyClauseCode}
@@ -200,6 +187,19 @@ export default function AdminActionModal({
                 actionType={actionModal.type}
                 isSellerDispute={isSellerDispute}
                 isDark={isDark}
+              />
+            )}
+
+            {/* Quick tags gợi ý lý do nhanh (áp dụng khi không phải báo cáo vi phạm cần chọn chính sách) */}
+            {!isReportAction && (
+              <AdminActionQuickTags
+                actionType={actionModal.type}
+                targetType={targetType}
+                currentNote={actionModal.note}
+                onSelectTag={(tag) => setActionModal((prev) => ({ ...prev, note: tag }))}
+                isDark={isDark}
+                targetTypeLabel={targetTypeLabel}
+                isSellerDispute={isSellerDispute}
               />
             )}
 

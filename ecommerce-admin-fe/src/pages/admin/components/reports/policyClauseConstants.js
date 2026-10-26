@@ -1,90 +1,137 @@
 /**
- * Danh mục 12 Căn cứ Điều khoản Quy chế Sàn TMĐT chuẩn hóa
- * Sử dụng làm fallback dự phòng khi dữ liệu API chưa tải kịp
+ * Danh mục Căn cứ Chính Sách & Quy Định Nền Tảng (Dynamic Platform Policies) chuẩn hóa
+ * Tương thích trực tiếp với thực thể PlatformPolicy (bảng platform_policies).
+ * Sử dụng làm fallback dự phòng khi dữ liệu API chưa tải kịp.
  */
 export const FALLBACK_CLAUSES = [
   {
-    code: 'CLAUSE_8_2_FAKE_PRODUCT',
-    title: 'Điều khoản 8.2: Hàng giả, hàng nhái hoặc vi phạm bản quyền',
+    code: 'CLAUSE_9_PRODUCT_QUALITY_AND_SPEC_DISPUTE',
+    policyKey: 'CLAUSE_9_PRODUCT_QUALITY_AND_SPEC_DISPUTE',
+    title: 'Chính Sách Xử Lý Lỗi Kỹ Thuật, Sai Lệch Mô Tả & Thiếu Phụ Kiện (Điều Khoản 9)',
+    summary:
+      'Gộp các căn cứ giải quyết khiếu nại: Lỗi kỹ thuật chức năng (9.1), sai lệch mô tả / màu sắc / phân loại (9.2), và thiếu phụ kiện / quà tặng cam kết (9.3).',
     description:
-      'Sản phẩm bị khiếu nại được xác định là hàng giả, hàng nhái hoặc vi phạm quyền sở hữu trí tuệ, vi phạm nghiêm trọng tiêu chuẩn hàng hóa.',
-    category: 'SELLER_FAULT',
+      'Gộp các căn cứ giải quyết khiếu nại: Lỗi kỹ thuật chức năng (9.1), sai lệch mô tả / màu sắc / phân loại (9.2), và thiếu phụ kiện / quà tặng cam kết (9.3).',
+    category: 'RETURN_REFUND',
   },
   {
-    code: 'CLAUSE_9_1_HARDWARE_FAULT',
-    title: 'Điều khoản 9.1: Lỗi kỹ thuật hoặc hỏng hóc chức năng',
+    code: 'CLAUSE_8_COUNTERFEIT_AND_PROHIBITED_GOODS',
+    policyKey: 'CLAUSE_8_COUNTERFEIT_AND_PROHIBITED_GOODS',
+    title: 'Chính Sách Chế Tài Hàng Giả, Hàng Nhái & Hàng Cấm Kinh Doanh (Điều Khoản 8)',
+    summary:
+      'Căn cứ xử lý vi phạm nghiêm trọng về hàng giả, hàng nhái nhãn hiệu, vi phạm quyền sở hữu trí tuệ hoặc hàng thuộc danh mục cấm kinh doanh trên sàn (Điều 8.2).',
     description:
-      'Sản phẩm bị lỗi kỹ thuật từ nhà sản xuất hoặc hỏng hóc chức năng ngay khi nhận hàng, không thể sử dụng bình thường.',
-    category: 'SELLER_FAULT',
+      'Căn cứ xử lý vi phạm nghiêm trọng về hàng giả, hàng nhái nhãn hiệu, vi phạm quyền sở hữu trí tuệ hoặc hàng thuộc danh mục cấm kinh doanh trên sàn (Điều 8.2).',
+    category: 'RETURN_REFUND',
   },
   {
-    code: 'CLAUSE_9_2_MISMATCH_SPECS',
-    title: 'Điều khoản 9.2: Giao sai mẫu mã, chủng loại hoặc mô tả',
+    code: 'CLAUSE_10_SELLER_UNRESPONSIVE_AND_SLA_BREACH',
+    policyKey: 'CLAUSE_10_SELLER_UNRESPONSIVE_AND_SLA_BREACH',
+    title: 'Quy Định Thời Hạn Thương Lượng 48h & Chế Tài Người Bán Bất Hợp Tác (Điều Khoản 10)',
+    summary:
+      'Căn cứ phán quyết Người bán thua kiện khi quá hạn SLA 48h không phản hồi khiếu nại hoặc từ chối hợp tác đối soát thỏa đáng cho Người mua (Điều 10.2).',
     description:
-      'Sản phẩm giao thực tế sai khác so với thông số, phân loại, màu sắc hoặc mô tả mà Người bán đã công bố.',
-    category: 'SELLER_FAULT',
+      'Căn cứ phán quyết Người bán thua kiện khi quá hạn SLA 48h không phản hồi khiếu nại hoặc từ chối hợp tác đối soát thỏa đáng cho Người mua (Điều 10.2).',
+    category: 'SELLER_RULES',
   },
   {
-    code: 'CLAUSE_9_3_MISSING_ACCESSORIES',
-    title: 'Điều khoản 9.3: Thiếu phụ kiện, bộ phận hoặc quà tặng kèm',
+    code: 'CLAUSE_14_BUYER_DISPUTE_REJECTION_STANDARDS',
+    policyKey: 'CLAUSE_14_BUYER_DISPUTE_REJECTION_STANDARDS',
+    title: 'Quy Chuẩn Bác Bỏ Khiếu Nại & Bảo Vệ Quyền Lợi Người Bán (Điều Khoản 14)',
+    summary:
+      'Gộp các căn cứ bác khiếu nại: Thiếu video unbox / bằng chứng đối soát (14.1), Hư hỏng do người mua (14.2), Quá hạn bảo vệ 72h (14.3), Lạm dụng chính sách trả hàng (14.4).',
     description:
-      'Đơn hàng thiếu linh kiện, phụ kiện hoặc quà tặng bắt buộc đi kèm theo quy chuẩn đóng gói của sản phẩm.',
-    category: 'SELLER_FAULT',
+      'Gộp các căn cứ bác khiếu nại: Thiếu video unbox / bằng chứng đối soát (14.1), Hư hỏng do người mua (14.2), Quá hạn bảo vệ 72h (14.3), Lạm dụng chính sách trả hàng (14.4).',
+    category: 'DISCIPLINE',
   },
   {
-    code: 'CLAUSE_10_2_SELLER_UNRESPONSIVE',
-    title: 'Điều khoản 10.2: Người bán bất hợp tác hoặc quá hạn phản hồi',
+    code: 'CLAUSE_15_RETURN_PACKAGE_DISPUTE_STANDARDS',
+    policyKey: 'CLAUSE_15_RETURN_PACKAGE_DISPUTE_STANDARDS',
+    title: 'Quy Chuẩn Phán Quyết Tranh Chấp Kiện Hàng Hoàn Trả (Điều Khoản 15)',
+    summary:
+      'Gộp các căn cứ bảo vệ Người bán khi nhận kiện hoàn: Kiện hàng hoàn rỗng (15.1), Bị tráo đổi thiết bị / IMEI (15.2), Biến dạng hư hỏng nặng khi giao hoàn (15.3).',
     description:
-      'Người bán không phản hồi khiếu nại trong thời hạn quy định hoặc từ chối hợp tác xử lý thỏa đáng cho Người mua.',
-    category: 'SELLER_FAULT',
+      'Gộp các căn cứ bảo vệ Người bán khi nhận kiện hoàn: Kiện hàng hoàn rỗng (15.1), Bị tráo đổi thiết bị / IMEI (15.2), Biến dạng hư hỏng nặng khi giao hoàn (15.3).',
+    category: 'RETURN_REFUND',
   },
   {
-    code: 'CLAUSE_14_1_INSUFFICIENT_EVIDENCE',
-    title: 'Điều khoản 14.1: Bằng chứng khiếu nại không đầy đủ hoặc thiếu căn cứ',
+    code: 'RETURN_REFUND_COMPLAINT_POLICY',
+    policyKey: 'RETURN_REFUND_COMPLAINT_POLICY',
+    title: 'Quy Trình 4 Bước Xử Lý Khiếu Nại, Đổi Trả & Hoàn Tiền',
+    summary:
+      'Quy chuẩn khung 4 bước tiếp nhận, thương lượng 48h, phán quyết căn cứ theo điều khoản pháp lý và thực thi chế tài tối cao.',
     description:
-      'Người mua không cung cấp được video mở hộp, hình ảnh đối soát rõ ràng hoặc bằng chứng không đủ cơ sở để quy kết lỗi cho Người bán.',
-    category: 'BUYER_FAULT',
+      'Quy chuẩn khung 4 bước tiếp nhận, thương lượng 48h, phán quyết căn cứ theo điều khoản pháp lý và thực thi chế tài tối cao.',
+    category: 'RETURN_REFUND',
   },
   {
-    code: 'CLAUSE_14_2_BUYER_DAMAGE',
-    title: 'Điều khoản 14.2: Hư hỏng phát sinh do quá trình Người mua sử dụng',
+    code: 'PRODUCT_LISTING_AND_CONDITION_STANDARDS',
+    policyKey: 'PRODUCT_LISTING_AND_CONDITION_STANDARDS',
+    title: 'Tiêu Chuẩn Đăng Bán, Phân Hạng Tình Trạng Like New 99% & Hàng Cấm',
+    summary:
+      'Quy chuẩn 6 cấp bậc tình trạng thiết bị công nghệ (Brand New đến As-Is), quy định bắt buộc về Serial Number/IMEI và danh mục hàng hóa cấm kinh doanh.',
     description:
-      'Sản phẩm bị rách tem niêm phong, rơi vỡ, chập cháy hoặc hư hại do Người mua sử dụng không đúng hướng dẫn.',
-    category: 'BUYER_FAULT',
+      'Quy chuẩn 6 cấp bậc tình trạng thiết bị công nghệ (Brand New đến As-Is), quy định bắt buộc về Serial Number/IMEI và danh mục hàng hóa cấm kinh doanh.',
+    category: 'CONDITION_GRADE',
   },
   {
-    code: 'CLAUSE_14_3_EXPIRED_WINDOW',
-    title: 'Điều khoản 14.3: Quá thời hạn khiếu nại theo quy chế sàn',
+    code: 'ESCROW_PAYMENT_PROTECTION',
+    policyKey: 'ESCROW_PAYMENT_PROTECTION',
+    title: 'Cơ Chế Ký Quỹ Thanh Toán Bảo Vệ Người Mua (Escrow 72h)',
+    summary:
+      'Bảo vệ 100% dòng tiền giao dịch, giữ tiền an toàn tại tài khoản ký quỹ trung gian trong thời hạn 72 giờ trải nghiệm sau khi giao hàng.',
     description:
-      'Yêu cầu khiếu nại được gửi khi đã vượt quá thời hạn bảo vệ quyền lợi sau khi nhận hàng quy định trên Sàn TMĐT.',
-    category: 'BUYER_FAULT',
+      'Bảo vệ 100% dòng tiền giao dịch, giữ tiền an toàn tại tài khoản ký quỹ trung gian trong thời hạn 72 giờ trải nghiệm sau khi giao hàng.',
+    category: 'ESCROW',
   },
   {
-    code: 'CLAUSE_14_4_BUYER_ABUSE',
-    title: 'Điều khoản 14.4: Lạm dụng chính sách khiếu nại hoặc từ chối hợp tác',
+    code: 'SHIPPING_AND_CO_INSPECTION_POLICY',
+    policyKey: 'SHIPPING_AND_CO_INSPECTION_POLICY',
+    title: 'Chính Sách Vận Chuyển GHN Express & Quy Chuẩn Đồng Kiểm',
+    summary:
+      'Tích hợp tự động cước phí vận chuyển GHN API, quy chuẩn đóng gói chống va đập và quyền đồng kiểm ngoại quan khi nhận kiện hàng.',
     description:
-      'Người mua từ chối cung cấp thông tin đối soát hoặc có dấu hiệu trục lợi chính sách bảo vệ người tiêu dùng.',
-    category: 'BUYER_FAULT',
+      'Tích hợp tự động cước phí vận chuyển GHN API, quy chuẩn đóng gói chống va đập và quyền đồng kiểm ngoại quan khi nhận kiện hàng.',
+    category: 'SHIPPING',
   },
   {
-    code: 'CLAUSE_15_1_RETURN_EMPTY_PARCEL',
-    title: 'Điều khoản 15.1: Kiện hàng hoàn trả rỗng hoặc mất cắp ruột',
+    code: 'SELLER_OPERATING_POLICY',
+    policyKey: 'SELLER_OPERATING_POLICY',
+    title: 'Quy Chế Hoạt Động Gian Hàng: Định Danh eKYC, Quỹ Ký Quỹ & Phí Sàn',
+    summary:
+      'Điều kiện mở gian hàng, bắt buộc xác thực VNPT eKYC 2 mặt CCCD, cơ chế duy trì Quỹ Ký Quỹ Shop Escrow Fund và biểu phí hoa hồng sàn.',
     description:
-      'Gói hàng hoàn trả khi Shop nhận lại hoàn toàn trống rỗng hoặc bị rạch mất ruột sản phẩm bên trong.',
-    category: 'RETURN_DISPUTE',
+      'Điều kiện mở gian hàng, bắt buộc xác thực VNPT eKYC 2 mặt CCCD, cơ chế duy trì Quỹ Ký Quỹ Shop Escrow Fund và biểu phí hoa hồng sàn.',
+    category: 'SELLER_RULES',
   },
   {
-    code: 'CLAUSE_15_2_RETURN_WRONG_ITEM',
-    title: 'Điều khoản 15.2: Kiện hàng hoàn trả bị tráo đổi sang sản phẩm khác',
+    code: 'DISCIPLINE_AND_REPUTATION_SYSTEM',
+    policyKey: 'DISCIPLINE_AND_REPUTATION_SYSTEM',
+    title: 'Thang Phạt Kỷ Luật Lũy Tiến 1-7 Gậy & Điểm Uy Tín Người Mua 100',
+    summary:
+      'Hệ thống Trust & Safety 2 chiều: Thang kỷ luật 7 gậy đóng băng gian hàng và Thang điểm uy tín người mua 100 điểm với cơ chế hồi phục 30 ngày.',
     description:
-      'Sản phẩm Người mua gửi trả về không phải là sản phẩm Shop đã giao, có dấu hiệu đánh tráo hàng hóa.',
-    category: 'RETURN_DISPUTE',
+      'Hệ thống Trust & Safety 2 chiều: Thang kỷ luật 7 gậy đóng băng gian hàng và Thang điểm uy tín người mua 100 điểm với cơ chế hồi phục 30 ngày.',
+    category: 'DISCIPLINE',
   },
   {
-    code: 'CLAUSE_15_3_RETURN_DAMAGED',
-    title: 'Điều khoản 15.3: Hàng hoàn trả bị biến dạng, hư hỏng nặng khi bưu tá giao',
+    code: 'PLATFORM_OPERATING_REGULATIONS',
+    policyKey: 'PLATFORM_OPERATING_REGULATIONS',
+    title: 'Quy Chế Hoạt Động Chung Sàn TMĐT E-commerce',
+    summary:
+      'Quy chế hoạt động sàn giao dịch thương mại điện tử ban hành căn cứ theo Nghị định số 52/2013/NĐ-CP và Nghị định số 85/2021/NĐ-CP.',
     description:
-      'Sản phẩm hoàn về bị vỡ hỏng, trầy xước nặng, không còn nguyên vẹn tem bảo hành hoặc phụ kiện gốc.',
-    category: 'RETURN_DISPUTE',
+      'Quy chế hoạt động sàn giao dịch thương mại điện tử ban hành căn cứ theo Nghị định số 52/2013/NĐ-CP và Nghị định số 85/2021/NĐ-CP.',
+    category: 'GENERAL',
+  },
+  {
+    code: 'PRIVACY_AND_DATA_PROTECTION',
+    policyKey: 'PRIVACY_AND_DATA_PROTECTION',
+    title: 'Chính Sách Bảo Mật Dữ Liệu Cá Nhân (Nghị Định 13/2023/NĐ-CP)',
+    summary:
+      'Cam kết bảo vệ quyền riêng tư, mã hóa mật khẩu một chiều BCrypt, lưu trữ CCCD trong Private MinIO Bucket và không chia sẻ cho bên thứ ba.',
+    description:
+      'Cam kết bảo vệ quyền riêng tư, mã hóa mật khẩu một chiều BCrypt, lưu trữ CCCD trong Private MinIO Bucket và không chia sẻ cho bên thứ ba.',
+    category: 'PRIVACY',
   },
 ]

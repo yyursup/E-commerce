@@ -7,11 +7,15 @@ import com.marketplace.ecommerce.common.exception.CustomException;
 import com.marketplace.ecommerce.order.entity.Order;
 import com.marketplace.ecommerce.order.repository.OrderRepository;
 import com.marketplace.ecommerce.order.valueObjects.OrderStatus;
+import com.marketplace.ecommerce.order.entity.Order;
+import com.marketplace.ecommerce.order.repository.OrderRepository;
+import com.marketplace.ecommerce.order.valueObjects.OrderStatus;
 import com.marketplace.ecommerce.request.entity.Report;
 import com.marketplace.ecommerce.request.entity.Request;
 import com.marketplace.ecommerce.request.entity.Seller;
 import com.marketplace.ecommerce.request.repository.ReportRepository;
 import com.marketplace.ecommerce.request.repository.SellerRepository;
+import com.marketplace.ecommerce.request.valueObjects.TargetType;
 import com.marketplace.ecommerce.request.valueObjects.*;
 import com.marketplace.ecommerce.shop.repository.ShopRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,6 +26,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
@@ -49,12 +55,12 @@ class RequestPolicyTest {
     private RequestPolicy requestPolicy;
 
     private UUID orderId;
-    private UUID reportId;
+    private UUID accountId;
 
     @BeforeEach
     void setUp() {
         orderId = UUID.randomUUID();
-        reportId = UUID.randomUUID();
+        accountId = UUID.randomUUID();
     }
 
     @Test
@@ -149,52 +155,87 @@ class RequestPolicyTest {
     }
 
     @Test
-    @DisplayName("Chặn phán quyết tranh chấp ORDER nếu thiếu mã điều khoản chính sách")
-    void validateDisputePolicyClause_ThrowsException_WhenOrderDisputeMissingClause() {
-        CustomException ex = assertThrows(CustomException.class, () ->
-                requestPolicy.validateDisputePolicyClause(TargetType.ORDER, null,
-                        com.marketplace.ecommerce.request.valueObjects.ReportDecision.APPROVE, false));
-        assertTrue(ex.getMessage().contains("bắt buộc phải gắn với một Điều khoản Chính sách"));
+    @DisplayName("resolve: Trả về TargetType chính xác khi tìm thấy đúng 1 loại đối tượng")
+    void resolve_ReturnsTargetType_WhenSingleTypeResolved() {
+        when(reportRepository.resolveTargetTypes(orderId)).thenReturn(List.of("ORDER"));
+
+        TargetType type = requestPolicy.resolve(orderId);
+
+        assertEquals(TargetType.ORDER, type);
     }
 
     @Test
-    @DisplayName("Chặn phán quyết nếu mã điều khoản chính sách không tồn tại")
-    void validateDisputePolicyClause_ThrowsException_WhenClauseInvalid() {
-        CustomException ex = assertThrows(CustomException.class, () ->
-                requestPolicy.validateDisputePolicyClause(TargetType.ORDER, "INVALID_CLAUSE_XYZ",
-                        com.marketplace.ecommerce.request.valueObjects.ReportDecision.APPROVE, false));
-        assertTrue(ex.getMessage().contains("không hợp lệ"));
+    @DisplayName("resolve: Ném ngoại lệ khi không tìm thấy bất kỳ đối tượng nào")
+    void resolve_ThrowsException_WhenNoTypesFound() {
+        when(reportRepository.resolveTargetTypes(orderId)).thenReturn(List.of());
+
+        CustomException ex = assertThrows(CustomException.class, () -> requestPolicy.resolve(orderId));
+        assertTrue(ex.getMessage().contains("Không tìm thấy đối tượng báo cáo"));
     }
 
     @Test
-    @DisplayName("Xác thực thành công điều khoản hợp lệ khi phán quyết tranh chấp")
-    void validateDisputePolicyClause_Passes_WhenClauseIsValidAndMatches() {
-        // Buyer thắng: Clause lỗi Shop
-        com.marketplace.ecommerce.request.valueObjects.DisputePolicyClause c1 =
-                requestPolicy.validateDisputePolicyClause(TargetType.ORDER, "CLAUSE_9_1_HARDWARE_FAULT",
-                        com.marketplace.ecommerce.request.valueObjects.ReportDecision.APPROVE, false);
-        assertNotNull(c1);
-        assertEquals("CLAUSE_9_1_HARDWARE_FAULT", c1.getCode());
+    @DisplayName("resolve: Ném ngoại lệ khi đối tượng trùng khớp nhiều loại khác nhau")
+    void resolve_ThrowsException_WhenMultipleTypesFound() {
+        when(reportRepository.resolveTargetTypes(orderId)).thenReturn(List.of("ORDER", "PRODUCT"));
 
-        // Shop thắng: Clause bác khiếu nại
-        com.marketplace.ecommerce.request.valueObjects.DisputePolicyClause c2 =
-                requestPolicy.validateDisputePolicyClause(TargetType.ORDER, "CLAUSE_14_1_INSUFFICIENT_EVIDENCE",
-                        com.marketplace.ecommerce.request.valueObjects.ReportDecision.REJECT, false);
-        assertNotNull(c2);
-        assertEquals("CLAUSE_14_1_INSUFFICIENT_EVIDENCE", c2.getCode());
+        CustomException ex = assertThrows(CustomException.class, () -> requestPolicy.resolve(orderId));
+        assertTrue(ex.getMessage().contains("trùng khớp nhiều loại đối tượng"));
+    }
 
-        // Tranh chấp kiện hoàn: Clause kiện hoàn
-        com.marketplace.ecommerce.request.valueObjects.DisputePolicyClause c3 =
-                requestPolicy.validateDisputePolicyClause(TargetType.ORDER, "CLAUSE_15_1_RETURN_EMPTY_PARCEL",
-                        com.marketplace.ecommerce.request.valueObjects.ReportDecision.APPROVE, true);
-        assertNotNull(c3);
-        assertEquals("CLAUSE_15_1_RETURN_EMPTY_PARCEL", c3.getCode());
+    @Test
+    @DisplayName("validateOrderReport: Ném ngoại lệ khi đơn hàng không tồn tại")
+    void validateOrderReport_ThrowsException_WhenOrderNotFound() {
+        when(orderRepository.findById(orderId)).thenReturn(Optional.empty());
 
-        // Các loại target khác (PRODUCT, SHOP) không bắt buộc clause
-        com.marketplace.ecommerce.request.valueObjects.DisputePolicyClause c4 =
-                requestPolicy.validateDisputePolicyClause(TargetType.PRODUCT, null,
-                        com.marketplace.ecommerce.request.valueObjects.ReportDecision.APPROVE, false);
-        assertNull(c4);
+        CustomException ex = assertThrows(CustomException.class, () ->
+                requestPolicy.validateOrderReport(accountId, orderId));
+        assertTrue(ex.getMessage().contains("Không tìm thấy đơn hàng"));
+    }
+
+    @Test
+    @DisplayName("validateOrderReport: Ném ngoại lệ khi người dùng không phải chủ đơn hàng")
+    void validateOrderReport_ThrowsException_WhenNotOrderOwner() {
+        Account otherAccount = Account.builder().id(UUID.randomUUID()).build();
+        User user = User.builder().account(otherAccount).build();
+        Order order = Order.builder().id(orderId).user(user).status(OrderStatus.DELIVERED).build();
+
+        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+
+        CustomException ex = assertThrows(CustomException.class, () ->
+                requestPolicy.validateOrderReport(accountId, orderId));
+        assertTrue(ex.getMessage().contains("Bạn không có quyền khiếu nại"));
+    }
+
+    @Test
+    @DisplayName("validateOrderReport: Ném ngoại lệ khi đơn hàng chưa DELIVERED (ví dụ đang SHIPPED)")
+    void validateOrderReport_ThrowsException_WhenOrderNotDelivered() {
+        Account account = Account.builder().id(accountId).build();
+        User user = User.builder().account(account).build();
+        Order order = Order.builder().id(orderId).user(user).status(OrderStatus.SHIPPED).build();
+
+        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+
+        CustomException ex = assertThrows(CustomException.class, () ->
+                requestPolicy.validateOrderReport(accountId, orderId));
+        assertTrue(ex.getMessage().contains("sau khi hệ thống đã cập nhật giao hàng thành công"));
+    }
+
+    @Test
+    @DisplayName("validateOrderReport: Thành công khi đơn hàng DELIVERED trong vòng 3 ngày và không có báo cáo pending")
+    void validateOrderReport_Success_WhenOrderDeliveredWithin3Days() {
+        Account account = Account.builder().id(accountId).build();
+        User user = User.builder().account(account).build();
+        Order order = Order.builder()
+                .id(orderId)
+                .user(user)
+                .status(OrderStatus.DELIVERED)
+                .deliveredAt(LocalDateTime.now().minusDays(1))
+                .build();
+
+        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+        when(reportRepository.existsPendingReportByOrderId(orderId)).thenReturn(false);
+
+        assertDoesNotThrow(() -> requestPolicy.validateOrderReport(accountId, orderId));
     }
 
     @Test

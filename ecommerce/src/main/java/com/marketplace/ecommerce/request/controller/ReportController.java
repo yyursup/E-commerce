@@ -2,6 +2,7 @@ package com.marketplace.ecommerce.request.controller;
 
 import com.marketplace.ecommerce.common.CurrentUserInfo;
 import com.marketplace.ecommerce.config.CurrentUser;
+import com.marketplace.ecommerce.platform.policy.dto.PlatformPolicyResponse;
 import com.marketplace.ecommerce.request.dto.request.CreateReportRequest;
 import com.marketplace.ecommerce.request.dto.request.EscalateReportRequest;
 import com.marketplace.ecommerce.request.dto.request.HandleReportRequest;
@@ -15,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -81,7 +83,7 @@ public class ReportController {
     }
 
     @GetMapping("/policy-clauses")
-    public ResponseEntity<java.util.List<com.marketplace.ecommerce.request.dto.response.DisputePolicyClauseResponse>> getPolicyClauses() {
+    public ResponseEntity<List<PlatformPolicyResponse>> getPolicyClauses() {
         return ResponseEntity.ok(reportService.getDisputePolicyClauses());
     }
 }

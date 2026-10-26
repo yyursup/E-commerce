@@ -68,43 +68,6 @@ const policyService = {
       throw error.response ? error.response.data : error
     }
   },
-
-  // Dispute Clauses Admin APIs
-  getAllDisputeClausesAdmin: async (params) => {
-    try {
-      const response = await axiosClient.get(`${ADMIN_BASE_URL}/dispute-clauses`, { params })
-      return response.data
-    } catch (error) {
-      throw error.response ? error.response.data : error
-    }
-  },
-
-  createDisputeClause: async (payload) => {
-    try {
-      const response = await axiosClient.post(`${ADMIN_BASE_URL}/dispute-clauses`, payload)
-      return response.data
-    } catch (error) {
-      throw error.response ? error.response.data : error
-    }
-  },
-
-  updateDisputeClause: async (id, payload) => {
-    try {
-      const response = await axiosClient.put(`${ADMIN_BASE_URL}/dispute-clauses/${id}`, payload)
-      return response.data
-    } catch (error) {
-      throw error.response ? error.response.data : error
-    }
-  },
-
-  deleteDisputeClause: async (id) => {
-    try {
-      const response = await axiosClient.delete(`${ADMIN_BASE_URL}/dispute-clauses/${id}`)
-      return response.data
-    } catch (error) {
-      throw error.response ? error.response.data : error
-    }
-  },
 }
 
 export default policyService

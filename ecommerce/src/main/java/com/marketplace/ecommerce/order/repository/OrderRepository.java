@@ -179,6 +179,40 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
       @Param("endDate") LocalDateTime endDate
   );
 
+  @Query("""
+      SELECT o.shop.id, COUNT(o)
+      FROM Order o
+      WHERE o.createdAt >= :startDate AND o.createdAt <= :endDate
+      GROUP BY o.shop.id
+  """)
+  List<Object[]> getShopTotalOrderCountsBetween(
+      @Param("startDate") LocalDateTime startDate,
+      @Param("endDate") LocalDateTime endDate
+  );
+
+  @Query("""
+      SELECT o.shop.id, COUNT(o)
+      FROM Order o
+      WHERE o.createdAt >= :startDate AND o.createdAt <= :endDate
+        AND o.status = :status
+      GROUP BY o.shop.id
+  """)
+  List<Object[]> getShopStatusOrderCountsBetween(
+      @Param("startDate") LocalDateTime startDate,
+      @Param("endDate") LocalDateTime endDate,
+      @Param("status") OrderStatus status
+  );
+
+  @Query("""
+      SELECT o.shop.id, COALESCE(SUM(o.subtotal - COALESCE(o.shopDiscountAmount, 0)), 0)
+      FROM Order o
+      WHERE o.status IN :statuses
+      GROUP BY o.shop.id
+  """)
+  List<Object[]> getAllShopsPendingEscrowRevenue(
+      @Param("statuses") List<OrderStatus> statuses
+  );
+
   long countByCreatedAtBetween(LocalDateTime startDate, LocalDateTime endDate);
 
   long countByStatusAndCreatedAtBetween(OrderStatus status, LocalDateTime startDate, LocalDateTime endDate);

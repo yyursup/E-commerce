@@ -42,6 +42,15 @@ const trustConfigService = {
     }
   },
 
+  getFundByShopId: async (shopId) => {
+    try {
+      const response = await axiosClient.get(`${ESCROW_FUND_BASE}/admin/shop/${shopId}`)
+      return response.data
+    } catch (error) {
+      throw error.response ? error.response.data : error
+    }
+  },
+
   getFundTransactions: async (fundId, params = {}) => {
     try {
       const response = await axiosClient.get(`${ESCROW_FUND_BASE}/admin/${fundId}/transactions`, { params })

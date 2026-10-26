@@ -48,6 +48,7 @@ public class StatisticsAnalyticsServiceImpl implements StatisticsAnalyticsServic
     private final CommissionRepository commissionRepository;
     private final ShopRepository shopRepository;
     private final UserRepository userRepository;
+    private final com.marketplace.ecommerce.shop.repository.ShopEscrowFundRepository shopEscrowFundRepository;
 
     public record DateRange(String period, LocalDate startDate, LocalDate endDate) {
         public LocalDateTime startDateTime() {
@@ -337,11 +338,30 @@ public class StatisticsAnalyticsServiceImpl implements StatisticsAnalyticsServic
     public SellerDashboardAnalyticsResponse getSellerDashboardAnalytics(
             UUID sellerAccountId, String period, LocalDate startDate, LocalDate endDate
     ) {
-        DateRange range = resolveDateRange(period, startDate, endDate);
         User user = userRepository.findByAccountId(sellerAccountId)
                 .orElseThrow(() -> new CustomException("Không tìm thấy thông tin tài khoản người bán."));
         Shop shop = shopRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new CustomException("Không tìm thấy thông tin Shop của bạn."));
+        return buildShopDashboardAnalytics(shop, user, period, startDate, endDate);
+    }
+
+    @Override
+    public SellerDashboardAnalyticsResponse getAdminShopAnalytics(
+            UUID shopId, String period, LocalDate startDate, LocalDate endDate
+    ) {
+        Shop shop = shopRepository.findById(shopId)
+                .orElseThrow(() -> new CustomException("Không tìm thấy thông tin Gian hàng."));
+        User user = shop.getUser();
+        if (user == null) {
+            throw new CustomException("Gian hàng chưa có thông tin chủ sở hữu.");
+        }
+        return buildShopDashboardAnalytics(shop, user, period, startDate, endDate);
+    }
+
+    private SellerDashboardAnalyticsResponse buildShopDashboardAnalytics(
+            Shop shop, User user, String period, LocalDate startDate, LocalDate endDate
+    ) {
+        DateRange range = resolveDateRange(period, startDate, endDate);
 
         long daysCount = ChronoUnit.DAYS.between(range.startDate(), range.endDate()) + 1;
         LocalDate prevStartDate = range.startDate().minusDays(daysCount);
@@ -521,6 +541,149 @@ public class StatisticsAnalyticsServiceImpl implements StatisticsAnalyticsServic
                 .startDate(range.startDate().toString())
                 .endDate(range.endDate().toString())
                 .build();
+    }
+
+    @Override
+    public List<AdminShopPerformanceDTO> getAdminShopsPerformance(
+            String period, LocalDate startDate, LocalDate endDate, String search
+    ) {
+        DateRange range = resolveDateRange(period, startDate, endDate);
+
+        List<Shop> allShops = shopRepository.findAll();
+        if (search != null && !search.trim().isEmpty()) {
+            String q = search.trim().toLowerCase();
+            allShops = allShops.stream().filter(s -> {
+                boolean matchShop = s.getName() != null && s.getName().toLowerCase().contains(q);
+                boolean matchPhone = s.getPhoneNumber() != null && s.getPhoneNumber().contains(q);
+                boolean matchUser = false;
+                if (s.getUser() != null) {
+                    User u = s.getUser();
+                    matchUser = (u.getFullName() != null && u.getFullName().toLowerCase().contains(q))
+                            || (u.getEmail() != null && u.getEmail().toLowerCase().contains(q))
+                            || (u.getPhoneNumber() != null && u.getPhoneNumber().contains(q));
+                }
+                return matchShop || matchPhone || matchUser;
+            }).toList();
+        }
+
+        // 1. Revenue & Completed order counts by shop
+        List<Object[]> rawShopRevenue = orderRepository.getShopRankingByRevenueBetween(range.startDateTime(), range.endDateTime());
+        Map<UUID, Object[]> revenueMap = new HashMap<>();
+        for (Object[] r : rawShopRevenue) {
+            if (r[0] != null) {
+                revenueMap.put((UUID) r[0], r);
+            }
+        }
+
+        // 2. Total orders by shop in period
+        List<Object[]> rawTotalOrders = orderRepository.getShopTotalOrderCountsBetween(range.startDateTime(), range.endDateTime());
+        Map<UUID, Long> totalOrdersMap = new HashMap<>();
+        for (Object[] r : rawTotalOrders) {
+            if (r[0] != null) {
+                totalOrdersMap.put((UUID) r[0], castLong(r[1]));
+            }
+        }
+
+        // 3. Returned orders by shop in period
+        List<Object[]> rawReturnedOrders = orderRepository.getShopStatusOrderCountsBetween(range.startDateTime(), range.endDateTime(), OrderStatus.REFUNDED);
+        Map<UUID, Long> returnedOrdersMap = new HashMap<>();
+        for (Object[] r : rawReturnedOrders) {
+            if (r[0] != null) {
+                returnedOrdersMap.put((UUID) r[0], castLong(r[1]));
+            }
+        }
+
+        // 4. Cancelled orders by shop in period
+        List<Object[]> rawCancelledOrders = orderRepository.getShopStatusOrderCountsBetween(range.startDateTime(), range.endDateTime(), OrderStatus.CANCELLED);
+        Map<UUID, Long> cancelledOrdersMap = new HashMap<>();
+        for (Object[] r : rawCancelledOrders) {
+            if (r[0] != null) {
+                cancelledOrdersMap.put((UUID) r[0], castLong(r[1]));
+            }
+        }
+
+        // 5. Pending escrow revenue by shop
+        List<OrderStatus> pendingEscrowStatuses = List.of(
+                OrderStatus.CONFIRMED, OrderStatus.PROCESSING, OrderStatus.SHIPPING, OrderStatus.DELIVERED);
+        List<Object[]> rawPendingEscrows = orderRepository.getAllShopsPendingEscrowRevenue(pendingEscrowStatuses);
+        Map<UUID, BigDecimal> pendingEscrowMap = new HashMap<>();
+        for (Object[] r : rawPendingEscrows) {
+            if (r[0] != null) {
+                pendingEscrowMap.put((UUID) r[0], castBigDecimal(r[1]));
+            }
+        }
+
+        // 6. Escrow funds map
+        List<com.marketplace.ecommerce.shop.entity.ShopEscrowFund> funds = shopEscrowFundRepository.findAll();
+        Map<UUID, com.marketplace.ecommerce.shop.entity.ShopEscrowFund> fundMap = new HashMap<>();
+        for (var f : funds) {
+            if (f.getShop() != null) {
+                fundMap.put(f.getShop().getId(), f);
+            }
+        }
+
+        List<AdminShopPerformanceDTO> result = new ArrayList<>();
+        for (Shop s : allShops) {
+            UUID sId = s.getId();
+            User u = s.getUser();
+
+            Object[] revRow = revenueMap.get(sId);
+            BigDecimal gmv = revRow != null ? castBigDecimal(revRow[2]) : BigDecimal.ZERO;
+            Long completed = revRow != null ? castLong(revRow[3]) : 0L;
+
+            BigDecimal commission = gmv.multiply(BigDecimal.valueOf(0.05)).setScale(0, RoundingMode.HALF_UP);
+            BigDecimal netIncome = gmv.subtract(commission);
+            if (netIncome.compareTo(BigDecimal.ZERO) < 0) {
+                netIncome = BigDecimal.ZERO;
+            }
+
+            Long totalOrders = totalOrdersMap.getOrDefault(sId, 0L);
+            Long returned = returnedOrdersMap.getOrDefault(sId, 0L);
+            Long cancelled = cancelledOrdersMap.getOrDefault(sId, 0L);
+            Double returnRate = totalOrders > 0 ? (Math.round((returned * 100.0 / totalOrders) * 10.0) / 10.0) : 0.0;
+
+            BigDecimal pendingEscrow = pendingEscrowMap.getOrDefault(sId, BigDecimal.ZERO);
+
+            var fund = fundMap.get(sId);
+            boolean isKycVerified = u != null && u.getIdentityCardNumber() != null && !u.getIdentityCardNumber().isBlank();
+
+            result.add(AdminShopPerformanceDTO.builder()
+                    .shopId(sId)
+                    .shopName(s.getName())
+                    .logoUrl(s.getLogoUrl())
+                    .ownerName(u != null ? u.getFullName() : null)
+                    .ownerEmail(u != null ? u.getEmail() : null)
+                    .ownerPhone(u != null ? (u.getPhoneNumber() != null ? u.getPhoneNumber() : s.getPhoneNumber()) : s.getPhoneNumber())
+                    .trustLevel(s.getTrustLevel() != null ? s.getTrustLevel() : 1)
+                    .isKycVerified(isKycVerified)
+                    .shopStatus(s.getStatus())
+                    .createdAt(s.getCreatedAt())
+                    .totalGmv(gmv)
+                    .settledNetIncome(netIncome)
+                    .platformCommission(commission)
+                    .completedOrders(completed)
+                    .totalOrders(totalOrders)
+                    .returnedOrders(returned)
+                    .cancelledOrders(cancelled)
+                    .returnRate(returnRate)
+                    .fundId(fund != null ? fund.getId() : null)
+                    .escrowFundBalance(fund != null ? fund.getBalance() : BigDecimal.ZERO)
+                    .requiredEscrowDeposit(fund != null ? fund.getCommittedAmount() : BigDecimal.ZERO)
+                    .isDeficit(fund != null && Boolean.TRUE.equals(fund.getIsDeficit()))
+                    .deficitAmount(fund != null ? fund.getDeficitAmount() : BigDecimal.ZERO)
+                    .deficitDeadline(fund != null ? fund.getDeficitDeadline() : null)
+                    .fundStatus(fund != null ? fund.getStatus() : null)
+                    .pendingEscrowRevenue(pendingEscrow)
+                    .build());
+        }
+
+        result.sort((a, b) -> {
+            int cmp = b.getTotalGmv().compareTo(a.getTotalGmv());
+            if (cmp != 0) return cmp;
+            return Long.compare(b.getTotalOrders(), a.getTotalOrders());
+        });
+
+        return result;
     }
 
     @Override

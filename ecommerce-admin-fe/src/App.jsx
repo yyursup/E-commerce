@@ -7,6 +7,7 @@ import AdminRequests from './pages/admin/AdminRequests'
 import AdminRequestDetail from './pages/admin/AdminRequestDetail'
 import AdminOrders from './pages/admin/AdminOrders'
 import AdminOrderDetail from './pages/admin/AdminOrderDetail'
+import AdminShopDetail from './pages/admin/AdminShopDetail'
 import AdminPlatformWallet from './pages/admin/AdminPlatformWallet'
 import AdminShopRanking from './pages/admin/AdminShopRanking'
 import AdminCommissions from './pages/admin/AdminCommissions'
@@ -42,6 +43,7 @@ export default function App() {
         <Route path="/requests/:requestId" element={<AdminRequestDetail />} />
         <Route path="/orders" element={<AdminOrders />} />
         <Route path="/orders/:orderId" element={<AdminOrderDetail />} />
+        <Route path="/orders/shops/:shopId" element={<AdminShopDetail />} />
         <Route path="/vouchers" element={<AdminVouchers />} />
 
         {/* Cụm Quản Lý Hoa Hồng (Hub 3 Tabs) */}

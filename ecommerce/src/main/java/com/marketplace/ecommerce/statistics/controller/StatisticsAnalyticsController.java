@@ -11,6 +11,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -32,6 +33,28 @@ public class StatisticsAnalyticsController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
     ) {
         return ResponseEntity.ok(statisticsAnalyticsService.getAdminDashboardAnalytics(period, startDate, endDate));
+    }
+
+    @GetMapping("/admin/shops/performance")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<java.util.List<com.marketplace.ecommerce.statistics.dto.response.AdminShopPerformanceDTO>> getAdminShopsPerformance(
+            @RequestParam(required = false, defaultValue = "14d") String period,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) String search
+    ) {
+        return ResponseEntity.ok(statisticsAnalyticsService.getAdminShopsPerformance(period, startDate, endDate, search));
+    }
+
+    @GetMapping("/admin/shops/{shopId}/analytics")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<SellerDashboardAnalyticsResponse> getAdminShopAnalytics(
+            @PathVariable java.util.UUID shopId,
+            @RequestParam(required = false, defaultValue = "14d") String period,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
+    ) {
+        return ResponseEntity.ok(statisticsAnalyticsService.getAdminShopAnalytics(shopId, period, startDate, endDate));
     }
 
     @GetMapping("/seller/dashboard")

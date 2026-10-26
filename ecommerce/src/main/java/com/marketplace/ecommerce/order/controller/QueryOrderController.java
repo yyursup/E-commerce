@@ -73,9 +73,10 @@ public class QueryOrderController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<OrderResponse>> adminListOrders(
             @CurrentUser CurrentUserInfo c,
-            @RequestParam(value = "status", required = false) OrderStatus status
+            @RequestParam(value = "status", required = false) OrderStatus status,
+            @RequestParam(value = "shopId", required = false) UUID shopId
     ) {
-        return ResponseEntity.ok(queryOrderService.adminListOrders(c.getAccountId(), status));
+        return ResponseEntity.ok(queryOrderService.adminListOrders(c.getAccountId(), status, shopId));
     }
 
 }

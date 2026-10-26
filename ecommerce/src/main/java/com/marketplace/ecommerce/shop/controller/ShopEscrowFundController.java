@@ -116,6 +116,16 @@ public class ShopEscrowFundController {
         return ResponseEntity.ok(shopEscrowFundService.getAllFunds(isDeficit, status, pageable));
     }
 
+    @GetMapping({ "/admin/shop/{shopId}", "/admin/shops/{shopId}" })
+    public ResponseEntity<ShopEscrowFundResponse> getFundByShopIdForAdmin(
+            @CurrentUser CurrentUserInfo currentUser,
+            @PathVariable UUID shopId) {
+        if (currentUser == null || !"ADMIN".equalsIgnoreCase(currentUser.getRole())) {
+            throw new CustomException("Chỉ Quản trị viên sàn mới có quyền truy cập");
+        }
+        return ResponseEntity.ok(shopEscrowFundService.getFundByShopId(shopId));
+    }
+
     @GetMapping("/admin/{fundId}/transactions")
     public ResponseEntity<Page<ShopEscrowTransactionResponse>> getFundTransactionsForAdmin(
             @CurrentUser CurrentUserInfo currentUser,

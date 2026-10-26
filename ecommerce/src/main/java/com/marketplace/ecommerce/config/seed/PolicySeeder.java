@@ -1,10 +1,7 @@
 package com.marketplace.ecommerce.config.seed;
 
-import com.marketplace.ecommerce.platform.policy.entity.DisputePolicyClauseEntity;
 import com.marketplace.ecommerce.platform.policy.entity.PlatformPolicy;
-import com.marketplace.ecommerce.platform.policy.repository.DisputePolicyClauseRepository;
 import com.marketplace.ecommerce.platform.policy.repository.PlatformPolicyRepository;
-import com.marketplace.ecommerce.request.valueObjects.DisputePolicyClause;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -17,53 +14,11 @@ import java.time.LocalDateTime;
 public class PolicySeeder {
 
     private final PlatformPolicyRepository platformPolicyRepository;
-    private final DisputePolicyClauseRepository disputePolicyClauseRepository;
 
     public void seed() {
-        log.info("Starting Platform Policies & Dispute Clauses Seeding...");
-
-        // 1. Seed Dynamic Dispute Policy Clauses
-        seedDisputePolicyClauses();
-
-        // 2. Seed Dynamic Platform Policies
+        log.info("Starting Platform Policies Seeding...");
         seedPlatformPolicies();
-
-        log.info("Platform Policies & Dispute Clauses Seeding Completed Successfully.");
-    }
-
-    private void seedDisputePolicyClauses() {
-        for (DisputePolicyClause clause : DisputePolicyClause.values()) {
-            if (!disputePolicyClauseRepository.existsByCode(clause.getCode())) {
-                DisputePolicyClauseEntity entity = DisputePolicyClauseEntity.builder()
-                        .code(clause.getCode())
-                        .title(clause.getTitle())
-                        .description(clause.getDescription())
-                        .category(clause.getCategory())
-                        .displayOrder(getClauseDisplayOrder(clause.getCode()))
-                        .isActive(true)
-                        .build();
-                disputePolicyClauseRepository.save(entity);
-            }
-        }
-        log.info("Seeded dispute policy clauses (Total: {})", disputePolicyClauseRepository.count());
-    }
-
-    private int getClauseDisplayOrder(String code) {
-        return switch (code) {
-            case "CLAUSE_8_2_FAKE_PRODUCT" -> 1;
-            case "CLAUSE_9_1_HARDWARE_FAULT" -> 2;
-            case "CLAUSE_9_2_MISMATCH_SPECS" -> 3;
-            case "CLAUSE_9_3_MISSING_ACCESSORIES" -> 4;
-            case "CLAUSE_10_2_SELLER_UNRESPONSIVE" -> 5;
-            case "CLAUSE_14_1_INSUFFICIENT_EVIDENCE" -> 6;
-            case "CLAUSE_14_2_BUYER_DAMAGE" -> 7;
-            case "CLAUSE_14_3_EXPIRED_WINDOW" -> 8;
-            case "CLAUSE_14_4_BUYER_ABUSE" -> 9;
-            case "CLAUSE_15_1_RETURN_EMPTY_PARCEL" -> 10;
-            case "CLAUSE_15_2_RETURN_WRONG_ITEM" -> 11;
-            case "CLAUSE_15_3_RETURN_DAMAGED" -> 12;
-            default -> 99;
-        };
+        log.info("Platform Policies Seeding Completed Successfully.");
     }
 
     private void seedPlatformPolicies() {
@@ -307,6 +262,140 @@ public class PolicySeeder {
                 "ALL",
                 "2.0",
                 8
+        );
+
+        // Policy 9: Clause 9 - Product Quality & Specification Dispute
+        initializePolicy(
+                "CLAUSE_9_PRODUCT_QUALITY_AND_SPEC_DISPUTE",
+                "Chính Sách Xử Lý Lỗi Kỹ Thuật, Sai Lệch Mô Tả & Thiếu Phụ Kiện (Điều Khoản 9)",
+                "Gộp toàn bộ các căn cứ giải quyết khiếu nại về lỗi kỹ thuật chức năng (9.1), sai lệch mô tả / màu sắc / phân loại (9.2) và thiếu phụ kiện / quà tặng cam kết (9.3).",
+                """
+                ### 1. PHẠM VI ÁP DỤNG & CĂN CỨ PHÁN QUYẾT (ĐIỀU KHOẢN 9)
+                Chính sách này áp dụng cho các khiếu nại phát sinh từ Người mua liên quan đến chất lượng, tính năng và độ chính xác của sản phẩm công nghệ nhận được so với thông tin Người bán đã công bố.
+
+                ### 2. CHI TIẾT CÁC ĐIỀU KHOẢN CĂN CỨ
+                - **Điều khoản 9.1: Lỗi kỹ thuật phần cứng hoặc hỏng hóc chức năng**:
+                  - Sản phẩm bị lỗi nguồn, sọc màn hình, lỗi cảm ứng, hỏng camera, chai pin nghiêm trọng hoặc không thể kích hoạt/sử dụng bình thường ngay khi mở hộp.
+                  - Căn cứ bằng chứng: Video mở hộp ghi rõ số Serial/IMEI và video quay lại thao tác chứng minh lỗi chức năng.
+                - **Điều khoản 9.2: Giao sai mẫu mã, chủng loại, thông số hoặc mô tả**:
+                  - Sản phẩm giao thực tế sai khác so với đơn đặt: sai phân loại dung lượng (ví dụ đặt 256GB giao 128GB), sai màu sắc, sai phiên bản chip/RAM hoặc tình trạng máy thực tế không đúng cấp bậc Like New đã cam kết.
+                - **Điều khoản 9.3: Thiếu phụ kiện, bộ phận hoặc quà tặng bắt buộc kèm theo**:
+                  - Kiện hàng thiếu củ sạc, dây cáp, bút cảm ứng, tai nghe hoặc quà tặng khuyến mãi bắt buộc đã nêu rõ trong tiêu đề/mô tả bài đăng bán.
+
+                ### 3. BIỆN PHÁP CHẾ TÀI & PHÁN QUYẾT
+                - **Chấp thuận khiếu nại (Buyer thắng)**: Người mua được hoàn tiền 100% hoặc đổi trả miễn phí qua GHN.
+                - **Chế tài Người bán**: Gian hàng chịu toàn bộ chi phí vận chuyển phát sinh, trừ điểm uy tín gian hàng và ghi nhận 1 gậy vi phạm chất lượng sản phẩm.
+                """,
+                "RETURN_REFUND",
+                "ALL",
+                "2.0",
+                9
+        );
+
+        // Policy 10: Clause 8 - Counterfeit & Prohibited Goods
+        initializePolicy(
+                "CLAUSE_8_COUNTERFEIT_AND_PROHIBITED_GOODS",
+                "Chính Sách Chế Tài Hàng Giả, Hàng Nhái & Hàng Cấm Kinh Doanh (Điều Khoản 8)",
+                "Căn cứ xử lý vi phạm nghiêm trọng về hàng giả, hàng nhái nhãn hiệu, vi phạm quyền sở hữu trí tuệ hoặc hàng thuộc danh mục cấm kinh doanh trên sàn (Điều 8.2).",
+                """
+                ### 1. NGUYÊN TẮC KHÔNG KHOAN NHƯỢNG (ZERO TOLERANCE)
+                Sàn TMĐT áp dụng chính sách cấm tuyệt đối và chế tài nghiêm khắc nhất đối với các hành vi gian lận thương mại, bán hàng giả, hàng nhái nhãn hiệu được bảo hộ, hàng dựng tráo linh kiện hoặc hàng hóa thuộc danh mục cấm theo pháp luật Việt Nam.
+
+                ### 2. CHI TIẾT ĐIỀU KHOẢN 8.2
+                - **Hàng giả mạo nhãn hiệu / Vi phạm bản quyền**: Thiết bị điện tử làm giả logo, số model của các thương hiệu chính hãng (Apple, Samsung, Sony...); phụ kiện nhái vỏ; phần mềm bẻ khóa gian lận.
+                - **Hàng khóa mạng (Lock) câu SIM ghép trá hình**: Điện thoại bản khóa mạng nhưng khai man là bản quốc tế, máy dính tài khoản iCloud/Knox ẩn lừa đảo người tiêu dùng.
+                - **Hàng thuộc danh mục cấm kinh doanh**: Thiết bị phá sóng viễn thông, thiết bị nghe lén gián điệp không phép, vũ khí, công cụ hỗ trợ.
+
+                ### 3. CHẾ TÀI ÁP DỤNG NGAY LẬP TỨC
+                - Phán quyết duyệt hoàn tiền 100% cho Người mua ngay lập tức từ tài khoản Escrow.
+                - **Khóa vĩnh viễn gian hàng (`BANNED`)**, tịch thu Quỹ ký quỹ gian hàng (Shop Escrow Fund) để bồi thường cho người tiêu dùng và chuyển hồ sơ sang cơ quan chức năng khi cần thiết.
+                """,
+                "RETURN_REFUND",
+                "ALL",
+                "2.0",
+                10
+        );
+
+        // Policy 11: Clause 10 - Seller Responsiveness & SLA Breach
+        initializePolicy(
+                "CLAUSE_10_SELLER_UNRESPONSIVE_AND_SLA_BREACH",
+                "Quy Định Thời Hạn Thương Lượng 48h & Chế Tài Người Bán Bất Hợp Tác (Điều Khoản 10)",
+                "Căn cứ phán quyết Người bán thua kiện khi quá hạn SLA 48h không phản hồi khiếu nại hoặc từ chối hợp tác đối soát thỏa đáng cho Người mua (Điều 10.2).",
+                """
+                ### 1. QUY ĐỊNH THỜI HẠN PHẢN HỒI (SLA 48 GIỜ)
+                Kể từ thời điểm Người mua gửi yêu cầu khiếu nại đơn hàng, Người bán có trách nhiệm tiếp nhận và đưa ra phản hồi chính thức trong vòng **tối đa 48 giờ làm việc**.
+
+                ### 2. CHI TIẾT ĐIỀU KHOẢN 10.2
+                - **Người bán quá hạn phản hồi**: Hệ thống tự động ghi nhận Người bán bỏ mặc khiếu nại sau 48 giờ mà không có lý do chính đáng được Ban Quản Trị chấp thuận.
+                - **Người bán bất hợp tác**: Người bán đưa ra phản hồi mang tính thách thức, từ chối đối soát bằng chứng rõ ràng hoặc không thực hiện nghĩa vụ giải trình theo yêu cầu của sàn.
+
+                ### 3. CHẾ TÀI PHÁN QUYẾT TỰ ĐỘNG
+                - Quá hạn 48 giờ hoặc bất hợp tác: Hệ thống và Ban Quản Trị tự động **phán quyết Người bán thua kiện**.
+                - Kích hoạt hoàn tiền hoặc chấp thuận trả hàng ngay lập tức cho Người mua, đồng thời ghi nhận điểm trừ uy tín vào hồ sơ của gian hàng.
+                """,
+                "SELLER_RULES",
+                "SELLER",
+                "2.0",
+                11
+        );
+
+        // Policy 12: Clause 14 - Buyer Dispute Rejection Standards
+        initializePolicy(
+                "CLAUSE_14_BUYER_DISPUTE_REJECTION_STANDARDS",
+                "Quy Chuẩn Bác Bỏ Khiếu Nại & Bảo Vệ Quyền Lợi Người Bán (Điều Khoản 14)",
+                "Gộp các căn cứ bác khiếu nại: Thiếu video unbox / bằng chứng đối soát (14.1), Hư hỏng do người mua (14.2), Quá hạn bảo vệ 72h (14.3), Lạm dụng chính sách trả hàng (14.4).",
+                """
+                ### 1. NGUYÊN TẮC BẢO VỆ GIAN HÀNG CÔNG BẰNG
+                Sàn TMĐT không chỉ bảo vệ người tiêu dùng mà còn bảo vệ quyền lợi hợp pháp của Người bán trước các hành vi gian lận, khiếu nại vô căn cứ hoặc lạm dụng chính sách đổi trả.
+
+                ### 2. CHI TIẾT CÁC ĐIỀU KHOẢN BÁC KHIẾU NẠI
+                - **Điều khoản 14.1: Thiếu video unbox hoặc bằng chứng đối soát không đủ căn cứ**:
+                  - Người mua không cung cấp được video quay 6 mặt kiện hàng còn nguyên tem niêm phong lúc mở hộp, hình ảnh chụp mờ nhòe, không rõ số IMEI/Serial của sản phẩm.
+                - **Điều khoản 14.2: Hư hại phát sinh do lỗi sử dụng từ phía Người mua**:
+                  - Sản phẩm bị rơi vỡ, móp méo, vào nước, cháy nổ do dùng sai điện áp, bị rách tem bảo hành hoặc can thiệp sửa chữa phần mềm/phần cứng trái phép.
+                - **Điều khoản 14.3: Khiếu nại quá thời hạn bảo vệ 72 giờ quy định**:
+                  - Yêu cầu được gửi sau khi đã hết thời hạn 72 giờ nghiệm thu kể từ khi bưu tá GHN giao thành công mà không có lý do bất khả kháng.
+                - **Điều khoản 14.4: Hành vi lạm dụng chính sách khiếu nại nhằm trục lợi**:
+                  - Người mua tráo hàng, mua hàng về trải nghiệm lướt rồi đòi trả vô cớ, hoặc từ chối hợp tác với bưu cục đối soát.
+
+                ### 3. PHÁN QUYẾT BẢO VỆ GIAN HÀNG
+                - Bác bỏ toàn bộ khiếu nại của Người mua (`decision = REJECT`).
+                - Giải ngân 100% doanh thu đơn hàng cho Người bán qua lệnh `releaseByOrder`.
+                - Trừ điểm uy tín của Người mua theo Thang Điểm 100 và áp dụng chế tài hạn chế COD nếu tái phạm.
+                """,
+                "DISCIPLINE",
+                "BUYER",
+                "2.0",
+                12
+        );
+
+        // Policy 13: Clause 15 - Return Parcel Dispute Standards
+        initializePolicy(
+                "CLAUSE_15_RETURN_PACKAGE_DISPUTE_STANDARDS",
+                "Quy Chuẩn Phán Quyết Tranh Chấp Kiện Hàng Hoàn Trả (Điều Khoản 15)",
+                "Gộp các căn cứ bảo vệ Người bán khi nhận kiện hoàn: Kiện hàng hoàn rỗng (15.1), Bị tráo đổi thiết bị / IMEI (15.2), Biến dạng hư hỏng nặng khi giao hoàn (15.3).",
+                """
+                ### 1. QUY TRÌNH TIẾP NHẬN & ĐỒNG KIỂM KIỆN HÀNG HOÀN
+                Khi Người bán nhận lại gói hàng trả về từ đơn vị vận chuyển GHN Express, Người bán có nghĩa vụ đồng kiểm ngoại quan cùng bưu tá và quay video mở hộp gói hàng hoàn trả.
+
+                ### 2. CHI TIẾT CÁC ĐIỀU KHOẢN TRANH CHẤP KIỆN HOÀN
+                - **Điều khoản 15.1: Kiện hàng hoàn trả rỗng hoặc mất cắp ruột sản phẩm**:
+                  - Hộp hàng gửi về hoàn toàn trống rỗng, bị rạch băng keo dưới đáy hoặc bị trộm mất thân máy chỉ còn phụ kiện.
+                - **Điều khoản 15.2: Sản phẩm hoàn trả bị tráo đổi sang thiết bị khác**:
+                  - Thiết bị gửi về không khớp với số Serial/IMEI mà Shop đã gửi đi ban đầu; gửi trả lại xác máy hỏng hoặc vỏ chai nước để đánh tráo.
+                - **Điều khoản 15.3: Hàng hoàn trả bị biến dạng, hư hỏng nặng do người mua đóng gói ẩu**:
+                  - Sản phẩm không được bọc xốp chống sốc theo chuẩn quy định, dẫn đến nứt vỡ màn hình, móp méo thân máy trong quá trình vận chuyển ngược.
+
+                ### 3. PHÁN QUYẾT BẢO VỆ NGƯỜI BÁN
+                - Admin chấp thuận khiếu nại của Shop (`decision = APPROVE` trong tranh chấp kiện hoàn):
+                  - Tiền ký quỹ Escrow được **giải ngân cho Người bán**.
+                  - Người bán **không bị trừ điểm và không bị phạt gậy**.
+                  - Người mua bị khóa tài khoản hoặc áp dụng mức phạt gian lận hoàn trả hàng (Return Fraud).
+                """,
+                "RETURN_REFUND",
+                "ALL",
+                "2.0",
+                13
         );
 
         log.info("Seeded platform policies (Total: {})", platformPolicyRepository.count());

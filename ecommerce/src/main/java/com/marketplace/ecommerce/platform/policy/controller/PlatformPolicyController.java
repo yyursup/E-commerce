@@ -1,7 +1,5 @@
 package com.marketplace.ecommerce.platform.policy.controller;
 
-import com.marketplace.ecommerce.platform.policy.dto.DisputePolicyClauseRequest;
-import com.marketplace.ecommerce.platform.policy.dto.DisputePolicyClauseResponse;
 import com.marketplace.ecommerce.platform.policy.dto.PlatformPolicyRequest;
 import com.marketplace.ecommerce.platform.policy.dto.PlatformPolicyResponse;
 import com.marketplace.ecommerce.platform.policy.service.PlatformPolicyService;
@@ -40,12 +38,6 @@ public class PlatformPolicyController {
         return ResponseEntity.ok(platformPolicyService.getPolicyByKey(policyKey));
     }
 
-    @GetMapping("/policies/dispute-clauses")
-    public ResponseEntity<List<DisputePolicyClauseResponse>> getActiveDisputeClauses(
-            @RequestParam(required = false) String category) {
-        return ResponseEntity.ok(platformPolicyService.getActiveDisputeClauses(category));
-    }
-
     // =========================================================================
     // ADMIN MANAGEMENT APIS (Dành riêng cho Quản trị viên sàn)
     // Resolves to: /api/v1/admin/policies/**
@@ -80,36 +72,6 @@ public class PlatformPolicyController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deletePolicy(@PathVariable UUID id) {
         platformPolicyService.deletePolicy(id);
-        return ResponseEntity.noContent().build();
-    }
-
-    // --- Admin Dispute Clauses Management ---
-
-    @GetMapping("/admin/policies/dispute-clauses")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<DisputePolicyClauseResponse>> getAllDisputeClausesAdmin() {
-        return ResponseEntity.ok(platformPolicyService.getAllDisputeClausesAdmin());
-    }
-
-    @PostMapping("/admin/policies/dispute-clauses")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<DisputePolicyClauseResponse> createDisputeClause(
-            @Valid @RequestBody DisputePolicyClauseRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(platformPolicyService.createDisputeClause(request));
-    }
-
-    @PutMapping("/admin/policies/dispute-clauses/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<DisputePolicyClauseResponse> updateDisputeClause(
-            @PathVariable UUID id,
-            @Valid @RequestBody DisputePolicyClauseRequest request) {
-        return ResponseEntity.ok(platformPolicyService.updateDisputeClause(id, request));
-    }
-
-    @DeleteMapping("/admin/policies/dispute-clauses/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteDisputeClause(@PathVariable UUID id) {
-        platformPolicyService.deleteDisputeClause(id);
         return ResponseEntity.noContent().build();
     }
 }

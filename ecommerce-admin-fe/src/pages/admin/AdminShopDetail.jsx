@@ -21,6 +21,7 @@ import {
   HiOutlineLocationMarker,
   HiOutlineTruck,
   HiOutlineDocumentText,
+  HiOutlineChevronRight,
 } from 'react-icons/hi'
 import { useThemeStore } from '../../store/useThemeStore'
 import { useAuthStore } from '../../store/useAuthStore'
@@ -137,17 +138,15 @@ export default function AdminShopDetail() {
 
   if (!isAuthenticated) {
     return (
-      <div className={cn('min-h-screen flex items-center justify-center', isDark ? 'bg-slate-950' : 'bg-stone-50')}>
-        <p className={cn('text-lg', isDark ? 'text-slate-400' : 'text-stone-600')}>
-          Vui lòng đăng nhập để xem thông tin gian hàng
-        </p>
+      <div className={cn('p-12 text-center rounded-2xl border', isDark ? 'border-slate-800 bg-slate-900 text-slate-300' : 'border-stone-200 bg-white text-stone-600')}>
+        <p className="text-base font-medium">Vui lòng đăng nhập để xem thông tin gian hàng.</p>
       </div>
     )
   }
 
   if (loading) {
     return (
-      <div className={cn('min-h-screen flex flex-col items-center justify-center', isDark ? 'bg-slate-950' : 'bg-stone-50')}>
+      <div className="flex flex-col items-center justify-center py-24">
         <div className="h-10 w-10 animate-spin rounded-full border-4 border-amber-500 border-t-transparent"></div>
         <p className={cn('mt-4 text-sm font-semibold', isDark ? 'text-slate-400' : 'text-stone-500')}>
           Đang tải dữ liệu gian hàng và đơn hàng...
@@ -158,16 +157,16 @@ export default function AdminShopDetail() {
 
   if (error || !shop) {
     return (
-      <div className={cn('min-h-screen p-8 text-center', isDark ? 'bg-slate-950 text-white' : 'bg-stone-50 text-stone-900')}>
-        <div className="mx-auto max-w-md py-16">
-          <HiOutlineExclamationCircle className="mx-auto h-12 w-12 text-rose-500" />
-          <h2 className="mt-4 text-xl font-bold">Không tìm thấy gian hàng</h2>
-          <p className={cn('mt-2 text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
-            {error || 'Gian hàng không tồn tại hoặc đã bị gỡ bỏ.'}
-          </p>
+      <div className="space-y-6 max-w-2xl mx-auto py-12 text-center">
+        <HiOutlineExclamationCircle className="mx-auto h-12 w-12 text-rose-500" />
+        <h2 className="mt-2 text-xl font-bold">Không tìm thấy gian hàng</h2>
+        <p className={cn('mt-1 text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
+          {error || 'Gian hàng không tồn tại hoặc đã bị gỡ bỏ.'}
+        </p>
+        <div className="pt-2">
           <Link
             to="/orders"
-            className="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500 text-white text-sm font-bold shadow-sm"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500 text-white text-sm font-bold shadow-sm"
           >
             <HiOutlineArrowLeft className="h-4 w-4" />
             <span>Quay lại danh sách gian hàng</span>
@@ -206,40 +205,39 @@ export default function AdminShopDetail() {
   }
 
   return (
-    <div className={cn('min-h-screen px-4 py-8 sm:px-6 lg:px-8', isDark ? 'bg-slate-950' : 'bg-stone-50')}>
-      <div className="mx-auto max-w-7xl space-y-6">
-        {/* Navigation Breadcrumb / Back button */}
-        <div className="flex items-center justify-between">
-          <Link
-            to="/orders"
-            className={cn(
-              'inline-flex items-center gap-2 px-4 py-2 rounded-xl border text-xs sm:text-sm font-bold transition-all shadow-sm active:scale-95',
-              isDark
-                ? 'border-slate-800 bg-slate-900 text-slate-300 hover:bg-slate-800'
-                : 'border-stone-200 bg-white text-stone-700 hover:bg-stone-100'
-            )}
-          >
-            <HiOutlineArrowLeft className="h-4 w-4" />
-            <span>← Danh sách tất cả gian hàng</span>
-          </Link>
+    <div className={cn('space-y-6', isDark ? 'text-slate-100' : 'text-stone-900')}>
+      {/* Navigation Breadcrumb / Back button */}
+      <div className="flex items-center justify-between">
+        <Link
+          to="/orders"
+          className={cn(
+            'inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl border text-xs sm:text-sm font-bold transition-all shadow-sm active:scale-95',
+            isDark
+              ? 'border-slate-800 bg-slate-900 text-slate-300 hover:bg-slate-800'
+              : 'border-stone-200 bg-white text-stone-700 hover:bg-stone-100'
+          )}
+        >
+          <HiOutlineArrowLeft className="h-4 w-4" />
+          <span>← Danh sách tất cả gian hàng</span>
+        </Link>
 
-          <button
-            type="button"
-            onClick={() => {
-              loadShopFullData()
-              loadShopOrders()
-            }}
-            className={cn(
-              'inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border text-xs font-bold transition-all shadow-sm active:scale-95',
-              isDark
-                ? 'border-slate-800 bg-slate-900 text-slate-300 hover:bg-slate-800'
-                : 'border-stone-200 bg-white text-stone-700 hover:bg-stone-50'
-            )}
-          >
-            <HiOutlineRefresh className="h-4 w-4 text-amber-500" />
-            <span>Làm mới toàn bộ</span>
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => {
+            loadShopFullData()
+            loadShopOrders()
+          }}
+          className={cn(
+            'inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border text-xs font-bold transition-all shadow-sm active:scale-95',
+            isDark
+              ? 'border-slate-800 bg-slate-900 text-slate-300 hover:bg-slate-800'
+              : 'border-stone-200 bg-white text-stone-700 hover:bg-stone-50'
+          )}
+        >
+          <HiOutlineRefresh className="h-4 w-4 text-amber-500" />
+          <span>Làm mới toàn bộ</span>
+        </button>
+      </div>
 
         {/* 1. Header Card: Shop Overview Info & Quick Actions */}
         <div
@@ -590,17 +588,22 @@ export default function AdminShopDetail() {
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+            <div className="w-full overflow-hidden rounded-xl border border-stone-200 dark:border-slate-800">
+              <table className="w-full table-fixed text-left border-collapse">
+                <colgroup>
+                  <col className="w-[22%]" />
+                  <col className="w-[22%]" />
+                  <col className="w-[24%]" />
+                  <col className="w-[18%]" />
+                  <col className="w-[14%]" />
+                </colgroup>
                 <thead>
                   <tr className={cn('border-b text-xs font-bold uppercase tracking-wider', isDark ? 'border-slate-800 text-slate-400 bg-slate-800/40' : 'border-stone-200 text-stone-500 bg-stone-50')}>
-                    <th className="px-4 py-3">Mã Đơn / Ngày Đặt</th>
-                    <th className="px-4 py-3">Người Mua</th>
-                    <th className="px-4 py-3">Sản Phẩm</th>
-                    <th className="px-4 py-3 text-right">Tổng Tiền</th>
-                    <th className="px-4 py-3 text-center">Thanh Toán / Ký Quỹ</th>
-                    <th className="px-4 py-3 text-center">Trạng Thái Đơn</th>
-                    <th className="px-4 py-3 text-center">Chi Tiết</th>
+                    <th className="px-3.5 py-3">Mã Đơn / Ngày Đặt</th>
+                    <th className="px-3.5 py-3">Khách Hàng</th>
+                    <th className="px-3.5 py-3">Sản Phẩm</th>
+                    <th className="px-3.5 py-3 text-right">Tổng Tiền & Ký Quỹ</th>
+                    <th className="px-3.5 py-3 text-center">Trạng Thái & Thao Tác</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100 dark:divide-slate-800 text-xs sm:text-sm">
@@ -616,35 +619,36 @@ export default function AdminShopDetail() {
                         onClick={() => navigate(`/orders/${order.id}`)}
                         className="cursor-pointer transition-colors hover:bg-stone-50/80 dark:hover:bg-slate-800/40 group"
                       >
-                        {/* Cột 1: Mã đơn & Ngày đặt */}
-                        <td className="px-4 py-3.5">
-                          <div>
-                            <span className={cn('font-bold font-mono text-xs sm:text-sm group-hover:text-amber-500 transition-colors', isDark ? 'text-white' : 'text-stone-900')}>
+                        {/* Cột 1: Mã đơn & Ngày đặt & GHN */}
+                        <td className="px-3.5 py-3.5 align-middle">
+                          <div className="space-y-0.5">
+                            <span className={cn('font-bold font-mono text-xs sm:text-sm group-hover:text-amber-500 transition-colors block truncate', isDark ? 'text-white' : 'text-stone-900')}>
                               {order.orderNumber || `#${order.id?.slice(0, 8)}`}
                             </span>
-                            <p className={cn('text-[11px] mt-0.5', isDark ? 'text-slate-400' : 'text-stone-500')}>
+                            <p className={cn('text-[11px] truncate', isDark ? 'text-slate-400' : 'text-stone-500')}>
                               {formatDate(order.createdAt)}
                             </p>
                             {order.shippingCode && (
-                              <div className="flex items-center gap-1 text-[11px] text-blue-500 font-mono mt-0.5">
-                                <HiOutlineTruck className="h-3 w-3" />
-                                <span>{order.shippingCode}</span>
+                              <div className="flex items-center gap-1 text-[11px] text-blue-500 font-mono">
+                                <HiOutlineTruck className="h-3 w-3 shrink-0" />
+                                <span className="truncate">{order.shippingCode}</span>
                               </div>
                             )}
                           </div>
                         </td>
 
-                        {/* Cột 2: Người mua */}
-                        <td className="px-4 py-3.5">
-                          <div>
-                            <p className={cn('font-semibold', isDark ? 'text-slate-200' : 'text-stone-800')}>
+                        {/* Cột 2: Khách hàng */}
+                        <td className="px-3.5 py-3.5 align-middle">
+                          <div className="space-y-0.5">
+                            <p className={cn('font-semibold text-xs sm:text-sm truncate', isDark ? 'text-slate-200' : 'text-stone-800')}>
                               {order.userName || order.customerName || 'Khách vãng lai'}
                             </p>
-                            <p className={cn('text-[11px]', isDark ? 'text-slate-400' : 'text-stone-500')}>
-                              {order.phoneNumber || order.phone || 'N/A'}
+                            <p className={cn('text-[11px] flex items-center gap-1', isDark ? 'text-slate-400' : 'text-stone-500')}>
+                              <HiOutlinePhone className="h-3 w-3 shrink-0" />
+                              <span>{order.phoneNumber || order.phone || 'N/A'}</span>
                             </p>
                             {order.shippingAddress && (
-                              <p className={cn('text-[11px] truncate max-w-[150px]', isDark ? 'text-slate-500' : 'text-stone-400')}>
+                              <p className={cn('text-[10px] truncate', isDark ? 'text-slate-500' : 'text-stone-400')} title={order.shippingAddress}>
                                 {order.shippingAddress}
                               </p>
                             )}
@@ -652,84 +656,81 @@ export default function AdminShopDetail() {
                         </td>
 
                         {/* Cột 3: Sản phẩm */}
-                        <td className="px-4 py-3.5">
-                          <div className="flex items-center gap-2.5">
+                        <td className="px-3.5 py-3.5 align-middle">
+                          <div className="flex items-center gap-2">
                             {firstItem?.productImageUrl && (
                               <img
                                 src={firstItem.productImageUrl}
                                 alt={firstItem.productName}
-                                className="h-10 w-10 rounded-lg object-cover border border-stone-200 dark:border-slate-700 bg-stone-100 dark:bg-slate-800 shrink-0"
+                                className="h-9 w-9 rounded-lg object-cover border border-stone-200 dark:border-slate-700 bg-stone-100 dark:bg-slate-800 shrink-0"
                               />
                             )}
-                            <div className="min-w-0">
-                              <p className={cn('font-medium text-xs truncate max-w-[180px]', isDark ? 'text-slate-200' : 'text-stone-800')}>
+                            <div className="min-w-0 flex-1">
+                              <p className={cn('font-medium text-xs truncate', isDark ? 'text-slate-200' : 'text-stone-800')} title={firstItem?.productName}>
                                 {firstItem?.productName || 'Sản phẩm công nghệ'}
                               </p>
                               <p className={cn('text-[11px]', isDark ? 'text-slate-400' : 'text-stone-500')}>
-                                {itemCount > 1 ? `+${itemCount - 1} sản phẩm khác` : `SL: ${firstItem?.quantity || 1}`}
+                                {itemCount > 1 ? `+${itemCount - 1} sp khác (${itemCount} món)` : `SL: ${firstItem?.quantity || 1}`}
                               </p>
                             </div>
                           </div>
                         </td>
 
-                        {/* Cột 4: Tổng tiền */}
-                        <td className="px-4 py-3.5 text-right">
-                          <span className="font-bold text-emerald-500">
-                            {formatCurrency(order.total)}
-                          </span>
-                        </td>
-
-                        {/* Cột 5: Phương thức thanh toán & Ký quỹ đơn */}
-                        <td className="px-4 py-3.5 text-center">
+                        {/* Cột 4: Tổng tiền & Ký quỹ đơn */}
+                        <td className="px-3.5 py-3.5 text-right align-middle">
                           <div className="space-y-1">
-                            <span
-                              className={cn(
-                                'inline-block px-2 py-0.5 rounded text-[11px] font-bold border',
-                                order.paymentMethod === 'VNPAY'
-                                  ? 'border-blue-500/30 bg-blue-500/10 text-blue-500'
-                                  : order.paymentMethod === 'WALLET'
-                                    ? 'border-purple-500/30 bg-purple-500/10 text-purple-600 dark:text-purple-400'
-                                    : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                              )}
-                            >
-                              {order.paymentMethod || 'VNPAY'}
+                            <span className="font-bold text-xs sm:text-sm text-emerald-500 block">
+                              {formatCurrency(order.total)}
                             </span>
-                            <div>
-                              <span className={cn('text-[10px] font-semibold block', isDark ? 'text-slate-400' : 'text-stone-500')}>
+                            <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                              <span
+                                className={cn(
+                                  'inline-block px-1.5 py-0.5 rounded text-[10px] font-bold border',
+                                  order.paymentMethod === 'VNPAY'
+                                    ? 'border-blue-500/30 bg-blue-500/10 text-blue-500'
+                                    : order.paymentMethod === 'WALLET'
+                                      ? 'border-purple-500/30 bg-purple-500/10 text-purple-600 dark:text-purple-400'
+                                      : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                                )}
+                              >
+                                {order.paymentMethod || 'VNPAY'}
+                              </span>
+                              <span className={cn('text-[10px] font-medium', isDark ? 'text-slate-400' : 'text-stone-500')}>
                                 Ký quỹ: {order.escrowStatus || 'HELD'}
                               </span>
                             </div>
                           </div>
                         </td>
 
-                        {/* Cột 6: Trạng thái đơn */}
-                        <td className="px-4 py-3.5 text-center">
-                          <span
-                            className={cn(
-                              'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold',
-                              statusBadge?.color || 'bg-stone-100 text-stone-700'
-                            )}
-                          >
-                            <StatusIcon className="h-3 w-3" />
-                            <span>{getOrderStatusLabel(order)}</span>
-                          </span>
-                        </td>
-
-                        {/* Cột 7: Nút xem Order Details */}
-                        <td className="px-4 py-3.5 text-center">
-                          <Link
-                            to={`/orders/${order.id}`}
-                            onClick={(e) => e.stopPropagation()}
-                            className={cn(
-                              'inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold border transition-all active:scale-95 shadow-sm',
-                              isDark
-                                ? 'border-amber-500/30 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20'
-                                : 'border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100'
-                            )}
-                          >
-                            <span>Xem</span>
-                            <HiOutlineArrowNarrowRight className="h-3.5 w-3.5" />
-                          </Link>
+                        {/* Cột 5: Trạng thái & Thao tác */}
+                        <td className="px-3 py-3.5 text-center align-middle">
+                          <div className="flex items-center justify-center gap-2">
+                            <span
+                              className={cn(
+                                'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold truncate',
+                                statusBadge?.color || 'bg-stone-100 text-stone-700'
+                              )}
+                            >
+                              <StatusIcon className="h-3 w-3 shrink-0" />
+                              <span className="truncate">{getOrderStatusLabel(order)}</span>
+                            </span>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                navigate(`/orders/${order.id}`)
+                              }}
+                              className={cn(
+                                'inline-flex items-center justify-center h-7 w-7 rounded-lg transition-all shadow-sm active:scale-95 border group-hover:bg-amber-500 group-hover:text-white group-hover:border-amber-500 shrink-0',
+                                isDark
+                                  ? 'border-slate-700 bg-slate-800 text-slate-300'
+                                  : 'border-stone-200 bg-stone-50 text-stone-700'
+                              )}
+                              title="Xem chi tiết đơn hàng này"
+                            >
+                              <HiOutlineChevronRight className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     )
@@ -758,7 +759,6 @@ export default function AdminShopDetail() {
             </div>
           )}
         </div>
-      </div>
 
       {/* MODALS */}
       {showAdjustModal && (

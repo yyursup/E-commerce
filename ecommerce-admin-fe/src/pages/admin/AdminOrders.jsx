@@ -1,6 +1,7 @@
 import { useThemeStore } from '../../store/useThemeStore'
 import { useAuthStore } from '../../store/useAuthStore'
 import { cn } from '../../lib/cn'
+import { HiOutlineOfficeBuilding } from 'react-icons/hi'
 import AdminShopListTable from './components/order/AdminShopListTable'
 
 export default function AdminOrders() {
@@ -9,32 +10,29 @@ export default function AdminOrders() {
 
   if (!isAuthenticated) {
     return (
-      <div className={cn('min-h-screen flex items-center justify-center', isDark ? 'bg-slate-950' : 'bg-stone-50')}>
-        <div className="text-center">
-          <p className={cn('text-lg', isDark ? 'text-slate-400' : 'text-stone-600')}>
-            Vui lòng đăng nhập để xem thông tin gian hàng và đơn hàng
-          </p>
-        </div>
+      <div className={cn('p-12 text-center rounded-2xl border', isDark ? 'border-slate-800 bg-slate-900 text-slate-300' : 'border-stone-200 bg-white text-stone-600')}>
+        <p className="text-base font-medium">Vui lòng đăng nhập để xem thông tin gian hàng và đơn hàng.</p>
       </div>
     )
   }
 
   return (
-    <div className={cn('min-h-screen px-4 py-8 sm:px-6 lg:px-8', isDark ? 'bg-slate-950' : 'bg-stone-50')}>
-      <div className="mx-auto max-w-7xl space-y-6">
-        {/* Page Title */}
+    <div className={cn('space-y-6', isDark ? 'text-slate-100' : 'text-stone-900')}>
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className={cn('text-3xl font-black tracking-tight', isDark ? 'text-white' : 'text-stone-900')}>
-            Gian Hàng & Đơn Hàng
+          <h1 className="text-2xl font-black flex items-center gap-2.5">
+            <HiOutlineOfficeBuilding className="h-7 w-7 text-amber-500" />
+            <span>Gian Hàng & Đơn Hàng</span>
           </h1>
-          <p className={cn('mt-2 text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
-            Xem danh sách tất cả các gian hàng trên sàn. Bấm vào một gian hàng bất kỳ để xem chi tiết tất cả các đơn hàng và quản lý ký quỹ của gian hàng đó.
+          <p className={cn('mt-1 text-sm', isDark ? 'text-slate-400' : 'text-stone-500')}>
+            Danh sách tất cả các gian hàng trên sàn. Click vào gian hàng bất kỳ để xem toàn bộ đơn hàng và quản lý ký quỹ.
           </p>
         </div>
-
-        {/* Danh sách gian hàng có phân trang + bộ lọc thời gian + search */}
-        <AdminShopListTable isDark={isDark} />
       </div>
+
+      {/* Danh sách gian hàng (Phân trang + Search + Lọc thời gian) */}
+      <AdminShopListTable isDark={isDark} />
     </div>
   )
 }

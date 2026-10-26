@@ -38,64 +38,61 @@ export default function AdminOrderDetail() {
 
   if (!isAuthenticated) {
     return (
-      <div className={cn('min-h-screen flex items-center justify-center', isDark ? 'bg-slate-950' : 'bg-stone-50')}>
-        <div className="text-center">
-          <p className={cn('text-lg', isDark ? 'text-slate-400' : 'text-stone-600')}>
-            Vui lòng đăng nhập để xem đơn hàng
-          </p>
-        </div>
+      <div className={cn('p-12 text-center rounded-2xl border', isDark ? 'border-slate-800 bg-slate-900 text-slate-300' : 'border-stone-200 bg-white text-stone-600')}>
+        <p className="text-base font-medium">Vui lòng đăng nhập để xem thông tin đơn hàng.</p>
       </div>
     )
   }
 
   if (loading) {
     return (
-      <div className={cn('min-h-screen flex items-center justify-center', isDark ? 'bg-slate-950' : 'bg-stone-50')}>
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent"></div>
+      <div className="flex flex-col items-center justify-center py-24">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-amber-500 border-t-transparent"></div>
+        <p className={cn('mt-4 text-sm font-semibold', isDark ? 'text-slate-400' : 'text-stone-500')}>
+          Đang tải chi tiết đơn hàng...
+        </p>
       </div>
     )
   }
 
   if (error || !order) {
     return (
-      <div className={cn('min-h-screen px-4 py-8', isDark ? 'bg-slate-950' : 'bg-stone-50')}>
-        <div className="mx-auto max-w-4xl">
-          <Link
-            to="/orders"
-            className={cn(
-              'mb-4 inline-flex items-center gap-2 text-sm font-medium',
-              isDark ? 'text-slate-400 hover:text-white' : 'text-stone-600 hover:text-stone-900',
-            )}
-          >
-            <HiOutlineArrowLeft className="h-4 w-4" />
-            Quay lại danh sách đơn hàng
-          </Link>
-          <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-center dark:border-red-800 dark:bg-red-900/20">
-            <p className={cn('text-sm', isDark ? 'text-red-400' : 'text-red-600')}>
-              {error || 'Không tìm thấy đơn hàng'}
-            </p>
-          </div>
+      <div className="space-y-6 max-w-5xl mx-auto">
+        <Link
+          to="/orders"
+          className={cn(
+            'inline-flex items-center gap-2 text-sm font-semibold transition-colors',
+            isDark ? 'text-slate-400 hover:text-white' : 'text-stone-600 hover:text-stone-900',
+          )}
+        >
+          <HiOutlineArrowLeft className="h-4 w-4" />
+          <span>Quay lại danh sách gian hàng</span>
+        </Link>
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center dark:border-red-800 dark:bg-red-900/20">
+          <p className={cn('text-sm font-medium', isDark ? 'text-red-400' : 'text-red-600')}>
+            {error || 'Không tìm thấy đơn hàng'}
+          </p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className={cn('min-h-screen px-4 py-8 sm:px-6 lg:px-8', isDark ? 'bg-slate-950' : 'bg-stone-50')}>
-      <div className="mx-auto max-w-4xl">
-        <Link
-          to={order?.shopId ? `/orders/shops/${order.shopId}` : '/orders'}
-          className={cn(
-            'mb-6 inline-flex items-center gap-2 text-sm font-semibold transition-colors',
-            isDark ? 'text-slate-400 hover:text-white' : 'text-stone-600 hover:text-stone-900',
-          )}
-        >
-          <HiOutlineArrowLeft className="h-4 w-4" />
-          {order?.shopName ? `Quay lại đơn hàng của ${order.shopName}` : 'Quay lại danh sách gian hàng'}
-        </Link>
+    <div className="space-y-6 max-w-5xl mx-auto">
+      <Link
+        to={order?.shopId ? `/orders/shops/${order.shopId}` : '/orders'}
+        className={cn(
+          'inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl border text-xs sm:text-sm font-bold transition-all shadow-sm active:scale-95',
+          isDark
+            ? 'border-slate-800 bg-slate-900 text-slate-300 hover:bg-slate-800'
+            : 'border-stone-200 bg-white text-stone-700 hover:bg-stone-100',
+        )}
+      >
+        <HiOutlineArrowLeft className="h-4 w-4" />
+        <span>{order?.shopName ? `← Quay lại đơn hàng của ${order.shopName}` : '← Quay lại danh sách gian hàng'}</span>
+      </Link>
 
-        <AdminOrderDetailCard order={order} isDark={isDark} />
-      </div>
+      <AdminOrderDetailCard order={order} isDark={isDark} />
     </div>
   )
 }

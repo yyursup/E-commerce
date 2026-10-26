@@ -433,7 +433,5 @@ function OrderPolicyClauseSelectorContent({
 }
 
 export default function AdminActionPolicyClauseSelector(props) {
-  if (props.targetType !== 'ORDER') return null
-
   return <OrderPolicyClauseSelectorContent {...props} />
 }

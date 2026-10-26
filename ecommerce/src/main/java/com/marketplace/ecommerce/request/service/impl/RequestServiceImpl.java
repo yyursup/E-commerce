@@ -34,6 +34,8 @@ import com.marketplace.ecommerce.payment.dto.EscrowAdminResponse;
 import com.marketplace.ecommerce.payment.repository.EscrowRepository;
 import com.marketplace.ecommerce.request.valueObjects.DisputeSellerAction;
 import com.marketplace.ecommerce.shop.service.ShopEscrowFundService;
+import com.marketplace.ecommerce.auth.entity.User;
+import com.marketplace.ecommerce.auth.repository.UserRepository;
 import com.marketplace.ecommerce.file.service.FileService;
 import org.springframework.web.multipart.MultipartFile;
 import lombok.RequiredArgsConstructor;
@@ -66,6 +68,7 @@ public class RequestServiceImpl implements RequestService {
     private final ReportRepository reportRepository;
     private final SellerRepository sellerRepository;
     private final AccountRepository accountRepository;
+    private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final RequestPolicy requestValidation;
     private final ShopService shopService;
@@ -266,9 +269,28 @@ public class RequestServiceImpl implements RequestService {
                             var accOpt = accountRepository.findById(rep.getTargetId());
                             if (accOpt.isPresent()) {
                                 var a = accOpt.get();
-                                targetName = a.getEmail();
-                                targetInfo = "Số lần vi phạm: " + a.getViolationCount() + " lần"
+                                var uOpt = userRepository.findByAccountId(a.getId());
+                                String fullName = uOpt.map(User::getFullName).filter(s -> !s.isBlank()).orElse(null);
+                                targetName = fullName != null ? fullName + " (" + a.getEmail() + ")" : a.getEmail();
+                                targetInfo = "SĐT: " + uOpt.map(User::getPhoneNumber).orElse("N/A")
+                                        + " | Số lần vi phạm: " + a.getViolationCount() + " lần"
                                         + " | Trạng thái: " + a.getStatus();
+                            } else {
+                                var uOpt = userRepository.findById(rep.getTargetId());
+                                if (uOpt.isPresent()) {
+                                    var u = uOpt.get();
+                                    var a = u.getAccount();
+                                    String fullName = u.getFullName();
+                                    String email = a != null ? a.getEmail() : null;
+                                    if (fullName != null && !fullName.isBlank()) {
+                                        targetName = email != null ? fullName + " (" + email + ")" : fullName;
+                                    } else {
+                                        targetName = email != null ? email : "Người dùng #" + u.getId();
+                                    }
+                                    targetInfo = "SĐT: " + (u.getPhoneNumber() != null ? u.getPhoneNumber() : "N/A")
+                                            + " | Số lần vi phạm: " + (a != null ? a.getViolationCount() : 0) + " lần"
+                                            + " | Trạng thái: " + (a != null ? a.getStatus() : "ACTIVE");
+                                }
                             }
                         }
                         case REVIEW -> {
@@ -276,7 +298,11 @@ public class RequestServiceImpl implements RequestService {
                             if (revOpt.isPresent()) {
                                 var rv = revOpt.get();
                                 targetName = "Đánh giá " + rv.getRating() + " sao";
-                                targetInfo = "Nội dung: " + (rv.getComment() != null ? rv.getComment() : "");
+                                String prodName = rv.getProduct() != null ? rv.getProduct().getName() : "N/A";
+                                String reviewerName = rv.getUser() != null ? rv.getUser().getFullName() : "N/A";
+                                targetInfo = "Sản phẩm: " + prodName
+                                        + " | Người đánh giá: " + reviewerName
+                                        + " | Nội dung: " + (rv.getComment() != null ? rv.getComment() : "");
                             }
                         }
                         case ORDER -> {

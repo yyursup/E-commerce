@@ -108,16 +108,31 @@ export default function AdminActionModal({
     }
 
     switch (actionModal.type) {
-      case 'REPORT_APPROVE':
+      case 'REPORT_APPROVE': {
+        let approveText = 'Xác nhận vi phạm'
+        if (targetType === 'ORDER') {
+          approveText = 'Xác nhận vi phạm & Bồi hoàn'
+        } else if (targetType === 'USER') {
+          approveText = 'Xác nhận vi phạm'
+        } else if (targetType === 'PRODUCT') {
+          approveText = 'Xác nhận vi phạm'
+        } else if (targetType === 'REVIEW') {
+          approveText = 'Xác nhận vi phạm'
+        } else if (targetType === 'SHOP') {
+          approveText = 'Xác nhận vi phạm'
+        }
         return {
-          text: targetType === 'ORDER' ? 'Xác nhận vi phạm & Bồi hoàn' : 'Xác nhận vi phạm (Phạt Shop)',
+          text: approveText,
           className: 'bg-rose-600 hover:bg-rose-700 shadow-md shadow-rose-600/20 text-white',
         }
-      case 'REPORT_REJECT':
+      }
+      case 'REPORT_REJECT': {
+        const rejectText = targetType === 'ORDER' ? 'Bác bỏ khiếu nại (Bảo vệ Shop)' : 'Bác bỏ tố cáo (Không vi phạm)'
         return {
-          text: 'Bác bỏ báo cáo (Bảo vệ Shop)',
+          text: rejectText,
           className: 'bg-stone-600 hover:bg-stone-700 shadow-md shadow-stone-600/20 text-white',
         }
+      }
       case 'ESCROW_REFUND':
         return {
           text: 'Xác nhận hoàn tiền 100% cho Buyer',

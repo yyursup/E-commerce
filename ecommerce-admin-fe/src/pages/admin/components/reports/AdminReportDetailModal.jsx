@@ -49,8 +49,8 @@ export default function AdminReportDetailModal({
 
   const canTakeAction = isPending || (isSellerReturnDispute && orderReturn?.status === 'DISPUTED')
 
-  // Kiểm tra xem đây có phải là vụ việc tranh chấp đơn hàng có phản hồi/đối chất từ phía Người bán hay không
-  const hasSellerResponse = Boolean(
+  // Bố cục đối chất 2 phía (AdminReportDisputeSideBySide) chỉ áp dụng cho Báo cáo Đơn hàng (ORDER) có tranh chấp / phản hồi từ 2 phía
+  const isSideBySideDispute = isOrderReport && Boolean(
     detailModal.data?.detail?.sellerResponse ||
     detailModal.data?.detail?.sellerAction ||
     detailModal.data?.detail?.sellerEvidenceUrl ||
@@ -220,8 +220,8 @@ export default function AdminReportDetailModal({
                     />
                   )}
 
-                  {/* Khối 2: BỐ CỤC ĐỐI CHẤT 2 PHÍA (BUYER VS SELLER) NẾU CÓ TRANH CHẤP */}
-                  {hasSellerResponse ? (
+                  {/* Khối 2: BỐ CỤC ĐỐI CHẤT 2 PHÍA (BUYER VS SELLER) NẾU CÓ TRANH CHẤP ĐƠN HÀNG */}
+                  {isSideBySideDispute ? (
                     <AdminReportDisputeSideBySide
                       detailModal={detailModal}
                       evImgs={evImgs}
@@ -230,7 +230,7 @@ export default function AdminReportDetailModal({
                       setPreviewImage={setPreviewImage}
                     />
                   ) : (
-                    /* TRƯỜNG HỢP HỒ SƠ THƯỜNG (Báo cáo sản phẩm, gian hàng, người dùng...) */
+                    /* TRƯỜNG HỢP HỒ SƠ THƯỜNG (Báo cáo sản phẩm, gian hàng, người dùng, đánh giá...) HOẶC ĐƠN HÀNG ĐƠN PHƯƠNG */
                     <AdminReportSingleClaim
                       detailModal={detailModal}
                       evImgs={evImgs}
@@ -316,7 +316,7 @@ export default function AdminReportDetailModal({
                         className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold border border-emerald-500/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 active:scale-95 transition-all shadow-xs"
                       >
                         <HiOutlineCheck className="h-4 w-4" />
-                        Chấp thuận Shop khiếu nại (Giải ngân Shop)
+                        Chấp thuận Shop khiếu nại
                       </button>
 
                       <button
@@ -325,7 +325,7 @@ export default function AdminReportDetailModal({
                         className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 active:scale-95 shadow-md shadow-rose-600/20 transition-all"
                       >
                         <HiOutlineX className="h-4 w-4" />
-                        Bác bỏ Shop khiếu nại (Bồi hoàn Buyer)
+                        Bác bỏ Shop khiếu nại
                       </button>
                     </>
                   ) : (
@@ -336,7 +336,7 @@ export default function AdminReportDetailModal({
                         className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold border border-stone-300 dark:border-slate-700 text-stone-700 dark:text-slate-200 hover:bg-stone-100 dark:hover:bg-slate-800 active:scale-95 transition-all shadow-xs"
                       >
                         <HiOutlineX className="h-4 w-4" />
-                        Bác bỏ (Bảo vệ Shop)
+                        {targetType === 'ORDER' ? 'Bác bỏ (Bảo vệ Shop)' : 'Bác bỏ tố cáo (Không vi phạm)'}
                       </button>
 
                       <button
@@ -345,7 +345,15 @@ export default function AdminReportDetailModal({
                         className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 active:scale-95 shadow-md shadow-rose-600/20 transition-all"
                       >
                         <HiOutlineCheck className="h-4 w-4" />
-                        Xác nhận vi phạm (Phạt Shop)
+                        {targetType === 'ORDER'
+                          ? 'Xác nhận vi phạm'
+                          : targetType === 'USER'
+                            ? 'Xác nhận vi phạm'
+                            : targetType === 'PRODUCT'
+                              ? 'Xác nhận vi phạm (Khóa sản phẩm)'
+                              : targetType === 'REVIEW'
+                                ? 'Xác nhận vi phạm'
+                                : 'Xác nhận vi phạm'}
                       </button>
                     </>
                   )}

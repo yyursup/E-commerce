@@ -5,7 +5,9 @@ import com.marketplace.ecommerce.auth.entity.Role;
 import com.marketplace.ecommerce.auth.entity.User;
 import com.marketplace.ecommerce.auth.repository.AccountRepository;
 import com.marketplace.ecommerce.auth.repository.RoleRepository;
+import com.marketplace.ecommerce.auth.repository.UserRepository;
 import com.marketplace.ecommerce.request.dto.response.RegisterSellerResponse;
+import com.marketplace.ecommerce.request.dto.response.ReportDetailsResponse;
 import com.marketplace.ecommerce.request.dto.response.RequestDetailsResponse;
 import com.marketplace.ecommerce.request.dto.response.RequestResponse;
 import com.marketplace.ecommerce.request.entity.Request;
@@ -61,6 +63,9 @@ class RequestServiceImplTest {
 
         @Mock
         private AccountRepository accountRepository;
+
+        @Mock
+        private UserRepository userRepository;
 
         @Mock
         private RoleRepository roleRepository;
@@ -251,5 +256,54 @@ class RequestServiceImplTest {
                 assertEquals(TargetType.ORDER, res.getTargetType());
                 assertEquals(ReportStage.ESCALATED_TO_ADMIN, res.getStage());
                 verify(requestRepository).findAllAdminRequests(eq(RequestType.REPORT), eq(RequestStatus.PENDING), any(Pageable.class));
+        }
+
+        @Test
+        @DisplayName("Lấy chi tiết Báo cáo Người dùng: Tra cứu thành công họ tên và thông tin từ UserRepository khi targetId là userId")
+        void getDetails_ReportUser_ResolvesFullNameAndAccount() {
+                UUID reportRequestId = UUID.randomUUID();
+                UUID targetUserId = UUID.randomUUID();
+                Request req = Request.builder()
+                                .id(reportRequestId)
+                                .type(RequestType.REPORT)
+                                .status(RequestStatus.PENDING)
+                                .description("Quấy rối người khác")
+                                .build();
+
+                Report report = Report.builder()
+                                .id(reportRequestId)
+                                .request(req)
+                                .targetType(TargetType.USER)
+                                .targetId(targetUserId)
+                                .stage(ReportStage.ESCALATED_TO_ADMIN)
+                                .build();
+
+                Account reportedAccount = Account.builder()
+                                .id(UUID.randomUUID())
+                                .email("reported@test.com")
+                                .status(com.marketplace.ecommerce.auth.valueObjects.AccountStatus.ACTIVE)
+                                .violationCount(1)
+                                .build();
+
+                User reportedUser = User.builder()
+                                .id(targetUserId)
+                                .account(reportedAccount)
+                                .fullName("Nguyễn Văn Nghi Phạm")
+                                .phoneNumber("0912345678")
+                                .build();
+
+                when(requestRepository.findById(reportRequestId)).thenReturn(Optional.of(req));
+                when(reportRepository.findByRequestId(reportRequestId)).thenReturn(report);
+                when(accountRepository.findById(targetUserId)).thenReturn(Optional.empty());
+                when(userRepository.findById(targetUserId)).thenReturn(Optional.of(reportedUser));
+
+                RequestDetailsResponse details = requestService.getDetails(reportRequestId);
+
+                assertNotNull(details);
+                assertInstanceOf(ReportDetailsResponse.class, details.getDetail());
+                ReportDetailsResponse repDto = (ReportDetailsResponse) details.getDetail();
+                assertEquals("Nguyễn Văn Nghi Phạm (reported@test.com)", repDto.getTargetName());
+                assertTrue(repDto.getTargetInfo().contains("0912345678"));
+                assertTrue(repDto.getTargetInfo().contains("1 lần"));
         }
 }

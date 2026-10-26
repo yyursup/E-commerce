@@ -264,7 +264,7 @@ class OrderReportDisputeTest {
         void autoRefundExpiredDisputedOrders_ExecutesRefund() {
                 // Given
                 RequestServiceImpl requestServiceImpl = new RequestServiceImpl(
-                                requestRepository, reportRepository, null, accountRepository, null,
+                                requestRepository, reportRepository, null, accountRepository, null, null,
                                 requestValidation, null, null, null, null, orderRepository, escrowRepository,
                                 orderReturnService, null, null);
 
@@ -281,7 +281,7 @@ class OrderReportDisputeTest {
         void autoRefundExpiredDisputedOrders_InitiatesReturn_WhenReturnAndRefund() {
                 // Given
                 RequestServiceImpl requestServiceImpl = new RequestServiceImpl(
-                                requestRepository, reportRepository, null, accountRepository, null,
+                                requestRepository, reportRepository, null, accountRepository, null, null,
                                 requestValidation, null, null, null, null, orderRepository, escrowRepository,
                                 orderReturnService, null, null);
 

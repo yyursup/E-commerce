@@ -148,9 +148,8 @@ public class ReportServiceImpl implements ReportService {
             }
         }
 
-        // Validate và lưu Căn cứ Điều khoản Chính sách bắt buộc đối với tranh chấp Đơn
-        // hàng
-        if (report.getTargetType() == TargetType.ORDER) {
+        // Validate và lưu Căn cứ Chính Sách Nền Tảng (áp dụng cho toàn bộ các đối tượng: ORDER, PRODUCT, SHOP, REVIEW, USER)
+        if (req.getPolicyClauseCode() != null && !req.getPolicyClauseCode().trim().isEmpty()) {
             PlatformPolicyResponse policy = platformPolicyService != null
                     ? platformPolicyService.validateDisputeClause(
                             req.getPolicyClauseCode(),
@@ -160,6 +159,18 @@ public class ReportServiceImpl implements ReportService {
             if (policy != null) {
                 report.setPolicyClauseCode(policy.getPolicyKey());
                 report.setPolicyClauseTitle(policy.getTitle());
+            }
+        } else if (report.getTargetType() == TargetType.ORDER) {
+            // Đối với tranh chấp Đơn hàng (ORDER), việc đính kèm Căn cứ Chính Sách là bắt buộc
+            if (platformPolicyService != null) {
+                PlatformPolicyResponse policy = platformPolicyService.validateDisputeClause(
+                        req.getPolicyClauseCode(),
+                        req.getDecision() != null ? req.getDecision().name() : null,
+                        isSellerReturnDispute);
+                if (policy != null) {
+                    report.setPolicyClauseCode(policy.getPolicyKey());
+                    report.setPolicyClauseTitle(policy.getTitle());
+                }
             }
         }
 
@@ -245,6 +256,16 @@ public class ReportServiceImpl implements ReportService {
                 shop.setViolationCount(Math.max(0, shop.getViolationCount() - 1));
                 restoreShopIfEligible(shop);
                 shopRepository.save(shop);
+            }
+            if (shop.getUser() != null && shop.getUser().getAccount() != null) {
+                Account owner = shop.getUser().getAccount();
+                if (owner.getViolationCount() > 0) {
+                    owner.setViolationCount(Math.max(0, owner.getViolationCount() - 1));
+                    if (owner.getViolationCount() < 3) {
+                        owner.setDisciplineLevel(DisciplineLevel.NONE);
+                    }
+                    accountRepository.save(owner);
+                }
             }
             log.info("Admin decided to PARDON shop penalty: orderId={}, newViolationCount={}", orderId,
                     shop.getViolationCount());

@@ -22,6 +22,7 @@ public class ReportDetailsResponse {
     private TargetType targetType;
     private UUID targetId;
     private String evidenceUrl;
+    private String coverImageUrl;
     private String moderatorNote;
     private String targetName;
     private String targetInfo;

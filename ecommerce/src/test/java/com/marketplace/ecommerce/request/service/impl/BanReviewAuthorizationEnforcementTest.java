@@ -135,6 +135,7 @@ public class BanReviewAuthorizationEnforcementTest {
                 reportRepository,
                 sellerRepository,
                 accountRepository,
+                userRepository,
                 roleRepository,
                 requestValidation,
                 shopService,

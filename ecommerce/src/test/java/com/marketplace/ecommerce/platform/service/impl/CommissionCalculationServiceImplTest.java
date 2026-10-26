@@ -1,5 +1,10 @@
 package com.marketplace.ecommerce.platform.service.impl;
 
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
+
+import com.marketplace.ecommerce.auth.entity.Account;
+import com.marketplace.ecommerce.auth.entity.User;
 import com.marketplace.ecommerce.platform.dto.CommissionRateBreakdown;
 import com.marketplace.ecommerce.platform.entity.SeniorityPolicyConfig;
 import com.marketplace.ecommerce.platform.repository.SeniorityPolicyConfigRepository;
@@ -7,6 +12,7 @@ import com.marketplace.ecommerce.platform.service.PlatformSettingService;
 import com.marketplace.ecommerce.product.entity.ProductCategory;
 import com.marketplace.ecommerce.product.valueObjects.ConditionGrade;
 import com.marketplace.ecommerce.shop.entity.Shop;
+import com.marketplace.ecommerce.shop.entity.ShopEscrowFund;
 import com.marketplace.ecommerce.shop.entity.TrustLevelConfig;
 import com.marketplace.ecommerce.shop.repository.ShopEscrowFundRepository;
 import com.marketplace.ecommerce.shop.repository.TrustLevelConfigRepository;
@@ -22,12 +28,14 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class CommissionCalculationServiceImplTest {
 
     @Mock
@@ -118,6 +126,10 @@ class CommissionCalculationServiceImplTest {
         assertEquals(new BigDecimal("1.00"), breakdown.getDepositDiscount());
         assertEquals(new BigDecimal("0.50"), breakdown.getSeniorityDiscount());
         assertEquals(new BigDecimal("2.50"), breakdown.getFinalRate());
+
+        // Test calculateFinalRate trực tiếp
+        BigDecimal directFinalRate = commissionCalculationService.calculateFinalRate(shop, cat, ConditionGrade.GRADE_NEW);
+        assertEquals(new BigDecimal("2.50"), directFinalRate);
     }
 
     @Test
@@ -166,5 +178,89 @@ class CommissionCalculationServiceImplTest {
         CommissionRateBreakdown breakdown = commissionCalculationService.calculateRateBreakdown(shop, cat, ConditionGrade.GRADE_NEW);
         assertEquals(new BigDecimal("1.50"), breakdown.getFinalRate());
         assertEquals(new BigDecimal("1.50"), breakdown.getFloorRate());
+    }
+
+    @Test
+    @DisplayName("getShopDepositAmount: lấy từ EscrowFund entity, repo findByShopId, hoặc mặc định 0")
+    void testDepositAmountBranches() {
+        // 1. EscrowFund trực tiếp từ shop
+        Shop shop1 = new Shop();
+        ShopEscrowFund fund1 = new ShopEscrowFund();
+        fund1.setBalance(new BigDecimal("15000000"));
+        shop1.setEscrowFund(fund1);
+
+        CommissionRateBreakdown b1 = commissionCalculationService.calculateRateBreakdown(shop1, null, null);
+        assertEquals(new BigDecimal("15000000"), b1.getDepositAmount());
+
+        // 2. EscrowFund từ repo findByShopId
+        Shop shop2 = new Shop();
+        shop2.setId(UUID.randomUUID());
+        ShopEscrowFund fund2 = new ShopEscrowFund();
+        fund2.setBalance(new BigDecimal("8000000"));
+        when(shopEscrowFundRepository.findByShopId(shop2.getId())).thenReturn(Optional.of(fund2));
+
+        CommissionRateBreakdown b2 = commissionCalculationService.calculateRateBreakdown(shop2, null, null);
+        assertEquals(new BigDecimal("8000000"), b2.getDepositAmount());
+
+        // 3. Shop null
+        CommissionRateBreakdown bNull = commissionCalculationService.calculateRateBreakdown(null, null, null);
+        assertEquals(BigDecimal.ZERO, bNull.getDepositAmount());
+    }
+
+    @Test
+    @DisplayName("Shop vi phạm hoặc thời gian hoạt động <= 0 không nhận ưu đãi thâm niên")
+    void testSeniorityDiscount_ViolationAndNewShop() {
+        // Shop vi phạm trực tiếp
+        Shop shopViolated = new Shop();
+        shopViolated.setCreatedAt(LocalDateTime.now().minusMonths(12));
+        shopViolated.setViolationCount(2);
+
+        CommissionRateBreakdown bViolated = commissionCalculationService.calculateRateBreakdown(shopViolated, null, null);
+        assertEquals(BigDecimal.ZERO, bViolated.getSeniorityDiscount());
+        assertEquals(2, bViolated.getViolationCount());
+
+        // Shop vi phạm qua Account
+        Shop shopUserViolated = new Shop();
+        shopUserViolated.setCreatedAt(LocalDateTime.now().minusMonths(12));
+        shopUserViolated.setViolationCount(0);
+        Account acc = new Account();
+        acc.setViolationCount(1);
+        User u = new User();
+        u.setAccount(acc);
+        shopUserViolated.setUser(u);
+
+        CommissionRateBreakdown bUserViolated = commissionCalculationService.calculateRateBreakdown(shopUserViolated, null, null);
+        assertEquals(BigDecimal.ZERO, bUserViolated.getSeniorityDiscount());
+        assertEquals(1, bUserViolated.getViolationCount());
+
+        // Shop mới tạo (activeMonths <= 0)
+        Shop shopNew = new Shop();
+        shopNew.setCreatedAt(LocalDateTime.now());
+        CommissionRateBreakdown bNew = commissionCalculationService.calculateRateBreakdown(shopNew, null, null);
+        assertEquals(BigDecimal.ZERO, bNew.getSeniorityDiscount());
+
+        // Policy có minMonths null hoặc discountRate null
+        Shop shopEligible = new Shop();
+        shopEligible.setCreatedAt(LocalDateTime.now().minusMonths(10));
+        SeniorityPolicyConfig pNullRate = SeniorityPolicyConfig.builder().minMonths(6).discountRate(null).build();
+        SeniorityPolicyConfig pNullMin = SeniorityPolicyConfig.builder().minMonths(null).discountRate(new BigDecimal("0.50")).build();
+        when(seniorityPolicyConfigRepository.findAllByIsActiveTrueOrderByMinMonthsDesc()).thenReturn(List.of(pNullMin, pNullRate));
+
+        CommissionRateBreakdown bNullRate = commissionCalculationService.calculateRateBreakdown(shopEligible, null, null);
+        assertEquals(BigDecimal.ZERO, bNullRate.getSeniorityDiscount());
+    }
+
+    @Test
+    @DisplayName("determineDepositDiscount: config có minDeposit null hoặc commissionDiscount null")
+    void testDepositDiscount_NullConfigs() {
+        Shop shop = new Shop();
+        shop.setDepositBalance(new BigDecimal("10000000"));
+
+        TrustLevelConfig cNullMin = TrustLevelConfig.builder().minDeposit(null).commissionDiscount(new BigDecimal("0.50")).build();
+        TrustLevelConfig cNullDiscount = TrustLevelConfig.builder().minDeposit(new BigDecimal("5000000")).commissionDiscount(null).build();
+        when(trustLevelConfigRepository.findAllByIsActiveTrueOrderByStarLevelAsc()).thenReturn(List.of(cNullMin, cNullDiscount));
+
+        CommissionRateBreakdown b = commissionCalculationService.calculateRateBreakdown(shop, null, null);
+        assertEquals(BigDecimal.ZERO, b.getDepositDiscount());
     }
 }

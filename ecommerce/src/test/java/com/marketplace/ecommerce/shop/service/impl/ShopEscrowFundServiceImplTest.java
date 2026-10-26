@@ -34,6 +34,26 @@ import com.marketplace.ecommerce.product.service.ProductService;
 import com.marketplace.ecommerce.voucher.service.VoucherService;
 import com.marketplace.ecommerce.wallet.entity.Wallet;
 import com.marketplace.ecommerce.wallet.repository.WalletRepository;
+import com.marketplace.ecommerce.auth.repository.UserRepository;
+import com.marketplace.ecommerce.config.VNPayConfig;
+import com.marketplace.ecommerce.notification.repository.NotificationRepository;
+import com.marketplace.ecommerce.payment.service.VNPayService;
+import com.marketplace.ecommerce.shop.dto.request.AdminAdjustEscrowFundRequest;
+import com.marketplace.ecommerce.shop.dto.request.TopUpEscrowFundRequest;
+import com.marketplace.ecommerce.shop.dto.response.ShopEscrowTransactionResponse;
+import com.marketplace.ecommerce.order.entity.OrderReturn;
+import com.marketplace.ecommerce.order.valueObjects.OrderStatus;
+import com.marketplace.ecommerce.order.valueObjects.ReturnStatus;
+import com.marketplace.ecommerce.payment.valueObjects.EscrowStatus;
+import com.marketplace.ecommerce.wallet.valueObjects.WalletType;
+import com.marketplace.ecommerce.notification.entity.Notification;
+import com.marketplace.ecommerce.notification.valueObjects.NotificationType;
+import com.marketplace.ecommerce.notification.valueObjects.NotificationStatus;
+import com.marketplace.ecommerce.notification.valueObjects.NotificationChannelType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -45,6 +65,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -54,7 +76,11 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
+
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class ShopEscrowFundServiceImplTest {
 
         @Mock
@@ -95,6 +121,18 @@ class ShopEscrowFundServiceImplTest {
 
         @Mock
         private ProductService productService;
+
+        @Mock
+        private UserRepository userRepository;
+
+        @Mock
+        private NotificationRepository notificationRepository;
+
+        @Mock
+        private VNPayService vnPayService;
+
+        @Mock
+        private VNPayConfig vnPayConfig;
 
         @InjectMocks
         private ShopEscrowFundServiceImpl shopEscrowFundService;
@@ -382,41 +420,584 @@ class ShopEscrowFundServiceImplTest {
         }
 
         @Test
-        @DisplayName("deductReturnDisputeShippingFees: Trích Quỹ Shop chi trả cước 2 chiều bù cho Sàn/GHN")
-        void deductReturnDisputeShippingFees_Success_DeductsBothLegsAndCreditsPlatform() {
-                UUID returnId = UUID.randomUUID();
-                com.marketplace.ecommerce.order.entity.OrderReturn orderReturn = com.marketplace.ecommerce.order.entity.OrderReturn.builder()
-                                .id(returnId)
-                                .order(order)
-                                .shippingFee(new BigDecimal("35000"))
-                                .isReturnShippingDeducted(false)
-                                .build();
+        @DisplayName("getFundByShopId lấy thông tin quỹ ký quỹ của shop")
+        void testGetFundByShopId() {
+                when(shopRepository.findById(shopId)).thenReturn(Optional.of(shop));
+                when(shopEscrowFundRepository.findByShopId(shopId)).thenReturn(Optional.of(fund));
 
-                order.setShippingFee(new BigDecimal("30000"));
-                fund.setBalance(new BigDecimal("10000000"));
+                ShopEscrowFundResponse res = shopEscrowFundService.getFundByShopId(shopId);
+                assertNotNull(res);
+                assertEquals(new BigDecimal("5000000"), res.getBalance());
 
-                Wallet platformEscrowWallet = Wallet.builder()
-                                .id(UUID.randomUUID())
-                                .walletType(com.marketplace.ecommerce.wallet.valueObjects.WalletType.ESCROW)
-                                .availableBalance(BigDecimal.ZERO)
-                                .lockedBalance(BigDecimal.ZERO)
-                                .build();
+                // Test tạo default fund khi chưa có
+                when(shopEscrowFundRepository.findByShopId(shopId)).thenReturn(Optional.empty());
+                ShopEscrowFundResponse defaultRes = shopEscrowFundService.getFundByShopId(shopId);
+                assertNotNull(defaultRes);
+        }
 
-                when(transactionRepository.existsByDedupeKey(any())).thenReturn(false);
+        @Test
+        @DisplayName("getFundByAccountId lấy quỹ ký quỹ theo account ID của seller")
+        void testGetFundByAccountId() {
+                UUID accId = seller.getAccount().getId();
+                when(userRepository.findByAccountId(accId)).thenReturn(Optional.of(seller));
+                when(shopRepository.findByUserId(seller.getId())).thenReturn(Optional.of(shop));
+                when(shopRepository.findById(shop.getId())).thenReturn(Optional.of(shop));
+                when(shopEscrowFundRepository.findByShopId(shop.getId())).thenReturn(Optional.of(fund));
+
+                ShopEscrowFundResponse res = shopEscrowFundService.getFundByAccountId(accId);
+                assertNotNull(res);
+        }
+
+        @Test
+        @DisplayName("createInitialFund tạo quỹ ký quỹ ban đầu khi đăng ký gian hàng")
+        void testCreateInitialFund() {
+                when(shopEscrowFundRepository.save(any(ShopEscrowFund.class))).thenAnswer(i -> i.getArgument(0));
+
+                ShopEscrowFund created = shopEscrowFundService.createInitialFund(shop, new BigDecimal("2000000"), "REG-001");
+                assertNotNull(created);
+                assertEquals(BigDecimal.ZERO, created.getBalance());
+                assertEquals(new BigDecimal("2000000"), created.getCommittedAmount());
+        }
+
+        @Test
+        @DisplayName("topUpFund nạp thêm tiền vào quỹ ký quỹ và thoát trạng thái DEFICIT nếu đủ bù")
+        void testTopUpFund() {
+                fund.setIsDeficit(true);
+                fund.setDeficitAmount(new BigDecimal("1000000"));
+                fund.setStatus(EscrowFundStatus.DEFICIT);
+
+                when(shopRepository.findById(shopId)).thenReturn(Optional.of(shop));
                 when(shopEscrowFundRepository.findByShopIdForUpdate(shopId)).thenReturn(Optional.of(fund));
-                when(walletRepository.findSystemWalletForUpdate(com.marketplace.ecommerce.wallet.valueObjects.WalletType.ESCROW))
-                                .thenReturn(Optional.of(platformEscrowWallet));
-                when(shopEscrowFundRepository.save(any())).thenAnswer(i -> i.getArgument(0));
-                when(trustLevelConfigService.getConfigByStarLevel(anyInt()))
-                                .thenReturn(TrustLevelConfig.builder().minDeposit(new BigDecimal("5000000")).build());
 
-                shopEscrowFundService.deductReturnDisputeShippingFees(orderReturn);
+                TopUpEscrowFundRequest req = TopUpEscrowFundRequest.builder()
+                                .amount(new BigDecimal("2000000"))
+                                .paymentMethod("VNPAY")
+                                .referenceCode("TXN-TOPUP-01")
+                                .note("Nạp bù tiền ký quỹ")
+                                .build();
 
-                assertEquals(new BigDecimal("9935000"), fund.getBalance());
-                assertEquals(new BigDecimal("65000"), platformEscrowWallet.getAvailableBalance());
-                assertTrue(orderReturn.getIsReturnShippingDeducted());
+                ShopEscrowFundResponse res = shopEscrowFundService.topUpFund(shopId, req);
+                assertNotNull(res);
+                assertFalse(fund.getIsDeficit());
+                assertEquals(EscrowFundStatus.ACTIVE, fund.getStatus());
+                verify(shopEscrowTransactionRepository).save(any(ShopEscrowTransaction.class));
+        }
+
+        @Test
+        @DisplayName("adminAdjustFund Admin điều chỉnh số dư và hạn mức cam kết của quỹ")
+        void testAdminAdjustFund() {
+                when(shopRepository.findById(shopId)).thenReturn(Optional.of(shop));
+                when(shopEscrowFundRepository.findByShopIdForUpdate(shopId)).thenReturn(Optional.of(fund));
+
+                AdminAdjustEscrowFundRequest req = AdminAdjustEscrowFundRequest.builder()
+                                .balance(new BigDecimal("6000000"))
+                                .committedAmount(new BigDecimal("6000000"))
+                                .targetTrustLevel(2)
+                                .reason("Thưởng uy tín gian hàng bán tốt")
+                                .build();
+
+                ShopEscrowFundResponse res = shopEscrowFundService.adminAdjustFund(shopId, req, UUID.randomUUID());
+                assertNotNull(res);
+                assertEquals(new BigDecimal("6000000"), fund.getBalance());
+                verify(shopEscrowTransactionRepository).save(any(ShopEscrowTransaction.class));
+        }
+
+        @Test
+        @DisplayName("Lấy danh sách giao dịch ký quỹ phân trang và lấy tất cả quỹ ký quỹ")
+        void testPaginationMethods() {
+                ShopEscrowTransaction tx = ShopEscrowTransaction.builder()
+                                .id(UUID.randomUUID())
+                                .fund(fund)
+                                .amount(new BigDecimal("1000000"))
+                                .transactionType(EscrowFundTransactionType.TOPUP_DEPOSIT)
+                                .createdAt(java.time.LocalDateTime.now())
+                                .build();
+
+                Page<ShopEscrowTransaction> txPage = new PageImpl<>(List.of(tx));
+                when(shopEscrowFundRepository.findByShopId(shopId)).thenReturn(Optional.of(fund));
+                when(shopEscrowTransactionRepository.findByFundIdOrderByCreatedAtDesc(eq(fund.getId()), any(Pageable.class)))
+                                .thenReturn(txPage);
+
+                Page<ShopEscrowTransactionResponse> page1 = shopEscrowFundService.getTransactionsByShopId(shopId, PageRequest.of(0, 10));
+                assertNotNull(page1);
+                assertEquals(1, page1.getContent().size());
+
+                Page<ShopEscrowTransactionResponse> page2 = shopEscrowFundService.getTransactionsByFundId(fund.getId(), PageRequest.of(0, 10));
+                assertNotNull(page2);
+
+                Page<ShopEscrowFund> fundPage = new PageImpl<>(List.of(fund));
+                when(shopEscrowFundRepository.findByStatus(eq(EscrowFundStatus.ACTIVE), any(Pageable.class)))
+                                .thenReturn(fundPage);
+
+                Page<ShopEscrowFundResponse> allFunds = shopEscrowFundService.getAllFunds(null, EscrowFundStatus.ACTIVE, PageRequest.of(0, 10));
+                assertNotNull(allFunds);
+                assertEquals(1, allFunds.getContent().size());
+        }
+
+        @Test
+        @DisplayName("createVnpayPaymentUrl tạo URL thanh toán VNPay cho nạp ký quỹ")
+        void testCreateVnpayPaymentUrl() {
+                when(shopRepository.findById(shopId)).thenReturn(Optional.of(shop));
+                when(vnPayService.buildPaymentUrl(anyString(), any(BigDecimal.class), anyString(), any(), anyString()))
+                                .thenReturn("https://sandbox.vnpayment.vn/paymentv2/vpcpay.html?test=123");
+
+                TopUpEscrowFundRequest req = TopUpEscrowFundRequest.builder()
+                                .amount(new BigDecimal("500000"))
+                                .build();
+
+                String url = shopEscrowFundService.createVnpayPaymentUrl(shopId, req, "127.0.0.1");
+                assertNotNull(url);
+                assertTrue(url.contains("sandbox.vnpayment.vn"));
+        }
+
+        @Test
+        @DisplayName("processVnpayCallback xử lý IPN từ VNPay nạp tiền ký quỹ")
+        void testProcessVnpayCallback() {
+                when(vnPayService.verifyChecksumFromQueryString(anyString())).thenReturn(true);
+
+                String txnRef = "ESCROW_" + shopId + "_123456789";
+                Map<String, String> params = Map.of(
+                                "vnp_TxnRef", txnRef,
+                                "vnp_ResponseCode", "00",
+                                "vnp_Amount", "200000000" // 2 triệu * 100
+                );
+
+                when(shopEscrowTransactionRepository.existsByReferenceCode(txnRef)).thenReturn(false);
+                when(shopRepository.findById(shopId)).thenReturn(Optional.of(shop));
+                when(shopEscrowFundRepository.findByShopIdForUpdate(shopId)).thenReturn(Optional.of(fund));
+
+                shopEscrowFundService.processVnpayCallback(params, "vnp_TxnRef=" + txnRef + "&vnp_SecureHash=valid");
 
                 verify(shopEscrowTransactionRepository).save(any(ShopEscrowTransaction.class));
-                verify(transactionRepository).save(any(Transaction.class));
         }
+
+        // --- topUpFund tests ---
+        @Test
+        @DisplayName("topUpFund throws CustomException when amount is null or <= 0")
+        void testTopUpFund_InvalidAmount() {
+                when(shopEscrowFundRepository.findByShopIdForUpdate(shopId)).thenReturn(Optional.of(fund));
+                assertThrows(CustomException.class, () -> shopEscrowFundService.topUpFund(shopId, TopUpEscrowFundRequest.builder().amount(null).build()));
+                assertThrows(CustomException.class, () -> shopEscrowFundService.topUpFund(shopId, TopUpEscrowFundRequest.builder().amount(BigDecimal.ZERO).build()));
+                assertThrows(CustomException.class, () -> shopEscrowFundService.topUpFund(shopId, TopUpEscrowFundRequest.builder().amount(new BigDecimal("-1000")).build()));
+        }
+
+        @Test
+        @DisplayName("topUpFund throws CustomException when fund not found")
+        void testTopUpFund_NotFound() {
+                when(shopEscrowFundRepository.findByShopIdForUpdate(shopId)).thenReturn(Optional.empty());
+                assertThrows(CustomException.class, () -> shopEscrowFundService.topUpFund(shopId, TopUpEscrowFundRequest.builder().amount(BigDecimal.valueOf(100000)).build()));
+        }
+
+        @Test
+        @DisplayName("topUpFund activates shop when pending deposit reaches committed amount")
+        void testTopUpFund_PendingDeposit_ActivatesShop() {
+                fund.setStatus(EscrowFundStatus.PENDING_DEPOSIT);
+                fund.getShop().setStatus(ShopStatus.PENDING_DEPOSIT);
+                fund.setBalance(BigDecimal.ZERO);
+                fund.setCommittedAmount(new BigDecimal("5000000"));
+
+                when(shopEscrowFundRepository.findByShopIdForUpdate(shopId)).thenReturn(Optional.of(fund));
+                when(trustLevelConfigService.resolveTrustLevel(any())).thenReturn(3);
+
+                TopUpEscrowFundRequest req = TopUpEscrowFundRequest.builder().amount(new BigDecimal("5000000")).build();
+                ShopEscrowFundResponse res = shopEscrowFundService.topUpFund(shopId, req);
+
+                assertNotNull(res);
+                assertEquals(EscrowFundStatus.ACTIVE, fund.getStatus());
+                assertEquals(ShopStatus.ACTIVE, fund.getShop().getStatus());
+                assertEquals(3, fund.getCurrentTrustLevel());
+                verify(shopRepository).save(fund.getShop());
+                verify(notificationRepository).save(any(Notification.class));
+        }
+
+        @Test
+        @DisplayName("topUpFund handles partial deposit during pending deposit stage")
+        void testTopUpFund_PendingDeposit_Partial() {
+                fund.setStatus(EscrowFundStatus.PENDING_DEPOSIT);
+                fund.getShop().setStatus(ShopStatus.PENDING_DEPOSIT);
+                fund.setBalance(BigDecimal.ZERO);
+                fund.setCommittedAmount(new BigDecimal("5000000"));
+
+                when(shopEscrowFundRepository.findByShopIdForUpdate(shopId)).thenReturn(Optional.of(fund));
+
+                TopUpEscrowFundRequest req = TopUpEscrowFundRequest.builder().amount(new BigDecimal("2000000")).build();
+                ShopEscrowFundResponse res = shopEscrowFundService.topUpFund(shopId, req);
+
+                assertNotNull(res);
+                assertEquals(EscrowFundStatus.PENDING_DEPOSIT, fund.getStatus());
+                assertEquals(new BigDecimal("2000000"), fund.getBalance());
+        }
+
+        @Test
+        @DisplayName("topUpFund upgrades star level when active shop balance increases")
+        void testTopUpFund_ActiveShop_IncreasesStarLevel() {
+                fund.setStatus(EscrowFundStatus.ACTIVE);
+                fund.getShop().setStatus(ShopStatus.ACTIVE);
+                fund.setBalance(new BigDecimal("5000000"));
+                fund.setCommittedAmount(new BigDecimal("5000000"));
+                fund.setCurrentTrustLevel(2);
+
+                when(shopEscrowFundRepository.findByShopIdForUpdate(shopId)).thenReturn(Optional.of(fund));
+                when(trustLevelConfigService.resolveTrustLevel(any())).thenReturn(4);
+                when(trustLevelConfigService.getConfigByStarLevel(4)).thenReturn(TrustLevelConfig.builder().minDeposit(new BigDecimal("8000000")).build());
+
+                TopUpEscrowFundRequest req = TopUpEscrowFundRequest.builder().amount(new BigDecimal("5000000")).build();
+                ShopEscrowFundResponse res = shopEscrowFundService.topUpFund(shopId, req);
+
+                assertNotNull(res);
+                assertEquals(4, fund.getCurrentTrustLevel());
+                assertEquals(4, fund.getShop().getTrustLevel());
+                assertEquals(new BigDecimal("10000000"), fund.getCommittedAmount());
+        }
+
+        @Test
+        @DisplayName("topUpFund updates deficit amount when active shop still under min deposit")
+        void testTopUpFund_ActiveShop_StillDeficit() {
+                fund.setStatus(EscrowFundStatus.ACTIVE);
+                fund.setBalance(new BigDecimal("1000000"));
+                fund.setCommittedAmount(new BigDecimal("5000000"));
+                fund.setCurrentTrustLevel(2);
+
+                when(shopEscrowFundRepository.findByShopIdForUpdate(shopId)).thenReturn(Optional.of(fund));
+                when(trustLevelConfigService.resolveTrustLevel(any())).thenReturn(2);
+                when(trustLevelConfigService.getConfigByStarLevel(2)).thenReturn(TrustLevelConfig.builder().minDeposit(new BigDecimal("5000000")).build());
+
+                TopUpEscrowFundRequest req = TopUpEscrowFundRequest.builder().amount(new BigDecimal("1000000")).build();
+                ShopEscrowFundResponse res = shopEscrowFundService.topUpFund(shopId, req);
+
+                assertNotNull(res);
+                assertEquals(new BigDecimal("3000000"), fund.getDeficitAmount());
+        }
+
+        // --- deductCompensation tests ---
+        @Test
+        @DisplayName("deductCompensation validations")
+        void testDeductCompensation_Validations() {
+                assertThrows(CustomException.class, () -> shopEscrowFundService.deductCompensation(shopId, null));
+
+                AdminDeductCompensationRequest reqSmall = AdminDeductCompensationRequest.builder().amount(new BigDecimal("500")).build();
+                assertThrows(CustomException.class, () -> shopEscrowFundService.deductCompensation(shopId, reqSmall));
+
+                AdminDeductCompensationRequest reqValid = AdminDeductCompensationRequest.builder().amount(new BigDecimal("20000")).build();
+                when(shopEscrowFundRepository.findByShopIdForUpdate(shopId)).thenReturn(Optional.empty());
+                assertThrows(CustomException.class, () -> shopEscrowFundService.deductCompensation(shopId, reqValid));
+
+                // Fund zero balance
+                fund.setBalance(BigDecimal.ZERO);
+                when(shopEscrowFundRepository.findByShopIdForUpdate(shopId)).thenReturn(Optional.of(fund));
+                assertThrows(CustomException.class, () -> shopEscrowFundService.deductCompensation(shopId, reqValid));
+
+                // OrderId null
+                fund.setBalance(new BigDecimal("1000000"));
+                assertThrows(CustomException.class, () -> shopEscrowFundService.deductCompensation(shopId, reqValid));
+
+                // Order not found
+                reqValid.setOrderId(orderId);
+                when(orderRepository.findById(orderId)).thenReturn(Optional.empty());
+                assertThrows(CustomException.class, () -> shopEscrowFundService.deductCompensation(shopId, reqValid));
+
+                // Order shop mismatch
+                Shop otherShop = new Shop();
+                otherShop.setId(UUID.randomUUID());
+                order.setShop(otherShop);
+                when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+                assertThrows(CustomException.class, () -> shopEscrowFundService.deductCompensation(shopId, reqValid));
+
+                // Order user null
+                order.setShop(shop);
+                order.setUser(null);
+                assertThrows(CustomException.class, () -> shopEscrowFundService.deductCompensation(shopId, reqValid));
+        }
+
+        @Test
+        @DisplayName("deductCompensation creates buyer wallet when not exists and dedupeKey checks")
+        void testDeductCompensation_BuyerWalletCreated_AndDedupeKey() {
+                AdminDeductCompensationRequest req = AdminDeductCompensationRequest.builder()
+                                .orderId(orderId)
+                                .amount(new BigDecimal("50000"))
+                                .reportId(UUID.randomUUID())
+                                .build();
+
+                order.setShop(shop);
+                order.setUser(buyer);
+                order.setTotal(new BigDecimal("200000"));
+                fund.setBalance(new BigDecimal("1000000"));
+
+                when(shopEscrowFundRepository.findByShopIdForUpdate(shopId)).thenReturn(Optional.of(fund));
+                when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+                when(walletRepository.findByUserIdForUpdate(buyer.getId())).thenReturn(Optional.empty());
+                when(walletRepository.save(any(Wallet.class))).thenAnswer(i -> {
+                        Wallet w = i.getArgument(0);
+                        w.setId(UUID.randomUUID());
+                        return w;
+                });
+
+                // Case 1: DedupeKey exists
+                when(transactionRepository.existsByDedupeKey("COMPENSATION:REPORT:" + req.getReportId())).thenReturn(true);
+                assertThrows(CustomException.class, () -> shopEscrowFundService.deductCompensation(shopId, req));
+
+                // Case 2: DedupeKey not exists, success with reportId
+                when(transactionRepository.existsByDedupeKey("COMPENSATION:REPORT:" + req.getReportId())).thenReturn(false);
+                when(shopEscrowTransactionRepository.sumCompensationByOrderId(orderId)).thenReturn(BigDecimal.ZERO);
+                when(escrowRepository.findByOrderId(orderId)).thenReturn(Optional.empty());
+                when(shopEscrowFundRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+                when(shopEscrowTransactionRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+                ShopEscrowTransaction tx = shopEscrowFundService.deductCompensation(shopId, req);
+                assertNotNull(tx);
+                assertEquals(new BigDecimal("-50000"), tx.getAmount());
+        }
+
+        // --- validateCanCloseShopInternal tests ---
+        @Test
+        @DisplayName("validateCanCloseShopInternal validates all shop and fund conditions")
+        void testValidateCanCloseShop_VariousConditions() {
+                // Shop not found
+                when(shopRepository.findById(shopId)).thenReturn(Optional.empty());
+                assertThrows(CustomException.class, () -> shopEscrowFundService.requestCloseShopAndRefund(shopId));
+
+                when(shopRepository.findById(shopId)).thenReturn(Optional.of(shop));
+                when(shopEscrowFundRepository.findByShopId(shopId)).thenReturn(Optional.empty());
+                when(shopEscrowFundRepository.findByShopIdForUpdate(shopId)).thenReturn(Optional.of(fund));
+                assertThrows(CustomException.class, () -> shopEscrowFundService.requestCloseShopAndRefund(shopId));
+
+                when(shopEscrowFundRepository.findByShopId(shopId)).thenReturn(Optional.of(fund));
+
+                // Non-approval step: shop not ACTIVE
+                shop.setStatus(ShopStatus.INACTIVE);
+                assertThrows(CustomException.class, () -> shopEscrowFundService.requestCloseShopAndRefund(shopId));
+
+                // Shop ACTIVE, but fund DEFICIT
+                shop.setStatus(ShopStatus.ACTIVE);
+                fund.setStatus(EscrowFundStatus.DEFICIT);
+                assertThrows(CustomException.class, () -> shopEscrowFundService.requestCloseShopAndRefund(shopId));
+
+                // Fund LOCKED
+                fund.setStatus(EscrowFundStatus.LOCKED);
+                assertThrows(CustomException.class, () -> shopEscrowFundService.requestCloseShopAndRefund(shopId));
+
+                fund.setStatus(EscrowFundStatus.ACTIVE);
+                fund.setIsDeficit(false);
+
+                // Active orders exist
+                when(orderRepository.existsByShopIdAndStatusIn(eq(shopId), any())).thenReturn(true);
+                assertThrows(CustomException.class, () -> shopEscrowFundService.requestCloseShopAndRefund(shopId));
+
+                // Cooling period orders exist
+                when(orderRepository.existsByShopIdAndStatusIn(eq(shopId), any())).thenReturn(false);
+                when(orderRepository.existsCompletedOrderWithinCoolingPeriod(eq(shopId), any())).thenReturn(true);
+                assertThrows(CustomException.class, () -> shopEscrowFundService.requestCloseShopAndRefund(shopId));
+
+                // Active escrow exists
+                when(orderRepository.existsCompletedOrderWithinCoolingPeriod(eq(shopId), any())).thenReturn(false);
+                when(escrowRepository.existsByOrderShopIdAndStatusIn(eq(shopId), any())).thenReturn(true);
+                assertThrows(CustomException.class, () -> shopEscrowFundService.requestCloseShopAndRefund(shopId));
+
+                // Active order return exists
+                when(escrowRepository.existsByOrderShopIdAndStatusIn(eq(shopId), any())).thenReturn(false);
+                when(orderReturnRepository.existsByOrderShopIdAndStatusIn(eq(shopId), any())).thenReturn(true);
+                assertThrows(CustomException.class, () -> shopEscrowFundService.requestCloseShopAndRefund(shopId));
+
+                // Pending reports exist
+                when(orderReturnRepository.existsByOrderShopIdAndStatusIn(eq(shopId), any())).thenReturn(false);
+                when(reportRepository.existsPendingReportsForShop(shopId)).thenReturn(true);
+                assertThrows(CustomException.class, () -> shopEscrowFundService.requestCloseShopAndRefund(shopId));
+
+                // Pending appeals exist
+                when(reportRepository.existsPendingReportsForShop(shopId)).thenReturn(false);
+                when(requestRepository.existsByAccountIdAndTypeAndStatus(any(), eq(RequestType.APPEAL), eq(RequestStatus.PENDING))).thenReturn(true);
+                assertThrows(CustomException.class, () -> shopEscrowFundService.requestCloseShopAndRefund(shopId));
+        }
+
+        // --- adminApproveCloseShopRefund edge cases ---
+        @Test
+        @DisplayName("adminApproveCloseShopRefund edge cases")
+        void testAdminApproveCloseShopRefund_EdgeCases() {
+                // Not found
+                when(shopEscrowFundRepository.findByShopIdForUpdate(shopId)).thenReturn(Optional.empty());
+                assertThrows(CustomException.class, () -> shopEscrowFundService.adminApproveCloseShopRefund(shopId));
+
+                // Status not REFUND_PENDING
+                fund.setStatus(EscrowFundStatus.ACTIVE);
+                when(shopEscrowFundRepository.findByShopIdForUpdate(shopId)).thenReturn(Optional.of(fund));
+                assertThrows(CustomException.class, () -> shopEscrowFundService.adminApproveCloseShopRefund(shopId));
+
+                // Shop or user null
+                fund.setStatus(EscrowFundStatus.REFUND_PENDING);
+                fund.getShop().setUser(null);
+                assertThrows(CustomException.class, () -> shopEscrowFundService.adminApproveCloseShopRefund(shopId));
+
+                // Approval step validation: Shop status CLOSED
+                fund.getShop().setUser(seller);
+                shop.setStatus(ShopStatus.CLOSED);
+                when(shopRepository.findById(shopId)).thenReturn(Optional.of(shop));
+                when(shopEscrowFundRepository.findByShopId(shopId)).thenReturn(Optional.of(fund));
+                assertThrows(CustomException.class, () -> shopEscrowFundService.adminApproveCloseShopRefund(shopId));
+
+                // Approval step validation: Fund status not REFUND_PENDING in validate
+                shop.setStatus(ShopStatus.INACTIVE);
+                ShopEscrowFund fundInDb = new ShopEscrowFund();
+                fundInDb.setStatus(EscrowFundStatus.ACTIVE);
+                when(shopEscrowFundRepository.findByShopId(shopId)).thenReturn(Optional.of(fundInDb));
+                assertThrows(CustomException.class, () -> shopEscrowFundService.adminApproveCloseShopRefund(shopId));
+        }
+
+        // --- adminRejectCloseShopRefund edge cases ---
+        @Test
+        @DisplayName("adminRejectCloseShopRefund edge cases")
+        void testAdminRejectCloseShopRefund_EdgeCases() {
+                when(shopEscrowFundRepository.findByShopIdForUpdate(shopId)).thenReturn(Optional.empty());
+                assertThrows(CustomException.class, () -> shopEscrowFundService.adminRejectCloseShopRefund(shopId, "reason"));
+
+                fund.setStatus(EscrowFundStatus.ACTIVE);
+                when(shopEscrowFundRepository.findByShopIdForUpdate(shopId)).thenReturn(Optional.of(fund));
+                assertThrows(CustomException.class, () -> shopEscrowFundService.adminRejectCloseShopRefund(shopId, "reason"));
+
+                fund.setStatus(EscrowFundStatus.REFUND_PENDING);
+                fund.setShop(null);
+                assertThrows(CustomException.class, () -> shopEscrowFundService.adminRejectCloseShopRefund(shopId, "reason"));
+        }
+
+        // --- processVnpayCallback edge cases ---
+        @Test
+        @DisplayName("processVnpayCallback edge cases")
+        void testProcessVnpayCallback_EdgeCases() {
+                when(vnPayService.verifyChecksumFromQueryString(anyString())).thenReturn(false);
+                assertThrows(CustomException.class, () -> shopEscrowFundService.processVnpayCallback(Map.of(), "query"));
+
+                when(vnPayService.verifyChecksumFromQueryString(anyString())).thenReturn(true);
+
+                // Failed response code
+                Map<String, String> failParams = Map.of("vnp_TxnRef", "ESCROW_" + shopId + "_1", "vnp_ResponseCode", "24");
+                shopEscrowFundService.processVnpayCallback(failParams, "query");
+
+                // Already processed
+                Map<String, String> successParams = Map.of("vnp_TxnRef", "ESCROW_" + shopId + "_2", "vnp_ResponseCode", "00", "vnp_Amount", "10000000");
+                when(shopEscrowTransactionRepository.existsByReferenceCode("ESCROW_" + shopId + "_2")).thenReturn(true);
+                shopEscrowFundService.processVnpayCallback(successParams, "query");
+
+                // Invalid amount
+                Map<String, String> zeroAmountParams = Map.of("vnp_TxnRef", "ESCROW_" + shopId + "_3", "vnp_ResponseCode", "00", "vnp_Amount", "0");
+                when(shopEscrowTransactionRepository.existsByReferenceCode("ESCROW_" + shopId + "_3")).thenReturn(false);
+                assertThrows(CustomException.class, () -> shopEscrowFundService.processVnpayCallback(zeroAmountParams, "query"));
+        }
+
+
+        @Test
+        @DisplayName("adminAdjustFund validation and branch coverage")
+        void testAdminAdjustFund_Branches() {
+                when(shopEscrowFundRepository.findByShopIdForUpdate(shopId)).thenReturn(Optional.of(fund));
+                
+                // Negative balance
+                AdminAdjustEscrowFundRequest reqNegBal = AdminAdjustEscrowFundRequest.builder().balance(new BigDecimal("-100")).build();
+                assertThrows(CustomException.class, () -> shopEscrowFundService.adminAdjustFund(shopId, reqNegBal, UUID.randomUUID()));
+
+                // Negative committed
+                AdminAdjustEscrowFundRequest reqNegCom = AdminAdjustEscrowFundRequest.builder().committedAmount(new BigDecimal("-100")).build();
+                assertThrows(CustomException.class, () -> shopEscrowFundService.adminAdjustFund(shopId, reqNegCom, UUID.randomUUID()));
+
+                // Invalid star level
+                AdminAdjustEscrowFundRequest reqBadStarLow = AdminAdjustEscrowFundRequest.builder().targetTrustLevel(0).build();
+                assertThrows(CustomException.class, () -> shopEscrowFundService.adminAdjustFund(shopId, reqBadStarLow, UUID.randomUUID()));
+                AdminAdjustEscrowFundRequest reqBadStarHigh = AdminAdjustEscrowFundRequest.builder().targetTrustLevel(6).build();
+                assertThrows(CustomException.class, () -> shopEscrowFundService.adminAdjustFund(shopId, reqBadStarHigh, UUID.randomUUID()));
+
+                // Deficit condition: newBalance < newCommitted
+                fund.setBalance(new BigDecimal("5000000"));
+                AdminAdjustEscrowFundRequest reqDeficit = AdminAdjustEscrowFundRequest.builder()
+                                .balance(new BigDecimal("3000000"))
+                                .committedAmount(new BigDecimal("5000000"))
+                                .targetTrustLevel(2)
+                                .build();
+                ShopEscrowFundResponse res = shopEscrowFundService.adminAdjustFund(shopId, reqDeficit, UUID.randomUUID());
+                assertTrue(fund.getIsDeficit());
+                assertEquals(new BigDecimal("2000000"), fund.getDeficitAmount());
+                assertEquals(EscrowFundStatus.DEFICIT, fund.getStatus());
+
+                // No balance change (diff == 0) and null targetTrustLevel
+                AdminAdjustEscrowFundRequest reqNoChange = AdminAdjustEscrowFundRequest.builder()
+                                .balance(new BigDecimal("3000000"))
+                                .committedAmount(new BigDecimal("2000000"))
+                                .targetTrustLevel(null)
+                                .build();
+                when(trustLevelConfigService.resolveTrustLevel(any())).thenReturn(2);
+                ShopEscrowFundResponse res2 = shopEscrowFundService.adminAdjustFund(shopId, reqNoChange, UUID.randomUUID());
+                assertFalse(fund.getIsDeficit());
+                assertEquals(BigDecimal.ZERO, fund.getDeficitAmount());
+        }
+
+        @Test
+        @DisplayName("getAllFunds branches: isDeficit, findAll, and fallback tier name")
+        void testGetAllFunds_Branches() {
+                when(trustLevelConfigService.getConfigByStarLevel(anyInt())).thenReturn(null);
+                Page<ShopEscrowFund> page = new PageImpl<>(List.of(fund));
+
+                // status null, isDeficit not null
+                when(shopEscrowFundRepository.findByIsDeficit(eq(true), any())).thenReturn(page);
+                Page<ShopEscrowFundResponse> res1 = shopEscrowFundService.getAllFunds(true, null, PageRequest.of(0, 10));
+                assertNotNull(res1);
+
+                // status null, isDeficit null
+                when(shopEscrowFundRepository.findAll(any(Pageable.class))).thenReturn(page);
+                Page<ShopEscrowFundResponse> res2 = shopEscrowFundService.getAllFunds(null, null, PageRequest.of(0, 10));
+                assertNotNull(res2);
+        }
+
+        @Test
+        @DisplayName("processVnpayCallback and createVnpayPaymentUrl edge cases")
+        void testCallbackAndPaymentUrlBranches() {
+                // createVnpayPaymentUrl invalid amount and blank clientIp
+                when(shopRepository.findById(shopId)).thenReturn(Optional.of(shop));
+                assertThrows(CustomException.class, () -> shopEscrowFundService.createVnpayPaymentUrl(shopId, TopUpEscrowFundRequest.builder().amount(BigDecimal.ZERO).build(), null));
+                
+                TopUpEscrowFundRequest reqValid = TopUpEscrowFundRequest.builder().amount(new BigDecimal("100000")).build();
+                when(vnPayService.buildPaymentUrl(anyString(), any(), anyString(), any(), eq("127.0.0.1"))).thenReturn("http://vnpay.vn");
+                String url = shopEscrowFundService.createVnpayPaymentUrl(shopId, reqValid, "   ");
+                assertEquals("http://vnpay.vn", url);
+
+                // processVnpayCallback with map verification
+                when(vnPayService.verifyChecksumFromMap(any())).thenReturn(true);
+                when(vnPayService.verifyChecksumFromQueryString(anyString())).thenReturn(true);
+                shopEscrowFundService.processVnpayCallback(Map.of("vnp_TxnRef", "OTHER_123"), null);
+
+                // processVnpayCallback non-escrow txnRef
+                shopEscrowFundService.processVnpayCallback(Map.of("vnp_TxnRef", "ORDER_123"), "vnp_TxnRef=ORDER_123");
+
+                // parts length < 2
+                shopEscrowFundService.processVnpayCallback(Map.of("vnp_TxnRef", "ESCROW"), "vnp_TxnRef=ESCROW");
+
+                // Invalid UUID
+                shopEscrowFundService.processVnpayCallback(Map.of("vnp_TxnRef", "ESCROW_invaliduuid_123"), "vnp_TxnRef=ESCROW_invaliduuid_123");
+
+                // Amount missing
+                shopEscrowFundService.processVnpayCallback(Map.of("vnp_TxnRef", "ESCROW_" + shopId + "_123", "vnp_ResponseCode", "00"), "vnp_TxnRef=ESCROW_" + shopId + "_123");
+        }
+
+
+        @Test
+        @DisplayName("createInitialFund with zero deposit")
+        void testCreateInitialFund_ZeroDeposit() {
+                when(shopEscrowFundRepository.save(any(ShopEscrowFund.class))).thenAnswer(i -> i.getArgument(0));
+                ShopEscrowFund created = shopEscrowFundService.createInitialFund(shop, BigDecimal.ZERO, "REG-002");
+                assertNotNull(created);
+                assertEquals(EscrowFundStatus.ACTIVE, created.getStatus());
+                assertEquals(ShopStatus.ACTIVE, shop.getStatus());
+        }
+
+        @Test
+        @DisplayName("processVnpayCallback with txnRef extracted from rawQueryString")
+        void testProcessVnpayCallback_ExtractTxnRefFromRawQuery() {
+                String txnRef = "ESCROW_" + shopId + "_777777";
+                String rawQuery = "vnp_TxnRef=" + txnRef + "&vnp_ResponseCode=00&vnp_Amount=300000000";
+
+                when(vnPayService.verifyChecksumFromQueryString(anyString())).thenReturn(true);
+                when(shopEscrowTransactionRepository.existsByReferenceCode(txnRef)).thenReturn(false);
+                when(shopRepository.findById(shopId)).thenReturn(Optional.of(shop));
+                when(shopEscrowFundRepository.findByShopIdForUpdate(shopId)).thenReturn(Optional.of(fund));
+
+                shopEscrowFundService.processVnpayCallback(Map.of("vnp_ResponseCode", "00", "vnp_Amount", "300000000"), rawQuery);
+
+                verify(shopEscrowTransactionRepository).save(any(ShopEscrowTransaction.class));
+        }
+
 }

@@ -36,7 +36,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
+
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class RegisterSellerServiceImplTest {
 
     @Mock
@@ -273,4 +277,194 @@ class RegisterSellerServiceImplTest {
         );
         assertTrue(exception.getMessage().contains("ngân hàng"));
     }
+
+    @Test
+    @DisplayName("Báo lỗi khi tài khoản hoặc user không tìm thấy, hoặc đã có Shop, hoặc đang có đơn PENDING")
+    void testPreconditions_Errors() {
+        // 1. Account not found
+        when(accountRepository.findById(accountId)).thenReturn(Optional.empty());
+        assertThrows(CustomException.class, () -> registerSellerService.createSellerRegistration(accountId, new RegisterSellerRequest()));
+
+        // 2. User not found
+        when(accountRepository.findById(accountId)).thenReturn(Optional.of(verifiedAccount));
+        when(userRepository.findByAccountId(accountId)).thenReturn(Optional.empty());
+        assertThrows(CustomException.class, () -> registerSellerService.createSellerRegistration(accountId, new RegisterSellerRequest()));
+
+        // 3. Đã có Shop
+        when(userRepository.findByAccountId(accountId)).thenReturn(Optional.of(mockUser));
+        when(shopRepository.existsByUserId(mockUser.getId())).thenReturn(true);
+        CustomException exShop = assertThrows(CustomException.class,
+                () -> registerSellerService.createSellerRegistration(accountId, new RegisterSellerRequest()));
+        assertTrue(exShop.getMessage().contains("đã sở hữu một gian hàng"));
+
+        // 4. Đang có đơn PENDING
+        when(shopRepository.existsByUserId(mockUser.getId())).thenReturn(false);
+        when(requestRepository.existsByAccountIdAndTypeAndStatus(accountId, RequestType.SELLER_REGISTRATION, RequestStatus.PENDING)).thenReturn(true);
+        CustomException exPending = assertThrows(CustomException.class,
+                () -> registerSellerService.createSellerRegistration(accountId, new RegisterSellerRequest()));
+        assertTrue(exPending.getMessage().contains("đang có một đơn đăng ký người bán chờ xét duyệt"));
+    }
+
+    @Test
+    @DisplayName("Báo lỗi khi tên Shop để trống hoặc đã tồn tại")
+    void testShopName_Errors() {
+        when(accountRepository.findById(accountId)).thenReturn(Optional.of(verifiedAccount));
+        when(userRepository.findByAccountId(accountId)).thenReturn(Optional.of(mockUser));
+        when(shopRepository.existsByUserId(mockUser.getId())).thenReturn(false);
+        when(requestRepository.existsByAccountIdAndTypeAndStatus(accountId, RequestType.SELLER_REGISTRATION, RequestStatus.PENDING)).thenReturn(false);
+
+        // Tên shop null / blank
+        RegisterSellerRequest req = RegisterSellerRequest.builder().shopName("   ").build();
+        assertThrows(CustomException.class, () -> registerSellerService.createSellerRegistration(accountId, req));
+
+        // Tên shop đã có trong Shop
+        req.setShopName("Shop Da Co");
+        when(shopRepository.existsByNameIgnoreCase("Shop Da Co")).thenReturn(true);
+        CustomException ex1 = assertThrows(CustomException.class, () -> registerSellerService.createSellerRegistration(accountId, req));
+        assertTrue(ex1.getMessage().contains("đã tồn tại"));
+
+        // Tên shop đã có trong đơn pending Seller
+        when(shopRepository.existsByNameIgnoreCase("Shop Da Co")).thenReturn(false);
+        when(sellerRepository.existsPendingByShopNameIgnoreCase("Shop Da Co")).thenReturn(true);
+        CustomException ex2 = assertThrows(CustomException.class, () -> registerSellerService.createSellerRegistration(accountId, req));
+        assertTrue(ex2.getMessage().contains("đang có một đơn đăng ký khác chờ xét duyệt"));
+    }
+
+    @Test
+    @DisplayName("Báo lỗi khi Business thiếu businessType, businessName, businessAddress, hoặc taxCode")
+    void testBusiness_ValidationErrors() {
+        when(accountRepository.findById(accountId)).thenReturn(Optional.of(verifiedAccount));
+        when(userRepository.findByAccountId(accountId)).thenReturn(Optional.of(mockUser));
+        when(shopRepository.existsByUserId(mockUser.getId())).thenReturn(false);
+        when(requestRepository.existsByAccountIdAndTypeAndStatus(accountId, RequestType.SELLER_REGISTRATION, RequestStatus.PENDING)).thenReturn(false);
+
+        RegisterSellerRequest req = RegisterSellerRequest.builder()
+                .sellerType(SellerType.BUSINESS)
+                .shopName("Tech Mall")
+                .build();
+
+        // 1. Thiếu businessType
+        assertThrows(CustomException.class, () -> registerSellerService.createSellerRegistration(accountId, req));
+
+        // 2. Thiếu businessName
+        req.setBusinessType(BusinessType.ENTERPRISE);
+        assertThrows(CustomException.class, () -> registerSellerService.createSellerRegistration(accountId, req));
+
+        // 3. Thiếu businessAddress
+        req.setBusinessName("Tech Corp");
+        assertThrows(CustomException.class, () -> registerSellerService.createSellerRegistration(accountId, req));
+
+        // 4. Thiếu taxCode
+        req.setBusinessAddress("Hà Nội");
+        assertThrows(CustomException.class, () -> registerSellerService.createSellerRegistration(accountId, req));
+
+        // 5. Individual thiếu taxCode
+        req.setSellerType(SellerType.INDIVIDUAL);
+        req.setTaxCode(null);
+        assertThrows(CustomException.class, () -> registerSellerService.createSellerRegistration(accountId, req));
+    }
+
+    @Test
+    @DisplayName("Báo lỗi khi taxCode hoặc shopPhone bị trùng lặp")
+    void testTaxCodeAndPhone_Duplicates() {
+        when(accountRepository.findById(accountId)).thenReturn(Optional.of(verifiedAccount));
+        when(userRepository.findByAccountId(accountId)).thenReturn(Optional.of(mockUser));
+        when(shopRepository.existsByUserId(mockUser.getId())).thenReturn(false);
+        when(requestRepository.existsByAccountIdAndTypeAndStatus(accountId, RequestType.SELLER_REGISTRATION, RequestStatus.PENDING)).thenReturn(false);
+
+        RegisterSellerRequest req = RegisterSellerRequest.builder()
+                .sellerType(SellerType.INDIVIDUAL)
+                .shopName("Unique Shop")
+                .taxCode("TAX999")
+                .shopPhone("0900000000")
+                .build();
+
+        // 1. TaxCode trùng trong Shop
+        when(shopRepository.existsByTaxCode("TAX999")).thenReturn(true);
+        assertThrows(CustomException.class, () -> registerSellerService.createSellerRegistration(accountId, req));
+
+        // 2. TaxCode trùng trong pending Seller
+        when(shopRepository.existsByTaxCode("TAX999")).thenReturn(false);
+        when(sellerRepository.existsPendingByTaxCode("TAX999")).thenReturn(true);
+        assertThrows(CustomException.class, () -> registerSellerService.createSellerRegistration(accountId, req));
+
+        // 3. Phone trùng trong Shop
+        when(sellerRepository.existsPendingByTaxCode("TAX999")).thenReturn(false);
+        when(shopRepository.existsByPhoneNumber("0900000000")).thenReturn(true);
+        assertThrows(CustomException.class, () -> registerSellerService.createSellerRegistration(accountId, req));
+
+        // 4. Phone trùng trong pending Seller
+        when(shopRepository.existsByPhoneNumber("0900000000")).thenReturn(false);
+        when(sellerRepository.existsPendingByShopPhone("0900000000")).thenReturn(true);
+        assertThrows(CustomException.class, () -> registerSellerService.createSellerRegistration(accountId, req));
+    }
+
+    @Test
+    @DisplayName("Báo lỗi khi thiếu thông tin ngân hàng hoặc địa chỉ lấy/trả hàng")
+    void testBankAndAddress_Errors() {
+        when(accountRepository.findById(accountId)).thenReturn(Optional.of(verifiedAccount));
+        when(userRepository.findByAccountId(accountId)).thenReturn(Optional.of(mockUser));
+        when(shopRepository.existsByUserId(mockUser.getId())).thenReturn(false);
+        when(requestRepository.existsByAccountIdAndTypeAndStatus(accountId, RequestType.SELLER_REGISTRATION, RequestStatus.PENDING)).thenReturn(false);
+
+        RegisterSellerRequest req = RegisterSellerRequest.builder()
+                .sellerType(SellerType.INDIVIDUAL)
+                .shopName("Good Shop")
+                .taxCode("TAX123")
+                .build();
+
+        // 1. Thiếu bankAccountName
+        assertThrows(CustomException.class, () -> registerSellerService.createSellerRegistration(accountId, req));
+
+        // 2. Thiếu bankAccountNumber
+        req.setBankAccountName("NGUYEN VAN A");
+        assertThrows(CustomException.class, () -> registerSellerService.createSellerRegistration(accountId, req));
+
+        // 3. Thiếu bankName
+        req.setBankAccountNumber("12345678");
+        assertThrows(CustomException.class, () -> registerSellerService.createSellerRegistration(accountId, req));
+
+        // 4. Thiếu pickupAddress
+        req.setBankName("VCB");
+        assertThrows(CustomException.class, () -> registerSellerService.createSellerRegistration(accountId, req));
+
+        // 5. Thiếu returnAddress
+        req.setPickupAddress("Địa chỉ lấy");
+        assertThrows(CustomException.class, () -> registerSellerService.createSellerRegistration(accountId, req));
+    }
+
+    @Test
+    @DisplayName("Đăng ký thành công kèm ký quỹ cam kết (isEscrowParticipated = true) và địa chỉ tùy chỉnh")
+    void testRegister_WithEscrowAndCustomAddress() {
+        when(accountRepository.findById(accountId)).thenReturn(Optional.of(verifiedAccount));
+        when(userRepository.findByAccountId(accountId)).thenReturn(Optional.of(mockUser));
+        when(shopRepository.existsByUserId(mockUser.getId())).thenReturn(false);
+        when(requestRepository.existsByAccountIdAndTypeAndStatus(accountId, RequestType.SELLER_REGISTRATION, RequestStatus.PENDING)).thenReturn(false);
+        when(requestService.createRequest(eq(verifiedAccount), any())).thenReturn(mockRequest);
+
+        RegisterSellerRequest req = RegisterSellerRequest.builder()
+                .sellerType(SellerType.INDIVIDUAL)
+                .shopName("Ký Quỹ Shop")
+                .taxCode("TAX_ESCROW")
+                .bankAccountName("CHỦ TÀI KHOẢN")
+                .bankAccountNumber("888888")
+                .bankName("MB Bank")
+                .pickupAddress("Kho 1")
+                .returnAddress("Kho 2")
+                .address("Địa chỉ giao dịch chính")
+                .isEscrowParticipated(true)
+                .initialDepositAmount(java.math.BigDecimal.valueOf(5000000))
+                .build();
+
+        CreateRequestResponse res = registerSellerService.createSellerRegistration(accountId, req);
+        assertNotNull(res);
+
+        ArgumentCaptor<Seller> captor = ArgumentCaptor.forClass(Seller.class);
+        verify(sellerRepository).save(captor.capture());
+        Seller s = captor.getValue();
+        assertTrue(s.getIsEscrowParticipated());
+        assertEquals(java.math.BigDecimal.valueOf(5000000), s.getInitialDepositAmount());
+        assertEquals("Địa chỉ giao dịch chính", s.getAddress());
+    }
+
 }

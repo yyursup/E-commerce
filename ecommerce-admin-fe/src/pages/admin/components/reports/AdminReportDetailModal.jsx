@@ -63,11 +63,12 @@ export default function AdminReportDetailModal({
   const sellerImgs = parseImages(detailModal.data?.detail?.sellerEvidenceUrl)
   const rawCovImgs = parseImages(
     detailModal.data?.coverImageUrl,
-    detailModal.rawItem?.coverImageUrl
+    detailModal.data?.detail?.coverImageUrl,
+    detailModal.rawItem?.coverImageUrl,
   )
   // Lọc ảnh bìa/minh họa không trùng lặp với ảnh bằng chứng
   const covImgs = rawCovImgs.filter(
-    (url) => !evImgs.includes(url) && !sellerImgs.includes(url)
+    (url) => !evImgs.includes(url) && !sellerImgs.includes(url),
   )
 
   const closeModal = () => {
@@ -233,6 +234,7 @@ export default function AdminReportDetailModal({
                     /* TRƯỜNG HỢP HỒ SƠ THƯỜNG (Báo cáo sản phẩm, gian hàng, người dùng, đánh giá...) HOẶC ĐƠN HÀNG ĐƠN PHƯƠNG */
                     <AdminReportSingleClaim
                       detailModal={detailModal}
+                      targetType={targetType}
                       evImgs={evImgs}
                       covImgs={covImgs}
                       isDark={isDark}

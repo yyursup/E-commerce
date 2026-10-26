@@ -35,12 +35,16 @@ public class RequestDetailsResponse {
 
 
     public static RequestDetailsResponse from(Request r, Object detail) {
+        String coverImage = r.getCoverImageUrl();
+        if ((coverImage == null || coverImage.isBlank()) && detail instanceof ReportDetailsResponse rep) {
+            coverImage = rep.getCoverImageUrl();
+        }
         return RequestDetailsResponse.builder()
                 .requestId(r.getId())
                 .type(r.getType())
                 .status(r.getStatus())
                 .description(r.getDescription())
-                .coverImageUrl(r.getCoverImageUrl())
+                .coverImageUrl(coverImage)
                 .accountId(r.getAccount() != null ? r.getAccount().getId() : null)
                 .reviewedBy(r.getReviewedBy() != null ? r.getReviewedBy().getId() : null)
                 .reviewedAt(r.getReviewedAt())

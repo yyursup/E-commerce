@@ -1,0 +1,597 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "D:\\e-commerce\\E-commerce\\automation-tests\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "--headed"
+    ],
+    "configFile": "D:\\e-commerce\\E-commerce\\automation-tests\\playwright.config.ts",
+    "rootDir": "D:/e-commerce/E-commerce/automation-tests/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "D:/e-commerce/E-commerce/automation-tests/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "D:/e-commerce/E-commerce/automation-tests/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 45000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "D:\\e-commerce\\E-commerce\\automation-tests\\test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "chromium",
+        "testDir": "D:\\e-commerce\\E-commerce\\automation-tests\\tests",
+        "snapshotDir": "D:\\e-commerce\\E-commerce\\automation-tests\\tests",
+        "testIgnore": [],
+        "testMatch": "**/*.@(spec|test).?(c|m)[jt]s?(x)",
+        "timeout": 45000,
+        "use": {
+          "baseURL": "http://localhost:3100",
+          "trace": "retain-on-failure",
+          "screenshot": "only-on-failure",
+          "video": "off",
+          "viewport": {
+            "width": 1280,
+            "height": 720
+          },
+          "actionTimeout": 10000,
+          "navigationTimeout": 20000,
+          "launchOptions": {
+            "slowMo": 150
+          },
+          "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.8078.4 Safari/537.36",
+          "screen": {
+            "width": 1920,
+            "height": 1080
+          },
+          "deviceScaleFactor": 1,
+          "isMobile": false,
+          "hasTouch": false,
+          "defaultBrowserType": "chromium",
+          "channel": "chrome",
+          "headless": false
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": "chromium"
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "html",
+        {
+          "outputFolder": "playwright-report",
+          "open": "never"
+        }
+      ],
+      [
+        "json",
+        {
+          "outputFile": "test-results/results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.64.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "flow-1-seller-onboarding.spec.ts",
+      "file": "flow-1-seller-onboarding.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "FLOW 1: SELLER ONBOARDING & BIOMETRIC eKYC VERIFICATION",
+          "file": "flow-1-seller-onboarding.spec.ts",
+          "line": 8,
+          "column": 6,
+          "specs": [
+            {
+              "title": "TC1.1 - [Happy Path] Quy trình xác minh danh tính điện tử eKYC (Upload CCCD giả lập & Đối chiếu sinh trắc học MATCH -> Mở form Seller)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 45000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5850,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-26T14:51:22.760Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b0ca5b99dd9e46657abe-30c35a6981f85f764a6d",
+              "file": "flow-1-seller-onboarding.spec.ts",
+              "line": 13,
+              "column": 7
+            },
+            {
+              "title": "TC1.2 - [Happy Path] Điền đầy đủ thông tin đăng ký Seller, chọn gói Ký quỹ bảo chứng -> Chờ duyệt (/pending) -> Admin phê duyệt & Kích hoạt Dashboard Seller",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 45000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 9709,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-26T14:51:29.235Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b0ca5b99dd9e46657abe-b6d3ebed5e78b3cdbe0e",
+              "file": "flow-1-seller-onboarding.spec.ts",
+              "line": 85,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "flow-2-commercial-trading-escrow.spec.ts",
+      "file": "flow-2-commercial-trading-escrow.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "FLOW 2: COMMERCIAL TRADING & SECURE ESCROW SETTLEMENT",
+          "file": "flow-2-commercial-trading-escrow.spec.ts",
+          "line": 9,
+          "column": 6,
+          "specs": [
+            {
+              "title": "TC2.1 - [Happy Path] Seller quản lý sản phẩm -> Buyer chọn sản phẩm, thêm vào giỏ hàng, kiểm tra tổng tiền và đặt hàng bằng Ví Ký Quỹ (Escrow)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 45000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5998,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-26T14:51:38.983Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "58abba3b110ed630d49e-0676cb28c6ad5b50ef56",
+              "file": "flow-2-commercial-trading-escrow.spec.ts",
+              "line": 14,
+              "column": 7
+            },
+            {
+              "title": "TC2.2 - [Happy Path] Kiểm tra khoản tiền giữ trong Escrow, Buyer xác nhận hoàn tất đơn hàng và Admin giải ngân/quyết toán Escrow",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 45000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3781,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-26T14:51:45.002Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "58abba3b110ed630d49e-1a950563c6b9080aa392",
+              "file": "flow-2-commercial-trading-escrow.spec.ts",
+              "line": 61,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "flow-3-trust-safety-moderation.spec.ts",
+      "file": "flow-3-trust-safety-moderation.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "FLOW 3: TRUST, SAFETY & COMMUNITY MODERATION",
+          "file": "flow-3-trust-safety-moderation.spec.ts",
+          "line": 8,
+          "column": 6,
+          "specs": [
+            {
+              "title": "TC3.1 - [Happy Path] Người dùng gửi báo cáo sản phẩm vi phạm kèm minh chứng và ghi nhận thông tin báo cáo",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 45000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 12754,
+                      "error": {
+                        "message": "TimeoutError: locator.click: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: /Gửi báo cáo/i })\u001b[22m\n\u001b[2m    - locator resolved to <button disabled type=\"submit\" class=\"rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition bg-red-600 hover:bg-red-700 cursor-not-allowed opacity-60\">Gửi báo cáo</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m  - element was detached from the DOM, retrying\u001b[22m\n",
+                        "stack": "TimeoutError: locator.click: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: /Gửi báo cáo/i })\u001b[22m\n\u001b[2m    - locator resolved to <button disabled type=\"submit\" class=\"rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition bg-red-600 hover:bg-red-700 cursor-not-allowed opacity-60\">Gửi báo cáo</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m  - element was detached from the DOM, retrying\u001b[22m\n\n    at D:\\e-commerce\\E-commerce\\automation-tests\\tests\\flow-3-trust-safety-moderation.spec.ts:55:62",
+                        "location": {
+                          "file": "D:\\e-commerce\\E-commerce\\automation-tests\\tests\\flow-3-trust-safety-moderation.spec.ts",
+                          "column": 62,
+                          "line": 55
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 53 |\u001b[39m     })\u001b[33m;\u001b[39m\n \u001b[90m 54 |\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 55 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgetByRole(\u001b[32m'button'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[35m/Gửi báo cáo/i\u001b[39m })\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                              \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 56 |\u001b[39m\n \u001b[90m 57 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByText(\u001b[35m/Gửi báo cáo thành công/i\u001b[39m)\u001b[33m.\u001b[39mfirst())\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m 58 |\u001b[39m     expect(capturedPayload)\u001b[33m.\u001b[39mtoBeTruthy()\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "D:\\e-commerce\\E-commerce\\automation-tests\\tests\\flow-3-trust-safety-moderation.spec.ts",
+                            "column": 62,
+                            "line": 55
+                          },
+                          "message": "TimeoutError: locator.click: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: /Gửi báo cáo/i })\u001b[22m\n\u001b[2m    - locator resolved to <button disabled type=\"submit\" class=\"rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition bg-red-600 hover:bg-red-700 cursor-not-allowed opacity-60\">Gửi báo cáo</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m  - element was detached from the DOM, retrying\u001b[22m\n\n\n\u001b[0m \u001b[90m 53 |\u001b[39m     })\u001b[33m;\u001b[39m\n \u001b[90m 54 |\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 55 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgetByRole(\u001b[32m'button'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[35m/Gửi báo cáo/i\u001b[39m })\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                              \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 56 |\u001b[39m\n \u001b[90m 57 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByText(\u001b[35m/Gửi báo cáo thành công/i\u001b[39m)\u001b[33m.\u001b[39mfirst())\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m 58 |\u001b[39m     expect(capturedPayload)\u001b[33m.\u001b[39mtoBeTruthy()\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at D:\\e-commerce\\E-commerce\\automation-tests\\tests\\flow-3-trust-safety-moderation.spec.ts:55:62\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-26T14:51:48.815Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "D:\\e-commerce\\E-commerce\\automation-tests\\test-results\\flow-3-trust-safety-modera-3fec0--ghi-nhận-thông-tin-báo-cáo-chromium\\test-failed-1.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "D:\\e-commerce\\E-commerce\\automation-tests\\test-results\\flow-3-trust-safety-modera-3fec0--ghi-nhận-thông-tin-báo-cáo-chromium\\error-context.md"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "D:\\e-commerce\\E-commerce\\automation-tests\\test-results\\flow-3-trust-safety-modera-3fec0--ghi-nhận-thông-tin-báo-cáo-chromium\\trace.zip"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "D:\\e-commerce\\E-commerce\\automation-tests\\tests\\flow-3-trust-safety-moderation.spec.ts",
+                        "column": 62,
+                        "line": 55
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "5a02f9460bb31062a4ae-98cc56ec5e341532cb67",
+              "file": "flow-3-trust-safety-moderation.spec.ts",
+              "line": 13,
+              "column": 7
+            },
+            {
+              "title": "TC3.2 - [Happy Path] Admin thẩm định, xử lý báo cáo vi phạm và phê duyệt sản phẩm công nghệ chờ duyệt (Product Moderation)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 45000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3708,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-26T14:52:03.030Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "5a02f9460bb31062a4ae-75e80c04aec0f743ca75",
+              "file": "flow-3-trust-safety-moderation.spec.ts",
+              "line": 63,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "flow-4-ai-conversational-support.spec.ts",
+      "file": "flow-4-ai-conversational-support.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "FLOW 4: AI CONVERSATIONAL COMMERCE & INTELLIGENT CUSTOMER SUPPORT",
+          "file": "flow-4-ai-conversational-support.spec.ts",
+          "line": 8,
+          "column": 6,
+          "specs": [
+            {
+              "title": "TC4.1 - [Happy Path] Người dùng mở Trợ lý ảo AI, hội thoại nhiều lượt (Multi-turn) tư vấn sản phẩm và nhận thẻ sản phẩm gợi ý",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 45000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5911,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-26T14:52:07.145Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "1dea7b7c361e1ab236ee-82e5b98ed0712e25636d",
+              "file": "flow-4-ai-conversational-support.spec.ts",
+              "line": 13,
+              "column": 7
+            },
+            {
+              "title": "TC4.2 - [Happy Path] Kiểm tra kênh CSKH trực tuyến (Customer Support), lưu trữ lịch sử hội thoại và trung tâm tin nhắn Seller",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 45000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 6127,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-26T14:52:13.074Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "1dea7b7c361e1ab236ee-d9cb738b99b3175a2e80",
+              "file": "flow-4-ai-conversational-support.spec.ts",
+              "line": 61,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "flow-5-commercial-analytics.spec.ts",
+      "file": "flow-5-commercial-analytics.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "FLOW 5: MULTI-ROLE COMMERCIAL ANALYTICS & REPORTING (BUYER, SELLER & ADMIN)",
+          "file": "flow-5-commercial-analytics.spec.ts",
+          "line": 8,
+          "column": 6,
+          "specs": [
+            {
+              "title": "TC5.1 - [Happy Path] Buyer xem dữ liệu thống kê tài sản/dòng tiền Ví & Escrow; Seller xem báo cáo doanh thu, sản phẩm của Shop",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 45000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2949,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-26T14:52:19.238Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3629329444c062cb3f6b-44e127e2908e55ed2567",
+              "file": "flow-5-commercial-analytics.spec.ts",
+              "line": 13,
+              "column": 7
+            },
+            {
+              "title": "TC5.2 - [Happy Path] Admin xem dữ liệu tổng hợp toàn sàn, Bảng xếp hạng Shop và Báo cáo hoa hồng",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 45000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2463,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-26T14:52:22.207Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3629329444c062cb3f6b-c9062aad45e4b0fbb70a",
+              "file": "flow-5-commercial-analytics.spec.ts",
+              "line": 43,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-26T14:51:19.327Z",
+    "duration": 66774.352,
+    "expected": 9,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

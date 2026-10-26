@@ -55,5 +55,14 @@ public interface OrderItemsRepository extends JpaRepository<OrderItem, UUID> {
         ORDER BY o.createdAt DESC
     """)
     List<OrderItem> findPurchasedDevicesByUser(@Param("userId") UUID userId, Pageable pageable);
+
+    @Query("""
+        SELECT p.productCategory.id, COALESCE(SUM(oi.quantity), 0), COALESCE(SUM(oi.totalPrice), 0)
+        FROM OrderItem oi
+        JOIN oi.product p
+        WHERE oi.order.status IN (com.marketplace.ecommerce.order.valueObjects.OrderStatus.DELIVERED, com.marketplace.ecommerce.order.valueObjects.OrderStatus.COMPLETED)
+        GROUP BY p.productCategory.id
+    """)
+    List<Object[]> getCategorySalesMetrics();
 }
 

@@ -230,16 +230,22 @@ export default function ProfileSpendingAnalytics({ isDark }) {
                 </div>
 
                 {categoryList.length === 0 ? (
-                    <div className="py-6 text-center text-xs text-slate-500">Chưa có giao dịch phát sinh theo danh mục</div>
+                    <div className={cn("py-6 text-center text-xs", isDark ? "text-slate-500" : "text-stone-500")}>
+                        Chưa có giao dịch phát sinh theo danh mục
+                    </div>
                 ) : (
                     <div className="space-y-4">
                         {categoryList.map((cat) => (
                             <div key={cat.categoryId} className="space-y-1.5">
                                 <div className="flex items-center justify-between text-xs">
-                                    <span className="font-semibold text-slate-300">{cat.categoryName} ({cat.itemCount} sản phẩm)</span>
-                                    <span className="font-bold text-amber-500">{formatCurrency(cat.amountSpent)} ({cat.percentage}%)</span>
+                                    <span className={cn("font-semibold", isDark ? "text-slate-300" : "text-stone-700")}>
+                                        {cat.categoryName} ({cat.itemCount} sản phẩm)
+                                    </span>
+                                    <span className={cn("font-bold", isDark ? "text-amber-400" : "text-amber-600")}>
+                                        {formatCurrency(cat.amountSpent)} ({cat.percentage}%)
+                                    </span>
                                 </div>
-                                <div className="h-2 w-full rounded-full bg-slate-800 overflow-hidden">
+                                <div className={cn("h-2 w-full rounded-full overflow-hidden", isDark ? "bg-slate-800" : "bg-stone-200")}>
                                     <div
                                         className="h-full rounded-full bg-gradient-to-r from-blue-500 to-amber-500 transition-all duration-500"
                                         style={{ width: `${Math.min(cat.percentage || 0, 100)}%` }}
@@ -267,28 +273,34 @@ export default function ProfileSpendingAnalytics({ isDark }) {
                             Quản lý thời hạn bảo hành của các thiết bị bạn đã sở hữu
                         </p>
                     </div>
-                    <span className="text-xs font-semibold text-slate-400">
+                    <span className={cn("text-xs font-semibold", isDark ? "text-slate-400" : "text-stone-500")}>
                         {devicesList.length} thiết bị gần nhất
                     </span>
                 </div>
 
                 {devicesList.length === 0 ? (
                     <div className="py-10 text-center">
-                        <HiOutlineCube className="mx-auto h-10 w-10 text-slate-600 mb-2" />
+                        <HiOutlineCube className="mx-auto h-10 w-10 text-slate-500 mb-2" />
                         <p className={cn("text-xs", isDark ? "text-slate-400" : "text-stone-500")}>
                             Bạn chưa có thiết bị nào được lưu trong sổ tay bảo hành.
                         </p>
                     </div>
                 ) : (
-                    <div className="divide-y divide-slate-800/40">
+                    <div className={cn("divide-y", isDark ? "divide-slate-800/40" : "divide-stone-100")}>
                         {devicesList.map((item, idx) => {
-                            let wBadgeColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+                            let wBadgeColor = isDark
+                                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                                : 'bg-emerald-50 text-emerald-700 border-emerald-200';
                             let wText = 'Còn bảo hành';
                             if (item.warrantyStatus === 'EXPIRED') {
-                                wBadgeColor = 'bg-slate-700/40 text-slate-400 border-slate-700';
+                                wBadgeColor = isDark
+                                    ? 'bg-slate-700/40 text-slate-400 border-slate-700'
+                                    : 'bg-stone-100 text-stone-600 border-stone-200';
                                 wText = 'Hết hạn BH';
                             } else if (item.warrantyStatus === 'NOT_APPLICABLE') {
-                                wBadgeColor = 'bg-rose-500/10 text-rose-400 border-rose-500/20';
+                                wBadgeColor = isDark
+                                    ? 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+                                    : 'bg-rose-50 text-rose-700 border-rose-200';
                                 wText = 'Bao test / As-is';
                             }
 
@@ -298,8 +310,8 @@ export default function ProfileSpendingAnalytics({ isDark }) {
                                         {item.imageUrl ? (
                                             <img src={item.imageUrl} alt="" className="h-12 w-12 rounded-xl object-cover shrink-0" />
                                         ) : (
-                                            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-800 shrink-0">
-                                                <HiOutlineDeviceMobile className="h-6 w-6 text-slate-400" />
+                                            <div className={cn("flex h-12 w-12 items-center justify-center rounded-xl shrink-0", isDark ? "bg-slate-800 text-slate-400" : "bg-stone-100 text-stone-500")}>
+                                                <HiOutlineDeviceMobile className="h-6 w-6" />
                                             </div>
                                         )}
                                         <div>
@@ -307,13 +319,13 @@ export default function ProfileSpendingAnalytics({ isDark }) {
                                                 {item.productName}
                                             </p>
                                             <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
-                                                <span className="rounded-md bg-amber-500/10 px-2 py-0.5 font-semibold text-amber-400 border border-amber-500/20 text-[10px]">
+                                                <span className={cn("rounded-md px-2 py-0.5 font-semibold border text-[10px]", isDark ? "bg-amber-500/10 text-amber-400 border-amber-500/20" : "bg-amber-50 text-amber-700 border-amber-200")}>
                                                     {item.conditionGradeLabel}
                                                 </span>
-                                                <span className="text-[11px] text-slate-400">
+                                                <span className={cn("text-[11px]", isDark ? "text-slate-400" : "text-stone-600")}>
                                                     Gói: {item.warrantyTypeLabel}
                                                 </span>
-                                                <span className="text-[11px] text-slate-500">
+                                                <span className={cn("text-[11px]", isDark ? "text-slate-500" : "text-stone-400")}>
                                                     • Đơn #{item.orderNumber ? item.orderNumber.slice(-8) : ''}
                                                 </span>
                                             </div>
@@ -321,7 +333,7 @@ export default function ProfileSpendingAnalytics({ isDark }) {
                                     </div>
 
                                     <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-1.5 shrink-0 pl-15 sm:pl-0">
-                                        <span className="font-extrabold text-sm text-emerald-400">
+                                        <span className={cn("font-extrabold text-sm", isDark ? "text-emerald-400" : "text-emerald-600")}>
                                             {formatCurrency(item.purchasePrice)}
                                         </span>
                                         <span className={cn("rounded-full border px-2 py-0.5 text-[10px] font-bold", wBadgeColor)}>

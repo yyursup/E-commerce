@@ -2,6 +2,7 @@ package com.marketplace.ecommerce.config;
 
 import com.marketplace.ecommerce.auth.entity.Account;
 import com.marketplace.ecommerce.auth.service.TokenService;
+import com.marketplace.ecommerce.auth.valueObjects.AccountStatus;
 import com.marketplace.ecommerce.common.CurrentUserInfo;
 import com.marketplace.ecommerce.common.exception.InvalidCredentialsException;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -10,7 +11,10 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
@@ -62,7 +66,8 @@ public class JwtFilter extends OncePerRequestFilter {
             "/api/v1/livestreams/*",
             "/api/v1/livestreams/*/join",
             "/api/v1/livestreams/*/like",
-            "/api/v1/vouchers"
+            "/api/v1/vouchers",
+            "/api/v1/policies"
     );
 
     public JwtFilter(
@@ -113,7 +118,64 @@ public class JwtFilter extends OncePerRequestFilter {
         }
 
         try {
+            boolean isBanReviewToken = tokenService.isBanReviewToken(token);
             Account account = tokenService.getAccountFromToken(token);
+
+            if (isBanReviewToken) {
+                String method = request.getMethod();
+                boolean isAllowedBanReviewEndpoint =
+                        ("GET".equalsIgnoreCase(method) && "/api/v1/request/ban-review/status".equals(uri)) ||
+                        ("POST".equalsIgnoreCase(method) && "/api/v1/request/ban-review".equals(uri));
+
+                if (!isAllowedBanReviewEndpoint) {
+                    SecurityContextHolder.clearContext();
+                    resolver.resolveException(request, response, null,
+                            new LockedException("Phiên làm việc xem xét kỷ luật không có quyền truy cập tài nguyên này."));
+                    return;
+                }
+
+                CurrentUserInfo info = new CurrentUserInfo();
+                info.setAccountId(account.getId());
+                info.setUsername(account.getUsername());
+                info.setRole("ROLE_BAN_REVIEW");
+
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(
+                                info,
+                                null,
+                                List.of(new SimpleGrantedAuthority("ROLE_BAN_REVIEW"))
+                        );
+                authentication.setDetails(
+                        new WebAuthenticationDetailsSource().buildDetails(request)
+                );
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+                filterChain.doFilter(request, response);
+                return;
+            }
+
+            if (account.isBanned()) {
+                SecurityContextHolder.clearContext();
+                if (isPublic) {
+                    filterChain.doFilter(request, response);
+                } else {
+                    resolver.resolveException(request, response, null,
+                            new LockedException("Tài khoản của bạn đã bị khóa vĩnh viễn do vi phạm quy định cộng đồng."));
+                }
+                return;
+            }
+
+            if (account.getStatus() == AccountStatus.INACTIVE
+                    || account.getStatus() == AccountStatus.DELETED
+                    || !Boolean.TRUE.equals(account.getIsActive())) {
+                SecurityContextHolder.clearContext();
+                if (isPublic) {
+                    filterChain.doFilter(request, response);
+                } else {
+                    resolver.resolveException(request, response, null,
+                            new DisabledException("Tài khoản chưa được kích hoạt hoặc đã ngừng hoạt động."));
+                }
+                return;
+            }
 
             CurrentUserInfo info = new CurrentUserInfo();
             info.setAccountId(account.getId());

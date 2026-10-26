@@ -43,8 +43,9 @@ public class ShopProfileResponse {
     private UUID ownerAccountId;
     private LocalDateTime createdAt;
     private Integer violationCount;
-    private String disciplineLevel;
+    private ShopStatus disciplineLevel;
     private LocalDateTime bannedUntil;
+    private LocalDateTime suspendedUntil;
     private LocalDateTime lastViolationAt;
 
     public static ShopProfileResponse from(Shop shop, Long productCount) {
@@ -61,12 +62,10 @@ public class ShopProfileResponse {
 
         Account owner = (shop.getUser() != null) ? shop.getUser().getAccount() : null;
         UUID ownerAccountId = owner != null ? owner.getId() : null;
-        Integer violationCount = owner != null ? owner.getViolationCount() : 0;
-        String disciplineLevel = (owner != null && owner.getDisciplineLevel() != null)
-                ? owner.getDisciplineLevel().name()
-                : "NONE";
+        Integer violationCount = shop.getViolationCount() != null ? shop.getViolationCount() : 0;
         LocalDateTime bannedUntil = owner != null ? owner.getBannedUntil() : null;
-        LocalDateTime lastViolationAt = owner != null ? owner.getLastViolationAt() : null;
+        ShopStatus disciplineLevel = shop.getStatus();
+        LocalDateTime lastViolationAt = shop.getLastViolationAt();
 
         return ShopProfileResponse.builder()
                 .id(shop.getId())
@@ -86,7 +85,8 @@ public class ShopProfileResponse {
                 .businessName(shop.getBusinessName())
                 .averageRating(finalRating)
                 .trustLevel(shop.getTrustLevel() != null ? shop.getTrustLevel() : 1)
-                .escrowBalance(shop.getEscrowFund() != null ? shop.getEscrowFund().getBalance() : java.math.BigDecimal.ZERO)
+                .escrowBalance(
+                        shop.getEscrowFund() != null ? shop.getEscrowFund().getBalance() : java.math.BigDecimal.ZERO)
                 .reviewCount(reviewCount != null ? reviewCount : 0L)
                 .followerCount(followerCount != null ? followerCount : 0L)
                 .responseRate(responseRate != null ? responseRate : "100%")
@@ -96,6 +96,7 @@ public class ShopProfileResponse {
                 .violationCount(violationCount)
                 .disciplineLevel(disciplineLevel)
                 .bannedUntil(bannedUntil)
+                .suspendedUntil(shop.getSuspendedUntil())
                 .lastViolationAt(lastViolationAt)
                 .build();
     }

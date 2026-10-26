@@ -44,6 +44,24 @@ public class ChatController {
         return ResponseEntity.ok(chatService.getOrCreateShopThread(principal, shopId));
     }
 
+    @GetMapping("/threads/dispute/by-request/{requestId}")
+    public ResponseEntity<ChatThreadResponse> getDisputeThreadByRequestId(
+            @CurrentUser CurrentUserInfo principal,
+            @PathVariable UUID requestId) {
+        return ResponseEntity.ok(chatService.getDisputeThreadByRequestId(principal, requestId));
+    }
+
+    @GetMapping("/threads/dispute/by-order/{orderId}")
+    public ResponseEntity<ChatThreadResponse> getDisputeThreadByOrderId(
+            @CurrentUser CurrentUserInfo principal,
+            @PathVariable UUID orderId) {
+        ChatThreadResponse res = chatService.getDisputeThreadByOrderId(principal, orderId);
+        if (res == null) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(res);
+    }
+
     @GetMapping("/threads/{threadId}")
     public ResponseEntity<ChatThreadResponse> getThreadById(
             @CurrentUser CurrentUserInfo principal,

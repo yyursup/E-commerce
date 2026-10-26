@@ -9,18 +9,20 @@ import com.marketplace.ecommerce.request.entity.Seller;
 import com.marketplace.ecommerce.request.repository.ReportRepository;
 import com.marketplace.ecommerce.request.repository.SellerRepository;
 import com.marketplace.ecommerce.request.valueObjects.ApproveSellerContext;
+import com.marketplace.ecommerce.request.valueObjects.DisputePolicyClause;
+import com.marketplace.ecommerce.request.valueObjects.ReportDecision;
 import com.marketplace.ecommerce.request.valueObjects.RequestStatus;
 import com.marketplace.ecommerce.request.valueObjects.TargetType;
 import com.marketplace.ecommerce.shop.repository.ShopRepository;
 import com.marketplace.ecommerce.order.entity.Order;
 import com.marketplace.ecommerce.order.repository.OrderRepository;
 import com.marketplace.ecommerce.order.valueObjects.OrderStatus;
+import com.marketplace.ecommerce.request.entity.Report;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 
@@ -38,16 +40,16 @@ public class RequestPolicy {
         List<String> types = reportRepository.resolveTargetTypes(targetId);
 
         if (types == null || types.isEmpty()) {
-            throw new CustomException("Target not found: " + targetId);
+            throw new CustomException("Không tìm thấy đối tượng báo cáo: " + targetId);
         }
         if (types.size() > 1) {
-            throw new CustomException("Target is ambiguous (matches multiple types): " + targetId);
+            throw new CustomException("Đối tượng báo cáo không rõ ràng (trùng khớp nhiều loại đối tượng): " + targetId);
         }
 
         try {
             return TargetType.valueOf(types.get(0));
         } catch (IllegalArgumentException ex) {
-            throw new CustomException("Invalid target type returned from DB: " + types.get(0));
+            throw new CustomException("Loại đối tượng báo cáo không hợp lệ từ hệ thống: " + types.get(0));
         }
     }
 
@@ -78,16 +80,13 @@ public class RequestPolicy {
         }
 
         // Kiểm tra tính hợp lệ về thời điểm:
-        // 1. DELIVERED: Hợp lệ khiếu nại (trong vòng 7 ngày kể từ khi giao)
-        // 2. SHIPPED / SHIPPING: Chỉ cho phép khiếu nại khi đơn bị quá hạn giao (sau 3
-        // ngày kể từ khi xuất kho)
+        // 1. DELIVERED: Hợp lệ khiếu nại (trong vòng 3 ngày kể từ khi giao, trước khi
+        // hệ thống tự động giải ngân)
         if (order.getStatus() == OrderStatus.DELIVERED) {
             if (order.getDeliveredAt() != null) {
-                long daysSinceDelivered = ChronoUnit.DAYS.between(order.getDeliveredAt(),
-                        java.time.LocalDateTime.now());
-                if (daysSinceDelivered > 7) {
+                if (LocalDateTime.now().isAfter(order.getDeliveredAt().plusDays(3))) {
                     throw new CustomException(
-                            "Đã quá thời hạn 7 ngày khiếu nại kể từ khi đơn hàng được giao thành công.");
+                            "Đã quá thời hạn 3 ngày khiếu nại kể từ khi đơn hàng được giao thành công.");
                 }
             }
         } else {
@@ -103,31 +102,31 @@ public class RequestPolicy {
     public ApproveSellerContext validateApproveSellerRequest(Request req, UUID requestId) {
 
         if (req.getStatus() != RequestStatus.PENDING) {
-            throw new CustomException("Only PENDING request can be approved");
+            throw new CustomException("Chỉ yêu cầu ở trạng thái PENDING mới có thể được phê duyệt");
         }
 
         Account ownerAccount = req.getAccount();
         if (ownerAccount == null) {
-            throw new CustomException("Request has no owner account");
+            throw new CustomException("Yêu cầu không có thông tin tài khoản sở hữu");
         }
 
         User user = userRepository.findByAccountId(ownerAccount.getId())
-                .orElseThrow(() -> new CustomException("User profile not found for account: " + ownerAccount.getId()));
+                .orElseThrow(() -> new CustomException("Không tìm thấy hồ sơ người dùng cho tài khoản: " + ownerAccount.getId()));
 
         if (shopRepository.existsByUserId(user.getId())) {
-            throw new CustomException("This user already has a shop");
+            throw new CustomException("Người dùng này đã sở hữu một gian hàng");
         }
 
         Seller sellerDetail = sellerRepository.findById(requestId)
-                .orElseThrow(() -> new CustomException("Seller detail not found: " + requestId));
+                .orElseThrow(() -> new CustomException("Không tìm thấy thông tin đăng ký người bán: " + requestId));
 
         String shopName = sellerDetail.getShopName();
         if (shopName == null || shopName.trim().isEmpty()) {
-            throw new CustomException("Shop name is required");
+            throw new CustomException("Tên gian hàng là bắt buộc");
         }
 
         if (shopRepository.existsByNameIgnoreCase(shopName)) {
-            throw new CustomException("Shop name already exists: " + shopName);
+            throw new CustomException("Tên gian hàng đã tồn tại: " + shopName);
         }
 
         String taxCode = sellerDetail.getTaxCode();
@@ -141,5 +140,41 @@ public class RequestPolicy {
         }
 
         return new ApproveSellerContext(user, sellerDetail, shopName.trim());
+    }
+
+
+    public DisputePolicyClause validateDisputePolicyClause(
+            TargetType targetType, String clauseCode, ReportDecision decision,
+            boolean isSellerReturnDispute) {
+        if (targetType != TargetType.ORDER) {
+            return null; // Không bắt buộc với các loại báo cáo khác (USER, SHOP, PRODUCT, REVIEW)
+        }
+        if (clauseCode == null || clauseCode.trim().isEmpty()) {
+            throw new CustomException(
+                    "Phán quyết tranh chấp đơn hàng bắt buộc phải gắn với một Điều khoản Chính sách (Policy Clause).");
+        }
+        DisputePolicyClause clause = DisputePolicyClause.fromCode(clauseCode);
+        if (clause == null) {
+            throw new CustomException("Mã điều khoản chính sách không hợp lệ: " + clauseCode);
+        }
+
+        // Kiểm tra tính tương thích giữa Clause và hướng phán quyết
+        if (isSellerReturnDispute) {
+            return clause;
+        }
+
+        if (decision == ReportDecision.APPROVE) {
+            if (!"SELLER_FAULT".equals(clause.getCategory())) {
+                throw new CustomException(
+                        "Điều khoản đã chọn không phù hợp với phán quyết chấp thuận khiếu nại của Người mua (Cần chọn điều khoản thuộc nhóm Lỗi Người bán).");
+            }
+        } else if (decision == ReportDecision.REJECT) {
+            if (!"BUYER_FAULT".equals(clause.getCategory())) {
+                throw new CustomException(
+                        "Điều khoản đã chọn không phù hợp với phán quyết bác bỏ khiếu nại (Cần chọn điều khoản thuộc nhóm Bác khiếu nại / Bảo vệ Người bán).");
+            }
+        }
+
+        return clause;
     }
 }

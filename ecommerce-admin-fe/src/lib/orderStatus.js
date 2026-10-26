@@ -161,9 +161,36 @@ export const getReturnStatusDisplay = (returnStatus) => {
 
 // ==========================================
 // 3. EFFECTIVE STATUS (Tổng hợp trạng thái hiển thị an toàn)
+// Khi đơn hàng đã kết thúc (REFUNDED / COMPLETED), phán quyết cuối cùng của Admin / Hệ thống
+// có hiệu lực thi hành, tuyệt đối không hiển thị trạng thái DISPUTED hay cảnh báo tranh chấp.
 // ==========================================
 export const getOrderEffectiveStatus = (order, returnInfo = null) => {
+  const status = order?.status
   const activeReturn = returnInfo || order?.returnInfo
+
+  // 1. Terminal state: REFUNDED (Đã hoàn tiền)
+  if (status === 'REFUNDED') {
+    return {
+      label: activeReturn && activeReturn.status !== 'CANCELLED'
+        ? 'Đã hoàn tất đổi trả & Hoàn tiền'
+        : 'Đã hoàn tiền',
+      color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-700',
+      icon: HiOutlineCheckCircle,
+      isReturn: !!activeReturn,
+    }
+  }
+
+  // 2. Terminal state: COMPLETED (Hoàn thành / Hoàn tất)
+  if (status === 'COMPLETED') {
+    return {
+      label: ORDER_STATUS_LABEL_MAP.COMPLETED || 'Hoàn thành',
+      color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border border-green-300 dark:border-green-700',
+      icon: HiOutlineCheckCircle,
+      isReturn: false,
+    }
+  }
+
+  // 3. Nếu đơn có quy trình đổi trả đang diễn ra (chưa hủy, đơn chưa kết thúc)
   if (activeReturn && activeReturn.status && activeReturn.status !== 'CANCELLED') {
     const returnDisplay = getReturnStatusDisplay(activeReturn.status)
     if (returnDisplay) {
@@ -176,12 +203,12 @@ export const getOrderEffectiveStatus = (order, returnInfo = null) => {
     }
   }
 
-  const orderBadge = ORDER_STATUS_BADGE_MAP[order?.status] || {
+  const orderBadge = ORDER_STATUS_BADGE_MAP[status] || {
     color: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400 border border-gray-200 dark:border-gray-800',
     icon: HiOutlineClock,
   }
   return {
-    label: ORDER_STATUS_LABEL_MAP[order?.status] || order?.status || 'Không xác định',
+    label: ORDER_STATUS_LABEL_MAP[status] || status || 'Không xác định',
     color: orderBadge.color,
     icon: orderBadge.icon,
     isReturn: false,

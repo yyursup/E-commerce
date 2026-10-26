@@ -2,8 +2,11 @@ package com.marketplace.ecommerce.review.service.impl;
 
 import com.marketplace.ecommerce.auth.entity.User;
 import com.marketplace.ecommerce.auth.repository.UserRepository;
+import com.marketplace.ecommerce.auth.valueObjects.AccountStatus;
 import com.marketplace.ecommerce.auth.valueObjects.DisciplineLevel;
 import com.marketplace.ecommerce.common.exception.CustomException;
+import com.marketplace.ecommerce.shop.entity.Shop;
+import com.marketplace.ecommerce.shop.valueObjects.ShopStatus;
 import com.marketplace.ecommerce.review.dto.request.ReplyRequest;
 import com.marketplace.ecommerce.review.dto.response.SellerReplyResponse;
 import com.marketplace.ecommerce.review.entity.Reply;
@@ -31,23 +34,30 @@ public class ReplyServiceImpl implements ReplyService {
     public SellerReplyResponse updateReply(UUID accountId, ReplyRequest request) {
 
         User seller = userRepository.findByAccountId(accountId)
-                .orElseThrow(() -> new CustomException("Account not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy tài khoản người dùng."));
 
-        if (seller.getAccount().getDisciplineLevel() == DisciplineLevel.SUSPENDED || seller.getAccount().getDisciplineLevel() == DisciplineLevel.BANNED) {
-            throw new CustomException("You can not update this reply because you got suspended or banned");
+        if (seller.getAccount().getDisciplineLevel() == DisciplineLevel.BANNED
+                || seller.getAccount().getStatus() == AccountStatus.BANNED) {
+            throw new CustomException("Bạn không thể cập nhật phản hồi này do tài khoản đã bị khóa vĩnh viễn.");
         }
         Reply reply = replyRepository.findByReviewId(request.getReviewId())
-                .orElseThrow(() -> new CustomException("Review not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy đánh giá."));
 
-        if (!reply.getReview().getProduct().getShop().getUser().getId()
-                .equals(seller.getId())) {
-            throw new CustomException("You don't have permission to update this reply.");
+        Shop shop = reply.getReview().getProduct().getShop();
+        assert shop != null : "Gian hàng không tìm thấy";
+
+        if (shop.getStatus() == ShopStatus.SUSPENDED || shop.getStatus() == ShopStatus.BANNED) {
+            throw new CustomException("Gian hàng của bạn đang bị tạm dừng hoạt động hoặc bị cấm, không thể cập nhật phản hồi.");
+        }
+
+        if (!shop.getUser().getId().equals(seller.getId())) {
+            throw new CustomException("Bạn không có quyền cập nhật phản hồi này.");
         }
 
         if (reply.getRepliedAt()
                 .plusDays(7)
                 .isBefore(LocalDateTime.now())) {
-            throw new CustomException("Reply can only be updated within 7 days.");
+            throw new CustomException("Phản hồi đánh giá chỉ có thể cập nhật trong vòng 7 ngày.");
         }
 
         reply.setReply(request.getReply());
@@ -61,21 +71,28 @@ public class ReplyServiceImpl implements ReplyService {
     public SellerReplyResponse replyToReview(UUID accountId, ReplyRequest request) {
 
         User seller = userRepository.findByAccountId(accountId)
-                .orElseThrow(() -> new CustomException("Account not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy tài khoản người dùng."));
 
-        if (seller.getAccount().getDisciplineLevel() == DisciplineLevel.SUSPENDED || seller.getAccount().getDisciplineLevel() == DisciplineLevel.BANNED) {
-            throw new CustomException("You can not reply to this review because you got suspended or banned");
+        if (seller.getAccount().getDisciplineLevel() == DisciplineLevel.BANNED
+                || seller.getAccount().getStatus() == AccountStatus.BANNED) {
+            throw new CustomException("Bạn không thể phản hồi đánh giá này do tài khoản đã bị khóa vĩnh viễn.");
         }
         Review review = reviewRepository.findById(request.getReviewId())
-                .orElseThrow(() -> new CustomException("Review not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy đánh giá."));
 
-        if (!review.getProduct().getShop().getUser().getId()
-                .equals(seller.getId())) {
-            throw new CustomException("You don't have permission to reply to this review.");
+        Shop shop = review.getProduct().getShop();
+        assert shop != null : "Gian hàng không tìm thấy";
+
+        if (shop.getStatus() == ShopStatus.SUSPENDED || shop.getStatus() == ShopStatus.BANNED) {
+            throw new CustomException("Gian hàng của bạn đang bị tạm dừng hoạt động hoặc bị cấm, không thể phản hồi đánh giá.");
+        }
+
+        if (!shop.getUser().getId().equals(seller.getId())) {
+            throw new CustomException("Bạn không có quyền phản hồi đánh giá này.");
         }
 
         if (replyRepository.existsByReviewId(request.getReviewId())) {
-            throw new CustomException("This review has already been replied to.");
+            throw new CustomException("Đánh giá này đã được phản hồi trước đó.");
         }
 
         Reply reply = Reply.builder()

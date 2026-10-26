@@ -23,4 +23,6 @@ public class ShopViolationResponse {
     private String appealStatus; // NONE, PENDING, APPROVED, REJECTED
     private UUID appealRequestId;
     private String appealResponse;
+    private String policyClauseCode;
+    private String policyClauseTitle;
 }

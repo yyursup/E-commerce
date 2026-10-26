@@ -10,6 +10,7 @@ import {
   HiOutlineCheckCircle,
   HiOutlineCurrencyDollar,
   HiOutlineFilter,
+  HiOutlineDocumentReport,
 } from 'react-icons/hi'
 import toast from 'react-hot-toast'
 import { useThemeStore } from '../../store/useThemeStore'
@@ -18,6 +19,7 @@ import { cn } from '../../lib/cn'
 import orderService from '../../services/order'
 import ShopOrderCard from './components/order/ShopOrderCard'
 import ShopOrderTabs from './components/order/ShopOrderTabs'
+import ExportSettlementModal from './components/order/ExportSettlementModal'
 import { formatCurrency } from './components/order/orderHelpers'
 
 export default function ShopOrders() {
@@ -30,6 +32,7 @@ export default function ShopOrders() {
   const [selectedTab, setSelectedTab] = useState('ALL')
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState('NEWEST')
+  const [showExportModal, setShowExportModal] = useState(false)
   const [error, setError] = useState(null)
 
   useEffect(() => {
@@ -190,20 +193,37 @@ export default function ShopOrders() {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={fetchOrders}
-          disabled={loading}
-          className={cn(
-            'inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-xs sm:text-sm font-bold transition-all shadow-sm active:scale-95',
-            isDark
-              ? 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700 hover:text-white'
-              : 'border-stone-200 bg-white text-stone-700 hover:bg-stone-50 hover:text-stone-900'
-          )}
-        >
-          <HiOutlineRefresh className={cn('h-4 w-4', loading && 'animate-spin text-amber-500')} />
-          <span>{loading ? 'Đang làm mới...' : 'Làm mới'}</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => setShowExportModal(true)}
+            disabled={orders.length === 0}
+            className={cn(
+              'inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-xs sm:text-sm font-bold transition-all shadow-sm active:scale-95',
+              isDark
+                ? 'border-amber-500/30 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20'
+                : 'border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100'
+            )}
+          >
+            <HiOutlineDocumentReport className="h-4 w-4 text-amber-500" />
+            <span>Xuất Báo Cáo Đối Soát</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={fetchOrders}
+            disabled={loading}
+            className={cn(
+              'inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-xs sm:text-sm font-bold transition-all shadow-sm active:scale-95',
+              isDark
+                ? 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700 hover:text-white'
+                : 'border-stone-200 bg-white text-stone-700 hover:bg-stone-50 hover:text-stone-900'
+            )}
+          >
+            <HiOutlineRefresh className={cn('h-4 w-4', loading && 'animate-spin text-amber-500')} />
+            <span>{loading ? 'Đang làm mới...' : 'Làm mới'}</span>
+          </button>
+        </div>
       </div>
 
       {/* 2. Key Metrics Summary Banner (Responsive 4 cards) */}
@@ -445,6 +465,15 @@ export default function ShopOrders() {
           </AnimatePresence>
         </div>
       )}
+
+      {/* Export Settlement Statement Modal */}
+      <ExportSettlementModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        orders={orders}
+        shopName={orders[0]?.shopName || 'Gian Hàng Của Bạn'}
+        isDark={isDark}
+      />
     </div>
   )
 }

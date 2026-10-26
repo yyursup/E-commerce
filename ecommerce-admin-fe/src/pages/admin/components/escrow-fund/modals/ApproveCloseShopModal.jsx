@@ -65,7 +65,7 @@ export default function ApproveCloseShopModal({ shop, onClose, onSuccess, format
             <ul className={cn('list-disc pl-4 space-y-1 text-[11px]', isDark ? 'text-slate-400' : 'text-stone-600')}>
               <li>Không còn đơn hàng đang xử lý / vận chuyển / chờ giao.</li>
               <li>Tất cả đơn hoàn thành đã qua 7 ngày cooling period.</li>
-              <li>Không có Escrow, Đổi trả hàng, Báo cáo hay Kháng cáo nào đang chờ giải quyết.</li>
+              <li>Không có Escrow, Đổi trả hàng hay Báo cáo vi phạm nào đang chờ giải quyết.</li>
               <li>Quỹ ký quỹ không ở trạng thái Thâm hụt (DEFICIT) hay Bị khóa (LOCKED).</li>
             </ul>
           </div>

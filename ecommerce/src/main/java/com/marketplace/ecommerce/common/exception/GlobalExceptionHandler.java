@@ -121,16 +121,7 @@ public class GlobalExceptionHandler {
         response.put("timestamp", Instant.now());
         
         java.util.Map<String, Object> data = new java.util.HashMap<>();
-        data.put("appealToken", ex.getAppealToken());
         data.put("bannedUntil", ex.getBannedUntil());
-        
-        // Extract accountId from token to return to frontend
-        try {
-            // A simple decode to get accountId since we know the structure, 
-            // but it's cleaner to get it from the exception if we had it.
-            // Wait, we can get it from the token using base64 decode of payload, or we can just pass it via exception.
-        } catch (Exception ignore) {}
-        
         response.put("data", data);
         
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);

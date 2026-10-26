@@ -12,6 +12,7 @@ import com.marketplace.ecommerce.payment.entity.Escrow;
 import com.marketplace.ecommerce.payment.repository.EscrowRepository;
 import com.marketplace.ecommerce.payment.service.EscrowService;
 import com.marketplace.ecommerce.payment.valueObjects.EscrowStatus;
+import com.marketplace.ecommerce.product.repository.ProductRepository;
 import com.marketplace.ecommerce.request.dto.response.OrderDisputeResponse;
 import com.marketplace.ecommerce.request.entity.Report;
 import com.marketplace.ecommerce.request.entity.Request;
@@ -20,6 +21,7 @@ import com.marketplace.ecommerce.request.repository.RequestRepository;
 import com.marketplace.ecommerce.request.service.OrderDisputeService;
 import com.marketplace.ecommerce.request.service.impl.OrderDisputeServiceImpl;
 import com.marketplace.ecommerce.request.service.impl.RequestServiceImpl;
+import com.marketplace.ecommerce.request.valueObjects.ReportStage;
 import com.marketplace.ecommerce.request.valueObjects.RequestStatus;
 import com.marketplace.ecommerce.request.valueObjects.RequestType;
 import com.marketplace.ecommerce.request.valueObjects.TargetType;
@@ -36,12 +38,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -72,7 +74,7 @@ class OrderDisputeFlowTest {
     private ShopRepository shopRepository;
 
     @Mock
-    private com.marketplace.ecommerce.product.repository.ProductRepository productRepository;
+    private ProductRepository productRepository;
 
     @Mock
     private OrderDisputeService orderDisputeService;
@@ -171,94 +173,6 @@ class OrderDisputeFlowTest {
         verify(escrowService, never()).releaseByOrder(any());
     }
 
-    @Test
-    @DisplayName("Test 6: Seller Appeal ACCEPTED -> Tranh chấp giải quyết theo hướng Shop thắng -> Tự động release Escrow & Order COMPLETED")
-    void approveAppeal_OrderTarget_ReleasesEscrowAndCompletesOrder() {
-        // Given
-        RequestServiceImpl requestService = new RequestServiceImpl(
-                requestRepository, reportRepository, null, accountRepository, null,
-                null, null, productRepository, shopRepository, null, orderRepository, escrowRepository, escrowService, null, null
-        );
-
-        UUID requestId = UUID.randomUUID();
-        UUID adminId = UUID.randomUUID();
-        Account admin = Account.builder().id(adminId).build();
-
-        Shop shop = Shop.builder().id(UUID.randomUUID()).user(buyerUser).build();
-        deliveredOrder.setShop(shop);
-
-        Request appealReq = Request.builder()
-                .id(requestId)
-                .account(admin)
-                .type(RequestType.APPEAL)
-                .status(RequestStatus.PENDING)
-                .build();
-
-        Report appealReport = Report.builder()
-                .id(requestId)
-                .request(appealReq)
-                .targetType(TargetType.ORDER)
-                .targetId(orderId)
-                .build();
-
-        heldEscrow.setStatus(EscrowStatus.DISPUTED);
-
-        when(requestRepository.findById(requestId)).thenReturn(Optional.of(appealReq));
-        when(accountRepository.findById(adminId)).thenReturn(Optional.of(admin));
-        when(reportRepository.findByRequestId(requestId)).thenReturn(appealReport);
-        when(orderRepository.findById(orderId)).thenReturn(Optional.of(deliveredOrder));
-        when(escrowRepository.findByOrderIdForUpdate(orderId)).thenReturn(Optional.of(heldEscrow));
-
-        // When
-        requestService.approveRequest(requestId, adminId, "Kháng cáo hợp lệ, gỡ phạt Shop");
-
-        // Then
-        assertEquals(RequestStatus.APPROVED, appealReq.getStatus());
-        assertEquals(EscrowStatus.HELD, heldEscrow.getStatus());
-        assertTrue(deliveredOrder.isReceivedByBuyer());
-        assertEquals(OrderStatus.COMPLETED, deliveredOrder.getStatus());
-        verify(escrowService).releaseByOrder(orderId);
-        verify(orderRepository).save(deliveredOrder);
-    }
-
-    @Test
-    @DisplayName("Test 7: Seller Appeal REJECTED -> Admin bác kháng cáo -> Hoàn tiền 100% Escrow cho Buyer")
-    void rejectAppeal_OrderTarget_RefundsEscrowToBuyer() {
-        // Given
-        RequestServiceImpl requestService = new RequestServiceImpl(
-                requestRepository, reportRepository, null, accountRepository, null,
-                null, null, null, shopRepository, null, orderRepository, escrowRepository, escrowService, null, null
-        );
-
-        UUID requestId = UUID.randomUUID();
-        UUID adminId = UUID.randomUUID();
-        Account admin = Account.builder().id(adminId).build();
-
-        Request appealReq = Request.builder()
-                .id(requestId)
-                .account(admin)
-                .type(RequestType.APPEAL)
-                .status(RequestStatus.PENDING)
-                .build();
-
-        Report appealReport = Report.builder()
-                .id(requestId)
-                .request(appealReq)
-                .targetType(TargetType.ORDER)
-                .targetId(orderId)
-                .build();
-
-        when(accountRepository.findById(adminId)).thenReturn(Optional.of(admin));
-        when(requestRepository.findById(requestId)).thenReturn(Optional.of(appealReq));
-        when(reportRepository.findByRequestId(requestId)).thenReturn(appealReport);
-
-        // When
-        requestService.rejectRequest(adminId, requestId, "Bác bỏ kháng cáo");
-
-        // Then
-        assertEquals(RequestStatus.REJECTED, appealReq.getStatus());
-        verify(escrowService).refundByOrder(eq(orderId), anyString());
-    }
 
     @Test
     @DisplayName("OrderDisputeServiceImpl: Phân tích đúng mọi trạng thái State Machine")
@@ -298,29 +212,7 @@ class OrderDisputeFlowTest {
         assertTrue(info3.isHasActiveDispute());
         assertEquals("REPORT_APPROVED", info3.getDisputeStatus());
 
-        // Case 4: Report APPROVED, có Appeal PENDING
-        Request aPending = Request.builder().type(RequestType.APPEAL).status(RequestStatus.PENDING).build();
-        Report appealPending = Report.builder().request(aPending).targetType(TargetType.ORDER).targetId(orderId).build();
-
-        when(reportRepository.findReportsByTargetTypeAndTargetId(TargetType.ORDER, orderId))
-                .thenReturn(List.of(repApproved, appealPending));
-
-        OrderDisputeResponse info4 = disputeService.getDisputeInfo(orderId);
-        assertTrue(info4.isHasActiveDispute());
-        assertEquals("APPEAL_PENDING", info4.getDisputeStatus());
-
-        // Case 5: Report APPROVED, có Appeal APPROVED
-        Request aApproved = Request.builder().type(RequestType.APPEAL).status(RequestStatus.APPROVED).build();
-        Report appealApproved = Report.builder().request(aApproved).targetType(TargetType.ORDER).targetId(orderId).build();
-
-        when(reportRepository.findReportsByTargetTypeAndTargetId(TargetType.ORDER, orderId))
-                .thenReturn(List.of(repApproved, appealApproved));
-
-        OrderDisputeResponse info5 = disputeService.getDisputeInfo(orderId);
-        assertFalse(info5.isHasActiveDispute());
-        assertEquals("APPEAL_APPROVED", info5.getDisputeStatus());
-
-        // Case 6: Report REJECTED
+        // Case 4: Report REJECTED
         Request rRejected = Request.builder().type(RequestType.REPORT).status(RequestStatus.REJECTED).build();
         Report repRejected = Report.builder().request(rRejected).targetType(TargetType.ORDER).targetId(orderId).build();
 
@@ -330,5 +222,77 @@ class OrderDisputeFlowTest {
         OrderDisputeResponse info6 = disputeService.getDisputeInfo(orderId);
         assertFalse(info6.isHasActiveDispute());
         assertEquals("NONE", info6.getDisputeStatus());
+
+        // Case 7: Report RETURN_IN_PROGRESS -> Bắt buộc active dispute = true để chặn buyer nhận hàng
+        Report repReturnInProgress = Report.builder()
+                .request(rApproved)
+                .targetType(TargetType.ORDER)
+                .targetId(orderId)
+                .stage(ReportStage.RETURN_IN_PROGRESS)
+                .build();
+
+        when(reportRepository.findReportsByTargetTypeAndTargetId(TargetType.ORDER, orderId))
+                .thenReturn(List.of(repReturnInProgress));
+
+        OrderDisputeResponse info7 = disputeService.getDisputeInfo(orderId);
+        assertTrue(info7.isHasActiveDispute());
+        assertEquals("RETURN_IN_PROGRESS", info7.getDisputeStatus());
+
+        // Case 8: Report DIRECT_NEGOTIATION -> Bắt buộc active dispute = true
+        Report repNegotiation = Report.builder()
+                .request(rPending)
+                .targetType(TargetType.ORDER)
+                .targetId(orderId)
+                .stage(ReportStage.DIRECT_NEGOTIATION)
+                .build();
+
+        when(reportRepository.findReportsByTargetTypeAndTargetId(TargetType.ORDER, orderId))
+                .thenReturn(List.of(repNegotiation));
+
+        OrderDisputeResponse info8 = disputeService.getDisputeInfo(orderId);
+        assertTrue(info8.isHasActiveDispute());
+        assertEquals("DIRECT_NEGOTIATION", info8.getDisputeStatus());
+
+        // Case 9: Escrow REFUNDED -> active dispute = false, status = REFUNDED
+        heldEscrow.setStatus(EscrowStatus.REFUNDED);
+        OrderDisputeResponse info9 = disputeService.getDisputeInfo(orderId);
+        assertFalse(info9.isHasActiveDispute());
+        assertEquals("REFUNDED", info9.getDisputeStatus());
+    }
+
+    @Test
+    @DisplayName("OrderDisputeServiceImpl: getDisputeInfoBatch gom nhóm truy vấn 1 lần, triệt tiêu N+1")
+    void orderDisputeServiceImpl_GetDisputeInfoBatch_OptimizedQueries() {
+        // Given
+        OrderDisputeServiceImpl disputeService = new OrderDisputeServiceImpl(reportRepository, escrowRepository);
+        UUID orderId1 = UUID.randomUUID();
+        UUID orderId2 = UUID.randomUUID();
+        List<UUID> orderIds = List.of(orderId1, orderId2);
+
+        Request rPending = Request.builder().type(RequestType.REPORT).status(RequestStatus.PENDING).description("Lỗi phần cứng").build();
+        Report repOrder1 = Report.builder().request(rPending).targetType(TargetType.ORDER).targetId(orderId1).build();
+
+        when(reportRepository.findReportsByTargetTypeAndTargetIdIn(TargetType.ORDER, orderIds))
+                .thenReturn(List.of(repOrder1));
+
+        Escrow escrow1 = Escrow.builder().id(UUID.randomUUID()).order(Order.builder().id(orderId1).build()).status(EscrowStatus.DISPUTED).build();
+        Escrow escrow2 = Escrow.builder().id(UUID.randomUUID()).order(Order.builder().id(orderId2).build()).status(EscrowStatus.HELD).build();
+
+        when(escrowRepository.findByOrderIdIn(orderIds))
+                .thenReturn(List.of(escrow1, escrow2));
+
+        // When
+        Map<UUID, OrderDisputeResponse> batchResult = disputeService.getDisputeInfoBatch(orderIds);
+
+        // Then
+        assertEquals(2, batchResult.size());
+        assertTrue(batchResult.get(orderId1).isHasActiveDispute());
+        assertEquals("REPORT_PENDING", batchResult.get(orderId1).getDisputeStatus());
+        assertFalse(batchResult.get(orderId2).isHasActiveDispute());
+        assertEquals("NONE", batchResult.get(orderId2).getDisputeStatus());
+
+        // Verify escrowRepository.findByOrderIdIn được gọi đúng 1 lần duy nhất, findByOrderId đơn lẻ không được gọi
+        verify(escrowRepository, times(1)).findByOrderIdIn(orderIds);
+        verify(escrowRepository, never()).findByOrderId(any(UUID.class));
     }
 }

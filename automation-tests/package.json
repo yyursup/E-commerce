@@ -1,0 +1,22 @@
+{
+  "name": "ecommerce-automation-tests",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Independent E2E & UI Test Automation Suite (Playwright + TypeScript) for E-commerce Platform",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "test:flow1": "playwright test tests/flow-1-seller-onboarding.spec.ts",
+    "test:flow2": "playwright test tests/flow-2-commercial-trading-escrow.spec.ts",
+    "test:flow3": "playwright test tests/flow-3-trust-safety-moderation.spec.ts",
+    "test:flow4": "playwright test tests/flow-4-ai-conversational-support.spec.ts",
+    "test:flow5": "playwright test tests/flow-5-commercial-analytics.spec.ts",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.50.0",
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.2"
+  }
+}

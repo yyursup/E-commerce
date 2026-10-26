@@ -1,14 +1,29 @@
 package com.marketplace.ecommerce.request.service;
 
 import com.marketplace.ecommerce.request.dto.request.CreateReportRequest;
+import com.marketplace.ecommerce.request.dto.request.EscalateReportRequest;
 import com.marketplace.ecommerce.request.dto.request.HandleReportRequest;
+import com.marketplace.ecommerce.request.dto.request.SellerDisputeRespondRequest;
 import com.marketplace.ecommerce.request.dto.response.CreateRequestResponse;
+import com.marketplace.ecommerce.request.dto.response.DisputePolicyClauseResponse;
+import com.marketplace.ecommerce.request.dto.response.ReportDetailsResponse;
 
 import java.util.UUID;
 
 public interface ReportService {
-     CreateRequestResponse createReport(UUID accountId, CreateReportRequest request);
+    CreateRequestResponse createReport(UUID accountId, CreateReportRequest request);
 
-     void handleReport(UUID adminAccountId, UUID requestId, HandleReportRequest request);
+    void handleReport(UUID adminAccountId, UUID requestId, HandleReportRequest request);
 
+    void cancelReport(UUID buyerAccountId, UUID reportId);
+
+    void sellerRespond(UUID sellerAccountId, UUID reportId, SellerDisputeRespondRequest req);
+
+    void escalateReport(UUID accountId, UUID reportId, EscalateReportRequest req);
+
+    ReportDetailsResponse getReportByOrderId(UUID accountId, UUID orderId);
+
+    java.util.List<DisputePolicyClauseResponse> getDisputePolicyClauses();
+
+    void processExpiredDirectNegotiations();
 }

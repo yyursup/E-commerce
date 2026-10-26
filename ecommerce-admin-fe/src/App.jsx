@@ -7,6 +7,7 @@ import AdminRequests from './pages/admin/AdminRequests'
 import AdminRequestDetail from './pages/admin/AdminRequestDetail'
 import AdminOrders from './pages/admin/AdminOrders'
 import AdminOrderDetail from './pages/admin/AdminOrderDetail'
+import AdminShopDetail from './pages/admin/AdminShopDetail'
 import AdminPlatformWallet from './pages/admin/AdminPlatformWallet'
 import AdminShopRanking from './pages/admin/AdminShopRanking'
 import AdminCommissions from './pages/admin/AdminCommissions'
@@ -16,6 +17,7 @@ import AdminLiveChat from './pages/admin/AdminLiveChat'
 import AdminVouchers from './pages/admin/AdminVouchers'
 import AdminTrustConfig from './pages/admin/AdminTrustConfig'
 import AdminProductModeration from './pages/admin/AdminProductModeration'
+import AdminPolicies from './pages/admin/AdminPolicies'
 import { useTokenLifecycle } from './hooks/useTokenLifecycle'
 
 export default function App() {
@@ -41,10 +43,14 @@ export default function App() {
         <Route path="/requests/:requestId" element={<AdminRequestDetail />} />
         <Route path="/orders" element={<AdminOrders />} />
         <Route path="/orders/:orderId" element={<AdminOrderDetail />} />
+        <Route path="/orders/shops/:shopId" element={<AdminShopDetail />} />
         <Route path="/vouchers" element={<AdminVouchers />} />
 
         {/* Cụm Quản Lý Hoa Hồng (Hub 3 Tabs) */}
         <Route path="/commissions" element={<AdminCommissions />} />
+
+        {/* Quản lý Chính Sách & Điều Khoản */}
+        <Route path="/policies" element={<AdminPolicies />} />
 
         {/* Cụm Quỹ Ký Quỹ & Bậc Sao (Hub 2 Tabs) */}
         <Route path="/trust-config" element={<AdminTrustConfig />} />

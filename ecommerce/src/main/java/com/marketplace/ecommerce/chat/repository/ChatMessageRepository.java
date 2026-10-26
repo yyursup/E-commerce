@@ -18,11 +18,8 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, UUID> 
 
     Page<ChatMessage> findByThread_IdOrderByCreatedAtDesc(UUID threadId, Pageable pageable);
 
-    List<ChatMessage> findByThread_IdOrderByCreatedAtAsc(UUID threadId);
-
     @Modifying
-    @Query("UPDATE ChatMessage m SET m.readAt = :readAt WHERE m.thread.id = :threadId AND m.readAt IS NULL AND m.senderId != :userId")
+    @Query("UPDATE ChatMessage m SET m.readAt = :readAt WHERE m.thread.id = :threadId AND m.readAt IS NULL AND (m.senderId IS NULL OR m.senderId != :userId)")
     int markAllAsRead(@Param("threadId") UUID threadId, @Param("userId") UUID userId, @Param("readAt") LocalDateTime readAt);
 
-    long countByThread_IdAndReadAtIsNullAndSenderIdNot(UUID threadId, UUID senderId);
 }

@@ -20,6 +20,7 @@ import LiveManagement from './pages/live/LiveManagement'
 import SellerLiveStudio from './pages/live/SellerLiveStudio'
 import ShopViolations from './pages/business/ShopViolations'
 import ShopEscrowFund from './pages/business/ShopEscrowFund'
+import SellerPolicy from './pages/business/SellerPolicy'
 import { useTokenLifecycle } from './hooks/useTokenLifecycle'
 
 export default function App() {
@@ -38,6 +39,8 @@ export default function App() {
       <Route path="/seller/register" element={<SellerRegister />} />
       <Route path="/pending" element={<PendingApproval />} />
       <Route path="/rejected" element={<PendingApproval />} />
+      <Route path="/seller-policy" element={<SellerPolicy />} />
+      <Route path="/escrow-policy" element={<SellerPolicy />} />
 
       {/* Protected routes for Shop Owner (ROLE_BUSINESS) */}
       <Route
@@ -58,6 +61,7 @@ export default function App() {
         <Route path="/escrow-fund" element={<ShopEscrowFund />} />
         <Route path="/violations" element={<ShopViolations />} />
         <Route path="/chat" element={<ShopLiveChat />} />
+        <Route path="/policy" element={<SellerPolicy />} />
         <Route path="/settings" element={<ShopSettings />} />
       </Route>
 

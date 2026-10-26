@@ -37,11 +37,24 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
+import com.marketplace.ecommerce.request.repository.ReportRepository;
+import com.marketplace.ecommerce.request.entity.Report;
+import com.marketplace.ecommerce.request.valueObjects.ReportStage;
+import com.marketplace.ecommerce.request.valueObjects.TargetType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import java.util.List;
+
 @ExtendWith(MockitoExtension.class)
 class RequestServiceImplTest {
 
         @Mock
         private RequestRepository requestRepository;
+
+        @Mock
+        private ReportRepository reportRepository;
 
         @Mock
         private SellerRepository sellerRepository;
@@ -205,5 +218,38 @@ class RequestServiceImplTest {
                 assertEquals("VietinBank", sellerDto.getBankName());
                 assertEquals("1020304050", sellerDto.getBankAccountNumber());
                 assertEquals("https://example.com/gpkd.jpg", sellerDto.getBusinessLicenseUrl());
+        }
+
+        @Test
+        @DisplayName("getAllRequests: Gọi findAllAdminRequests và batch map dữ liệu Report thành công")
+        void getAllRequests_FiltersAndMapsReportCorrectly() {
+                UUID reportRequestId = UUID.randomUUID();
+                Request req = Request.builder()
+                                .id(reportRequestId)
+                                .type(RequestType.REPORT)
+                                .status(RequestStatus.PENDING)
+                                .description("Khiếu nại leo thang")
+                                .build();
+
+                Report report = Report.builder()
+                                .id(reportRequestId)
+                                .targetType(TargetType.ORDER)
+                                .stage(ReportStage.ESCALATED_TO_ADMIN)
+                                .build();
+
+                Page<Request> mockPage = new PageImpl<>(List.of(req));
+                when(requestRepository.findAllAdminRequests(eq(RequestType.REPORT), eq(RequestStatus.PENDING), any(Pageable.class)))
+                                .thenReturn(mockPage);
+                when(reportRepository.findAllById(List.of(reportRequestId))).thenReturn(List.of(report));
+
+                Page<com.marketplace.ecommerce.request.dto.response.CreateRequestResponse> result =
+                                requestService.getAllRequests(RequestType.REPORT, RequestStatus.PENDING, PageRequest.of(0, 10));
+
+                assertNotNull(result);
+                assertEquals(1, result.getTotalElements());
+                com.marketplace.ecommerce.request.dto.response.CreateRequestResponse res = result.getContent().get(0);
+                assertEquals(TargetType.ORDER, res.getTargetType());
+                assertEquals(ReportStage.ESCALATED_TO_ADMIN, res.getStage());
+                verify(requestRepository).findAllAdminRequests(eq(RequestType.REPORT), eq(RequestStatus.PENDING), any(Pageable.class));
         }
 }

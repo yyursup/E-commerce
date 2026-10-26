@@ -61,21 +61,21 @@ const requestService = {
     }
   },
 
-  createAppeal: async (payload) => {
+  getBanReviewStatus: async () => {
     try {
-      const response = await api.post(`${REQUEST_BASE}/appeal`, payload);
+      const response = await api.get(`${REQUEST_BASE}/ban-review/status`);
       return response.data;
     } catch (error) {
       throw error.response ? error.response.data : error;
     }
   },
 
-  createAppealPublic: async (token, payload) => {
+  submitBanReview: async (formData) => {
     try {
-      const response = await api.post(`${REQUEST_BASE}/appeal/public`, payload, {
+      const response = await api.post(`${REQUEST_BASE}/ban-review`, formData, {
         headers: {
-          Authorization: `Bearer ${token}`
-        }
+          'Content-Type': 'multipart/form-data',
+        },
       });
       return response.data;
     } catch (error) {

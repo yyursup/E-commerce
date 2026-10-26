@@ -13,12 +13,14 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AdminDashboardAnalyticsResponse {
-    // 1. Financial Metrics
+    // 1. Financial Metrics (trong kỳ được chọn)
     private BigDecimal totalGmv;
     private BigDecimal settledRevenue;
     private BigDecimal activeEscrowBalance;
     private BigDecimal totalPlatformCommission;
     private Double gmvGrowthRate;
+    private BigDecimal allTimeGmv;
+    private BigDecimal allTimeSettledRevenue;
 
     // 2. Operational & Risk Metrics
     private Long totalOrders;
@@ -41,4 +43,9 @@ public class AdminDashboardAnalyticsResponse {
     private List<DailyPlatformTimelineDTO> dailyTimeline;
     private List<TopShopAnalyticsDTO> topShops;
     private List<TopCategoryAnalyticsDTO> topCategories;
+
+    // 5. Filter Window Metadata
+    private String selectedPeriod;
+    private String startDate;
+    private String endDate;
 }

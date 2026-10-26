@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 public interface GeminiService {
+
     /**
      * Generate response synchronously with full conversation history.
      * @param contents the full conversation history compatible with Gemini API

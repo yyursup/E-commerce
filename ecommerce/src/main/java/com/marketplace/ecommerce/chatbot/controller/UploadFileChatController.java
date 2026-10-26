@@ -1,5 +1,9 @@
 package com.marketplace.ecommerce.chatbot.controller;
 
+import com.marketplace.ecommerce.common.CurrentUserInfo;
+import com.marketplace.ecommerce.common.exception.CustomException;
+import com.marketplace.ecommerce.common.exception.InvalidCredentialsException;
+import com.marketplace.ecommerce.config.CurrentUser;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -19,7 +23,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 @RestController
@@ -27,15 +33,25 @@ import java.util.UUID;
 public class UploadFileChatController {
 
     private static final Path CHAT_UPLOAD_DIR = Paths.get("uploads/chat");
+    private static final Set<String> ALLOWED_EXT = Set.of(".jpg", ".jpeg", ".png", ".gif", ".webp");
 
     @PostMapping("/upload")
     public Map<String, String> uploadImage(
             @RequestParam("file") MultipartFile file,
+            @CurrentUser CurrentUserInfo user,
             HttpServletRequest request
     ) throws IOException {
-
-        String fileName =
-                UUID.randomUUID() + "_" + file.getOriginalFilename();
+        if (user == null || user.getAccountId() == null) {
+            throw new InvalidCredentialsException("Vui lòng đăng nhập");
+        }
+        // never trust the client filename: it can contain ../ and escape the upload dir
+        String original = file.getOriginalFilename() == null ? "" : file.getOriginalFilename();
+        int dot = original.lastIndexOf('.');
+        String ext = dot < 0 ? "" : original.substring(dot).toLowerCase(Locale.ROOT);
+        if (!ALLOWED_EXT.contains(ext)) {
+            throw new CustomException("Chỉ chấp nhận ảnh jpg, jpeg, png, gif, webp");
+        }
+        String fileName = UUID.randomUUID() + ext;
 
         if (!Files.exists(CHAT_UPLOAD_DIR)) {
             Files.createDirectories(CHAT_UPLOAD_DIR);

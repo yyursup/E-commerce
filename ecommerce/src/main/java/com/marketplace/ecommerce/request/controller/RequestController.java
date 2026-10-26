@@ -2,18 +2,17 @@ package com.marketplace.ecommerce.request.controller;
 
 import com.marketplace.ecommerce.common.CurrentUserInfo;
 import com.marketplace.ecommerce.config.CurrentUser;
-import com.marketplace.ecommerce.request.dto.request.CreateAppealRequest;
-import com.marketplace.ecommerce.request.dto.request.CreatePublicAppealRequest;
+
 import com.marketplace.ecommerce.request.dto.request.RegisterSellerRequest;
+import com.marketplace.ecommerce.request.dto.response.BanReviewStatusResponse;
 import com.marketplace.ecommerce.request.dto.response.CreateRequestResponse;
 import com.marketplace.ecommerce.request.dto.response.RequestResponse;
 import com.marketplace.ecommerce.request.dto.response.RequestDetailsResponse;
 import com.marketplace.ecommerce.request.service.RegisterSellerService;
 import com.marketplace.ecommerce.request.service.RequestService;
 import com.marketplace.ecommerce.request.valueObjects.RequestStatus;
-import com.marketplace.ecommerce.request.valueObjects.TargetType;
-import com.marketplace.ecommerce.auth.service.TokenService;
-import com.marketplace.ecommerce.auth.entity.Account;
+import org.springframework.http.MediaType;
+import org.springframework.web.multipart.MultipartFile;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -23,6 +22,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -34,8 +34,6 @@ public class RequestController {
 
     private final RegisterSellerService registerSellerService;
     
-    private final TokenService tokenService;
-
     @PostMapping("regis-seller")
     public CreateRequestResponse register(
             @CurrentUser CurrentUserInfo u,
@@ -43,32 +41,22 @@ public class RequestController {
         return registerSellerService.createSellerRegistration(u.getAccountId(), request);
     }
 
-    @PostMapping("/appeal")
-    public CreateRequestResponse createAppeal(
+    @PostMapping(value = "/ban-review", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public CreateRequestResponse submitBanReview(
             @CurrentUser CurrentUserInfo u,
-            @Valid @RequestBody CreateAppealRequest request) {
-        return requestService.createAppeal(u.getAccountId(), request);
+            @RequestParam("description") String description,
+            @RequestParam(value = "files", required = false) List<MultipartFile> files
+    ) {
+        return requestService.submitBanReview(u.getAccountId(), description, files);
     }
 
-    @PostMapping("/appeal/public")
-    public CreateRequestResponse createAppealPublic(
-            @RequestHeader("Authorization") String authHeader,
-            @Valid @RequestBody CreatePublicAppealRequest request) {
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            throw new com.marketplace.ecommerce.common.exception.CustomException("Missing or invalid authorization header");
-        }
-        String token = authHeader.substring(7);
-        Account account = tokenService.getAccountFromAppealToken(token);
-        
-        CreateAppealRequest fullRequest = CreateAppealRequest.builder()
-                .targetId(account.getId())
-                .targetType(TargetType.USER)
-                .description(request.getDescription())
-                .evidenceUrl(request.getEvidenceUrl())
-                .build();
-                
-        return requestService.createAppeal(account.getId(), fullRequest);
+    @GetMapping("/ban-review/status")
+    public BanReviewStatusResponse getBanReviewStatus(
+            @CurrentUser CurrentUserInfo u
+    ) {
+        return requestService.getBanReviewStatus(u.getAccountId());
     }
+
 
 
     @PutMapping("reject")

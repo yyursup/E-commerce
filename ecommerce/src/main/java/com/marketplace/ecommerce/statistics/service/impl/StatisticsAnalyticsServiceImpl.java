@@ -31,8 +31,9 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -47,39 +48,131 @@ public class StatisticsAnalyticsServiceImpl implements StatisticsAnalyticsServic
     private final CommissionRepository commissionRepository;
     private final ShopRepository shopRepository;
     private final UserRepository userRepository;
+    private final com.marketplace.ecommerce.shop.repository.ShopEscrowFundRepository shopEscrowFundRepository;
+
+    public record DateRange(String period, LocalDate startDate, LocalDate endDate) {
+        public LocalDateTime startDateTime() {
+            return startDate.atStartOfDay();
+        }
+        public LocalDateTime endDateTime() {
+            return endDate.atTime(LocalTime.MAX);
+        }
+    }
+
+    private DateRange resolveDateRange(String period, LocalDate reqStart, LocalDate reqEnd) {
+        String p = (period != null && !period.isBlank()) ? period.trim().toLowerCase() : "14d";
+        LocalDate today = LocalDate.now();
+
+        LocalDate start;
+        LocalDate end = today;
+
+        switch (p) {
+            case "7d":
+                start = today.minusDays(6);
+                break;
+            case "30d":
+                start = today.minusDays(29);
+                break;
+            case "90d":
+                start = today.minusDays(89);
+                break;
+            case "this_month":
+                start = today.withDayOfMonth(1);
+                end = today;
+                break;
+            case "last_month":
+                LocalDate prevMonth = today.minusMonths(1);
+                start = prevMonth.withDayOfMonth(1);
+                end = prevMonth.withDayOfMonth(prevMonth.lengthOfMonth());
+                break;
+            case "custom":
+                if (reqStart != null && reqEnd != null) {
+                    if (reqStart.isAfter(reqEnd)) {
+                        start = reqEnd;
+                        end = reqStart;
+                    } else {
+                        start = reqStart;
+                        end = reqEnd;
+                    }
+                    if (ChronoUnit.DAYS.between(start, end) > 365) {
+                        start = end.minusDays(365);
+                    }
+                } else if (reqStart != null) {
+                    start = reqStart;
+                    end = reqStart.plusDays(13);
+                } else if (reqEnd != null) {
+                    end = reqEnd;
+                    start = reqEnd.minusDays(13);
+                } else {
+                    p = "14d";
+                    start = today.minusDays(13);
+                }
+                break;
+            case "14d":
+            default:
+                p = "14d";
+                start = today.minusDays(13);
+                break;
+        }
+
+        return new DateRange(p, start, end);
+    }
 
     @Override
     public AdminDashboardAnalyticsResponse getAdminDashboardAnalytics() {
-        // 1. Financial KPIs
-        BigDecimal totalGmv = orderRepository.getPlatformTotalGmv();
-        BigDecimal settledRevenue = orderRepository.getPlatformSettledRevenue();
-        BigDecimal activeEscrowBalance = escrowRepository.sumAmountByStatus(EscrowStatus.HELD);
+        return getAdminDashboardAnalytics("14d", null, null);
+    }
 
-        BigDecimal totalPlatformCommission = BigDecimal.ZERO;
-        List<Object[]> commOverview = commissionRepository.getOverviewStatistics();
-        if (commOverview != null && !commOverview.isEmpty() && commOverview.get(0)[0] != null) {
-            totalPlatformCommission = castBigDecimal(commOverview.get(0)[0]);
+    @Override
+    public AdminDashboardAnalyticsResponse getAdminDashboardAnalytics(String period, LocalDate startDate, LocalDate endDate) {
+        DateRange range = resolveDateRange(period, startDate, endDate);
+        long daysCount = ChronoUnit.DAYS.between(range.startDate(), range.endDate()) + 1;
+        LocalDate prevStartDate = range.startDate().minusDays(daysCount);
+        LocalDate prevEndDate = range.startDate().minusDays(1);
+        LocalDateTime prevStartDateTime = prevStartDate.atStartOfDay();
+        LocalDateTime prevEndDateTime = prevEndDate.atTime(LocalTime.MAX);
+
+        // 1. Financial KPIs (Tính theo kỳ được chọn)
+        BigDecimal totalGmv = orderRepository.getPlatformGmvBetween(range.startDateTime(), range.endDateTime());
+        BigDecimal prevGmv = orderRepository.getPlatformGmvBetween(prevStartDateTime, prevEndDateTime);
+        BigDecimal allTimeGmv = orderRepository.getPlatformTotalGmv();
+
+        Double gmvGrowthRate = null;
+        if (prevGmv != null && prevGmv.compareTo(BigDecimal.ZERO) > 0) {
+            double rate = ((totalGmv.doubleValue() - prevGmv.doubleValue()) / prevGmv.doubleValue()) * 100.0;
+            gmvGrowthRate = Math.round(rate * 10.0) / 10.0;
+        } else if (totalGmv == null || totalGmv.compareTo(BigDecimal.ZERO) == 0) {
+            gmvGrowthRate = 0.0;
         }
 
-        // 2. Operational & Risk Metrics
-        long totalOrders = orderRepository.count();
-        long completedOrders = orderRepository.countByStatus(OrderStatus.COMPLETED)
-                + orderRepository.countByStatus(OrderStatus.DELIVERED);
-        long cancelledOrders = orderRepository.countByStatus(OrderStatus.CANCELLED);
-        long returnedOrders = orderRepository.countByStatus(OrderStatus.REFUNDED);
-        long pendingDisputes = escrowRepository.countByStatus(EscrowStatus.DISPUTED);
+        BigDecimal settledRevenue = orderRepository.getPlatformSettledRevenueBetween(range.startDateTime(), range.endDateTime());
+        BigDecimal allTimeSettledRevenue = orderRepository.getPlatformSettledRevenue();
 
-        double fulfillmentRate = totalOrders > 0
-                ? Math.round((completedOrders * 100.0 / totalOrders) * 10.0) / 10.0
-                : 0.0;
-        double returnRate = totalOrders > 0
-                ? Math.round((returnedOrders * 100.0 / totalOrders) * 10.0) / 10.0
-                : 0.0;
-        double disputeRate = totalOrders > 0
-                ? Math.round((pendingDisputes * 100.0 / totalOrders) * 10.0) / 10.0
-                : 0.0;
+        // Quỹ ký quỹ Escrow: Thời gian thực (Snapshot)
+        BigDecimal activeEscrowBalance = escrowRepository.sumAmountByStatus(EscrowStatus.HELD);
 
-        // 3. User & Merchant Growth
+        // Hoa hồng sàn trong kỳ: Lấy thực tế từ bảng Commission hoặc tổng trên Order
+        BigDecimal totalPlatformCommission = commissionRepository.getTotalCommissionBetween(range.startDateTime(), range.endDateTime());
+        if (totalPlatformCommission == null || totalPlatformCommission.compareTo(BigDecimal.ZERO) == 0) {
+            totalPlatformCommission = orderRepository.getTotalPlatformCommissionBetween(range.startDateTime(), range.endDateTime());
+        }
+        if (totalPlatformCommission == null) {
+            totalPlatformCommission = BigDecimal.ZERO;
+        }
+
+        // 2. Operational & Risk Metrics (Tính theo kỳ)
+        long totalOrders = orderRepository.countByCreatedAtBetween(range.startDateTime(), range.endDateTime());
+        long completedOrders = orderRepository.countByStatusInAndCreatedAtBetween(
+                List.of(OrderStatus.COMPLETED, OrderStatus.DELIVERED), range.startDateTime(), range.endDateTime());
+        long cancelledOrders = orderRepository.countByStatusAndCreatedAtBetween(OrderStatus.CANCELLED, range.startDateTime(), range.endDateTime());
+        long returnedOrders = orderRepository.countByStatusAndCreatedAtBetween(OrderStatus.REFUNDED, range.startDateTime(), range.endDateTime());
+        long pendingDisputes = escrowRepository.countByStatus(EscrowStatus.DISPUTED); // Realtime
+
+        double fulfillmentRate = calculateFulfillmentRate(completedOrders, totalOrders);
+        double returnRate = calculateOperationalRate(returnedOrders, totalOrders);
+        double disputeRate = calculateOperationalRate(pendingDisputes, totalOrders);
+
+        // 3. User & Merchant Growth (Realtime Network Status)
         long totalBuyers = userRepository.count();
         long totalShops = shopRepository.count();
         long verifiedKycShops = shopRepository.findAll().stream()
@@ -87,24 +180,24 @@ public class StatisticsAnalyticsServiceImpl implements StatisticsAnalyticsServic
                         && s.getUser().getIdentityCardNumber() != null
                         && !s.getUser().getIdentityCardNumber().isBlank())
                 .count();
-        double kycVerificationRate = totalShops > 0
-                ? Math.round((verifiedKycShops * 100.0 / totalShops) * 10.0) / 10.0
-                : 0.0;
+        double kycVerificationRate = calculateSafeRate(verifiedKycShops, totalShops);
 
-        // 4. Daily Timeline (30 days)
-        LocalDateTime thirtyDaysAgo = LocalDateTime.now().minusDays(30);
-        List<Object[]> rawDailyGmv = orderRepository.getDailyPlatformGmvSince(thirtyDaysAgo);
+        // 4. Daily Timeline based on date range
+        List<Object[]> rawDailyGmv = (range.endDate().isEqual(LocalDate.now()))
+                ? orderRepository.getDailyPlatformGmvSince(range.startDateTime())
+                : orderRepository.getDailyPlatformGmvBetween(range.startDateTime(), range.endDateTime());
         Map<String, DailyPlatformTimelineDTO> timelineMap = new LinkedHashMap<>();
 
-        // Initialize last 14 days by default for smoother chart display
-        for (int i = 13; i >= 0; i--) {
-            String dateStr = LocalDate.now().minusDays(i).format(DateTimeFormatter.ISO_LOCAL_DATE);
+        LocalDate curAdmin = range.startDate();
+        while (!curAdmin.isAfter(range.endDate())) {
+            String dateStr = curAdmin.format(DateTimeFormatter.ISO_LOCAL_DATE);
             timelineMap.put(dateStr, DailyPlatformTimelineDTO.builder()
                     .date(dateStr)
                     .gmv(BigDecimal.ZERO)
                     .commission(BigDecimal.ZERO)
                     .orderCount(0L)
                     .build());
+            curAdmin = curAdmin.plusDays(1);
         }
 
         for (Object[] row : rawDailyGmv) {
@@ -112,15 +205,16 @@ public class StatisticsAnalyticsServiceImpl implements StatisticsAnalyticsServic
                 String dStr = row[0].toString();
                 BigDecimal gmvVal = castBigDecimal(row[1]);
                 Long oCount = castLong(row[2]);
-                // Ước tính hoa hồng sàn ~5% của GMV mỗi ngày
-                BigDecimal commVal = gmvVal.multiply(BigDecimal.valueOf(0.05)).setScale(0, RoundingMode.HALF_UP);
+                BigDecimal commVal = row.length > 3 ? castBigDecimal(row[3]) : BigDecimal.ZERO;
 
-                timelineMap.put(dStr, DailyPlatformTimelineDTO.builder()
-                        .date(dStr)
-                        .gmv(gmvVal)
-                        .commission(commVal)
-                        .orderCount(oCount)
-                        .build());
+                if (timelineMap.containsKey(dStr)) {
+                    timelineMap.put(dStr, DailyPlatformTimelineDTO.builder()
+                            .date(dStr)
+                            .gmv(gmvVal)
+                            .commission(commVal)
+                            .orderCount(oCount)
+                            .build());
+                }
             }
         }
         List<DailyPlatformTimelineDTO> dailyTimeline = new ArrayList<>(timelineMap.values());
@@ -128,15 +222,24 @@ public class StatisticsAnalyticsServiceImpl implements StatisticsAnalyticsServic
         // 5. Tech Condition Breakdown (Seal vs Like New vs As-is)
         List<TechConditionBreakdownDTO> conditionBreakdown = buildTechConditionBreakdown(null);
 
-        // 6. Top Shops
-        List<TopShopAnalyticsDTO> topShops = orderRepository.getShopRankingByRevenue().stream()
+        // 6. Top Shops (Trong kỳ hoặc All-time fallback)
+        List<Object[]> rawTopShops = orderRepository.getShopRankingByRevenueBetween(range.startDateTime(), range.endDateTime());
+        if (rawTopShops == null || rawTopShops.isEmpty()) {
+            rawTopShops = orderRepository.getShopRankingByRevenue();
+        }
+        List<TopShopAnalyticsDTO> topShops = rawTopShops.stream()
                 .limit(5)
                 .map(row -> {
                     UUID sId = (UUID) row[0];
                     String sName = (String) row[1];
                     BigDecimal rev = castBigDecimal(row[2]);
                     Long oCnt = castLong(row[3]);
-                    BigDecimal comm = rev.multiply(BigDecimal.valueOf(0.05)).setScale(0, RoundingMode.HALF_UP);
+                    BigDecimal comm = row.length > 4 ? castBigDecimal(row[4]) : BigDecimal.ZERO;
+
+                    long sTotal = orderRepository.countByShopId(sId);
+                    long sCompleted = orderRepository.countByShopIdAndStatus(sId, OrderStatus.COMPLETED)
+                            + orderRepository.countByShopIdAndStatus(sId, OrderStatus.DELIVERED);
+                    double sFulfillmentRate = calculateFulfillmentRate(sCompleted, sTotal);
 
                     return TopShopAnalyticsDTO.builder()
                             .shopId(sId)
@@ -145,29 +248,52 @@ public class StatisticsAnalyticsServiceImpl implements StatisticsAnalyticsServic
                             .totalRevenue(rev)
                             .orderCount(oCnt)
                             .commissionContributed(comm)
-                            .fulfillmentRate(96.5)
+                            .fulfillmentRate(sFulfillmentRate)
                             .build();
                 })
                 .toList();
 
-        // 7. Top Categories
+        // 7. Top Categories (Số liệu bán & doanh thu thực tế từ OrderItems)
         List<Object[]> rawCatList = productRepository.getTopCategoriesByProductCount(PageRequest.of(0, 5));
         long totalProductsInTopCats = rawCatList.stream().mapToLong(r -> castLong(r[2])).sum();
+
+        List<Object[]> catSalesMetrics = orderItemsRepository.getCategorySalesMetrics();
+        Map<UUID, Object[]> salesMapByCat = new HashMap<>();
+        for (Object[] row : catSalesMetrics) {
+            if (row[0] != null) {
+                salesMapByCat.put((UUID) row[0], row);
+            }
+        }
+
+        BigDecimal totalSalesRevenueAllCats = catSalesMetrics.stream()
+                .map(r -> castBigDecimal(r[2]))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
         List<TopCategoryAnalyticsDTO> topCategories = rawCatList.stream()
                 .map(row -> {
                     UUID cId = (UUID) row[0];
                     String cName = (String) row[1];
                     Long pCount = castLong(row[2]);
-                    double share = totalProductsInTopCats > 0
-                            ? Math.round((pCount * 100.0 / totalProductsInTopCats) * 10.0) / 10.0
-                            : 0.0;
+
+                    Object[] salesRow = salesMapByCat.get(cId);
+                    Long soldQty = salesRow != null ? castLong(salesRow[1]) : 0L;
+                    BigDecimal catRev = salesRow != null ? castBigDecimal(salesRow[2]) : BigDecimal.ZERO;
+
+                    double share = 0.0;
+                    if (totalSalesRevenueAllCats.compareTo(BigDecimal.ZERO) > 0) {
+                        double rawShare = (catRev.doubleValue() * 100.0) / totalSalesRevenueAllCats.doubleValue();
+                        share = (catRev.compareTo(totalSalesRevenueAllCats) < 0 && rawShare >= 99.95)
+                                ? 99.9 : Math.round(rawShare * 10.0) / 10.0;
+                    } else if (totalProductsInTopCats > 0) {
+                        share = Math.round((pCount * 100.0 / totalProductsInTopCats) * 10.0) / 10.0;
+                    }
 
                     return TopCategoryAnalyticsDTO.builder()
                             .categoryId(cId)
                             .categoryName(cName)
                             .productCount(pCount)
-                            .orderItemsSold(pCount * 4) // synthetic aggregate demo
-                            .totalRevenue(BigDecimal.valueOf(pCount * 15_000_000L))
+                            .orderItemsSold(soldQty)
+                            .totalRevenue(catRev)
                             .revenueShare(share)
                             .build();
                 })
@@ -178,7 +304,9 @@ public class StatisticsAnalyticsServiceImpl implements StatisticsAnalyticsServic
                 .settledRevenue(settledRevenue)
                 .activeEscrowBalance(activeEscrowBalance)
                 .totalPlatformCommission(totalPlatformCommission)
-                .gmvGrowthRate(12.8)
+                .gmvGrowthRate(gmvGrowthRate)
+                .allTimeGmv(allTimeGmv)
+                .allTimeSettledRevenue(allTimeSettledRevenue)
                 .totalOrders(totalOrders)
                 .completedOrders(completedOrders)
                 .cancelledOrders(cancelledOrders)
@@ -195,49 +323,101 @@ public class StatisticsAnalyticsServiceImpl implements StatisticsAnalyticsServic
                 .dailyTimeline(dailyTimeline)
                 .topShops(topShops)
                 .topCategories(topCategories)
+                .selectedPeriod(range.period())
+                .startDate(range.startDate().toString())
+                .endDate(range.endDate().toString())
                 .build();
     }
 
     @Override
     public SellerDashboardAnalyticsResponse getSellerDashboardAnalytics(UUID sellerAccountId) {
+        return getSellerDashboardAnalytics(sellerAccountId, "14d", null, null);
+    }
+
+    @Override
+    public SellerDashboardAnalyticsResponse getSellerDashboardAnalytics(
+            UUID sellerAccountId, String period, LocalDate startDate, LocalDate endDate
+    ) {
         User user = userRepository.findByAccountId(sellerAccountId)
                 .orElseThrow(() -> new CustomException("Không tìm thấy thông tin tài khoản người bán."));
         Shop shop = shopRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new CustomException("Không tìm thấy thông tin Shop của bạn."));
+        return buildShopDashboardAnalytics(shop, user, period, startDate, endDate);
+    }
 
-        // 1. Financial Performance KPIs
+    @Override
+    public SellerDashboardAnalyticsResponse getAdminShopAnalytics(
+            UUID shopId, String period, LocalDate startDate, LocalDate endDate
+    ) {
+        Shop shop = shopRepository.findById(shopId)
+                .orElseThrow(() -> new CustomException("Không tìm thấy thông tin Gian hàng."));
+        User user = shop.getUser();
+        if (user == null) {
+            throw new CustomException("Gian hàng chưa có thông tin chủ sở hữu.");
+        }
+        return buildShopDashboardAnalytics(shop, user, period, startDate, endDate);
+    }
+
+    private SellerDashboardAnalyticsResponse buildShopDashboardAnalytics(
+            Shop shop, User user, String period, LocalDate startDate, LocalDate endDate
+    ) {
+        DateRange range = resolveDateRange(period, startDate, endDate);
+
+        long daysCount = ChronoUnit.DAYS.between(range.startDate(), range.endDate()) + 1;
+        LocalDate prevStartDate = range.startDate().minusDays(daysCount);
+        LocalDate prevEndDate = range.startDate().minusDays(1);
+        LocalDateTime prevStartDateTime = prevStartDate.atStartOfDay();
+        LocalDateTime prevEndDateTime = prevEndDate.atTime(LocalTime.MAX);
+
+        // 1. Financial Performance KPIs (Tính theo kỳ)
         List<OrderStatus> revenueStatuses = List.of(OrderStatus.DELIVERED, OrderStatus.COMPLETED);
-        BigDecimal totalRevenue = orderRepository.getRevenueByShop(shop.getId(), revenueStatuses);
+        BigDecimal totalRevenue = orderRepository.getRevenueByShopBetween(shop.getId(), revenueStatuses, range.startDateTime(), range.endDateTime());
+        BigDecimal prevRevenue = orderRepository.getRevenueByShopBetween(shop.getId(), revenueStatuses, prevStartDateTime, prevEndDateTime);
+        BigDecimal allTimeRevenue = orderRepository.getRevenueByShop(shop.getId(), revenueStatuses);
+
+        Double revenueGrowthRate = null;
+        if (prevRevenue != null && prevRevenue.compareTo(BigDecimal.ZERO) > 0) {
+            double rate = ((totalRevenue.doubleValue() - prevRevenue.doubleValue()) / prevRevenue.doubleValue()) * 100.0;
+            revenueGrowthRate = Math.round(rate * 10.0) / 10.0;
+        } else if (totalRevenue == null || totalRevenue.compareTo(BigDecimal.ZERO) == 0) {
+            revenueGrowthRate = 0.0;
+        }
 
         List<OrderStatus> estimatedStatuses = List.of(
                 OrderStatus.CONFIRMED, OrderStatus.PROCESSING, OrderStatus.SHIPPING,
                 OrderStatus.DELIVERED, OrderStatus.PENDING_PAYMENT, OrderStatus.PENDING);
-        BigDecimal estimatedRevenue = orderRepository.getEstimatedRevenueByShop(shop.getId(), estimatedStatuses);
+        BigDecimal estimatedRevenue = orderRepository.getEstimatedRevenueByShopBetween(shop.getId(), estimatedStatuses, range.startDateTime(), range.endDateTime());
 
-        BigDecimal totalCommissionPaid = commissionRepository.getTotalCommissionBySeller(sellerAccountId);
-        BigDecimal settledNetIncome = totalRevenue.subtract(totalCommissionPaid != null ? totalCommissionPaid : BigDecimal.ZERO);
+        // Lấy phí hoa hồng thực tế: theo user.getId() từ bảng Commission hoặc tổng trên Order
+        BigDecimal totalCommissionPaid = commissionRepository.getTotalCommissionBySellerBetween(user.getId(), range.startDateTime(), range.endDateTime());
+        if (totalCommissionPaid == null || totalCommissionPaid.compareTo(BigDecimal.ZERO) == 0) {
+            totalCommissionPaid = orderRepository.getTotalPlatformCommissionByShopBetween(shop.getId(), range.startDateTime(), range.endDateTime());
+        }
+        if (totalCommissionPaid == null) {
+            totalCommissionPaid = BigDecimal.ZERO;
+        }
+        BigDecimal settledNetIncome = totalRevenue.subtract(totalCommissionPaid);
         if (settledNetIncome.compareTo(BigDecimal.ZERO) < 0) {
             settledNetIncome = BigDecimal.ZERO;
         }
 
-        BigDecimal pendingEscrowRevenue = estimatedRevenue.subtract(totalRevenue);
-        if (pendingEscrowRevenue.compareTo(BigDecimal.ZERO) < 0) {
+        // Quỹ ký quỹ Escrow đang chờ giải ngân: Realtime snapshot
+        List<OrderStatus> pendingEscrowStatuses = List.of(
+                OrderStatus.CONFIRMED, OrderStatus.PROCESSING, OrderStatus.SHIPPING, OrderStatus.DELIVERED);
+        BigDecimal pendingEscrowRevenue = orderRepository.getPendingEscrowRevenueByShop(shop.getId(), pendingEscrowStatuses);
+        if (pendingEscrowRevenue == null || pendingEscrowRevenue.compareTo(BigDecimal.ZERO) < 0) {
             pendingEscrowRevenue = BigDecimal.ZERO;
         }
 
-        // 2. Fulfillment Metrics
-        long totalOrders = orderRepository.countByShopId(shop.getId());
-        long completedOrders = orderRepository.countByShopIdAndStatus(shop.getId(), OrderStatus.COMPLETED)
-                + orderRepository.countByShopIdAndStatus(shop.getId(), OrderStatus.DELIVERED);
-        long returnedOrders = orderRepository.countByShopIdAndStatus(shop.getId(), OrderStatus.REFUNDED);
-        long cancelledOrders = orderRepository.countByShopIdAndStatus(shop.getId(), OrderStatus.CANCELLED);
+        // 2. Fulfillment Metrics (Tính theo kỳ)
+        long totalOrders = orderRepository.countByShopIdAndCreatedAtBetween(shop.getId(), range.startDateTime(), range.endDateTime());
+        long completedOrders = orderRepository.countByShopIdAndStatusInAndCreatedAtBetween(
+                shop.getId(), List.of(OrderStatus.COMPLETED, OrderStatus.DELIVERED), range.startDateTime(), range.endDateTime());
+        long returnedOrders = orderRepository.countByShopIdAndStatusAndCreatedAtBetween(shop.getId(), OrderStatus.REFUNDED, range.startDateTime(), range.endDateTime());
+        long cancelledOrders = orderRepository.countByShopIdAndStatusAndCreatedAtBetween(shop.getId(), OrderStatus.CANCELLED, range.startDateTime(), range.endDateTime());
 
-        double fulfillmentRate = totalOrders > 0
-                ? Math.round((completedOrders * 100.0 / totalOrders) * 10.0) / 10.0
-                : 0.0;
-        double returnRate = totalOrders > 0
-                ? Math.round((returnedOrders * 100.0 / totalOrders) * 10.0) / 10.0
-                : 0.0;
+        double fulfillmentRate = calculateFulfillmentRate(completedOrders, totalOrders);
+        double returnRate = calculateOperationalRate(returnedOrders, totalOrders);
 
         BigDecimal aov = completedOrders > 0
                 ? totalRevenue.divide(BigDecimal.valueOf(completedOrders), 0, RoundingMode.HALF_UP)
@@ -245,21 +425,24 @@ public class StatisticsAnalyticsServiceImpl implements StatisticsAnalyticsServic
 
         Map<String, Long> orderCountByStatus = new LinkedHashMap<>();
         for (OrderStatus st : OrderStatus.values()) {
-            orderCountByStatus.put(st.name(), orderRepository.countByShopIdAndStatus(shop.getId(), st));
+            orderCountByStatus.put(st.name(), orderRepository.countByShopIdAndStatusAndCreatedAtBetween(shop.getId(), st, range.startDateTime(), range.endDateTime()));
         }
 
-        // 3. Daily Sales Timeline (14 days)
-        LocalDateTime fourteenDaysAgo = LocalDateTime.now().minusDays(14);
-        List<Object[]> rawShopSales = orderRepository.getShopDailySalesSince(shop.getId(), fourteenDaysAgo);
+        // 3. Daily Sales Timeline based on date range
+        List<Object[]> rawShopSales = (range.endDate().isEqual(LocalDate.now()))
+                ? orderRepository.getShopDailySalesSince(shop.getId(), range.startDateTime())
+                : orderRepository.getShopDailySalesBetween(shop.getId(), range.startDateTime(), range.endDateTime());
         Map<String, DailySalesPointDTO> salesMap = new LinkedHashMap<>();
 
-        for (int i = 13; i >= 0; i--) {
-            String dStr = LocalDate.now().minusDays(i).format(DateTimeFormatter.ISO_LOCAL_DATE);
+        LocalDate curSeller = range.startDate();
+        while (!curSeller.isAfter(range.endDate())) {
+            String dStr = curSeller.format(DateTimeFormatter.ISO_LOCAL_DATE);
             salesMap.put(dStr, DailySalesPointDTO.builder()
                     .date(dStr)
                     .revenue(BigDecimal.ZERO)
                     .orderCount(0L)
                     .build());
+            curSeller = curSeller.plusDays(1);
         }
 
         for (Object[] row : rawShopSales) {
@@ -267,11 +450,13 @@ public class StatisticsAnalyticsServiceImpl implements StatisticsAnalyticsServic
                 String dStr = row[0].toString();
                 BigDecimal rev = castBigDecimal(row[1]);
                 Long cnt = castLong(row[2]);
-                salesMap.put(dStr, DailySalesPointDTO.builder()
-                        .date(dStr)
-                        .revenue(rev)
-                        .orderCount(cnt)
-                        .build());
+                if (salesMap.containsKey(dStr)) {
+                    salesMap.put(dStr, DailySalesPointDTO.builder()
+                            .date(dStr)
+                            .revenue(rev)
+                            .orderCount(cnt)
+                            .build());
+                }
             }
         }
         List<DailySalesPointDTO> salesTimeline = new ArrayList<>(salesMap.values());
@@ -339,6 +524,8 @@ public class StatisticsAnalyticsServiceImpl implements StatisticsAnalyticsServic
                 .estimatedRevenue(estimatedRevenue)
                 .totalCommissionPaid(totalCommissionPaid != null ? totalCommissionPaid : BigDecimal.ZERO)
                 .averageOrderValue(aov)
+                .revenueGrowthRate(revenueGrowthRate)
+                .allTimeRevenue(allTimeRevenue)
                 .totalOrders(totalOrders)
                 .completedOrders(completedOrders)
                 .returnedOrders(returnedOrders)
@@ -350,7 +537,153 @@ public class StatisticsAnalyticsServiceImpl implements StatisticsAnalyticsServic
                 .topProducts(topProducts)
                 .conditionSalesBreakdown(conditionSalesBreakdown)
                 .lowStockAlerts(lowStockAlerts)
+                .selectedPeriod(range.period())
+                .startDate(range.startDate().toString())
+                .endDate(range.endDate().toString())
                 .build();
+    }
+
+    @Override
+    public List<AdminShopPerformanceDTO> getAdminShopsPerformance(
+            String period, LocalDate startDate, LocalDate endDate, String search
+    ) {
+        DateRange range = resolveDateRange(period, startDate, endDate);
+
+        List<Shop> allShops = shopRepository.findAll();
+        if (search != null && !search.trim().isEmpty()) {
+            String q = search.trim().toLowerCase();
+            allShops = allShops.stream().filter(s -> {
+                boolean matchShop = s.getName() != null && s.getName().toLowerCase().contains(q);
+                boolean matchPhone = s.getPhoneNumber() != null && s.getPhoneNumber().contains(q);
+                boolean matchUser = false;
+                if (s.getUser() != null) {
+                    User u = s.getUser();
+                    matchUser = (u.getFullName() != null && u.getFullName().toLowerCase().contains(q))
+                            || (u.getEmail() != null && u.getEmail().toLowerCase().contains(q))
+                            || (u.getPhoneNumber() != null && u.getPhoneNumber().contains(q));
+                }
+                return matchShop || matchPhone || matchUser;
+            }).toList();
+        }
+
+        // 1. Revenue & Completed order counts by shop
+        List<Object[]> rawShopRevenue = orderRepository.getShopRankingByRevenueBetween(range.startDateTime(), range.endDateTime());
+        Map<UUID, Object[]> revenueMap = new HashMap<>();
+        for (Object[] r : rawShopRevenue) {
+            if (r[0] != null) {
+                revenueMap.put((UUID) r[0], r);
+            }
+        }
+
+        // 2. Total orders by shop in period
+        List<Object[]> rawTotalOrders = orderRepository.getShopTotalOrderCountsBetween(range.startDateTime(), range.endDateTime());
+        Map<UUID, Long> totalOrdersMap = new HashMap<>();
+        for (Object[] r : rawTotalOrders) {
+            if (r[0] != null) {
+                totalOrdersMap.put((UUID) r[0], castLong(r[1]));
+            }
+        }
+
+        // 3. Returned orders by shop in period
+        List<Object[]> rawReturnedOrders = orderRepository.getShopStatusOrderCountsBetween(range.startDateTime(), range.endDateTime(), OrderStatus.REFUNDED);
+        Map<UUID, Long> returnedOrdersMap = new HashMap<>();
+        for (Object[] r : rawReturnedOrders) {
+            if (r[0] != null) {
+                returnedOrdersMap.put((UUID) r[0], castLong(r[1]));
+            }
+        }
+
+        // 4. Cancelled orders by shop in period
+        List<Object[]> rawCancelledOrders = orderRepository.getShopStatusOrderCountsBetween(range.startDateTime(), range.endDateTime(), OrderStatus.CANCELLED);
+        Map<UUID, Long> cancelledOrdersMap = new HashMap<>();
+        for (Object[] r : rawCancelledOrders) {
+            if (r[0] != null) {
+                cancelledOrdersMap.put((UUID) r[0], castLong(r[1]));
+            }
+        }
+
+        // 5. Pending escrow revenue by shop
+        List<OrderStatus> pendingEscrowStatuses = List.of(
+                OrderStatus.CONFIRMED, OrderStatus.PROCESSING, OrderStatus.SHIPPING, OrderStatus.DELIVERED);
+        List<Object[]> rawPendingEscrows = orderRepository.getAllShopsPendingEscrowRevenue(pendingEscrowStatuses);
+        Map<UUID, BigDecimal> pendingEscrowMap = new HashMap<>();
+        for (Object[] r : rawPendingEscrows) {
+            if (r[0] != null) {
+                pendingEscrowMap.put((UUID) r[0], castBigDecimal(r[1]));
+            }
+        }
+
+        // 6. Escrow funds map
+        List<com.marketplace.ecommerce.shop.entity.ShopEscrowFund> funds = shopEscrowFundRepository.findAll();
+        Map<UUID, com.marketplace.ecommerce.shop.entity.ShopEscrowFund> fundMap = new HashMap<>();
+        for (var f : funds) {
+            if (f.getShop() != null) {
+                fundMap.put(f.getShop().getId(), f);
+            }
+        }
+
+        List<AdminShopPerformanceDTO> result = new ArrayList<>();
+        for (Shop s : allShops) {
+            UUID sId = s.getId();
+            User u = s.getUser();
+
+            Object[] revRow = revenueMap.get(sId);
+            BigDecimal gmv = revRow != null ? castBigDecimal(revRow[2]) : BigDecimal.ZERO;
+            Long completed = revRow != null ? castLong(revRow[3]) : 0L;
+
+            BigDecimal commission = gmv.multiply(BigDecimal.valueOf(0.05)).setScale(0, RoundingMode.HALF_UP);
+            BigDecimal netIncome = gmv.subtract(commission);
+            if (netIncome.compareTo(BigDecimal.ZERO) < 0) {
+                netIncome = BigDecimal.ZERO;
+            }
+
+            Long totalOrders = totalOrdersMap.getOrDefault(sId, 0L);
+            Long returned = returnedOrdersMap.getOrDefault(sId, 0L);
+            Long cancelled = cancelledOrdersMap.getOrDefault(sId, 0L);
+            Double returnRate = totalOrders > 0 ? (Math.round((returned * 100.0 / totalOrders) * 10.0) / 10.0) : 0.0;
+
+            BigDecimal pendingEscrow = pendingEscrowMap.getOrDefault(sId, BigDecimal.ZERO);
+
+            var fund = fundMap.get(sId);
+            boolean isKycVerified = u != null && u.getIdentityCardNumber() != null && !u.getIdentityCardNumber().isBlank();
+
+            result.add(AdminShopPerformanceDTO.builder()
+                    .shopId(sId)
+                    .shopName(s.getName())
+                    .logoUrl(s.getLogoUrl())
+                    .ownerName(u != null ? u.getFullName() : null)
+                    .ownerEmail(u != null ? u.getEmail() : null)
+                    .ownerPhone(u != null ? (u.getPhoneNumber() != null ? u.getPhoneNumber() : s.getPhoneNumber()) : s.getPhoneNumber())
+                    .trustLevel(s.getTrustLevel() != null ? s.getTrustLevel() : 1)
+                    .isKycVerified(isKycVerified)
+                    .shopStatus(s.getStatus())
+                    .createdAt(s.getCreatedAt())
+                    .totalGmv(gmv)
+                    .settledNetIncome(netIncome)
+                    .platformCommission(commission)
+                    .completedOrders(completed)
+                    .totalOrders(totalOrders)
+                    .returnedOrders(returned)
+                    .cancelledOrders(cancelled)
+                    .returnRate(returnRate)
+                    .fundId(fund != null ? fund.getId() : null)
+                    .escrowFundBalance(fund != null ? fund.getBalance() : BigDecimal.ZERO)
+                    .requiredEscrowDeposit(fund != null ? fund.getCommittedAmount() : BigDecimal.ZERO)
+                    .isDeficit(fund != null && Boolean.TRUE.equals(fund.getIsDeficit()))
+                    .deficitAmount(fund != null ? fund.getDeficitAmount() : BigDecimal.ZERO)
+                    .deficitDeadline(fund != null ? fund.getDeficitDeadline() : null)
+                    .fundStatus(fund != null ? fund.getStatus() : null)
+                    .pendingEscrowRevenue(pendingEscrow)
+                    .build());
+        }
+
+        result.sort((a, b) -> {
+            int cmp = b.getTotalGmv().compareTo(a.getTotalGmv());
+            if (cmp != 0) return cmp;
+            return Long.compare(b.getTotalOrders(), a.getTotalOrders());
+        });
+
+        return result;
     }
 
     @Override
@@ -470,9 +803,12 @@ public class StatisticsAnalyticsServiceImpl implements StatisticsAnalyticsServic
             Long pCount = match != null ? castLong(match[1]) : 0L;
             Long soldQty = match != null ? castLong(match[2]) : 0L;
             BigDecimal rev = match != null ? castBigDecimal(match[3]) : BigDecimal.ZERO;
-            double pct = totalRevenue.compareTo(BigDecimal.ZERO) > 0
-                    ? Math.round(rev.doubleValue() * 1000.0 / totalRevenue.doubleValue()) / 10.0
-                    : 0.0;
+            double pct = 0.0;
+            if (totalRevenue.compareTo(BigDecimal.ZERO) > 0) {
+                double rawPct = (rev.doubleValue() * 100.0) / totalRevenue.doubleValue();
+                pct = (rev.compareTo(totalRevenue) < 0 && rawPct >= 99.95)
+                        ? 99.9 : Math.round(rawPct * 10.0) / 10.0;
+            }
 
             result.add(TechConditionBreakdownDTO.builder()
                     .conditionGrade(grade.name())
@@ -484,6 +820,37 @@ public class StatisticsAnalyticsServiceImpl implements StatisticsAnalyticsServic
                     .build());
         }
         return result;
+    }
+
+    private double calculateFulfillmentRate(long completed, long total) {
+        if (total <= 0 || completed <= 0) return 0.0;
+        if (completed >= total) return 100.0;
+        double raw = (completed * 100.0) / total;
+        double rounded = Math.round(raw * 10.0) / 10.0;
+        if (rounded >= 100.0 && completed < total) {
+            return 99.9;
+        }
+        return rounded;
+    }
+
+    private double calculateOperationalRate(long count, long total) {
+        if (total <= 0 || count <= 0) return 0.0;
+        double raw = (count * 100.0) / total;
+        if (raw < 0.1) {
+            return Math.round(raw * 100.0) / 100.0;
+        }
+        return Math.round(raw * 10.0) / 10.0;
+    }
+
+    private double calculateSafeRate(long count, long total) {
+        if (total <= 0 || count <= 0) return 0.0;
+        if (count >= total) return 100.0;
+        double raw = (count * 100.0) / total;
+        double rounded = Math.round(raw * 10.0) / 10.0;
+        if (rounded >= 100.0 && count < total) {
+            return 99.9;
+        }
+        return rounded;
     }
 
     private BigDecimal castBigDecimal(Object val) {

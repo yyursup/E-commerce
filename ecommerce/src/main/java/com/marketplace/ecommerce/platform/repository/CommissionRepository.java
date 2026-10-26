@@ -5,8 +5,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -60,6 +62,28 @@ public interface CommissionRepository extends
         WHERE c.sellerId = :sellerId
     """)
     BigDecimal getTotalCommissionBySeller(UUID sellerId);
+
+    @Query("""
+        SELECT COALESCE(SUM(c.totalCommission), 0)
+        FROM Commission c
+        WHERE c.createdAt >= :startDate AND c.createdAt <= :endDate
+    """)
+    BigDecimal getTotalCommissionBetween(
+        @Param("startDate") LocalDateTime startDate,
+        @Param("endDate") LocalDateTime endDate
+    );
+
+    @Query("""
+        SELECT COALESCE(SUM(c.totalCommission), 0)
+        FROM Commission c
+        WHERE c.sellerId = :sellerId
+          AND c.createdAt >= :startDate AND c.createdAt <= :endDate
+    """)
+    BigDecimal getTotalCommissionBySellerBetween(
+        @Param("sellerId") UUID sellerId,
+        @Param("startDate") LocalDateTime startDate,
+        @Param("endDate") LocalDateTime endDate
+    );
 
     @Query("""
         SELECT COALESCE(SUM((ci.unitPrice * ci.quantity) - ci.commissionAmount), 0)

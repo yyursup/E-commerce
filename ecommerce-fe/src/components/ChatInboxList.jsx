@@ -6,6 +6,7 @@ import {
   HiOutlineShoppingBag,
   HiOutlineBadgeCheck,
   HiOutlineBell,
+  HiOutlineLockClosed,
   HiX,
 } from 'react-icons/hi'
 import { HiOutlineBellSlash } from 'react-icons/hi2'
@@ -17,6 +18,7 @@ import chatService from '../services/chatService'
 import { addWebSocketListener } from '../services/websocketService'
 import { cn } from '../lib/cn'
 import toast from 'react-hot-toast'
+import DisputeChatModal from '../pages/orders/components/DisputeChatModal'
 
 function formatTime(isoString) {
   if (!isoString) return ''
@@ -55,6 +57,7 @@ export default function ChatInboxList({ onClose, notifEnabled, toggleNotif }) {
   const [threads, setThreads] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
+  const [activeDisputeThread, setActiveDisputeThread] = useState(null)
 
   // Load threads
   useEffect(() => {
@@ -89,10 +92,10 @@ export default function ChatInboxList({ onClose, notifEnabled, toggleNotif }) {
     const unregUpdated = addWebSocketListener('CHAT_THREAD_UPDATED', (updated) => {
       if (!updated) return
 
-      // In customer inbox, only accept threads where the current user is the customer
+      // In customer inbox, accept threads where current user is the customer
       const currentAccountId = useAuthStore.getState().user?.accountId || useAuthStore.getState().user?.id
       const userShopId = useAuthStore.getState().user?.shopId
-      if (updated.type === 'SHOP') {
+      if (updated.type === 'SHOP' || updated.type === 'DISPUTE') {
         if (userShopId && updated.shopId && String(updated.shopId).toLowerCase() === String(userShopId).toLowerCase()) {
           return
         }
@@ -143,7 +146,7 @@ export default function ChatInboxList({ onClose, notifEnabled, toggleNotif }) {
     const currentAccountId = useAuthStore.getState().user?.accountId || useAuthStore.getState().user?.id
     const userShopId = useAuthStore.getState().user?.shopId
     const list = threads.filter((t) => {
-      if (t.type !== 'SHOP') return false
+      if (t.type !== 'SHOP' && t.type !== 'DISPUTE') return false
       // Filter out threads if user owns the shop
       if (userShopId && t.shopId && String(t.shopId).toLowerCase() === String(userShopId).toLowerCase()) {
         return false
@@ -343,16 +346,23 @@ export default function ChatInboxList({ onClose, notifEnabled, toggleNotif }) {
           shopThreads.map((thread) => {
             const hasUnread = thread.unreadCount > 0
             const shopName = thread.shopName || thread.title?.replace(/^Chat với\s*/, '') || 'Cửa hàng'
+            const isDispute = thread.type === 'DISPUTE'
+            const isClosed = thread.status === 'CLOSED' || thread.isLocked || thread.locked
+
             return (
               <button
                 key={thread.id}
                 type="button"
                 onClick={() => {
-                  openShopChat({
-                    id: thread.shopId,
-                    name: shopName,
-                    logo: thread.shopLogo,
-                  })
+                  if (isDispute) {
+                    setActiveDisputeThread(thread)
+                  } else {
+                    openShopChat({
+                      id: thread.shopId,
+                      name: shopName,
+                      logo: thread.shopLogo,
+                    })
+                  }
                 }}
                 className={cn(
                   'group flex w-full items-center gap-3 px-4 py-3 text-left transition-colors',
@@ -373,17 +383,35 @@ export default function ChatInboxList({ onClose, notifEnabled, toggleNotif }) {
                       {shopName.charAt(0).toUpperCase()}
                     </div>
                   )}
-                  <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900" />
+                  <span
+                    className={cn(
+                      'absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white dark:border-slate-900',
+                      isClosed ? 'bg-stone-400 dark:bg-slate-600' : 'bg-emerald-500'
+                    )}
+                    title={isClosed ? 'Cuộc hội thoại đã đóng' : 'Đang hoạt động'}
+                  />
                 </div>
 
                 {/* Shop Info & Last Message */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-1">
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <span className={cn('text-xs font-bold truncate', isDark ? 'text-white' : 'text-stone-900')}>
+                    <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
+                      <span className={cn('text-xs font-bold truncate max-w-[140px]', isDark ? 'text-white' : 'text-stone-900')}>
                         {shopName}
                       </span>
-                      <HiOutlineBadgeCheck className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                      {isDispute ? (
+                        <span className="rounded-md bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30 px-1.5 py-0.2 text-[9px] font-bold shrink-0">
+                          Khiếu nại
+                        </span>
+                      ) : (
+                        <HiOutlineBadgeCheck className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                      )}
+                      {isClosed && (
+                        <span className="shrink-0 flex items-center gap-0.5 rounded-md bg-stone-200/80 dark:bg-slate-750 px-1.5 py-0.2 text-[9px] font-semibold text-stone-600 dark:text-slate-400 border border-stone-300/60 dark:border-slate-700">
+                          <HiOutlineLockClosed className="h-2.5 w-2.5 text-stone-500" />
+                          Đóng
+                        </span>
+                      )}
                     </div>
                     {thread.lastMessageAt && (
                       <span className="text-[10px] opacity-50 shrink-0">
@@ -401,7 +429,7 @@ export default function ChatInboxList({ onClose, notifEnabled, toggleNotif }) {
                           : (isDark ? 'text-slate-400' : 'text-stone-500')
                       )}
                     >
-                      {thread.lastMessage || 'Bắt đầu cuộc trò chuyện với shop'}
+                      {thread.lastMessage || (isDispute ? 'Trao đổi thương lượng khiếu nại' : 'Bắt đầu cuộc trò chuyện với shop')}
                     </p>
 
                     {/* Unread dot or pill badge */}
@@ -417,6 +445,30 @@ export default function ChatInboxList({ onClose, notifEnabled, toggleNotif }) {
           })
         )}
       </div>
+
+      {/* Modal Khiếu Nại & Tranh Chấp */}
+      {activeDisputeThread && (
+        <DisputeChatModal
+          isOpen={Boolean(activeDisputeThread)}
+          onClose={() => {
+            setActiveDisputeThread(null)
+            if (token) {
+              chatService
+                .getThreads('CUSTOMER')
+                .then((res) => {
+                  const list = Array.isArray(res) ? res : res?.content || []
+                  setThreads(list)
+                  const totalUnread = list.reduce((sum, t) => sum + (t.unreadCount || 0), 0)
+                  setUnreadTotal(totalUnread)
+                })
+                .catch(() => {})
+            }
+          }}
+          orderId={activeDisputeThread.orderId}
+          requestId={activeDisputeThread.requestId}
+          isDark={isDark}
+        />
+      )}
     </div>
   )
 }

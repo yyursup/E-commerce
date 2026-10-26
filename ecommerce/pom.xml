@@ -175,6 +175,41 @@
 					</excludes>
 				</configuration>
 			</plugin>
+			<!-- JaCoCo Code Coverage Plugin -->
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>0.8.12</version>
+				<configuration>
+					<excludes>
+						<!-- Loại trừ các class boilerplate để số liệu coverage chính xác cho business logic -->
+						<exclude>**/controller/**</exclude>
+						<exclude>**/websocket/**</exclude>
+						<exclude>**/config/**</exclude>
+						<exclude>**/dto/**</exclude>
+						<exclude>**/entity/**</exclude>
+						<exclude>**/valueObjects/**</exclude>
+						<exclude>**/enums/**</exclude>
+						<exclude>**/constant/**</exclude>
+						<exclude>**/exception/**</exclude>
+						<exclude>**/EcommerceApplication.class</exclude>
+					</excludes>
+				</configuration>
+				<executions>
+					<execution>
+						<goals>
+							<goal>prepare-agent</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>report</id>
+						<phase>test</phase>
+						<goals>
+							<goal>report</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
 		</plugins>
 	</build>
 

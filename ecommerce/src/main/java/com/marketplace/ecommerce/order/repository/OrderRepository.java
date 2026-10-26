@@ -21,10 +21,6 @@ import java.util.UUID;
 public interface OrderRepository extends JpaRepository<Order, UUID> {
   Optional<Order> findByOrderNumber(String orderNumber);
 
-  Optional<Order> findByIdAndUserId(UUID id, UUID userId);
-
-  Optional<Order> findByIdAndShopId(UUID id, UUID shopId);
-
   List<Order> findByUserIdOrderByCreatedAtDesc(UUID userId);
 
   List<Order> findByUserIdAndStatusOrderByCreatedAtDesc(UUID userId, OrderStatus status);
@@ -47,9 +43,6 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
   List<Order> findByStatusOrderByCreatedAtDesc(OrderStatus status);
 
   Optional<Order> findByGhnOrderCode(String ghnOrderCode);
-
-  @Query("SELECT o FROM Order o WHERE o.shop = :shop ORDER BY o.createdAt DESC")
-  List<Order> getOrdersByShop(@Param("shop") Shop shop);
 
   @Query("""
           select o.id
@@ -82,15 +75,36 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
       @Param("statuses") List<OrderStatus> statuses);
 
   /**
-   * Doanh thu từ đơn đã giao/hoàn thành: tổng tiền hàng (subtotal), không bao gồm
+   * Doanh thu thực nhận đang chờ giải ngân trong Ký quỹ (Escrow):
+   * Chỉ tính các đơn hàng đã thanh toán thành công và tiền đang được bảo đảm trong Escrow
+   * (CONFIRMED, PROCESSING, SHIPPING, DELIVERED).
+   * Số tiền thực nhận = subtotal - shopDiscountAmount - platformCommission (voucher Sàn do Sàn tài trợ không trừ).
+   */
+  @Query("""
+      SELECT COALESCE(SUM(
+          CASE
+              WHEN (o.subtotal - COALESCE(o.shopDiscountAmount, 0) - COALESCE(o.platformCommission, 0)) > 0 
+              THEN (o.subtotal - COALESCE(o.shopDiscountAmount, 0) - COALESCE(o.platformCommission, 0))
+              ELSE 0 
+          END
+      ), 0)
+      FROM Order o
+      WHERE o.shop.id = :shopId
+        AND o.status IN :statuses
+      """)
+  BigDecimal getPendingEscrowRevenueByShop(
+      @Param("shopId") UUID shopId,
+      @Param("statuses") List<OrderStatus> statuses);
+
+  /**
+   * Doanh thu từ đơn đã giao/hoàn thành: tổng tiền hàng sau khi trừ voucher shop (subtotal - shopDiscount), không bao gồm
    * phí ship.
    */
   @Query("""
-      SELECT COALESCE(SUM(o.subtotal), 0)
+      SELECT COALESCE(SUM(o.subtotal - COALESCE(o.shopDiscountAmount, 0)), 0)
       FROM Order o
       WHERE o.shop.id = :shopId
         AND o.status IN :revenueStatuses
-        AND o.deliveredAt IS NOT NULL
       """)
   BigDecimal getRevenueByShop(
       @Param("shopId") UUID shopId,
@@ -99,7 +113,7 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
   long countByShop_IdAndCreatedAtAfter(UUID shopId, LocalDateTime createdAt);
 
   @Query("""
-      SELECT o.shop.id, o.shop.name, COALESCE(SUM(o.total), 0), COUNT(o)
+      SELECT o.shop.id, o.shop.name, COALESCE(SUM(o.total), 0), COUNT(o), COALESCE(SUM(o.platformCommission), 0)
       FROM Order o
       WHERE o.status = com.marketplace.ecommerce.order.valueObjects.OrderStatus.DELIVERED
       OR o.status = com.marketplace.ecommerce.order.valueObjects.OrderStatus.COMPLETED
@@ -120,13 +134,127 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
   @Query("""
       SELECT COALESCE(SUM(o.total), 0)
       FROM Order o
+      WHERE o.createdAt >= :startDate
+        AND o.createdAt <= :endDate
+        AND o.status <> com.marketplace.ecommerce.order.valueObjects.OrderStatus.CANCELLED
+  """)
+  BigDecimal getPlatformGmvBetween(
+      @Param("startDate") LocalDateTime startDate,
+      @Param("endDate") LocalDateTime endDate
+  );
+
+  @Query("""
+      SELECT COALESCE(SUM(o.total), 0)
+      FROM Order o
       WHERE o.status = com.marketplace.ecommerce.order.valueObjects.OrderStatus.DELIVERED
          OR o.status = com.marketplace.ecommerce.order.valueObjects.OrderStatus.COMPLETED
   """)
   BigDecimal getPlatformSettledRevenue();
 
   @Query("""
-      SELECT CAST(o.createdAt as LocalDate), COALESCE(SUM(o.total), 0), COUNT(o)
+      SELECT COALESCE(SUM(o.total), 0)
+      FROM Order o
+      WHERE o.createdAt >= :startDate
+        AND o.createdAt <= :endDate
+        AND (o.status = com.marketplace.ecommerce.order.valueObjects.OrderStatus.DELIVERED
+          OR o.status = com.marketplace.ecommerce.order.valueObjects.OrderStatus.COMPLETED)
+  """)
+  BigDecimal getPlatformSettledRevenueBetween(
+      @Param("startDate") LocalDateTime startDate,
+      @Param("endDate") LocalDateTime endDate
+  );
+
+  @Query("""
+      SELECT o.shop.id, o.shop.name, COALESCE(SUM(o.total), 0), COUNT(o), COALESCE(SUM(o.platformCommission), 0)
+      FROM Order o
+      WHERE o.createdAt >= :startDate
+        AND o.createdAt <= :endDate
+        AND (o.status = com.marketplace.ecommerce.order.valueObjects.OrderStatus.DELIVERED
+          OR o.status = com.marketplace.ecommerce.order.valueObjects.OrderStatus.COMPLETED)
+      GROUP BY o.shop.id, o.shop.name
+      ORDER BY SUM(o.total) DESC
+  """)
+  List<Object[]> getShopRankingByRevenueBetween(
+      @Param("startDate") LocalDateTime startDate,
+      @Param("endDate") LocalDateTime endDate
+  );
+
+  @Query("""
+      SELECT o.shop.id, COUNT(o)
+      FROM Order o
+      WHERE o.createdAt >= :startDate AND o.createdAt <= :endDate
+      GROUP BY o.shop.id
+  """)
+  List<Object[]> getShopTotalOrderCountsBetween(
+      @Param("startDate") LocalDateTime startDate,
+      @Param("endDate") LocalDateTime endDate
+  );
+
+  @Query("""
+      SELECT o.shop.id, COUNT(o)
+      FROM Order o
+      WHERE o.createdAt >= :startDate AND o.createdAt <= :endDate
+        AND o.status = :status
+      GROUP BY o.shop.id
+  """)
+  List<Object[]> getShopStatusOrderCountsBetween(
+      @Param("startDate") LocalDateTime startDate,
+      @Param("endDate") LocalDateTime endDate,
+      @Param("status") OrderStatus status
+  );
+
+  @Query("""
+      SELECT o.shop.id, COALESCE(SUM(o.subtotal - COALESCE(o.shopDiscountAmount, 0)), 0)
+      FROM Order o
+      WHERE o.status IN :statuses
+      GROUP BY o.shop.id
+  """)
+  List<Object[]> getAllShopsPendingEscrowRevenue(
+      @Param("statuses") List<OrderStatus> statuses
+  );
+
+  long countByCreatedAtBetween(LocalDateTime startDate, LocalDateTime endDate);
+
+  long countByStatusAndCreatedAtBetween(OrderStatus status, LocalDateTime startDate, LocalDateTime endDate);
+
+  long countByStatusInAndCreatedAtBetween(Collection<OrderStatus> statuses, LocalDateTime startDate, LocalDateTime endDate);
+
+  @Query("""
+      SELECT COALESCE(SUM(o.subtotal - COALESCE(o.shopDiscountAmount, 0)), 0)
+      FROM Order o
+      WHERE o.shop.id = :shopId
+        AND o.status IN :revenueStatuses
+        AND o.createdAt >= :startDate
+        AND o.createdAt <= :endDate
+      """)
+  BigDecimal getRevenueByShopBetween(
+      @Param("shopId") UUID shopId,
+      @Param("revenueStatuses") List<OrderStatus> revenueStatuses,
+      @Param("startDate") LocalDateTime startDate,
+      @Param("endDate") LocalDateTime endDate);
+
+  @Query("""
+      SELECT COALESCE(SUM(o.subtotal - COALESCE(o.shopDiscountAmount, 0)), 0)
+      FROM Order o
+      WHERE o.shop.id = :shopId
+        AND o.status IN :statuses
+        AND o.createdAt >= :startDate
+        AND o.createdAt <= :endDate
+      """)
+  BigDecimal getEstimatedRevenueByShopBetween(
+      @Param("shopId") UUID shopId,
+      @Param("statuses") List<OrderStatus> statuses,
+      @Param("startDate") LocalDateTime startDate,
+      @Param("endDate") LocalDateTime endDate);
+
+  long countByShopIdAndCreatedAtBetween(UUID shopId, LocalDateTime startDate, LocalDateTime endDate);
+
+  long countByShopIdAndStatusAndCreatedAtBetween(UUID shopId, OrderStatus status, LocalDateTime startDate, LocalDateTime endDate);
+
+  long countByShopIdAndStatusInAndCreatedAtBetween(UUID shopId, Collection<OrderStatus> statuses, LocalDateTime startDate, LocalDateTime endDate);
+
+  @Query("""
+      SELECT CAST(o.createdAt as LocalDate), COALESCE(SUM(o.total), 0), COUNT(o), COALESCE(SUM(o.platformCommission), 0)
       FROM Order o
       WHERE o.createdAt >= :startDate
         AND o.status <> com.marketplace.ecommerce.order.valueObjects.OrderStatus.CANCELLED
@@ -134,6 +262,48 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
       ORDER BY CAST(o.createdAt as LocalDate) ASC
   """)
   List<Object[]> getDailyPlatformGmvSince(@Param("startDate") LocalDateTime startDate);
+
+  @Query("""
+      SELECT CAST(o.createdAt as LocalDate), COALESCE(SUM(o.total), 0), COUNT(o), COALESCE(SUM(o.platformCommission), 0)
+      FROM Order o
+      WHERE o.createdAt >= :startDate
+        AND o.createdAt <= :endDate
+        AND o.status <> com.marketplace.ecommerce.order.valueObjects.OrderStatus.CANCELLED
+      GROUP BY CAST(o.createdAt as LocalDate)
+      ORDER BY CAST(o.createdAt as LocalDate) ASC
+  """)
+  List<Object[]> getDailyPlatformGmvBetween(
+      @Param("startDate") LocalDateTime startDate,
+      @Param("endDate") LocalDateTime endDate
+  );
+
+  @Query("""
+      SELECT COALESCE(SUM(o.platformCommission), 0)
+      FROM Order o
+      WHERE o.createdAt >= :startDate
+        AND o.createdAt <= :endDate
+        AND (o.status = com.marketplace.ecommerce.order.valueObjects.OrderStatus.DELIVERED
+          OR o.status = com.marketplace.ecommerce.order.valueObjects.OrderStatus.COMPLETED)
+  """)
+  BigDecimal getTotalPlatformCommissionBetween(
+      @Param("startDate") LocalDateTime startDate,
+      @Param("endDate") LocalDateTime endDate
+  );
+
+  @Query("""
+      SELECT COALESCE(SUM(o.platformCommission), 0)
+      FROM Order o
+      WHERE o.shop.id = :shopId
+        AND o.createdAt >= :startDate
+        AND o.createdAt <= :endDate
+        AND (o.status = com.marketplace.ecommerce.order.valueObjects.OrderStatus.DELIVERED
+          OR o.status = com.marketplace.ecommerce.order.valueObjects.OrderStatus.COMPLETED)
+  """)
+  BigDecimal getTotalPlatformCommissionByShopBetween(
+      @Param("shopId") UUID shopId,
+      @Param("startDate") LocalDateTime startDate,
+      @Param("endDate") LocalDateTime endDate
+  );
 
   @Query("""
       SELECT CAST(o.createdAt as LocalDate), COALESCE(SUM(o.subtotal), 0), COUNT(o)
@@ -145,6 +315,22 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
       ORDER BY CAST(o.createdAt as LocalDate) ASC
   """)
   List<Object[]> getShopDailySalesSince(@Param("shopId") UUID shopId, @Param("startDate") LocalDateTime startDate);
+
+  @Query("""
+      SELECT CAST(o.createdAt as LocalDate), COALESCE(SUM(o.subtotal), 0), COUNT(o)
+      FROM Order o
+      WHERE o.shop.id = :shopId
+        AND o.createdAt >= :startDate
+        AND o.createdAt <= :endDate
+        AND o.status <> com.marketplace.ecommerce.order.valueObjects.OrderStatus.CANCELLED
+      GROUP BY CAST(o.createdAt as LocalDate)
+      ORDER BY CAST(o.createdAt as LocalDate) ASC
+  """)
+  List<Object[]> getShopDailySalesBetween(
+      @Param("shopId") UUID shopId,
+      @Param("startDate") LocalDateTime startDate,
+      @Param("endDate") LocalDateTime endDate
+  );
 
   @Query("""
       SELECT COALESCE(SUM(o.total), 0)

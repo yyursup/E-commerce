@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { motion } from 'framer-motion'
@@ -15,11 +15,13 @@ import { useThemeStore } from '../store/useThemeStore'
 import { useAuthStore } from '../store/useAuthStore'
 import { cn } from '../lib/cn'
 import authService from '../services/auth'
+import TermsModal from '../components/TermsModal'
 
 export default function Register() {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
   const { isAuthenticated, user } = useAuthStore()
   const navigate = useNavigate()
+  const [showTermsModal, setShowTermsModal] = useState(false)
 
   // Redirect if already logged in
   useEffect(() => {
@@ -38,8 +40,13 @@ export default function Register() {
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors, isSubmitting },
-  } = useForm()
+  } = useForm({
+    defaultValues: {
+      agreeToTerms: false,
+    },
+  })
   const password = watch('password')
 
   const onSubmit = async (data) => {
@@ -49,6 +56,7 @@ export default function Register() {
         email: data.email,
         password: data.password,
         phoneNumber: data.phoneNumber,
+        agreeToTerms: data.agreeToTerms ?? true,
       })
 
       toast.success('Đăng ký tài khoản thành công! Vui lòng nhập mã OTP để kích hoạt.')
@@ -313,6 +321,44 @@ export default function Register() {
               )}
             </div>
 
+            {/* Terms of Service & Merchant Policy Agreement */}
+            <div className="pt-1">
+              <div className="flex items-start gap-2.5">
+                <input
+                  id="agreeToTerms"
+                  type="checkbox"
+                  className={cn(
+                    'mt-0.5 h-3.5 w-3.5 rounded border text-amber-500 focus:ring-amber-500 cursor-pointer',
+                    isDark ? 'border-slate-700 bg-slate-800' : 'border-stone-300 bg-white',
+                    errors.agreeToTerms && 'border-rose-500 ring-1 ring-rose-500'
+                  )}
+                  {...register('agreeToTerms', {
+                    required: 'Vui lòng xác nhận đồng ý với Quy chế & Điều khoản Kênh Người Bán',
+                  })}
+                />
+                <label
+                  htmlFor="agreeToTerms"
+                  className={cn(
+                    'text-xs leading-relaxed select-none cursor-pointer',
+                    isDark ? 'text-slate-300' : 'text-stone-700 font-medium'
+                  )}
+                >
+                  Tôi đã đọc và đồng ý với{' '}
+                  <button
+                    type="button"
+                    onClick={() => setShowTermsModal(true)}
+                    className="font-bold text-amber-600 hover:text-amber-700 underline underline-offset-2 dark:text-amber-400 dark:hover:text-amber-300"
+                  >
+                    Quy chế hoạt động & Điều khoản Kênh Người Bán
+                  </button>{' '}
+                  của sàn E-commerce.
+                </label>
+              </div>
+              {errors.agreeToTerms && (
+                <p className="mt-1 text-[11px] text-rose-500 font-medium">{errors.agreeToTerms.message}</p>
+              )}
+            </div>
+
             {/* Submit Button */}
             <button
               type="submit"
@@ -348,6 +394,13 @@ export default function Register() {
           </div>
         </div>
       </motion.div>
+
+      {/* Interactive Terms & Policies Modal */}
+      <TermsModal
+        open={showTermsModal}
+        onClose={() => setShowTermsModal(false)}
+        onAccept={() => setValue('agreeToTerms', true, { shouldValidate: true })}
+      />
     </div>
   )
 }

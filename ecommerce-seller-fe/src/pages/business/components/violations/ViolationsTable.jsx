@@ -13,11 +13,8 @@ export default function ViolationsTable({
   loading,
   violations,
   onDetail,
-  onAppeal,
   parseImages,
 }) {
-  const activeCount = violations.filter((v) => v.appealStatus !== 'APPROVED').length
-  const clearedCount = violations.filter((v) => v.appealStatus === 'APPROVED').length
 
   return (
     <div
@@ -32,18 +29,13 @@ export default function ViolationsTable({
             Hồ Sơ Ghi Nhận Điểm Uy Tín
           </h2>
           <p className={cn('text-xs', isDark ? 'text-slate-400' : 'text-stone-500')}>
-            Lựa chọn đúng sự vụ vi phạm để nộp đơn giải trình nhằm khôi phục điểm uy tín gian hàng
+            Danh sách sự vụ vi phạm đã được Ban Quản Trị thẩm định và ghi nhận chế tài
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-xs font-bold text-amber-500">
-            {activeCount} vi phạm đang ghi nhận
+            {violations.length} vi phạm đã ghi nhận
           </span>
-          {clearedCount > 0 && (
-            <span className="text-[11px] font-bold text-emerald-500 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
-              {clearedCount} đã gỡ bỏ thành công
-            </span>
-          )}
         </div>
       </div>
 
@@ -151,9 +143,15 @@ export default function ViolationsTable({
                     </td>
 
                     <td className="py-4 px-4 align-top min-w-[180px] max-w-xs">
-                      <span className={cn('text-[11px] leading-relaxed', isDark ? 'text-slate-400' : 'text-stone-600')}>
+                      {(v.policyClauseTitle || v.policyClauseCode) && (
+                        <div className="inline-flex items-center gap-1 mb-1.5 px-2 py-0.5 rounded-lg bg-purple-500/15 border border-purple-500/25 text-[10px] font-bold text-purple-600 dark:text-purple-300">
+                          <span>⚖️</span>
+                          <span className="line-clamp-1">{v.policyClauseTitle || v.policyClauseCode}</span>
+                        </div>
+                      )}
+                      <p className={cn('text-[11px] leading-relaxed', isDark ? 'text-slate-400' : 'text-stone-600')}>
                         {v.adminNote || 'Đã được Ban Quản Trị xác minh và áp dụng chế tài'}
-                      </span>
+                      </p>
                     </td>
 
                     <td className="py-4 px-4 align-top whitespace-nowrap text-stone-400 min-w-[100px]">
@@ -161,38 +159,18 @@ export default function ViolationsTable({
                     </td>
 
                     <td className="py-4 px-4 align-top whitespace-nowrap min-w-[130px]">
-                      {v.appealStatus === 'NONE' && (
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-stone-500/10 text-stone-400 border border-stone-500/20">
-                          Chưa nộp đơn
-                        </span>
-                      )}
-                      {v.appealStatus === 'PENDING' && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">
-                          <HiOutlineClock className="h-3.5 w-3.5" />
-                          Đang thẩm định
-                        </span>
-                      )}
-                      {v.appealStatus === 'APPROVED' && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                          <HiOutlineCheckCircle className="h-3.5 w-3.5" />
-                          Đã gỡ vi phạm
-                        </span>
-                      )}
-                      {v.appealStatus === 'REJECTED' && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-500/15 text-rose-400 border border-rose-500/30">
-                          <HiOutlineXCircle className="h-3.5 w-3.5" />
-                          Bị bác đơn
-                        </span>
-                      )}
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-blue-500/15 text-blue-400 border border-blue-500/30">
+                        Phán quyết cuối cùng
+                      </span>
                     </td>
 
-                    <td className="py-4 px-4 align-top text-right whitespace-nowrap min-w-[160px]">
+                    <td className="py-4 px-4 align-top text-right whitespace-nowrap min-w-[120px]">
                       <div className="inline-flex items-center justify-end gap-2">
                         <button
                           type="button"
                           onClick={() => onDetail(v)}
                           className={cn(
-                            'inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all active:scale-95',
+                            'inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all active:scale-95',
                             isDark
                               ? 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-750 hover:text-amber-400'
                               : 'border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100 hover:text-amber-600'
@@ -202,17 +180,6 @@ export default function ViolationsTable({
                           <HiOutlineEye className="h-3.5 w-3.5" />
                           Chi tiết
                         </button>
-
-                        {v.appealStatus === 'NONE' && (
-                          <button
-                            type="button"
-                            onClick={() => onAppeal(v)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 active:scale-95 shadow-sm shadow-amber-500/20 transition-all"
-                          >
-                            <HiOutlineDocumentText className="h-3.5 w-3.5" />
-                            Kháng cáo
-                          </button>
-                        )}
                       </div>
                     </td>
                   </tr>

@@ -132,5 +132,10 @@ class EscrowPolicyTest {
         CustomException ex = assertThrows(CustomException.class,
                 () -> escrowPolicy.validateSettlementPreconditions(orderId));
         assertTrue(ex.getMessage().contains("không có khiếu nại kiện hàng hoàn"));
+
+        // orderId null & order not found
+        assertThrows(CustomException.class, () -> escrowPolicy.validateSettlementPreconditions(null));
+        when(orderRepository.findById(orderId)).thenReturn(Optional.empty());
+        assertThrows(CustomException.class, () -> escrowPolicy.validateSettlementPreconditions(orderId));
     }
 }

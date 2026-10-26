@@ -25,6 +25,43 @@ const reportService = {
       throw error.response ? error.response.data : error
     }
   },
+
+  cancelReport: async (reportId) => {
+    try {
+      const response = await axiosClient.put(`${REPORT_BASE}/${reportId}/cancel`)
+      return response.data
+    } catch (error) {
+      throw error.response ? error.response.data : error
+    }
+  },
+
+  sellerRespond: async (reportId, payload) => {
+    try {
+      const response = await axiosClient.post(`${REPORT_BASE}/${reportId}/seller-respond`, payload)
+      return response.data
+    } catch (error) {
+      throw error.response ? error.response.data : error
+    }
+  },
+
+  escalateReport: async (reportId, payload = {}) => {
+    try {
+      const response = await axiosClient.post(`${REPORT_BASE}/${reportId}/escalate`, payload)
+      return response.data
+    } catch (error) {
+      throw error.response ? error.response.data : error
+    }
+  },
+
+  getReportByOrderId: async (orderId) => {
+    try {
+      const response = await axiosClient.get(`${REPORT_BASE}/by-order/${orderId}`)
+      return response.data || null
+    } catch (error) {
+      if (error?.response?.status === 204) return null
+      throw error.response ? error.response.data : error
+    }
+  },
 }
 
 export default reportService

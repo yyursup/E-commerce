@@ -390,9 +390,6 @@ public class StatisticsAnalyticsServiceImpl implements StatisticsAnalyticsServic
 
         // Lấy phí hoa hồng thực tế: theo user.getId() từ bảng Commission hoặc tổng trên Order
         BigDecimal totalCommissionPaid = commissionRepository.getTotalCommissionBySellerBetween(user.getId(), range.startDateTime(), range.endDateTime());
-        if ((totalCommissionPaid == null || totalCommissionPaid.compareTo(BigDecimal.ZERO) == 0) && user.getAccount() != null) {
-            totalCommissionPaid = commissionRepository.getTotalCommissionBySellerBetween(user.getAccount().getId(), range.startDateTime(), range.endDateTime());
-        }
         if (totalCommissionPaid == null || totalCommissionPaid.compareTo(BigDecimal.ZERO) == 0) {
             totalCommissionPaid = orderRepository.getTotalPlatformCommissionByShopBetween(shop.getId(), range.startDateTime(), range.endDateTime());
         }

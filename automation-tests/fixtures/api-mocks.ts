@@ -114,6 +114,22 @@ export async function setupStandardApiMocks(page: Page) {
   });
 
   // Fallback mặc định cho các API phụ (notifications, live, policies, file upload...) để không bị lỗi kết nối
+  await page.route(/\/files\//, async (route) => {
+    return route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ url: '/product-placeholder.svg', fileName: 'mock-evidence.png' }),
+    });
+  });
+
+  await page.route(/auth\/refresh-token/, async (route) => {
+    return route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ token: 'mock-token', refreshToken: 'mock-refresh-token' }),
+    });
+  });
+
   await page.route(/\/api\/v1\//, async (route) => {
     const pathname = new URL(route.request().url()).pathname;
     if (pathname.includes('/file')) {

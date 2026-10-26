@@ -38,7 +38,14 @@ export default function AdminRequestDetail() {
 
   const isPending = detail?.status === 'PENDING'
   const requestType = detail?.type
-  const requestDetail = detail?.detail || {}
+  const requestDetail = useMemo(() => {
+    return {
+      ...(detail?.detail || {}),
+      description: detail?.detail?.description || detail?.description,
+      coverImageUrl: detail?.detail?.coverImageUrl || detail?.coverImageUrl,
+      violationHistory: detail?.detail?.violationHistory || detail?.violationHistory || [],
+    }
+  }, [detail])
 
   const detailEntries = useMemo(() => {
     return buildRequestDetailEntries(requestType, requestDetail)
@@ -46,7 +53,10 @@ export default function AdminRequestDetail() {
 
   const handleApprove = async () => {
     // If admin didn't input response, provide default approval note to satisfy API
-    const note = responseText.trim() || 'Hồ sơ hợp lệ. Đã phê duyệt yêu cầu đăng ký người bán.'
+    const defaultNote = requestType === 'APPEAL'
+      ? 'Đã xem xét giải trình và chấp thuận giảm về 6 gậy (Tạm đình chỉ 14 ngày).'
+      : 'Hồ sơ hợp lệ. Đã phê duyệt yêu cầu đăng ký người bán.'
+    const note = responseText.trim() || defaultNote
     try {
       setActionLoading(true)
       if (requestType === 'REPORT') {

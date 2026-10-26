@@ -43,6 +43,13 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import com.marketplace.ecommerce.auth.repository.AccountRepository;
+import com.marketplace.ecommerce.auth.entity.Account;
+import com.marketplace.ecommerce.auth.valueObjects.AccountStatus;
+import com.marketplace.ecommerce.auth.valueObjects.DisciplineLevel;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.transaction.annotation.Transactional;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -57,6 +64,7 @@ public class ShopServiceImpl implements ShopService {
     private final OrderRepository orderRepository;
     private final ShopEscrowFundRepository shopEscrowFundRepository;
     private final StringRedisTemplate redisTemplate;
+    private final AccountRepository accountRepository;
 
     @Override
     public Shop createShop(User ownerUser, String shopName, Request req, Seller sellerDetail) {
@@ -138,36 +146,99 @@ public class ShopServiceImpl implements ShopService {
         return ShopProfileResponse.from(s, productCount, followerCount, reviewCount, avgRating, responseRate);
     }
 
+    private Shop reconcileShopDisciplineState(Shop shop) {
+        if (shop == null) return null;
+        LocalDateTime now = LocalDateTime.now();
+        boolean changed = false;
+
+        // Trường hợp 1: Shop đang có thời hạn đình chỉ trong tương lai (Cool-down 14 ngày)
+        if (shop.getSuspendedUntil() != null && shop.getSuspendedUntil().isAfter(now)) {
+            if (shop.getStatus() != ShopStatus.SUSPENDED) {
+                shop.setStatus(ShopStatus.SUSPENDED);
+                changed = true;
+            }
+            try {
+                productRepository.updateStatusByShopId(shop.getId(), ProductStatus.INACTIVE);
+            } catch (Exception ex) {
+                log.warn("Failed to deactivate products for suspended shopId={}: {}", shop.getId(), ex.getMessage());
+            }
+        } 
+        // Trường hợp 2: Shop đã HẾT thời hạn đình chỉ 14 ngày -> Tự động khôi phục sang WARNED
+        else if (shop.getSuspendedUntil() != null && !shop.getSuspendedUntil().isAfter(now)) {
+            if (shop.getStatus() == ShopStatus.SUSPENDED) {
+                shop.setStatus(ShopStatus.WARNED);
+                changed = true;
+                try {
+                    productRepository.updateStatusByShopId(
+                            shop.getId(),
+                            List.of(ProductStatus.INACTIVE),
+                            ProductStatus.PUBLISHED,
+                            now
+                    );
+                } catch (Exception ex) {
+                    log.warn("Failed to restore products for reinstated shopId={}: {}", shop.getId(), ex.getMessage());
+                }
+                if (shop.getUser() != null && shop.getUser().getAccount() != null) {
+                    Account owner = shop.getUser().getAccount();
+                    if (owner.getDisciplineLevel() == DisciplineLevel.SUSPENDED) {
+                        owner.setDisciplineLevel(DisciplineLevel.WARNED);
+                        owner.setStatus(AccountStatus.ACTIVE);
+                        accountRepository.save(owner);
+                    }
+                }
+            }
+            shop.setSuspendedUntil(null);
+            changed = true;
+        }
+
+        if (changed) {
+            shop = shopRepository.save(shop);
+            log.info("Reconciled shop discipline state: shopId={}, newStatus={}, suspendedUntil={}, violationCount={}",
+                    shop.getId(), shop.getStatus(), shop.getSuspendedUntil(), shop.getViolationCount());
+        }
+        return shop;
+    }
+
     @Override
+    @Transactional
     public ShopProfileResponse getShopProfileById(UUID shopId) {
         Shop shop = shopRepository.findById(shopId)
                 .orElseThrow(() -> new CustomException("Không tìm thấy thông tin cửa hàng"));
+        shop = reconcileShopDisciplineState(shop);
         return buildShopProfile(shop);
     }
 
     @Override
+    @Transactional
     public ShopProfileResponse getMyShopProfile(UUID accountId) {
         User user = userRepository.findByAccountId(accountId)
                 .orElseThrow(() -> new CustomException("Không tìm thấy thông tin người dùng"));
         Shop shop = shopRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new CustomException("Tài khoản chưa có thông tin cửa hàng"));
+        shop = reconcileShopDisciplineState(shop);
         return buildShopProfile(shop);
     }
 
     @Override
+    @Transactional
     public List<ShopProfileResponse> getAllActiveShops() {
-        return shopRepository.findAll().stream()
-                .filter(s -> s.getStatus() == ShopStatus.ACTIVE || s.getStatus() == ShopStatus.WARNED)
+        LocalDateTime now = LocalDateTime.now();
+        return shopRepository.findEligibleActiveShops(now).stream()
+                .map(this::reconcileShopDisciplineState)
+                .filter(s -> (s.getStatus() == ShopStatus.ACTIVE || s.getStatus() == ShopStatus.WARNED)
+                        && (s.getSuspendedUntil() == null || !s.getSuspendedUntil().isAfter(now)))
                 .map(this::buildShopProfile)
                 .collect(Collectors.toList());
     }
 
     @Override
+    @Transactional
     public List<ShopViolationResponse> getMyShopViolations(UUID accountId) {
         User user = userRepository.findByAccountId(accountId)
                 .orElseThrow(() -> new CustomException("Không tìm thấy thông tin người dùng"));
         Shop shop = shopRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new CustomException("Tài khoản chưa có thông tin cửa hàng"));
+        shop = reconcileShopDisciplineState(shop);
 
         List<Product> products = productRepository.findAllByShopIdWithDetails(shop.getId());
         List<UUID> productIds = products.stream().map(Product::getId).collect(Collectors.toList());
@@ -178,17 +249,6 @@ public class ShopServiceImpl implements ShopService {
             reports.addAll(reportRepository.findApprovedReportsByProductIds(productIds));
         }
         reports.addAll(reportRepository.findApprovedReportsByShopIdForOrders(shop.getId()));
-
-        // Lấy danh sách appeal do account này gửi
-        List<Report> appeals = reportRepository.findAllAppealsByAccountId(accountId);
-        java.util.Map<UUID, Report> appealByReportIdMap = new java.util.HashMap<>();
-        java.util.Set<UUID> usedLegacyAppealIds = new java.util.HashSet<>();
-
-        for (Report a : appeals) {
-            if (a.getViolationReportId() != null && !appealByReportIdMap.containsKey(a.getViolationReportId())) {
-                appealByReportIdMap.put(a.getViolationReportId(), a);
-            }
-        }
 
         java.util.Map<UUID, String> productNameMap = products.stream()
                 .collect(Collectors.toMap(Product::getId, Product::getName, (existing, replacement) -> existing));
@@ -206,31 +266,10 @@ public class ShopServiceImpl implements ShopService {
                 targetName = productNameMap.getOrDefault(rep.getTargetId(), "Sản phẩm vi phạm");
             }
 
-            String appealStatus = "NONE";
+            // Mọi phán quyết của Quản trị viên đối với vi phạm là quyết định cuối cùng, không áp dụng kháng cáo
+            String appealStatus = "FINAL_RULING";
             UUID appealRequestId = null;
             String appealResponse = null;
-
-            // 1. Khớp chính xác theo vi phạm cụ thể (violationReportId)
-            Report appeal = appealByReportIdMap.get(rep.getId());
-
-            // 2. Fallback cho appeal cũ chưa có violationReportId: chỉ gán tối đa 1-1 cho 1 report vi phạm duy nhất
-            if (appeal == null) {
-                for (Report a : appeals) {
-                    if (a.getViolationReportId() == null && !usedLegacyAppealIds.contains(a.getId())) {
-                        if (a.getTargetId() != null && a.getTargetId().equals(rep.getTargetId())) {
-                            appeal = a;
-                            usedLegacyAppealIds.add(a.getId());
-                            break;
-                        }
-                    }
-                }
-            }
-
-            if (appeal != null && appeal.getRequest() != null) {
-                appealStatus = appeal.getRequest().getStatus().name();
-                appealRequestId = appeal.getRequest().getId();
-                appealResponse = appeal.getRequest().getResponse();
-            }
 
             results.add(ShopViolationResponse.builder()
                     .reportId(rep.getId())
@@ -245,6 +284,8 @@ public class ShopServiceImpl implements ShopService {
                     .appealStatus(appealStatus)
                     .appealRequestId(appealRequestId)
                     .appealResponse(appealResponse)
+                    .policyClauseCode(rep.getPolicyClauseCode())
+                    .policyClauseTitle(rep.getPolicyClauseTitle())
                     .build());
         }
 
@@ -331,6 +372,68 @@ public class ShopServiceImpl implements ShopService {
             redisTemplate.opsForValue().set(rateLimitKey, "1", 24, TimeUnit.HOURS);
         } else {
             redisTemplate.opsForValue().increment(rateLimitKey);
+        }
+    }
+
+    /**
+     * Tự động quét và phục hồi các Shop đã hoàn thành thời hạn đình chỉ 14 ngày (Cool-down Period).
+     * Khi hết hạn 14 ngày:
+     * - Chuyển shop sang trạng thái WARNED (để tiếp tục kinh doanh kiếm sống).
+     * - Xóa suspendedUntil về null.
+     * - Khôi phục toàn bộ sản phẩm của Shop sang PUBLISHED.
+     * - Cập nhật trạng thái tài khoản chủ Shop sang WARNED / ACTIVE.
+     * - Số gậy vi phạm (violationCount) VẪN ĐƯỢC BẢO LƯU (để răn đe, tránh tái phạm).
+     */
+    @Scheduled(cron = "0 */10 * * * *")
+    @Transactional
+    public void processExpiredSuspensions() {
+        LocalDateTime now = LocalDateTime.now();
+        List<Shop> expiredShops = shopRepository.findExpiredSuspensions(ShopStatus.SUSPENDED, now);
+        for (Shop s : expiredShops) {
+            try {
+                shopRepository.findByIdForUpdate(s.getId()).ifPresent(shop -> {
+                    if (shop.getStatus() == ShopStatus.SUSPENDED
+                            && shop.getSuspendedUntil() != null
+                            && !shop.getSuspendedUntil().isAfter(now)) {
+
+                        shop.setStatus(ShopStatus.WARNED);
+                        shop.setSuspendedUntil(null);
+                        shopRepository.save(shop);
+
+                        productRepository.updateStatusByShopId(
+                                shop.getId(),
+                                List.of(ProductStatus.INACTIVE),
+                                ProductStatus.PUBLISHED,
+                                now
+                        );
+
+                        if (shop.getUser() != null && shop.getUser().getAccount() != null) {
+                            Account owner = shop.getUser().getAccount();
+                            boolean isBannedOrInactive = owner.getStatus() == AccountStatus.BANNED
+                                    || owner.getDisciplineLevel() == DisciplineLevel.BANNED
+                                    || owner.getStatus() == AccountStatus.INACTIVE
+                                    || owner.getStatus() == AccountStatus.DELETED;
+
+                            if (!isBannedOrInactive && (owner.getDisciplineLevel() == DisciplineLevel.SUSPENDED || owner.getStatus() == AccountStatus.SUSPENDED)) {
+                                if (owner.getSuspendedUntil() == null) {
+                                    log.warn("Shop expired but owner account has legacy suspension without suspendedUntil: accountId={}", owner.getId());
+                                } else if (owner.getSuspendedUntil().isAfter(now)) {
+                                    log.info("Preserved active user suspension for shop owner accountId={}", owner.getId());
+                                } else {
+                                    owner.setDisciplineLevel(DisciplineLevel.WARNED);
+                                    owner.setStatus(AccountStatus.ACTIVE);
+                                    owner.setSuspendedUntil(null);
+                                    accountRepository.save(owner);
+                                }
+                            }
+                        }
+                        log.info("Auto reinstated expired suspended shop: shopId={}, newStatus=WARNED, violationCount={}",
+                                shop.getId(), shop.getViolationCount());
+                    }
+                });
+            } catch (Exception e) {
+                log.error("Failed to process expired suspension for shopId={}: {}", s.getId(), e.getMessage());
+            }
         }
     }
 }

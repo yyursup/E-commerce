@@ -4,9 +4,39 @@ import { cn } from '../../lib/cn';
 import { useAuthStore } from '../../store/useAuthStore';
 import authService from '../../services/auth';
 import { FiCamera, FiCheck, FiAlertCircle, FiLoader, FiUpload, FiUser } from 'react-icons/fi';
+import BuyerReputationCard from './components/BuyerReputationCard';
 
 export default function ProfileInfo({ isDark }) {
     const { user, updateUser } = useAuthStore();
+
+    // Refresh profile on mount to ensure fresh trust score & decay calculations
+    useEffect(() => {
+        authService.getUserProfile().then((profile) => {
+            if (profile) {
+                updateUser({
+                    fullName: profile.fullName,
+                    name: profile.fullName,
+                    avatarUrl: profile.avatarUrl,
+                    phoneNumber: profile.phoneNumber,
+                    gender: profile.gender,
+                    dateOfBirth: profile.dateOfBirth,
+                    email: profile.email || user?.email,
+                    role: profile.role || user?.role,
+                    shopId: profile.shopId,
+                    violationCount: profile.violationCount ?? 0,
+                    reputationScore: profile.reputationScore ?? 100,
+                    disciplineLevel: profile.disciplineLevel ?? 'NONE',
+                    lastViolationAt: profile.lastViolationAt || null,
+                    bannedUntil: profile.bannedUntil || null,
+                });
+            }
+        }).catch((err) => {
+            const msg = String(err?.message || err?.response?.data?.message || '').toLowerCase();
+            if (msg.includes('khóa') || msg.includes('locked')) {
+                toast.error(err?.response?.data?.message || 'Tài khoản của bạn đã bị khóa.');
+            }
+        });
+    }, []);
 
     // Pre-populate form with existing user data
     const [form, setForm] = useState({
@@ -132,12 +162,16 @@ export default function ProfileInfo({ isDark }) {
     );
 
     return (
-        <div
-            className={cn(
-                'rounded-3xl border p-5 sm:p-8 shadow-sm transition-colors',
-                isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
-            )}
-        >
+        <div className="space-y-6">
+            {/* Buyer Trust & Safety Credibility Score Card */}
+            <BuyerReputationCard user={user} isDark={isDark} />
+
+            <div
+                className={cn(
+                    'rounded-3xl border p-5 sm:p-8 shadow-sm transition-colors',
+                    isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
+                )}
+            >
             {/* Header */}
             <div className="border-b pb-5 mb-8 border-stone-200 dark:border-slate-800">
                 <h2 className={cn('text-xl sm:text-2xl font-bold tracking-tight', isDark ? 'text-white' : 'text-stone-900')}>
@@ -347,6 +381,7 @@ export default function ProfileInfo({ isDark }) {
                     </div>
                 </div>
             </form>
+        </div>
         </div>
     );
 }

@@ -6,7 +6,7 @@ import com.marketplace.ecommerce.common.CurrentUserInfo;
 import com.marketplace.ecommerce.config.ApiVersioningConfig;
 import com.marketplace.ecommerce.config.CurrentUserArgumentResolver;
 import com.marketplace.ecommerce.config.WebMvcConfig;
-import com.marketplace.ecommerce.request.dto.request.CreateAppealRequest;
+
 import com.marketplace.ecommerce.request.dto.request.RegisterSellerRequest;
 import com.marketplace.ecommerce.request.dto.response.CreateRequestResponse;
 import com.marketplace.ecommerce.request.dto.response.RegisterSellerResponse;
@@ -18,7 +18,6 @@ import com.marketplace.ecommerce.request.valueObjects.BusinessType;
 import com.marketplace.ecommerce.request.valueObjects.RequestStatus;
 import com.marketplace.ecommerce.request.valueObjects.RequestType;
 import com.marketplace.ecommerce.request.valueObjects.SellerType;
-import com.marketplace.ecommerce.request.valueObjects.TargetType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -241,39 +240,5 @@ class RequestControllerTest {
         verify(requestService).getDetails(requestId);
     }
 
-    @Test
-    @DisplayName("POST /api/v1/request/appeal - Tạo đơn kháng cáo vi phạm thành công")
-    void createAppeal_Success() throws Exception {
-        UUID targetId = UUID.randomUUID();
-        CreateAppealRequest request = CreateAppealRequest.builder()
-                .targetId(targetId)
-                .targetType(TargetType.SHOP)
-                .reportId(UUID.randomUUID())
-                .description("Giải trình vi phạm do nhầm lẫn giấy tờ")
-                .evidenceUrl("https://example.com/img1.png,https://example.com/img2.png")
-                .build();
 
-        CreateRequestResponse mockResponse = CreateRequestResponse.builder()
-                .requestId(UUID.randomUUID())
-                .accountId(accountId)
-                .type(RequestType.APPEAL)
-                .status(RequestStatus.PENDING)
-                .description(request.getDescription())
-                .coverImageUrl(request.getEvidenceUrl())
-                .createdAt(LocalDateTime.now())
-                .build();
-
-        when(requestService.createAppeal(eq(accountId), any(CreateAppealRequest.class)))
-                .thenReturn(mockResponse);
-
-        mockMvc.perform(post("/api/v1/request/appeal")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.requestId").value(mockResponse.getRequestId().toString()))
-                .andExpect(jsonPath("$.type").value("APPEAL"))
-                .andExpect(jsonPath("$.status").value("PENDING"));
-
-        verify(requestService).createAppeal(eq(accountId), any(CreateAppealRequest.class));
-    }
 }

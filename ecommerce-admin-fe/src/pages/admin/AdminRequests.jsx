@@ -45,6 +45,7 @@ export default function AdminRequests() {
   const isDark = useThemeStore((state) => state.theme) === 'dark'
 
   const [requests, setRequests] = useState([])
+  const [typeFilter, setTypeFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [page, setPage] = useState(0)
   const [size] = useState(10)
@@ -57,15 +58,14 @@ export default function AdminRequests() {
     try {
       setLoading(true)
       setError(null)
-      const params = { page, size, type: 'SELLER_REGISTRATION' }
+      const params = { page, size }
+      if (typeFilter) params.type = typeFilter
       if (statusFilter) params.status = statusFilter
       const res = await requestService.getAdminRequests(params)
       const content = Array.isArray(res?.content) ? res.content : Array.isArray(res) ? res : []
-      // Phân tách nghiệp vụ: Trang này chỉ dành riêng cho Duyệt mở Shop (SELLER_REGISTRATION)
-      const sellerRequests = content.filter((r) => r.type === 'SELLER_REGISTRATION')
-      setRequests(sellerRequests)
+      setRequests(content)
       setTotalPages(typeof res?.totalPages === 'number' ? res.totalPages : 0)
-      setTotalElements(typeof res?.totalElements === 'number' ? res.totalElements : sellerRequests.length)
+      setTotalElements(typeof res?.totalElements === 'number' ? res.totalElements : content.length)
     } catch (err) {
       console.error('Admin request list error:', err)
       setError(err?.message || 'Failed to load requests.')
@@ -73,7 +73,7 @@ export default function AdminRequests() {
     } finally {
       setLoading(false)
     }
-  }, [page, size, statusFilter])
+  }, [page, size, typeFilter, statusFilter])
 
   useEffect(() => {
     fetchRequests()
@@ -83,12 +83,29 @@ export default function AdminRequests() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">Duyệt Đăng Ký Mở Shop</h1>
+          <h1 className="text-2xl font-semibold">Quản Lý Yêu Cầu & Xét Duyệt</h1>
           <p className={cn('text-sm mt-0.5', isDark ? 'text-slate-400' : 'text-stone-500')}>
-            Danh sách yêu cầu mở gian hàng từ người bán (Tổng: {totalElements})
+            Danh sách yêu cầu mở gian hàng và khiếu nại tài khoản bị cấm (Tổng: {totalElements})
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            value={typeFilter}
+            onChange={(e) => {
+              setTypeFilter(e.target.value)
+              setPage(0)
+            }}
+            className={cn(
+              'rounded-lg border px-3 py-2 text-sm outline-none transition',
+              isDark
+                ? 'border-slate-700 bg-slate-900 text-slate-100 focus:border-amber-500/60'
+                : 'border-stone-300 bg-white text-stone-700 focus:border-amber-500',
+            )}
+          >
+            <option value="">Tất cả loại yêu cầu</option>
+            <option value="SELLER_REGISTRATION">Đăng ký mở shop</option>
+            <option value="APPEAL">Kháng nghị khóa tài khoản</option>
+          </select>
           <select
             value={statusFilter}
             onChange={(e) => {
@@ -137,88 +154,88 @@ export default function AdminRequests() {
             <div className="col-span-2 text-right">Thao tác</div>
           </div>
 
-        {loading && (
-          <div className="flex items-center justify-center gap-3 px-6 py-10 text-sm">
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-amber-500 border-r-transparent" />
-            Đang tải danh sách yêu cầu...
-          </div>
-        )}
-
-        {!loading && error && (
-          <div className="px-6 py-6 text-sm text-red-500">{error}</div>
-        )}
-
-        {!loading && !error && requests.length === 0 && (
-          <div className="px-6 py-10 text-center text-sm text-stone-500 dark:text-slate-400">
-            Không có yêu cầu nào.
-          </div>
-        )}
-
-        {!loading && !error && requests.map((req) => {
-          const typeBadge = getRequestTypeBadge(req.type, isDark)
-          const statusBadge = getStatusBadge(req.status, isDark)
-          return (
-            <div
-              key={req.requestId || req.id}
-              className={cn(
-                'grid grid-cols-12 items-center gap-3 px-6 py-4 text-sm transition-colors',
-                isDark ? 'border-slate-800 text-slate-200 hover:bg-slate-800/40' : 'border-stone-100 text-stone-700 hover:bg-stone-50',
-                'border-b last:border-b-0',
-              )}
-            >
-              <div className="col-span-3 flex items-center gap-2 font-mono text-xs font-semibold">
-                <span title={req.requestId}>{req.displayCode || shortUUID(req.requestId)}</span>
-                {req.requestId && (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      navigator.clipboard.writeText(req.displayCode || req.requestId);
-                      toast.success('Đã copy Mã yêu cầu');
-                    }}
-                    className={cn(
-                      'p-1.5 rounded-lg transition hover:shadow-sm',
-                      isDark ? 'text-slate-400 hover:bg-slate-700 hover:text-slate-200' : 'text-stone-400 hover:bg-stone-200 hover:text-stone-600'
-                    )}
-                    title="Copy Mã yêu cầu"
-                  >
-                    <HiOutlineDuplicate className="h-3.5 w-3.5" />
-                  </button>
-                )}
-              </div>
-              <div className="col-span-3">
-                <span className={cn('inline-block rounded-full px-2.5 py-1 text-xs font-medium border', typeBadge.className)}>
-                  {typeBadge.label}
-                </span>
-              </div>
-              <div className="col-span-2">
-                <span className={cn('inline-block rounded-full px-2.5 py-1 text-xs font-medium', statusBadge.className)}>
-                  {statusBadge.label}
-                </span>
-              </div>
-              <div className="col-span-2 text-xs text-stone-500 dark:text-slate-400">
-                {formatAdminRequestDate(req.createdAt)}
-              </div>
-              <div className="col-span-2 text-right">
-                {req.requestId ? (
-                  <Link
-                    to={`/requests/${req.requestId}`}
-                    className={cn(
-                      'inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold transition',
-                      isDark
-                        ? 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30'
-                        : 'bg-amber-100 text-amber-700 hover:bg-amber-200',
-                    )}
-                  >
-                    Xem xét →
-                  </Link>
-                ) : (
-                  <span className="text-xs text-stone-400">-</span>
-                )}
-              </div>
+          {loading && (
+            <div className="flex items-center justify-center gap-3 px-6 py-10 text-sm">
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-amber-500 border-r-transparent" />
+              Đang tải danh sách yêu cầu...
             </div>
-          )
-        })}
+          )}
+
+          {!loading && error && (
+            <div className="px-6 py-6 text-sm text-red-500">{error}</div>
+          )}
+
+          {!loading && !error && requests.length === 0 && (
+            <div className="px-6 py-10 text-center text-sm text-stone-500 dark:text-slate-400">
+              Không có yêu cầu nào.
+            </div>
+          )}
+
+          {!loading && !error && requests.map((req) => {
+            const typeBadge = getRequestTypeBadge(req.type, isDark)
+            const statusBadge = getStatusBadge(req.status, isDark)
+            return (
+              <div
+                key={req.requestId || req.id}
+                className={cn(
+                  'grid grid-cols-12 items-center gap-3 px-6 py-4 text-sm transition-colors',
+                  isDark ? 'border-slate-800 text-slate-200 hover:bg-slate-800/40' : 'border-stone-100 text-stone-700 hover:bg-stone-50',
+                  'border-b last:border-b-0',
+                )}
+              >
+                <div className="col-span-3 flex items-center gap-2 font-mono text-xs font-semibold">
+                  <span title={req.requestId}>{req.displayCode || shortUUID(req.requestId)}</span>
+                  {req.requestId && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        navigator.clipboard.writeText(req.displayCode || req.requestId);
+                        toast.success('Đã copy Mã yêu cầu');
+                      }}
+                      className={cn(
+                        'p-1.5 rounded-lg transition hover:shadow-sm',
+                        isDark ? 'text-slate-400 hover:bg-slate-700 hover:text-slate-200' : 'text-stone-400 hover:bg-stone-200 hover:text-stone-600'
+                      )}
+                      title="Copy Mã yêu cầu"
+                    >
+                      <HiOutlineDuplicate className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
+                <div className="col-span-3">
+                  <span className={cn('inline-block rounded-full px-2.5 py-1 text-xs font-medium border', typeBadge.className)}>
+                    {typeBadge.label}
+                  </span>
+                </div>
+                <div className="col-span-2">
+                  <span className={cn('inline-block rounded-full px-2.5 py-1 text-xs font-medium', statusBadge.className)}>
+                    {statusBadge.label}
+                  </span>
+                </div>
+                <div className="col-span-2 text-xs text-stone-500 dark:text-slate-400">
+                  {formatAdminRequestDate(req.createdAt)}
+                </div>
+                <div className="col-span-2 text-right">
+                  {req.requestId ? (
+                    <Link
+                      to={`/requests/${req.requestId}`}
+                      className={cn(
+                        'inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold transition',
+                        isDark
+                          ? 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30'
+                          : 'bg-amber-100 text-amber-700 hover:bg-amber-200',
+                      )}
+                    >
+                      Xem xét →
+                    </Link>
+                  ) : (
+                    <span className="text-xs text-stone-400">-</span>
+                  )}
+                </div>
+              </div>
+            )
+          })}
         </div>
       </motion.div>
 

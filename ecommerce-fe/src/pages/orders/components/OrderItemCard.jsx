@@ -29,7 +29,9 @@ export default function OrderItemCard({
   const hasActiveReturn =
     order.returnInfo &&
     order.returnInfo.status !== 'COMPLETED' &&
-    order.returnInfo.status !== 'CANCELLED'
+    order.returnInfo.status !== 'CANCELLED' &&
+    order.status !== 'REFUNDED' &&
+    order.status !== 'COMPLETED'
 
   return (
     <motion.div
@@ -66,8 +68,11 @@ export default function OrderItemCard({
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          {/* Dispute status indicator */}
-          {order.hasActiveDispute && (
+          {/* Dispute status indicator: Ẩn nếu đã hoàn tất đổi trả, đã hoàn tiền hoặc case đã resolved */}
+          {order.hasActiveDispute &&
+            order.status !== 'REFUNDED' &&
+            order.returnInfo?.status !== 'COMPLETED' &&
+            !['RESOLVED', 'CANCELLED', 'REFUNDED', 'NONE'].includes(order.disputeStatus) && (
             <span
               className={cn(
                 'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold border uppercase tracking-wider',
@@ -79,7 +84,6 @@ export default function OrderItemCard({
               <HiOutlineExclamationCircle className="h-3.5 w-3.5" />
               {order.disputeStatus === 'REPORT_PENDING' && 'Đang khiếu nại'}
               {order.disputeStatus === 'REPORT_APPROVED' && 'Khiếu nại được duyệt'}
-              {order.disputeStatus === 'APPEAL_PENDING' && 'Shop đang kháng cáo'}
             </span>
           )}
 
@@ -142,6 +146,12 @@ export default function OrderItemCard({
           <p className={cn('mt-1 text-xs', isDark ? 'text-slate-400' : 'text-stone-500')}>
             {order.items?.length || 0} sản phẩm • Đặt ngày {formatDate(order.createdAt)}
           </p>
+          {(order.policyClauseTitle || order.policyClauseCode) && (
+            <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-purple-500/10 border border-purple-500/20 text-[11px] font-semibold text-purple-700 dark:text-purple-300">
+              <span>⚖️ Căn cứ Điều khoản:</span>
+              <span className="font-bold line-clamp-1">{order.policyClauseTitle || order.policyClauseCode}</span>
+            </div>
+          )}
           <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-500 dark:text-amber-400 mt-2 hover:underline">
             Xem chi tiết kiện hàng <HiOutlineChevronRight className="h-3 w-3" />
           </span>
@@ -203,7 +213,6 @@ export default function OrderItemCard({
               <HiOutlineExclamationCircle className="h-4 w-4 text-amber-500" />
               {order.disputeStatus === 'REPORT_PENDING' && 'Đang đối soát khiếu nại'}
               {order.disputeStatus === 'REPORT_APPROVED' && 'Khiếu nại được chấp thuận'}
-              {order.disputeStatus === 'APPEAL_PENDING' && 'Shop đang kháng cáo'}
             </span>
           )}
 

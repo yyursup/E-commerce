@@ -7,7 +7,6 @@ import com.marketplace.ecommerce.common.exception.CustomException;
 import com.marketplace.ecommerce.order.entity.Order;
 import com.marketplace.ecommerce.order.repository.OrderRepository;
 import com.marketplace.ecommerce.order.valueObjects.OrderStatus;
-import com.marketplace.ecommerce.request.dto.request.CreateAppealRequest;
 import com.marketplace.ecommerce.request.entity.Report;
 import com.marketplace.ecommerce.request.entity.Request;
 import com.marketplace.ecommerce.request.entity.Seller;
@@ -147,6 +146,55 @@ class RequestPolicyTest {
         // Hợp lệ
         when(reportRepository.existsPendingReportByOrderId(orderId)).thenReturn(false);
         assertDoesNotThrow(() -> requestPolicy.validateOrderReport(buyerAccId, orderId));
+    }
+
+    @Test
+    @DisplayName("Chặn phán quyết tranh chấp ORDER nếu thiếu mã điều khoản chính sách")
+    void validateDisputePolicyClause_ThrowsException_WhenOrderDisputeMissingClause() {
+        CustomException ex = assertThrows(CustomException.class, () ->
+                requestPolicy.validateDisputePolicyClause(TargetType.ORDER, null,
+                        com.marketplace.ecommerce.request.valueObjects.ReportDecision.APPROVE, false));
+        assertTrue(ex.getMessage().contains("bắt buộc phải gắn với một Điều khoản Chính sách"));
+    }
+
+    @Test
+    @DisplayName("Chặn phán quyết nếu mã điều khoản chính sách không tồn tại")
+    void validateDisputePolicyClause_ThrowsException_WhenClauseInvalid() {
+        CustomException ex = assertThrows(CustomException.class, () ->
+                requestPolicy.validateDisputePolicyClause(TargetType.ORDER, "INVALID_CLAUSE_XYZ",
+                        com.marketplace.ecommerce.request.valueObjects.ReportDecision.APPROVE, false));
+        assertTrue(ex.getMessage().contains("không hợp lệ"));
+    }
+
+    @Test
+    @DisplayName("Xác thực thành công điều khoản hợp lệ khi phán quyết tranh chấp")
+    void validateDisputePolicyClause_Passes_WhenClauseIsValidAndMatches() {
+        // Buyer thắng: Clause lỗi Shop
+        com.marketplace.ecommerce.request.valueObjects.DisputePolicyClause c1 =
+                requestPolicy.validateDisputePolicyClause(TargetType.ORDER, "CLAUSE_9_1_HARDWARE_FAULT",
+                        com.marketplace.ecommerce.request.valueObjects.ReportDecision.APPROVE, false);
+        assertNotNull(c1);
+        assertEquals("CLAUSE_9_1_HARDWARE_FAULT", c1.getCode());
+
+        // Shop thắng: Clause bác khiếu nại
+        com.marketplace.ecommerce.request.valueObjects.DisputePolicyClause c2 =
+                requestPolicy.validateDisputePolicyClause(TargetType.ORDER, "CLAUSE_14_1_INSUFFICIENT_EVIDENCE",
+                        com.marketplace.ecommerce.request.valueObjects.ReportDecision.REJECT, false);
+        assertNotNull(c2);
+        assertEquals("CLAUSE_14_1_INSUFFICIENT_EVIDENCE", c2.getCode());
+
+        // Tranh chấp kiện hoàn: Clause kiện hoàn
+        com.marketplace.ecommerce.request.valueObjects.DisputePolicyClause c3 =
+                requestPolicy.validateDisputePolicyClause(TargetType.ORDER, "CLAUSE_15_1_RETURN_EMPTY_PARCEL",
+                        com.marketplace.ecommerce.request.valueObjects.ReportDecision.APPROVE, true);
+        assertNotNull(c3);
+        assertEquals("CLAUSE_15_1_RETURN_EMPTY_PARCEL", c3.getCode());
+
+        // Các loại target khác (PRODUCT, SHOP) không bắt buộc clause
+        com.marketplace.ecommerce.request.valueObjects.DisputePolicyClause c4 =
+                requestPolicy.validateDisputePolicyClause(TargetType.PRODUCT, null,
+                        com.marketplace.ecommerce.request.valueObjects.ReportDecision.APPROVE, false);
+        assertNull(c4);
     }
 
     @Test

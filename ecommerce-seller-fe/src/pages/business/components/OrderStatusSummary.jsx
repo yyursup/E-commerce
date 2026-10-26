@@ -58,7 +58,8 @@ export default function OrderStatusSummary({ isDark, orderCountByStatus, totalOr
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {statusItems.map((item) => {
           const StatusIcon = item.badge.icon
-          const percentage = Math.round((item.count / denominator) * 100)
+          const rawPercentage = (item.count / denominator) * 100
+          const percentage = item.count === 0 ? 0 : Number.isInteger(rawPercentage) ? rawPercentage : Number(rawPercentage.toFixed(1))
           const width = item.count === 0 ? 0 : Math.max(percentage, 4)
 
           return (

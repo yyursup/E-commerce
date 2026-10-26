@@ -7,7 +7,6 @@ import com.marketplace.ecommerce.order.valueObjects.OrderStatus;
 import com.marketplace.ecommerce.payment.dto.EscrowAdminResponse;
 import com.marketplace.ecommerce.payment.dto.SettlementInfo;
 import com.marketplace.ecommerce.payment.entity.Escrow;
-import com.marketplace.ecommerce.payment.entity.Payment;
 import com.marketplace.ecommerce.payment.entity.Transaction;
 import com.marketplace.ecommerce.payment.repository.EscrowRepository;
 import com.marketplace.ecommerce.payment.repository.PaymentRepository;
@@ -53,152 +52,6 @@ public class EscrowServiceImpl implements EscrowService {
 
     @Override
     @Transactional
-    public void recordCodEscrow(Order order) {
-        if (order == null || order.getId() == null) {
-            return;
-        }
-
-        BigDecimal amount = order.getTotal();
-        if (amount == null || amount.signum() <= 0) {
-            log.warn("Cannot record COD escrow: order {} total is null or non-positive", order.getOrderNumber());
-            return;
-        }
-
-        // 1. Create or retrieve Payment entity
-        Payment payment = paymentRepository.findByOrderId(order.getId())
-                .orElseGet(() -> Payment.builder()
-                        .order(order)
-                        .method(PaymentMethod.COD)
-                        .status(PaymentStatus.PENDING)
-                        .amount(amount)
-                        .txnRef("COD-" + order.getOrderNumber() + "-"
-                                + UUID.randomUUID().toString().substring(0, 8).toUpperCase())
-                        .createdAt(LocalDateTime.now())
-                        .build());
-
-        if (payment.getId() == null) {
-            paymentRepository.save(payment);
-        }
-
-        // 2. Safely retrieve or create buyer & seller wallets
-        Wallet buyerWallet = walletRepository.findByUserIdForUpdate(order.getUser().getId())
-                .orElseGet(() -> {
-                    Wallet w = Wallet.builder()
-                            .user(order.getUser())
-                            .currency("VND")
-                            .availableBalance(BigDecimal.ZERO)
-                            .lockedBalance(BigDecimal.ZERO)
-                            .walletType(WalletType.USER)
-                            .createdAt(LocalDateTime.now())
-                            .build();
-                    return walletRepository.save(w);
-                });
-
-        Wallet sellerWallet = walletRepository.findByUserIdForUpdate(order.getShop().getUser().getId())
-                .orElseGet(() -> {
-                    Wallet w = Wallet.builder()
-                            .user(order.getShop().getUser())
-                            .currency("VND")
-                            .availableBalance(BigDecimal.ZERO)
-                            .lockedBalance(BigDecimal.ZERO)
-                            .walletType(WalletType.USER)
-                            .createdAt(LocalDateTime.now())
-                            .build();
-                    return walletRepository.save(w);
-                });
-
-        Wallet escrowWallet = walletRepository.findSystemWalletForUpdate(WalletType.ESCROW)
-                .orElseThrow(() -> new CustomException("System ESCROW wallet not found"));
-
-        // 3. Create or retrieve Escrow entity
-        Escrow escrow = escrowRepository.findByOrderId(order.getId())
-                .orElseGet(() -> Escrow.builder()
-                        .order(order)
-                        .buyerWallet(buyerWallet)
-                        .sellerWallet(sellerWallet)
-                        .escrowWallet(escrowWallet)
-                        .amount(amount)
-                        .status(EscrowStatus.HELD)
-                        .createdAt(LocalDateTime.now())
-                        .build());
-
-        if (escrow.getId() == null) {
-            escrow = escrowRepository.save(escrow);
-        }
-
-        // 4. Update escrow wallet locked balance and record Transaction
-        String holdDedupe = "COD_HOLD:" + escrow.getId();
-        if (!transactionRepository.existsByDedupeKey(holdDedupe)) {
-            escrowWallet.addLocked(amount);
-            walletRepository.save(escrowWallet);
-
-            Transaction tx = Transaction.builder()
-                    .fromWallet(null) // Physical cash COD collected by courier on delivery
-                    .toWallet(escrowWallet)
-                    .amount(amount)
-                    .type(TransactionType.HOLD)
-                    .status(TransactionStatus.SUCCESS)
-                    .referenceType(ReferenceType.ESCROW)
-                    .referenceId(escrow.getId())
-                    .dedupeKey(holdDedupe)
-                    .createdAt(LocalDateTime.now())
-                    .note("COD escrow hold for order " + order.getOrderNumber())
-                    .build();
-
-            transactionRepository.save(tx);
-        }
-    }
-
-    @Override
-    @Transactional
-    public void cancelCodEscrow(Order order) {
-        if (order == null || order.getId() == null) {
-            return;
-        }
-
-        Escrow escrow = escrowRepository.findByOrderIdForUpdate(order.getId()).orElse(null);
-        if (escrow != null && escrow.getStatus() == EscrowStatus.HELD) {
-            Wallet escrowWallet = escrow.getEscrowWallet();
-            if (escrowWallet != null && escrow.getAmount() != null) {
-                if (escrowWallet.getLockedBalance().compareTo(escrow.getAmount()) >= 0) {
-                    escrowWallet.subLocked(escrow.getAmount());
-                    walletRepository.save(escrowWallet);
-                }
-            }
-
-            escrow.setStatus(EscrowStatus.CANCELED);
-            escrow.setUpdatedAt(LocalDateTime.now());
-            escrowRepository.save(escrow);
-
-            String cancelDedupe = "COD_CANCEL:" + escrow.getId();
-            if (!transactionRepository.existsByDedupeKey(cancelDedupe)) {
-                Transaction tx = Transaction.builder()
-                        .fromWallet(escrowWallet)
-                        .toWallet(null)
-                        .amount(escrow.getAmount())
-                        .type(TransactionType.REFUND)
-                        .status(TransactionStatus.SUCCESS)
-                        .referenceType(ReferenceType.ESCROW)
-                        .referenceId(escrow.getId())
-                        .dedupeKey(cancelDedupe)
-                        .createdAt(LocalDateTime.now())
-                        .note("COD cancelled for order " + order.getOrderNumber())
-                        .build();
-                transactionRepository.save(tx);
-            }
-        }
-
-        paymentRepository.findByOrderId(order.getId()).ifPresent(payment -> {
-            if (payment.getStatus() == PaymentStatus.PENDING || payment.getStatus() == PaymentStatus.INIT) {
-                payment.setStatus(PaymentStatus.CANCELLED);
-                payment.setUpdatedAt(LocalDateTime.now());
-                paymentRepository.save(payment);
-            }
-        });
-    }
-
-    @Override
-    @Transactional
     public void releaseByOrder(UUID orderId) {
 
         Order order = orderRepository.findById(orderId)
@@ -209,18 +62,7 @@ public class EscrowServiceImpl implements EscrowService {
         }
 
         Escrow escrow = escrowRepository.findByOrderIdForUpdate(orderId)
-                .orElse(null);
-
-        if (escrow == null) {
-            if (order.getPaymentMethod() == PaymentMethod.COD) {
-                log.info("Auto-healing missing COD escrow for order {}", order.getOrderNumber());
-                recordCodEscrow(order);
-                escrow = escrowRepository.findByOrderIdForUpdate(orderId)
-                        .orElseThrow(() -> new CustomException("Escrow not found for order"));
-            } else {
-                throw new CustomException("Escrow not found for order");
-            }
-        }
+                .orElseThrow(() -> new CustomException("Escrow not found for order"));
 
         if (escrow.getStatus() == EscrowStatus.RELEASED) {
             return;
@@ -246,40 +88,56 @@ public class EscrowServiceImpl implements EscrowService {
             return;
         }
 
-        Wallet escrowWallet = escrow.getEscrowWallet();
-        Wallet sellerWallet = escrow.getSellerWallet();
+        // Khóa bi quan theo thứ tự toàn cục chuẩn: SellerWallet -> System EscrowWallet
+        Wallet sellerWallet = walletRepository.findByUserIdForUpdate(order.getShop().getUser().getId())
+                .orElseGet(() -> {
+                    Wallet w = Wallet.builder()
+                            .user(order.getShop().getUser())
+                            .currency("VND")
+                            .availableBalance(BigDecimal.ZERO)
+                            .lockedBalance(BigDecimal.ZERO)
+                            .walletType(WalletType.USER)
+                            .createdAt(LocalDateTime.now())
+                            .build();
+                    return walletRepository.save(w);
+                });
+        escrow.setSellerWallet(sellerWallet);
 
-        if (escrowWallet == null)
-            throw new CustomException("Escrow wallet missing");
-        if (sellerWallet == null) {
-            sellerWallet = walletRepository.findByUserIdForUpdate(order.getShop().getUser().getId())
-                    .orElseGet(() -> {
-                        Wallet w = Wallet.builder()
-                                .user(order.getShop().getUser())
-                                .currency("VND")
-                                .availableBalance(BigDecimal.ZERO)
-                                .lockedBalance(BigDecimal.ZERO)
-                                .walletType(WalletType.USER)
-                                .createdAt(LocalDateTime.now())
-                                .build();
-                        return walletRepository.save(w);
-                    });
-            escrow.setSellerWallet(sellerWallet);
-        }
+        Wallet escrowWallet = walletRepository.findSystemWalletForUpdate(WalletType.ESCROW)
+                .orElseThrow(() -> new CustomException("System ESCROW wallet not found"));
 
         BigDecimal amount = escrow.getAmount();
         if (amount == null || amount.signum() <= 0) {
             throw new CustomException("Escrow amount invalid");
         }
 
-        BigDecimal commission = order.getPlatformCommission();
-        if (commission == null)
-            commission = BigDecimal.ZERO;
+        // 1. Phí ship khách trả (Sàn giữ lại trong ví ESCROW, Seller tuyệt đối không nhận)
+        BigDecimal shippingFee = order.getShippingFee() != null ? order.getShippingFee() : BigDecimal.ZERO;
+        BigDecimal shippingRetained = shippingFee.min(amount);
 
-        BigDecimal sellerNet = amount.subtract(commission);
-        if (sellerNet.signum() < 0) {
-            throw new CustomException("Commission > amount");
+        // 2. Tiền hàng thực tế thu được trong Ký quỹ
+        BigDecimal merchandiseProceeds = amount.subtract(shippingRetained);
+
+        // 3. Khoản tài trợ Voucher Sàn (Platform Voucher Subsidy)
+        // Quy tắc nghiệp vụ: Voucher do Sàn phát hành không làm giảm thu nhập của Seller
+        BigDecimal platformSubsidy = order.getPlatformDiscountAmount() != null ? order.getPlatformDiscountAmount() : BigDecimal.ZERO;
+        BigDecimal effectiveMerchandise = merchandiseProceeds.add(platformSubsidy);
+
+        // 4. Phí hoa hồng sàn thực tế thu (tính trên tiền hàng hiệu dụng)
+        BigDecimal nominalCommission = order.getPlatformCommission() != null ? order.getPlatformCommission() : BigDecimal.ZERO;
+        BigDecimal actualCommission = nominalCommission.min(effectiveMerchandise);
+
+        if (nominalCommission.compareTo(actualCommission) > 0) {
+            BigDecimal shortfall = nominalCommission.subtract(actualCommission);
+            log.warn("Đơn hàng {}: Tiền hàng hiệu dụng trong ký quỹ ({}) không đủ thu toàn bộ hoa hồng danh nghĩa ({}). Khoản hụt hoa hồng: {}",
+                    order.getOrderNumber(), effectiveMerchandise, nominalCommission, shortfall);
         }
+
+        // 5. Tiền thanh toán thực nhận của Seller (chỉ tiền hàng ròng, không có ship, được bù voucher sàn)
+        BigDecimal sellerPayout = effectiveMerchandise.subtract(actualCommission);
+
+        // 6. Doanh thu ròng của Sàn nạp vào số dư khả dụng (Hoa hồng + Phí ship giữ lại - Khoản tài trợ voucher sàn)
+        BigDecimal platformNetCredit = actualCommission.add(shippingRetained).subtract(platformSubsidy);
 
         if (escrowWallet.getLockedBalance().compareTo(amount) < 0) {
             escrowWallet.setLockedBalance(amount);
@@ -287,46 +145,90 @@ public class EscrowServiceImpl implements EscrowService {
 
         escrowWallet.subLocked(amount);
 
-        if (sellerNet.signum() > 0) {
-            sellerWallet.addAvailable(sellerNet);
+        if (sellerPayout.signum() > 0) {
+            sellerWallet.addAvailable(sellerPayout);
         }
 
-        if (commission.signum() > 0) {
-            escrowWallet.addAvailable(commission);
+        if (platformNetCredit.signum() > 0) {
+            escrowWallet.addAvailable(platformNetCredit);
+        } else if (platformNetCredit.signum() < 0) {
+            BigDecimal deficit = platformNetCredit.abs();
+            if (escrowWallet.getAvailableBalance() != null && escrowWallet.getAvailableBalance().compareTo(deficit) < 0) {
+                log.warn("Đơn hàng {}: Khoản tài trợ voucher sàn ({}) vượt quá tổng thu của sàn, gây thâm hụt số dư khả dụng: {}",
+                        order.getOrderNumber(), platformSubsidy, deficit);
+            }
+            escrowWallet.subAvailable(deficit);
         }
 
         walletRepository.saveAll(List.of(escrowWallet, sellerWallet));
 
+        // Hạch toán sổ cái (Transaction Ledger)
         String esCrowDedupe = "ESCROW:" + order.getId();
-        Transaction tRelease = Transaction.builder()
-                .fromWallet(escrowWallet)
-                .toWallet(sellerWallet)
-                .amount(sellerNet)
-                .type(TransactionType.RELEASE)
-                .status(TransactionStatus.SUCCESS)
-                .referenceType(ReferenceType.ESCROW)
-                .referenceId(escrow.getId())
-                .createdAt(LocalDateTime.now())
-                .dedupeKey(esCrowDedupe)
-                .note("Release success for order " + order.getId())
-                .build();
-        transactionRepository.save(tRelease);
+        if (!transactionRepository.existsByDedupeKey(esCrowDedupe)) {
+            Transaction tRelease = Transaction.builder()
+                    .fromWallet(escrowWallet)
+                    .toWallet(sellerWallet)
+                    .amount(sellerPayout)
+                    .type(TransactionType.RELEASE)
+                    .status(TransactionStatus.SUCCESS)
+                    .referenceType(ReferenceType.ESCROW)
+                    .referenceId(escrow.getId())
+                    .createdAt(LocalDateTime.now())
+                    .dedupeKey(esCrowDedupe)
+                    .note("Release merchandise proceeds to seller for order " + order.getOrderNumber())
+                    .build();
+            transactionRepository.save(tRelease);
+        }
 
         String commissionDedupe = "COMMISSION:" + order.getId();
-        if (commission.signum() > 0) {
+        if (actualCommission.signum() > 0 && !transactionRepository.existsByDedupeKey(commissionDedupe)) {
             Transaction tFee = Transaction.builder()
                     .fromWallet(escrowWallet)
                     .toWallet(escrowWallet)
-                    .amount(commission)
+                    .amount(actualCommission)
                     .type(TransactionType.COMMISSION)
                     .status(TransactionStatus.SUCCESS)
                     .referenceType(ReferenceType.ESCROW)
                     .createdAt(LocalDateTime.now())
                     .referenceId(escrow.getId())
                     .dedupeKey(commissionDedupe)
-                    .note("Taking commission success for order " + order.getId())
+                    .note("Taking platform commission for order " + order.getOrderNumber())
                     .build();
             transactionRepository.save(tFee);
+        }
+
+        String shippingDedupe = "SHIPPING_RETAIN:" + order.getId();
+        if (shippingRetained.signum() > 0 && !transactionRepository.existsByDedupeKey(shippingDedupe)) {
+            Transaction tShipping = Transaction.builder()
+                    .fromWallet(escrowWallet)
+                    .toWallet(escrowWallet)
+                    .amount(shippingRetained)
+                    .type(TransactionType.TRANSFER)
+                    .status(TransactionStatus.SUCCESS)
+                    .referenceType(ReferenceType.ESCROW)
+                    .createdAt(LocalDateTime.now())
+                    .referenceId(escrow.getId())
+                    .dedupeKey(shippingDedupe)
+                    .note("Customer shipping fee retained by platform for order " + order.getOrderNumber())
+                    .build();
+            transactionRepository.save(tShipping);
+        }
+
+        String subsidyDedupe = "PLATFORM_SUBSIDY:" + order.getId();
+        if (platformSubsidy.signum() > 0 && !transactionRepository.existsByDedupeKey(subsidyDedupe)) {
+            Transaction tSubsidy = Transaction.builder()
+                    .fromWallet(escrowWallet)
+                    .toWallet(sellerWallet)
+                    .amount(platformSubsidy)
+                    .type(TransactionType.TRANSFER)
+                    .status(TransactionStatus.SUCCESS)
+                    .referenceType(ReferenceType.ESCROW)
+                    .createdAt(LocalDateTime.now())
+                    .referenceId(escrow.getId())
+                    .dedupeKey(subsidyDedupe)
+                    .note("Platform voucher subsidy for order " + order.getOrderNumber())
+                    .build();
+            transactionRepository.save(tSubsidy);
         }
 
         escrow.setStatus(EscrowStatus.RELEASED);
@@ -413,6 +315,108 @@ public class EscrowServiceImpl implements EscrowService {
         order.setStatus(OrderStatus.REFUNDED);
         orderRepository.save(order);
 
+    }
+
+    @Override
+    @Transactional
+    public void refundMerchandiseOnly(UUID orderId, String reason) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new CustomException("Order not found: " + orderId));
+
+        Escrow escrow = escrowRepository.findByOrderIdForUpdate(orderId)
+                .orElseThrow(() -> new CustomException("Escrow not found for order: " + orderId));
+
+        if (escrow.getStatus() == EscrowStatus.REFUNDED) {
+            return;
+        }
+
+        if (escrow.getStatus() != EscrowStatus.HELD && escrow.getStatus() != EscrowStatus.DISPUTED) {
+            throw new CustomException("Escrow status không hợp lệ để hoàn tiền: " + escrow.getStatus());
+        }
+
+        Wallet escrowWallet = escrow.getEscrowWallet();
+        Wallet buyerWallet = escrow.getBuyerWallet();
+
+        if (escrowWallet == null)
+            throw new CustomException("Escrow wallet missing");
+        if (buyerWallet == null)
+            throw new CustomException("Buyer wallet missing");
+
+        BigDecimal totalAmount = escrow.getAmount();
+        if (totalAmount == null || totalAmount.signum() <= 0) {
+            throw new CustomException("Escrow amount invalid");
+        }
+
+        // Tiền ship chiều đi sàn giữ lại để thanh toán cước GHN vì chuyến giao hàng đã thành công
+        BigDecimal shippingFee = order.getShippingFee() != null ? order.getShippingFee() : BigDecimal.ZERO;
+        BigDecimal shippingRetained = shippingFee.min(totalAmount);
+
+        // Tiền hàng thực tế hoàn về cho Buyer (subtotal - discountAmount)
+        BigDecimal merchandiseRefund = totalAmount.subtract(shippingRetained);
+
+        if (escrowWallet.getLockedBalance().compareTo(totalAmount) < 0) {
+            escrowWallet.setLockedBalance(totalAmount);
+        }
+
+        // Mở khóa toàn bộ số tiền ký quỹ của đơn hàng
+        escrowWallet.subLocked(totalAmount);
+
+        // 1. Hoàn tiền hàng về cho Buyer
+        if (merchandiseRefund.signum() > 0) {
+            buyerWallet.addAvailable(merchandiseRefund);
+        }
+
+        // 2. Chuyển phí ship chiều đi vào số dư khả dụng của Sàn để thanh toán cước GHN
+        if (shippingRetained.signum() > 0) {
+            escrowWallet.addAvailable(shippingRetained);
+        }
+
+        walletRepository.saveAll(List.of(escrowWallet, buyerWallet));
+
+        // Hạch toán sổ cái hoàn tiền hàng cho Buyer
+        String refundDedupe = "ESCROW_MERCHANDISE_REFUND:" + order.getId();
+        if (!transactionRepository.existsByDedupeKey(refundDedupe) && merchandiseRefund.signum() > 0) {
+            Transaction txRefund = Transaction.builder()
+                    .fromWallet(escrowWallet)
+                    .toWallet(buyerWallet)
+                    .amount(merchandiseRefund)
+                    .type(TransactionType.REFUND)
+                    .status(TransactionStatus.SUCCESS)
+                    .referenceType(ReferenceType.ESCROW)
+                    .referenceId(escrow.getId())
+                    .createdAt(LocalDateTime.now())
+                    .dedupeKey(refundDedupe)
+                    .note(reason != null ? reason
+                            : ("Hoàn tiền hàng (khách giữ hàng) cho đơn " + order.getOrderNumber()))
+                    .build();
+            transactionRepository.save(txRefund);
+        }
+
+        // Hạch toán sổ cái phí ship sàn giữ lại để trả GHN
+        String shipRetainedDedupe = "ESCROW_SHIP_RETAINED:" + order.getId();
+        if (!transactionRepository.existsByDedupeKey(shipRetainedDedupe) && shippingRetained.signum() > 0) {
+            Transaction txShipRetained = Transaction.builder()
+                    .fromWallet(escrowWallet)
+                    .toWallet(escrowWallet)
+                    .amount(shippingRetained)
+                    .type(TransactionType.RELEASE)
+                    .status(TransactionStatus.SUCCESS)
+                    .referenceType(ReferenceType.ESCROW)
+                    .referenceId(escrow.getId())
+                    .createdAt(LocalDateTime.now())
+                    .dedupeKey(shipRetainedDedupe)
+                    .note("Giữ lại cước vận chuyển chiều đi trả GHN cho đơn hoàn tiền khách giữ hàng "
+                            + order.getOrderNumber())
+                    .build();
+            transactionRepository.save(txShipRetained);
+        }
+
+        escrow.setStatus(EscrowStatus.REFUNDED);
+        escrow.setUpdatedAt(LocalDateTime.now());
+        escrowRepository.save(escrow);
+
+        order.setStatus(OrderStatus.REFUNDED);
+        orderRepository.save(order);
     }
 
     /**

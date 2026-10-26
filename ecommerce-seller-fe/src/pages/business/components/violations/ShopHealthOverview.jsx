@@ -11,8 +11,6 @@ export default function ShopHealthOverview({
   shopHealth,
   violationCount,
   shopStatus,
-  hasAppealableViolations,
-  onOpenAppealModal,
 }) {
   // Thang điểm uy tín chuẩn 100 điểm, mỗi lần vi phạm trừ 15 điểm
   const reputationScore = Math.max(0, 100 - violationCount * 15)
@@ -24,15 +22,15 @@ export default function ShopHealthOverview({
         color: 'bg-rose-500/10 text-rose-400 border-rose-500/30',
       }
     }
-    if (shopStatus === 'SUSPENDED' || reputationScore < 40) {
+    if (shopStatus === 'SUSPENDED') {
       return {
-        label: 'Nguy cơ đình chỉ',
+        label: 'Đình chỉ 14 ngày',
         color: 'bg-rose-500/10 text-rose-400 border-rose-500/30',
       }
     }
     if (shopStatus === 'WARNED' || reputationScore < 70) {
       return {
-        label: 'Cảnh báo giảm uy tín',
+        label: violationCount >= 5 ? 'Cảnh báo rủi ro cao' : 'Cảnh báo giảm uy tín',
         color: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
       }
     }
@@ -53,7 +51,7 @@ export default function ShopHealthOverview({
   return (
     <div className="space-y-6">
       {/* Cảnh báo kỷ luật cấp độ 2: Tạm ngưng 14 ngày & Giữ Escrow */}
-      {(shopStatus === 'SUSPENDED' || violationCount >= 5) && (
+      {shopStatus === 'SUSPENDED' && (
         <div className="rounded-3xl border border-rose-500/30 bg-rose-500/10 p-6 shadow-sm backdrop-blur-sm">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-start gap-4">
@@ -66,34 +64,29 @@ export default function ShopHealthOverview({
                     Kỷ luật cấp 2 (Điểm uy tín: {reputationScore}/100 - {violationCount}/7 vi phạm)
                   </span>
                   <h3 className="text-base font-bold text-rose-500 dark:text-rose-400">
-                    Gian hàng đang bị tạm ngưng hoạt động 14 ngày
+                    Gian hàng đang trong thời hạn tạm ngưng hoạt động 14 ngày
                   </h3>
                 </div>
                 <p className={cn('text-xs leading-relaxed', isDark ? 'text-slate-300' : 'text-stone-700')}>
                   Do điểm uy tín sụt giảm nghiêm trọng (tích lũy <strong>{violationCount} lần vi phạm</strong>), toàn bộ sản phẩm của gian hàng đã được tạm ẩn khỏi sàn và gian hàng bị đình chỉ kinh doanh tạm thời. Khoản tiền ký quỹ Escrow đang được tạm giữ để bảo vệ quyền lợi người mua.
                 </p>
-                <p className="text-[11px] text-rose-500 dark:text-rose-400 font-medium">
+                {shopHealth?.suspendedUntil && (
+                  <p className="text-xs font-semibold text-rose-600 dark:text-rose-300 flex items-center gap-1.5 pt-1">
+                    <HiOutlineClock className="h-4 w-4 shrink-0" />
+                    Thời hạn đình chỉ dự kiến kết thúc: <strong>{new Date(shopHealth.suspendedUntil).toLocaleString('vi-VN')}</strong>
+                  </p>
+                )}
+                <p className="text-[11px] text-rose-500/80 dark:text-rose-400/80 font-medium">
                   • Các đơn hàng đã phát sinh trước đó vẫn được tiếp tục vận chuyển bình thường đến tay khách hàng.
                 </p>
               </div>
             </div>
-
-            {hasAppealableViolations && (
-              <button
-                type="button"
-                onClick={onOpenAppealModal}
-                className="w-full sm:w-auto shrink-0 flex items-center justify-center gap-2 rounded-2xl bg-rose-600 px-5 py-2.5 text-xs font-bold text-white hover:bg-rose-700 active:scale-95 shadow-md shadow-rose-600/30 transition-all"
-              >
-                <HiOutlineDocumentText className="h-4 w-4" />
-                Nộp đơn kháng cáo phục hồi uy tín
-              </button>
-            )}
           </div>
         </div>
       )}
 
       {/* Cảnh báo kỷ luật cấp độ 1: Cảnh báo gian hàng */}
-      {shopStatus === 'WARNED' && violationCount < 5 && (
+      {shopStatus === 'WARNED' && (
         <div className="rounded-3xl border border-amber-500/30 bg-amber-500/10 p-6 shadow-sm backdrop-blur-sm">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-start gap-4">
@@ -114,17 +107,6 @@ export default function ShopHealthOverview({
                 </p>
               </div>
             </div>
-
-            {hasAppealableViolations && (
-              <button
-                type="button"
-                onClick={onOpenAppealModal}
-                className="w-full sm:w-auto shrink-0 flex items-center justify-center gap-2 rounded-2xl bg-amber-600 px-5 py-2.5 text-xs font-bold text-white hover:bg-amber-700 active:scale-95 shadow-md shadow-amber-600/30 transition-all"
-              >
-                <HiOutlineDocumentText className="h-4 w-4" />
-                Kháng cáo gỡ cảnh báo uy tín
-              </button>
-            )}
           </div>
         </div>
       )}
@@ -213,8 +195,8 @@ export default function ShopHealthOverview({
               </div>
               <p>• <strong>Ưu tiên hiển thị:</strong> Sản phẩm của gian hàng có điểm uy tín cao được ưu tiên đề xuất trên trang chủ và kết quả tìm kiếm.</p>
               <p>• <strong>Khắc phục sai sót:</strong> Giúp các gian hàng có cơ hội sửa đổi và phục hồi toàn diện điểm số theo thời gian mà không bị trừ điểm vĩnh viễn.</p>
-              <p>• <strong>Kháng cáo phục hồi điểm:</strong> Khi nộp đơn giải trình và được Ban Quản Trị chấp thuận, điểm uy tín của sự vụ đó sẽ được khôi phục ngay lập tức (+15 điểm).</p>
-              <p>• <strong>Tính công bằng:</strong> Quyết định thẩm định của Ban Quản Trị là phán quyết cuối cùng để bảo đảm tính nghiêm minh và quyền lợi người mua.</p>
+              <p>• <strong>Phán quyết nghiêm minh:</strong> Mọi phán quyết xử lý vi phạm của Ban Quản Trị là phán quyết cuối cùng, không áp dụng kháng cáo.</p>
+              <p>• <strong>Tính công bằng:</strong> Cơ chế tự động phục hồi điểm sau 30 ngày giúp các gian hàng sửa đổi chuẩn mực và khôi phục hoạt động.</p>
             </div>
           </div>
 

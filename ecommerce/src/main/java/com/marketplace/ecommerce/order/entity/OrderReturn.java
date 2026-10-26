@@ -91,6 +91,10 @@ public class OrderReturn {
     @Column(name = "is_restocked", nullable = false)
     private Boolean isRestocked = false;
 
+    @Builder.Default
+    @Column(name = "is_return_shipping_deducted", nullable = false)
+    private Boolean isReturnShippingDeducted = false;
+
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

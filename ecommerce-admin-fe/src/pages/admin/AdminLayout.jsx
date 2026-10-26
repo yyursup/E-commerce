@@ -14,6 +14,7 @@ import {
   HiOutlineTicket,
   HiOutlineShieldCheck,
   HiOutlineCash,
+  HiOutlineDocumentText,
 } from 'react-icons/hi'
 import { useAuthStore } from '../../store/useAuthStore'
 import { useThemeStore } from '../../store/useThemeStore'
@@ -21,14 +22,15 @@ import { cn } from '../../lib/cn'
 
 const navItems = [
   { to: '/dashboard', label: 'Tổng quan Sàn', icon: HiOutlineViewGrid },
-  { to: '/requests', label: 'Duyệt mở Gian hàng', icon: HiOutlineClipboardCheck },
+  { to: '/requests', label: 'Duyệt Yêu Cầu & Mở Shop', icon: HiOutlineClipboardCheck },
   { to: '/moderation', label: 'Kiểm duyệt Sản phẩm', icon: HiOutlineShieldCheck },
-  { to: '/orders', label: 'Quản lý Đơn hàng', icon: HiOutlineShoppingBag },
+  { to: '/orders', label: 'Gian Hàng & Đơn Hàng', icon: HiOutlineShoppingBag },
   { to: '/vouchers', label: 'Voucher Toàn Sàn', icon: HiOutlineTicket },
   { to: '/commissions', label: 'Hoa Hồng & Biểu Phí', icon: HiOutlineChartBar },
   { to: '/trust-config', label: 'Quỹ Ký Quỹ & Bậc Sao', icon: HiOutlineCash },
   { to: '/platform-wallet', label: 'Tài Chính & Ví Sàn', icon: HiOutlineCreditCard },
   { to: '/reports', label: 'Khiếu Nại & Vi Phạm', icon: HiOutlineClipboardCheck },
+  { to: '/policies', label: 'Chính Sách & Quy Chế', icon: HiOutlineDocumentText },
   { to: '/live-chat', label: 'Live Chat CSKH', icon: HiOutlineChat },
 ]
 

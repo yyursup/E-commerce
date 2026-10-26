@@ -24,12 +24,35 @@ public class UserServiceImpl implements UserService {
     private final com.marketplace.ecommerce.shop.repository.ShopRepository shopRepository;
 
     @Override
+    @Transactional
     public UserProfileResponse getUserProfile(UUID accountId) {
         User user = userRepository.findByAccountId(accountId)
                 .orElseThrow(() -> new CustomException("User not found"));
+        if (user.getAccount() != null) {
+            reconcileAccountDecay(user.getAccount());
+        }
         UserProfileResponse response = UserProfileResponse.from(user);
         shopRepository.findByUserId(user.getId()).ifPresent(shop -> response.setShopId(shop.getId()));
         return response;
+    }
+
+    private void reconcileAccountDecay(com.marketplace.ecommerce.auth.entity.Account account) {
+        if (account == null || account.getViolationCount() <= 0 || account.getLastViolationAt() == null) {
+            return;
+        }
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        long daysPassed = java.time.temporal.ChronoUnit.DAYS.between(account.getLastViolationAt(), now);
+        long decayCycles = daysPassed / 30;
+        if (decayCycles > 0) {
+            int newCount = Math.max(0, account.getViolationCount() - (int) decayCycles);
+            account.setViolationCount(newCount);
+            if (newCount < 3 && account.getDisciplineLevel() == com.marketplace.ecommerce.auth.valueObjects.DisciplineLevel.WARNED) {
+                account.setDisciplineLevel(com.marketplace.ecommerce.auth.valueObjects.DisciplineLevel.NONE);
+            } else if (newCount < 5 && account.getDisciplineLevel() == com.marketplace.ecommerce.auth.valueObjects.DisciplineLevel.SUSPENDED) {
+                account.setDisciplineLevel(com.marketplace.ecommerce.auth.valueObjects.DisciplineLevel.WARNED);
+            }
+            accountRepository.save(account);
+        }
     }
 
     @Override

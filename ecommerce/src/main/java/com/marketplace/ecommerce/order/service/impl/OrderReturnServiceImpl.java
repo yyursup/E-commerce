@@ -26,7 +26,12 @@ import com.marketplace.ecommerce.product.service.InventoryHistoryService;
 import com.marketplace.ecommerce.product.valueObjects.InventoryActionType;
 import com.marketplace.ecommerce.request.entity.Report;
 import com.marketplace.ecommerce.request.repository.ReportRepository;
+import com.marketplace.ecommerce.request.repository.RequestRepository;
+import com.marketplace.ecommerce.request.valueObjects.ReportStage;
+import com.marketplace.ecommerce.request.valueObjects.RequestStatus;
 import com.marketplace.ecommerce.shop.entity.Shop;
+import com.marketplace.ecommerce.chat.service.ChatService;
+import com.marketplace.ecommerce.shop.service.ShopEscrowFundService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -49,12 +54,15 @@ public class OrderReturnServiceImpl implements OrderReturnService {
     private final OrderReturnRepository orderReturnRepository;
     private final OrderRepository orderRepository;
     private final ReportRepository reportRepository;
+    private final RequestRepository requestRepository;
     private final EscrowRepository escrowRepository;
     private final EscrowService escrowService;
     private final ProductRepository productRepository;
     private final ProductVariantRepository productVariantRepository;
     private final InventoryHistoryService inventoryHistoryService;
     private final UserRepository userRepository;
+    private final ShopEscrowFundService shopEscrowFundService;
+    private final ChatService chatService;
 
     @Override
     @Transactional
@@ -110,15 +118,9 @@ public class OrderReturnServiceImpl implements OrderReturnService {
     @Override
     @Transactional
     public OrderReturnResponse submitTracking(UUID accountId, UUID returnId, SubmitReturnTrackingRequest request) {
-        OrderReturn returnObj = orderReturnRepository.findByIdForUpdate(returnId)
-                .orElseThrow(() -> new CustomException("Không tìm thấy thông tin hoàn hàng: " + returnId));
-
-        User user = userRepository.findByAccountId(accountId)
-                .orElseThrow(() -> new CustomException("User not found for account: " + accountId));
-
-        if (!returnObj.getOrder().getUser().getId().equals(user.getId())) {
-            throw new CustomException("Bạn không có quyền thực hiện thao tác trên yêu cầu trả hàng này");
-        }
+        OrderReturn returnObj = getOrderReturnForUpdate(returnId);
+        User user = getUserByAccountId(accountId);
+        validateBuyerOwnership(returnObj, user);
 
         if (returnObj.getStatus() != ReturnStatus.WAITING_FOR_SHIPMENT) {
             throw new CustomException("Trạng thái hoàn hàng không hợp lệ để nộp vận đơn: " + returnObj.getStatus());
@@ -157,15 +159,12 @@ public class OrderReturnServiceImpl implements OrderReturnService {
     @Override
     @Transactional
     public OrderReturnResponse confirmDelivered(UUID accountId, UUID returnId) {
-        OrderReturn returnObj = orderReturnRepository.findByIdForUpdate(returnId)
-                .orElseThrow(() -> new CustomException("Không tìm thấy thông tin hoàn hàng: " + returnId));
-
-        User user = userRepository.findByAccountId(accountId)
-                .orElseThrow(() -> new CustomException("User not found for account: " + accountId));
+        OrderReturn returnObj = getOrderReturnForUpdate(returnId);
+        User user = getUserByAccountId(accountId);
 
         Order order = returnObj.getOrder();
-        boolean isBuyer = order.getUser() != null && order.getUser().getId().equals(user.getId());
-        boolean isShopOwner = order.getShop() != null && order.getShop().getUser() != null
+        boolean isBuyer = order != null && order.getUser() != null && order.getUser().getId().equals(user.getId());
+        boolean isShopOwner = order != null && order.getShop() != null && order.getShop().getUser() != null
                 && order.getShop().getUser().getId().equals(user.getId());
         boolean isAdmin = user.getAccount() != null && user.getAccount().getRole() != null
                 && ("ROLE_ADMIN".equalsIgnoreCase(user.getAccount().getRole().getRoleName())
@@ -180,9 +179,7 @@ public class OrderReturnServiceImpl implements OrderReturnService {
                     "Chỉ có thể xác nhận đã giao khi hàng ở trạng thái SHIPPED: " + returnObj.getStatus());
         }
 
-        returnObj.setStatus(ReturnStatus.RETURNED);
-        returnObj.setSellerReceivedAt(LocalDateTime.now());
-        returnObj.setSellerInspectionDeadline(LocalDateTime.now().plusHours(72));
+        markAsReturned(returnObj);
 
         OrderReturn saved = orderReturnRepository.save(returnObj);
         log.info("Return marked as RETURNED (Đã hoàn hàng) for returnId={} by accountId={}", returnId, accountId);
@@ -192,24 +189,16 @@ public class OrderReturnServiceImpl implements OrderReturnService {
     @Override
     @Transactional
     public OrderReturnResponse confirmReturned(UUID accountId, UUID returnId) {
-        OrderReturn returnObj = orderReturnRepository.findByIdForUpdate(returnId)
-                .orElseThrow(() -> new CustomException("Không tìm thấy thông tin hoàn hàng: " + returnId));
-
-        User user = userRepository.findByAccountId(accountId)
-                .orElseThrow(() -> new CustomException("User not found for account: " + accountId));
-
-        if (!returnObj.getOrder().getUser().getId().equals(user.getId())) {
-            throw new CustomException("Bạn không có quyền thực hiện thao tác trên yêu cầu trả hàng này");
-        }
+        OrderReturn returnObj = getOrderReturnForUpdate(returnId);
+        User user = getUserByAccountId(accountId);
+        validateBuyerOwnership(returnObj, user);
 
         if (returnObj.getStatus() != ReturnStatus.SHIPPED) {
             throw new CustomException(
                     "Chỉ có thể xác nhận khi hàng ở trạng thái SHIPPED: " + returnObj.getStatus());
         }
 
-        returnObj.setStatus(ReturnStatus.RETURNED);
-        returnObj.setSellerReceivedAt(LocalDateTime.now());
-        returnObj.setSellerInspectionDeadline(LocalDateTime.now().plusHours(72));
+        markAsReturned(returnObj);
 
         OrderReturn saved = orderReturnRepository.save(returnObj);
         log.info("Buyer confirmed RETURNED for returnId={}, seller inspection deadline set to {}",
@@ -220,16 +209,9 @@ public class OrderReturnServiceImpl implements OrderReturnService {
     @Override
     @Transactional
     public OrderReturnResponse completeReturn(UUID accountId, UUID returnId, SellerCompleteReturnRequest request) {
-        OrderReturn returnObj = orderReturnRepository.findByIdForUpdate(returnId)
-                .orElseThrow(() -> new CustomException("Không tìm thấy thông tin hoàn hàng: " + returnId));
-
-        User user = userRepository.findByAccountId(accountId)
-                .orElseThrow(() -> new CustomException("User not found for account: " + accountId));
-
-        Shop shop = returnObj.getOrder().getShop();
-        if (shop == null || shop.getUser() == null || !shop.getUser().getId().equals(user.getId())) {
-            throw new CustomException("Bạn không phải người bán sở hữu đơn hàng này");
-        }
+        OrderReturn returnObj = getOrderReturnForUpdate(returnId);
+        User user = getUserByAccountId(accountId);
+        validateSellerOwnership(returnObj, user);
 
         if (returnObj.getStatus() != ReturnStatus.RETURNED) {
             throw new CustomException("Trạng thái hoàn hàng không hợp lệ để nghiệm thu: " + returnObj.getStatus());
@@ -245,13 +227,22 @@ public class OrderReturnServiceImpl implements OrderReturnService {
         orderReturnRepository.save(returnObj);
 
         Order order = returnObj.getOrder();
-        if (isRestock) {
+        if (isRestock && order != null) {
             restoreOrderStock(order);
         }
 
-        escrowService.refundByOrder(order.getId(),
+        refundBuyerAndDeductFees(returnObj,
                 "Hoàn tiền cho người mua sau khi người bán nghiệm thu hoàn hàng thành công");
-        log.info("Completed return id={}, refunded orderId={}, isRestocked={}", returnId, order.getId(), isRestock);
+
+        finalizeReportAndChatThread(
+                returnObj,
+                ReportStage.RESOLVED,
+                RequestStatus.APPROVED,
+                "Đã hoàn tất đổi trả và hoàn tiền sau khi người bán nghiệm thu hoàn hàng thành công.",
+                "Đã hoàn tất đổi trả và hoàn tiền sau khi người bán nghiệm thu hoàn hàng thành công"
+        );
+
+        log.info("Completed return id={}, refunded orderId={}, isRestocked={}", returnId, order != null ? order.getId() : null, isRestock);
 
         return OrderReturnResponse.from(returnObj);
     }
@@ -259,22 +250,16 @@ public class OrderReturnServiceImpl implements OrderReturnService {
     @Override
     @Transactional
     public OrderReturnResponse disputeReturn(UUID accountId, UUID returnId, SellerDisputeReturnRequest request) {
-        OrderReturn returnObj = orderReturnRepository.findByIdForUpdate(returnId)
-                .orElseThrow(() -> new CustomException("Không tìm thấy thông tin hoàn hàng: " + returnId));
-
-        User user = userRepository.findByAccountId(accountId)
-                .orElseThrow(() -> new CustomException("User not found for account: " + accountId));
-
-        Shop shop = returnObj.getOrder().getShop();
-        if (shop == null || shop.getUser() == null || !shop.getUser().getId().equals(user.getId())) {
-            throw new CustomException("Bạn không phải người bán sở hữu đơn hàng này");
-        }
+        OrderReturn returnObj = getOrderReturnForUpdate(returnId);
+        User user = getUserByAccountId(accountId);
+        validateSellerOwnership(returnObj, user);
 
         if (returnObj.getStatus() != ReturnStatus.RETURNED) {
             throw new CustomException("Không thể khiếu nại kiện hoàn ở trạng thái: " + returnObj.getStatus());
         }
 
         returnObj.setStatus(ReturnStatus.DISPUTED);
+        returnObj.setSellerInspectionDeadline(null); // Vô hiệu hóa hạn thẩm định khi Shop đã khiếu nại kiện hoàn
         returnObj.setConditionStatus(request.getConditionStatus());
         returnObj.setConditionNote(request.getConditionNote());
         returnObj.setSellerEvidenceUrls(request.getSellerEvidenceUrls());
@@ -282,15 +267,31 @@ public class OrderReturnServiceImpl implements OrderReturnService {
         OrderReturn saved = orderReturnRepository.save(returnObj);
 
         Order order = returnObj.getOrder();
+        if (order != null) {
+            escrowRepository.findByOrderIdForUpdate(order.getId()).ifPresent(escrow -> {
+                escrow.setStatus(EscrowStatus.DISPUTED);
+                escrow.setUpdatedAt(LocalDateTime.now());
+                escrowRepository.save(escrow);
+            });
+        }
 
-        escrowRepository.findByOrderIdForUpdate(order.getId()).ifPresent(escrow -> {
-            escrow.setStatus(EscrowStatus.DISPUTED);
-            escrow.setUpdatedAt(LocalDateTime.now());
-            escrowRepository.save(escrow);
-        });
+        if (returnObj.getReport() != null) {
+            Report rep = returnObj.getReport();
+            rep.setStage(ReportStage.ESCALATED_TO_ADMIN);
+            rep.setEscalationReason("Người bán khiếu nại kiện hàng hoàn: " + request.getConditionNote());
+            rep.setEscalatedAt(LocalDateTime.now());
+            // TUYỆT ĐỐI KHÔNG ghi đè sellerEvidenceUrl và sellerResponse ban đầu của Shop.
+            // Bằng chứng và mô tả kiện hàng hoàn được lưu trữ toàn vẹn trong OrderReturn.
+            if (rep.getRequest() != null) {
+                rep.getRequest().setStatus(RequestStatus.PENDING);
+                requestRepository.save(rep.getRequest());
+                chatService.closeDisputeThread(
+                        rep.getRequest().getId(),
+                        "Người bán khiếu nại tình trạng kiện hàng hoàn. Vụ việc được chuyển lên Ban Quản Trị sàn phân xử, phòng chat 1:1 đã khóa để bảo lưu hồ sơ đối soát.");
+            }
+            reportRepository.save(rep);
+        }
 
-        // Không tạo Request/Report sang bên Báo Cáo Vi Phạm để tránh xử phạt gậy vi phạm cho Shop/Khách.
-        // Thông tin tranh chấp kiện hoàn được lưu trực tiếp trên OrderReturn và quản lý tại phần Ký Quỹ & Tranh Chấp.
         log.warn("Seller disputed returnId={}, condition={}, note={}",
                 returnId, request.getConditionStatus(), request.getConditionNote());
         return OrderReturnResponse.from(saved);
@@ -300,8 +301,7 @@ public class OrderReturnServiceImpl implements OrderReturnService {
     @Transactional
     public OrderReturnResponse resolveDispute(UUID adminAccountId, UUID returnId,
             AdminResolveReturnDisputeRequest request) {
-        OrderReturn returnObj = orderReturnRepository.findByIdForUpdate(returnId)
-                .orElseThrow(() -> new CustomException("Không tìm thấy thông tin hoàn hàng: " + returnId));
+        OrderReturn returnObj = getOrderReturnForUpdate(returnId);
 
         if (returnObj.getStatus() != ReturnStatus.DISPUTED) {
             throw new CustomException("Chỉ có thể phân xử kiện hàng ở trạng thái DISPUTED: " + returnObj.getStatus());
@@ -316,10 +316,19 @@ public class OrderReturnServiceImpl implements OrderReturnService {
                             + "Admin chấp thuận: " + request.getAdminNote());
             orderReturnRepository.save(returnObj);
 
-            escrowService.refundByOrder(order.getId(),
+            refundBuyerAndDeductFees(returnObj,
                     "Admin chấp thuận hoàn tiền cho người mua sau khi phân xử khiếu nại hoàn hàng: "
                             + (request.getAdminNote() != null ? request.getAdminNote() : ""));
-            log.info("Admin approved return dispute for returnId={}, refunded orderId={}", returnId, order.getId());
+
+            finalizeReportAndChatThread(
+                    returnObj,
+                    ReportStage.CLOSED,
+                    RequestStatus.APPROVED,
+                    request.getAdminNote(),
+                    "Admin chấp thuận hoàn tiền sau khi phân xử khiếu nại hoàn hàng"
+            );
+
+            log.info("Admin approved return dispute for returnId={}, refunded orderId={}", returnId, order != null ? order.getId() : null);
         } else {
             returnObj.setStatus(ReturnStatus.CANCELLED);
             returnObj
@@ -327,21 +336,18 @@ public class OrderReturnServiceImpl implements OrderReturnService {
                             + "Admin bác bỏ hoàn hàng: " + request.getAdminNote());
             orderReturnRepository.save(returnObj);
 
-            // Phục hồi Escrow về HELD rồi release tiền cho Seller
-            escrowRepository.findByOrderIdForUpdate(order.getId()).ifPresent(escrow -> {
-                if (escrow.getStatus() == EscrowStatus.DISPUTED) {
-                    escrow.setStatus(EscrowStatus.HELD);
-                    escrowRepository.save(escrow);
-                }
-            });
+            releaseEscrowToSellerAndCompleteOrder(order);
 
-            order.setReceivedByBuyer(true);
-            order.setReceivedAt(LocalDateTime.now());
-            escrowService.releaseByOrder(order.getId());
-            order.setStatus(OrderStatus.COMPLETED);
-            orderRepository.save(order);
-            log.info("Admin rejected return dispute for returnId={}, released money to shop for orderId={}", returnId,
-                    order.getId());
+            finalizeReportAndChatThread(
+                    returnObj,
+                    ReportStage.CLOSED,
+                    RequestStatus.APPROVED,
+                    request.getAdminNote(),
+                    "Admin bác bỏ hoàn hàng và giải ngân cho gian hàng"
+            );
+
+            log.info("Admin rejected return dispute for returnId={}, resolved for orderId={}", returnId,
+                    order != null ? order.getId() : null);
         }
 
         return OrderReturnResponse.from(returnObj);
@@ -391,6 +397,9 @@ public class OrderReturnServiceImpl implements OrderReturnService {
                     ret.setConditionNote((ret.getConditionNote() != null ? ret.getConditionNote() + " | " : "") + note);
                 }
                 orderReturnRepository.save(ret);
+                if (ret.getReport() != null && ret.getReport().getRequest() != null) {
+                    chatService.closeDisputeThread(ret.getReport().getRequest().getId(), note != null ? note : "Đổi trả kết thúc do quyết toán ký quỹ");
+                }
                 log.info("Closed returnId={} with status={} on escrow settlement for orderId={}", ret.getId(), finalStatus, orderId);
             }
         });
@@ -414,22 +423,18 @@ public class OrderReturnServiceImpl implements OrderReturnService {
                             "Hệ thống tự động hủy do Người mua không nộp mã vận đơn trong thời hạn 3 ngày");
                     orderReturnRepository.save(ret);
 
-                    Order order = ret.getOrder();
-                    escrowRepository.findByOrderIdForUpdate(order.getId()).ifPresent(escrow -> {
-                        if (escrow.getStatus() == EscrowStatus.DISPUTED) {
-                            escrow.setStatus(EscrowStatus.HELD);
-                            escrowRepository.save(escrow);
-                        }
-                    });
+                    releaseEscrowToSellerAndCompleteOrder(ret.getOrder());
 
-                    order.setReceivedByBuyer(true);
-                    order.setReceivedAt(now);
-                    escrowService.releaseByOrder(order.getId());
-                    order.setStatus(OrderStatus.COMPLETED);
-                    orderRepository.save(order);
+                    finalizeReportAndChatThread(
+                            ret,
+                            ReportStage.CLOSED,
+                            null,
+                            null,
+                            "Hệ thống tự động hủy đổi trả do Người mua không nộp mã vận đơn trong 3 ngày"
+                    );
 
                     log.info("Auto cancelled expired returnId={} due to 3-day buyer deadline, released orderId={}",
-                            ret.getId(), order.getId());
+                            ret.getId(), ret.getOrder() != null ? ret.getOrder().getId() : null);
                 }
             } catch (Exception e) {
                 log.error("Failed to process expired buyer shipment for returnId={}", r.getId(), e);
@@ -447,24 +452,116 @@ public class OrderReturnServiceImpl implements OrderReturnService {
         for (OrderReturn r : expired) {
             try {
                 Optional<OrderReturn> lockedOpt = orderReturnRepository.findByIdForUpdate(r.getId());
-                if (lockedOpt.isPresent() && lockedOpt.get().getStatus() == ReturnStatus.RETURNED) {
+                if (lockedOpt.isPresent()) {
                     OrderReturn ret = lockedOpt.get();
+                    if (ret.getStatus() != ReturnStatus.RETURNED
+                            || ret.getStatus() == ReturnStatus.DISPUTED
+                            || ret.getSellerInspectionDeadline() == null
+                            || (ret.getReport() != null && ret.getReport().getStage() == ReportStage.ESCALATED_TO_ADMIN)) {
+                        continue;
+                    }
                     ret.setStatus(ReturnStatus.COMPLETED);
                     ret.setIsRestocked(false); // Tuyệt đối không auto-restock khi seller không phản hồi
                     ret.setConditionNote("Hệ thống tự động nghiệm thu do Người bán không kiểm tra hàng trong 72 giờ");
                     orderReturnRepository.save(ret);
 
-                    Order order = ret.getOrder();
-                    escrowService.refundByOrder(order.getId(),
+                    refundBuyerAndDeductFees(ret,
                             "Tự động hoàn tiền do Người bán quá hạn 72h kiểm tra hàng hoàn");
 
+                    finalizeReportAndChatThread(
+                            ret,
+                            ReportStage.RESOLVED,
+                            null,
+                            null,
+                            "Tự động hoàn tiền do Người bán quá hạn 72h kiểm tra hàng hoàn"
+                    );
+
                     log.info("Auto completed expired inspection for returnId={}, refunded orderId={}", ret.getId(),
-                            order.getId());
+                            ret.getOrder() != null ? ret.getOrder().getId() : null);
                 }
             } catch (Exception e) {
                 log.error("Failed to process expired seller inspection for returnId={}", r.getId(), e);
             }
         }
+    }
+
+    private OrderReturn getOrderReturnForUpdate(UUID returnId) {
+        return orderReturnRepository.findByIdForUpdate(returnId)
+                .orElseThrow(() -> new CustomException("Không tìm thấy thông tin hoàn hàng: " + returnId));
+    }
+
+    private User getUserByAccountId(UUID accountId) {
+        return userRepository.findByAccountId(accountId)
+                .orElseThrow(() -> new CustomException("User not found for account: " + accountId));
+    }
+
+    private void validateBuyerOwnership(OrderReturn returnObj, User user) {
+        if (returnObj.getOrder() == null || returnObj.getOrder().getUser() == null
+                || !returnObj.getOrder().getUser().getId().equals(user.getId())) {
+            throw new CustomException("Bạn không có quyền thực hiện thao tác trên yêu cầu trả hàng này");
+        }
+    }
+
+    private void validateSellerOwnership(OrderReturn returnObj, User user) {
+        Shop shop = returnObj.getOrder() != null ? returnObj.getOrder().getShop() : null;
+        if (shop == null || shop.getUser() == null || !shop.getUser().getId().equals(user.getId())) {
+            throw new CustomException("Bạn không phải người bán sở hữu đơn hàng này");
+        }
+    }
+
+    private void markAsReturned(OrderReturn returnObj) {
+        returnObj.setStatus(ReturnStatus.RETURNED);
+        returnObj.setSellerReceivedAt(LocalDateTime.now());
+        returnObj.setSellerInspectionDeadline(LocalDateTime.now().plusHours(72));
+    }
+
+    private void refundBuyerAndDeductFees(OrderReturn returnObj, String reason) {
+        if (returnObj.getOrder() != null) {
+            escrowService.refundByOrder(returnObj.getOrder().getId(), reason);
+        }
+        shopEscrowFundService.deductReturnDisputeShippingFees(returnObj);
+    }
+
+    private void finalizeReportAndChatThread(OrderReturn returnObj, ReportStage stage, RequestStatus requestStatus,
+            String responseMessage, String chatCloseReason) {
+        if (returnObj == null || returnObj.getReport() == null) {
+            return;
+        }
+        Report rep = returnObj.getReport();
+        rep.setStage(stage);
+        if (responseMessage != null && !responseMessage.isBlank()) {
+            rep.setModeratorNote(responseMessage);
+        }
+        if (rep.getRequest() != null) {
+            if (requestStatus != null) {
+                rep.getRequest().setStatus(requestStatus);
+            }
+            if (responseMessage != null) {
+                rep.getRequest().setResponse(responseMessage);
+                rep.getRequest().setReviewedAt(LocalDateTime.now());
+            }
+            chatService.closeDisputeThread(rep.getRequest().getId(), chatCloseReason);
+        }
+        reportRepository.save(rep);
+    }
+
+    private void releaseEscrowToSellerAndCompleteOrder(Order order) {
+        if (order == null) {
+            return;
+        }
+        escrowRepository.findByOrderIdForUpdate(order.getId()).ifPresent(escrow -> {
+            if (escrow.getStatus() == EscrowStatus.DISPUTED) {
+                escrow.setStatus(EscrowStatus.HELD);
+                escrowRepository.save(escrow);
+            }
+            if (escrow.getStatus() == EscrowStatus.HELD) {
+                order.setReceivedByBuyer(true);
+                order.setReceivedAt(LocalDateTime.now());
+                escrowService.releaseByOrder(order.getId());
+                order.setStatus(OrderStatus.COMPLETED);
+                orderRepository.save(order);
+            }
+        });
     }
 
     private void restoreOrderStock(Order order) {

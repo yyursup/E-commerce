@@ -122,6 +122,12 @@ public class Shop {
     @Builder.Default
     private Integer violationCount = 0;
 
+    @Column(name = "suspended_until")
+    private LocalDateTime suspendedUntil;
+
+    @Column(name = "last_violation_at")
+    private LocalDateTime lastViolationAt;
+
     @OneToOne(mappedBy = "shop", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private ShopEscrowFund escrowFund;
 

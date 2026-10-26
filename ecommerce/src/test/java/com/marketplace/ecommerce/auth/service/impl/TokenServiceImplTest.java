@@ -80,26 +80,4 @@ class TokenServiceImplTest {
         assertFalse(refreshToken.isBlank());
     }
 
-    @Test
-    @DisplayName("createAppealToken tạo token phạm vi APPEAL_ONLY và getAccountFromAppealToken thành công")
-    void testAppealToken_Success() {
-        String appealToken = tokenService.createAppealToken(sampleAccount);
-        assertNotNull(appealToken);
-
-        when(accountRepository.findByUsername("testuser")).thenReturn(Optional.of(sampleAccount));
-
-        Account extracted = tokenService.getAccountFromAppealToken(appealToken);
-        assertNotNull(extracted);
-        assertEquals("testuser", extracted.getUsername());
-    }
-
-    @Test
-    @DisplayName("getAccountFromAppealToken ném ngoại lệ nếu dùng token thường (sai scope)")
-    void testGetAccountFromAppealToken_InvalidScope() {
-        String normalToken = tokenService.createToken(sampleAccount);
-
-        RuntimeException ex = assertThrows(RuntimeException.class,
-                () -> tokenService.getAccountFromAppealToken(normalToken));
-        assertEquals("Invalid token scope", ex.getMessage());
-    }
 }

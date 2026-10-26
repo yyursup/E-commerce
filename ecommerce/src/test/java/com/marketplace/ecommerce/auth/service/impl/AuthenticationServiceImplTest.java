@@ -239,10 +239,7 @@ class AuthenticationServiceImplTest {
 
         when(accountRepository.findByUsername(req.getUsername())).thenReturn(Optional.of(sampleAccount));
         when(authenticationManager.authenticate(any())).thenThrow(new LockedException("Locked"));
-        when(tokenService.createAppealToken(sampleAccount)).thenReturn("appeal_token_xyz");
-
-        AccountLockedException ex = assertThrows(AccountLockedException.class, () -> authenticationService.login(req));
-        assertEquals("appeal_token_xyz", ex.getAppealToken());
+        CustomException ex = assertThrows(CustomException.class, () -> authenticationService.login(req));
         assertTrue(ex.getMessage().contains("Tài khoản của bạn đã bị khóa"));
     }
 

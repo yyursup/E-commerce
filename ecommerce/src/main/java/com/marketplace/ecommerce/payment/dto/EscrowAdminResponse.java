@@ -20,6 +20,8 @@ public class EscrowAdminResponse {
     private String orderNumber;
     private BigDecimal platformCommission;
 
+    private String paymentMethod;
+
     private UUID buyerWalletId;
     private UUID sellerWalletId;
     private UUID escrowWalletId;
@@ -42,6 +44,9 @@ public class EscrowAdminResponse {
                 .orderId(e.getOrder() != null ? e.getOrder().getId() : null)
                 .orderNumber(e.getOrder() != null ? e.getOrder().getOrderNumber() : null)
                 .platformCommission(e.getOrder() != null ? e.getOrder().getPlatformCommission() : null)
+                .paymentMethod(e.getOrder() != null && e.getOrder().getPaymentMethod() != null
+                        ? e.getOrder().getPaymentMethod().name()
+                        : null)
                 .buyerWalletId(e.getBuyerWallet() != null ? e.getBuyerWallet().getId() : null)
                 .sellerWalletId(e.getSellerWallet() != null ? e.getSellerWallet().getId() : null)
                 .escrowWalletId(e.getEscrowWallet() != null ? e.getEscrowWallet().getId() : null)

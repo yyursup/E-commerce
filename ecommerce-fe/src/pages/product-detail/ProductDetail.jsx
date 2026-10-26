@@ -36,7 +36,7 @@ import { cn } from '../../lib/cn'
 import productService from '../../services/product'
 import recommendationService from '../../services/recommendation'
 import cartService from '../../services/cart'
-import shopService, { FALLBACK_SHOPS } from '../../services/shop'
+import shopService from '../../services/shop'
 import wishlistService from '../../services/wishlist'
 
 const getConditionDetail = (grade) => {
@@ -420,8 +420,8 @@ export default function ProductDetail() {
   const originalPrice = product.originalPrice ? Number(product.originalPrice) : null
   const displayStock = selectedVariant ? (selectedVariant.stock ?? 0) : (product.quantity ?? 0)
   const images = product.images || []
+  const shopData = shop || (product?.shopId ? { id: product.shopId, name: product.shopName || 'Cửa hàng', logo: '/shop-placeholder.svg' } : null)
   const currentShopId = product.shopId || shopData?.id || shop?.id
-  const shopData = shop || FALLBACK_SHOPS[0]
 
   return (
     <div className={cn('min-h-screen', isDark ? 'bg-slate-950 text-slate-100' : 'bg-stone-100 text-stone-900')}>

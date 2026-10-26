@@ -54,7 +54,7 @@ export default function AdminActionOrderResolution({
         </label>
       </div>
       <p className="text-[10px] text-stone-400 dark:text-slate-400 mt-2 leading-relaxed">
-        Phương án này sẽ có hiệu lực sau khi kết thúc thời hạn 72h kháng cáo của Shop.
+        Phán quyết có hiệu lực thi hành ngay lập tức: Nếu chọn &apos;Chỉ hoàn tiền&apos;, tiền ký quỹ sẽ được hoàn trả ngay cho Người mua. Nếu chọn &apos;Trả hàng &amp; Hoàn tiền&apos;, hệ thống sẽ khởi tạo tiến trình đổi trả hàng.
       </p>
     </div>
   )

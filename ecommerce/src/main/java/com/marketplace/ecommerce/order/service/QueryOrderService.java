@@ -19,4 +19,6 @@ public interface QueryOrderService {
     OrderResponse adminGetOrder(UUID orderId, UUID accountId);
 
     List<OrderResponse> adminListOrders(UUID accountId, OrderStatus statusOpt);
+
+    List<OrderResponse> adminListOrders(UUID accountId, OrderStatus statusOpt, UUID shopId);
 }

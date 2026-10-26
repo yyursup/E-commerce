@@ -56,6 +56,12 @@ public class Request {
     @Column(name = "reviewed_at")
     private LocalDateTime reviewedAt;
 
+    @Column(name = "old_violation_count")
+    private Integer oldViolationCount;
+
+    @Column(name = "new_violation_count")
+    private Integer newViolationCount;
+
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

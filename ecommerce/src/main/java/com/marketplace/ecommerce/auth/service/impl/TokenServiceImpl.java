@@ -68,33 +68,31 @@ public class TokenServiceImpl implements TokenService {
     }
 
     @Override
-    public String createAppealToken(Account account) {
+    public String createBanReviewToken(Account account) {
         long currentTime = System.currentTimeMillis();
         return Jwts.builder()
                 .subject(account.getUsername() + "")
-                .claim("scope", "APPEAL_ONLY")
+                .claim("type", "BAN_REVIEW")
+                .claim("role", "BAN_REVIEW")
                 .claim("accountId", account.getId())
                 .issuedAt(new Date(currentTime))
-                .expiration(new Date(currentTime + 1000 * 60 * 30)) // 30 minutes
+                .expiration(new Date(currentTime + 1000L * 60 * 30)) // 30 minutes short-lived
                 .signWith(getSignInKey())
                 .compact();
     }
 
     @Override
-    public Account getAccountFromAppealToken(String token) {
-        Claims claims = Jwts.parser()
-                .verifyWith(getSignInKey())
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
-                
-        String scope = claims.get("scope", String.class);
-        if (!"APPEAL_ONLY".equals(scope)) {
-            throw new RuntimeException("Invalid token scope");
+    public boolean isBanReviewToken(String token) {
+        if (token == null || token.isBlank()) {
+            return false;
         }
-        
-        String username = claims.getSubject();
-        return accountRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("Account not found"));
+        try {
+            Claims claims = Jwts.parser()
+                    .verifyWith(getSignInKey())
+                    .build().parseSignedClaims(token).getPayload();
+            return "BAN_REVIEW".equals(claims.get("type"));
+        } catch (Exception e) {
+            return false;
+        }
     }
 }

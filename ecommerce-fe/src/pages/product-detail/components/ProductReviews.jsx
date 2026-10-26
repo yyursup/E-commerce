@@ -1,9 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { HiStar, HiOutlineChatAlt2, HiPlay, HiX, HiOutlineScale, HiOutlineExclamationCircle } from 'react-icons/hi'
+import { HiStar, HiOutlineChatAlt2, HiPlay, HiX, HiOutlineExclamationCircle } from 'react-icons/hi'
 import toast from 'react-hot-toast'
 import ReportActionButton from '../../../components/ReportActionButton'
-import ReviewAppealModal from '../../../components/ReviewAppealModal'
 import { cn } from '../../../lib/cn'
 import reviewService from '../../../services/review'
 import replyService from '../../../services/reply'
@@ -27,7 +26,6 @@ export default function ProductReviews({ productId }) {
   const [filterRating, setFilterRating] = useState(null)
   const [selectedMedia, setSelectedMedia] = useState(null)
   const [myReview, setMyReview] = useState(null)
-  const [appealModal, setAppealModal] = useState({ isOpen: false, review: null })
 
   const fetchReviews = useCallback(async () => {
     try {
@@ -164,15 +162,6 @@ export default function ProductReviews({ productId }) {
               Nội dung đánh giá: &ldquo;{myReview.comment || 'Không có văn bản'}&rdquo;
             </p>
           </div>
-
-          <button
-            type="button"
-            onClick={() => setAppealModal({ isOpen: true, review: myReview })}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-amber-500 hover:bg-amber-600 active:scale-95 transition shrink-0 shadow-sm"
-          >
-            <HiOutlineScale className="h-4 w-4" />
-            Kháng cáo đánh giá này
-          </button>
         </div>
       )}
 
@@ -407,13 +396,6 @@ export default function ProductReviews({ productId }) {
         </div>
       )}
 
-      {/* Modal Kháng cáo đánh giá vi phạm */}
-      <ReviewAppealModal
-        isOpen={appealModal.isOpen}
-        onClose={() => setAppealModal({ isOpen: false, review: null })}
-        review={appealModal.review}
-        onSuccess={fetchReviews}
-      />
     </div>
   )
 }

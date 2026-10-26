@@ -15,6 +15,7 @@ import toast from 'react-hot-toast'
 import orderService from '../../services/order'
 import returnService from '../../services/returnService'
 import escrowService from '../../services/escrow'
+import reportService from '../../services/report'
 import ReviewModal from '../../components/ReviewModal'
 import OrderReportModal from '../../components/OrderReportModal'
 import CustomerReturnCard from './components/CustomerReturnCard'
@@ -37,6 +38,7 @@ export default function OrderDetail() {
   const [reviewModal, setReviewModal] = useState({ open: false, productId: null, productName: '' })
   const [showReportModal, setShowReportModal] = useState(false)
   const [returnInfo, setReturnInfo] = useState(null)
+  const [report, setReport] = useState(null)
 
   useEffect(() => {
     if (!isAuthenticated || !orderId) return
@@ -68,6 +70,14 @@ export default function OrderDetail() {
         }
       }
       setReturnInfo(retInfo)
+
+      // Tải thông tin khiếu nại / phán quyết của đơn nếu có
+      try {
+        const repData = await reportService.getReportByOrderId(orderId)
+        setReport(repData || null)
+      } catch {
+        setReport(null)
+      }
     } catch (err) {
       console.error('Error fetching order:', err)
       setError(err?.response?.data?.message || err?.message || 'Không thể tải thông tin đơn hàng')
@@ -220,7 +230,9 @@ export default function OrderDetail() {
             <OrderDisputeBanner
               order={order}
               returnInfo={activeReturn}
+              report={report}
               isDark={isDark}
+              onRefresh={fetchOrder}
             />
 
             {/* Quick Action Bar for DELIVERED */}
@@ -251,6 +263,8 @@ export default function OrderDetail() {
             <div className="border-b p-5 sm:p-6">
               <CustomerReturnCard
                 returnInfo={activeReturn}
+                order={order}
+                report={report}
                 isDark={isDark}
                 onRefresh={fetchOrder}
               />
@@ -304,6 +318,7 @@ export default function OrderDetail() {
           {/* Order Summary & Escrow */}
           <OrderSummaryCard
             order={order}
+            report={report}
             isDark={isDark}
             formatCurrency={formatOrderCurrency}
             onPayNow={handlePayNow}

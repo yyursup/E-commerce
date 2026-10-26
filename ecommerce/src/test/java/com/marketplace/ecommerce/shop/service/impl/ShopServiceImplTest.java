@@ -33,6 +33,9 @@ import com.marketplace.ecommerce.shop.repository.ShopRepository;
 import com.marketplace.ecommerce.shop.valueObjects.EscrowFundStatus;
 import com.marketplace.ecommerce.shop.valueObjects.ShopStatus;
 import org.junit.jupiter.api.BeforeEach;
+import com.marketplace.ecommerce.auth.repository.AccountRepository;
+import com.marketplace.ecommerce.auth.valueObjects.AccountStatus;
+import com.marketplace.ecommerce.auth.valueObjects.DisciplineLevel;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -43,13 +46,14 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import com.marketplace.ecommerce.order.entity.Order;
@@ -81,6 +85,8 @@ class ShopServiceImplTest {
     private StringRedisTemplate redisTemplate;
     @Mock
     private ValueOperations<String, String> valueOperations;
+    @Mock
+    private AccountRepository accountRepository;
 
     @InjectMocks
     private ShopServiceImpl shopService;
@@ -337,7 +343,7 @@ class ShopServiceImplTest {
         when(reportRepository.findApprovedReportsByShopId(sampleShop.getId())).thenReturn(List.of());
         when(reportRepository.findApprovedReportsByProductIds(List.of(prodId))).thenReturn(List.of(repProd));
         when(reportRepository.findApprovedReportsByShopIdForOrders(sampleShop.getId())).thenReturn(List.of(repOrder));
-        when(reportRepository.findAllAppealsByAccountId(accountId)).thenReturn(List.of(legacyAppeal));
+        
 
         List<ShopViolationResponse> violations = shopService.getMyShopViolations(accountId);
         assertNotNull(violations);
@@ -345,7 +351,7 @@ class ShopServiceImplTest {
 
         // Verify ORDER appealStatus is NONE when no appeal exists
         ShopViolationResponse orderVio = violations.stream().filter(v -> v.getTargetType() == TargetType.ORDER).findFirst().orElseThrow();
-        assertEquals("NONE", orderVio.getAppealStatus());
+        assertEquals("FINAL_RULING", orderVio.getAppealStatus());
         assertEquals("Đơn hàng ORD-888", orderVio.getTargetName());
 
         // Verify PRODUCT appealStatus is APPROVED from legacy appeal
@@ -495,11 +501,11 @@ class ShopServiceImplTest {
         when(reportRepository.findApprovedReportsByShopId(sampleShop.getId())).thenReturn(List.of(rep));
         when(reportRepository.findApprovedReportsByProductIds(anyList())).thenReturn(List.of());
         when(reportRepository.findApprovedReportsByShopIdForOrders(sampleShop.getId())).thenReturn(List.of());
-        when(reportRepository.findAllAppealsByAccountId(accountId)).thenReturn(List.of(exactAppeal, dupAppeal));
+        
 
         List<ShopViolationResponse> vios = shopService.getMyShopViolations(accountId);
         assertEquals(1, vios.size());
-        assertEquals("PENDING", vios.get(0).getAppealStatus());
+        assertEquals("FINAL_RULING", vios.get(0).getAppealStatus());
         assertEquals("ModNote", vios.get(0).getAdminNote());
 
         // 3. updateEscrowStatus: expireTime null/<=0, fund FROZEN with balance > 0, cancel when fund == null
@@ -524,5 +530,167 @@ class ShopServiceImplTest {
         req.setIsEscrowParticipated(true);
         req.setCommittedAmount(BigDecimal.valueOf(5000000));
         assertThrows(CustomException.class, () -> shopService.updateEscrowStatus(accountId, req));
+    }
+
+    @Test
+    @DisplayName("Tự động khôi phục Shop hết hạn 14 ngày đình chỉ sang WARNED và mở lại sản phẩm")
+    void processExpiredSuspensions_Success() {
+        UUID shopId = UUID.randomUUID();
+        Account owner = Account.builder()
+                .status(AccountStatus.SUSPENDED)
+                .disciplineLevel(DisciplineLevel.SUSPENDED)
+                .suspendedUntil(LocalDateTime.now().minusHours(1)) // User suspension cũng đã hết hạn
+                .violationCount(5)
+                .build();
+
+        User user = new User();
+        user.setAccount(owner);
+
+        Shop suspendedShop = Shop.builder()
+                .id(shopId)
+                .name("Shop Đang Bị Đình Chỉ")
+                .status(ShopStatus.SUSPENDED)
+                .suspendedUntil(LocalDateTime.now().minusHours(1)) // Đã quá hạn 14 ngày
+                .violationCount(5)
+                .user(user)
+                .build();
+
+        when(shopRepository.findExpiredSuspensions(eq(ShopStatus.SUSPENDED), any(LocalDateTime.class)))
+                .thenReturn(List.of(suspendedShop));
+        when(shopRepository.findByIdForUpdate(shopId))
+                .thenReturn(Optional.of(suspendedShop));
+
+        shopService.processExpiredSuspensions();
+
+        // 1. Shop phải chuyển sang WARNED và xóa suspendedUntil
+        assertEquals(ShopStatus.WARNED, suspendedShop.getStatus());
+        assertNull(suspendedShop.getSuspendedUntil());
+        assertEquals(5, suspendedShop.getViolationCount()); // Số gậy vẫn được bảo lưu!
+
+        // 2. Sản phẩm phải được mở lại PUBLISHED (chỉ mở lại các sản phẩm INACTIVE)
+        verify(productRepository).updateStatusByShopId(
+                eq(shopId),
+                eq(List.of(ProductStatus.INACTIVE)),
+                eq(ProductStatus.PUBLISHED),
+                any(LocalDateTime.class)
+        );
+
+        // 3. Tài khoản chủ shop phải chuyển sang WARNED / ACTIVE
+        assertEquals(DisciplineLevel.WARNED, owner.getDisciplineLevel());
+        assertEquals(AccountStatus.ACTIVE, owner.getStatus());
+        assertNull(owner.getSuspendedUntil());
+        verify(accountRepository).save(owner);
+        verify(shopRepository).save(suspendedShop);
+    }
+
+    @Test
+    @DisplayName("Hết hạn đình chỉ Shop: Nếu chủ shop đang có án kỷ luật User riêng còn hiệu lực thì KHÔNG được xóa án User")
+    void processExpiredSuspensions_PreservesActiveUserSuspension() {
+        UUID shopId = UUID.randomUUID();
+        LocalDateTime userSuspensionExpiry = LocalDateTime.now().plusDays(10); // User suspension còn 10 ngày
+        Account owner = Account.builder()
+                .status(AccountStatus.SUSPENDED)
+                .disciplineLevel(DisciplineLevel.SUSPENDED)
+                .suspendedUntil(userSuspensionExpiry)
+                .violationCount(5)
+                .build();
+
+        User user = new User();
+        user.setAccount(owner);
+
+        Shop suspendedShop = Shop.builder()
+                .id(shopId)
+                .name("Shop Đang Bị Đình Chỉ")
+                .status(ShopStatus.SUSPENDED)
+                .suspendedUntil(LocalDateTime.now().minusHours(1)) // Shop đã hết hạn 14 ngày
+                .violationCount(5)
+                .user(user)
+                .build();
+
+        when(shopRepository.findExpiredSuspensions(eq(ShopStatus.SUSPENDED), any(LocalDateTime.class)))
+                .thenReturn(List.of(suspendedShop));
+        when(shopRepository.findByIdForUpdate(shopId))
+                .thenReturn(Optional.of(suspendedShop));
+
+        shopService.processExpiredSuspensions();
+
+        // 1. Shop vẫn được mở lại bình thường
+        assertEquals(ShopStatus.WARNED, suspendedShop.getStatus());
+        assertNull(suspendedShop.getSuspendedUntil());
+        verify(shopRepository).save(suspendedShop);
+
+        // 2. NHƯNG tài khoản chủ shop PHẢI GIỮ NGUYÊN án kỷ luật User (SUSPENDED), không được save cập nhật
+        assertEquals(DisciplineLevel.SUSPENDED, owner.getDisciplineLevel(), "DisciplineLevel của User phải giữ nguyên SUSPENDED");
+        assertEquals(AccountStatus.SUSPENDED, owner.getStatus(), "Status của User phải giữ nguyên SUSPENDED");
+        assertEquals(userSuspensionExpiry, owner.getSuspendedUntil(), "suspendedUntil của User phải giữ nguyên");
+        verify(accountRepository, never()).save(owner);
+    }
+
+    @Test
+    @DisplayName("Hết hạn đình chỉ Shop: Nếu chủ shop SUSPENDED với suspendedUntil == null (legacy) thì KHÔNG được tự ý gỡ")
+    void processExpiredSuspensions_LegacyNullSuspendedUntil_PreservesSuspension() {
+        UUID shopId = UUID.randomUUID();
+        Account owner = Account.builder()
+                .status(AccountStatus.SUSPENDED)
+                .disciplineLevel(DisciplineLevel.SUSPENDED)
+                .suspendedUntil(null) // Legacy null
+                .violationCount(5)
+                .build();
+
+        User user = new User();
+        user.setAccount(owner);
+
+        Shop suspendedShop = Shop.builder()
+                .id(shopId)
+                .name("Shop Đang Bị Đình Chỉ")
+                .status(ShopStatus.SUSPENDED)
+                .suspendedUntil(LocalDateTime.now().minusHours(1))
+                .user(user)
+                .build();
+
+        when(shopRepository.findExpiredSuspensions(eq(ShopStatus.SUSPENDED), any(LocalDateTime.class)))
+                .thenReturn(List.of(suspendedShop));
+        when(shopRepository.findByIdForUpdate(shopId))
+                .thenReturn(Optional.of(suspendedShop));
+
+        shopService.processExpiredSuspensions();
+
+        assertEquals(ShopStatus.WARNED, suspendedShop.getStatus());
+        assertEquals(AccountStatus.SUSPENDED, owner.getStatus(), "Owner có suspendedUntil=null không được tự ý mở khóa");
+        verify(accountRepository, never()).save(owner);
+    }
+
+    @Test
+    @DisplayName("Hết hạn đình chỉ Shop: Nếu chủ shop BANNED hoặc INACTIVE thì KHÔNG bao giờ bị kích hoạt lại")
+    void processExpiredSuspensions_BannedOrInactiveOwner_NeverReactivated() {
+        UUID shopId = UUID.randomUUID();
+        Account owner = Account.builder()
+                .status(AccountStatus.BANNED)
+                .disciplineLevel(DisciplineLevel.BANNED)
+                .suspendedUntil(LocalDateTime.now().minusDays(10))
+                .isActive(false)
+                .build();
+
+        User user = new User();
+        user.setAccount(owner);
+
+        Shop suspendedShop = Shop.builder()
+                .id(shopId)
+                .name("Shop Đang Bị Đình Chỉ")
+                .status(ShopStatus.SUSPENDED)
+                .suspendedUntil(LocalDateTime.now().minusHours(1))
+                .user(user)
+                .build();
+
+        when(shopRepository.findExpiredSuspensions(eq(ShopStatus.SUSPENDED), any(LocalDateTime.class)))
+                .thenReturn(List.of(suspendedShop));
+        when(shopRepository.findByIdForUpdate(shopId))
+                .thenReturn(Optional.of(suspendedShop));
+
+        shopService.processExpiredSuspensions();
+
+        assertEquals(ShopStatus.WARNED, suspendedShop.getStatus());
+        assertEquals(AccountStatus.BANNED, owner.getStatus(), "Owner BANNED không bao giờ được chuyển sang ACTIVE");
+        verify(accountRepository, never()).save(owner);
     }
 }

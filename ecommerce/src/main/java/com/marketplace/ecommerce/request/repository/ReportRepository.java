@@ -2,18 +2,59 @@ package com.marketplace.ecommerce.request.repository;
 
 import com.marketplace.ecommerce.request.entity.Report;
 import com.marketplace.ecommerce.request.valueObjects.TargetType;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
 public interface ReportRepository extends JpaRepository<Report, UUID> {
 
     Report findByRequestId(UUID requestId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select r from Report r where r.id = :id")
+    Optional<Report> findByIdForUpdate(@Param("id") UUID id);
+
+    @Query("""
+        select r from Report r
+        join fetch r.request req
+        where r.targetType = 'ORDER'
+          and r.stage = com.marketplace.ecommerce.request.valueObjects.ReportStage.DIRECT_NEGOTIATION
+          and r.sellerResponseDeadline <= :now
+    """)
+    List<Report> findExpiredDirectNegotiations(@Param("now") java.time.LocalDateTime now);
+
+    @Query("""
+        select case when count(r) > 0 then true else false end
+        from Report r join r.request req
+        where r.targetType = 'ORDER'
+          and r.targetId = :orderId
+          and (
+               r.stage in (
+                   com.marketplace.ecommerce.request.valueObjects.ReportStage.DIRECT_NEGOTIATION,
+                   com.marketplace.ecommerce.request.valueObjects.ReportStage.RETURN_IN_PROGRESS,
+                   com.marketplace.ecommerce.request.valueObjects.ReportStage.ESCALATED_TO_ADMIN
+               )
+               or req.status = com.marketplace.ecommerce.request.valueObjects.RequestStatus.PENDING
+          )
+    """)
+    boolean hasActiveOrderDispute(@Param("orderId") UUID orderId);
+
+    @Query("""
+        select r from Report r
+        join fetch r.request req
+        where r.targetType = 'ORDER'
+          and r.targetId = :orderId
+        order by req.createdAt desc
+    """)
+    List<Report> findByOrderIdOrderByCreatedAtDesc(@Param("orderId") UUID orderId);
 
     @Query("""
         select r from Report r
@@ -37,33 +78,6 @@ public interface ReportRepository extends JpaRepository<Report, UUID> {
     """)
     List<Report> findApprovedReportsByProductIds(@Param("productIds") List<UUID> productIds);
 
-    @Query("""
-        select r from Report r
-        join fetch r.request req
-        where req.type = 'APPEAL'
-          and req.account.id = :accountId
-        order by req.createdAt desc
-    """)
-    List<Report> findAllAppealsByAccountId(@Param("accountId") UUID accountId);
-
-    @Query("""
-        select r from Report r
-        join fetch r.request req
-        where req.type = 'APPEAL'
-          and req.account.id = :accountId
-          and r.targetId = :targetId
-        order by req.createdAt desc
-    """)
-    List<Report> findAppealsByAccountIdAndTargetId(@Param("accountId") UUID accountId, @Param("targetId") UUID targetId);
-
-    @Query("""
-        select r from Report r
-        join fetch r.request req
-        where req.type = 'APPEAL'
-          and r.violationReportId = :reportId
-        order by req.createdAt desc
-    """)
-    List<Report> findAppealsByViolationReportId(@Param("reportId") UUID reportId);
 
 
     @Query(value = """
@@ -104,52 +118,47 @@ public interface ReportRepository extends JpaRepository<Report, UUID> {
         """, nativeQuery = true)
     UUID resolveUserAccountId(@Param("targetId") UUID targetId);
 
-    @Query(value = """
-        select a.id
-        from shops s
-        join users u on u.id = s.user_id
-        join accounts a on a.id = u.account_id
+    @Query("""
+        select s.user.account.id
+        from Shop s
         where s.id = :targetId
-        """, nativeQuery = true)
+    """)
     UUID resolveShopOwnerAccountId(@Param("targetId") UUID targetId);
 
-    @Query(value = """
-        select a.id
-        from products p
-        join shops s on s.id = p.shop_id
-        join users u on u.id = s.user_id
-        join accounts a on a.id = u.account_id
+    @Query("""
+        select p.shop.user.account.id
+        from Product p
         where p.id = :targetId
-        """, nativeQuery = true)
+    """)
     UUID resolveProductOwnerAccountId(@Param("targetId") UUID targetId);
 
-    @Query(value = """
-        select a.id
-        from reviews r
-        join users u on u.id = r.user_id
-        join accounts a on a.id = u.account_id
+    @Query("""
+        select r.user.account.id
+        from Review r
         where r.id = :targetId
-        """, nativeQuery = true)
+    """)
     UUID resolveReviewOwnerAccountId(@Param("targetId") UUID targetId);
 
-    @Query(value = """
-        select a.id
-        from orders o
-        join shops s on s.id = o.shop_id
-        join users u on u.id = s.user_id
-        join accounts a on a.id = u.account_id
+    @Query("""
+        select o.shop.user.account.id
+        from Order o
         where o.id = :targetId
-        """, nativeQuery = true)
+    """)
     UUID resolveOrderShopOwnerAccountId(@Param("targetId") UUID targetId);
 
     @Query("""
         select r from Report r
         join fetch r.request req
-        join Order o on o.id = r.targetId
-        where req.type = 'REPORT'
-          and req.status = 'APPROVED'
-          and r.targetType = 'ORDER'
-          and o.shop.id = :shopId
+        where req.type = com.marketplace.ecommerce.request.valueObjects.RequestType.REPORT
+          and r.targetType = com.marketplace.ecommerce.request.valueObjects.TargetType.ORDER
+          and r.targetId in (select o.id from Order o where o.shop.id = :shopId)
+          and (
+               (req.status = com.marketplace.ecommerce.request.valueObjects.RequestStatus.APPROVED
+                and r.targetId not in (select o1.id from Order o1 where o1.status = com.marketplace.ecommerce.order.valueObjects.OrderStatus.COMPLETED))
+            or (r.stage = com.marketplace.ecommerce.request.valueObjects.ReportStage.CLOSED
+                and req.reviewedBy is not null
+                and r.targetId in (select o2.id from Order o2 where o2.status = com.marketplace.ecommerce.order.valueObjects.OrderStatus.REFUNDED))
+          )
         order by req.createdAt desc
     """)
     List<Report> findApprovedReportsByShopIdForOrders(@Param("shopId") UUID shopId);
@@ -163,16 +172,6 @@ public interface ReportRepository extends JpaRepository<Report, UUID> {
           and req.status = 'PENDING'
     """)
     boolean existsPendingReportByOrderId(@Param("orderId") UUID orderId);
-
-    @Query("""
-        select r from Report r
-        join fetch r.request req
-        where req.type = 'REPORT'
-          and req.status = 'APPROVED'
-          and r.targetType = 'ORDER'
-          and req.reviewedAt <= :threshold
-    """)
-    List<Report> findApprovedOrderReportsReviewedBefore(@Param("threshold") java.time.LocalDateTime threshold);
 
     @Query("""
         select r from Report r
@@ -203,5 +202,29 @@ public interface ReportRepository extends JpaRepository<Report, UUID> {
           )
     """)
     boolean existsPendingReportsForShop(@Param("shopId") UUID shopId);
+
+    @Query("""
+        select r from Report r
+        join fetch r.request req
+        where (req.status = com.marketplace.ecommerce.request.valueObjects.RequestStatus.APPROVED
+               or (r.stage = com.marketplace.ecommerce.request.valueObjects.ReportStage.CLOSED
+                   and (r.moderatorNote is not null or req.reviewedBy is not null or req.response is not null)))
+          and (
+               (r.targetType = com.marketplace.ecommerce.request.valueObjects.TargetType.USER
+                and (r.targetId = :accountId or r.targetId in (select u.id from User u where u.account.id = :accountId)))
+            or (r.targetType = com.marketplace.ecommerce.request.valueObjects.TargetType.SHOP
+                and (r.targetId in (select s.id from Shop s where s.user.account.id = :accountId or s.user.id in (select u.id from User u where u.account.id = :accountId))
+                     or r.targetId = :accountId
+                     or r.targetId in (select u.id from User u where u.account.id = :accountId)))
+            or (r.targetType = com.marketplace.ecommerce.request.valueObjects.TargetType.PRODUCT
+                and r.targetId in (select p.id from Product p where p.shop.user.account.id = :accountId or p.shop.user.id in (select u.id from User u where u.account.id = :accountId)))
+            or (r.targetType = com.marketplace.ecommerce.request.valueObjects.TargetType.ORDER
+                and r.targetId in (select o.id from Order o where o.shop.user.account.id = :accountId or o.user.account.id = :accountId or o.user.id in (select u.id from User u where u.account.id = :accountId)))
+            or (r.targetType = com.marketplace.ecommerce.request.valueObjects.TargetType.REVIEW
+                and r.targetId in (select rev.id from Review rev where rev.user.account.id = :accountId or rev.user.id in (select u.id from User u where u.account.id = :accountId)))
+          )
+        order by req.createdAt desc
+    """)
+    List<Report> findApprovedViolationsByAccountId(@Param("accountId") UUID accountId);
 }
 

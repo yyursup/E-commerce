@@ -185,9 +185,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     public void forgotPasswordSendOtp(String email) {
         Account account = accountRepository.findByEmail(email)
                 .orElseThrow(() -> new CustomException("Email not found"));
-        
+
         String otp = emailService.generateOTP();
-        
+
         MailBody mailBody = new MailBody();
         mailBody.setTo(account);
         mailBody.setSubject("Password Reset Request");
@@ -207,23 +207,35 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
         account.setPasswordHash(passwordEncoder.encode(newPassword));
         accountRepository.save(account);
-        
+
         emailService.clearOtp(email);
     }
 
 
     @Override
     public LoginResponse login(LoginRequest request) {
-        // 1. Kiểm tra tài khoản để xử lý tự động gỡ ban nếu đã hết hạn thời gian phạt
+        // 1. Kiểm tra tài khoản: nếu đang bị khóa vĩnh viễn (BANNED), xác minh mật khẩu trước khi cấp phiên BAN_REVIEW
         Optional<Account> accountOpt = accountRepository.findByUsername(request.getUsername());
         if (accountOpt.isPresent()) {
             Account acc = accountOpt.get();
-            if (acc.getBannedUntil() != null && LocalDateTime.now().isAfter(acc.getBannedUntil())) {
-                acc.setStatus(AccountStatus.ACTIVE);
-                acc.setDisciplineLevel(DisciplineLevel.NONE);
-                acc.setIsActive(true);
-                acc.setBannedUntil(null);
-                accountRepository.save(acc);
+            if (acc.isBanned()) {
+                // Phải xác minh đúng mật khẩu trước khi tiết lộ trạng thái BANNED
+                if (!passwordEncoder.matches(request.getPassword(), acc.getPasswordHash())) {
+                    throw new InvalidCredentialsException("Tên đăng nhập hoặc mật khẩu không chính xác.");
+                }
+
+                // Cấp token riêng giới hạn BAN_REVIEW (không cấp refresh token, không quyền marketplace)
+                String banReviewToken = tokenService.createBanReviewToken(acc);
+                return LoginResponse.builder()
+                        .email(acc.getEmail())
+                        .username(acc.getUsername())
+                        .token(banReviewToken)
+                        .refreshToken(null)
+                        .role("ROLE_BAN_REVIEW")
+                        .disciplineLevel(DisciplineLevel.BANNED.name())
+                        .violationCount(acc.getViolationCount())
+                        .accountId(acc.getId())
+                        .build();
             }
         }
 
@@ -277,16 +289,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         } catch (LockedException e) {
             Account acc = accountOpt.orElse(null);
             if (acc != null && (acc.getStatus() == AccountStatus.BANNED || acc.getDisciplineLevel() == DisciplineLevel.BANNED)) {
-                if (acc.getBannedUntil() != null) {
-                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm 'ngày' dd/MM/yyyy");
-                    String appealToken = tokenService.createAppealToken(acc);
-                    throw new com.marketplace.ecommerce.common.exception.AccountLockedException(
-                            "Tài khoản của bạn đã bị khóa đến " + acc.getBannedUntil().format(formatter) + " do vi phạm quy định cộng đồng.", 
-                            appealToken, 
-                            acc.getBannedUntil()
-                    );
-                }
-                throw new CustomException("Tài khoản của bạn đã bị khóa vĩnh viễn do vi phạm quy định cộng đồng. (Không hỗ trợ kháng cáo)");
+                throw new CustomException("Tài khoản của bạn đã bị khóa vĩnh viễn do vi phạm quy định cộng đồng.");
             }
             throw new CustomException("Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên để được hỗ trợ.");
         } catch (DisabledException e) {
@@ -416,11 +419,13 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             String name = (String) response.get("name");
             String picture = (String) response.get("picture");
             String providerId = (String) response.get("sub");
-            
+
             return processOAuth2User(email, name, picture, providerId, com.marketplace.ecommerce.auth.valueObjects.AuthProvider.GOOGLE);
+        } catch (CustomException ce) {
+            throw ce;
         } catch (Exception e) {
             log.error("Google Auth Error", e);
-            throw new CustomException("Failed to verify Google token: " + e.getMessage());
+            throw new CustomException("Xác thực Google thất bại: " + e.getMessage());
         }
     }
 
@@ -459,11 +464,13 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                     picture = (String) picData.get("url");
                 }
             }
-            
+
             return processOAuth2User(email, name, picture, providerId, com.marketplace.ecommerce.auth.valueObjects.AuthProvider.FACEBOOK);
+        } catch (CustomException ce) {
+            throw ce;
         } catch (Exception e) {
             log.error("Facebook Auth Error", e);
-            throw new CustomException("Failed to verify Facebook token: " + e.getMessage());
+            throw new CustomException("Xác thực Facebook thất bại: " + e.getMessage());
         }
     }
 
@@ -510,6 +517,22 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                     .build();
             cartRepository.save(cart);
         } else {
+            if (account.isBanned()) {
+                String banReviewToken = tokenService.createBanReviewToken(account);
+                return LoginResponse.builder()
+                        .email(account.getEmail())
+                        .username(account.getUsername())
+                        .token(banReviewToken)
+                        .refreshToken(null)
+                        .role("ROLE_BAN_REVIEW")
+                        .disciplineLevel(DisciplineLevel.BANNED.name())
+                        .violationCount(account.getViolationCount())
+                        .accountId(account.getId())
+                        .build();
+            }
+            if (account.getStatus() == AccountStatus.INACTIVE || account.getStatus() == AccountStatus.DELETED || !Boolean.TRUE.equals(account.getIsActive())) {
+                throw new CustomException("Tài khoản chưa được kích hoạt hoặc đã ngừng hoạt động.");
+            }
             if (account.getAuthProvider() == com.marketplace.ecommerce.auth.valueObjects.AuthProvider.LOCAL) {
                 account.setAuthProvider(provider);
                 account.setProviderId(providerId);
@@ -524,7 +547,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .refreshToken(tokenService.refreshToken(account))
                 .role(account.getRole().getRoleName())
                 .build();
-        
+
         populateShopAndSellerStatus(response, account.getId());
         return response;
     }
@@ -539,8 +562,11 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             if (account == null) {
                 throw new InvalidCredentialsException("Tài khoản không tồn tại.");
             }
-            if (account.getStatus() == AccountStatus.BANNED || !Boolean.TRUE.equals(account.getIsActive())) {
-                throw new CustomException("Tài khoản đã bị khóa hoặc ngừng hoạt động.");
+            if (account.getStatus() == AccountStatus.BANNED || account.getDisciplineLevel() == DisciplineLevel.BANNED) {
+                throw new CustomException("Tài khoản của bạn đã bị khóa vĩnh viễn do vi phạm quy định cộng đồng.");
+            }
+            if (!Boolean.TRUE.equals(account.getIsActive()) || account.getStatus() == AccountStatus.INACTIVE || account.getStatus() == AccountStatus.DELETED) {
+                throw new CustomException("Tài khoản chưa được kích hoạt hoặc đã ngừng hoạt động.");
             }
 
             LoginResponse response = LoginResponse.builder()

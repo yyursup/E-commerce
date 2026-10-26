@@ -19,7 +19,7 @@ import HorizontalRankingChart from '../analytics/HorizontalRankingChart'
 function formatCurrencyShort(amount) {
     if (amount >= 1_000_000_000) return `${(amount / 1_000_000_000).toFixed(1)}B`
     if (amount >= 1_000_000) return `${(amount / 1_000_000).toFixed(1)}M`
-    if (amount >= 1_000) return `${(amount / 1_000).toFixed(0)}K`
+    if (amount >= 1_000) return `${(amount / 1_000).toFixed(1)}K`
     return String(amount)
 }
 
@@ -45,7 +45,8 @@ function BarChart({ data, isDark }) {
     return (
         <div className="flex h-48 items-stretch gap-1.5 overflow-x-auto pb-2">
             {data.map((item, idx) => {
-                const height = (Number(item.totalCommission || 0) / maxVal) * 100
+                const commVal = Number(item.totalCommission || 0)
+                const height = (commVal / maxVal) * 100
                 const label = `T${item.month}/${String(item.year).slice(-2)}`
                 return (
                     <div key={idx} className="group relative flex h-full min-w-[40px] flex-1 flex-col items-center justify-end gap-2">
@@ -55,7 +56,7 @@ function BarChart({ data, isDark }) {
                                 isDark ? 'bg-slate-700 text-white' : 'bg-stone-800 text-white',
                             )}
                         >
-                            <div className="font-semibold">{formatCurrency(Number(item.totalCommission || 0))}</div>
+                            <div className="font-semibold">{formatCurrency(commVal)}</div>
                             <div className={cn('mt-0.5 text-[11px]', isDark ? 'text-slate-300' : 'text-stone-200')}>
                                 {label}
                             </div>
@@ -63,9 +64,9 @@ function BarChart({ data, isDark }) {
 
                         <div className="flex w-full flex-1 items-end">
                             <div
-                                title={`${label}: ${formatCurrency(Number(item.totalCommission || 0))}`}
+                                title={`${label}: ${formatCurrency(commVal)}`}
                                 className="w-full rounded-t-md bg-gradient-to-t from-amber-600 to-amber-400 shadow-[0_0_16px_rgba(251,191,36,0.18)] transition-all duration-500 group-hover:from-amber-500 group-hover:to-yellow-300"
-                                style={{ height: `${Math.max(height, 2)}%` }}
+                                style={{ height: `${commVal > 0 ? Math.max(height, 2) : 0}%` }}
                             />
                         </div>
 

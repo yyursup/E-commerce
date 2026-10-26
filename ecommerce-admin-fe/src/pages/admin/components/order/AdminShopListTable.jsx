@@ -17,6 +17,7 @@ import {
 import { cn } from '../../../../lib/cn'
 import toast from 'react-hot-toast'
 import statisticsService from '../../../../services/statistics'
+import Pagination from './Pagination'
 
 function formatCurrency(amount) {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0)
@@ -43,7 +44,12 @@ export default function AdminShopListTable({ isDark }) {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('ALL') // ALL, ACTIVE, WARNED, DEFICIT
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+
   useEffect(() => {
+    setCurrentPage(1)
     fetchShopsPerformance()
   }, [period])
 
@@ -89,6 +95,11 @@ export default function AdminShopListTable({ isDark }) {
     if (statusFilter === 'WARNED') return s.shopStatus === 'WARNED' || (s.violationCount && s.violationCount > 0)
     return true
   })
+
+  // Pagination calculation
+  const totalItems = filteredShops.length
+  const totalPages = Math.ceil(totalItems / pageSize) || 1
+  const paginatedShops = filteredShops.slice((currentPage - 1) * pageSize, currentPage * pageSize)
 
   // Summary Metrics
   const totalShopsCount = shops.length
@@ -343,7 +354,10 @@ export default function AdminShopListTable({ isDark }) {
           <div className="flex items-center gap-2">
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => {
+                setStatusFilter(e.target.value)
+                setCurrentPage(1)
+              }}
               className={cn(
                 'rounded-xl border px-3 py-2 text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/20',
                 isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-300 bg-white text-stone-900'
@@ -357,7 +371,10 @@ export default function AdminShopListTable({ isDark }) {
 
             <button
               type="button"
-              onClick={fetchShopsPerformance}
+              onClick={() => {
+                setCurrentPage(1)
+                fetchShopsPerformance()
+              }}
               className="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs sm:text-sm font-bold transition-all shrink-0"
             >
               Tìm kiếm
@@ -412,7 +429,7 @@ export default function AdminShopListTable({ isDark }) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100 dark:divide-slate-800 text-xs sm:text-sm">
-                {filteredShops.map((shop) => {
+                {paginatedShops.map((shop) => {
                   const stars = Number(shop.trustLevel) || 1
                   return (
                     <tr
@@ -575,6 +592,25 @@ export default function AdminShopListTable({ isDark }) {
                 })}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* Pagination Controls */}
+        {!loading && !error && filteredShops.length > 0 && (
+          <div className="border-t border-stone-200 dark:border-slate-800 p-4 bg-stone-50/50 dark:bg-slate-900/50">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              pageSize={pageSize}
+              onPageChange={(p) => setCurrentPage(p)}
+              onPageSizeChange={(newSize) => {
+                setPageSize(newSize)
+                setCurrentPage(1)
+              }}
+              isDark={isDark}
+              pageSizeOptions={[10, 20, 50]}
+            />
           </div>
         )}
       </div>

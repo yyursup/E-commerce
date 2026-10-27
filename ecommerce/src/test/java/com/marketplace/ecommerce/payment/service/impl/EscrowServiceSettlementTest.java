@@ -11,6 +11,8 @@ import com.marketplace.ecommerce.payment.repository.EscrowRepository;
 import com.marketplace.ecommerce.payment.repository.TransactionRepository;
 import com.marketplace.ecommerce.payment.valueObjects.EscrowStatus;
 import com.marketplace.ecommerce.payment.valueObjects.PaymentMethod;
+import com.marketplace.ecommerce.payment.valueObjects.ReferenceType;
+import com.marketplace.ecommerce.payment.valueObjects.TransactionType;
 import com.marketplace.ecommerce.shop.entity.Shop;
 import com.marketplace.ecommerce.wallet.entity.Wallet;
 import com.marketplace.ecommerce.wallet.repository.WalletRepository;
@@ -27,11 +29,22 @@ import java.math.BigDecimal;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.marketplace.ecommerce.payment.repository.PaymentRepository;
+import com.marketplace.ecommerce.payment.entity.Payment;
+import com.marketplace.ecommerce.payment.valueObjects.PaymentStatus;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class EscrowServiceSettlementTest {
 
     @Mock
@@ -42,6 +55,8 @@ class EscrowServiceSettlementTest {
     private TransactionRepository transactionRepository;
     @Mock
     private WalletRepository walletRepository;
+    @Mock
+    private PaymentRepository paymentRepository;
 
     @InjectMocks
     private EscrowServiceImpl escrowService;
@@ -309,4 +324,105 @@ class EscrowServiceSettlementTest {
         // 4. Kiểm tra lưu transactions
         verify(transactionRepository, atLeast(1)).save(any(Transaction.class));
     }
+
+    @Test
+    @DisplayName("adminList: Phân trang danh sách ký quỹ theo trạng thái cho quản trị viên")
+    void testAdminList() {
+        when(escrowRepository.adminList(eq(EscrowStatus.HELD), any())).thenReturn(new PageImpl<>(List.of(escrow)));
+        Page<com.marketplace.ecommerce.payment.dto.EscrowAdminResponse> page = escrowService.adminList(EscrowStatus.HELD, PageRequest.of(0, 10));
+        assertNotNull(page);
+        assertEquals(1, page.getTotalElements());
+    }
+
+    @Test
+    @DisplayName("splitSettleByOrder: Kiểm tra validation (null, tổng khác 100%, trạng thái ký quỹ không hợp lệ, hoa hồng vượt quá ký quỹ)")
+    void testSplitSettleByOrder_Validation() {
+        // 1. null percentage
+        assertThrows(CustomException.class, () -> escrowService.splitSettleByOrder(orderId, null, 50, "Note"));
+        assertThrows(CustomException.class, () -> escrowService.splitSettleByOrder(orderId, 50, null, "Note"));
+
+        // 2. sum != 100
+        assertThrows(CustomException.class, () -> escrowService.splitSettleByOrder(orderId, 40, 50, "Note"));
+        assertThrows(CustomException.class, () -> escrowService.splitSettleByOrder(orderId, -10, 110, "Note"));
+
+        // 3. order not found
+        when(orderRepository.findById(orderId)).thenReturn(Optional.empty());
+        assertThrows(CustomException.class, () -> escrowService.splitSettleByOrder(orderId, 50, 50, "Note"));
+
+        // 4. escrow not found
+        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+        when(escrowRepository.findByOrderIdForUpdate(orderId)).thenReturn(Optional.empty());
+        assertThrows(CustomException.class, () -> escrowService.splitSettleByOrder(orderId, 50, 50, "Note"));
+
+        // 5. escrow already RELEASED or REFUNDED
+        escrow.setStatus(EscrowStatus.RELEASED);
+        when(escrowRepository.findByOrderIdForUpdate(orderId)).thenReturn(Optional.of(escrow));
+        assertThrows(CustomException.class, () -> escrowService.splitSettleByOrder(orderId, 50, 50, "Note"));
+
+        // 6. escrow status not HELD / DISPUTED
+        escrow.setStatus(EscrowStatus.CANCELED);
+        assertThrows(CustomException.class, () -> escrowService.splitSettleByOrder(orderId, 50, 50, "Note"));
+
+        // 7. commission > totalAmount
+        escrow.setStatus(EscrowStatus.DISPUTED);
+        escrow.setAmount(new BigDecimal("100000"));
+        escrow.setEscrowWallet(escrowWallet);
+        escrow.setBuyerWallet(buyerWallet);
+        escrow.setSellerWallet(sellerWallet);
+        order.setPlatformCommission(new BigDecimal("150000"));
+        assertThrows(CustomException.class, () -> escrowService.splitSettleByOrder(orderId, 50, 50, "Note"));
+    }
+
+    @Test
+    @DisplayName("splitSettleByOrder: Thành công phân chia tỷ lệ 50-50 kèm hoa hồng và cập nhật COD payment")
+    void testSplitSettleByOrder_Success_WithCodPayment() {
+        order.setPlatformCommission(new BigDecimal("50000"));
+        order.setPaymentMethod(PaymentMethod.COD);
+        escrow.setStatus(EscrowStatus.DISPUTED);
+        escrow.setAmount(new BigDecimal("1050000")); // netAmount = 1.000.000
+        escrow.setEscrowWallet(escrowWallet);
+        escrow.setBuyerWallet(buyerWallet);
+        escrow.setSellerWallet(null); // triggers orElseGet seller wallet branch
+
+        escrowWallet.setLockedBalance(new BigDecimal("1050000"));
+        escrowWallet.setAvailableBalance(BigDecimal.ZERO);
+        buyerWallet.setAvailableBalance(BigDecimal.ZERO);
+        sellerWallet.setAvailableBalance(BigDecimal.ZERO);
+
+        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+        when(escrowRepository.findByOrderIdForUpdate(orderId)).thenReturn(Optional.of(escrow));
+        when(walletRepository.findByUserIdForUpdate(seller.getId())).thenReturn(Optional.of(sellerWallet));
+        when(transactionRepository.existsByDedupeKey(any())).thenReturn(false);
+
+        Payment codPayment = Payment.builder().order(order).status(PaymentStatus.PENDING).build();
+        when(paymentRepository.findByOrderId(orderId)).thenReturn(Optional.of(codPayment));
+
+        escrowService.splitSettleByOrder(orderId, 50, 50, "Admin split 50-50");
+
+        assertEquals(new BigDecimal("50000"), escrowWallet.getAvailableBalance()); // commission
+        assertEquals(new BigDecimal("500000"), buyerWallet.getAvailableBalance());
+        assertEquals(new BigDecimal("500000"), sellerWallet.getAvailableBalance());
+        assertEquals(EscrowStatus.RELEASED, escrow.getStatus());
+        assertEquals(OrderStatus.REFUNDED, order.getStatus());
+        assertEquals(PaymentStatus.SUCCESS, codPayment.getStatus());
+    }
+
+    @Test
+    @DisplayName("getSettlementByOrderId: Trả về null khi orderId null hoặc không tìm thấy escrow, và trả về SettlementInfo khi thành công")
+    void testGetSettlementByOrderId() {
+        assertNull(escrowService.getSettlementByOrderId(null));
+
+        when(escrowRepository.findByOrderId(orderId)).thenReturn(Optional.empty());
+        assertNull(escrowService.getSettlementByOrderId(orderId));
+
+        escrow.setAmount(new BigDecimal("500000"));
+        when(escrowRepository.findByOrderId(orderId)).thenReturn(Optional.of(escrow));
+        Transaction tx = Transaction.builder().type(TransactionType.RELEASE).amount(new BigDecimal("500000")).build();
+        when(transactionRepository.findByReferenceTypeAndReferenceId(eq(ReferenceType.ESCROW), eq(escrow.getId())))
+                .thenReturn(List.of(tx));
+
+        com.marketplace.ecommerce.payment.dto.SettlementInfo info = escrowService.getSettlementByOrderId(orderId);
+        assertNotNull(info);
+    }
 }
+

@@ -271,4 +271,93 @@ class AccountDisciplineServiceImplTest {
         assertNull(result.getSuspendedUntil());
         verify(accountRepository).save(account);
     }
+
+    @Test
+    @DisplayName("10. checkAndReconcileSuspension(UUID): accountId là null trả về null")
+    void checkAndReconcileSuspension_ByUUID_NullId_ReturnsNull() {
+        assertNull(accountDisciplineService.checkAndReconcileSuspension((UUID) null, LocalDateTime.now()));
+        verify(accountRepository, never()).findById(any());
+    }
+
+    @Test
+    @DisplayName("11. checkAndReconcileSuspension(UUID): Không tìm thấy Account trong DB trả về null")
+    void checkAndReconcileSuspension_ByUUID_NotFound_ReturnsNull() {
+        UUID id = UUID.randomUUID();
+        when(accountRepository.findById(id)).thenReturn(Optional.empty());
+
+        assertNull(accountDisciplineService.checkAndReconcileSuspension(id, LocalDateTime.now()));
+        verify(accountRepository).findById(id);
+    }
+
+    @Test
+    @DisplayName("12. checkAndReconcileSuspension(UUID): Tìm thấy Account hợp lệ thì thực hiện reconcile")
+    void checkAndReconcileSuspension_ByUUID_Found_Reconciles() {
+        UUID id = UUID.randomUUID();
+        LocalDateTime now = LocalDateTime.now();
+        Account acc = Account.builder()
+                .id(id)
+                .status(AccountStatus.SUSPENDED)
+                .disciplineLevel(DisciplineLevel.SUSPENDED)
+                .suspendedUntil(now.minusDays(1))
+                .build();
+
+        when(accountRepository.findById(id)).thenReturn(Optional.of(acc));
+        when(accountRepository.save(any(Account.class))).thenAnswer(i -> i.getArgument(0));
+
+        Account res = accountDisciplineService.checkAndReconcileSuspension(id, now);
+
+        assertNotNull(res);
+        assertEquals(AccountStatus.ACTIVE, res.getStatus());
+        assertEquals(DisciplineLevel.WARNED, res.getDisciplineLevel());
+    }
+
+    @Test
+    @DisplayName("13. checkAndReconcileSuspension(Account): account là null trả về null")
+    void checkAndReconcileSuspension_NullAccount_ReturnsNull() {
+        assertNull(accountDisciplineService.checkAndReconcileSuspension((Account) null, LocalDateTime.now()));
+    }
+
+    @Test
+    @DisplayName("14. checkAndReconcileSuspension: Account đang ACTIVE và NONE (không bị SUSPENDED) thì giữ nguyên")
+    void checkAndReconcileSuspension_NotSuspended_ReturnsSame() {
+        Account normalAcc = Account.builder()
+                .id(UUID.randomUUID())
+                .status(AccountStatus.ACTIVE)
+                .disciplineLevel(DisciplineLevel.NONE)
+                .build();
+
+        Account res = accountDisciplineService.checkAndReconcileSuspension(normalAcc, LocalDateTime.now());
+
+        assertSame(normalAcc, res);
+        verify(accountRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("15. checkAndReconcileSuspension: Account có status DELETED thì không can thiệp")
+    void checkAndReconcileSuspension_DeletedAccount_ReturnsSame() {
+        Account deletedAcc = Account.builder()
+                .id(UUID.randomUUID())
+                .status(AccountStatus.DELETED)
+                .disciplineLevel(DisciplineLevel.SUSPENDED)
+                .suspendedUntil(LocalDateTime.now().minusDays(1))
+                .build();
+
+        Account res = accountDisciplineService.checkAndReconcileSuspension(deletedAcc, LocalDateTime.now());
+
+        assertSame(deletedAcc, res);
+        verify(accountRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("16. processExpiredSuspensions: Xử lý ngoại lệ trong vòng lặp an toàn, không làm crash daemon")
+    void processExpiredSuspensions_ExceptionInLoop_HandledGracefully() {
+        UUID accId = UUID.randomUUID();
+        Account expiredAcc = Account.builder().id(accId).build();
+
+        when(accountRepository.findExpiredSuspensions(eq(AccountStatus.SUSPENDED), eq(DisciplineLevel.SUSPENDED), any(LocalDateTime.class)))
+                .thenReturn(List.of(expiredAcc));
+        when(accountRepository.findByIdForUpdate(accId)).thenThrow(new RuntimeException("DB Connection Timeout"));
+
+        assertDoesNotThrow(() -> accountDisciplineService.processExpiredSuspensions());
+    }
 }

@@ -182,21 +182,47 @@
 				<version>0.8.12</version>
 				<configuration>
 					<excludes>
-						<!-- Loại trừ các class boilerplate để số liệu coverage chính xác cho business logic -->
-						<exclude>**/controller/**</exclude>
-						<exclude>**/websocket/**</exclude>
-						<exclude>**/config/**</exclude>
+						<!-- DTO, Request/Response, Entity, Model -->
 						<exclude>**/dto/**</exclude>
+						<exclude>**/*DTO*</exclude>
+						<exclude>**/*Request*</exclude>
+						<exclude>**/*Response*</exclude>
 						<exclude>**/entity/**</exclude>
+						<exclude>**/*Entity*</exclude>
+						<exclude>**/model/**</exclude>
+						<exclude>**/*Model*</exclude>
+
+						<!-- Enums, Constants, Value Objects -->
 						<exclude>**/valueObjects/**</exclude>
 						<exclude>**/enums/**</exclude>
 						<exclude>**/constant/**</exclude>
+						<exclude>**/*Constant*</exclude>
+
+						<!-- Configs, Initializers & Seeders -->
+						<exclude>**/config/**</exclude>
+						<exclude>**/*Config*</exclude>
+						<exclude>**/*Configuration*</exclude>
+						<exclude>**/seed/**</exclude>
+						<exclude>**/*Seeder*</exclude>
+
+						<!-- Exceptions -->
 						<exclude>**/exception/**</exclude>
-						<exclude>**/EcommerceApplication.class</exclude>
+						<exclude>**/*Exception*</exclude>
+
+						<!-- Application Main Class -->
+						<exclude>**/EcommerceApplication*</exclude>
+						<exclude>**/*Application*</exclude>
+
+						<!-- Các class phụ trợ không chứa business logic -->
+						<exclude>**/controller/**</exclude>
+						<exclude>**/*Controller*</exclude>
+						<exclude>**/websocket/**</exclude>
+						<exclude>**/common/**</exclude>
 					</excludes>
 				</configuration>
 				<executions>
 					<execution>
+						<id>prepare-agent</id>
 						<goals>
 							<goal>prepare-agent</goal>
 						</goals>

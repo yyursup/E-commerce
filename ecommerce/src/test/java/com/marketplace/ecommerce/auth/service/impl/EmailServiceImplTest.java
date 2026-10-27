@@ -12,19 +12,16 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.thymeleaf.TemplateEngine;
-import org.thymeleaf.context.Context;
+import org.thymeleaf.templateresolver.StringTemplateResolver;
 
 import java.util.Optional;
 import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -35,12 +32,10 @@ class EmailServiceImplTest {
     private AccountRepository accountRepository;
 
     @Mock
-    private TemplateEngine templateEngine;
-
-    @Mock
     private JavaMailSender javaMailSender;
 
-    @InjectMocks
+    private TemplateEngine templateEngine;
+
     private EmailServiceImpl emailService;
 
     private Account sampleAccount;
@@ -48,6 +43,13 @@ class EmailServiceImplTest {
 
     @BeforeEach
     void setUp() {
+        org.thymeleaf.spring6.SpringTemplateEngine springEngine = new org.thymeleaf.spring6.SpringTemplateEngine();
+        StringTemplateResolver resolver = new StringTemplateResolver();
+        springEngine.setTemplateResolver(resolver);
+        templateEngine = springEngine;
+
+        emailService = new EmailServiceImpl(accountRepository, templateEngine, javaMailSender);
+
         sampleAccount = new Account();
         sampleAccount.setEmail("customer@example.com");
 
@@ -109,7 +111,6 @@ class EmailServiceImplTest {
     @Test
     @DisplayName("sendOtpForVerifyAccount gửi email đăng ký thành công")
     void testSendOtpForVerifyAccount_Success() {
-        when(templateEngine.process(eq("REGIS"), any(Context.class))).thenReturn("<html>Hello</html>");
         MimeMessage mimeMessage = new MimeMessage(Session.getInstance(new Properties()));
         when(javaMailSender.createMimeMessage()).thenReturn(mimeMessage);
 
@@ -122,7 +123,6 @@ class EmailServiceImplTest {
     @Test
     @DisplayName("sendOtpForVerifyAccount bắt lỗi MessagingException an toàn khi địa chỉ email không hợp lệ")
     void testSendOtpForVerifyAccount_MessagingException() {
-        when(templateEngine.process(eq("REGIS"), any(Context.class))).thenReturn("<html>Hello</html>");
         MimeMessage mimeMessage = new MimeMessage(Session.getInstance(new Properties()));
         when(javaMailSender.createMimeMessage()).thenReturn(mimeMessage);
 
@@ -138,7 +138,6 @@ class EmailServiceImplTest {
     @Test
     @DisplayName("sendOtpForForgotPassword gửi email quên mật khẩu thành công")
     void testSendOtpForForgotPassword_Success() {
-        when(templateEngine.process(eq("FORGOT_PASSWORD"), any(Context.class))).thenReturn("<html>Reset</html>");
         MimeMessage mimeMessage = new MimeMessage(Session.getInstance(new Properties()));
         when(javaMailSender.createMimeMessage()).thenReturn(mimeMessage);
 
@@ -151,7 +150,6 @@ class EmailServiceImplTest {
     @Test
     @DisplayName("sendOtpForForgotPassword bắt lỗi MessagingException an toàn khi email không hợp lệ")
     void testSendOtpForForgotPassword_MessagingException() {
-        when(templateEngine.process(eq("FORGOT_PASSWORD"), any(Context.class))).thenReturn("<html>Reset</html>");
         MimeMessage mimeMessage = new MimeMessage(Session.getInstance(new Properties()));
         when(javaMailSender.createMimeMessage()).thenReturn(mimeMessage);
 
@@ -177,7 +175,6 @@ class EmailServiceImplTest {
 
         // thành công
         when(accountRepository.findByEmail("customer@example.com")).thenReturn(Optional.of(sampleAccount));
-        when(templateEngine.process(eq("REGIS"), any(Context.class))).thenReturn("<html>Hello</html>");
         MimeMessage mimeMessage = new MimeMessage(Session.getInstance(new Properties()));
         when(javaMailSender.createMimeMessage()).thenReturn(mimeMessage);
 

@@ -4,12 +4,28 @@ import { isVideoUrl } from '../../../../lib/mediaUtils'
 
 export default function AdminReportSingleClaim({
   detailModal,
+  targetType,
   evImgs = [],
   covImgs = [],
   isDark,
   setPreviewImage,
 }) {
   const desc = detailModal.data?.description || detailModal.rawItem?.description || 'Không có mô tả chi tiết'
+
+  const systemImageLabel = (() => {
+    switch (targetType) {
+      case 'PRODUCT':
+        return 'Hình ảnh sản phẩm trên hệ thống'
+      case 'SHOP':
+        return 'Logo / Ảnh nhận diện gian hàng'
+      case 'USER':
+        return 'Ảnh đại diện tài khoản'
+      case 'REVIEW':
+        return 'Hình ảnh bài đánh giá / sản phẩm'
+      default:
+        return 'Hình ảnh minh họa đối tượng'
+    }
+  })()
 
   const renderSingleMediaItem = (imgUrl, altText, borderClass) => {
     const isVid = isVideoUrl(imgUrl)
@@ -52,6 +68,22 @@ export default function AdminReportSingleClaim({
 
   return (
     <div className="space-y-4">
+      {evImgs.length === 0 && covImgs.length > 0 && (
+        <div
+          className={cn(
+            'p-3 rounded-2xl border text-xs flex items-center gap-2.5',
+            isDark
+              ? 'border-sky-500/30 bg-sky-500/10 text-sky-300'
+              : 'border-sky-200 bg-sky-50 text-sky-800',
+          )}
+        >
+          <span className="text-base select-none">ℹ️</span>
+          <span className="leading-relaxed">
+            Người tố cáo không gửi ảnh bằng chứng. Dưới đây là hình ảnh và thông tin đối tượng thực tế do hệ thống tự động ghi nhận để đối soát.
+          </span>
+        </div>
+      )}
+
       <div className="space-y-1.5">
         <label className="text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-slate-400">
           Mô tả vi phạm từ người tố cáo:
@@ -92,14 +124,14 @@ export default function AdminReportSingleClaim({
           <div className="flex items-center justify-between">
             <label className="text-xs font-bold uppercase tracking-wider text-blue-500 dark:text-blue-400 flex items-center gap-1.5">
               <span className="h-2 w-2 rounded-full bg-blue-500 inline-block" />
-              Hình ảnh minh họa sản phẩm / gian hàng ({covImgs.length} tệp):
+              {systemImageLabel} ({covImgs.length} tệp):
             </label>
             <span className="text-[11px] text-stone-400">Ảnh hệ thống ghi nhận</span>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
             {covImgs.map((imgUrl, idx) => (
               <div key={idx}>
-                {renderSingleMediaItem(imgUrl, `Minh họa shop ${idx + 1}`, 'border-blue-500/25')}
+                {renderSingleMediaItem(imgUrl, `${systemImageLabel} ${idx + 1}`, 'border-blue-500/25')}
               </div>
             ))}
           </div>

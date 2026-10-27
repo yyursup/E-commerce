@@ -34,6 +34,10 @@ import com.marketplace.ecommerce.payment.dto.EscrowAdminResponse;
 import com.marketplace.ecommerce.payment.repository.EscrowRepository;
 import com.marketplace.ecommerce.request.valueObjects.DisputeSellerAction;
 import com.marketplace.ecommerce.shop.service.ShopEscrowFundService;
+import com.marketplace.ecommerce.auth.entity.User;
+import com.marketplace.ecommerce.auth.repository.UserRepository;
+import com.marketplace.ecommerce.product.entity.ProductImage;
+import com.marketplace.ecommerce.review.entity.ReviewImage;
 import com.marketplace.ecommerce.file.service.FileService;
 import org.springframework.web.multipart.MultipartFile;
 import lombok.RequiredArgsConstructor;
@@ -66,6 +70,7 @@ public class RequestServiceImpl implements RequestService {
     private final ReportRepository reportRepository;
     private final SellerRepository sellerRepository;
     private final AccountRepository accountRepository;
+    private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final RequestPolicy requestValidation;
     private final ShopService shopService;
@@ -235,6 +240,7 @@ public class RequestServiceImpl implements RequestService {
                 }
                 String targetName = "Không xác định";
                 String targetInfo = "";
+                String coverImageUrl = r.getCoverImageUrl();
                 EscrowAdminResponse escrowDto = null;
                 OrderReturnResponse orderReturnDto = null;
                 String sellerResponse = rep.getSellerResponse();
@@ -248,8 +254,27 @@ public class RequestServiceImpl implements RequestService {
                             if (shopOpt.isPresent()) {
                                 var s = shopOpt.get();
                                 targetName = s.getName();
-                                targetInfo = "SĐT: " + (s.getPhoneNumber() != null ? s.getPhoneNumber() : "N/A")
-                                        + " | Địa chỉ: " + (s.getAddress() != null ? s.getAddress() : "N/A");
+                                String ownerInfo = "N/A";
+                                if (s.getUser() != null) {
+                                    String ownerName = s.getUser().getFullName();
+                                    String ownerEmail = s.getUser().getAccount() != null ? s.getUser().getAccount().getEmail() : null;
+                                    ownerInfo = ownerName != null ? (ownerEmail != null ? ownerName + " (" + ownerEmail + ")" : ownerName) : (ownerEmail != null ? ownerEmail : "N/A");
+                                }
+                                targetInfo = "Chủ gian hàng: " + ownerInfo
+                                        + " | SĐT: " + (s.getPhoneNumber() != null ? s.getPhoneNumber() : "N/A")
+                                        + " | Địa chỉ: " + (s.getAddress() != null ? s.getAddress() : "N/A")
+                                        + (s.getTaxCode() != null && !s.getTaxCode().isBlank() ? " | MST: " + s.getTaxCode() : "")
+                                        + " | Đánh giá: " + (s.getAverageRating() != null ? String.format("%.1f", s.getAverageRating()) + "★" : "0★")
+                                        + " | Điểm vi phạm: " + (s.getViolationCount() != null ? s.getViolationCount() : 0) + " lần"
+                                        + " | Trạng thái: " + s.getStatus();
+
+                                if (coverImageUrl == null || coverImageUrl.isBlank()) {
+                                    if (s.getLogoUrl() != null && !s.getLogoUrl().isBlank()) {
+                                        coverImageUrl = s.getLogoUrl();
+                                    } else if (s.getCoverImageUrl() != null && !s.getCoverImageUrl().isBlank()) {
+                                        coverImageUrl = s.getCoverImageUrl();
+                                    }
+                                }
                             }
                         }
                         case PRODUCT -> {
@@ -257,18 +282,66 @@ public class RequestServiceImpl implements RequestService {
                             if (prodOpt.isPresent()) {
                                 var p = prodOpt.get();
                                 targetName = p.getName();
-                                targetInfo = "SKU: " + (p.getSku() != null ? p.getSku() : "N/A")
-                                        + " | Gian hàng: " + (p.getShop() != null ? p.getShop().getName() : "N/A")
-                                        + " | Giá: " + (p.getBasePrice() != null ? p.getBasePrice() + " đ" : "");
+                                String categoryName = p.getProductCategory() != null ? p.getProductCategory().getName() : "N/A";
+                                String shopName = p.getShop() != null ? p.getShop().getName() : "N/A";
+                                targetInfo = "Gian hàng: " + shopName
+                                        + " | Danh mục: " + categoryName
+                                        + " | SKU: " + (p.getSku() != null ? p.getSku() : "N/A")
+                                        + " | Giá: " + (p.getBasePrice() != null ? p.getBasePrice() + " đ" : "")
+                                        + " | Tồn kho: " + (p.getQuantity() != null ? p.getQuantity() : 0)
+                                        + " | Đã bán: " + (p.getSold() != null ? p.getSold() : 0)
+                                        + " | Trạng thái: " + p.getStatus();
+
+                                if (coverImageUrl == null || coverImageUrl.isBlank()) {
+                                    if (p.getImages() != null && !p.getImages().isEmpty()) {
+                                        String prodImg = p.getImages().stream()
+                                                .filter(img -> Boolean.TRUE.equals(img.getIsThumbnail()))
+                                                .map(ProductImage::getImageUrl)
+                                                .findFirst()
+                                                .orElseGet(() -> p.getImages().stream().map(ProductImage::getImageUrl).findFirst().orElse(null));
+                                        if (prodImg != null && !prodImg.isBlank()) {
+                                            coverImageUrl = prodImg;
+                                        }
+                                    }
+                                }
                             }
                         }
                         case USER -> {
                             var accOpt = accountRepository.findById(rep.getTargetId());
                             if (accOpt.isPresent()) {
                                 var a = accOpt.get();
-                                targetName = a.getEmail();
-                                targetInfo = "Số lần vi phạm: " + a.getViolationCount() + " lần"
+                                var uOpt = userRepository.findByAccountId(a.getId());
+                                String fullName = uOpt.map(User::getFullName).filter(s -> !s.isBlank()).orElse(null);
+                                targetName = fullName != null ? fullName + " (" + a.getEmail() + ")" : a.getEmail();
+                                targetInfo = "SĐT: " + uOpt.map(User::getPhoneNumber).orElse("N/A")
+                                        + " | Cấp kỷ luật: " + (a.getDisciplineLevel() != null ? a.getDisciplineLevel() : "NORMAL")
+                                        + " | Số lần vi phạm: " + a.getViolationCount() + " lần"
                                         + " | Trạng thái: " + a.getStatus();
+
+                                if (coverImageUrl == null || coverImageUrl.isBlank()) {
+                                    coverImageUrl = uOpt.map(User::getAvatarUrl).filter(url -> url != null && !url.isBlank()).orElse(null);
+                                }
+                            } else {
+                                var uOpt = userRepository.findById(rep.getTargetId());
+                                if (uOpt.isPresent()) {
+                                    var u = uOpt.get();
+                                    var a = u.getAccount();
+                                    String fullName = u.getFullName();
+                                    String email = a != null ? a.getEmail() : null;
+                                    if (fullName != null && !fullName.isBlank()) {
+                                        targetName = email != null ? fullName + " (" + email + ")" : fullName;
+                                    } else {
+                                        targetName = email != null ? email : "Người dùng #" + u.getId();
+                                    }
+                                    targetInfo = "SĐT: " + (u.getPhoneNumber() != null ? u.getPhoneNumber() : "N/A")
+                                            + " | Cấp kỷ luật: " + (a != null && a.getDisciplineLevel() != null ? a.getDisciplineLevel() : "NORMAL")
+                                            + " | Số lần vi phạm: " + (a != null ? a.getViolationCount() : 0) + " lần"
+                                            + " | Trạng thái: " + (a != null ? a.getStatus() : "ACTIVE");
+
+                                    if (coverImageUrl == null || coverImageUrl.isBlank()) {
+                                        coverImageUrl = u.getAvatarUrl();
+                                    }
+                                }
                             }
                         }
                         case REVIEW -> {
@@ -276,7 +349,32 @@ public class RequestServiceImpl implements RequestService {
                             if (revOpt.isPresent()) {
                                 var rv = revOpt.get();
                                 targetName = "Đánh giá " + rv.getRating() + " sao";
-                                targetInfo = "Nội dung: " + (rv.getComment() != null ? rv.getComment() : "");
+                                String prodName = rv.getProduct() != null ? rv.getProduct().getName() : "N/A";
+                                String reviewerName = "N/A";
+                                if (rv.getUser() != null) {
+                                    String name = rv.getUser().getFullName();
+                                    String email = rv.getUser().getAccount() != null ? rv.getUser().getAccount().getEmail() : null;
+                                    reviewerName = name != null ? (email != null ? name + " (" + email + ")" : name) : (email != null ? email : "N/A");
+                                }
+                                targetInfo = "Sản phẩm: " + prodName
+                                        + " | Người đánh giá: " + reviewerName
+                                        + " | Đánh giá: " + rv.getRating() + "★"
+                                        + " | Nội dung: " + (rv.getComment() != null ? rv.getComment() : "");
+
+                                if (coverImageUrl == null || coverImageUrl.isBlank()) {
+                                    if (rv.getImages() != null && !rv.getImages().isEmpty()) {
+                                        coverImageUrl = rv.getImages().stream()
+                                                .map(ReviewImage::getImageUrl)
+                                                .filter(url -> url != null && !url.isBlank())
+                                                .collect(Collectors.joining(","));
+                                    } else if (rv.getProduct() != null && rv.getProduct().getImages() != null && !rv.getProduct().getImages().isEmpty()) {
+                                        coverImageUrl = rv.getProduct().getImages().stream()
+                                                .filter(img -> Boolean.TRUE.equals(img.getIsThumbnail()))
+                                                .map(ProductImage::getImageUrl)
+                                                .findFirst()
+                                                .orElseGet(() -> rv.getProduct().getImages().stream().map(ProductImage::getImageUrl).findFirst().orElse(null));
+                                    }
+                                }
                             }
                         }
                         case ORDER -> {
@@ -313,6 +411,7 @@ public class RequestServiceImpl implements RequestService {
                         .targetId(rep.getTargetId())
                         .targetType(rep.getTargetType() != null ? TargetType.valueOf(rep.getTargetType().name()) : null)
                         .evidenceUrl(rep.getEvidenceUrl())
+                        .coverImageUrl(coverImageUrl)
                         .moderatorNote(rep.getModeratorNote())
                         .targetName(targetName)
                         .targetInfo(targetInfo)

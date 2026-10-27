@@ -1,7 +1,5 @@
 package com.marketplace.ecommerce.platform.policy.service;
 
-import com.marketplace.ecommerce.platform.policy.dto.DisputePolicyClauseRequest;
-import com.marketplace.ecommerce.platform.policy.dto.DisputePolicyClauseResponse;
 import com.marketplace.ecommerce.platform.policy.dto.PlatformPolicyRequest;
 import com.marketplace.ecommerce.platform.policy.dto.PlatformPolicyResponse;
 
@@ -24,14 +22,6 @@ public interface PlatformPolicyService {
 
     void deletePolicy(UUID id);
 
-    // === Dispute Policy Clauses ===
-    List<DisputePolicyClauseResponse> getActiveDisputeClauses(String category);
-
-    List<DisputePolicyClauseResponse> getAllDisputeClausesAdmin();
-
-    DisputePolicyClauseResponse createDisputeClause(DisputePolicyClauseRequest req);
-
-    DisputePolicyClauseResponse updateDisputeClause(UUID id, DisputePolicyClauseRequest req);
-
-    void deleteDisputeClause(UUID id);
+    // === Validation for Dispute Resolution ===
+    PlatformPolicyResponse validateDisputeClause(String clauseCode, String decision, boolean isSellerReturnDispute);
 }

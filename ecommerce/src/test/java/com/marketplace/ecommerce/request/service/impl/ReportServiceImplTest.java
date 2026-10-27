@@ -35,6 +35,14 @@ import com.marketplace.ecommerce.review.valueObjects.ReviewStatus;
 import com.marketplace.ecommerce.shop.entity.Shop;
 import com.marketplace.ecommerce.shop.repository.ShopRepository;
 import com.marketplace.ecommerce.shop.valueObjects.ShopStatus;
+import com.marketplace.ecommerce.auth.repository.UserRepository;
+import com.marketplace.ecommerce.auth.service.AccountDisciplineService;
+import com.marketplace.ecommerce.chat.service.ChatService;
+import com.marketplace.ecommerce.notification.repository.NotificationRepository;
+import com.marketplace.ecommerce.order.service.OrderReturnService;
+import com.marketplace.ecommerce.platform.policy.dto.PlatformPolicyResponse;
+import com.marketplace.ecommerce.platform.policy.service.PlatformPolicyService;
+import com.marketplace.ecommerce.shop.service.ShopEscrowFundService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -42,6 +50,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -49,10 +60,12 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class ReportServiceImplTest {
 
     @Mock
@@ -79,6 +92,20 @@ class ReportServiceImplTest {
     private OrderReturnRepository orderReturnRepository;
     @Mock
     private EscrowService escrowService;
+    @Mock
+    private OrderReturnService orderReturnService;
+    @Mock
+    private ShopEscrowFundService shopEscrowFundService;
+    @Mock
+    private NotificationRepository notificationRepository;
+    @Mock
+    private UserRepository userRepository;
+    @Mock
+    private ChatService chatService;
+    @Mock
+    private AccountDisciplineService accountDisciplineService;
+    @Mock
+    private PlatformPolicyService platformPolicyService;
 
     @InjectMocks
     private ReportServiceImpl reportService;
@@ -91,6 +118,23 @@ class ReportServiceImplTest {
 
     @BeforeEach
     void setUp() {
+        ReflectionTestUtils.setField(reportService, "platformPolicyService", platformPolicyService);
+
+        lenient().when(accountDisciplineService.checkAndReconcileSuspension(any(Account.class), any(LocalDateTime.class)))
+                .thenAnswer(i -> i.getArgument(0));
+        lenient().when(accountDisciplineService.checkAndReconcileSuspension(any(UUID.class), any(LocalDateTime.class)))
+                .thenAnswer(i -> null);
+
+        lenient().when(platformPolicyService.validateDisputeClause(any(), any(), anyBoolean()))
+                .thenAnswer(invocation -> {
+                    String code = invocation.getArgument(0);
+                    if (code == null) return null;
+                    return PlatformPolicyResponse.builder()
+                            .policyKey(code)
+                            .title("Chính sách " + code)
+                            .build();
+                });
+
         adminAccountId = UUID.randomUUID();
         requestId = UUID.randomUUID();
 
@@ -108,7 +152,11 @@ class ReportServiceImplTest {
         report = Report.builder()
                 .id(requestId)
                 .request(request)
+                .stage(ReportStage.ESCALATED_TO_ADMIN)
                 .build();
+
+        when(accountDisciplineService.checkAndReconcileSuspension(any(Account.class), any(LocalDateTime.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
     }
 
     @Test
@@ -133,28 +181,36 @@ class ReportServiceImplTest {
         HandleReportRequest approveReq = HandleReportRequest.builder()
                 .decision(ReportDecision.APPROVE)
                 .note("Xử lý vi phạm")
+                .policyClauseCode("PRODUCT_LISTING_AND_PROHIBITED_ITEMS")
                 .resolutionType(ResolutionType.RETURN_AND_REFUND)
                 .build();
 
         reportService.handleReport(adminAccountId, requestId, approveReq);
         assertEquals(2, targetAcc.getViolationCount());
         assertEquals(DisciplineLevel.NONE, targetAcc.getDisciplineLevel());
+        assertEquals("PRODUCT_LISTING_AND_PROHIBITED_ITEMS", report.getPolicyClauseCode());
+        assertEquals("Chính sách PRODUCT_LISTING_AND_PROHIBITED_ITEMS", report.getPolicyClauseTitle());
 
         // 2. SHOP -> WARNED, SUSPENDED, BANNED
         UUID shopId = UUID.randomUUID();
-        Shop shop = Shop.builder().id(shopId).status(ShopStatus.ACTIVE).build();
+        Shop shop = Shop.builder().id(shopId).status(ShopStatus.ACTIVE).violationCount(0).build();
         report.setTargetType(TargetType.SHOP);
         report.setTargetId(shopId);
+        report.setStage(null);
         when(shopRepository.findByIdForUpdate(shopId)).thenReturn(Optional.of(shop));
-        when(requestPolicy.resolveTargetAccountId(TargetType.SHOP, shopId)).thenReturn(targetUserId);
 
         request.setStatus(RequestStatus.PENDING);
+        report.setStage(ReportStage.ESCALATED_TO_ADMIN);
+        shop.setStatus(ShopStatus.ACTIVE);
+        shop.setViolationCount(2);
         targetAcc.setViolationCount(2);
         targetAcc.setLastViolationAt(null);
         reportService.handleReport(adminAccountId, requestId, approveReq);
         assertEquals(ShopStatus.WARNED, shop.getStatus());
 
         request.setStatus(RequestStatus.PENDING);
+        report.setStage(ReportStage.ESCALATED_TO_ADMIN);
+        shop.setViolationCount(4);
         targetAcc.setViolationCount(4);
         targetAcc.setLastViolationAt(null);
         reportService.handleReport(adminAccountId, requestId, approveReq);
@@ -162,6 +218,8 @@ class ReportServiceImplTest {
         verify(productRepository).updateStatusByShopId(shopId, ProductStatus.INACTIVE);
 
         request.setStatus(RequestStatus.PENDING);
+        report.setStage(ReportStage.ESCALATED_TO_ADMIN);
+        shop.setViolationCount(6);
         targetAcc.setViolationCount(6);
         targetAcc.setLastViolationAt(null);
         reportService.handleReport(adminAccountId, requestId, approveReq);
@@ -178,10 +236,11 @@ class ReportServiceImplTest {
                 .build();
         report.setTargetType(TargetType.PRODUCT);
         report.setTargetId(prodId);
+        report.setStage(null);
         when(productRepository.findByIdForUpdate(prodId)).thenReturn(Optional.of(product));
-        when(requestPolicy.resolveTargetAccountId(TargetType.PRODUCT, prodId)).thenReturn(targetUserId);
 
         request.setStatus(RequestStatus.PENDING);
+        report.setStage(ReportStage.ESCALATED_TO_ADMIN);
         targetAcc.setStatus(AccountStatus.ACTIVE);
         targetAcc.setDisciplineLevel(DisciplineLevel.NONE);
         targetAcc.setViolationCount(0);
@@ -190,6 +249,7 @@ class ReportServiceImplTest {
         assertTrue(product.isFlagged());
 
         request.setStatus(RequestStatus.PENDING);
+        report.setStage(ReportStage.ESCALATED_TO_ADMIN);
         product.setReportCount(4);
         product.setLastReportedAt(null);
         reportService.handleReport(adminAccountId, requestId, approveReq);
@@ -200,10 +260,12 @@ class ReportServiceImplTest {
         Review review = Review.builder().id(reviewId).status(ReviewStatus.ACTIVE).reportCount(4).build();
         report.setTargetType(TargetType.REVIEW);
         report.setTargetId(reviewId);
+        report.setStage(null);
         when(reviewRepository.findByIdForUpdate(reviewId)).thenReturn(Optional.of(review));
         when(requestPolicy.resolveTargetAccountId(TargetType.REVIEW, reviewId)).thenReturn(targetUserId);
 
         request.setStatus(RequestStatus.PENDING);
+        report.setStage(ReportStage.ESCALATED_TO_ADMIN);
         targetAcc.setViolationCount(0);
         targetAcc.setLastViolationAt(null);
         reportService.handleReport(adminAccountId, requestId, approveReq);
@@ -212,15 +274,19 @@ class ReportServiceImplTest {
         // 5. ORDER (WARNED, SUSPENDED, BANNED + Escrow HELD -> DISPUTED)
         UUID orderId = UUID.randomUUID();
         shop.setStatus(ShopStatus.ACTIVE);
+        shop.setViolationCount(2);
         Order order = Order.builder().id(orderId).shop(shop).status(OrderStatus.DELIVERED).build();
         Escrow escrow = Escrow.builder().id(UUID.randomUUID()).status(EscrowStatus.HELD).build();
         report.setTargetType(TargetType.ORDER);
         report.setTargetId(orderId);
+        report.setStage(ReportStage.ESCALATED_TO_ADMIN);
         when(orderRepository.findByIdForUpdate(orderId)).thenReturn(Optional.of(order));
-        when(requestPolicy.resolveTargetAccountId(TargetType.ORDER, orderId)).thenReturn(targetUserId);
         when(escrowRepository.findByOrderIdForUpdate(orderId)).thenReturn(Optional.of(escrow));
 
         request.setStatus(RequestStatus.PENDING);
+        report.setStage(ReportStage.ESCALATED_TO_ADMIN);
+        shop.setStatus(ShopStatus.ACTIVE);
+        shop.setViolationCount(2);
         targetAcc.setViolationCount(2);
         targetAcc.setLastViolationAt(null);
         reportService.handleReport(adminAccountId, requestId, approveReq);
@@ -229,12 +295,16 @@ class ReportServiceImplTest {
         assertEquals(ResolutionType.RETURN_AND_REFUND, report.getResolutionType());
 
         request.setStatus(RequestStatus.PENDING);
+        report.setStage(ReportStage.ESCALATED_TO_ADMIN);
+        shop.setViolationCount(4);
         targetAcc.setViolationCount(4);
         targetAcc.setLastViolationAt(null);
         reportService.handleReport(adminAccountId, requestId, approveReq);
         assertEquals(ShopStatus.SUSPENDED, shop.getStatus());
 
         request.setStatus(RequestStatus.PENDING);
+        report.setStage(ReportStage.ESCALATED_TO_ADMIN);
+        shop.setViolationCount(6);
         targetAcc.setViolationCount(6);
         targetAcc.setLastViolationAt(null);
         reportService.handleReport(adminAccountId, requestId, approveReq);
@@ -250,14 +320,16 @@ class ReportServiceImplTest {
         UUID orderId = UUID.randomUUID();
         Account shopOwner = Account.builder().id(UUID.randomUUID()).violationCount(4).status(AccountStatus.SUSPENDED).build();
         User sellerUser = User.builder().id(UUID.randomUUID()).account(shopOwner).build();
-        Shop shop = Shop.builder().id(UUID.randomUUID()).user(sellerUser).status(ShopStatus.SUSPENDED).build();
+        Shop shop = Shop.builder().id(UUID.randomUUID()).user(sellerUser).status(ShopStatus.SUSPENDED).violationCount(4).build();
         Order order = Order.builder().id(orderId).shop(shop).status(OrderStatus.DELIVERED).build();
         OrderReturn orderReturn = OrderReturn.builder().id(UUID.randomUUID()).status(ReturnStatus.DISPUTED).conditionNote("Cũ").build();
         Escrow escrow = Escrow.builder().id(UUID.randomUUID()).status(EscrowStatus.DISPUTED).build();
 
         report.setTargetType(TargetType.ORDER);
         report.setTargetId(orderId);
+        report.setStage(ReportStage.ESCALATED_TO_ADMIN);
         report.setViolationReportId(UUID.randomUUID());
+        report.setStage(ReportStage.ESCALATED_TO_ADMIN);
 
         when(orderRepository.findByIdForUpdate(orderId)).thenReturn(Optional.of(order));
         when(orderReturnRepository.findByOrderIdForUpdate(orderId)).thenReturn(Optional.of(orderReturn));
@@ -267,21 +339,27 @@ class ReportServiceImplTest {
         HandleReportRequest approveReq = HandleReportRequest.builder()
                 .decision(ReportDecision.APPROVE)
                 .note("Shop đúng")
+                .policyClauseCode("CLAUSE_9_1_HARDWARE_FAULT")
                 .build();
         reportService.handleReport(adminAccountId, requestId, approveReq);
         assertEquals(ReturnStatus.CANCELLED, orderReturn.getStatus());
         assertEquals(OrderStatus.COMPLETED, order.getStatus());
-        assertEquals(3, shopOwner.getViolationCount());
+        assertEquals(4, shopOwner.getViolationCount());
+        assertEquals(3, shop.getViolationCount());
         assertEquals(ShopStatus.WARNED, shop.getStatus());
         verify(escrowService).releaseByOrder(orderId);
 
         // 2. Reject Seller Return Dispute
         request.setStatus(RequestStatus.PENDING);
+        report.setStage(ReportStage.ESCALATED_TO_ADMIN);
         request.setDescription("Shop khiếu nại kiện hàng hoàn");
-        report.setViolationReportId(null);
+        orderReturn.setStatus(ReturnStatus.DISPUTED);
+        report.setViolationReportId(UUID.randomUUID());
+        report.setStage(ReportStage.ESCALATED_TO_ADMIN);
         HandleReportRequest rejectReq = HandleReportRequest.builder()
                 .decision(ReportDecision.REJECT)
                 .note("Khách đúng")
+                .policyClauseCode("CLAUSE_9_1_HARDWARE_FAULT")
                 .build();
         reportService.handleReport(adminAccountId, requestId, rejectReq);
         assertEquals(ReturnStatus.COMPLETED, orderReturn.getStatus());
@@ -290,7 +368,12 @@ class ReportServiceImplTest {
 
         // 3. Normal Reject Request for ORDER
         request.setStatus(RequestStatus.PENDING);
+        report.setStage(ReportStage.ESCALATED_TO_ADMIN);
         request.setDescription("Báo cáo thường");
+        orderReturn.setStatus(ReturnStatus.COMPLETED);
+        report.setViolationReportId(null);
+        report.setStage(ReportStage.ESCALATED_TO_ADMIN);
+        when(orderReturnRepository.findByOrderIdForUpdate(orderId)).thenReturn(Optional.empty());
         escrow.setStatus(EscrowStatus.DISPUTED);
         reportService.handleReport(adminAccountId, requestId, rejectReq);
         assertEquals(RequestStatus.REJECTED, request.getStatus());
@@ -339,6 +422,7 @@ class ReportServiceImplTest {
 
         // Additional exception branches for handleReport targets
         request.setStatus(RequestStatus.PENDING);
+        report.setStage(ReportStage.ESCALATED_TO_ADMIN);
         report.setTargetType(TargetType.PRODUCT);
         UUID delProdId = UUID.randomUUID();
         report.setTargetId(delProdId);
@@ -378,7 +462,7 @@ class ReportServiceImplTest {
         when(accountRepository.findByIdForUpdate(missingTargetAccId)).thenReturn(Optional.empty());
         assertThrows(CustomException.class, () -> reportService.handleReport(adminAccountId, requestId, approveReq));
 
-        // Product decay to < 3 (unflagged) and ownerAccountId null
+        // Product decay to < 3 (unflagged)
         UUID prodDecayId = UUID.randomUUID();
         Product decayProd = Product.builder()
                 .id(prodDecayId)
@@ -389,25 +473,31 @@ class ReportServiceImplTest {
                 .build();
         report.setTargetType(TargetType.PRODUCT);
         report.setTargetId(prodDecayId);
+        report.setStage(null);
+        request.setStatus(RequestStatus.PENDING);
         when(productRepository.findByIdForUpdate(prodDecayId)).thenReturn(Optional.of(decayProd));
         when(requestPolicy.resolveTargetAccountId(TargetType.PRODUCT, prodDecayId)).thenReturn(null);
-        assertThrows(CustomException.class, () -> reportService.handleReport(adminAccountId, requestId, approveReq));
+        reportService.handleReport(adminAccountId, requestId, approveReq);
         assertFalse(decayProd.isFlagged());
 
-        // Order not found & ownerAccountId null in handleReportOrder
+        // Order not found in handleReportOrder
         UUID missingOrdId = UUID.randomUUID();
         report.setTargetType(TargetType.ORDER);
         report.setTargetId(missingOrdId);
+        report.setStage(ReportStage.ESCALATED_TO_ADMIN);
+        request.setStatus(RequestStatus.PENDING);
         when(orderRepository.findByIdForUpdate(missingOrdId)).thenReturn(Optional.empty());
         assertThrows(CustomException.class, () -> reportService.handleReport(adminAccountId, requestId, approveReq));
 
-        when(orderRepository.findByIdForUpdate(missingOrdId)).thenReturn(Optional.of(Order.builder().id(missingOrdId).build()));
-        when(requestPolicy.resolveTargetAccountId(TargetType.ORDER, missingOrdId)).thenReturn(null);
+        Shop bannedOrderShop = Shop.builder().id(UUID.randomUUID()).status(ShopStatus.BANNED).build();
+        Order ordBannedShop = Order.builder().id(missingOrdId).shop(bannedOrderShop).build();
+        when(orderRepository.findByIdForUpdate(missingOrdId)).thenReturn(Optional.of(ordBannedShop));
+        when(shopRepository.findByIdForUpdate(bannedOrderShop.getId())).thenReturn(Optional.of(bannedOrderShop));
         assertThrows(CustomException.class, () -> reportService.handleReport(adminAccountId, requestId, approveReq));
 
         // Seller Return Dispute with violationCount = 1 -> newViolationCount = 0 (< 3 -> ACTIVE / NONE) and null note
-        Account lowVioOwner = Account.builder().id(UUID.randomUUID()).violationCount(1).status(AccountStatus.ACTIVE).build();
-        Shop lowVioShop = Shop.builder().id(UUID.randomUUID()).user(User.builder().id(UUID.randomUUID()).account(lowVioOwner).build()).status(ShopStatus.WARNED).build();
+        Account lowVioOwner = Account.builder().id(UUID.randomUUID()).violationCount(1).disciplineLevel(DisciplineLevel.NONE).status(AccountStatus.ACTIVE).build();
+        Shop lowVioShop = Shop.builder().id(UUID.randomUUID()).user(User.builder().id(UUID.randomUUID()).account(lowVioOwner).build()).status(ShopStatus.WARNED).violationCount(1).build();
         Order lowVioOrd = Order.builder().id(missingOrdId).shop(lowVioShop).status(OrderStatus.DELIVERED).build();
         OrderReturn lowVioRet = OrderReturn.builder().id(UUID.randomUUID()).status(ReturnStatus.DISPUTED).conditionNote(null).build();
         report.setViolationReportId(UUID.randomUUID());

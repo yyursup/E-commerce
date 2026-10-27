@@ -21,6 +21,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.marketplace.ecommerce.auth.valueObjects.AccountStatus;
+import com.marketplace.ecommerce.shop.valueObjects.ShopStatus;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
@@ -198,5 +200,37 @@ class ReplyServiceImplTest {
         assertNotNull(res);
         assertEquals("Dạ shop đã cập nhật lại nội dung phản hồi!", res.getReply());
         verify(replyRepository).save(reply);
+    }
+
+    @Test
+    @DisplayName("replyToReview và updateReply ném ngoại lệ khi shop bị SUSPENDED hoặc BANNED")
+    void testReply_ShopSuspendedOrBanned() {
+        when(userRepository.findByAccountId(accountId)).thenReturn(Optional.of(seller));
+        when(reviewRepository.findById(reviewId)).thenReturn(Optional.of(review));
+        when(replyRepository.findByReviewId(reviewId)).thenReturn(Optional.of(reply));
+
+        // 1. replyToReview with shop SUSPENDED
+        shop.setStatus(ShopStatus.SUSPENDED);
+        CustomException ex1 = assertThrows(CustomException.class, () -> replyService.replyToReview(accountId, request));
+        assertTrue(ex1.getMessage().contains("tạm dừng hoạt động"));
+
+        // 2. replyToReview with shop BANNED
+        shop.setStatus(ShopStatus.BANNED);
+        CustomException ex2 = assertThrows(CustomException.class, () -> replyService.replyToReview(accountId, request));
+        assertTrue(ex2.getMessage().contains("bị cấm"));
+
+        // 3. updateReply with shop SUSPENDED
+        shop.setStatus(ShopStatus.SUSPENDED);
+        assertThrows(CustomException.class, () -> replyService.updateReply(accountId, request));
+
+        // 4. updateReply with shop BANNED
+        shop.setStatus(ShopStatus.BANNED);
+        assertThrows(CustomException.class, () -> replyService.updateReply(accountId, request));
+
+        // 5. Account status BANNED
+        shop.setStatus(ShopStatus.ACTIVE);
+        account.setStatus(AccountStatus.BANNED);
+        assertThrows(CustomException.class, () -> replyService.replyToReview(accountId, request));
+        assertThrows(CustomException.class, () -> replyService.updateReply(accountId, request));
     }
 }

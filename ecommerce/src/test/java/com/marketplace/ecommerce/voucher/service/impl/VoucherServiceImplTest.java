@@ -912,4 +912,213 @@ class VoucherServiceImplTest {
         when(userRepository.findByAccountId(nonUser)).thenReturn(Optional.empty());
         assertThrows(CustomException.class, () -> voucherService.createVoucher(nonUser, new CreateVoucherRequest()));
     }
+
+    @Test
+    @DisplayName("listActiveVouchers: Kiểm tra tất cả các nhánh scope (SHOP có shopId, PLATFORM, scope null có shopId, scope null không shopId)")
+    void listActiveVouchers_AllBranches() {
+        Voucher v = Voucher.builder().id(UUID.randomUUID()).code("V1").status(VoucherStatus.ACTIVE).startDate(LocalDateTime.now().minusDays(1)).endDate(LocalDateTime.now().plusDays(1)).build();
+        when(voucherRepository.findActiveByShopId(any(), any(), any(), any())).thenReturn(new PageImpl<>(List.of(v)));
+        when(voucherRepository.findActiveByScope(any(), any(), any(), any())).thenReturn(new PageImpl<>(List.of(v)));
+        when(voucherRepository.findActiveForCheckout(any(), any(), any(), any())).thenReturn(new PageImpl<>(List.of(v)));
+        when(voucherRepository.findAllCurrentlyActive(any(), any(), any())).thenReturn(new PageImpl<>(List.of(v)));
+
+        // 1. scope = SHOP, shopId != null
+        Page<VoucherResponse> p1 = voucherService.listActiveVouchers(VoucherScope.SHOP, testShop.getId(), testUserA.getId(), PageRequest.of(0, 10));
+        assertEquals(1, p1.getTotalElements());
+
+        // 2. scope = PLATFORM
+        Page<VoucherResponse> p2 = voucherService.listActiveVouchers(VoucherScope.PLATFORM, null, testUserA.getId(), PageRequest.of(0, 10));
+        assertEquals(1, p2.getTotalElements());
+
+        // 3. scope = null, shopId != null
+        Page<VoucherResponse> p3 = voucherService.listActiveVouchers(null, testShop.getId(), testUserA.getId(), PageRequest.of(0, 10));
+        assertEquals(1, p3.getTotalElements());
+
+        // 4. scope = null, shopId = null
+        Page<VoucherResponse> p4 = voucherService.listActiveVouchers(null, null, testUserA.getId(), PageRequest.of(0, 10));
+        assertEquals(1, p4.getTotalElements());
+
+        // 5. unpaged list overload
+        List<VoucherResponse> list = voucherService.listActiveVouchers(VoucherScope.PLATFORM, null, testUserA.getId());
+        assertEquals(1, list.size());
+    }
+
+    @Test
+    @DisplayName("getShopVouchers: Ném lỗi khi shopId null và trả về danh sách thành công")
+    void getShopVouchers_Validation_And_Success() {
+        assertThrows(CustomException.class, () -> voucherService.getShopVouchers(null, testUserA.getId()));
+
+        Voucher v = Voucher.builder().id(UUID.randomUUID()).code("SHOP_V").status(VoucherStatus.ACTIVE).startDate(LocalDateTime.now().minusDays(1)).endDate(LocalDateTime.now().plusDays(1)).build();
+        when(voucherRepository.findActiveByShopIdList(eq(VoucherStatus.ACTIVE), eq(testShop.getId()), any()))
+                .thenReturn(List.of(v));
+
+        List<VoucherResponse> list = voucherService.getShopVouchers(testShop.getId(), testUserA.getId());
+        assertEquals(1, list.size());
+    }
+
+    @Test
+    @DisplayName("getMyVouchers: Lọc bỏ voucher không hợp lệ (null, không active, hoặc đã dùng hết lượt)")
+    void getMyVouchers_Filtering() {
+        UUID accountId = UUID.randomUUID();
+        when(userRepository.findByAccountId(accountId)).thenReturn(Optional.of(testUserA));
+
+        // vActive: valid
+        Voucher vActive = Voucher.builder().id(UUID.randomUUID()).code("ACT").status(VoucherStatus.ACTIVE).startDate(LocalDateTime.now().minusDays(1)).endDate(LocalDateTime.now().plusDays(1)).userUsageLimit(2).build();
+        UserVoucher uv1 = UserVoucher.builder().id(UUID.randomUUID()).voucher(vActive).status(UserVoucherStatus.UNUSED).build();
+
+        // vExpired
+        Voucher vExpired = Voucher.builder().id(UUID.randomUUID()).code("EXP").status(VoucherStatus.ACTIVE).startDate(LocalDateTime.now().minusDays(10)).endDate(LocalDateTime.now().minusDays(5)).build();
+        UserVoucher uv2 = UserVoucher.builder().id(UUID.randomUUID()).voucher(vExpired).status(UserVoucherStatus.UNUSED).build();
+
+        // vOverLimit: usedCount >= limit
+        Voucher vOverLimit = Voucher.builder().id(UUID.randomUUID()).code("OVER").status(VoucherStatus.ACTIVE).startDate(LocalDateTime.now().minusDays(1)).endDate(LocalDateTime.now().plusDays(1)).userUsageLimit(1).build();
+        UserVoucher uv3 = UserVoucher.builder().id(UUID.randomUUID()).voucher(vOverLimit).status(UserVoucherStatus.UNUSED).build();
+        when(userVoucherRepository.countByUserIdAndVoucherIdAndStatus(testUserA.getId(), vOverLimit.getId(), UserVoucherStatus.USED)).thenReturn(1L);
+
+        when(userVoucherRepository.findMyVouchersWithDetails(testUserA.getId(), UserVoucherStatus.UNUSED))
+                .thenReturn(List.of(uv1, uv2, uv3));
+
+        List<com.marketplace.ecommerce.voucher.dto.UserVoucherResponse> res = voucherService.getMyVouchers(accountId);
+        assertEquals(1, res.size());
+        assertEquals("ACT", res.get(0).getVoucher().getCode());
+    }
+
+    @Test
+    @DisplayName("claimVoucher: Ném ngoại lệ khi voucher không tồn tại, hết hạn, đã dùng hết lượt hoặc đã claim trước đó")
+    void claimVoucher_ValidationAndSuccess() {
+        UUID accountId = UUID.randomUUID();
+        UUID voucherId = UUID.randomUUID();
+        when(userRepository.findByAccountId(accountId)).thenReturn(Optional.of(testUserA));
+
+        // 1. Not found
+        when(voucherRepository.findById(voucherId)).thenReturn(Optional.empty());
+        assertThrows(CustomException.class, () -> voucherService.claimVoucher(accountId, voucherId));
+
+        // 2. Inactive
+        Voucher inactiveV = Voucher.builder().id(voucherId).status(VoucherStatus.INACTIVE).build();
+        when(voucherRepository.findById(voucherId)).thenReturn(Optional.of(inactiveV));
+        assertThrows(CustomException.class, () -> voucherService.claimVoucher(accountId, voucherId));
+
+        // 3. Over limit
+        Voucher activeV = Voucher.builder().id(voucherId).status(VoucherStatus.ACTIVE).startDate(LocalDateTime.now().minusDays(1)).endDate(LocalDateTime.now().plusDays(1)).userUsageLimit(1).build();
+        when(voucherRepository.findById(voucherId)).thenReturn(Optional.of(activeV));
+        when(userVoucherRepository.countByUserIdAndVoucherIdAndStatus(testUserA.getId(), voucherId, UserVoucherStatus.USED)).thenReturn(1L);
+        assertThrows(CustomException.class, () -> voucherService.claimVoucher(accountId, voucherId));
+
+        // 4. Already claimed
+        when(userVoucherRepository.countByUserIdAndVoucherIdAndStatus(testUserA.getId(), voucherId, UserVoucherStatus.USED)).thenReturn(0L);
+        when(userVoucherRepository.existsByUserIdAndVoucherIdAndStatus(testUserA.getId(), voucherId, UserVoucherStatus.UNUSED)).thenReturn(true);
+        assertThrows(CustomException.class, () -> voucherService.claimVoucher(accountId, voucherId));
+
+        // 5. Success
+        when(userVoucherRepository.existsByUserIdAndVoucherIdAndStatus(testUserA.getId(), voucherId, UserVoucherStatus.UNUSED)).thenReturn(false);
+        when(userVoucherRepository.save(any(UserVoucher.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        com.marketplace.ecommerce.voucher.dto.UserVoucherResponse claimed = voucherService.claimVoucher(accountId, voucherId);
+        assertNotNull(claimed);
+        assertEquals(UserVoucherStatus.UNUSED, claimed.getStatus());
+    }
+
+    @Test
+    @DisplayName("rollbackVoucherUsage: Khôi phục lượt dùng voucher cho shop, platform, user voucher")
+    void rollbackVoucherUsage_AllBranches() {
+        Voucher shopV = Voucher.builder().id(UUID.randomUUID()).code("SV").usedCount(2).build();
+        Voucher platV = Voucher.builder().id(UUID.randomUUID()).code("PV").usedCount(1).build();
+        Voucher genV = Voucher.builder().id(UUID.randomUUID()).code("GV").usedCount(1).build();
+
+        Order order = Order.builder()
+                .id(UUID.randomUUID())
+                .orderNumber("ORD-ROLL")
+                .user(testUserA)
+                .shopVoucher(shopV)
+                .platformVoucher(platV)
+                .voucher(genV)
+                .build();
+
+        UserVoucher uv1 = UserVoucher.builder().id(UUID.randomUUID()).voucher(shopV).status(UserVoucherStatus.USED).build();
+        UserVoucher uv2 = UserVoucher.builder().id(UUID.randomUUID()).voucher(platV).status(UserVoucherStatus.USED).build();
+        when(userVoucherRepository.findByOrderId(order.getId())).thenReturn(List.of(uv1, uv2));
+
+        // uv1: hasUnused is false -> restore to UNUSED
+        when(userVoucherRepository.existsByUserIdAndVoucherIdAndStatus(testUserA.getId(), shopV.getId(), UserVoucherStatus.UNUSED)).thenReturn(false);
+        // uv2: hasUnused is true -> delete
+        when(userVoucherRepository.existsByUserIdAndVoucherIdAndStatus(testUserA.getId(), platV.getId(), UserVoucherStatus.UNUSED)).thenReturn(true);
+
+        voucherService.rollbackVoucherUsage(order);
+
+        assertEquals(1, shopV.getUsedCount());
+        assertEquals(0, platV.getUsedCount());
+        assertEquals(0, genV.getUsedCount());
+        verify(userVoucherRepository).save(uv1);
+        verify(userVoucherRepository).delete(uv2);
+    }
+
+    @Test
+    @DisplayName("createVoucher: Kiểm tra các nhánh validation shop closed, pending deposit, category not found, notification exception")
+    void createVoucher_ShopStatusAndCategoryBranches() {
+        UUID accountId = UUID.randomUUID();
+        when(userRepository.findByAccountId(accountId)).thenReturn(Optional.of(testUserA));
+
+        // 1. Code already exists
+        CreateVoucherRequest reqDup = new CreateVoucherRequest();
+        reqDup.setCode("EXISTING");
+        when(voucherRepository.existsByCodeIgnoreCase("EXISTING")).thenReturn(true);
+        assertThrows(CustomException.class, () -> voucherService.createVoucher(accountId, reqDup));
+
+        // 2. Scope SHOP with closed shop
+        when(voucherRepository.existsByCodeIgnoreCase("NEW_CODE")).thenReturn(false);
+        CreateVoucherRequest reqShopClosed = new CreateVoucherRequest();
+        reqShopClosed.setCode("NEW_CODE");
+        reqShopClosed.setScope(VoucherScope.SHOP);
+        Shop closedShop = Shop.builder().id(UUID.randomUUID()).status(ShopStatus.CLOSED).build();
+        when(shopRepository.findByUserId(testUserA.getId())).thenReturn(Optional.of(closedShop));
+        assertThrows(CustomException.class, () -> voucherService.createVoucher(accountId, reqShopClosed));
+
+        // 3. Scope SHOP with pending deposit shop
+        Shop pendingShop = Shop.builder().id(UUID.randomUUID()).status(ShopStatus.PENDING_DEPOSIT).build();
+        when(shopRepository.findByUserId(testUserA.getId())).thenReturn(Optional.of(pendingShop));
+        assertThrows(CustomException.class, () -> voucherService.createVoucher(accountId, reqShopClosed));
+
+        // 4. Category not found
+        CreateVoucherRequest reqCat = new CreateVoucherRequest();
+        reqCat.setCode("NEW_CODE");
+        reqCat.setScope(VoucherScope.PLATFORM);
+        UUID catId = UUID.randomUUID();
+        reqCat.setCategoryId(catId);
+        when(productCategoryRepository.findById(catId)).thenReturn(Optional.empty());
+        assertThrows(CustomException.class, () -> voucherService.createVoucher(accountId, reqCat));
+
+        // 5. Scope SHOP with active shop and notification throws exception
+        Shop activeShop = Shop.builder().id(UUID.randomUUID()).status(ShopStatus.ACTIVE).build();
+        when(shopRepository.findByUserId(testUserA.getId())).thenReturn(Optional.of(activeShop));
+        CreateVoucherRequest reqSuccess = new CreateVoucherRequest();
+        reqSuccess.setCode("NEW_CODE");
+        reqSuccess.setTitle("Title");
+        reqSuccess.setScope(VoucherScope.SHOP);
+        reqSuccess.setVoucherType(VoucherType.FIXED_AMOUNT);
+        reqSuccess.setDiscountValue(new BigDecimal("10000"));
+
+        when(voucherRepository.save(any(Voucher.class))).thenAnswer(inv -> {
+            Voucher v = inv.getArgument(0);
+            v.setId(UUID.randomUUID());
+            return v;
+        });
+        doThrow(new RuntimeException("Notification failed")).when(notificationService).notifyFollowersAboutVoucher(any(), any());
+
+        // Should not throw exception when notification fails
+        VoucherResponse vRes = voucherService.createVoucher(accountId, reqSuccess);
+        assertNotNull(vRes);
+        assertEquals("NEW_CODE", vRes.getCode());
+    }
+
+    @Test
+    @DisplayName("deactivateVouchersOnShopClose: Bỏ qua khi shopId null và cập nhật status khi shopId hợp lệ")
+    void deactivateVouchersOnShopClose_Test() {
+        voucherService.deactivateVouchersOnShopClose(null);
+        verify(voucherRepository, never()).updateStatusByShopId(any(), any(), any());
+
+        UUID shopId = UUID.randomUUID();
+        voucherService.deactivateVouchersOnShopClose(shopId);
+        verify(voucherRepository).updateStatusByShopId(shopId, VoucherStatus.ACTIVE, VoucherStatus.INACTIVE);
+    }
 }

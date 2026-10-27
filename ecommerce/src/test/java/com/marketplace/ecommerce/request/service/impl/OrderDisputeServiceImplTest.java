@@ -7,6 +7,7 @@ import com.marketplace.ecommerce.request.dto.response.OrderDisputeResponse;
 import com.marketplace.ecommerce.request.entity.Report;
 import com.marketplace.ecommerce.request.entity.Request;
 import com.marketplace.ecommerce.request.repository.ReportRepository;
+import com.marketplace.ecommerce.request.valueObjects.ReportStage;
 import com.marketplace.ecommerce.request.valueObjects.RequestStatus;
 import com.marketplace.ecommerce.request.valueObjects.RequestType;
 import com.marketplace.ecommerce.request.valueObjects.TargetType;
@@ -95,21 +96,21 @@ class OrderDisputeServiceImplTest {
         escrow.setStatus(EscrowStatus.HELD);
         assertEquals("NONE", orderDisputeService.getDisputeInfo(orderId).getDisputeStatus());
 
-        // 5. Initial report APPROVED + Appeal APPROVED
-        Request reqAppeal = Request.builder().type(RequestType.APPEAL).status(RequestStatus.APPROVED).build();
-        Report appealReport = Report.builder().targetId(orderId).request(reqAppeal).build();
-        when(reportRepository.findReportsByTargetTypeAndTargetId(TargetType.ORDER, orderId)).thenReturn(List.of(initialReport, appealReport));
-        assertEquals("APPEAL_APPROVED", orderDisputeService.getDisputeInfo(orderId).getDisputeStatus());
-
-        // 6. Initial report APPROVED + Appeal PENDING
-        reqAppeal.setStatus(RequestStatus.PENDING);
-        OrderDisputeResponse resAppealPending = orderDisputeService.getDisputeInfo(orderId);
-        assertTrue(resAppealPending.isHasActiveDispute());
-        assertEquals("APPEAL_PENDING", resAppealPending.getDisputeStatus());
-
-        // 7. Initial report APPROVED + Appeal REJECTED
-        reqAppeal.setStatus(RequestStatus.REJECTED);
+        // 5. Escrow status REFUNDED
+        escrow.setStatus(EscrowStatus.REFUNDED);
         assertEquals("REFUNDED", orderDisputeService.getDisputeInfo(orderId).getDisputeStatus());
+
+        // 6. ReportStage RETURN_IN_PROGRESS
+        escrow.setStatus(EscrowStatus.HELD);
+        initialReport.setStage(ReportStage.RETURN_IN_PROGRESS);
+        OrderDisputeResponse resReturn = orderDisputeService.getDisputeInfo(orderId);
+        assertTrue(resReturn.isHasActiveDispute());
+        assertEquals("RETURN_IN_PROGRESS", resReturn.getDisputeStatus());
+
+        // 7. ReportStage DIRECT_NEGOTIATION
+        initialReport.setStage(ReportStage.DIRECT_NEGOTIATION);
+        assertEquals("DIRECT_NEGOTIATION", orderDisputeService.getDisputeInfo(orderId).getDisputeStatus());
+        initialReport.setStage(null);
 
         // 8. Initial report status null
         reqReport.setStatus(null);

@@ -802,11 +802,10 @@ class ShopEscrowFundServiceImplTest {
                 when(orderReturnRepository.existsByOrderShopIdAndStatusIn(eq(shopId), any())).thenReturn(false);
                 when(reportRepository.existsPendingReportsForShop(shopId)).thenReturn(true);
                 assertThrows(CustomException.class, () -> shopEscrowFundService.requestCloseShopAndRefund(shopId));
-
-                // Pending appeals exist
-                when(reportRepository.existsPendingReportsForShop(shopId)).thenReturn(false);
-                when(requestRepository.existsByAccountIdAndTypeAndStatus(any(), eq(RequestType.APPEAL), eq(RequestStatus.PENDING))).thenReturn(true);
+                // Fund DEFICIT
+                fund.setStatus(EscrowFundStatus.DEFICIT);
                 assertThrows(CustomException.class, () -> shopEscrowFundService.requestCloseShopAndRefund(shopId));
+                fund.setStatus(EscrowFundStatus.ACTIVE);
         }
 
         // --- adminApproveCloseShopRefund edge cases ---

@@ -1,13 +1,14 @@
 package com.marketplace.ecommerce.request.service;
 
+import com.marketplace.ecommerce.platform.policy.dto.PlatformPolicyResponse;
 import com.marketplace.ecommerce.request.dto.request.CreateReportRequest;
 import com.marketplace.ecommerce.request.dto.request.EscalateReportRequest;
 import com.marketplace.ecommerce.request.dto.request.HandleReportRequest;
 import com.marketplace.ecommerce.request.dto.request.SellerDisputeRespondRequest;
 import com.marketplace.ecommerce.request.dto.response.CreateRequestResponse;
-import com.marketplace.ecommerce.request.dto.response.DisputePolicyClauseResponse;
 import com.marketplace.ecommerce.request.dto.response.ReportDetailsResponse;
 
+import java.util.List;
 import java.util.UUID;
 
 public interface ReportService {
@@ -23,7 +24,7 @@ public interface ReportService {
 
     ReportDetailsResponse getReportByOrderId(UUID accountId, UUID orderId);
 
-    java.util.List<DisputePolicyClauseResponse> getDisputePolicyClauses();
+    List<PlatformPolicyResponse> getDisputePolicyClauses();
 
     void processExpiredDirectNegotiations();
 }

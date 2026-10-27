@@ -9,8 +9,6 @@ import com.marketplace.ecommerce.request.entity.Seller;
 import com.marketplace.ecommerce.request.repository.ReportRepository;
 import com.marketplace.ecommerce.request.repository.SellerRepository;
 import com.marketplace.ecommerce.request.valueObjects.ApproveSellerContext;
-import com.marketplace.ecommerce.request.valueObjects.DisputePolicyClause;
-import com.marketplace.ecommerce.request.valueObjects.ReportDecision;
 import com.marketplace.ecommerce.request.valueObjects.RequestStatus;
 import com.marketplace.ecommerce.request.valueObjects.TargetType;
 import com.marketplace.ecommerce.shop.repository.ShopRepository;
@@ -140,41 +138,5 @@ public class RequestPolicy {
         }
 
         return new ApproveSellerContext(user, sellerDetail, shopName.trim());
-    }
-
-
-    public DisputePolicyClause validateDisputePolicyClause(
-            TargetType targetType, String clauseCode, ReportDecision decision,
-            boolean isSellerReturnDispute) {
-        if (targetType != TargetType.ORDER) {
-            return null; // Không bắt buộc với các loại báo cáo khác (USER, SHOP, PRODUCT, REVIEW)
-        }
-        if (clauseCode == null || clauseCode.trim().isEmpty()) {
-            throw new CustomException(
-                    "Phán quyết tranh chấp đơn hàng bắt buộc phải gắn với một Điều khoản Chính sách (Policy Clause).");
-        }
-        DisputePolicyClause clause = DisputePolicyClause.fromCode(clauseCode);
-        if (clause == null) {
-            throw new CustomException("Mã điều khoản chính sách không hợp lệ: " + clauseCode);
-        }
-
-        // Kiểm tra tính tương thích giữa Clause và hướng phán quyết
-        if (isSellerReturnDispute) {
-            return clause;
-        }
-
-        if (decision == ReportDecision.APPROVE) {
-            if (!"SELLER_FAULT".equals(clause.getCategory())) {
-                throw new CustomException(
-                        "Điều khoản đã chọn không phù hợp với phán quyết chấp thuận khiếu nại của Người mua (Cần chọn điều khoản thuộc nhóm Lỗi Người bán).");
-            }
-        } else if (decision == ReportDecision.REJECT) {
-            if (!"BUYER_FAULT".equals(clause.getCategory())) {
-                throw new CustomException(
-                        "Điều khoản đã chọn không phù hợp với phán quyết bác bỏ khiếu nại (Cần chọn điều khoản thuộc nhóm Bác khiếu nại / Bảo vệ Người bán).");
-            }
-        }
-
-        return clause;
     }
 }

@@ -38,6 +38,7 @@ import com.marketplace.ecommerce.shop.service.ShopEscrowFundService;
 import com.marketplace.ecommerce.shop.valueObjects.ShopStatus;
 import com.marketplace.ecommerce.product.repository.ProductRepository;
 import com.marketplace.ecommerce.chat.service.ChatService;
+import com.marketplace.ecommerce.platform.policy.service.PlatformPolicyService;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -47,6 +48,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -63,6 +65,9 @@ class OrderReportDisputeTest {
 
         @Mock(name = "requestPolicy")
         private RequestPolicy requestValidation;
+
+        @Mock
+        private PlatformPolicyService platformPolicyService;
 
         @Mock
         private RequestService requestService;
@@ -122,6 +127,8 @@ class OrderReportDisputeTest {
 
         @BeforeEach
         void setUp() {
+                ReflectionTestUtils.setField(reportService, "platformPolicyService", platformPolicyService);
+
                 buyerAccountId = UUID.randomUUID();
                 adminAccountId = UUID.randomUUID();
                 orderId = UUID.randomUUID();
@@ -257,7 +264,7 @@ class OrderReportDisputeTest {
         void autoRefundExpiredDisputedOrders_ExecutesRefund() {
                 // Given
                 RequestServiceImpl requestServiceImpl = new RequestServiceImpl(
-                                requestRepository, reportRepository, null, accountRepository, null,
+                                requestRepository, reportRepository, null, accountRepository, null, null,
                                 requestValidation, null, null, null, null, orderRepository, escrowRepository,
                                 orderReturnService, null, null);
 
@@ -274,7 +281,7 @@ class OrderReportDisputeTest {
         void autoRefundExpiredDisputedOrders_InitiatesReturn_WhenReturnAndRefund() {
                 // Given
                 RequestServiceImpl requestServiceImpl = new RequestServiceImpl(
-                                requestRepository, reportRepository, null, accountRepository, null,
+                                requestRepository, reportRepository, null, accountRepository, null, null,
                                 requestValidation, null, null, null, null, orderRepository, escrowRepository,
                                 orderReturnService, null, null);
 
@@ -771,21 +778,28 @@ class OrderReportDisputeTest {
                 HandleReportRequest req = HandleReportRequest.builder()
                                 .decision(ReportDecision.APPROVE)
                                 .resolutionType(ResolutionType.REFUND_ONLY)
-                                .policyClauseCode("CLAUSE_9_1_HARDWARE_FAULT")
+                                .policyClauseCode("RETURN_REFUND_COMPLAINT_POLICY")
                                 .note("Xác nhận hàng lỗi phần cứng theo biên bản")
                                 .build();
 
                 when(accountRepository.findById(adminAccountId)).thenReturn(Optional.of(adminAccount));
                 when(reportRepository.findByRequestId(reportRequestId)).thenReturn(report);
                 when(orderRepository.findByIdForUpdate(orderId)).thenReturn(Optional.of(deliveredOrder));
-                when(requestValidation.validateDisputePolicyClause(eq(TargetType.ORDER),
-                                eq("CLAUSE_9_1_HARDWARE_FAULT"), eq(ReportDecision.APPROVE), anyBoolean()))
-                                .thenReturn(com.marketplace.ecommerce.request.valueObjects.DisputePolicyClause.CLAUSE_9_1_HARDWARE_FAULT);
+                com.marketplace.ecommerce.platform.policy.dto.PlatformPolicyResponse mockPolicy = com.marketplace.ecommerce.platform.policy.dto.PlatformPolicyResponse
+                                .builder()
+                                .policyKey("RETURN_REFUND_COMPLAINT_POLICY")
+                                .title("Quy Trình 4 Bước Xử Lý Khiếu Nại, Đổi Trả & Hoàn Tiền")
+                                .category("RETURN_REFUND")
+                                .isActive(true)
+                                .build();
+                when(platformPolicyService.validateDisputeClause(eq("RETURN_REFUND_COMPLAINT_POLICY"), eq("APPROVE"),
+                                anyBoolean()))
+                                .thenReturn(mockPolicy);
 
                 reportService.handleReport(adminAccountId, reportRequestId, req);
 
-                assertEquals("CLAUSE_9_1_HARDWARE_FAULT", report.getPolicyClauseCode());
-                assertEquals("Điều khoản 9.1: Lỗi kỹ thuật hoặc hỏng hóc chức năng", report.getPolicyClauseTitle());
+                assertEquals("RETURN_REFUND_COMPLAINT_POLICY", report.getPolicyClauseCode());
+                assertEquals("Quy Trình 4 Bước Xử Lý Khiếu Nại, Đổi Trả & Hoàn Tiền", report.getPolicyClauseTitle());
                 verify(reportRepository).save(report);
                 verify(escrowService).refundByOrder(eq(orderId), anyString());
         }

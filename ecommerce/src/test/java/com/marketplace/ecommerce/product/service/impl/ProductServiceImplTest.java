@@ -171,7 +171,7 @@ class ProductServiceImplTest {
         when(productRepository.existsBySkuAndDeletedFalse("EXISTING-SKU")).thenReturn(true);
 
         CustomException ex = assertThrows(CustomException.class, () -> productService.createProduct(accountId, req));
-        assertTrue(ex.getMessage().contains("SKU already exists"));
+        assertTrue(ex.getMessage().contains("Mã SKU đã tồn tại"));
     }
 
     @Test
@@ -440,7 +440,7 @@ class ProductServiceImplTest {
         when(productRepository.softDeleteByAccountId(sampleProduct.getId(), accountId)).thenReturn(0);
 
         CustomException ex = assertThrows(CustomException.class, () -> productService.deleteProduct(accountId, sampleProduct.getId()));
-        assertTrue(ex.getMessage().contains("Product can not found or you don't have permission"));
+        assertTrue(ex.getMessage().contains("Không tìm thấy sản phẩm"));
     }
 
     @Test

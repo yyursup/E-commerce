@@ -1,16 +1,11 @@
 package com.marketplace.ecommerce.platform.policy.service.impl;
 
 import com.marketplace.ecommerce.common.exception.CustomException;
-import com.marketplace.ecommerce.platform.policy.dto.DisputePolicyClauseRequest;
-import com.marketplace.ecommerce.platform.policy.dto.DisputePolicyClauseResponse;
 import com.marketplace.ecommerce.platform.policy.dto.PlatformPolicyRequest;
 import com.marketplace.ecommerce.platform.policy.dto.PlatformPolicyResponse;
-import com.marketplace.ecommerce.platform.policy.entity.DisputePolicyClauseEntity;
 import com.marketplace.ecommerce.platform.policy.entity.PlatformPolicy;
-import com.marketplace.ecommerce.platform.policy.repository.DisputePolicyClauseRepository;
 import com.marketplace.ecommerce.platform.policy.repository.PlatformPolicyRepository;
 import com.marketplace.ecommerce.platform.policy.service.PlatformPolicyService;
-import com.marketplace.ecommerce.request.valueObjects.DisputePolicyClause;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -27,7 +22,6 @@ import java.util.UUID;
 public class PlatformPolicyServiceImpl implements PlatformPolicyService {
 
     private final PlatformPolicyRepository platformPolicyRepository;
-    private final DisputePolicyClauseRepository disputePolicyClauseRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -130,92 +124,26 @@ public class PlatformPolicyServiceImpl implements PlatformPolicyService {
         log.info("Deleted platform policy: {}", policy.getPolicyKey());
     }
 
-    // === Dispute Policy Clauses ===
+    // === Validation for Dispute Resolution ===
 
     @Override
     @Transactional(readOnly = true)
-    public List<DisputePolicyClauseResponse> getActiveDisputeClauses(String category) {
-        List<DisputePolicyClauseEntity> list;
-        if (category != null && !category.isBlank()) {
-            list = disputePolicyClauseRepository.findByIsActiveTrueAndCategoryIgnoreCaseOrderByDisplayOrderAscCreatedAtAsc(category.trim());
-        } else {
-            list = disputePolicyClauseRepository.findByIsActiveTrueOrderByDisplayOrderAscCreatedAtAsc();
+    public PlatformPolicyResponse validateDisputeClause(
+            String clauseCode,
+            String decision,
+            boolean isSellerReturnDispute) {
+        if (clauseCode == null || clauseCode.trim().isEmpty()) {
+            throw new CustomException(
+                    "Phán quyết tranh chấp đơn hàng bắt buộc phải gắn với một Chính sách nền tảng (Platform Policy).");
+        }
+        String key = clauseCode.trim();
+        PlatformPolicy policy = platformPolicyRepository.findByPolicyKey(key)
+                .orElseThrow(() -> new CustomException("Chính sách nền tảng không hợp lệ hoặc không tồn tại: " + key));
+
+        if (!Boolean.TRUE.equals(policy.getIsActive())) {
+            throw new CustomException("Chính sách nền tảng đã bị vô hiệu hóa hoặc không còn hiệu lực: " + key);
         }
 
-        if (list.isEmpty()) {
-            // Fallback to Enum DisputePolicyClause values if table has not been seeded yet
-            return Arrays.stream(DisputePolicyClause.values())
-                    .filter(c -> category == null || category.isBlank() || c.getCategory().equalsIgnoreCase(category.trim()))
-                    .map(DisputePolicyClauseResponse::fromEnum)
-                    .toList();
-        }
-
-        return list.stream().map(DisputePolicyClauseResponse::from).toList();
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<DisputePolicyClauseResponse> getAllDisputeClausesAdmin() {
-        List<DisputePolicyClauseEntity> list = disputePolicyClauseRepository.findAllByOrderByDisplayOrderAscCreatedAtAsc();
-        if (list.isEmpty()) {
-            return Arrays.stream(DisputePolicyClause.values())
-                    .map(DisputePolicyClauseResponse::fromEnum)
-                    .toList();
-        }
-        return list.stream().map(DisputePolicyClauseResponse::from).toList();
-    }
-
-    @Override
-    @Transactional
-    public DisputePolicyClauseResponse createDisputeClause(DisputePolicyClauseRequest req) {
-        String code = req.getCode().trim().toUpperCase();
-        if (disputePolicyClauseRepository.existsByCode(code)) {
-            throw new CustomException("Mã điều khoản phân xử đã tồn tại: " + code);
-        }
-
-        DisputePolicyClauseEntity entity = DisputePolicyClauseEntity.builder()
-                .code(code)
-                .title(req.getTitle().trim())
-                .description(req.getDescription().trim())
-                .category(req.getCategory().trim().toUpperCase())
-                .displayOrder(req.getDisplayOrder() != null ? req.getDisplayOrder() : 0)
-                .isActive(req.getIsActive() != null ? req.getIsActive() : true)
-                .build();
-
-        DisputePolicyClauseEntity saved = disputePolicyClauseRepository.save(entity);
-        log.info("Created new dispute policy clause: {}", code);
-        return DisputePolicyClauseResponse.from(saved);
-    }
-
-    @Override
-    @Transactional
-    public DisputePolicyClauseResponse updateDisputeClause(UUID id, DisputePolicyClauseRequest req) {
-        DisputePolicyClauseEntity entity = disputePolicyClauseRepository.findById(id)
-                .orElseThrow(() -> new CustomException("Không tìm thấy điều khoản phân xử với ID: " + id));
-
-        String code = req.getCode().trim().toUpperCase();
-        if (!entity.getCode().equalsIgnoreCase(code) && disputePolicyClauseRepository.existsByCode(code)) {
-            throw new CustomException("Mã điều khoản phân xử đã được sử dụng: " + code);
-        }
-
-        entity.setCode(code);
-        entity.setTitle(req.getTitle().trim());
-        entity.setDescription(req.getDescription().trim());
-        entity.setCategory(req.getCategory().trim().toUpperCase());
-        if (req.getDisplayOrder() != null) entity.setDisplayOrder(req.getDisplayOrder());
-        if (req.getIsActive() != null) entity.setIsActive(req.getIsActive());
-
-        DisputePolicyClauseEntity saved = disputePolicyClauseRepository.save(entity);
-        log.info("Updated dispute policy clause: {}", code);
-        return DisputePolicyClauseResponse.from(saved);
-    }
-
-    @Override
-    @Transactional
-    public void deleteDisputeClause(UUID id) {
-        DisputePolicyClauseEntity entity = disputePolicyClauseRepository.findById(id)
-                .orElseThrow(() -> new CustomException("Không tìm thấy điều khoản phân xử với ID: " + id));
-        disputePolicyClauseRepository.delete(entity);
-        log.info("Deleted dispute policy clause: {}", entity.getCode());
+        return PlatformPolicyResponse.from(policy);
     }
 }

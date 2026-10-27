@@ -19,6 +19,7 @@ import com.marketplace.ecommerce.product.valueObjects.WarrantyType;
 import com.marketplace.ecommerce.shop.entity.Shop;
 import com.marketplace.ecommerce.shop.repository.ShopRepository;
 import com.marketplace.ecommerce.statistics.dto.response.AdminDashboardAnalyticsResponse;
+import com.marketplace.ecommerce.statistics.dto.response.AdminShopPerformanceDTO;
 import com.marketplace.ecommerce.statistics.dto.response.BuyerSpendingAnalyticsResponse;
 import com.marketplace.ecommerce.statistics.dto.response.SellerDashboardAnalyticsResponse;
 import org.junit.jupiter.api.BeforeEach;
@@ -61,6 +62,8 @@ class StatisticsAnalyticsServiceImplTest {
     private ShopRepository shopRepository;
     @Mock
     private UserRepository userRepository;
+    @Mock
+    private com.marketplace.ecommerce.shop.repository.ShopEscrowFundRepository shopEscrowFundRepository;
 
     @InjectMocks
     private StatisticsAnalyticsServiceImpl statisticsAnalyticsService;
@@ -81,11 +84,15 @@ class StatisticsAnalyticsServiceImplTest {
                 .build();
         shop.setId(UUID.randomUUID());
         shop.setUser(user);
+
+        when(orderRepository.getRevenueByShopBetween(any(), any(), any(), any())).thenReturn(BigDecimal.ZERO);
     }
 
     @Test
     @DisplayName("Admin Dashboard Analytics - Thống kê đầy đủ tài chính, tỷ lệ hoàn tất, tranh chấp, biểu đồ GMV")
     void testGetAdminDashboardAnalytics_Success() {
+        when(orderRepository.getPlatformGmvBetween(any(), any())).thenReturn(new BigDecimal("100000000"));
+        when(orderRepository.getPlatformSettledRevenueBetween(any(), any())).thenReturn(new BigDecimal("80000000"));
         when(orderRepository.getPlatformTotalGmv()).thenReturn(new BigDecimal("100000000"));
         when(orderRepository.getPlatformSettledRevenue()).thenReturn(new BigDecimal("80000000"));
         when(escrowRepository.sumAmountByStatus(EscrowStatus.HELD)).thenReturn(new BigDecimal("15000000"));
@@ -94,6 +101,10 @@ class StatisticsAnalyticsServiceImplTest {
         when(commissionRepository.getOverviewStatistics()).thenReturn(Collections.singletonList(commRow));
 
         when(orderRepository.count()).thenReturn(100L);
+        when(orderRepository.countByCreatedAtBetween(any(), any())).thenReturn(100L);
+        when(orderRepository.countByStatusInAndCreatedAtBetween(any(), any(), any())).thenReturn(85L);
+        when(orderRepository.countByStatusAndCreatedAtBetween(eq(OrderStatus.CANCELLED), any(), any())).thenReturn(10L);
+        when(orderRepository.countByStatusAndCreatedAtBetween(eq(OrderStatus.REFUNDED), any(), any())).thenReturn(5L);
         when(orderRepository.countByStatus(OrderStatus.COMPLETED)).thenReturn(70L);
         when(orderRepository.countByStatus(OrderStatus.DELIVERED)).thenReturn(15L);
         when(orderRepository.countByStatus(OrderStatus.CANCELLED)).thenReturn(10L);
@@ -147,6 +158,7 @@ class StatisticsAnalyticsServiceImplTest {
         List<OrderStatus> expectedStatuses = List.of(
                 OrderStatus.CONFIRMED, OrderStatus.PROCESSING, OrderStatus.SHIPPING, OrderStatus.DELIVERED);
         BigDecimal expectedPendingEscrow = new BigDecimal("16160200");
+        when(orderRepository.getPendingEscrowRevenueByShop(eq(shop.getId()), any())).thenReturn(new BigDecimal("16490000"));
         
 
         when(orderRepository.countByShopId(shop.getId())).thenReturn(10L);
@@ -446,5 +458,173 @@ class StatisticsAnalyticsServiceImplTest {
         assertEquals(1, res.getLowStockAlerts().size());
         assertNull(res.getLowStockAlerts().get(0).getImageUrl());
         assertNull(res.getLowStockAlerts().get(0).getSku());
+    }
+
+    @Test
+    @DisplayName("Admin Dashboard Analytics - Test tất cả các loại kỳ thống kê (7d, 30d, 90d, this_month, last_month, custom)")
+    void testGetAdminDashboardAnalytics_VariousPeriods() {
+        when(orderRepository.getPlatformGmvBetween(any(), any())).thenReturn(new BigDecimal("20000000"));
+        when(orderRepository.getPlatformSettledRevenueBetween(any(), any())).thenReturn(new BigDecimal("15000000"));
+        when(commissionRepository.getTotalCommissionBetween(any(), any())).thenReturn(null);
+        when(orderRepository.getTotalPlatformCommissionBetween(any(), any())).thenReturn(new BigDecimal("1000000"));
+
+        when(orderRepository.getDailyPlatformGmvBetween(any(), any())).thenReturn(Collections.emptyList());
+        when(orderRepository.getShopRankingByRevenueBetween(any(), any())).thenReturn(Collections.emptyList());
+        when(orderRepository.getShopRankingByRevenue()).thenReturn(Collections.emptyList());
+        when(productRepository.getTopCategoriesByProductCount(any())).thenReturn(Collections.emptyList());
+        when(orderItemsRepository.getCategorySalesMetrics()).thenReturn(Collections.emptyList());
+
+        // 7d
+        AdminDashboardAnalyticsResponse r7d = statisticsAnalyticsService.getAdminDashboardAnalytics("7d", null, null);
+        assertNotNull(r7d);
+        assertEquals("7d", r7d.getSelectedPeriod());
+
+        // 30d
+        AdminDashboardAnalyticsResponse r30d = statisticsAnalyticsService.getAdminDashboardAnalytics("30d", null, null);
+        assertNotNull(r30d);
+        assertEquals("30d", r30d.getSelectedPeriod());
+
+        // 90d
+        AdminDashboardAnalyticsResponse r90d = statisticsAnalyticsService.getAdminDashboardAnalytics("90d", null, null);
+        assertNotNull(r90d);
+        assertEquals("90d", r90d.getSelectedPeriod());
+
+        // this_month
+        AdminDashboardAnalyticsResponse rTm = statisticsAnalyticsService.getAdminDashboardAnalytics("this_month", null, null);
+        assertNotNull(rTm);
+        assertEquals("this_month", rTm.getSelectedPeriod());
+
+        // last_month
+        AdminDashboardAnalyticsResponse rLm = statisticsAnalyticsService.getAdminDashboardAnalytics("last_month", null, null);
+        assertNotNull(rLm);
+        assertEquals("last_month", rLm.getSelectedPeriod());
+
+        // custom: start is after end (swaps dates)
+        LocalDate d1 = LocalDate.now().minusDays(10);
+        LocalDate d2 = LocalDate.now().minusDays(20);
+        AdminDashboardAnalyticsResponse rSwap = statisticsAnalyticsService.getAdminDashboardAnalytics("custom", d1, d2);
+        assertNotNull(rSwap);
+
+        // custom: range > 365 days
+        LocalDate dStartOld = LocalDate.now().minusDays(400);
+        LocalDate dEndNow = LocalDate.now();
+        AdminDashboardAnalyticsResponse rCap = statisticsAnalyticsService.getAdminDashboardAnalytics("custom", dStartOld, dEndNow);
+        assertNotNull(rCap);
+
+        // custom: only reqStart != null
+        AdminDashboardAnalyticsResponse rOnlyStart = statisticsAnalyticsService.getAdminDashboardAnalytics("custom", d1, null);
+        assertNotNull(rOnlyStart);
+
+        // custom: only reqEnd != null
+        AdminDashboardAnalyticsResponse rOnlyEnd = statisticsAnalyticsService.getAdminDashboardAnalytics("custom", null, dEndNow);
+        assertNotNull(rOnlyEnd);
+
+        // custom: both null
+        AdminDashboardAnalyticsResponse rBothNull = statisticsAnalyticsService.getAdminDashboardAnalytics("custom", null, null);
+        assertNotNull(rBothNull);
+        assertEquals("14d", rBothNull.getSelectedPeriod());
+    }
+
+    @Test
+    @DisplayName("Admin Shop Analytics - Ném ngoại lệ khi shop hoặc user không hợp lệ và thành công")
+    void testGetAdminShopAnalytics() {
+        UUID sId = UUID.randomUUID();
+        when(shopRepository.findById(sId)).thenReturn(Optional.empty());
+        assertThrows(CustomException.class, () -> statisticsAnalyticsService.getAdminShopAnalytics(sId, "14d", null, null));
+
+        Shop shopNoOwner = Shop.builder().name("Shop No Owner").build();
+        shopNoOwner.setId(sId);
+        shopNoOwner.setUser(null);
+        when(shopRepository.findById(sId)).thenReturn(Optional.of(shopNoOwner));
+        assertThrows(CustomException.class, () -> statisticsAnalyticsService.getAdminShopAnalytics(sId, "14d", null, null));
+
+        Shop shopOk = Shop.builder().name("Shop OK").build();
+        shopOk.setId(sId);
+        shopOk.setUser(user);
+        when(shopRepository.findById(sId)).thenReturn(Optional.of(shopOk));
+
+        when(orderRepository.getRevenueByShopBetween(eq(sId), any(), any(), any())).thenReturn(new BigDecimal("10000000"));
+        when(orderRepository.getRevenueByShopBetween(eq(sId), any(), any(), any())).thenReturn(new BigDecimal("5000000"));
+        when(commissionRepository.getTotalCommissionBySellerBetween(eq(user.getId()), any(), any())).thenReturn(new BigDecimal("500000"));
+
+        when(orderRepository.countByShopIdAndCreatedAtBetween(eq(sId), any(), any())).thenReturn(5L);
+        when(orderRepository.countByShopIdAndStatusInAndCreatedAtBetween(eq(sId), any(), any(), any())).thenReturn(5L);
+
+        SellerDashboardAnalyticsResponse res = statisticsAnalyticsService.getAdminShopAnalytics(sId, "14d", null, null);
+        assertNotNull(res);
+        assertEquals("Shop OK", res.getShopName());
+        assertEquals(100.0, res.getFulfillmentRate());
+    }
+
+    @Test
+    @DisplayName("Admin Shops Performance - Danh sách hiệu suất các shop với bộ lọc search và escrow fund")
+    void testGetAdminShopsPerformance_WithSearchAndEscrowFunds() {
+        Shop s1 = Shop.builder().name("Tech Super Store").phoneNumber("0987654321").build();
+        s1.setId(UUID.randomUUID());
+        user.setFullName("Nguyen Van A");
+        user.setEmail("nva@gmail.com");
+        user.setPhoneNumber("0987654321");
+        s1.setUser(user);
+
+        Shop s2 = Shop.builder().name("Gadget World").phoneNumber("0123456789").build();
+        s2.setId(UUID.randomUUID());
+        User u2 = new User();
+        u2.setId(UUID.randomUUID());
+        u2.setFullName("Tran Thi B");
+        u2.setEmail("ttb@gmail.com");
+        s2.setUser(u2);
+
+        when(shopRepository.findAll()).thenReturn(List.of(s1, s2));
+
+        // Revenue map
+        Object[] rRow1 = new Object[]{s1.getId(), s1.getName(), new BigDecimal("50000000"), 20L};
+        Object[] rRow2 = new Object[]{s2.getId(), s2.getName(), new BigDecimal("10000000"), 5L};
+        when(orderRepository.getShopRankingByRevenueBetween(any(), any())).thenReturn(List.<Object[]>of(rRow1, rRow2));
+
+        // Total orders map
+        Object[] oRow1 = new Object[]{s1.getId(), 25L};
+        when(orderRepository.getShopTotalOrderCountsBetween(any(), any())).thenReturn(List.<Object[]>of(oRow1));
+
+        // Returned orders
+        Object[] retRow1 = new Object[]{s1.getId(), 2L};
+        when(orderRepository.getShopStatusOrderCountsBetween(any(), any(), eq(OrderStatus.REFUNDED))).thenReturn(List.<Object[]>of(retRow1));
+
+        // Cancelled orders
+        Object[] canRow1 = new Object[]{s1.getId(), 3L};
+        when(orderRepository.getShopStatusOrderCountsBetween(any(), any(), eq(OrderStatus.CANCELLED))).thenReturn(List.<Object[]>of(canRow1));
+
+        // Pending escrows
+        Object[] escRow1 = new Object[]{s1.getId(), new BigDecimal("8000000")};
+        when(orderRepository.getAllShopsPendingEscrowRevenue(any())).thenReturn(List.<Object[]>of(escRow1));
+
+        // Escrow funds
+        com.marketplace.ecommerce.shop.entity.ShopEscrowFund fund1 = com.marketplace.ecommerce.shop.entity.ShopEscrowFund.builder()
+                .shop(s1)
+                .balance(new BigDecimal("10000000"))
+                .committedAmount(new BigDecimal("10000000"))
+                .isDeficit(true)
+                .deficitAmount(new BigDecimal("2000000"))
+                .build();
+        fund1.setId(UUID.randomUUID());
+        when(shopEscrowFundRepository.findAll()).thenReturn(List.of(fund1));
+
+        // Test without search
+        List<AdminShopPerformanceDTO> listAll = statisticsAnalyticsService.getAdminShopsPerformance("14d", null, null, null);
+        assertNotNull(listAll);
+        assertEquals(2, listAll.size());
+        assertEquals("Tech Super Store", listAll.get(0).getShopName());
+        assertTrue(listAll.get(0).getIsDeficit());
+
+        // Test with search matching name
+        List<AdminShopPerformanceDTO> listSearchName = statisticsAnalyticsService.getAdminShopsPerformance("14d", null, null, "Tech");
+        assertEquals(1, listSearchName.size());
+
+        // Test with search matching email
+        List<AdminShopPerformanceDTO> listSearchEmail = statisticsAnalyticsService.getAdminShopsPerformance("14d", null, null, "ttb@gmail.com");
+        assertEquals(1, listSearchEmail.size());
+
+        // Test with search matching phone
+        List<AdminShopPerformanceDTO> listSearchPhone = statisticsAnalyticsService.getAdminShopsPerformance("14d", null, null, "0123456789");
+        assertEquals(1, listSearchPhone.size());
     }
 }

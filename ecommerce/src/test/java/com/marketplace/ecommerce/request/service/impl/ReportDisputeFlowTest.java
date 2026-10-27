@@ -31,6 +31,8 @@ import com.marketplace.ecommerce.request.policy.RequestPolicy;
 import com.marketplace.ecommerce.request.repository.ReportRepository;
 import com.marketplace.ecommerce.request.repository.RequestRepository;
 import com.marketplace.ecommerce.request.service.RequestService;
+import com.marketplace.ecommerce.platform.policy.dto.PlatformPolicyResponse;
+import com.marketplace.ecommerce.platform.policy.service.PlatformPolicyService;
 import com.marketplace.ecommerce.request.valueObjects.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -39,6 +41,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -62,6 +65,8 @@ class ReportDisputeFlowTest {
         private AccountRepository accountRepository;
         @Mock
         private RequestPolicy requestPolicy;
+        @Mock
+        private PlatformPolicyService platformPolicyService;
         @Mock
         private OrderRepository orderRepository;
         @Mock
@@ -107,6 +112,8 @@ class ReportDisputeFlowTest {
 
         @BeforeEach
         void setUp() {
+                ReflectionTestUtils.setField(reportService, "platformPolicyService", platformPolicyService);
+
                 buyerAccountId = UUID.randomUUID();
                 sellerAccountId = UUID.randomUUID();
                 adminAccountId = UUID.randomUUID();
@@ -298,6 +305,7 @@ class ReportDisputeFlowTest {
         void handleReport_AdminReject_ReleasesMoneyToShop() {
                 HandleReportRequest req = HandleReportRequest.builder()
                                 .decision(ReportDecision.REJECT)
+                                .policyClauseCode("RETURN_REFUND_COMPLAINT_POLICY")
                                 .note("Bằng chứng không đủ căn cứ")
                                 .build();
 
@@ -307,10 +315,22 @@ class ReportDisputeFlowTest {
                 when(orderReturnRepository.findByOrderId(orderId)).thenReturn(Optional.empty());
                 when(orderRepository.findByIdForUpdate(orderId)).thenReturn(Optional.of(orderEntity));
 
+                PlatformPolicyResponse policyResp = PlatformPolicyResponse.builder()
+                                .policyKey("RETURN_REFUND_COMPLAINT_POLICY")
+                                .title("Quy Trình 4 Bước Xử Lý Khiếu Nại, Đổi Trả & Hoàn Tiền")
+                                .category("RETURN_REFUND")
+                                .isActive(true)
+                                .build();
+                when(platformPolicyService.validateDisputeClause(eq("RETURN_REFUND_COMPLAINT_POLICY"),
+                                eq("REJECT"), eq(false)))
+                                .thenReturn(policyResp);
+
                 reportService.handleReport(adminAccountId, reportId, req);
 
                 assertEquals(ReportStage.CLOSED, reportEntity.getStage());
                 assertEquals(RequestStatus.REJECTED, requestEntity.getStatus());
+                assertEquals("RETURN_REFUND_COMPLAINT_POLICY", reportEntity.getPolicyClauseCode());
+                assertEquals("Quy Trình 4 Bước Xử Lý Khiếu Nại, Đổi Trả & Hoàn Tiền", reportEntity.getPolicyClauseTitle());
                 assertTrue(orderEntity.isReceivedByBuyer());
                 assertEquals(OrderStatus.COMPLETED, orderEntity.getStatus());
                 verify(escrowService).releaseByOrder(orderId);

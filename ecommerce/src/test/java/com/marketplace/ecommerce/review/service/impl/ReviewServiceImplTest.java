@@ -3,6 +3,7 @@ package com.marketplace.ecommerce.review.service.impl;
 import com.marketplace.ecommerce.auth.entity.Account;
 import com.marketplace.ecommerce.auth.entity.User;
 import com.marketplace.ecommerce.auth.repository.UserRepository;
+import com.marketplace.ecommerce.auth.service.AccountDisciplineService;
 import com.marketplace.ecommerce.common.exception.CustomException;
 import com.marketplace.ecommerce.file.service.FileService;
 import com.marketplace.ecommerce.order.entity.Order;
@@ -58,6 +59,8 @@ class ReviewServiceImplTest {
     private ReviewValidation reviewValidation;
     @Mock
     private FileService fileService;
+    @Mock
+    private AccountDisciplineService accountDisciplineService;
 
     @InjectMocks
     private ReviewServiceImpl reviewService;
@@ -135,7 +138,7 @@ class ReviewServiceImplTest {
                 sampleUser.getId(), sampleProduct.getId(), sampleOrder.getId(), ReviewStatus.ACTIVE)).thenReturn(true);
 
         CustomException ex = assertThrows(CustomException.class, () -> reviewService.createReview(accountId, sampleProduct.getId(), req));
-        assertTrue(ex.getMessage().contains("already reviewing"));
+        assertTrue(ex.getMessage().contains("đã đánh giá"));
     }
 
     @Test
@@ -187,7 +190,7 @@ class ReviewServiceImplTest {
 
         UpdateReviewRequest req = new UpdateReviewRequest();
         CustomException ex = assertThrows(CustomException.class, () -> reviewService.updateReview(accountId, sampleReview.getId(), req));
-        assertTrue(ex.getMessage().contains("within 7 days"));
+        assertTrue(ex.getMessage().contains("7 ngày"));
     }
 
     @Test
@@ -242,12 +245,12 @@ class ReviewServiceImplTest {
 
         // deleteReview not author
         CustomException exDel = assertThrows(CustomException.class, () -> reviewService.deleteReview(accountId, sampleReview.getId()));
-        assertTrue(exDel.getMessage().contains("permission to delete"));
+        assertTrue(exDel.getMessage().contains("không có quyền xóa"));
 
         // updateReview not author
         UpdateReviewRequest req = new UpdateReviewRequest();
         CustomException exUp = assertThrows(CustomException.class, () -> reviewService.updateReview(accountId, sampleReview.getId(), req));
-        assertTrue(exUp.getMessage().contains("permission to update"));
+        assertTrue(exUp.getMessage().contains("không có quyền cập nhật"));
     }
 
     @Test

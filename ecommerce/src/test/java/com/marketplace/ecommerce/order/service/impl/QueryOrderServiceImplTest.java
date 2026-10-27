@@ -231,5 +231,15 @@ class QueryOrderServiceImplTest {
         when(orderRepository.findById(sampleOrder.getId())).thenReturn(Optional.of(sampleOrder));
         assertThrows(CustomException.class, () -> queryOrderService.getOrderForUser(sampleOrder.getId(), accountId));
         assertThrows(CustomException.class, () -> queryOrderService.getOrderByIdAndShop(sampleOrder.getId(), accountId));
+
+        // 11. adminListOrders with shopId != null
+        when(orderRepository.findByShopIdOrderByCreatedAtDesc(sampleShop.getId())).thenReturn(List.of(sampleOrder));
+        assertEquals(1, queryOrderService.adminListOrders(accountId, null, sampleShop.getId()).size());
+
+        when(orderRepository.findByShopIdAndStatusOrderByCreatedAtDesc(sampleShop.getId(), OrderStatus.DELIVERED)).thenReturn(List.of(sampleOrder));
+        assertEquals(1, queryOrderService.adminListOrders(accountId, OrderStatus.DELIVERED, sampleShop.getId()).size());
+
+        when(orderRepository.findByStatusOrderByCreatedAtDesc(OrderStatus.DELIVERED)).thenReturn(List.of(sampleOrder));
+        assertEquals(1, queryOrderService.adminListOrders(accountId, OrderStatus.DELIVERED).size());
     }
 }

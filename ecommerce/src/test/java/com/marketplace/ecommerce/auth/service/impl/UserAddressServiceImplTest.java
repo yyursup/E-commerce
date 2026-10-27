@@ -162,4 +162,115 @@ class UserAddressServiceImplTest {
         when(userRepository.findByAccountId(accountId)).thenReturn(Optional.empty());
         assertThrows(CustomException.class, () -> userAddressService.listMyAddresses(accountId));
     }
+
+    @Test
+    @DisplayName("createMyAddress: Đã có địa chỉ và req.isDefault = false thì không set default")
+    void testCreateMyAddress_NotDefault() {
+        when(userRepository.findByAccountId(accountId)).thenReturn(Optional.of(sampleUser));
+        when(userAddressRepository.existsByUserIdAndDeletedFalse(sampleUser.getId())).thenReturn(true);
+        when(userAddressRepository.save(any(UserAddress.class))).thenAnswer(inv -> {
+            UserAddress a = inv.getArgument(0);
+            a.setId(addressId);
+            return a;
+        });
+
+        request.setIsDefault(false);
+        UserAddressResponse res = userAddressService.createMyAddress(accountId, request);
+
+        assertNotNull(res);
+        verify(userAddressRepository, never()).unsetDefaultExcept(any(), any());
+    }
+
+    @Test
+    @DisplayName("updateMyAddress ném lỗi khi không tìm thấy địa chỉ")
+    void testUpdateMyAddress_NotFound() {
+        when(userRepository.findByAccountId(accountId)).thenReturn(Optional.of(sampleUser));
+        when(userAddressRepository.findByIdAndUserIdAndDeletedFalse(addressId, sampleUser.getId()))
+                .thenReturn(Optional.empty());
+
+        assertThrows(CustomException.class, () -> userAddressService.updateMyAddress(accountId, addressId, request));
+    }
+
+    @Test
+    @DisplayName("updateMyAddress: req.isDefault = false thì không set default")
+    void testUpdateMyAddress_NotDefault() {
+        when(userRepository.findByAccountId(accountId)).thenReturn(Optional.of(sampleUser));
+        UserAddress existing = new UserAddress();
+        existing.setId(addressId);
+        existing.setUser(sampleUser);
+        existing.setIsDefault(false);
+
+        when(userAddressRepository.findByIdAndUserIdAndDeletedFalse(addressId, sampleUser.getId()))
+                .thenReturn(Optional.of(existing));
+        when(userAddressRepository.save(any(UserAddress.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        request.setIsDefault(false);
+        UserAddressResponse res = userAddressService.updateMyAddress(accountId, addressId, request);
+
+        assertNotNull(res);
+        assertFalse(existing.getIsDefault());
+        verify(userAddressRepository, never()).unsetDefaultExcept(any(), any());
+    }
+
+    @Test
+    @DisplayName("deleteMyAddress ném lỗi khi không tìm thấy địa chỉ")
+    void testDeleteMyAddress_NotFound() {
+        when(userRepository.findByAccountId(accountId)).thenReturn(Optional.of(sampleUser));
+        when(userAddressRepository.findByIdAndUserIdAndDeletedFalse(addressId, sampleUser.getId()))
+                .thenReturn(Optional.empty());
+
+        assertThrows(CustomException.class, () -> userAddressService.deleteMyAddress(accountId, addressId));
+    }
+
+    @Test
+    @DisplayName("deleteMyAddress: Địa chỉ bị xóa không phải default thì không thực hiện promote")
+    void testDeleteMyAddress_NotDefault_NoPromote() {
+        when(userRepository.findByAccountId(accountId)).thenReturn(Optional.of(sampleUser));
+        UserAddress existing = new UserAddress();
+        existing.setId(addressId);
+        existing.setUser(sampleUser);
+        existing.setIsDefault(false);
+
+        when(userAddressRepository.findByIdAndUserIdAndDeletedFalse(addressId, sampleUser.getId()))
+                .thenReturn(Optional.of(existing));
+
+        userAddressService.deleteMyAddress(accountId, addressId);
+
+        assertTrue(existing.getDeleted());
+        assertFalse(existing.getIsDefault());
+        verify(userAddressRepository).save(existing);
+        verify(userAddressRepository, never()).findAllByUserIdAndDeletedFalseOrderByIsDefaultDescIdDesc(any());
+    }
+
+    @Test
+    @DisplayName("deleteMyAddress: Địa chỉ xóa là default nhưng không còn địa chỉ nào khác (remaining rỗng)")
+    void testDeleteMyAddress_Default_NoRemaining() {
+        when(userRepository.findByAccountId(accountId)).thenReturn(Optional.of(sampleUser));
+        UserAddress existing = new UserAddress();
+        existing.setId(addressId);
+        existing.setUser(sampleUser);
+        existing.setIsDefault(true);
+
+        when(userAddressRepository.findByIdAndUserIdAndDeletedFalse(addressId, sampleUser.getId()))
+                .thenReturn(Optional.of(existing));
+        when(userAddressRepository.findAllByUserIdAndDeletedFalseOrderByIsDefaultDescIdDesc(sampleUser.getId()))
+                .thenReturn(List.of());
+
+        userAddressService.deleteMyAddress(accountId, addressId);
+
+        assertTrue(existing.getDeleted());
+        assertFalse(existing.getIsDefault());
+        verify(userAddressRepository).save(existing);
+        verify(userAddressRepository, never()).unsetDefaultExcept(any(), any());
+    }
+
+    @Test
+    @DisplayName("setDefault ném lỗi khi không tìm thấy địa chỉ")
+    void testSetDefault_NotFound() {
+        when(userRepository.findByAccountId(accountId)).thenReturn(Optional.of(sampleUser));
+        when(userAddressRepository.findByIdAndUserIdAndDeletedFalse(addressId, sampleUser.getId()))
+                .thenReturn(Optional.empty());
+
+        assertThrows(CustomException.class, () -> userAddressService.setDefault(accountId, addressId));
+    }
 }

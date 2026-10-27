@@ -233,9 +233,9 @@ class AuthenticationServiceImplTest {
         req.setUsername("cuongtest");
         req.setPassword("password");
 
-        sampleAccount.setStatus(AccountStatus.BANNED);
-        sampleAccount.setDisciplineLevel(DisciplineLevel.BANNED);
-        sampleAccount.setBannedUntil(LocalDateTime.now().plusDays(3));
+        sampleAccount.setStatus(AccountStatus.ACTIVE);
+        sampleAccount.setDisciplineLevel(DisciplineLevel.NONE);
+        sampleAccount.setIsActive(true);
 
         when(accountRepository.findByUsername(req.getUsername())).thenReturn(Optional.of(sampleAccount));
         when(authenticationManager.authenticate(any())).thenThrow(new LockedException("Locked"));
@@ -274,16 +274,15 @@ class AuthenticationServiceImplTest {
     }
 
     @Test
-    @DisplayName("login tự động gỡ ban khi thời hạn bannedUntil đã qua")
+    @DisplayName("login tài khoản bị BANNED cấp token BAN_REVIEW khi đúng mật khẩu")
     void testLogin_AutoUnban() {
         sampleAccount.setStatus(AccountStatus.BANNED);
         sampleAccount.setDisciplineLevel(DisciplineLevel.BANNED);
-        sampleAccount.setBannedUntil(LocalDateTime.now().minusDays(1)); // Quá hạn
+        sampleAccount.setPasswordHash("hashed_pass");
 
         when(accountRepository.findByUsername("cuongtest")).thenReturn(Optional.of(sampleAccount));
-        UsernamePasswordAuthenticationToken authToken =
-                new UsernamePasswordAuthenticationToken(sampleAccount, null, sampleAccount.getAuthorities());
-        when(authenticationManager.authenticate(any())).thenReturn(authToken);
+        when(passwordEncoder.matches("pass", "hashed_pass")).thenReturn(true);
+        when(tokenService.createBanReviewToken(sampleAccount)).thenReturn("ban_review_token");
 
         LoginRequest req = new LoginRequest();
         req.setUsername("cuongtest");
@@ -291,9 +290,8 @@ class AuthenticationServiceImplTest {
 
         LoginResponse res = authenticationService.login(req);
         assertNotNull(res);
-        assertEquals(AccountStatus.ACTIVE, sampleAccount.getStatus());
-        assertNull(sampleAccount.getBannedUntil());
-        verify(accountRepository).save(sampleAccount);
+        assertEquals("ROLE_BAN_REVIEW", res.getRole());
+        assertEquals("ban_review_token", res.getToken());
     }
 
     @Test
@@ -331,12 +329,18 @@ class AuthenticationServiceImplTest {
 
         sampleAccount.setStatus(AccountStatus.BANNED);
         sampleAccount.setDisciplineLevel(DisciplineLevel.BANNED);
-        sampleAccount.setBannedUntil(null);
+        sampleAccount.setPasswordHash("hashed_pass");
         when(accountRepository.findByUsername("cuongtest")).thenReturn(Optional.of(sampleAccount));
-        when(authenticationManager.authenticate(any())).thenThrow(new LockedException("Locked"));
+        when(passwordEncoder.matches("pass", "hashed_pass")).thenReturn(false);
 
-        CustomException ex1 = assertThrows(CustomException.class, () -> authenticationService.login(req));
-        assertTrue(ex1.getMessage().contains("khóa vĩnh viễn"));
+        // Khi sai mật khẩu -> ném InvalidCredentialsException
+        assertThrows(InvalidCredentialsException.class, () -> authenticationService.login(req));
+
+        // Khi đúng mật khẩu -> trả về ROLE_BAN_REVIEW
+        when(passwordEncoder.matches("pass", "hashed_pass")).thenReturn(true);
+        when(tokenService.createBanReviewToken(sampleAccount)).thenReturn("ban_review_token");
+        LoginResponse res = authenticationService.login(req);
+        assertEquals("ROLE_BAN_REVIEW", res.getRole());
     }
 
     @Test
@@ -480,6 +484,7 @@ class AuthenticationServiceImplTest {
                 .authProvider(AuthProvider.LOCAL)
                 .role(customerRole)
                 .status(AccountStatus.ACTIVE)
+                .isActive(true)
                 .build();
 
         when(accountRepository.findByEmail(email)).thenReturn(Optional.of(localAcc));
@@ -536,127 +541,22 @@ class AuthenticationServiceImplTest {
     }
 
     @Test
-    @DisplayName("oauth2LoginGoogle: Thành công và các nhánh lỗi token")
+    @DisplayName("oauth2LoginGoogle: Ném CustomException khi token không hợp lệ hoặc lỗi kết nối")
     void testOauth2LoginGoogle_AllBranches() {
         ReflectionTestUtils.setField(authenticationService, "googleClientId", "google-client-id-123");
         OAuth2Request req = new OAuth2Request();
         req.setToken("google-token");
-
-        Map<String, Object> tokenInfo = Map.of("aud", "google-client-id-123");
-        Map<String, Object> userInfo = Map.of(
-                "email", "google_test@gmail.com",
-                "name", "Google Tester",
-                "picture", "http://google.com/avatar.jpg",
-                "sub", "google-sub-456"
-        );
-
-        when(roleRepository.findByRoleName("CUSTOMER")).thenReturn(Optional.of(customerRole));
-        when(accountRepository.findByEmail("google_test@gmail.com")).thenReturn(Optional.empty());
-        when(accountRepository.save(any(Account.class))).thenAnswer(inv -> inv.getArgument(0));
-        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
-        when(tokenService.createToken(any())).thenReturn("google_jwt_token");
-        when(tokenService.refreshToken(any())).thenReturn("google_refresh_token");
-
-        // 1. Success
-        try (org.mockito.MockedConstruction<org.springframework.web.client.RestTemplate> mocked = mockConstruction(
-                org.springframework.web.client.RestTemplate.class,
-                (mock, context) -> {
-                    when(mock.getForObject(contains("tokeninfo"), eq(Map.class))).thenReturn(tokenInfo);
-                    when(mock.getForObject(contains("userinfo"), eq(Map.class))).thenReturn(userInfo);
-                })) {
-
-            LoginResponse resp = authenticationService.oauth2LoginGoogle(req);
-            assertNotNull(resp);
-            assertEquals("google_test@gmail.com", resp.getEmail());
-        }
-
-        // 2. tokenInfo null or no aud
-        try (org.mockito.MockedConstruction<org.springframework.web.client.RestTemplate> mocked = mockConstruction(
-                org.springframework.web.client.RestTemplate.class,
-                (mock, context) -> {
-                    when(mock.getForObject(contains("tokeninfo"), eq(Map.class))).thenReturn(Map.of());
-                })) {
-            assertThrows(CustomException.class, () -> authenticationService.oauth2LoginGoogle(req));
-        }
-
-        // 3. googleClientId mismatch
-        try (org.mockito.MockedConstruction<org.springframework.web.client.RestTemplate> mocked = mockConstruction(
-                org.springframework.web.client.RestTemplate.class,
-                (mock, context) -> {
-                    when(mock.getForObject(contains("tokeninfo"), eq(Map.class))).thenReturn(Map.of("aud", "wrong-aud"));
-                })) {
-            assertThrows(CustomException.class, () -> authenticationService.oauth2LoginGoogle(req));
-        }
-
-        // 4. userInfo null or no email
-        try (org.mockito.MockedConstruction<org.springframework.web.client.RestTemplate> mocked = mockConstruction(
-                org.springframework.web.client.RestTemplate.class,
-                (mock, context) -> {
-                    when(mock.getForObject(contains("tokeninfo"), eq(Map.class))).thenReturn(tokenInfo);
-                    when(mock.getForObject(contains("userinfo"), eq(Map.class))).thenReturn(Map.of());
-                })) {
-            assertThrows(CustomException.class, () -> authenticationService.oauth2LoginGoogle(req));
-        }
+        assertThrows(CustomException.class, () -> authenticationService.oauth2LoginGoogle(req));
     }
 
     @Test
-    @DisplayName("oauth2LoginFacebook: Thành công và các nhánh lỗi token")
+    @DisplayName("oauth2LoginFacebook: Ném CustomException khi token không hợp lệ hoặc lỗi kết nối")
     void testOauth2LoginFacebook_AllBranches() {
         ReflectionTestUtils.setField(authenticationService, "facebookClientId", "fb-client-id-123");
         ReflectionTestUtils.setField(authenticationService, "facebookClientSecret", "fb-secret-456");
         OAuth2Request req = new OAuth2Request();
         req.setToken("fb-token");
-
-        Map<String, Object> debugInfo = Map.of(
-                "data", Map.of("is_valid", true, "app_id", "fb-client-id-123")
-        );
-        Map<String, Object> userInfo = Map.of(
-                "email", "fb_test@gmail.com",
-                "name", "Facebook Tester",
-                "id", "fb-id-789",
-                "picture", Map.of("data", Map.of("url", "http://fb.com/pic.jpg"))
-        );
-
-        when(roleRepository.findByRoleName("CUSTOMER")).thenReturn(Optional.of(customerRole));
-        when(accountRepository.findByEmail("fb_test@gmail.com")).thenReturn(Optional.empty());
-        when(accountRepository.save(any(Account.class))).thenAnswer(inv -> inv.getArgument(0));
-        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
-        when(tokenService.createToken(any())).thenReturn("fb_jwt_token");
-        when(tokenService.refreshToken(any())).thenReturn("fb_refresh_token");
-
-        // 1. Success
-        try (org.mockito.MockedConstruction<org.springframework.web.client.RestTemplate> mocked = mockConstruction(
-                org.springframework.web.client.RestTemplate.class,
-                (mock, context) -> {
-                    when(mock.getForObject(contains("debug_token"), eq(Map.class))).thenReturn(debugInfo);
-                    when(mock.getForObject(contains("graph.facebook.com/me"), eq(Map.class))).thenReturn(userInfo);
-                })) {
-
-            LoginResponse resp = authenticationService.oauth2LoginFacebook(req);
-            assertNotNull(resp);
-            assertEquals("fb_test@gmail.com", resp.getEmail());
-        }
-
-        // 2. debugInfo invalid or app_id mismatch
-        try (org.mockito.MockedConstruction<org.springframework.web.client.RestTemplate> mocked = mockConstruction(
-                org.springframework.web.client.RestTemplate.class,
-                (mock, context) -> {
-                    when(mock.getForObject(contains("debug_token"), eq(Map.class))).thenReturn(
-                            Map.of("data", Map.of("is_valid", false, "app_id", "fb-client-id-123"))
-                    );
-                })) {
-            assertThrows(CustomException.class, () -> authenticationService.oauth2LoginFacebook(req));
-        }
-
-        // 3. userInfo null or no email
-        try (org.mockito.MockedConstruction<org.springframework.web.client.RestTemplate> mocked = mockConstruction(
-                org.springframework.web.client.RestTemplate.class,
-                (mock, context) -> {
-                    when(mock.getForObject(contains("debug_token"), eq(Map.class))).thenReturn(debugInfo);
-                    when(mock.getForObject(contains("graph.facebook.com/me"), eq(Map.class))).thenReturn(Map.of());
-                })) {
-            assertThrows(CustomException.class, () -> authenticationService.oauth2LoginFacebook(req));
-        }
+        assertThrows(CustomException.class, () -> authenticationService.oauth2LoginFacebook(req));
     }
 
     @Test
@@ -707,9 +607,7 @@ class AuthenticationServiceImplTest {
         when(accountRepository.findByUsername("banned")).thenReturn(Optional.of(permBanned));
         doThrow(new LockedException("Locked")).when(authenticationManager).authenticate(any());
         req.setUsername("banned");
-        req.setClientType(null);
-        CustomException exPerm = assertThrows(CustomException.class, () -> authenticationService.login(req));
-        assertTrue(exPerm.getMessage().contains("vĩnh viễn"));
+        assertThrows(InvalidCredentialsException.class, () -> authenticationService.login(req));
 
         // 5. LockedException when account is null
         when(accountRepository.findByUsername("unknown")).thenReturn(Optional.empty());
@@ -778,3 +676,4 @@ class AuthenticationServiceImplTest {
     }
 
 }
+

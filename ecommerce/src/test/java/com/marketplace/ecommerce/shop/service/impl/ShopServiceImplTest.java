@@ -184,6 +184,7 @@ class ShopServiceImplTest {
     void testGetAllActiveShops() {
         Shop s1 = Shop.builder().id(UUID.randomUUID()).status(ShopStatus.ACTIVE).name("S1").build();
         Shop s2 = Shop.builder().id(UUID.randomUUID()).status(ShopStatus.CLOSED).name("S2").build();
+        when(shopRepository.findEligibleActiveShops(any())).thenReturn(List.of(s1, s2));
         when(shopRepository.findAll()).thenReturn(List.of(s1, s2));
 
         List<ShopProfileResponse> active = shopService.getAllActiveShops();
@@ -354,9 +355,9 @@ class ShopServiceImplTest {
         assertEquals("FINAL_RULING", orderVio.getAppealStatus());
         assertEquals("Đơn hàng ORD-888", orderVio.getTargetName());
 
-        // Verify PRODUCT appealStatus is APPROVED from legacy appeal
+        // Verify PRODUCT appealStatus is FINAL_RULING
         ShopViolationResponse prodVio = violations.stream().filter(v -> v.getTargetType() == TargetType.PRODUCT).findFirst().orElseThrow();
-        assertEquals("APPROVED", prodVio.getAppealStatus());
+        assertEquals("FINAL_RULING", prodVio.getAppealStatus());
         assertEquals("Sản phẩm vi phạm", prodVio.getTargetName());
     }
 
@@ -461,6 +462,7 @@ class ShopServiceImplTest {
                 .status(ShopStatus.WARNED)
                 .averageRating(4.5f)
                 .build();
+        when(shopRepository.findEligibleActiveShops(any())).thenReturn(List.of(warnedShop));
         when(shopRepository.findAll()).thenReturn(List.of(warnedShop));
         when(productRepository.countByShopIdAndStatusAndDeletedFalse(any(), any())).thenThrow(new RuntimeException("DB err"));
         when(shopFollowerRepository.countByShopId(any())).thenThrow(new RuntimeException("DB err"));

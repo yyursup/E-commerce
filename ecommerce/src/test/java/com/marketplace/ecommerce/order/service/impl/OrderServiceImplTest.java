@@ -208,7 +208,7 @@ class OrderServiceImplTest {
     }
 
     @Test
-    @DisplayName("convertCartToOrder thành công khi khách chọn phương thức COD")
+    @DisplayName("convertCartToOrder ném lỗi khi khách chọn phương thức COD đã ngừng hỗ trợ")
     void testConvertCartToOrder_CodDisabled() {
         CreateOrderRequest req = new CreateOrderRequest();
         req.setShopId(sampleShop.getId());
@@ -220,18 +220,9 @@ class OrderServiceImplTest {
         when(userAddressRepository.findByIdAndUserIdAndDeletedFalse(sampleAddress.getId(), sampleBuyer.getId()))
                 .thenReturn(Optional.of(sampleAddress));
         when(cartRepository.findByUserIdWithItems(sampleBuyer.getId())).thenReturn(Optional.of(sampleCart));
-        when(shippingService.quoteFee(any(), any(), any(), any())).thenReturn(BigDecimal.valueOf(30000));
-        when(commissionCalculationService.calculateFinalRate(any(), any(), any())).thenReturn(BigDecimal.valueOf(5.0));
-        when(orderRepository.save(any(Order.class))).thenAnswer(inv -> {
-            Order o = inv.getArgument(0);
-            if (o.getId() == null) o.setId(UUID.randomUUID());
-            return o;
-        });
-        when(productVariantRepository.findById(sampleVariant.getId())).thenReturn(Optional.of(sampleVariant));
 
-        OrderResponse res = orderService.convertCartToOrder(accountId, req);
-        assertNotNull(res);
-        assertEquals(PaymentMethod.COD.name(), res.getPaymentMethod());
+        CustomException ex = assertThrows(CustomException.class, () -> orderService.convertCartToOrder(accountId, req));
+        assertTrue(ex.getMessage().contains("COD"));
     }
 
     @Test
@@ -423,7 +414,7 @@ class OrderServiceImplTest {
     }
 
     @Test
-    @DisplayName("convertCartToOrder fallback về COD khi phương thức thanh toán không hợp lệ")
+    @DisplayName("convertCartToOrder ném lỗi khi phương thức thanh toán không hợp lệ")
     void testConvertCartToOrder_InvalidPaymentMethod() {
         CreateOrderRequest req = new CreateOrderRequest();
         req.setShopId(sampleShop.getId());
@@ -435,18 +426,9 @@ class OrderServiceImplTest {
         when(userAddressRepository.findByIdAndUserIdAndDeletedFalse(sampleAddress.getId(), sampleBuyer.getId()))
                 .thenReturn(Optional.of(sampleAddress));
         when(cartRepository.findByUserIdWithItems(sampleBuyer.getId())).thenReturn(Optional.of(sampleCart));
-        when(shippingService.quoteFee(any(), any(), any(), any())).thenReturn(BigDecimal.valueOf(30000));
-        when(commissionCalculationService.calculateFinalRate(any(), any(), any())).thenReturn(BigDecimal.valueOf(5.0));
-        when(orderRepository.save(any(Order.class))).thenAnswer(inv -> {
-            Order o = inv.getArgument(0);
-            if (o.getId() == null) o.setId(UUID.randomUUID());
-            return o;
-        });
-        when(productVariantRepository.findById(sampleVariant.getId())).thenReturn(Optional.of(sampleVariant));
 
-        OrderResponse res = orderService.convertCartToOrder(accountId, req);
-        assertNotNull(res);
-        assertEquals(PaymentMethod.COD.name(), res.getPaymentMethod());
+        CustomException ex = assertThrows(CustomException.class, () -> orderService.convertCartToOrder(accountId, req));
+        assertTrue(ex.getMessage().contains("Phương thức thanh toán không hợp lệ"));
     }
 
     @Test

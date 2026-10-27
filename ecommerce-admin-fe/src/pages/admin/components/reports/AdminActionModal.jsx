@@ -50,8 +50,8 @@ export default function AdminActionModal({
 
   const isSellerDispute = isSellerReturnDisputeItem(actionModal.item)
 
-  const isOrderDispute = targetType === 'ORDER' && ['REPORT_APPROVE', 'REPORT_REJECT'].includes(actionModal.type)
-  const isClauseMissing = isOrderDispute && !actionModal.policyClauseCode
+  const isReportAction = ['REPORT_APPROVE', 'REPORT_REJECT'].includes(actionModal.type)
+  const isClauseMissing = isReportAction && !actionModal.policyClauseCode
 
   const handleClauseSelect = (clauseCode) => {
     const clauseInfo = policyClauses.find((c) => c.code === clauseCode)
@@ -108,16 +108,31 @@ export default function AdminActionModal({
     }
 
     switch (actionModal.type) {
-      case 'REPORT_APPROVE':
+      case 'REPORT_APPROVE': {
+        let approveText = 'Xác nhận vi phạm'
+        if (targetType === 'ORDER') {
+          approveText = 'Xác nhận vi phạm & Bồi hoàn'
+        } else if (targetType === 'USER') {
+          approveText = 'Xác nhận vi phạm'
+        } else if (targetType === 'PRODUCT') {
+          approveText = 'Xác nhận vi phạm'
+        } else if (targetType === 'REVIEW') {
+          approveText = 'Xác nhận vi phạm'
+        } else if (targetType === 'SHOP') {
+          approveText = 'Xác nhận vi phạm'
+        }
         return {
-          text: targetType === 'ORDER' ? 'Xác nhận vi phạm & Bồi hoàn' : 'Xác nhận vi phạm (Phạt Shop)',
+          text: approveText,
           className: 'bg-rose-600 hover:bg-rose-700 shadow-md shadow-rose-600/20 text-white',
         }
-      case 'REPORT_REJECT':
+      }
+      case 'REPORT_REJECT': {
+        const rejectText = targetType === 'ORDER' ? 'Bác bỏ khiếu nại (Bảo vệ Shop)' : 'Bác bỏ tố cáo (Không vi phạm)'
         return {
-          text: 'Bác bỏ báo cáo (Bảo vệ Shop)',
+          text: rejectText,
           className: 'bg-stone-600 hover:bg-stone-700 shadow-md shadow-stone-600/20 text-white',
         }
+      }
       case 'ESCROW_REFUND':
         return {
           text: 'Xác nhận hoàn tiền 100% cho Buyer',
@@ -177,21 +192,8 @@ export default function AdminActionModal({
                     : 'Vui lòng nhập lý do / phán quyết chính thức từ Ban Quản Trị. Thông tin này sẽ được lưu trữ vào hồ sơ đối soát:'}
             </p>
 
-            {/* Quick tags gợi ý lý do nhanh (Chỉ áp dụng khi không phải tranh chấp Đơn hàng có Căn Cứ Điều Khoản chuẩn hóa) */}
-            {!isOrderDispute && (
-              <AdminActionQuickTags
-                actionType={actionModal.type}
-                targetType={targetType}
-                currentNote={actionModal.note}
-                onSelectTag={(tag) => setActionModal((prev) => ({ ...prev, note: tag }))}
-                isDark={isDark}
-                targetTypeLabel={targetTypeLabel}
-                isSellerDispute={isSellerDispute}
-              />
-            )}
-
-            {/* Bộ chọn Căn Cứ Điều Khoản Chính Sách bắt buộc cho tranh chấp Đơn hàng */}
-            {isOrderDispute && (
+            {/* Bộ chọn Căn Cứ Điều Khoản Chính Sách chuẩn hóa bắt buộc cho toàn bộ báo cáo vi phạm (ORDER, PRODUCT, SHOP, REVIEW, USER) */}
+            {isReportAction && (
               <AdminActionPolicyClauseSelector
                 policyClauses={policyClauses}
                 selectedClause={actionModal.policyClauseCode}
@@ -200,6 +202,19 @@ export default function AdminActionModal({
                 actionType={actionModal.type}
                 isSellerDispute={isSellerDispute}
                 isDark={isDark}
+              />
+            )}
+
+            {/* Quick tags gợi ý lý do nhanh (áp dụng khi không phải báo cáo vi phạm cần chọn chính sách) */}
+            {!isReportAction && (
+              <AdminActionQuickTags
+                actionType={actionModal.type}
+                targetType={targetType}
+                currentNote={actionModal.note}
+                onSelectTag={(tag) => setActionModal((prev) => ({ ...prev, note: tag }))}
+                isDark={isDark}
+                targetTypeLabel={targetTypeLabel}
+                isSellerDispute={isSellerDispute}
               />
             )}
 

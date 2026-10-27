@@ -88,20 +88,58 @@ function OrderPolicyClauseSelectorContent({
     let list = allClauses
 
     if (activeTab === 'RECOMMENDED') {
-      // Ưu tiên chính sách đổi trả và tiêu chuẩn hàng hóa lên trên đầu
+      const priorityMap = {
+        PRODUCT: [
+          'PRODUCT_LISTING_AND_PROHIBITED_ITEMS',
+          'PRODUCT_LISTING_AND_CONDITION_STANDARDS',
+          'CLAUSE_8_COUNTERFEIT_AND_PROHIBITED_GOODS',
+          'CLAUSE_9_PRODUCT_QUALITY_AND_SPEC_DISPUTE',
+        ],
+        SHOP: [
+          'SELLER_CONDUCT_AND_PENALTIES',
+          'SELLER_OPERATING_POLICY',
+          'CLAUSE_10_SELLER_UNRESPONSIVE_AND_SLA_BREACH',
+          'COMMISSION_AND_SETTLEMENT',
+        ],
+        REVIEW: [
+          'BUYER_RIGHTS_AND_PROTECTION',
+          'PRIVACY_AND_DATA_PROTECTION',
+          'SELLER_CONDUCT_AND_PENALTIES',
+        ],
+        USER: [
+          'BUYER_RIGHTS_AND_PROTECTION',
+          'CLAUSE_14_BUYER_DISPUTE_REJECTION_STANDARDS',
+          'PRIVACY_AND_DATA_PROTECTION',
+        ],
+        ORDER: [
+          'CLAUSE_9_PRODUCT_QUALITY_AND_SPEC_DISPUTE',
+          'CLAUSE_8_COUNTERFEIT_AND_PROHIBITED_GOODS',
+          'CLAUSE_10_SELLER_UNRESPONSIVE_AND_SLA_BREACH',
+          'CLAUSE_14_BUYER_DISPUTE_REJECTION_STANDARDS',
+          'CLAUSE_15_RETURN_PACKAGE_DISPUTE_STANDARDS',
+          'RETURN_REFUND_COMPLAINT_POLICY',
+          'ESCROW_PAYMENT_PROTECTION',
+        ],
+      }
+
+      const priorities = priorityMap[targetType] || priorityMap.ORDER
+
       list = [...list].sort((a, b) => {
-        if (a.code === 'RETURN_REFUND_COMPLAINT_POLICY') return -1
-        if (b.code === 'RETURN_REFUND_COMPLAINT_POLICY') return 1
-        if (a.code === 'PRODUCT_LISTING_AND_CONDITION_STANDARDS') return -1
-        if (b.code === 'PRODUCT_LISTING_AND_CONDITION_STANDARDS') return 1
+        const idxA = priorities.indexOf(a.code)
+        const idxB = priorities.indexOf(b.code)
+        if (idxA !== -1 && idxB !== -1) return idxA - idxB
+        if (idxA !== -1) return -1
+        if (idxB !== -1) return 1
         return 0
       })
     } else if (activeTab === 'RETURN') {
       list = list.filter((c) => c.category === 'RETURN_REFUND' || c.category === 'RETURN')
     } else if (activeTab === 'STANDARDS') {
-      list = list.filter((c) => c.category === 'CONDITION_GRADE' || c.category === 'SHIPPING' || c.category === 'GRADING')
-    } else if (activeTab === 'ESCROW_SAFETY') {
-      list = list.filter((c) => c.category === 'ESCROW' || c.category === 'DISCIPLINE' || c.category === 'SELLER_RULES')
+      list = list.filter((c) => c.category === 'CONDITION_GRADE' || c.category === 'SHIPPING' || c.category === 'GRADING' || c.category === 'LISTING_STANDARDS')
+    } else if (activeTab === 'SELLER_RULES') {
+      list = list.filter((c) => c.category === 'SELLER_RULES' || c.category === 'SELLER' || c.category === 'FINANCE')
+    } else if (activeTab === 'USER_SAFETY') {
+      list = list.filter((c) => c.category === 'BUYER_PROTECTION' || c.category === 'ESCROW' || c.category === 'DISCIPLINE' || c.category === 'PRIVACY')
     }
 
     if (searchQuery.trim()) {
@@ -115,7 +153,7 @@ function OrderPolicyClauseSelectorContent({
     }
 
     return list
-  }, [allClauses, activeTab, searchQuery])
+  }, [allClauses, activeTab, searchQuery, targetType])
 
   const activeClauseInfo = useMemo(() => {
     return allClauses.find((c) => c.code === selectedClause) || null
@@ -274,15 +312,27 @@ function OrderPolicyClauseSelectorContent({
             </button>
             <button
               type="button"
-              onClick={() => setActiveTab('ESCROW_SAFETY')}
+              onClick={() => setActiveTab('SELLER_RULES')}
               className={cn(
                 'px-2.5 py-1 rounded-lg transition-all shrink-0 border',
-                activeTab === 'ESCROW_SAFETY'
+                activeTab === 'SELLER_RULES'
+                  ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
+                  : 'border-transparent text-stone-500 hover:bg-stone-100 dark:hover:bg-slate-800'
+              )}
+            >
+              Gian Hàng & Người Bán
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('USER_SAFETY')}
+              className={cn(
+                'px-2.5 py-1 rounded-lg transition-all shrink-0 border',
+                activeTab === 'USER_SAFETY'
                   ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
                   : 'border-transparent text-stone-500 hover:bg-stone-100 dark:hover:bg-slate-800'
               )}
             >
-              Escrow & Kỷ Luật
+              Người Dùng & Kỷ Luật
             </button>
           </div>
 
@@ -383,7 +433,5 @@ function OrderPolicyClauseSelectorContent({
 }
 
 export default function AdminActionPolicyClauseSelector(props) {
-  if (props.targetType !== 'ORDER') return null
-
   return <OrderPolicyClauseSelectorContent {...props} />
 }

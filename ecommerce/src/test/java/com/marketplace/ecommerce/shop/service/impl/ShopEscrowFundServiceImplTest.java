@@ -802,7 +802,6 @@ class ShopEscrowFundServiceImplTest {
                 when(orderReturnRepository.existsByOrderShopIdAndStatusIn(eq(shopId), any())).thenReturn(false);
                 when(reportRepository.existsPendingReportsForShop(shopId)).thenReturn(true);
                 assertThrows(CustomException.class, () -> shopEscrowFundService.requestCloseShopAndRefund(shopId));
-
                 // Fund DEFICIT
                 fund.setStatus(EscrowFundStatus.DEFICIT);
                 assertThrows(CustomException.class, () -> shopEscrowFundService.requestCloseShopAndRefund(shopId));

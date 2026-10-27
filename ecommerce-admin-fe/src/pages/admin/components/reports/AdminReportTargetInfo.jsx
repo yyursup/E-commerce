@@ -91,6 +91,11 @@ export const renderTargetChips = (targetInfo, isDark) => {
             }
           }
 
+          const isViolation = label.toLowerCase().includes('vi phạm') || label.toLowerCase().includes('kỷ luật')
+          const isRating = label.toLowerCase().includes('đánh giá') || rawValue.includes('★') || rawValue.includes('sao')
+          const isCategory = label.toLowerCase().includes('danh mục')
+          const isQuantity = label.toLowerCase().includes('tồn kho') || label.toLowerCase().includes('kho') || label.toLowerCase().includes('đã bán')
+
           return (
             <div
               key={index}
@@ -100,11 +105,19 @@ export const renderTargetChips = (targetInfo, isDark) => {
                   ? (isDark ? 'bg-rose-500/10 border-rose-500/30 text-rose-300 font-bold' : 'bg-rose-50 border-rose-200 text-rose-700 font-bold')
                   : isStatus
                     ? (isDark ? 'bg-amber-500/10 border-amber-500/30 text-amber-300 font-bold' : 'bg-amber-50 border-amber-200 text-amber-700 font-bold')
-                    : isPayment
-                      ? (isDark ? 'bg-blue-500/10 border-blue-500/30 text-blue-300 font-semibold' : 'bg-blue-50 border-blue-200 text-blue-700 font-semibold')
-                      : isReturn
-                        ? (isDark ? 'bg-purple-500/10 border-purple-500/30 text-purple-300 font-semibold' : 'bg-purple-50 border-purple-200 text-purple-700 font-semibold')
-                        : (isDark ? 'bg-slate-800/80 border-slate-700/80 text-slate-300' : 'bg-stone-50 border-stone-200 text-stone-700')
+                    : isViolation
+                      ? (isDark ? 'bg-rose-500/15 border-rose-500/40 text-rose-400 font-bold' : 'bg-rose-100/70 border-rose-300 text-rose-800 font-bold')
+                      : isRating
+                        ? (isDark ? 'bg-amber-500/15 border-amber-500/40 text-amber-300 font-semibold' : 'bg-amber-50 border-amber-200 text-amber-700 font-semibold')
+                        : isCategory
+                          ? (isDark ? 'bg-cyan-500/10 border-cyan-500/30 text-cyan-300 font-semibold' : 'bg-cyan-50 border-cyan-200 text-cyan-700 font-semibold')
+                          : isQuantity
+                            ? (isDark ? 'bg-teal-500/10 border-teal-500/30 text-teal-300 font-semibold' : 'bg-teal-50 border-teal-200 text-teal-700 font-semibold')
+                            : isPayment
+                              ? (isDark ? 'bg-blue-500/10 border-blue-500/30 text-blue-300 font-semibold' : 'bg-blue-50 border-blue-200 text-blue-700 font-semibold')
+                              : isReturn
+                                ? (isDark ? 'bg-purple-500/10 border-purple-500/30 text-purple-300 font-semibold' : 'bg-purple-50 border-purple-200 text-purple-700 font-semibold')
+                                : (isDark ? 'bg-slate-800/80 border-slate-700/80 text-slate-300' : 'bg-stone-50 border-stone-200 text-stone-700')
               )}
             >
               <span className="text-stone-400 dark:text-slate-400 font-normal">{label}:</span>

@@ -446,7 +446,7 @@ export default function ShopEscrowFund() {
         >
           <div className="flex items-center justify-between">
             <span className={cn('text-xs font-semibold uppercase tracking-wider', isDark ? 'text-slate-400' : 'text-stone-500')}>
-              Số Dư Quỹ Ký Quỹ (Ví 2)
+              Số Dư Quỹ Ký Quỹ
             </span>
             <div className={cn('flex h-9 w-9 items-center justify-center rounded-lg', isDark ? 'bg-amber-500/10 text-amber-400' : 'bg-amber-50 text-amber-600')}>
               <HiOutlineCreditCard className="h-5 w-5" />
@@ -518,27 +518,27 @@ export default function ShopEscrowFund() {
                   fund?.status === 'ACTIVE'
                     ? 'bg-emerald-500/15 text-emerald-500'
                     : fund?.status === 'DEFICIT'
-                    ? 'bg-rose-500/15 text-rose-500 animate-pulse'
-                    : fund?.status === 'PENDING_DEPOSIT'
-                    ? 'bg-amber-500/15 text-amber-500 border border-amber-500/30'
-                    : fund?.status === 'REFUND_PENDING'
-                    ? 'bg-purple-500/15 text-purple-400 border border-purple-500/30 animate-pulse'
-                    : fund?.status === 'REFUNDED'
-                    ? 'bg-slate-500/15 text-slate-400 border border-slate-500/30'
-                    : 'bg-amber-500/15 text-amber-500'
+                      ? 'bg-rose-500/15 text-rose-500 animate-pulse'
+                      : fund?.status === 'PENDING_DEPOSIT'
+                        ? 'bg-amber-500/15 text-amber-500 border border-amber-500/30'
+                        : fund?.status === 'REFUND_PENDING'
+                          ? 'bg-purple-500/15 text-purple-400 border border-purple-500/30 animate-pulse'
+                          : fund?.status === 'REFUNDED'
+                            ? 'bg-slate-500/15 text-slate-400 border border-slate-500/30'
+                            : 'bg-amber-500/15 text-amber-500'
                 )}
               >
                 {fund?.status === 'ACTIVE'
                   ? 'BẢO CHỨNG TỐT'
                   : fund?.status === 'DEFICIT'
-                  ? 'ĐANG HỤT QUỸ'
-                  : fund?.status === 'PENDING_DEPOSIT'
-                  ? 'CHỜ NẠP KÍCH HOẠT'
-                  : fund?.status === 'REFUND_PENDING'
-                  ? 'CHỜ DUYỆT ĐÓNG SHOP'
-                  : fund?.status === 'REFUNDED'
-                  ? 'ĐÃ ĐÓNG GIAN HÀNG'
-                  : fund?.status || 'HOẠT ĐỘNG'}
+                    ? 'ĐANG HỤT QUỸ'
+                    : fund?.status === 'PENDING_DEPOSIT'
+                      ? 'CHỜ NẠP KÍCH HOẠT'
+                      : fund?.status === 'REFUND_PENDING'
+                        ? 'CHỜ DUYỆT ĐÓNG SHOP'
+                        : fund?.status === 'REFUNDED'
+                          ? 'ĐÃ ĐÓNG GIAN HÀNG'
+                          : fund?.status || 'HOẠT ĐỘNG'}
               </span>
             </div>
             <div className="mt-4 space-y-2 text-xs">
@@ -635,8 +635,8 @@ export default function ShopEscrowFund() {
                   isCurrent
                     ? 'border-amber-500 bg-amber-500/10 shadow-md ring-1 ring-amber-500'
                     : isDark
-                    ? 'border-slate-800 bg-slate-950/60'
-                    : 'border-stone-200 bg-stone-50'
+                      ? 'border-slate-800 bg-slate-950/60'
+                      : 'border-stone-200 bg-stone-50'
                 )}
               >
                 {isCurrent && (

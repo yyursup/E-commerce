@@ -23,6 +23,14 @@ body {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: #fafaf9;
+  color: #1c1917;
+}
+
+:root.dark body,
+html.dark body {
+  background-color: #020617;
+  color: #f8fafc;
 }
 
 /* Slick overrides */

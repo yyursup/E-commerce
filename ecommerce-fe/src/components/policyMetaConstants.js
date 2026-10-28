@@ -1,75 +1,91 @@
 import {
   HiOutlineShieldCheck,
+  HiOutlineRefresh,
   HiOutlineScale,
   HiOutlineTruck,
-  HiOutlineCash,
-  HiOutlineLockClosed,
   HiOutlineCheckCircle,
+  HiOutlineLockClosed,
   HiOutlineTag,
   HiOutlineDocumentText,
 } from 'react-icons/hi'
 
-export const POLICY_META_MAP = {
-  PLATFORM_OPERATING_REGULATIONS: {
-    label: 'Quy Chế Hoạt Động',
-    icon: HiOutlineScale,
-    aliases: ['TERMS_OF_SERVICE', 'GENERAL_TERMS'],
-  },
-  SELLER_OPERATING_POLICY: {
-    label: 'Quy Chế Gian Hàng & eKYC',
-    icon: HiOutlineCash,
-    aliases: ['SELLER_OPERATING_REGULATIONS', 'SELLER_POLICY'],
-  },
-  ESCROW_PAYMENT_PROTECTION: {
-    label: 'Ký Quỹ Escrow (72h)',
-    icon: HiOutlineShieldCheck,
-    aliases: ['ESCROW'],
-  },
-  RETURN_REFUND_COMPLAINT_POLICY: {
-    label: 'Khiếu Nại & Đổi Trả',
-    icon: HiOutlineTruck,
-    aliases: ['RETURN_REFUND_POLICY', 'RETURNS'],
-  },
-  PRODUCT_LISTING_AND_CONDITION_STANDARDS: {
-    label: 'Tiêu Chuẩn Đăng Bán',
-    icon: HiOutlineTag,
-    aliases: ['CONDITION_GRADE', 'SECOND_HAND_GRADING'],
-  },
-  SHIPPING_AND_CO_INSPECTION_POLICY: {
-    label: 'Vận Chuyển GHN & Đồng Kiểm',
-    icon: HiOutlineTruck,
-    aliases: ['SHIPPING_AND_DELIVERY', 'SHIPPING'],
-  },
-  DISCIPLINE_AND_REPUTATION_SYSTEM: {
-    label: 'Kỷ Luật 7 Gậy & Uy Tín',
-    icon: HiOutlineCheckCircle,
-    aliases: ['DISCIPLINE'],
-  },
-  PRIVACY_AND_DATA_PROTECTION: {
-    label: 'Bảo Mật Dữ Liệu',
-    icon: HiOutlineLockClosed,
-    aliases: ['PRIVACY_POLICY', 'PRIVACY'],
-  },
+  /**
+   * Dynamic Category Icon Resolver
+   * Maps policy category or keywords to intuitive icons, defaulting to HiOutlineDocumentText.
+   * Data-driven architecture: Any new policy created by Admin or Backend will automatically
+   * get an appropriate icon without modifying Frontend code!
+   */
+  export function getCategoryIcon(category = '', key = '') {
+    const cat = String(category || '').toUpperCase()
+  const k = String(key || '').toUpperCase()
+
+  if (cat.includes('ESCROW') || k.includes('ESCROW')) return HiOutlineShieldCheck
+if (cat.includes('RETURN') || cat.includes('REFUND') || k.includes('RETURN') || k.includes('REFUND')) return HiOutlineRefresh
+if (cat.includes('SHIPPING') || k.includes('SHIPPING') || cat.includes('DELIVERY')) return HiOutlineTruck
+if (cat.includes('SELLER') || k.includes('SELLER') || cat.includes('MERCHANT')) return HiOutlineScale
+if (
+  cat.includes('DISCIPLINE') ||
+  cat.includes('PENALTY') ||
+  cat.includes('REPUTATION') ||
+  k.includes('DISCIPLINE') ||
+  k.includes('CLAUSE')
+) {
+  return HiOutlineCheckCircle
+}
+if (cat.includes('PRIVACY') || cat.includes('SECURITY') || k.includes('PRIVACY')) return HiOutlineLockClosed
+if (
+  cat.includes('GRADE') ||
+  cat.includes('GRADING') ||
+  cat.includes('CONDITION') ||
+  k.includes('CONDITION') ||
+  k.includes('SPEC')
+) {
+  return HiOutlineTag
+}
+
+return HiOutlineDocumentText
 }
 
 /**
- * Resolve icon, label, and fallback metadata for any policy key
+ * Dynamic Target Audience Label Resolver
  */
-export function getPolicyMeta(key) {
-  if (!key) {
+  export function getAudienceLabel(audience = 'ALL') {
+    const aud = String(audience || '').toUpperCase()
+    if (aud === 'SELLER') return 'Dành cho Người bán'
+    if (aud === 'BUYER') return 'Dành cho Người mua'
+    return 'Toàn sàn (Tất cả)'
+  }
+
+  /**
+   * Dynamic Category Label Resolver with graceful fallback
+   */
+  export const CATEGORY_LABEL_MAP = {
+    ESCROW: 'Bảo Vệ Escrow',
+    RETURN: 'Đổi Trả & Khiếu Nại',
+    RETURN_REFUND: 'Đổi Trả & Khiếu Nại',
+    SHIPPING: 'Vận Chuyển GHN & Đồng Kiểm',
+    SELLER: 'Quy Chế Người Bán',
+    SELLER_RULES: 'Quy Chế Người Bán',
+    DISCIPLINE: 'Kỷ Luật & Điểm Uy Tín',
+    PRIVACY: 'Chính Sách Bảo Mật',
+    CONDITION_GRADE: 'Phân Hạng Hàng Cũ & Like New',
+    GRADING: 'Phân Hạng Hàng Cũ & Like New',
+    GENERAL: 'Quy Chế Hoạt Động Chung',
+    TERMS: 'Quy Chế Hoạt Động Chung',
+  }
+
+  export function getCategoryLabel(category = 'GENERAL') {
+    const cat = String(category || '').toUpperCase()
+    return CATEGORY_LABEL_MAP[cat] || 'Quy Chế Nền Tảng'
+  }
+
+  /**
+   * Backwards compatibility helper
+   * Always prioritizes dynamic database title (p.title) — NEVER converts keys into English strings!
+   */
+  export function getPolicyMeta(key, fallbackTitle) {
     return {
-      label: 'Chính Sách',
-      icon: HiOutlineDocumentText,
+      label: fallbackTitle || null,
+      icon: getCategoryIcon('', key),
     }
   }
-  if (POLICY_META_MAP[key]) return POLICY_META_MAP[key]
-  for (const [, meta] of Object.entries(POLICY_META_MAP)) {
-    if (meta.aliases?.includes(key)) {
-      return meta
-    }
-  }
-  return {
-    label: key.replace(/_/g, ' '),
-    icon: HiOutlineDocumentText,
-  }
-}

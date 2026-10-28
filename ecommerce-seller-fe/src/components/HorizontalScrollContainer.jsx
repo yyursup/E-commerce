@@ -17,6 +17,7 @@ export default function HorizontalScrollContainer({
   isDark = false,
   showArrows = true,
   scrollStep = 220,
+  gradientColor,
 }) {
   const containerRef = useRef(null)
   const isDraggingRef = useRef(false)
@@ -152,9 +153,11 @@ export default function HorizontalScrollContainer({
           <div
             className={cn(
               'h-full w-12 transition-opacity duration-300',
-              isDark
-                ? 'bg-gradient-to-r from-slate-900 via-slate-900/80 to-transparent'
-                : 'bg-gradient-to-r from-stone-100 via-stone-100/80 to-transparent'
+              gradientColor
+                ? cn('bg-gradient-to-r to-transparent', gradientColor)
+                : isDark
+                  ? 'bg-gradient-to-r from-slate-900 via-slate-900/80 to-transparent'
+                  : 'bg-gradient-to-r from-stone-100 via-stone-100/80 to-transparent'
             )}
           />
           {showArrows && (
@@ -217,9 +220,11 @@ export default function HorizontalScrollContainer({
           <div
             className={cn(
               'h-full w-12 transition-opacity duration-300',
-              isDark
-                ? 'bg-gradient-to-l from-slate-900 via-slate-900/80 to-transparent'
-                : 'bg-gradient-to-l from-stone-100 via-stone-100/80 to-transparent'
+              gradientColor
+                ? cn('bg-gradient-to-l to-transparent', gradientColor)
+                : isDark
+                  ? 'bg-gradient-to-l from-slate-900 via-slate-900/80 to-transparent'
+                  : 'bg-gradient-to-l from-stone-100 via-stone-100/80 to-transparent'
             )}
           />
         </div>

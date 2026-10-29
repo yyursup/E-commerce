@@ -10,7 +10,6 @@ import com.marketplace.ecommerce.product.entity.ProductImage;
 import com.marketplace.ecommerce.review.dto.projection.ShopReviewStatsProjection;
 import com.marketplace.ecommerce.review.entity.Reply;
 import com.marketplace.ecommerce.review.entity.Review;
-import com.marketplace.ecommerce.review.entity.ReviewImage;
 import com.marketplace.ecommerce.review.repository.ReplyRepository;
 import com.marketplace.ecommerce.review.repository.ReviewRepository;
 import com.marketplace.ecommerce.review.valueObjects.ReviewStatus;
@@ -127,20 +126,14 @@ public class ReviewSeeder {
                         .status(ReviewStatus.ACTIVE)
                         .rating(rating)
                         .comment(comment)
-                        .images(new ArrayList<>())
+                        .imageUrls(new ArrayList<>())
                         .build();
                 review.setCreatedAt(reviewTime);
                 review.setUpdatedAt(reviewTime);
 
                 if (product.getImages() != null && !product.getImages().isEmpty() && random.nextBoolean()) {
                     ProductImage firstImg = product.getImages().iterator().next();
-                    ReviewImage rImg = ReviewImage.builder()
-                            .review(review)
-                            .imageUrl(firstImg.getImageUrl())
-                            .displayOrder(0)
-                            .build();
-                    rImg.setCreatedAt(reviewTime);
-                    review.getImages().add(rImg);
+                    review.getImageUrls().add(firstImg.getImageUrl());
                 }
 
                 Review savedReview = reviewRepository.save(review);

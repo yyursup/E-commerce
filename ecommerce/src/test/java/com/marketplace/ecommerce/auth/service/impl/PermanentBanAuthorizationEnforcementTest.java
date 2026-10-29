@@ -29,6 +29,7 @@ import com.marketplace.ecommerce.order.service.OrderReturnService;
 import com.marketplace.ecommerce.payment.repository.EscrowRepository;
 import com.marketplace.ecommerce.payment.service.EscrowService;
 import com.marketplace.ecommerce.product.repository.ProductRepository;
+import com.marketplace.ecommerce.request.policy.ReportRateLimiter;
 import com.marketplace.ecommerce.request.policy.RequestPolicy;
 import com.marketplace.ecommerce.request.repository.ReportRepository;
 import com.marketplace.ecommerce.request.repository.RequestRepository;
@@ -111,6 +112,7 @@ public class PermanentBanAuthorizationEnforcementTest {
     @Mock private HttpServletRequest httpServletRequest;
     @Mock private HttpServletResponse httpServletResponse;
     @Mock private FilterChain filterChain;
+    @Mock private ReportRateLimiter reportRateLimiter;
 
     private ReportServiceImpl reportService;
     private AuthenticationServiceImpl authenticationService;
@@ -136,7 +138,8 @@ public class PermanentBanAuthorizationEnforcementTest {
                 notificationRepository,
                 userRepository,
                 chatService,
-                accountDisciplineService
+                accountDisciplineService,
+                reportRateLimiter
         );
 
         authenticationService = new AuthenticationServiceImpl(

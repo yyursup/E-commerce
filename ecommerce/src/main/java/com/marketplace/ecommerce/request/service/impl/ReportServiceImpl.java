@@ -22,6 +22,7 @@ import com.marketplace.ecommerce.request.repository.RequestRepository;
 import com.marketplace.ecommerce.request.service.ReportService;
 import com.marketplace.ecommerce.request.service.RequestService;
 import com.marketplace.ecommerce.request.policy.RequestPolicy;
+import com.marketplace.ecommerce.request.policy.ReportRateLimiter;
 import com.marketplace.ecommerce.request.valueObjects.ReportDecision;
 import com.marketplace.ecommerce.request.valueObjects.RequestStatus;
 import com.marketplace.ecommerce.request.valueObjects.RequestType;
@@ -99,6 +100,7 @@ public class ReportServiceImpl implements ReportService {
     private final AccountDisciplineService accountDisciplineService;
     @Autowired(required = false)
     private PlatformPolicyService platformPolicyService;
+    private final ReportRateLimiter reportRateLimiter;
 
     @Override
     @Transactional
@@ -148,7 +150,8 @@ public class ReportServiceImpl implements ReportService {
             }
         }
 
-        // Validate và lưu Căn cứ Chính Sách Nền Tảng (áp dụng cho toàn bộ các đối tượng: ORDER, PRODUCT, SHOP, REVIEW, USER)
+        // Validate và lưu Căn cứ Chính Sách Nền Tảng (áp dụng cho toàn bộ các đối
+        // tượng: ORDER, PRODUCT, SHOP, REVIEW, USER)
         if (req.getPolicyClauseCode() != null && !req.getPolicyClauseCode().trim().isEmpty()) {
             PlatformPolicyResponse policy = platformPolicyService != null
                     ? platformPolicyService.validateDisputeClause(
@@ -161,7 +164,8 @@ public class ReportServiceImpl implements ReportService {
                 report.setPolicyClauseTitle(policy.getTitle());
             }
         } else if (report.getTargetType() == TargetType.ORDER) {
-            // Đối với tranh chấp Đơn hàng (ORDER), việc đính kèm Căn cứ Chính Sách là bắt buộc
+            // Đối với tranh chấp Đơn hàng (ORDER), việc đính kèm Căn cứ Chính Sách là bắt
+            // buộc
             if (platformPolicyService != null) {
                 PlatformPolicyResponse policy = platformPolicyService.validateDisputeClause(
                         req.getPolicyClauseCode(),
@@ -605,6 +609,10 @@ public class ReportServiceImpl implements ReportService {
             });
             initialStage = ReportStage.DIRECT_NEGOTIATION;
             deadline = LocalDateTime.now().plusHours(48);
+        } else {
+            if (reportRateLimiter != null) {
+                reportRateLimiter.checkRateLimit(accountId);
+            }
         }
 
         Request r = requestService.createRequest(acc, CreateSendRequest.builder()

@@ -177,6 +177,20 @@ public interface ReportRepository extends JpaRepository<Report, UUID> {
     }
 
     @Query("""
+        SELECT CASE WHEN COUNT(r) > 0 THEN TRUE ELSE FALSE END
+        FROM Report r JOIN r.request req
+        WHERE req.account.id = :reporterAccountId
+          AND r.targetType = :targetType
+          AND r.targetId = :targetId
+          AND req.status = com.marketplace.ecommerce.request.valueObjects.RequestStatus.PENDING
+    """)
+    boolean existsActiveReportByReporterAndTarget(
+        @Param("reporterAccountId") UUID reporterAccountId,
+        @Param("targetType") TargetType targetType,
+        @Param("targetId") UUID targetId
+    );
+
+    @Query("""
         select r from Report r
         join fetch r.request req
         where r.targetType = :targetType

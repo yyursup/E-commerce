@@ -613,6 +613,7 @@ public class ReportServiceImpl implements ReportService {
             if (reportRateLimiter != null) {
                 reportRateLimiter.checkRateLimit(accountId);
             }
+            requestPolicy.validateMarketplaceReport(accountId, targetType, request.getTargetId());
         }
 
         Request r = requestService.createRequest(acc, CreateSendRequest.builder()

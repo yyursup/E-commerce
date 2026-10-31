@@ -139,4 +139,10 @@ public class RequestPolicy {
 
         return new ApproveSellerContext(user, sellerDetail, shopName.trim());
     }
+
+    public void validateMarketplaceReport(UUID reporterAccountId, TargetType targetType, UUID targetId) {
+        if (reportRepository.existsActiveReportByReporterAndTarget(reporterAccountId, targetType, targetId)) {
+            throw new CustomException("Bạn đang có một báo cáo cho đối tượng này đang chờ xử lý. Vui lòng chờ kết quả từ Ban Quản Trị.");
+        }
+    }
 }

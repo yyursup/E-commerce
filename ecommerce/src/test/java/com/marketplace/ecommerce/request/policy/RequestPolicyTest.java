@@ -328,4 +328,35 @@ class RequestPolicyTest {
         assertEquals("Official Tech Store", ctx.shopName());
         assertEquals(user, ctx.ownerUser());
     }
+
+    @Test
+    @DisplayName("validateMarketplaceReport - Ném lỗi khi tài khoản đã có Report đang PENDING cho cùng đối tượng")
+    void testValidateMarketplaceReport_WhenActiveReportExists_ShouldThrowException() {
+        UUID reporterId = UUID.randomUUID();
+        UUID targetId = UUID.randomUUID();
+        TargetType targetType = TargetType.PRODUCT;
+
+        when(reportRepository.existsActiveReportByReporterAndTarget(reporterId, targetType, targetId))
+                .thenReturn(true);
+
+        CustomException ex = assertThrows(CustomException.class,
+                () -> requestPolicy.validateMarketplaceReport(reporterId, targetType, targetId));
+
+        assertTrue(ex.getMessage().contains("đang chờ xử lý"));
+        verify(reportRepository).existsActiveReportByReporterAndTarget(reporterId, targetType, targetId);
+    }
+
+    @Test
+    @DisplayName("validateMarketplaceReport - Cho phép khi không có Report nào đang PENDING")
+    void testValidateMarketplaceReport_WhenNoActiveReport_ShouldPass() {
+        UUID reporterId = UUID.randomUUID();
+        UUID targetId = UUID.randomUUID();
+        TargetType targetType = TargetType.PRODUCT;
+
+        when(reportRepository.existsActiveReportByReporterAndTarget(reporterId, targetType, targetId))
+                .thenReturn(false);
+
+        assertDoesNotThrow(() -> requestPolicy.validateMarketplaceReport(reporterId, targetType, targetId));
+        verify(reportRepository).existsActiveReportByReporterAndTarget(reporterId, targetType, targetId);
+    }
 }

@@ -15,7 +15,6 @@ import com.marketplace.ecommerce.shop.repository.ShopRepository;
 import com.marketplace.ecommerce.order.entity.Order;
 import com.marketplace.ecommerce.order.repository.OrderRepository;
 import com.marketplace.ecommerce.order.valueObjects.OrderStatus;
-import com.marketplace.ecommerce.request.entity.Report;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -62,12 +61,16 @@ public class RequestPolicy {
     }
 
     public void validateOrderReport(UUID buyerAccountId, UUID orderId) {
-        Order order = orderRepository.findById(orderId)
+        Order order = orderRepository.findByIdForUpdate(orderId)
                 .orElseThrow(() -> new CustomException("Không tìm thấy đơn hàng: " + orderId));
 
         if (order.getUser() == null || order.getUser().getAccount() == null ||
                 !order.getUser().getAccount().getId().equals(buyerAccountId)) {
             throw new CustomException("Bạn không có quyền khiếu nại đơn hàng này.");
+        }
+
+        if (reportRepository.existsByOrderId(orderId)) {
+            throw new CustomException("Đơn hàng này đã được gửi khiếu nại trước đó và không thể gửi lại.");
         }
 
         if (order.getStatus() == OrderStatus.CANCELLED) {
@@ -91,10 +94,6 @@ public class RequestPolicy {
             throw new CustomException(
                     "Chỉ có thể khiếu nại đơn hàng sau khi hệ thống đã cập nhật giao hàng thành công.");
         }
-
-        if (reportRepository.existsPendingReportByOrderId(orderId)) {
-            throw new CustomException("Đơn hàng này đang có một khiếu nại đang chờ Ban Quản Trị xử lý.");
-        }
     }
 
     public ApproveSellerContext validateApproveSellerRequest(Request req, UUID requestId) {
@@ -109,7 +108,8 @@ public class RequestPolicy {
         }
 
         User user = userRepository.findByAccountId(ownerAccount.getId())
-                .orElseThrow(() -> new CustomException("Không tìm thấy hồ sơ người dùng cho tài khoản: " + ownerAccount.getId()));
+                .orElseThrow(() -> new CustomException(
+                        "Không tìm thấy hồ sơ người dùng cho tài khoản: " + ownerAccount.getId()));
 
         if (shopRepository.existsByUserId(user.getId())) {
             throw new CustomException("Người dùng này đã sở hữu một gian hàng");
@@ -138,5 +138,11 @@ public class RequestPolicy {
         }
 
         return new ApproveSellerContext(user, sellerDetail, shopName.trim());
+    }
+
+    public void validateMarketplaceReport(UUID reporterAccountId, TargetType targetType, UUID targetId) {
+        if (reportRepository.existsActiveReportByReporterAndTarget(reporterAccountId, targetType, targetId)) {
+            throw new CustomException("Bạn đang có một báo cáo cho đối tượng này đang chờ xử lý. Vui lòng chờ kết quả từ Ban Quản Trị.");
+        }
     }
 }

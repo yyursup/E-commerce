@@ -5,6 +5,8 @@ import com.marketplace.ecommerce.product.entity.Product;
 import com.marketplace.ecommerce.review.valueObjects.ReviewStatus;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -55,9 +57,11 @@ public class Review {
     @Builder.Default
     private ReviewStatus status = ReviewStatus.ACTIVE;
 
-    @OneToMany(mappedBy = "review", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    // Image/video URLs stored inline (merged former review_images table)
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "image_urls", columnDefinition = "jsonb", nullable = false)
     @Builder.Default
-    private List<ReviewImage> images = new ArrayList<>();
+    private List<String> imageUrls = new ArrayList<>();
 
     @Column(nullable = false)
     private int reportCount = 0;

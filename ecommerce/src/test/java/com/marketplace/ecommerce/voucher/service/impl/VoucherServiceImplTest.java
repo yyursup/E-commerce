@@ -1,11 +1,14 @@
 package com.marketplace.ecommerce.voucher.service.impl;
 
+import com.marketplace.ecommerce.auth.entity.Account;
+import com.marketplace.ecommerce.auth.entity.Role;
 import com.marketplace.ecommerce.auth.entity.User;
 import com.marketplace.ecommerce.auth.repository.UserRepository;
 import com.marketplace.ecommerce.common.exception.CustomException;
 import com.marketplace.ecommerce.order.entity.Order;
 import com.marketplace.ecommerce.order.repository.OrderRepository;
 import com.marketplace.ecommerce.shop.entity.Shop;
+import com.marketplace.ecommerce.voucher.dto.UpdateVoucherRequest;
 import com.marketplace.ecommerce.voucher.dto.VoucherResponse;
 import com.marketplace.ecommerce.voucher.entity.UserVoucher;
 import com.marketplace.ecommerce.voucher.entity.Voucher;
@@ -87,9 +90,13 @@ class VoucherServiceImplTest {
 
         @BeforeEach
         void setUp() {
+                Role businessRole = Role.builder().id(UUID.randomUUID()).roleName("BUSINESS").build();
+                Account businessAccount = Account.builder().id(UUID.randomUUID()).role(businessRole).build();
+
                 testUserA = User.builder()
                         .id(UUID.randomUUID())
                         .fullName("Nguyen Van A")
+                        .account(businessAccount)
                         .build();
 
                 testUserB = User.builder()
@@ -105,6 +112,7 @@ class VoucherServiceImplTest {
 
         lenient().when(userRepository.findByAccountId(any())).thenReturn(Optional.of(testUserA));
         lenient().when(userRepository.findById(any())).thenReturn(Optional.of(testUserA));
+        lenient().when(shopRepository.findByUserId(testUserA.getId())).thenReturn(Optional.of(testShop));
 
                 multiUseVoucher = Voucher.builder()
                         .id(UUID.randomUUID())
@@ -1120,5 +1128,1058 @@ class VoucherServiceImplTest {
         UUID shopId = UUID.randomUUID();
         voucherService.deactivateVouchersOnShopClose(shopId);
         verify(voucherRepository).updateStatusByShopId(shopId, VoucherStatus.ACTIVE, VoucherStatus.INACTIVE);
+    }
+
+    private User createTestUserWithRole(String roleName) {
+        Role role = Role.builder().id(UUID.randomUUID()).roleName(roleName).build();
+        Account account = Account.builder().id(UUID.randomUUID()).role(role).build();
+        return User.builder()
+                .id(UUID.randomUUID())
+                .fullName("Test " + roleName)
+                .account(account)
+                .build();
+    }
+
+    // ==================== TASK 2 REQUIRED TESTS (1 - 30) ====================
+
+    // --- Create (1 - 5) ---
+    @Test
+    @DisplayName("1. ADMIN tạo PLATFORM Voucher thành công")
+    void test01_adminCreatePlatformVoucher() {
+        User adminUser = createTestUserWithRole("ADMIN");
+        UUID adminAccountId = adminUser.getAccount().getId();
+        when(userRepository.findByAccountId(adminAccountId)).thenReturn(Optional.of(adminUser));
+        when(voucherRepository.save(any(Voucher.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        CreateVoucherRequest req = CreateVoucherRequest.builder()
+                .code("PLATFORM_V1")
+                .title("Platform Promo")
+                .voucherType(VoucherType.FIXED_AMOUNT)
+                .discountValue(BigDecimal.valueOf(50000))
+                .build();
+
+        VoucherResponse res = voucherService.createVoucher(adminAccountId, req);
+        assertNotNull(res);
+        assertEquals(VoucherScope.PLATFORM, res.getScope());
+        assertNull(res.getShopId());
+    }
+
+    @Test
+    @DisplayName("2. ADMIN gửi scope SHOP và shopId giả: hệ thống vẫn tạo PLATFORM Voucher")
+    void test02_adminSendShopScopeAndFakeShopId_systemForcesPlatform() {
+        User adminUser = createTestUserWithRole("ADMIN");
+        UUID adminAccountId = adminUser.getAccount().getId();
+        when(userRepository.findByAccountId(adminAccountId)).thenReturn(Optional.of(adminUser));
+        when(voucherRepository.save(any(Voucher.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        CreateVoucherRequest req = CreateVoucherRequest.builder()
+                .code("ADMIN_FORCED_PLATFORM")
+                .title("Admin Promo")
+                .scope(VoucherScope.SHOP)
+                .shopId(UUID.randomUUID())
+                .voucherType(VoucherType.FIXED_AMOUNT)
+                .discountValue(BigDecimal.valueOf(20000))
+                .build();
+
+        VoucherResponse res = voucherService.createVoucher(adminAccountId, req);
+        assertNotNull(res);
+        assertEquals(VoucherScope.PLATFORM, res.getScope());
+        assertNull(res.getShopId());
+    }
+
+    @Test
+    @DisplayName("3. BUSINESS tạo SHOP Voucher thuộc Shop của mình")
+    void test03_businessCreateShopVoucher_belongsToOwnShop() {
+        User bizUser = createTestUserWithRole("BUSINESS");
+        UUID bizAccountId = bizUser.getAccount().getId();
+        when(userRepository.findByAccountId(bizAccountId)).thenReturn(Optional.of(bizUser));
+        when(shopRepository.findByUserId(bizUser.getId())).thenReturn(Optional.of(testShop));
+        when(voucherRepository.save(any(Voucher.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        CreateVoucherRequest req = CreateVoucherRequest.builder()
+                .code("SHOP_V1")
+                .title("Shop Promo")
+                .voucherType(VoucherType.FIXED_AMOUNT)
+                .discountValue(BigDecimal.valueOf(15000))
+                .build();
+
+        VoucherResponse res = voucherService.createVoucher(bizAccountId, req);
+        assertNotNull(res);
+        assertEquals(VoucherScope.SHOP, res.getScope());
+        assertEquals(testShop.getId(), res.getShopId());
+    }
+
+    @Test
+    @DisplayName("4. BUSINESS gửi shopId của người khác: bị chặn, không thể tạo Voucher cho Shop đó")
+    void test04_businessSendOtherShopId_cannotCreateForOtherShop() {
+        User bizUser = createTestUserWithRole("BUSINESS");
+        UUID bizAccountId = bizUser.getAccount().getId();
+        when(userRepository.findByAccountId(bizAccountId)).thenReturn(Optional.of(bizUser));
+        when(shopRepository.findByUserId(bizUser.getId())).thenReturn(Optional.of(testShop));
+
+        UUID maliciousShopId = UUID.randomUUID();
+        Shop maliciousShop = Shop.builder().id(maliciousShopId).build();
+        when(shopRepository.findById(maliciousShopId)).thenReturn(Optional.of(maliciousShop));
+
+        CreateVoucherRequest req = CreateVoucherRequest.builder()
+                .code("SHOP_V2")
+                .title("Shop Promo Tamper")
+                .shopId(maliciousShopId)
+                .voucherType(VoucherType.FIXED_AMOUNT)
+                .discountValue(BigDecimal.valueOf(15000))
+                .build();
+
+        CustomException ex = assertThrows(CustomException.class, () -> voucherService.createVoucher(bizAccountId, req));
+        assertEquals("Bạn không thể tạo voucher cho Shop khác", ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("5. CUSTOMER tạo Voucher: bị từ chối")
+    void test05_customerCreateVoucher_rejected() {
+        User custUser = createTestUserWithRole("CUSTOMER");
+        UUID custAccountId = custUser.getAccount().getId();
+        when(userRepository.findByAccountId(custAccountId)).thenReturn(Optional.of(custUser));
+
+        CreateVoucherRequest req = CreateVoucherRequest.builder()
+                .code("CUST_V")
+                .title("Cust Promo")
+                .voucherType(VoucherType.FIXED_AMOUNT)
+                .discountValue(BigDecimal.valueOf(10000))
+                .build();
+
+        CustomException ex = assertThrows(CustomException.class, () -> voucherService.createVoucher(custAccountId, req));
+        assertEquals("Bạn không có quyền tạo mã giảm giá", ex.getMessage());
+    }
+
+    // --- Update (6 - 14) ---
+    @Test
+    @DisplayName("6. Voucher chưa bắt đầu: cập nhật thành công")
+    void test06_updateUpcomingVoucher_success() {
+        User bizUser = createTestUserWithRole("BUSINESS");
+        UUID bizAccountId = bizUser.getAccount().getId();
+        when(userRepository.findByAccountId(bizAccountId)).thenReturn(Optional.of(bizUser));
+        when(shopRepository.findByUserId(bizUser.getId())).thenReturn(Optional.of(testShop));
+
+        UUID vId = UUID.randomUUID();
+        Voucher v = Voucher.builder()
+                .id(vId)
+                .code("UPCOMING_1")
+                .title("Old Title")
+                .scope(VoucherScope.SHOP)
+                .shop(testShop)
+                .status(VoucherStatus.ACTIVE)
+                .startDate(LocalDateTime.now().plusDays(2))
+                .endDate(LocalDateTime.now().plusDays(10))
+                .build();
+        when(voucherRepository.findById(vId)).thenReturn(Optional.of(v));
+        when(voucherRepository.save(any(Voucher.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        UpdateVoucherRequest uReq = UpdateVoucherRequest.builder()
+                .title("New Updated Title")
+                .discountValue(BigDecimal.valueOf(45000))
+                .build();
+
+        VoucherResponse res = voucherService.updateVoucher(bizAccountId, vId, uReq);
+        assertEquals("New Updated Title", res.getTitle());
+        assertEquals(BigDecimal.valueOf(45000), res.getDiscountValue());
+    }
+
+    @Test
+    @DisplayName("7. Voucher đã bắt đầu: từ chối cập nhật")
+    void test07_updateStartedVoucher_rejected() {
+        User bizUser = createTestUserWithRole("BUSINESS");
+        UUID bizAccountId = bizUser.getAccount().getId();
+        when(userRepository.findByAccountId(bizAccountId)).thenReturn(Optional.of(bizUser));
+        when(shopRepository.findByUserId(bizUser.getId())).thenReturn(Optional.of(testShop));
+
+        UUID vId = UUID.randomUUID();
+        Voucher v = Voucher.builder()
+                .id(vId)
+                .scope(VoucherScope.SHOP)
+                .shop(testShop)
+                .status(VoucherStatus.ACTIVE)
+                .startDate(LocalDateTime.now().minusDays(1))
+                .build();
+        when(voucherRepository.findById(vId)).thenReturn(Optional.of(v));
+
+        CustomException ex = assertThrows(CustomException.class,
+                () -> voucherService.updateVoucher(bizAccountId, vId, new UpdateVoucherRequest()));
+        assertEquals("Voucher đã bắt đầu hoạt động, không thể chỉnh sửa thông tin", ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("8. Voucher có startDate == null: từ chối cập nhật (coi như đã bắt đầu)")
+    void test08_updateVoucherWithNullStartDate_rejected() {
+        User bizUser = createTestUserWithRole("BUSINESS");
+        UUID bizAccountId = bizUser.getAccount().getId();
+        when(userRepository.findByAccountId(bizAccountId)).thenReturn(Optional.of(bizUser));
+        when(shopRepository.findByUserId(bizUser.getId())).thenReturn(Optional.of(testShop));
+
+        UUID vId = UUID.randomUUID();
+        Voucher v = Voucher.builder()
+                .id(vId)
+                .scope(VoucherScope.SHOP)
+                .shop(testShop)
+                .status(VoucherStatus.ACTIVE)
+                .startDate(null)
+                .build();
+        when(voucherRepository.findById(vId)).thenReturn(Optional.of(v));
+
+        CustomException ex = assertThrows(CustomException.class,
+                () -> voucherService.updateVoucher(bizAccountId, vId, new UpdateVoucherRequest()));
+        assertEquals("Voucher đã bắt đầu hoạt động, không thể chỉnh sửa thông tin", ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("9. Voucher DELETED: từ chối cập nhật")
+    void test09_updateDeletedVoucher_rejected() {
+        User bizUser = createTestUserWithRole("BUSINESS");
+        UUID bizAccountId = bizUser.getAccount().getId();
+        when(userRepository.findByAccountId(bizAccountId)).thenReturn(Optional.of(bizUser));
+        when(shopRepository.findByUserId(bizUser.getId())).thenReturn(Optional.of(testShop));
+
+        UUID vId = UUID.randomUUID();
+        Voucher v = Voucher.builder()
+                .id(vId)
+                .scope(VoucherScope.SHOP)
+                .shop(testShop)
+                .status(VoucherStatus.DELETED)
+                .startDate(LocalDateTime.now().plusDays(2))
+                .build();
+        when(voucherRepository.findById(vId)).thenReturn(Optional.of(v));
+
+        CustomException ex = assertThrows(CustomException.class,
+                () -> voucherService.updateVoucher(bizAccountId, vId, new UpdateVoucherRequest()));
+        assertEquals("Voucher đã bị xóa, không thể chỉnh sửa", ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("10. Voucher INACTIVE đã bắt đầu: từ chối cập nhật")
+    void test10_updateInactiveVoucherAlreadyStarted_rejected() {
+        User bizUser = createTestUserWithRole("BUSINESS");
+        UUID bizAccountId = bizUser.getAccount().getId();
+        when(userRepository.findByAccountId(bizAccountId)).thenReturn(Optional.of(bizUser));
+        when(shopRepository.findByUserId(bizUser.getId())).thenReturn(Optional.of(testShop));
+
+        UUID vId = UUID.randomUUID();
+        Voucher v = Voucher.builder()
+                .id(vId)
+                .scope(VoucherScope.SHOP)
+                .shop(testShop)
+                .status(VoucherStatus.INACTIVE)
+                .startDate(LocalDateTime.now().minusDays(2))
+                .build();
+        when(voucherRepository.findById(vId)).thenReturn(Optional.of(v));
+
+        assertThrows(CustomException.class,
+                () -> voucherService.updateVoucher(bizAccountId, vId, new UpdateVoucherRequest()));
+    }
+
+    @Test
+    @DisplayName("11. BUSINESS sửa Voucher của Shop khác: từ chối")
+    void test11_businessUpdateOtherShopVoucher_rejected() {
+        User bizUser = createTestUserWithRole("BUSINESS");
+        UUID bizAccountId = bizUser.getAccount().getId();
+        when(userRepository.findByAccountId(bizAccountId)).thenReturn(Optional.of(bizUser));
+        when(shopRepository.findByUserId(bizUser.getId())).thenReturn(Optional.of(testShop));
+
+        Shop otherShop = Shop.builder().id(UUID.randomUUID()).name("Other Shop").build();
+        UUID vId = UUID.randomUUID();
+        Voucher v = Voucher.builder()
+                .id(vId)
+                .scope(VoucherScope.SHOP)
+                .shop(otherShop)
+                .status(VoucherStatus.ACTIVE)
+                .startDate(LocalDateTime.now().plusDays(2))
+                .build();
+        when(voucherRepository.findById(vId)).thenReturn(Optional.of(v));
+
+        CustomException ex = assertThrows(CustomException.class,
+                () -> voucherService.updateVoucher(bizAccountId, vId, new UpdateVoucherRequest()));
+        assertEquals("Bạn không có quyền chỉnh sửa voucher này", ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("12. BUSINESS sửa PLATFORM Voucher: từ chối")
+    void test12_businessUpdatePlatformVoucher_rejected() {
+        User bizUser = createTestUserWithRole("BUSINESS");
+        UUID bizAccountId = bizUser.getAccount().getId();
+        when(userRepository.findByAccountId(bizAccountId)).thenReturn(Optional.of(bizUser));
+
+        UUID vId = UUID.randomUUID();
+        Voucher v = Voucher.builder()
+                .id(vId)
+                .scope(VoucherScope.PLATFORM)
+                .status(VoucherStatus.ACTIVE)
+                .startDate(LocalDateTime.now().plusDays(2))
+                .build();
+        when(voucherRepository.findById(vId)).thenReturn(Optional.of(v));
+
+        CustomException ex = assertThrows(CustomException.class,
+                () -> voucherService.updateVoucher(bizAccountId, vId, new UpdateVoucherRequest()));
+        assertEquals("Bạn không có quyền chỉnh sửa voucher này", ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("13. ADMIN sửa SHOP Voucher: từ chối")
+    void test13_adminUpdateShopVoucher_rejected() {
+        User adminUser = createTestUserWithRole("ADMIN");
+        UUID adminAccountId = adminUser.getAccount().getId();
+        when(userRepository.findByAccountId(adminAccountId)).thenReturn(Optional.of(adminUser));
+
+        UUID vId = UUID.randomUUID();
+        Voucher v = Voucher.builder()
+                .id(vId)
+                .scope(VoucherScope.SHOP)
+                .shop(testShop)
+                .status(VoucherStatus.ACTIVE)
+                .startDate(LocalDateTime.now().plusDays(2))
+                .build();
+        when(voucherRepository.findById(vId)).thenReturn(Optional.of(v));
+
+        CustomException ex = assertThrows(CustomException.class,
+                () -> voucherService.updateVoucher(adminAccountId, vId, new UpdateVoucherRequest()));
+        assertEquals("Bạn không có quyền chỉnh sửa voucher này", ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("14. ADMIN sửa PLATFORM Voucher: thành công")
+    void test14_adminUpdatePlatformVoucher_success() {
+        User adminUser = createTestUserWithRole("ADMIN");
+        UUID adminAccountId = adminUser.getAccount().getId();
+        when(userRepository.findByAccountId(adminAccountId)).thenReturn(Optional.of(adminUser));
+
+        UUID vId = UUID.randomUUID();
+        Voucher v = Voucher.builder()
+                .id(vId)
+                .code("PLAT_V1")
+                .scope(VoucherScope.PLATFORM)
+                .status(VoucherStatus.ACTIVE)
+                .startDate(LocalDateTime.now().plusDays(2))
+                .endDate(LocalDateTime.now().plusDays(10))
+                .build();
+        when(voucherRepository.findById(vId)).thenReturn(Optional.of(v));
+        when(voucherRepository.save(any(Voucher.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        UpdateVoucherRequest uReq = UpdateVoucherRequest.builder()
+                .title("Admin Updated Promo")
+                .build();
+
+        VoucherResponse res = voucherService.updateVoucher(adminAccountId, vId, uReq);
+        assertEquals("Admin Updated Promo", res.getTitle());
+    }
+
+    // --- Delete (15 - 28) ---
+    @Test
+    @DisplayName("15. ACTIVE chưa bắt đầu: chuyển DELETED")
+    void test15_deleteActiveUpcomingVoucher_becomesDeleted() {
+        User bizUser = createTestUserWithRole("BUSINESS");
+        UUID bizAccountId = bizUser.getAccount().getId();
+        when(userRepository.findByAccountId(bizAccountId)).thenReturn(Optional.of(bizUser));
+        when(shopRepository.findByUserId(bizUser.getId())).thenReturn(Optional.of(testShop));
+
+        UUID vId = UUID.randomUUID();
+        Voucher v = Voucher.builder()
+                .id(vId)
+                .scope(VoucherScope.SHOP)
+                .shop(testShop)
+                .status(VoucherStatus.ACTIVE)
+                .startDate(LocalDateTime.now().plusDays(3))
+                .build();
+        when(voucherRepository.findById(vId)).thenReturn(Optional.of(v));
+        when(voucherRepository.save(any(Voucher.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        VoucherResponse res = voucherService.deleteVoucher(bizAccountId, vId);
+        assertEquals(VoucherStatus.DELETED, res.getStatus());
+    }
+
+    @Test
+    @DisplayName("16. INACTIVE chưa bắt đầu: chuyển DELETED (Shop đóng cửa)")
+    void test16_deleteInactiveUpcomingVoucher_becomesDeleted() {
+        User bizUser = createTestUserWithRole("BUSINESS");
+        UUID bizAccountId = bizUser.getAccount().getId();
+        when(userRepository.findByAccountId(bizAccountId)).thenReturn(Optional.of(bizUser));
+        when(shopRepository.findByUserId(bizUser.getId())).thenReturn(Optional.of(testShop));
+
+        UUID vId = UUID.randomUUID();
+        Voucher v = Voucher.builder()
+                .id(vId)
+                .scope(VoucherScope.SHOP)
+                .shop(testShop)
+                .status(VoucherStatus.INACTIVE)
+                .startDate(LocalDateTime.now().plusDays(3))
+                .build();
+        when(voucherRepository.findById(vId)).thenReturn(Optional.of(v));
+        when(voucherRepository.save(any(Voucher.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        VoucherResponse res = voucherService.deleteVoucher(bizAccountId, vId);
+        assertEquals(VoucherStatus.DELETED, res.getStatus());
+    }
+
+    @Test
+    @DisplayName("17. ACTIVE đã bắt đầu: chuyển INACTIVE")
+    void test17_deleteActiveStartedVoucher_becomesInactive() {
+        User bizUser = createTestUserWithRole("BUSINESS");
+        UUID bizAccountId = bizUser.getAccount().getId();
+        when(userRepository.findByAccountId(bizAccountId)).thenReturn(Optional.of(bizUser));
+        when(shopRepository.findByUserId(bizUser.getId())).thenReturn(Optional.of(testShop));
+
+        UUID vId = UUID.randomUUID();
+        Voucher v = Voucher.builder()
+                .id(vId)
+                .scope(VoucherScope.SHOP)
+                .shop(testShop)
+                .status(VoucherStatus.ACTIVE)
+                .startDate(LocalDateTime.now().minusDays(1))
+                .build();
+        when(voucherRepository.findById(vId)).thenReturn(Optional.of(v));
+        when(voucherRepository.save(any(Voucher.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        VoucherResponse res = voucherService.deleteVoucher(bizAccountId, vId);
+        assertEquals(VoucherStatus.INACTIVE, res.getStatus());
+    }
+
+    @Test
+    @DisplayName("18. ACTIVE có startDate == null: chuyển INACTIVE (coi như đã bắt đầu)")
+    void test18_deleteActiveVoucherWithNullStartDate_becomesInactive() {
+        User bizUser = createTestUserWithRole("BUSINESS");
+        UUID bizAccountId = bizUser.getAccount().getId();
+        when(userRepository.findByAccountId(bizAccountId)).thenReturn(Optional.of(bizUser));
+        when(shopRepository.findByUserId(bizUser.getId())).thenReturn(Optional.of(testShop));
+
+        UUID vId = UUID.randomUUID();
+        Voucher v = Voucher.builder()
+                .id(vId)
+                .scope(VoucherScope.SHOP)
+                .shop(testShop)
+                .status(VoucherStatus.ACTIVE)
+                .startDate(null)
+                .build();
+        when(voucherRepository.findById(vId)).thenReturn(Optional.of(v));
+        when(voucherRepository.save(any(Voucher.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        VoucherResponse res = voucherService.deleteVoucher(bizAccountId, vId);
+        assertEquals(VoucherStatus.INACTIVE, res.getStatus());
+    }
+
+    @Test
+    @DisplayName("19. INACTIVE đã bắt đầu: từ chối xóa lại")
+    void test19_deleteInactiveStartedVoucher_rejected() {
+        User bizUser = createTestUserWithRole("BUSINESS");
+        UUID bizAccountId = bizUser.getAccount().getId();
+        when(userRepository.findByAccountId(bizAccountId)).thenReturn(Optional.of(bizUser));
+        when(shopRepository.findByUserId(bizUser.getId())).thenReturn(Optional.of(testShop));
+
+        UUID vId = UUID.randomUUID();
+        Voucher v = Voucher.builder()
+                .id(vId)
+                .scope(VoucherScope.SHOP)
+                .shop(testShop)
+                .status(VoucherStatus.INACTIVE)
+                .startDate(LocalDateTime.now().minusDays(1))
+                .build();
+        when(voucherRepository.findById(vId)).thenReturn(Optional.of(v));
+
+        assertThrows(CustomException.class, () -> voucherService.deleteVoucher(bizAccountId, vId));
+    }
+
+    @Test
+    @DisplayName("20. DELETED: từ chối xóa lại")
+    void test20_deleteDeletedVoucher_rejected() {
+        User bizUser = createTestUserWithRole("BUSINESS");
+        UUID bizAccountId = bizUser.getAccount().getId();
+        when(userRepository.findByAccountId(bizAccountId)).thenReturn(Optional.of(bizUser));
+        when(shopRepository.findByUserId(bizUser.getId())).thenReturn(Optional.of(testShop));
+
+        UUID vId = UUID.randomUUID();
+        Voucher v = Voucher.builder()
+                .id(vId)
+                .scope(VoucherScope.SHOP)
+                .shop(testShop)
+                .status(VoucherStatus.DELETED)
+                .build();
+        when(voucherRepository.findById(vId)).thenReturn(Optional.of(v));
+
+        assertThrows(CustomException.class, () -> voucherService.deleteVoucher(bizAccountId, vId));
+    }
+
+    @Test
+    @DisplayName("21. EXPIRED: từ chối xóa/kết thúc")
+    void test21_deleteExpiredVoucher_rejected() {
+        User bizUser = createTestUserWithRole("BUSINESS");
+        UUID bizAccountId = bizUser.getAccount().getId();
+        when(userRepository.findByAccountId(bizAccountId)).thenReturn(Optional.of(bizUser));
+        when(shopRepository.findByUserId(bizUser.getId())).thenReturn(Optional.of(testShop));
+
+        UUID vId = UUID.randomUUID();
+        Voucher v = Voucher.builder()
+                .id(vId)
+                .scope(VoucherScope.SHOP)
+                .shop(testShop)
+                .status(VoucherStatus.EXPIRED)
+                .build();
+        when(voucherRepository.findById(vId)).thenReturn(Optional.of(v));
+
+        assertThrows(CustomException.class, () -> voucherService.deleteVoucher(bizAccountId, vId));
+    }
+
+    @Test
+    @DisplayName("22. EXHAUSTED: từ chối xóa/kết thúc")
+    void test22_deleteExhaustedVoucher_rejected() {
+        User bizUser = createTestUserWithRole("BUSINESS");
+        UUID bizAccountId = bizUser.getAccount().getId();
+        when(userRepository.findByAccountId(bizAccountId)).thenReturn(Optional.of(bizUser));
+        when(shopRepository.findByUserId(bizUser.getId())).thenReturn(Optional.of(testShop));
+
+        UUID vId = UUID.randomUUID();
+        Voucher v = Voucher.builder()
+                .id(vId)
+                .scope(VoucherScope.SHOP)
+                .shop(testShop)
+                .status(VoucherStatus.EXHAUSTED)
+                .build();
+        when(voucherRepository.findById(vId)).thenReturn(Optional.of(v));
+
+        assertThrows(CustomException.class, () -> voucherService.deleteVoucher(bizAccountId, vId));
+    }
+
+    @Test
+    @DisplayName("23. Voucher hết hạn theo thời gian (endDate < now): từ chối")
+    void test23_deleteVoucherExpiredByDate_rejected() {
+        User bizUser = createTestUserWithRole("BUSINESS");
+        UUID bizAccountId = bizUser.getAccount().getId();
+        when(userRepository.findByAccountId(bizAccountId)).thenReturn(Optional.of(bizUser));
+        when(shopRepository.findByUserId(bizUser.getId())).thenReturn(Optional.of(testShop));
+
+        UUID vId = UUID.randomUUID();
+        Voucher v = Voucher.builder()
+                .id(vId)
+                .scope(VoucherScope.SHOP)
+                .shop(testShop)
+                .status(VoucherStatus.ACTIVE)
+                .startDate(LocalDateTime.now().minusDays(5))
+                .endDate(LocalDateTime.now().minusMinutes(10))
+                .build();
+        when(voucherRepository.findById(vId)).thenReturn(Optional.of(v));
+
+        assertThrows(CustomException.class, () -> voucherService.deleteVoucher(bizAccountId, vId));
+    }
+
+    @Test
+    @DisplayName("24. Voucher hết lượt (usedCount >= usageLimit): từ chối")
+    void test24_deleteVoucherExhaustedByCount_rejected() {
+        User bizUser = createTestUserWithRole("BUSINESS");
+        UUID bizAccountId = bizUser.getAccount().getId();
+        when(userRepository.findByAccountId(bizAccountId)).thenReturn(Optional.of(bizUser));
+        when(shopRepository.findByUserId(bizUser.getId())).thenReturn(Optional.of(testShop));
+
+        UUID vId = UUID.randomUUID();
+        Voucher v = Voucher.builder()
+                .id(vId)
+                .scope(VoucherScope.SHOP)
+                .shop(testShop)
+                .status(VoucherStatus.ACTIVE)
+                .usageLimit(100)
+                .usedCount(100)
+                .startDate(LocalDateTime.now().minusDays(1))
+                .build();
+        when(voucherRepository.findById(vId)).thenReturn(Optional.of(v));
+
+        assertThrows(CustomException.class, () -> voucherService.deleteVoucher(bizAccountId, vId));
+    }
+
+    @Test
+    @DisplayName("25. BUSINESS xóa Voucher của Shop khác: từ chối")
+    void test25_businessDeleteOtherShopVoucher_rejected() {
+        User bizUser = createTestUserWithRole("BUSINESS");
+        UUID bizAccountId = bizUser.getAccount().getId();
+        when(userRepository.findByAccountId(bizAccountId)).thenReturn(Optional.of(bizUser));
+        when(shopRepository.findByUserId(bizUser.getId())).thenReturn(Optional.of(testShop));
+
+        Shop otherShop = Shop.builder().id(UUID.randomUUID()).name("Other").build();
+        UUID vId = UUID.randomUUID();
+        Voucher v = Voucher.builder()
+                .id(vId)
+                .scope(VoucherScope.SHOP)
+                .shop(otherShop)
+                .status(VoucherStatus.ACTIVE)
+                .startDate(LocalDateTime.now().plusDays(2))
+                .build();
+        when(voucherRepository.findById(vId)).thenReturn(Optional.of(v));
+
+        assertThrows(CustomException.class, () -> voucherService.deleteVoucher(bizAccountId, vId));
+    }
+
+    @Test
+    @DisplayName("26. BUSINESS xóa PLATFORM Voucher: từ chối")
+    void test26_businessDeletePlatformVoucher_rejected() {
+        User bizUser = createTestUserWithRole("BUSINESS");
+        UUID bizAccountId = bizUser.getAccount().getId();
+        when(userRepository.findByAccountId(bizAccountId)).thenReturn(Optional.of(bizUser));
+
+        UUID vId = UUID.randomUUID();
+        Voucher v = Voucher.builder()
+                .id(vId)
+                .scope(VoucherScope.PLATFORM)
+                .status(VoucherStatus.ACTIVE)
+                .startDate(LocalDateTime.now().plusDays(2))
+                .build();
+        when(voucherRepository.findById(vId)).thenReturn(Optional.of(v));
+
+        assertThrows(CustomException.class, () -> voucherService.deleteVoucher(bizAccountId, vId));
+    }
+
+    @Test
+    @DisplayName("27. ADMIN xóa SHOP Voucher: từ chối")
+    void test27_adminDeleteShopVoucher_rejected() {
+        User adminUser = createTestUserWithRole("ADMIN");
+        UUID adminAccountId = adminUser.getAccount().getId();
+        when(userRepository.findByAccountId(adminAccountId)).thenReturn(Optional.of(adminUser));
+
+        UUID vId = UUID.randomUUID();
+        Voucher v = Voucher.builder()
+                .id(vId)
+                .scope(VoucherScope.SHOP)
+                .shop(testShop)
+                .status(VoucherStatus.ACTIVE)
+                .startDate(LocalDateTime.now().plusDays(2))
+                .build();
+        when(voucherRepository.findById(vId)).thenReturn(Optional.of(v));
+
+        assertThrows(CustomException.class, () -> voucherService.deleteVoucher(adminAccountId, vId));
+    }
+
+    @Test
+    @DisplayName("28. ADMIN xóa PLATFORM Voucher: thành công")
+    void test28_adminDeletePlatformVoucher_success() {
+        User adminUser = createTestUserWithRole("ADMIN");
+        UUID adminAccountId = adminUser.getAccount().getId();
+        when(userRepository.findByAccountId(adminAccountId)).thenReturn(Optional.of(adminUser));
+
+        UUID vId = UUID.randomUUID();
+        Voucher v = Voucher.builder()
+                .id(vId)
+                .scope(VoucherScope.PLATFORM)
+                .status(VoucherStatus.ACTIVE)
+                .startDate(LocalDateTime.now().plusDays(2))
+                .build();
+        when(voucherRepository.findById(vId)).thenReturn(Optional.of(v));
+        when(voucherRepository.save(any(Voucher.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        VoucherResponse res = voucherService.deleteVoucher(adminAccountId, vId);
+        assertEquals(VoucherStatus.DELETED, res.getStatus());
+    }
+
+    // --- Platform management (29 - 30) ---
+    @Test
+    @DisplayName("29. ADMIN truy vấn được tất cả PLATFORM Voucher, không lọc theo status hoặc thời gian")
+    void test29_adminQueryAllPlatformVouchers_unfiltered() {
+        User adminUser = createTestUserWithRole("ADMIN");
+        UUID adminAccountId = adminUser.getAccount().getId();
+        when(userRepository.findByAccountId(adminAccountId)).thenReturn(Optional.of(adminUser));
+
+        Voucher v1 = Voucher.builder().id(UUID.randomUUID()).code("P1").scope(VoucherScope.PLATFORM).status(VoucherStatus.ACTIVE).build();
+        Voucher v2 = Voucher.builder().id(UUID.randomUUID()).code("P2").scope(VoucherScope.PLATFORM).status(VoucherStatus.DELETED).build();
+        Voucher v3 = Voucher.builder().id(UUID.randomUUID()).code("P3").scope(VoucherScope.PLATFORM).status(VoucherStatus.INACTIVE).build();
+
+        when(voucherRepository.findByScopeOrderByCreatedAtDesc(VoucherScope.PLATFORM)).thenReturn(List.of(v1, v2, v3));
+
+        List<VoucherResponse> list = voucherService.getPlatformManageVouchers(adminAccountId);
+        assertEquals(3, list.size());
+    }
+
+    @Test
+    @DisplayName("30. Không trả về Voucher thuộc scope SHOP khi ADMIN truy vấn platform manage; Non-admin bị từ chối")
+    void test30_nonAdminCannotAccessPlatformManagement() {
+        User bizUser = createTestUserWithRole("BUSINESS");
+        UUID bizAccountId = bizUser.getAccount().getId();
+        when(userRepository.findByAccountId(bizAccountId)).thenReturn(Optional.of(bizUser));
+
+        User custUser = createTestUserWithRole("CUSTOMER");
+        UUID custAccountId = custUser.getAccount().getId();
+        when(userRepository.findByAccountId(custAccountId)).thenReturn(Optional.of(custUser));
+
+        assertThrows(CustomException.class, () -> voucherService.getPlatformManageVouchers(bizAccountId));
+        assertThrows(CustomException.class, () -> voucherService.getPlatformManageVouchers(custAccountId));
+    }
+
+    // ==================== TASK 2.1 REQUIRED TESTS (31 - 42) ====================
+
+    @Test
+    @DisplayName("31. Voucher chưa bắt đầu, đổi startDate thành quá khứ: bị từ chối và entity không đổi")
+    void test31_updateVoucher_newStartDateInPast_rejected() {
+        User bizUser = createTestUserWithRole("BUSINESS");
+        UUID bizAccountId = bizUser.getAccount().getId();
+        when(userRepository.findByAccountId(bizAccountId)).thenReturn(Optional.of(bizUser));
+        when(shopRepository.findByUserId(bizUser.getId())).thenReturn(Optional.of(testShop));
+
+        UUID vId = UUID.randomUUID();
+        LocalDateTime originalStart = LocalDateTime.now().plusDays(2);
+        LocalDateTime originalEnd = LocalDateTime.now().plusDays(10);
+        Voucher v = Voucher.builder()
+                .id(vId)
+                .scope(VoucherScope.SHOP)
+                .shop(testShop)
+                .status(VoucherStatus.ACTIVE)
+                .startDate(originalStart)
+                .endDate(originalEnd)
+                .usedCount(0)
+                .build();
+        when(voucherRepository.findById(vId)).thenReturn(Optional.of(v));
+
+        UpdateVoucherRequest req = UpdateVoucherRequest.builder()
+                .startDate(LocalDateTime.now().minusDays(1))
+                .build();
+
+        CustomException ex = assertThrows(CustomException.class, () -> voucherService.updateVoucher(bizAccountId, vId, req));
+        assertEquals("Thời gian bắt đầu mới phải sau thời điểm hiện tại", ex.getMessage());
+        assertEquals(originalStart, v.getStartDate());
+        verify(voucherRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("32. Voucher chưa bắt đầu, đổi startDate thành hiện tại: bị từ chối và entity không đổi")
+    void test32_updateVoucher_newStartDateCurrent_rejected() {
+        User bizUser = createTestUserWithRole("BUSINESS");
+        UUID bizAccountId = bizUser.getAccount().getId();
+        when(userRepository.findByAccountId(bizAccountId)).thenReturn(Optional.of(bizUser));
+        when(shopRepository.findByUserId(bizUser.getId())).thenReturn(Optional.of(testShop));
+
+        UUID vId = UUID.randomUUID();
+        LocalDateTime originalStart = LocalDateTime.now().plusDays(3);
+        Voucher v = Voucher.builder()
+                .id(vId)
+                .scope(VoucherScope.SHOP)
+                .shop(testShop)
+                .status(VoucherStatus.ACTIVE)
+                .startDate(originalStart)
+                .endDate(LocalDateTime.now().plusDays(10))
+                .usedCount(0)
+                .build();
+        when(voucherRepository.findById(vId)).thenReturn(Optional.of(v));
+
+        UpdateVoucherRequest req = UpdateVoucherRequest.builder()
+                .startDate(LocalDateTime.now().minusSeconds(1))
+                .build();
+
+        CustomException ex = assertThrows(CustomException.class, () -> voucherService.updateVoucher(bizAccountId, vId, req));
+        assertEquals("Thời gian bắt đầu mới phải sau thời điểm hiện tại", ex.getMessage());
+        assertEquals(originalStart, v.getStartDate());
+        verify(voucherRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("33. Voucher chưa bắt đầu, đổi startDate thành tương lai: thành công")
+    void test33_updateVoucher_newStartDateInFuture_success() {
+        User bizUser = createTestUserWithRole("BUSINESS");
+        UUID bizAccountId = bizUser.getAccount().getId();
+        when(userRepository.findByAccountId(bizAccountId)).thenReturn(Optional.of(bizUser));
+        when(shopRepository.findByUserId(bizUser.getId())).thenReturn(Optional.of(testShop));
+
+        UUID vId = UUID.randomUUID();
+        LocalDateTime originalStart = LocalDateTime.now().plusDays(2);
+        LocalDateTime originalEnd = LocalDateTime.now().plusDays(10);
+        Voucher v = Voucher.builder()
+                .id(vId)
+                .scope(VoucherScope.SHOP)
+                .shop(testShop)
+                .status(VoucherStatus.ACTIVE)
+                .startDate(originalStart)
+                .endDate(originalEnd)
+                .usedCount(0)
+                .build();
+        when(voucherRepository.findById(vId)).thenReturn(Optional.of(v));
+        when(voucherRepository.save(any(Voucher.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        LocalDateTime newStart = LocalDateTime.now().plusDays(4);
+        UpdateVoucherRequest req = UpdateVoucherRequest.builder()
+                .startDate(newStart)
+                .build();
+
+        VoucherResponse res = voucherService.updateVoucher(bizAccountId, vId, req);
+        assertEquals(newStart, res.getStartDate());
+        verify(voucherRepository).save(v);
+    }
+
+    @Test
+    @DisplayName("34. Voucher chưa bắt đầu, đổi endDate thành quá khứ: bị từ chối và entity không đổi")
+    void test34_updateVoucher_newEndDateInPast_rejected() {
+        User bizUser = createTestUserWithRole("BUSINESS");
+        UUID bizAccountId = bizUser.getAccount().getId();
+        when(userRepository.findByAccountId(bizAccountId)).thenReturn(Optional.of(bizUser));
+        when(shopRepository.findByUserId(bizUser.getId())).thenReturn(Optional.of(testShop));
+
+        UUID vId = UUID.randomUUID();
+        LocalDateTime originalEnd = LocalDateTime.now().plusDays(10);
+        Voucher v = Voucher.builder()
+                .id(vId)
+                .scope(VoucherScope.SHOP)
+                .shop(testShop)
+                .status(VoucherStatus.ACTIVE)
+                .startDate(LocalDateTime.now().plusDays(2))
+                .endDate(originalEnd)
+                .usedCount(0)
+                .build();
+        when(voucherRepository.findById(vId)).thenReturn(Optional.of(v));
+
+        UpdateVoucherRequest req = UpdateVoucherRequest.builder()
+                .endDate(LocalDateTime.now().minusDays(1))
+                .build();
+
+        CustomException ex = assertThrows(CustomException.class, () -> voucherService.updateVoucher(bizAccountId, vId, req));
+        assertEquals("Thời gian kết thúc mới phải sau thời điểm hiện tại", ex.getMessage());
+        assertEquals(originalEnd, v.getEndDate());
+        verify(voucherRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("35. Voucher chưa bắt đầu, đổi endDate thành hiện tại: bị từ chối và entity không đổi")
+    void test35_updateVoucher_newEndDateCurrent_rejected() {
+        User bizUser = createTestUserWithRole("BUSINESS");
+        UUID bizAccountId = bizUser.getAccount().getId();
+        when(userRepository.findByAccountId(bizAccountId)).thenReturn(Optional.of(bizUser));
+        when(shopRepository.findByUserId(bizUser.getId())).thenReturn(Optional.of(testShop));
+
+        UUID vId = UUID.randomUUID();
+        LocalDateTime originalEnd = LocalDateTime.now().plusDays(10);
+        Voucher v = Voucher.builder()
+                .id(vId)
+                .scope(VoucherScope.SHOP)
+                .shop(testShop)
+                .status(VoucherStatus.ACTIVE)
+                .startDate(LocalDateTime.now().plusDays(2))
+                .endDate(originalEnd)
+                .usedCount(0)
+                .build();
+        when(voucherRepository.findById(vId)).thenReturn(Optional.of(v));
+
+        UpdateVoucherRequest req = UpdateVoucherRequest.builder()
+                .endDate(LocalDateTime.now().minusSeconds(1))
+                .build();
+
+        CustomException ex = assertThrows(CustomException.class, () -> voucherService.updateVoucher(bizAccountId, vId, req));
+        assertEquals("Thời gian kết thúc mới phải sau thời điểm hiện tại", ex.getMessage());
+        assertEquals(originalEnd, v.getEndDate());
+        verify(voucherRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("36. endDate mới trước startDate: bị từ chối và entity không đổi")
+    void test36_updateVoucher_endDateBeforeStartDate_rejected() {
+        User bizUser = createTestUserWithRole("BUSINESS");
+        UUID bizAccountId = bizUser.getAccount().getId();
+        when(userRepository.findByAccountId(bizAccountId)).thenReturn(Optional.of(bizUser));
+        when(shopRepository.findByUserId(bizUser.getId())).thenReturn(Optional.of(testShop));
+
+        UUID vId = UUID.randomUUID();
+        LocalDateTime originalStart = LocalDateTime.now().plusDays(5);
+        LocalDateTime originalEnd = LocalDateTime.now().plusDays(10);
+        Voucher v = Voucher.builder()
+                .id(vId)
+                .scope(VoucherScope.SHOP)
+                .shop(testShop)
+                .status(VoucherStatus.ACTIVE)
+                .startDate(originalStart)
+                .endDate(originalEnd)
+                .usedCount(0)
+                .build();
+        when(voucherRepository.findById(vId)).thenReturn(Optional.of(v));
+
+        UpdateVoucherRequest req = UpdateVoucherRequest.builder()
+                .endDate(LocalDateTime.now().plusDays(4))
+                .build();
+
+        CustomException ex = assertThrows(CustomException.class, () -> voucherService.updateVoucher(bizAccountId, vId, req));
+        assertEquals("Thời gian kết thúc phải sau thời gian bắt đầu", ex.getMessage());
+        assertEquals(originalEnd, v.getEndDate());
+        verify(voucherRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("37. endDate mới sau startDate: thành công")
+    void test37_updateVoucher_endDateAfterStartDate_success() {
+        User bizUser = createTestUserWithRole("BUSINESS");
+        UUID bizAccountId = bizUser.getAccount().getId();
+        when(userRepository.findByAccountId(bizAccountId)).thenReturn(Optional.of(bizUser));
+        when(shopRepository.findByUserId(bizUser.getId())).thenReturn(Optional.of(testShop));
+
+        UUID vId = UUID.randomUUID();
+        LocalDateTime originalStart = LocalDateTime.now().plusDays(2);
+        Voucher v = Voucher.builder()
+                .id(vId)
+                .scope(VoucherScope.SHOP)
+                .shop(testShop)
+                .status(VoucherStatus.ACTIVE)
+                .startDate(originalStart)
+                .endDate(LocalDateTime.now().plusDays(5))
+                .usedCount(0)
+                .build();
+        when(voucherRepository.findById(vId)).thenReturn(Optional.of(v));
+        when(voucherRepository.save(any(Voucher.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        LocalDateTime newEnd = LocalDateTime.now().plusDays(12);
+        UpdateVoucherRequest req = UpdateVoucherRequest.builder()
+                .endDate(newEnd)
+                .build();
+
+        VoucherResponse res = voucherService.updateVoucher(bizAccountId, vId, req);
+        assertEquals(newEnd, res.getEndDate());
+        verify(voucherRepository).save(v);
+    }
+
+    @Test
+    @DisplayName("38. usageLimit mới nhỏ hơn usedCount: bị từ chối và entity không đổi")
+    void test38_updateVoucher_usageLimitLessThanUsedCount_rejected() {
+        User bizUser = createTestUserWithRole("BUSINESS");
+        UUID bizAccountId = bizUser.getAccount().getId();
+        when(userRepository.findByAccountId(bizAccountId)).thenReturn(Optional.of(bizUser));
+        when(shopRepository.findByUserId(bizUser.getId())).thenReturn(Optional.of(testShop));
+
+        UUID vId = UUID.randomUUID();
+        Voucher v = Voucher.builder()
+                .id(vId)
+                .scope(VoucherScope.SHOP)
+                .shop(testShop)
+                .status(VoucherStatus.ACTIVE)
+                .startDate(LocalDateTime.now().plusDays(2))
+                .endDate(LocalDateTime.now().plusDays(10))
+                .usageLimit(10)
+                .usedCount(5)
+                .build();
+        when(voucherRepository.findById(vId)).thenReturn(Optional.of(v));
+
+        UpdateVoucherRequest req = UpdateVoucherRequest.builder()
+                .usageLimit(4)
+                .build();
+
+        CustomException ex = assertThrows(CustomException.class, () -> voucherService.updateVoucher(bizAccountId, vId, req));
+        assertEquals("Số lượng giới hạn không được nhỏ hơn số lượt đã sử dụng (5)", ex.getMessage());
+        assertEquals(10, v.getUsageLimit());
+        verify(voucherRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("39. usageLimit mới bằng usedCount: xử lý hợp lệ, chuyển EXHAUSTED")
+    void test39_updateVoucher_usageLimitEqualsUsedCount_successAndExhausted() {
+        User bizUser = createTestUserWithRole("BUSINESS");
+        UUID bizAccountId = bizUser.getAccount().getId();
+        when(userRepository.findByAccountId(bizAccountId)).thenReturn(Optional.of(bizUser));
+        when(shopRepository.findByUserId(bizUser.getId())).thenReturn(Optional.of(testShop));
+
+        UUID vId = UUID.randomUUID();
+        Voucher v = Voucher.builder()
+                .id(vId)
+                .scope(VoucherScope.SHOP)
+                .shop(testShop)
+                .status(VoucherStatus.ACTIVE)
+                .startDate(LocalDateTime.now().plusDays(2))
+                .endDate(LocalDateTime.now().plusDays(10))
+                .usageLimit(10)
+                .usedCount(5)
+                .build();
+        when(voucherRepository.findById(vId)).thenReturn(Optional.of(v));
+        when(voucherRepository.save(any(Voucher.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        UpdateVoucherRequest req = UpdateVoucherRequest.builder()
+                .usageLimit(5)
+                .build();
+
+        VoucherResponse res = voucherService.updateVoucher(bizAccountId, vId, req);
+        assertEquals(5, res.getUsageLimit());
+        assertEquals(VoucherStatus.EXHAUSTED, res.getStatus());
+        verify(voucherRepository).save(v);
+    }
+
+    @Test
+    @DisplayName("40. Request không truyền ngày: giữ nguyên giá trị startDate và endDate hiện tại")
+    void test40_updateVoucher_omitDates_preservesOriginalDates() {
+        User bizUser = createTestUserWithRole("BUSINESS");
+        UUID bizAccountId = bizUser.getAccount().getId();
+        when(userRepository.findByAccountId(bizAccountId)).thenReturn(Optional.of(bizUser));
+        when(shopRepository.findByUserId(bizUser.getId())).thenReturn(Optional.of(testShop));
+
+        UUID vId = UUID.randomUUID();
+        LocalDateTime originalStart = LocalDateTime.now().plusDays(3);
+        LocalDateTime originalEnd = LocalDateTime.now().plusDays(15);
+        Voucher v = Voucher.builder()
+                .id(vId)
+                .scope(VoucherScope.SHOP)
+                .shop(testShop)
+                .status(VoucherStatus.ACTIVE)
+                .startDate(originalStart)
+                .endDate(originalEnd)
+                .usedCount(0)
+                .build();
+        when(voucherRepository.findById(vId)).thenReturn(Optional.of(v));
+        when(voucherRepository.save(any(Voucher.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        UpdateVoucherRequest req = UpdateVoucherRequest.builder()
+                .title("Updated Title Only")
+                .build();
+
+        VoucherResponse res = voucherService.updateVoucher(bizAccountId, vId, req);
+        assertEquals("Updated Title Only", res.getTitle());
+        assertEquals(originalStart, res.getStartDate());
+        assertEquals(originalEnd, res.getEndDate());
+        verify(voucherRepository).save(v);
+    }
+
+    @Test
+    @DisplayName("41. Voucher EXPIRED: bị từ chối và entity không đổi")
+    void test41_updateVoucher_expiredVoucher_rejected() {
+        User bizUser = createTestUserWithRole("BUSINESS");
+        UUID bizAccountId = bizUser.getAccount().getId();
+        when(userRepository.findByAccountId(bizAccountId)).thenReturn(Optional.of(bizUser));
+        when(shopRepository.findByUserId(bizUser.getId())).thenReturn(Optional.of(testShop));
+
+        UUID vId = UUID.randomUUID();
+        Voucher v = Voucher.builder()
+                .id(vId)
+                .scope(VoucherScope.SHOP)
+                .shop(testShop)
+                .status(VoucherStatus.EXPIRED)
+                .startDate(LocalDateTime.now().minusDays(5))
+                .endDate(LocalDateTime.now().minusDays(1))
+                .usedCount(0)
+                .build();
+        when(voucherRepository.findById(vId)).thenReturn(Optional.of(v));
+
+        UpdateVoucherRequest req = UpdateVoucherRequest.builder()
+                .title("Update Expired")
+                .build();
+
+        CustomException ex = assertThrows(CustomException.class, () -> voucherService.updateVoucher(bizAccountId, vId, req));
+        assertEquals("Voucher đã hết hạn sử dụng, không thể chỉnh sửa", ex.getMessage());
+        verify(voucherRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("42. Voucher EXHAUSTED: bị từ chối và entity không đổi")
+    void test42_updateVoucher_exhaustedVoucher_rejected() {
+        User bizUser = createTestUserWithRole("BUSINESS");
+        UUID bizAccountId = bizUser.getAccount().getId();
+        when(userRepository.findByAccountId(bizAccountId)).thenReturn(Optional.of(bizUser));
+        when(shopRepository.findByUserId(bizUser.getId())).thenReturn(Optional.of(testShop));
+
+        UUID vId = UUID.randomUUID();
+        Voucher v = Voucher.builder()
+                .id(vId)
+                .scope(VoucherScope.SHOP)
+                .shop(testShop)
+                .status(VoucherStatus.EXHAUSTED)
+                .startDate(LocalDateTime.now().minusDays(2))
+                .endDate(LocalDateTime.now().plusDays(5))
+                .usageLimit(10)
+                .usedCount(10)
+                .build();
+        when(voucherRepository.findById(vId)).thenReturn(Optional.of(v));
+
+        UpdateVoucherRequest req = UpdateVoucherRequest.builder()
+                .title("Update Exhausted")
+                .build();
+
+        CustomException ex = assertThrows(CustomException.class, () -> voucherService.updateVoucher(bizAccountId, vId, req));
+        assertEquals("Voucher đã hết lượt sử dụng, không thể chỉnh sửa", ex.getMessage());
+        verify(voucherRepository, never()).save(any());
     }
 }

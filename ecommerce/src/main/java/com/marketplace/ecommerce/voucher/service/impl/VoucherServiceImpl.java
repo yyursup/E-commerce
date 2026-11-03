@@ -559,19 +559,35 @@ public class VoucherServiceImpl implements VoucherService {
     @Transactional
     public VoucherResponse createVoucher(UUID accountId, CreateVoucherRequest req) {
         User user = getUser(accountId);
+        String role = getRoleName(user);
 
-        String code = req.getCode().trim().toUpperCase();
+        if (!"ADMIN".equals(role) && !"BUSINESS".equals(role)) {
+            throw new CustomException("Bạn không có quyền tạo mã giảm giá");
+        }
+
+        String code = req.getCode() != null ? req.getCode().trim().toUpperCase() : "";
+        if (code.isBlank()) {
+            throw new CustomException("Mã voucher không được để trống");
+        }
         if (voucherRepository.existsByCodeIgnoreCase(code)) {
             throw new CustomException("Mã voucher '" + code + "' đã tồn tại trên hệ thống");
         }
 
         Shop shop = null;
-        VoucherScope scope = req.getScope() != null ? req.getScope() : VoucherScope.PLATFORM;
+        VoucherScope scope;
 
-        if (scope == VoucherScope.SHOP) {
+        if ("ADMIN".equals(role)) {
+            scope = VoucherScope.PLATFORM;
+            shop = null;
+        } else {
+            scope = VoucherScope.SHOP;
             if (req.getShopId() != null) {
                 shop = shopRepository.findById(req.getShopId())
                         .orElseThrow(() -> new CustomException("Shop không tồn tại"));
+                Shop sellerShop = shopRepository.findByUserId(user.getId()).orElse(null);
+                if (sellerShop == null || !shop.getId().equals(sellerShop.getId())) {
+                    throw new CustomException("Bạn không thể tạo voucher cho Shop khác");
+                }
             } else {
                 shop = shopRepository.findByUserId(user.getId())
                         .orElseThrow(() -> new CustomException("Tài khoản chưa đăng ký Shop"));
@@ -594,7 +610,7 @@ public class VoucherServiceImpl implements VoucherService {
 
         Voucher voucher = Voucher.builder()
                 .code(code)
-                .title(req.getTitle().trim())
+                .title(req.getTitle() != null ? req.getTitle().trim() : "")
                 .description(req.getDescription())
                 .voucherType(req.getVoucherType())
                 .discountValue(req.getDiscountValue())
@@ -635,6 +651,226 @@ public class VoucherServiceImpl implements VoucherService {
 
         List<Voucher> vouchers = voucherRepository.findByShopIdOrderByCreatedAtDesc(shop.getId());
         return vouchers.stream().map(VoucherResponse::from).toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<VoucherResponse> getPlatformManageVouchers(UUID accountId) {
+        User user = getUser(accountId);
+        String role = getRoleName(user);
+        if (!"ADMIN".equals(role)) {
+            throw new CustomException("Chỉ Quản trị viên (Admin) mới có quyền truy cập danh sách voucher sàn");
+        }
+
+        List<Voucher> vouchers = voucherRepository.findByScopeOrderByCreatedAtDesc(VoucherScope.PLATFORM);
+        return vouchers.stream().map(VoucherResponse::from).toList();
+    }
+
+    @Override
+    @Transactional
+    public VoucherResponse updateVoucher(UUID accountId, UUID voucherId, UpdateVoucherRequest req) {
+        User user = getUser(accountId);
+        Voucher voucher = voucherRepository.findById(voucherId)
+                .orElseThrow(() -> new CustomException("Không tìm thấy voucher"));
+
+        String role = getRoleName(user);
+
+        // Kiểm tra quyền sở hữu
+        if ("ADMIN".equals(role)) {
+            if (voucher.getScope() != VoucherScope.PLATFORM) {
+                throw new CustomException("Bạn không có quyền chỉnh sửa voucher này");
+            }
+        } else if ("BUSINESS".equals(role)) {
+            if (voucher.getScope() != VoucherScope.SHOP) {
+                throw new CustomException("Bạn không có quyền chỉnh sửa voucher này");
+            }
+            Shop sellerShop = shopRepository.findByUserId(user.getId())
+                    .orElseThrow(() -> new CustomException("Tài khoản chưa đăng ký Shop"));
+            if (voucher.getShop() == null || !voucher.getShop().getId().equals(sellerShop.getId())) {
+                throw new CustomException("Bạn không có quyền chỉnh sửa voucher này");
+            }
+        } else {
+            throw new CustomException("Bạn không có quyền chỉnh sửa voucher này");
+        }
+
+        // Kiểm tra trạng thái hiện tại của voucher trong DB
+        if (voucher.getStatus() == VoucherStatus.DELETED) {
+            throw new CustomException("Voucher đã bị xóa, không thể chỉnh sửa");
+        }
+        if (voucher.getStatus() == VoucherStatus.INACTIVE) {
+            throw new CustomException("Voucher đã ngừng hoạt động/kết thúc, không thể chỉnh sửa");
+        }
+        if (voucher.getStatus() == VoucherStatus.EXPIRED) {
+            throw new CustomException("Voucher đã hết hạn sử dụng, không thể chỉnh sửa");
+        }
+        if (voucher.getStatus() == VoucherStatus.EXHAUSTED) {
+            throw new CustomException("Voucher đã hết lượt sử dụng, không thể chỉnh sửa");
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+
+        // Kiểm tra hết hạn hoặc hết lượt dựa trên dữ liệu thực tế
+        if (voucher.getEndDate() != null && !now.isBefore(voucher.getEndDate())) {
+            throw new CustomException("Voucher đã hết hạn sử dụng, không thể chỉnh sửa");
+        }
+        if (voucher.getUsageLimit() != null && voucher.getUsedCount() >= voucher.getUsageLimit()) {
+            throw new CustomException("Voucher đã hết lượt sử dụng, không thể chỉnh sửa");
+        }
+
+        // Kiểm tra điều kiện thời gian: chỉ sửa khi chưa bắt đầu (startDate > now)
+        if (voucher.getStartDate() == null || !voucher.getStartDate().isAfter(now)) {
+            throw new CustomException("Voucher đã bắt đầu hoạt động, không thể chỉnh sửa thông tin");
+        }
+
+        // Kiểm tra dữ liệu request trước khi gán
+        if (req.getStartDate() != null && !req.getStartDate().isAfter(now)) {
+            throw new CustomException("Thời gian bắt đầu mới phải sau thời điểm hiện tại");
+        }
+
+        if (req.getEndDate() != null && !req.getEndDate().isAfter(now)) {
+            throw new CustomException("Thời gian kết thúc mới phải sau thời điểm hiện tại");
+        }
+
+        LocalDateTime targetStartDate = req.getStartDate() != null ? req.getStartDate() : voucher.getStartDate();
+        LocalDateTime targetEndDate = req.getEndDate() != null ? req.getEndDate() : voucher.getEndDate();
+
+        if (targetEndDate != null && targetStartDate != null && !targetEndDate.isAfter(targetStartDate)) {
+            throw new CustomException("Thời gian kết thúc phải sau thời gian bắt đầu");
+        }
+
+        if (req.getUsageLimit() != null && req.getUsageLimit() < voucher.getUsedCount()) {
+            throw new CustomException("Số lượng giới hạn không được nhỏ hơn số lượt đã sử dụng (" + voucher.getUsedCount() + ")");
+        }
+
+        // Cập nhật các trường được phép
+        if (req.getTitle() != null && !req.getTitle().isBlank()) {
+            voucher.setTitle(req.getTitle().trim());
+        }
+        if (req.getDescription() != null) {
+            voucher.setDescription(req.getDescription());
+        }
+        if (req.getVoucherType() != null) {
+            voucher.setVoucherType(req.getVoucherType());
+        }
+        if (req.getDiscountValue() != null) {
+            voucher.setDiscountValue(req.getDiscountValue());
+        }
+        if (req.getMaxDiscountAmount() != null) {
+            voucher.setMaxDiscountAmount(req.getMaxDiscountAmount());
+        }
+        if (req.getMinOrderValue() != null) {
+            voucher.setMinOrderValue(req.getMinOrderValue());
+        }
+        if (req.getUsageLimit() != null) {
+            voucher.setUsageLimit(req.getUsageLimit());
+            if (voucher.getUsedCount() >= req.getUsageLimit()) {
+                voucher.setStatus(VoucherStatus.EXHAUSTED);
+            }
+        }
+        if (req.getUserUsageLimit() != null) {
+            voucher.setUserUsageLimit(req.getUserUsageLimit());
+        }
+        if (req.getStartDate() != null) {
+            voucher.setStartDate(req.getStartDate());
+        }
+        if (req.getEndDate() != null) {
+            voucher.setEndDate(req.getEndDate());
+        }
+        if (req.getCategoryId() != null) {
+            ProductCategory category = productCategoryRepository.findById(req.getCategoryId())
+                    .orElseThrow(() -> new CustomException("Không tìm thấy ngành hàng"));
+            voucher.setCategory(category);
+        }
+        if (req.getIsFirstOrderOnly() != null) {
+            voucher.setIsFirstOrderOnly(req.getIsFirstOrderOnly());
+        }
+
+        voucher = voucherRepository.save(voucher);
+        return VoucherResponse.from(voucher);
+    }
+
+    @Override
+    @Transactional
+    public VoucherResponse deleteVoucher(UUID accountId, UUID voucherId) {
+        User user = getUser(accountId);
+        Voucher voucher = voucherRepository.findById(voucherId)
+                .orElseThrow(() -> new CustomException("Không tìm thấy voucher"));
+
+        String role = getRoleName(user);
+
+        // Kiểm tra quyền sở hữu
+        if ("ADMIN".equals(role)) {
+            if (voucher.getScope() != VoucherScope.PLATFORM) {
+                throw new CustomException("Bạn không có quyền thao tác trên voucher này");
+            }
+        } else if ("BUSINESS".equals(role)) {
+            if (voucher.getScope() != VoucherScope.SHOP) {
+                throw new CustomException("Bạn không có quyền thao tác trên voucher này");
+            }
+            Shop sellerShop = shopRepository.findByUserId(user.getId())
+                    .orElseThrow(() -> new CustomException("Tài khoản chưa đăng ký Shop"));
+            if (voucher.getShop() == null || !voucher.getShop().getId().equals(sellerShop.getId())) {
+                throw new CustomException("Bạn không có quyền thao tác trên voucher này");
+            }
+        } else {
+            throw new CustomException("Bạn không có quyền thao tác trên voucher này");
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+
+        // 1. DELETED: Từ chối, không thao tác lại
+        if (voucher.getStatus() == VoucherStatus.DELETED) {
+            throw new CustomException("Voucher này đã bị xóa trước đó");
+        }
+
+        // 2. EXPIRED (cả enum EXPIRED lẫn hết hạn theo thời gian endDate)
+        boolean isExpired = voucher.getStatus() == VoucherStatus.EXPIRED
+                || (voucher.getEndDate() != null && now.isAfter(voucher.getEndDate()));
+        if (isExpired) {
+            throw new CustomException("Voucher đã hết hạn sử dụng, không thể thực hiện thao tác");
+        }
+
+        // 3. EXHAUSTED (cả enum EXHAUSTED lẫn hết lượt usedCount >= usageLimit)
+        boolean isExhausted = voucher.getStatus() == VoucherStatus.EXHAUSTED
+                || (voucher.getUsageLimit() != null && voucher.getUsedCount() >= voucher.getUsageLimit());
+        if (isExhausted) {
+            throw new CustomException("Voucher đã hết lượt sử dụng, không thể thực hiện thao tác");
+        }
+
+        // 4. Xác định chưa bắt đầu hay đã bắt đầu (startDate == null nghĩa là đã bắt đầu)
+        boolean isStarted = voucher.getStartDate() == null || !now.isBefore(voucher.getStartDate());
+
+        // 5. INACTIVE và đã bắt đầu: Từ chối
+        if (voucher.getStatus() == VoucherStatus.INACTIVE && isStarted) {
+            throw new CustomException("Voucher này đã ở trạng thái ngừng hoạt động/kết thúc");
+        }
+
+        // 6. Chuyển trạng thái
+        if (!isStarted) {
+            // startDate > now (ACTIVE hoặc INACTIVE do đóng shop) -> Chuyển DELETED
+            voucher.setStatus(VoucherStatus.DELETED);
+        } else {
+            // Đã bắt đầu và status ACTIVE (hoặc startDate == null, status ACTIVE) -> Chuyển INACTIVE
+            voucher.setStatus(VoucherStatus.INACTIVE);
+        }
+
+        voucher = voucherRepository.save(voucher);
+        return VoucherResponse.from(voucher);
+    }
+
+    private String getRoleName(User user) {
+        if (user == null || user.getAccount() == null || user.getAccount().getRole() == null) {
+            return "CUSTOMER";
+        }
+        String roleName = user.getAccount().getRole().getRoleName();
+        if (roleName == null) {
+            return "CUSTOMER";
+        }
+        String clean = roleName.trim().toUpperCase();
+        if (clean.startsWith("ROLE_")) {
+            clean = clean.substring(5);
+        }
+        return clean;
     }
 
     private boolean isCategoryHierarchyMatch(ProductCategory productCategory, ProductCategory targetCategory) {

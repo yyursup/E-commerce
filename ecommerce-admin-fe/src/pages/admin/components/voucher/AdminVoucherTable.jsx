@@ -1,6 +1,7 @@
 import { useRef, useEffect } from 'react'
 import { HiOutlineTicket, HiOutlinePlus } from 'react-icons/hi'
 import { cn } from '../../../../lib/cn'
+import { getVoucherDisplayStatus, getVoucherBadgeConfig } from '../../../../lib/voucherStatus'
 
 export default function AdminVoucherTable({ vouchers, loading, isDark, onOpenCreateModal }) {
   const tableContainerRef = useRef(null)
@@ -81,8 +82,8 @@ export default function AdminVoucherTable({ vouchers, loading, isDark, onOpenCre
           </thead>
           <tbody className={cn('divide-y', isDark ? 'divide-slate-800' : 'divide-stone-100')}>
             {vouchers.map((v) => {
-              const isExpired = v.endDate && new Date(v.endDate) < new Date()
-              const statusLabel = isExpired ? 'Hết hạn' : v.status === 'ACTIVE' ? 'Đang chạy' : 'Tạm dừng'
+              const displayStatus = getVoucherDisplayStatus(v)
+              const badgeConfig = getVoucherBadgeConfig(displayStatus.key, isDark)
 
               return (
                 <tr key={v.id || v.code} className={cn('transition-colors', isDark ? 'hover:bg-slate-800/60' : 'hover:bg-stone-50/50')}>
@@ -145,13 +146,11 @@ export default function AdminVoucherTable({ vouchers, loading, isDark, onOpenCre
                     <span
                       className={cn(
                         'rounded-full px-2.5 py-1 text-[11px] font-bold inline-flex items-center gap-1.5',
-                        statusLabel === 'Đang chạy'
-                          ? (isDark ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20' : 'bg-emerald-50 text-emerald-700 border border-emerald-200')
-                          : (isDark ? 'bg-slate-800 text-slate-400 border border-slate-700' : 'bg-stone-100 text-stone-600 border border-stone-200')
+                        badgeConfig.badgeClass
                       )}
                     >
-                      <span className={cn('h-1.5 w-1.5 rounded-full', statusLabel === 'Đang chạy' ? 'bg-emerald-500 animate-pulse' : 'bg-stone-400')} />
-                      {statusLabel}
+                      <span className={cn('h-1.5 w-1.5 rounded-full', badgeConfig.dotClass)} />
+                      {displayStatus.label}
                     </span>
                   </td>
                 </tr>

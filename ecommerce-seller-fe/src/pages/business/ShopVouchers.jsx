@@ -5,9 +5,11 @@ import voucherService from '../../services/voucher'
 import { useThemeStore } from '../../store/useThemeStore'
 import { useAuthStore } from '../../store/useAuthStore'
 import { cn } from '../../lib/cn'
+import { getVoucherDisplayStatus, VOUCHER_STATUS_FILTER_OPTIONS } from '../../lib/voucherStatus'
 import VoucherTable from './components/voucher/VoucherTable'
 import CreateVoucherModal from './components/voucher/CreateVoucherModal'
 import VoucherDetailModal from './components/voucher/VoucherDetailModal'
+import EditVoucherModal from './components/voucher/EditVoucherModal'
 
 export default function ShopVouchers() {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
@@ -16,9 +18,18 @@ export default function ShopVouchers() {
   const [vouchers, setVouchers] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState('ALL') // 'ALL' | 'ACTIVE' | 'INACTIVE' | 'EXPIRED'
+  const [statusFilter, setStatusFilter] = useState('ALL')
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [selectedVoucher, setSelectedVoucher] = useState(null)
+  const [editingVoucher, setEditingVoucher] = useState(null)
+
+  const handleOpenEdit = (v) => {
+    if (isShopClosed) {
+      toast.error('Gian hàng đã đóng cửa (CLOSED). Không thể chỉnh sửa voucher.')
+      return
+    }
+    setEditingVoucher(v)
+  }
 
   useEffect(() => {
     loadVouchers()
@@ -51,13 +62,9 @@ export default function ShopVouchers() {
       if (!matchesSearch) return false
 
       // 2. Status filter
-      const isExpired = v.endDate && new Date(v.endDate) < new Date()
       if (statusFilter === 'ALL') return true
-      if (statusFilter === 'ACTIVE') return v.status === 'ACTIVE' && !isExpired
-      if (statusFilter === 'INACTIVE') return v.status !== 'ACTIVE' && !isExpired
-      if (statusFilter === 'EXPIRED') return isExpired
-
-      return true
+      const displayStatus = getVoucherDisplayStatus(v)
+      return displayStatus.key === statusFilter
     })
   }, [vouchers, searchTerm, statusFilter])
 
@@ -153,12 +160,7 @@ export default function ShopVouchers() {
           'flex flex-wrap items-center gap-1.5 p-1.5 rounded-2xl border transition-all self-start lg:self-auto',
           isDark ? 'border-slate-800 bg-slate-900/90' : 'border-stone-200 bg-stone-100/90'
         )}>
-          {[
-            { key: 'ALL', label: 'Tất cả' },
-            { key: 'ACTIVE', label: 'Đang chạy' },
-            { key: 'INACTIVE', label: 'Tạm dừng' },
-            { key: 'EXPIRED', label: 'Hết hạn' },
-          ].map((tab) => {
+          {VOUCHER_STATUS_FILTER_OPTIONS.map((tab) => {
             const isActive = statusFilter === tab.key
             return (
               <button
@@ -188,6 +190,8 @@ export default function ShopVouchers() {
         search={searchTerm}
         onOpenCreateModal={() => setShowCreateModal(true)}
         onSelectVoucher={(v) => setSelectedVoucher(v)}
+        onEditVoucher={handleOpenEdit}
+        isShopClosed={isShopClosed}
       />
 
       {/* Voucher Detail Modal */}
@@ -195,6 +199,8 @@ export default function ShopVouchers() {
         <VoucherDetailModal
           voucher={selectedVoucher}
           onClose={() => setSelectedVoucher(null)}
+          onEditVoucher={handleOpenEdit}
+          isShopClosed={isShopClosed}
         />
       )}
 
@@ -205,6 +211,18 @@ export default function ShopVouchers() {
         onSuccess={loadVouchers}
         isDark={isDark}
       />
+
+      {/* Edit Voucher Modal */}
+      {editingVoucher && (
+        <EditVoucherModal
+          isOpen={Boolean(editingVoucher)}
+          onClose={() => setEditingVoucher(null)}
+          onSuccess={loadVouchers}
+          voucher={editingVoucher}
+          isDark={isDark}
+          isShopClosed={isShopClosed}
+        />
+      )}
     </div>
   )
 }

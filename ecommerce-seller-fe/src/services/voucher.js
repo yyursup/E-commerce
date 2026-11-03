@@ -24,6 +24,16 @@ export const voucherService = {
     } catch (error) {
       throw error.response ? error.response.data : error
     }
+  },
+
+  // Cập nhật voucher cho Shop
+  updateVoucher: async (id, payload) => {
+    try {
+      const response = await axiosClient.put(`${VOUCHER_BASE}/${id}`, payload)
+      return response.data
+    } catch (error) {
+      throw error.response ? error.response.data : error
+    }
   }
 }
 

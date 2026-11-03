@@ -4,6 +4,7 @@ import toast from 'react-hot-toast'
 import voucherService from '../../services/voucher'
 import { useThemeStore } from '../../store/useThemeStore'
 import { cn } from '../../lib/cn'
+import { getVoucherDisplayStatus, VOUCHER_STATUS_FILTER_OPTIONS } from '../../lib/voucherStatus'
 import AdminVoucherMetrics from './components/voucher/AdminVoucherMetrics'
 import AdminVoucherTable from './components/voucher/AdminVoucherTable'
 import CreateAdminVoucherModal from './components/voucher/CreateAdminVoucherModal'
@@ -13,6 +14,7 @@ export default function AdminVouchers() {
   const [vouchers, setVouchers] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
+  const [statusFilter, setStatusFilter] = useState('ALL')
   const [showCreateModal, setShowCreateModal] = useState(false)
 
   useEffect(() => {
@@ -34,14 +36,22 @@ export default function AdminVouchers() {
   }
 
   const filteredVouchers = useMemo(() => {
-    if (!searchTerm.trim()) return vouchers
-    const term = searchTerm.toLowerCase()
-    return vouchers.filter(
-      (v) =>
+    return vouchers.filter((v) => {
+      // 1. Search filter
+      const term = searchTerm.toLowerCase().trim()
+      const matchesSearch =
+        !term ||
         v.code?.toLowerCase().includes(term) ||
         v.title?.toLowerCase().includes(term)
-    )
-  }, [vouchers, searchTerm])
+
+      if (!matchesSearch) return false
+
+      // 2. Status filter
+      if (statusFilter === 'ALL') return true
+      const displayStatus = getVoucherDisplayStatus(v)
+      return displayStatus.key === statusFilter
+    })
+  }, [vouchers, searchTerm, statusFilter])
 
   return (
     <div className="space-y-6">
@@ -69,7 +79,7 @@ export default function AdminVouchers() {
       <AdminVoucherMetrics vouchers={vouchers} isDark={isDark} />
 
       {/* 2. Filter & Search Bar */}
-      <div className={cn('rounded-2xl border p-4 shadow-sm flex items-center justify-between gap-4', isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white')}>
+      <div className={cn('rounded-2xl border p-4 shadow-sm flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4', isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white')}>
         <div className="relative flex-1 max-w-md">
           <input
             type="text"
@@ -82,6 +92,32 @@ export default function AdminVouchers() {
             )}
           />
           <HiOutlineSearch className="absolute left-3 top-2.5 h-4 w-4 text-stone-400" />
+        </div>
+
+        {/* Status Filter Tabs */}
+        <div className={cn(
+          'flex flex-wrap items-center gap-1.5 p-1 rounded-2xl border transition-all self-start lg:self-auto',
+          isDark ? 'border-slate-800 bg-slate-800/60' : 'border-stone-200 bg-stone-100/80'
+        )}>
+          {VOUCHER_STATUS_FILTER_OPTIONS.map((tab) => {
+            const isActive = statusFilter === tab.key
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setStatusFilter(tab.key)}
+                className={cn(
+                  'px-3 py-1.5 text-xs font-bold rounded-xl transition-all',
+                  isActive
+                    ? 'bg-amber-500 text-white shadow-md shadow-amber-500/25'
+                    : isDark
+                      ? 'text-slate-300 hover:text-white hover:bg-slate-700/60'
+                      : 'text-stone-600 hover:text-stone-900 hover:bg-white'
+                )}
+              >
+                {tab.label}
+              </button>
+            )
+          })}
         </div>
       </div>
 

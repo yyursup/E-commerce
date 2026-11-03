@@ -11,14 +11,18 @@ import {
   HiOutlineShieldCheck,
   HiOutlineClock,
   HiOutlineSparkles,
+  HiOutlinePencilAlt,
 } from 'react-icons/hi'
 import { useThemeStore } from '../../../../store/useThemeStore'
 import { cn } from '../../../../lib/cn'
+import { getVoucherDisplayStatus, getVoucherBadgeConfig, canEditVoucher } from '../../../../lib/voucherStatus'
 import toast from 'react-hot-toast'
 
 export default function VoucherDetailModal({
   voucher,
   onClose,
+  onEditVoucher,
+  isShopClosed,
 }) {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
   const [copiedCode, setCopiedCode] = useState(false)
@@ -48,8 +52,10 @@ export default function VoucherDetailModal({
     })
   }
 
-  const isExpired = voucher.endDate && new Date(voucher.endDate) < new Date()
-  const statusLabel = isExpired ? 'Hết hạn' : voucher.status === 'ACTIVE' ? 'Đang hoạt động' : 'Tạm dừng'
+  const displayStatus = getVoucherDisplayStatus(voucher)
+  const badgeConfig = getVoucherBadgeConfig(displayStatus.key, isDark)
+  const isExpired = displayStatus.key === 'EXPIRED'
+  const canEdit = canEditVoucher(voucher, isShopClosed)
 
   const usageLimit = voucher.usageLimit ? Number(voucher.usageLimit) : null
   const usedCount = Number(voucher.usedCount || 0)
@@ -92,20 +98,16 @@ export default function VoucherDetailModal({
             <span
               className={cn(
                 'rounded-full px-3 py-1 text-xs font-bold inline-flex items-center gap-1.5 shrink-0 border',
-                statusLabel === 'Đang hoạt động'
-                  ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
-                  : statusLabel === 'Hết hạn'
-                  ? 'bg-rose-500/15 text-rose-400 border-rose-500/30'
-                  : 'bg-slate-500/15 text-slate-400 border-slate-500/30'
+                badgeConfig.badgeClass
               )}
             >
               <span
                 className={cn(
                   'h-1.5 w-1.5 rounded-full',
-                  statusLabel === 'Đang hoạt động' ? 'bg-emerald-500 animate-pulse' : 'bg-stone-400'
+                  badgeConfig.dotClass
                 )}
               />
-              {statusLabel}
+              {displayStatus.label}
             </span>
 
             <button
@@ -254,14 +256,30 @@ export default function VoucherDetailModal({
           'flex items-center justify-between gap-3 px-6 py-4 border-t shrink-0',
           isDark ? 'border-slate-800 bg-slate-900/90' : 'border-stone-100 bg-stone-50/80'
         )}>
-          <button
-            type="button"
-            onClick={handleCopyCode}
-            className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-amber-500/20 hover:bg-amber-600 active:scale-95 transition-all"
-          >
-            {copiedCode ? <HiOutlineCheck className="h-4 w-4" /> : <HiOutlineClipboardCopy className="h-4 w-4" />}
-            Sao chép mã voucher
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={handleCopyCode}
+              className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-amber-500/20 hover:bg-amber-600 active:scale-95 transition-all"
+            >
+              {copiedCode ? <HiOutlineCheck className="h-4 w-4" /> : <HiOutlineClipboardCopy className="h-4 w-4" />}
+              Sao chép mã voucher
+            </button>
+
+            {canEdit && (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose?.()
+                  onEditVoucher?.(voucher)
+                }}
+                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-amber-500/20 hover:from-amber-600 hover:to-orange-600 active:scale-95 transition-all"
+              >
+                <HiOutlinePencilAlt className="h-4 w-4" />
+                Chỉnh sửa voucher
+              </button>
+            )}
+          </div>
 
           <button
             type="button"

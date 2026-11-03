@@ -1,8 +1,9 @@
 import { HiOutlineTicket, HiOutlineCheckCircle, HiOutlineUsers } from 'react-icons/hi'
 import { cn } from '../../../../lib/cn'
+import { getVoucherDisplayStatus } from '../../../../lib/voucherStatus'
 
 export default function AdminVoucherMetrics({ vouchers, isDark }) {
-  const activeCount = vouchers.filter((v) => v.status === 'ACTIVE').length
+  const activeCount = vouchers.filter((v) => getVoucherDisplayStatus(v).key === 'ACTIVE').length
   const totalUsed = vouchers.reduce((sum, v) => sum + (v.usedCount || 0), 0)
 
   return (

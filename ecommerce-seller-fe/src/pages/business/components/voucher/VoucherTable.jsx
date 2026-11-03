@@ -9,9 +9,11 @@ import {
   HiOutlineTag,
   HiOutlineSparkles,
   HiOutlineEye,
+  HiOutlinePencilAlt,
 } from 'react-icons/hi'
 import toast from 'react-hot-toast'
 import { cn } from '../../../../lib/cn'
+import { getVoucherDisplayStatus, getVoucherBadgeConfig, canEditVoucher } from '../../../../lib/voucherStatus'
 
 export default function VoucherTable({
   vouchers,
@@ -20,6 +22,8 @@ export default function VoucherTable({
   search,
   onOpenCreateModal,
   onSelectVoucher,
+  onEditVoucher,
+  isShopClosed,
 }) {
   const [copiedCode, setCopiedCode] = useState('')
 
@@ -90,8 +94,9 @@ export default function VoucherTable({
   return (
     <div className="space-y-3.5">
       {vouchers.map((v) => {
-        const isExpired = v.endDate && new Date(v.endDate) < new Date()
-        const statusLabel = isExpired ? 'Hết hạn' : v.status === 'ACTIVE' ? 'Đang chạy' : 'Tạm dừng'
+        const displayStatus = getVoucherDisplayStatus(v)
+        const badgeConfig = getVoucherBadgeConfig(displayStatus.key, isDark)
+        const canEdit = canEditVoucher(v, isShopClosed)
         const isCopied = copiedCode === v.code
         const usageLimit = v.usageLimit ? Number(v.usageLimit) : null
         const usedCount = Number(v.usedCount || 0)
@@ -144,22 +149,16 @@ export default function VoucherTable({
                   <span
                     className={cn(
                       'inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-bold tracking-wide shrink-0 border',
-                      statusLabel === 'Đang chạy'
-                        ? isDark
-                          ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
-                          : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                        : isDark
-                        ? 'bg-slate-800 text-slate-400 border-slate-700'
-                        : 'bg-stone-100 text-stone-600 border-stone-200'
+                      badgeConfig.badgeClass
                     )}
                   >
                     <span
                       className={cn(
                         'h-1.5 w-1.5 rounded-full',
-                        statusLabel === 'Đang chạy' ? 'bg-emerald-500 animate-pulse' : 'bg-stone-400'
+                        badgeConfig.dotClass
                       )}
                     />
-                    {statusLabel}
+                    {displayStatus.label}
                   </span>
 
                   {/* Code Pill */}
@@ -235,6 +234,27 @@ export default function VoucherTable({
 
               {/* Action Buttons */}
               <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                {/* Nút Chỉnh sửa cho Voucher đủ điều kiện */}
+                {canEdit && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onEditVoucher?.(v)
+                    }}
+                    className={cn(
+                      'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all active:scale-95',
+                      isDark
+                        ? 'border-amber-500/30 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20'
+                        : 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100'
+                    )}
+                    title="Chỉnh sửa voucher"
+                  >
+                    <HiOutlinePencilAlt className="h-4 w-4" />
+                    <span>Sửa</span>
+                  </button>
+                )}
+
                 <button
                   type="button"
                   onClick={(e) => handleCopyCode(v.code, e)}

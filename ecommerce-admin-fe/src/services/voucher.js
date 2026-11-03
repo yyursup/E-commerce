@@ -4,11 +4,9 @@ const VOUCHER_BASE = '/api/v1/vouchers'
 
 export const voucherService = {
   // Lấy danh sách voucher toàn sàn (cho Admin)
-  getPlatformVouchers: async (params = {}) => {
+  getPlatformVouchers: async () => {
     try {
-      const response = await axiosClient.get(VOUCHER_BASE, {
-        params: { scope: 'PLATFORM', ...params }
-      })
+      const response = await axiosClient.get(`${VOUCHER_BASE}/platform-manage`)
       return response.data
     } catch (error) {
       throw error.response ? error.response.data : error

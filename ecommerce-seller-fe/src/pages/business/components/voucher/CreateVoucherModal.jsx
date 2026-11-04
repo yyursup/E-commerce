@@ -5,6 +5,26 @@ import toast from 'react-hot-toast'
 import voucherService from '../../../../services/voucher'
 import { cn } from '../../../../lib/cn'
 
+const formatDateTimeForPayload = (dtStr) => {
+  if (!dtStr) return null
+  if (dtStr.length === 16) {
+    return `${dtStr}:00`
+  }
+  return dtStr
+}
+
+const getNowLocalDateTimeString = () => {
+  const d = new Date()
+  const pad = (n) => String(n).padStart(2, '0')
+  const yyyy = d.getFullYear()
+  const MM = pad(d.getMonth() + 1)
+  const dd = pad(d.getDate())
+  const hh = pad(d.getHours())
+  const mm = pad(d.getMinutes())
+  const ss = pad(d.getSeconds())
+  return `${yyyy}-${MM}-${dd}T${hh}:${mm}:${ss}`
+}
+
 export default function CreateVoucherModal({ isOpen, onClose, onSuccess, isDark }) {
   const [creating, setCreating] = useState(false)
   const [formData, setFormData] = useState({
@@ -57,8 +77,8 @@ export default function CreateVoucherModal({ isOpen, onClose, onSuccess, isDark 
         minOrderValue: Number(formData.minOrderValue || 0),
         usageLimit: Number(formData.usageLimit || 100),
         userUsageLimit: Number(formData.userUsageLimit || 1),
-        startDate: formData.startDate ? new Date(formData.startDate).toISOString() : new Date().toISOString(),
-        endDate: formData.endDate ? new Date(formData.endDate).toISOString() : null,
+        startDate: formData.startDate ? formatDateTimeForPayload(formData.startDate) : getNowLocalDateTimeString(),
+        endDate: formatDateTimeForPayload(formData.endDate),
       }
 
       await voucherService.createVoucher(payload)

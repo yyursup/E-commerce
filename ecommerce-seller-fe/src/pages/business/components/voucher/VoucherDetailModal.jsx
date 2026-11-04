@@ -12,16 +12,24 @@ import {
   HiOutlineClock,
   HiOutlineSparkles,
   HiOutlinePencilAlt,
+  HiOutlineTrash,
 } from 'react-icons/hi'
 import { useThemeStore } from '../../../../store/useThemeStore'
 import { cn } from '../../../../lib/cn'
-import { getVoucherDisplayStatus, getVoucherBadgeConfig, canEditVoucher } from '../../../../lib/voucherStatus'
+import {
+  getVoucherDisplayStatus,
+  getVoucherBadgeConfig,
+  canEditVoucher,
+  canDeleteVoucher,
+  isVoucherStarted,
+} from '../../../../lib/voucherStatus'
 import toast from 'react-hot-toast'
 
 export default function VoucherDetailModal({
   voucher,
   onClose,
   onEditVoucher,
+  onDeleteVoucher,
   isShopClosed,
 }) {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
@@ -56,6 +64,8 @@ export default function VoucherDetailModal({
   const badgeConfig = getVoucherBadgeConfig(displayStatus.key, isDark)
   const isExpired = displayStatus.key === 'EXPIRED'
   const canEdit = canEditVoucher(voucher, isShopClosed)
+  const canDelete = canDeleteVoucher(voucher)
+  const isStarted = isVoucherStarted(voucher)
 
   const usageLimit = voucher.usageLimit ? Number(voucher.usageLimit) : null
   const usedCount = Number(voucher.usedCount || 0)
@@ -277,6 +287,27 @@ export default function VoucherDetailModal({
               >
                 <HiOutlinePencilAlt className="h-4 w-4" />
                 Chỉnh sửa voucher
+              </button>
+            )}
+
+            {canDelete && (
+              <button
+                type="button"
+                onClick={() => onDeleteVoucher?.(voucher)}
+                className={cn(
+                  'inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition-all active:scale-95 border',
+                  isStarted
+                    ? isDark
+                      ? 'border-amber-500/40 bg-amber-500/15 text-amber-400 hover:bg-amber-500/25'
+                      : 'border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100'
+                    : isDark
+                      ? 'border-rose-500/40 bg-rose-500/15 text-rose-400 hover:bg-rose-500/25'
+                      : 'border-rose-300 bg-rose-50 text-rose-700 hover:bg-rose-100'
+                )}
+                title={isStarted ? 'Kết thúc sớm voucher' : 'Xóa voucher'}
+              >
+                <HiOutlineTrash className="h-4 w-4" />
+                {isStarted ? 'Kết thúc sớm' : 'Xóa voucher'}
               </button>
             )}
           </div>

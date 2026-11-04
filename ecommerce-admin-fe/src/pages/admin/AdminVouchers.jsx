@@ -4,10 +4,12 @@ import toast from 'react-hot-toast'
 import voucherService from '../../services/voucher'
 import { useThemeStore } from '../../store/useThemeStore'
 import { cn } from '../../lib/cn'
-import { getVoucherDisplayStatus, VOUCHER_STATUS_FILTER_OPTIONS } from '../../lib/voucherStatus'
+import { getVoucherDisplayStatus, VOUCHER_STATUS_FILTER_OPTIONS, canEditVoucher, canDeleteVoucher } from '../../lib/voucherStatus'
 import AdminVoucherMetrics from './components/voucher/AdminVoucherMetrics'
 import AdminVoucherTable from './components/voucher/AdminVoucherTable'
 import CreateAdminVoucherModal from './components/voucher/CreateAdminVoucherModal'
+import EditAdminVoucherModal from './components/voucher/EditAdminVoucherModal'
+import DeleteAdminVoucherConfirmModal from './components/voucher/DeleteAdminVoucherConfirmModal'
 
 export default function AdminVouchers() {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
@@ -16,6 +18,47 @@ export default function AdminVouchers() {
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('ALL')
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [editingVoucher, setEditingVoucher] = useState(null)
+  const [deletingVoucher, setDeletingVoucher] = useState(null)
+  const [deleteLoading, setDeleteLoading] = useState(false)
+
+  const handleOpenEdit = (v) => {
+    if (!canEditVoucher(v)) {
+      toast.error('Voucher này không đủ điều kiện để chỉnh sửa')
+      return
+    }
+    setEditingVoucher(v)
+  }
+
+  const handleOpenDelete = (v) => {
+    if (!canDeleteVoucher(v)) {
+      toast.error('Voucher này không đủ điều kiện để xóa hoặc dừng')
+      return
+    }
+    setDeletingVoucher(v)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!deletingVoucher) return
+    try {
+      setDeleteLoading(true)
+      const res = await voucherService.deleteVoucher(deletingVoucher.id)
+      if (res?.status === 'DELETED') {
+        toast.success(`Đã hủy voucher sàn ${res.code || deletingVoucher.code} thành công!`)
+      } else if (res?.status === 'INACTIVE') {
+        toast.success(`Đã kết thúc sớm voucher sàn ${res.code || deletingVoucher.code}!`)
+      } else {
+        toast.success('Thao tác trên voucher sàn thành công!')
+      }
+      setDeletingVoucher(null)
+      await loadVouchers()
+    } catch (err) {
+      console.error('Delete platform voucher error:', err)
+      toast.error(err?.message || err?.response?.data?.message || 'Thao tác trên voucher sàn thất bại')
+    } finally {
+      setDeleteLoading(false)
+    }
+  }
 
   useEffect(() => {
     loadVouchers()
@@ -127,6 +170,8 @@ export default function AdminVouchers() {
         loading={loading}
         isDark={isDark}
         onOpenCreateModal={() => setShowCreateModal(true)}
+        onEditVoucher={handleOpenEdit}
+        onDeleteVoucher={handleOpenDelete}
       />
 
       {/* 4. Create Platform Voucher Modal */}
@@ -136,6 +181,29 @@ export default function AdminVouchers() {
         onSuccess={loadVouchers}
         isDark={isDark}
       />
+
+      {/* 5. Edit Platform Voucher Modal */}
+      {editingVoucher && (
+        <EditAdminVoucherModal
+          isOpen={Boolean(editingVoucher)}
+          onClose={() => setEditingVoucher(null)}
+          onSuccess={loadVouchers}
+          voucher={editingVoucher}
+          isDark={isDark}
+        />
+      )}
+
+      {/* 6. Delete / End Platform Voucher Confirm Modal */}
+      {deletingVoucher && (
+        <DeleteAdminVoucherConfirmModal
+          isOpen={Boolean(deletingVoucher)}
+          onClose={() => !deleteLoading && setDeletingVoucher(null)}
+          onConfirm={handleConfirmDelete}
+          voucher={deletingVoucher}
+          loading={deleteLoading}
+          isDark={isDark}
+        />
+      )}
     </div>
   )
 }

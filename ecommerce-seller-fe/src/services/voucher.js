@@ -34,6 +34,16 @@ export const voucherService = {
     } catch (error) {
       throw error.response ? error.response.data : error
     }
+  },
+
+  // Xóa mềm / Kết thúc sớm voucher cho Shop
+  deleteVoucher: async (id) => {
+    try {
+      const response = await axiosClient.delete(`${VOUCHER_BASE}/${id}`)
+      return response.data
+    } catch (error) {
+      throw error.response ? error.response.data : error
+    }
   }
 }
 

@@ -134,3 +134,128 @@ export function getVoucherBadgeConfig(statusKey, isDark) {
   }
 }
 
+/**
+ * Kiểm tra điều kiện cho phép Admin chỉnh sửa Voucher Toàn Sàn (PLATFORM).
+ * Đối chiếu chính xác theo logic Backend VoucherServiceImpl.updateVoucher():
+ * 1. Voucher tồn tại
+ * 2. voucher.scope === 'PLATFORM'
+ * 3. voucher.status === 'ACTIVE'
+ * 4. startDate tồn tại và > now (chưa bắt đầu hoạt động)
+ * 5. Chưa hết hạn (endDate == null hoặc endDate > now)
+ * 6. Chưa hết lượt dùng (usageLimit == null hoặc usedCount < usageLimit)
+ *
+ * @param {Object} voucher Bản ghi voucher
+ * @param {Date|string|number} [now=new Date()] Mốc thời gian đối soát
+ * @returns {boolean} true nếu thỏa mãn toàn bộ điều kiện chỉnh sửa
+ */
+export function canEditVoucher(voucher, now = new Date()) {
+  if (!voucher) return false
+
+  // 1. Phải là scope PLATFORM
+  if (voucher.scope !== 'PLATFORM') return false
+
+  // 2. Phải là status ACTIVE ở DB
+  if (voucher.status !== 'ACTIVE') return false
+
+  // 3. startDate phải tồn tại và hợp lệ
+  if (!voucher.startDate) return false
+
+  const currentTime = now instanceof Date ? now : new Date(now)
+  const startDate = new Date(voucher.startDate)
+  if (isNaN(startDate.getTime()) || startDate.getTime() <= currentTime.getTime()) return false
+
+  // 4. endDate nếu có thì phải > now
+  if (voucher.endDate) {
+    const endDate = new Date(voucher.endDate)
+    if (isNaN(endDate.getTime()) || endDate.getTime() <= currentTime.getTime()) return false
+  }
+
+  // 5. usageLimit nếu có thì usedCount phải < usageLimit
+  if (voucher.usageLimit !== null && voucher.usageLimit !== undefined) {
+    const used = voucher.usedCount != null ? Number(voucher.usedCount) : 0
+    if (used >= Number(voucher.usageLimit)) return false
+  }
+
+  return true
+}
+
+/**
+ * Kiểm tra xem Voucher đã bắt đầu hay chưa theo quy chuẩn Backend:
+ * - startDate == null nghĩa là đã bắt đầu
+ * - now >= startDate nghĩa là đã bắt đầu (!now.isBefore(startDate))
+ * - now < startDate nghĩa là chưa bắt đầu (now.isBefore(startDate))
+ *
+ * @param {Object} voucher Bản ghi voucher
+ * @param {Date|string|number} [now=new Date()] Mốc thời gian đối soát
+ * @returns {boolean} true nếu voucher đã bắt đầu
+ */
+export function isVoucherStarted(voucher, now = new Date()) {
+  if (!voucher || !voucher.startDate) return true
+  const currentTime = now instanceof Date ? now : new Date(now)
+  const startDate = new Date(voucher.startDate)
+  if (isNaN(startDate.getTime())) return true
+  return currentTime.getTime() >= startDate.getTime()
+}
+
+/**
+ * Kiểm tra điều kiện cho phép Admin Xóa mềm / Kết thúc sớm Voucher Toàn Sàn (PLATFORM).
+ * Đối chiếu chính xác theo logic Backend VoucherServiceImpl.deleteVoucher():
+ * 1. Voucher không tồn tại: false
+ * 2. voucher.scope !== 'PLATFORM': false
+ * 3. DELETED: false (không thao tác lại)
+ * 4. EXPIRED: false (cả enum EXPIRED lẫn hết hạn theo endDate: now > endDate)
+ * 5. EXHAUSTED: false (cả enum EXHAUSTED lẫn hết lượt: usedCount >= usageLimit)
+ * 6. INACTIVE và đã bắt đầu: false (đã ngừng hoạt động/kết thúc)
+ * 7. ACTIVE: cho phép (chưa bắt đầu -> DELETED, đã bắt đầu -> INACTIVE)
+ * 8. INACTIVE chưa bắt đầu: cho phép (-> DELETED)
+ *
+ * @param {Object} voucher Bản ghi voucher
+ * @param {Date|string|number} [now=new Date()] Mốc thời gian đối soát
+ * @returns {boolean} true nếu thỏa mãn điều kiện xóa/kết thúc sớm
+ */
+export function canDeleteVoucher(voucher, now = new Date()) {
+  if (!voucher) return false
+
+  // 1. Phải là scope PLATFORM
+  if (voucher.scope !== 'PLATFORM') return false
+
+  const currentTime = now instanceof Date ? now : new Date(now)
+
+  // 2. DELETED: không cho phép
+  if (voucher.status === 'DELETED') return false
+
+  // 3. EXPIRED: cả enum EXPIRED lẫn hết hạn theo endDate (now > endDate)
+  const hasEndDate = voucher.endDate !== null && voucher.endDate !== undefined && voucher.endDate !== ''
+  const isExpired =
+    voucher.status === 'EXPIRED' ||
+    (hasEndDate && currentTime.getTime() > new Date(voucher.endDate).getTime())
+  if (isExpired) return false
+
+  // 4. EXHAUSTED: cả enum EXHAUSTED lẫn hết lượt usedCount >= usageLimit
+  const hasUsageLimit = voucher.usageLimit !== null && voucher.usageLimit !== undefined
+  const used = voucher.usedCount != null ? Number(voucher.usedCount) : 0
+  const isExhausted =
+    voucher.status === 'EXHAUSTED' ||
+    (hasUsageLimit && used >= Number(voucher.usageLimit))
+  if (isExhausted) return false
+
+  // 5. Xác định startDate hợp lệ (nếu có nhưng không hợp lệ thì không cho phép thao tác an toàn)
+  if (voucher.startDate) {
+    const sDate = new Date(voucher.startDate)
+    if (isNaN(sDate.getTime())) return false
+  }
+
+  // 6. Xác định isStarted (startDate == null nghĩa là đã bắt đầu; now >= startDate nghĩa là đã bắt đầu)
+  const isStarted = isVoucherStarted(voucher, currentTime)
+
+  // 7. INACTIVE và đã bắt đầu: Từ chối
+  if (voucher.status === 'INACTIVE' && isStarted) return false
+
+  // 8. Cho phép với ACTIVE (cả chưa bắt đầu và đã bắt đầu), hoặc INACTIVE chưa bắt đầu
+  if (voucher.status === 'ACTIVE') return true
+  if (voucher.status === 'INACTIVE' && !isStarted) return true
+
+  // Các status khác: không cho phép
+  return false
+}
+

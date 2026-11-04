@@ -24,6 +24,26 @@ export const voucherService = {
     } catch (error) {
       throw error.response ? error.response.data : error
     }
+  },
+
+  // Cập nhật voucher toàn sàn (cho Admin)
+  updateVoucher: async (id, payload) => {
+    try {
+      const response = await axiosClient.put(`${VOUCHER_BASE}/${id}`, payload)
+      return response.data
+    } catch (error) {
+      throw error.response ? error.response.data : error
+    }
+  },
+
+  // Xóa mềm / Kết thúc sớm voucher toàn sàn (cho Admin)
+  deleteVoucher: async (id) => {
+    try {
+      const response = await axiosClient.delete(`${VOUCHER_BASE}/${id}`)
+      return response.data
+    } catch (error) {
+      throw error.response ? error.response.data : error
+    }
   }
 }
 

@@ -441,6 +441,34 @@ class VoucherControllerTest {
 
             verify(voucherService, never()).getPlatformManageVouchers(any());
         }
+
+        @Test
+        @DisplayName("GET /api/v1/vouchers/my-vouchers — BUSINESS được phép 200 OK")
+        void business_getMyVouchers_Allowed() throws Exception {
+            when(voucherService.getMyVouchers(businessId)).thenReturn(List.of());
+
+            mockMvc.perform(get("/api/v1/vouchers/my-vouchers")
+                            .with(authentication(businessAuth)))
+                    .andExpect(status().isOk());
+
+            verify(voucherService, times(1)).getMyVouchers(businessId);
+        }
+
+        @Test
+        @DisplayName("POST /api/v1/vouchers/{id}/claim — BUSINESS được phép 200 OK")
+        void business_claimVoucher_Allowed() throws Exception {
+            UserVoucherResponse resp = UserVoucherResponse.builder()
+                    .voucher(buildVoucherResponse(voucherId, "CLAIM_BIZ", VoucherStatus.ACTIVE))
+                    .build();
+            when(voucherService.claimVoucher(businessId, voucherId)).thenReturn(resp);
+
+            mockMvc.perform(post("/api/v1/vouchers/{voucherId}/claim", voucherId)
+                            .with(authentication(businessAuth)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.voucher.code").value("CLAIM_BIZ"));
+
+            verify(voucherService, times(1)).claimVoucher(businessId, voucherId);
+        }
     }
 
     // =========================================================================
@@ -525,6 +553,26 @@ class VoucherControllerTest {
                     .andExpect(status().isForbidden());
 
             verify(voucherService, never()).getShopManageVouchers(any());
+        }
+
+        @Test
+        @DisplayName("GET /api/v1/vouchers/my-vouchers — ADMIN bị 403 Forbidden")
+        void admin_getMyVouchers_Forbidden() throws Exception {
+            mockMvc.perform(get("/api/v1/vouchers/my-vouchers")
+                            .with(authentication(adminAuth)))
+                    .andExpect(status().isForbidden());
+
+            verify(voucherService, never()).getMyVouchers(any());
+        }
+
+        @Test
+        @DisplayName("POST /api/v1/vouchers/{id}/claim — ADMIN bị 403 Forbidden")
+        void admin_claimVoucher_Forbidden() throws Exception {
+            mockMvc.perform(post("/api/v1/vouchers/{voucherId}/claim", voucherId)
+                            .with(authentication(adminAuth)))
+                    .andExpect(status().isForbidden());
+
+            verify(voucherService, never()).claimVoucher(any(), any());
         }
     }
 

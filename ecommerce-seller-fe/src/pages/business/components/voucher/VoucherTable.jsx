@@ -10,10 +10,17 @@ import {
   HiOutlineSparkles,
   HiOutlineEye,
   HiOutlinePencilAlt,
+  HiOutlineTrash,
 } from 'react-icons/hi'
 import toast from 'react-hot-toast'
 import { cn } from '../../../../lib/cn'
-import { getVoucherDisplayStatus, getVoucherBadgeConfig, canEditVoucher } from '../../../../lib/voucherStatus'
+import {
+  getVoucherDisplayStatus,
+  getVoucherBadgeConfig,
+  canEditVoucher,
+  canDeleteVoucher,
+  isVoucherStarted,
+} from '../../../../lib/voucherStatus'
 
 export default function VoucherTable({
   vouchers,
@@ -23,6 +30,7 @@ export default function VoucherTable({
   onOpenCreateModal,
   onSelectVoucher,
   onEditVoucher,
+  onDeleteVoucher,
   isShopClosed,
 }) {
   const [copiedCode, setCopiedCode] = useState('')
@@ -97,6 +105,8 @@ export default function VoucherTable({
         const displayStatus = getVoucherDisplayStatus(v)
         const badgeConfig = getVoucherBadgeConfig(displayStatus.key, isDark)
         const canEdit = canEditVoucher(v, isShopClosed)
+        const canDelete = canDeleteVoucher(v)
+        const isStarted = isVoucherStarted(v)
         const isCopied = copiedCode === v.code
         const usageLimit = v.usageLimit ? Number(v.usageLimit) : null
         const usedCount = Number(v.usedCount || 0)
@@ -252,6 +262,31 @@ export default function VoucherTable({
                   >
                     <HiOutlinePencilAlt className="h-4 w-4" />
                     <span>Sửa</span>
+                  </button>
+                )}
+
+                {/* Nút Xóa / Kết thúc sớm cho Voucher đủ điều kiện */}
+                {canDelete && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onDeleteVoucher?.(v)
+                    }}
+                    className={cn(
+                      'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all active:scale-95',
+                      isStarted
+                        ? isDark
+                          ? 'border-amber-500/30 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20'
+                          : 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100'
+                        : isDark
+                          ? 'border-rose-500/30 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20'
+                          : 'border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100'
+                    )}
+                    title={isStarted ? 'Kết thúc sớm voucher' : 'Xóa voucher'}
+                  >
+                    <HiOutlineTrash className="h-4 w-4" />
+                    <span>{isStarted ? 'Dừng' : 'Xóa'}</span>
                   </button>
                 )}
 

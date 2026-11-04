@@ -46,7 +46,7 @@ public class VoucherController {
     }
 
     @GetMapping("/my-vouchers")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'BUSINESS')")
     public ResponseEntity<List<UserVoucherResponse>> getMyVouchers(
             @CurrentUser CurrentUserInfo c
     ) {
@@ -54,7 +54,7 @@ public class VoucherController {
     }
 
     @PostMapping("/{voucherId}/claim")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'BUSINESS')")
     public ResponseEntity<UserVoucherResponse> claimVoucher(
             @CurrentUser CurrentUserInfo c,
             @PathVariable UUID voucherId

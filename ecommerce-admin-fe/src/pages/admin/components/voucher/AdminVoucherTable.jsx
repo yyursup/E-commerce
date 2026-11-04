@@ -1,9 +1,22 @@
 import { useRef, useEffect } from 'react'
-import { HiOutlineTicket, HiOutlinePlus } from 'react-icons/hi'
+import { HiOutlineTicket, HiOutlinePlus, HiOutlinePencilAlt, HiOutlineTrash } from 'react-icons/hi'
 import { cn } from '../../../../lib/cn'
-import { getVoucherDisplayStatus, getVoucherBadgeConfig } from '../../../../lib/voucherStatus'
+import {
+  getVoucherDisplayStatus,
+  getVoucherBadgeConfig,
+  canEditVoucher,
+  canDeleteVoucher,
+  isVoucherStarted,
+} from '../../../../lib/voucherStatus'
 
-export default function AdminVoucherTable({ vouchers, loading, isDark, onOpenCreateModal }) {
+export default function AdminVoucherTable({
+  vouchers,
+  loading,
+  isDark,
+  onOpenCreateModal,
+  onEditVoucher,
+  onDeleteVoucher,
+}) {
   const tableContainerRef = useRef(null)
 
   useEffect(() => {
@@ -68,7 +81,7 @@ export default function AdminVoucherTable({ vouchers, loading, isDark, onOpenCre
           isDark ? 'custom-scrollbar-dark' : 'custom-scrollbar-light'
         )}
       >
-        <table className="w-full text-left text-xs min-w-[950px] border-collapse">
+        <table className="w-full text-left text-xs min-w-[1100px] border-collapse">
           <thead className={cn('border-b text-[11px] font-bold uppercase tracking-wider', isDark ? 'border-slate-800 bg-slate-800/60 text-slate-400' : 'border-stone-200 bg-stone-50 text-stone-600')}>
             <tr>
               <th className="p-4 min-w-[280px]">Mã Voucher Sàn & Chiến Dịch</th>
@@ -78,12 +91,16 @@ export default function AdminVoucherTable({ vouchers, loading, isDark, onOpenCre
               <th className="p-4 whitespace-nowrap">Lượt Dùng / Giới Hạn</th>
               <th className="p-4 whitespace-nowrap">Thời Gian Hiệu Lực</th>
               <th className="p-4 whitespace-nowrap text-center">Trạng Thái</th>
+              <th className="p-4 whitespace-nowrap text-center">Thao Tác</th>
             </tr>
           </thead>
           <tbody className={cn('divide-y', isDark ? 'divide-slate-800' : 'divide-stone-100')}>
             {vouchers.map((v) => {
               const displayStatus = getVoucherDisplayStatus(v)
               const badgeConfig = getVoucherBadgeConfig(displayStatus.key, isDark)
+              const canEdit = canEditVoucher(v)
+              const canDelete = canDeleteVoucher(v)
+              const isStarted = isVoucherStarted(v)
 
               return (
                 <tr key={v.id || v.code} className={cn('transition-colors', isDark ? 'hover:bg-slate-800/60' : 'hover:bg-stone-50/50')}>
@@ -152,6 +169,67 @@ export default function AdminVoucherTable({ vouchers, loading, isDark, onOpenCre
                       <span className={cn('h-1.5 w-1.5 rounded-full', badgeConfig.dotClass)} />
                       {displayStatus.label}
                     </span>
+                  </td>
+                  <td className="p-4 whitespace-nowrap text-center">
+                    {canEdit || canDelete ? (
+                      <div className="flex items-center justify-center gap-1.5">
+                        {canEdit && (
+                          <button
+                            type="button"
+                            onClick={() => onEditVoucher?.(v)}
+                            className={cn(
+                              'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all active:scale-95',
+                              isDark
+                                ? 'border-amber-500/30 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20'
+                                : 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100'
+                            )}
+                            title="Chỉnh sửa voucher sàn"
+                          >
+                            <HiOutlinePencilAlt className="h-4 w-4" />
+                            <span>Sửa</span>
+                          </button>
+                        )}
+
+                        {canDelete && (
+                          <button
+                            type="button"
+                            onClick={() => onDeleteVoucher?.(v)}
+                            className={cn(
+                              'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all active:scale-95',
+                              isStarted
+                                ? isDark
+                                ? 'border-amber-500/30 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20'
+                                : 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100'
+                                : isDark
+                                ? 'border-rose-500/30 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20'
+                                : 'border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100'
+                            )}
+                            title={isStarted ? 'Kết thúc sớm voucher toàn sàn' : 'Xóa voucher toàn sàn'}
+                          >
+                            <HiOutlineTrash className="h-4 w-4" />
+                            <span>{isStarted ? 'Dừng' : 'Xóa'}</span>
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <span
+                        className={cn(
+                          'text-[11px] font-medium italic select-none',
+                          isDark ? 'text-slate-600' : 'text-stone-400'
+                        )}
+                        title={
+                          v.status === 'DELETED'
+                            ? 'Voucher đã bị xóa'
+                            : v.status === 'EXPIRED'
+                            ? 'Voucher đã hết hạn'
+                            : v.status === 'EXHAUSTED'
+                            ? 'Voucher đã hết lượt sử dụng'
+                            : 'Voucher không khả dụng để thao tác'
+                        }
+                      >
+                        Khóa
+                      </span>
+                    )}
                   </td>
                 </tr>
               )

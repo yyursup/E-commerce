@@ -10,6 +10,7 @@ import VoucherTable from './components/voucher/VoucherTable'
 import CreateVoucherModal from './components/voucher/CreateVoucherModal'
 import VoucherDetailModal from './components/voucher/VoucherDetailModal'
 import EditVoucherModal from './components/voucher/EditVoucherModal'
+import DeleteVoucherConfirmModal from './components/voucher/DeleteVoucherConfirmModal'
 
 export default function ShopVouchers() {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
@@ -22,6 +23,8 @@ export default function ShopVouchers() {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [selectedVoucher, setSelectedVoucher] = useState(null)
   const [editingVoucher, setEditingVoucher] = useState(null)
+  const [deletingVoucher, setDeletingVoucher] = useState(null)
+  const [deleteLoading, setDeleteLoading] = useState(false)
 
   const handleOpenEdit = (v) => {
     if (isShopClosed) {
@@ -29,6 +32,34 @@ export default function ShopVouchers() {
       return
     }
     setEditingVoucher(v)
+  }
+
+  const handleOpenDelete = (v) => {
+    setDeletingVoucher(v)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!deletingVoucher) return
+    try {
+      setDeleteLoading(true)
+      const res = await voucherService.deleteVoucher(deletingVoucher.id)
+      if (res?.status === 'DELETED') {
+        toast.success(`Đã hủy voucher ${res.code || deletingVoucher.code} thành công`)
+      } else if (res?.status === 'INACTIVE') {
+        toast.success(`Đã kết thúc sớm voucher ${res.code || deletingVoucher.code}`)
+      } else {
+        toast.success('Thao tác trên voucher thành công')
+      }
+      setDeletingVoucher(null)
+      setSelectedVoucher(null)
+      await loadVouchers()
+    } catch (err) {
+      console.error('Delete voucher error:', err)
+      const msg = err?.message || err?.response?.data?.message || 'Không thể thực hiện thao tác trên voucher'
+      toast.error(msg)
+    } finally {
+      setDeleteLoading(false)
+    }
   }
 
   useEffect(() => {
@@ -191,6 +222,7 @@ export default function ShopVouchers() {
         onOpenCreateModal={() => setShowCreateModal(true)}
         onSelectVoucher={(v) => setSelectedVoucher(v)}
         onEditVoucher={handleOpenEdit}
+        onDeleteVoucher={handleOpenDelete}
         isShopClosed={isShopClosed}
       />
 
@@ -200,6 +232,7 @@ export default function ShopVouchers() {
           voucher={selectedVoucher}
           onClose={() => setSelectedVoucher(null)}
           onEditVoucher={handleOpenEdit}
+          onDeleteVoucher={handleOpenDelete}
           isShopClosed={isShopClosed}
         />
       )}
@@ -221,6 +254,18 @@ export default function ShopVouchers() {
           voucher={editingVoucher}
           isDark={isDark}
           isShopClosed={isShopClosed}
+        />
+      )}
+
+      {/* Delete / End Voucher Confirm Modal */}
+      {deletingVoucher && (
+        <DeleteVoucherConfirmModal
+          isOpen={Boolean(deletingVoucher)}
+          onClose={() => !deleteLoading && setDeletingVoucher(null)}
+          onConfirm={handleConfirmDelete}
+          voucher={deletingVoucher}
+          loading={deleteLoading}
+          isDark={isDark}
         />
       )}
     </div>

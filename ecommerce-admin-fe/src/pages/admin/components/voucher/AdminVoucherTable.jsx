@@ -1,5 +1,5 @@
 import { useRef, useEffect } from 'react'
-import { HiOutlineTicket, HiOutlinePlus, HiOutlinePencilAlt, HiOutlineTrash } from 'react-icons/hi'
+import { HiOutlineTicket, HiOutlinePlus, HiOutlinePencilAlt, HiOutlineTrash, HiOutlineEye } from 'react-icons/hi'
 import { cn } from '../../../../lib/cn'
 import {
   getVoucherDisplayStatus,
@@ -16,6 +16,7 @@ export default function AdminVoucherTable({
   onOpenCreateModal,
   onEditVoucher,
   onDeleteVoucher,
+  onSelectVoucher,
 }) {
   const tableContainerRef = useRef(null)
 
@@ -103,7 +104,12 @@ export default function AdminVoucherTable({
               const isStarted = isVoucherStarted(v)
 
               return (
-                <tr key={v.id || v.code} className={cn('transition-colors', isDark ? 'hover:bg-slate-800/60' : 'hover:bg-stone-50/50')}>
+                <tr
+                  key={v.id || v.code}
+                  onClick={() => onSelectVoucher?.(v)}
+                  className={cn('transition-colors cursor-pointer', isDark ? 'hover:bg-slate-800/60' : 'hover:bg-stone-50/50')}
+                  title="Nhấp để xem chi tiết voucher sàn"
+                >
                   <td className="p-4">
                     <div className="flex items-center gap-3">
                       <span className="font-mono text-xs font-bold text-blue-500 uppercase px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 shrink-0">
@@ -171,65 +177,89 @@ export default function AdminVoucherTable({
                     </span>
                   </td>
                   <td className="p-4 whitespace-nowrap text-center">
-                    {canEdit || canDelete ? (
-                      <div className="flex items-center justify-center gap-1.5">
-                        {canEdit && (
-                          <button
-                            type="button"
-                            onClick={() => onEditVoucher?.(v)}
-                            className={cn(
-                              'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all active:scale-95',
-                              isDark
-                                ? 'border-amber-500/30 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20'
-                                : 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100'
-                            )}
-                            title="Chỉnh sửa voucher sàn"
-                          >
-                            <HiOutlinePencilAlt className="h-4 w-4" />
-                            <span>Sửa</span>
-                          </button>
-                        )}
-
-                        {canDelete && (
-                          <button
-                            type="button"
-                            onClick={() => onDeleteVoucher?.(v)}
-                            className={cn(
-                              'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all active:scale-95',
-                              isStarted
-                                ? isDark
-                                ? 'border-amber-500/30 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20'
-                                : 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100'
-                                : isDark
-                                ? 'border-rose-500/30 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20'
-                                : 'border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100'
-                            )}
-                            title={isStarted ? 'Kết thúc sớm voucher toàn sàn' : 'Xóa voucher toàn sàn'}
-                          >
-                            <HiOutlineTrash className="h-4 w-4" />
-                            <span>{isStarted ? 'Dừng' : 'Xóa'}</span>
-                          </button>
-                        )}
-                      </div>
-                    ) : (
-                      <span
+                    <div className="flex items-center justify-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onSelectVoucher?.(v)
+                        }}
                         className={cn(
-                          'text-[11px] font-medium italic select-none',
-                          isDark ? 'text-slate-600' : 'text-stone-400'
+                          'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all active:scale-95',
+                          isDark
+                            ? 'border-blue-500/30 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20'
+                            : 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100'
                         )}
-                        title={
-                          v.status === 'DELETED'
-                            ? 'Voucher đã bị xóa'
-                            : v.status === 'EXPIRED'
-                            ? 'Voucher đã hết hạn'
-                            : v.status === 'EXHAUSTED'
-                            ? 'Voucher đã hết lượt sử dụng'
-                            : 'Voucher không khả dụng để thao tác'
-                        }
+                        title="Xem chi tiết voucher sàn"
                       >
-                        Khóa
-                      </span>
-                    )}
+                        <HiOutlineEye className="h-4 w-4" />
+                        <span>Chi tiết</span>
+                      </button>
+
+                      {canEdit && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onEditVoucher?.(v)
+                          }}
+                          className={cn(
+                            'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all active:scale-95',
+                            isDark
+                              ? 'border-amber-500/30 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20'
+                              : 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100'
+                          )}
+                          title="Chỉnh sửa voucher sàn"
+                        >
+                          <HiOutlinePencilAlt className="h-4 w-4" />
+                          <span>Sửa</span>
+                        </button>
+                      )}
+
+                      {canDelete && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onDeleteVoucher?.(v)
+                          }}
+                          className={cn(
+                            'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all active:scale-95',
+                            isStarted
+                              ? isDark
+                              ? 'border-amber-500/30 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20'
+                              : 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100'
+                              : isDark
+                              ? 'border-rose-500/30 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20'
+                              : 'border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100'
+                          )}
+                          title={isStarted ? 'Kết thúc sớm voucher toàn sàn' : 'Xóa voucher toàn sàn'}
+                        >
+                          <HiOutlineTrash className="h-4 w-4" />
+                          <span>{isStarted ? 'Dừng' : 'Xóa'}</span>
+                        </button>
+                      )}
+
+                      {!canEdit && !canDelete && (
+                        <span
+                          className={cn(
+                            'text-[11px] font-medium italic select-none px-1',
+                            isDark ? 'text-slate-600' : 'text-stone-400'
+                          )}
+                          title={
+                            v.status === 'DELETED'
+                              ? 'Voucher đã bị xóa'
+                              : v.status === 'EXPIRED'
+                              ? 'Voucher đã hết hạn'
+                              : v.status === 'EXHAUSTED'
+                              ? 'Voucher đã hết lượt sử dụng'
+                              : 'Voucher không khả dụng để thao tác'
+                          }
+                        >
+                          (Khóa)
+                        </span>
+                      )}
+                    </div>
                   </td>
                 </tr>
               )

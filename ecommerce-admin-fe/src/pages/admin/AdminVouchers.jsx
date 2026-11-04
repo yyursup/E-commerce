@@ -10,6 +10,7 @@ import AdminVoucherTable from './components/voucher/AdminVoucherTable'
 import CreateAdminVoucherModal from './components/voucher/CreateAdminVoucherModal'
 import EditAdminVoucherModal from './components/voucher/EditAdminVoucherModal'
 import DeleteAdminVoucherConfirmModal from './components/voucher/DeleteAdminVoucherConfirmModal'
+import AdminVoucherDetailModal from './components/voucher/AdminVoucherDetailModal'
 
 export default function AdminVouchers() {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
@@ -20,6 +21,7 @@ export default function AdminVouchers() {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [editingVoucher, setEditingVoucher] = useState(null)
   const [deletingVoucher, setDeletingVoucher] = useState(null)
+  const [selectedVoucher, setSelectedVoucher] = useState(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
 
   const handleOpenEdit = (v) => {
@@ -172,6 +174,7 @@ export default function AdminVouchers() {
         onOpenCreateModal={() => setShowCreateModal(true)}
         onEditVoucher={handleOpenEdit}
         onDeleteVoucher={handleOpenDelete}
+        onSelectVoucher={setSelectedVoucher}
       />
 
       {/* 4. Create Platform Voucher Modal */}
@@ -193,7 +196,24 @@ export default function AdminVouchers() {
         />
       )}
 
-      {/* 6. Delete / End Platform Voucher Confirm Modal */}
+      {/* 6. Admin Voucher Detail Modal */}
+      {selectedVoucher && (
+        <AdminVoucherDetailModal
+          voucher={selectedVoucher}
+          onClose={() => setSelectedVoucher(null)}
+          onEditVoucher={(v) => {
+            setSelectedVoucher(null)
+            handleOpenEdit(v)
+          }}
+          onDeleteVoucher={(v) => {
+            setSelectedVoucher(null)
+            handleOpenDelete(v)
+          }}
+          isDark={isDark}
+        />
+      )}
+
+      {/* 7. Delete / End Platform Voucher Confirm Modal */}
       {deletingVoucher && (
         <DeleteAdminVoucherConfirmModal
           isOpen={Boolean(deletingVoucher)}

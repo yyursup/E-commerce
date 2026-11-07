@@ -2182,4 +2182,78 @@ class VoucherServiceImplTest {
         assertEquals("Voucher đã hết lượt sử dụng, không thể chỉnh sửa", ex.getMessage());
         verify(voucherRepository, never()).save(any());
     }
+
+    @Test
+    @DisplayName("43. Create Voucher: Percentage > 100% bị từ chối")
+    void test43_createVoucher_percentageGreaterThan100_rejected() {
+        User adminUser = createTestUserWithRole("ADMIN");
+        UUID adminAccountId = adminUser.getAccount().getId();
+        when(userRepository.findByAccountId(adminAccountId)).thenReturn(Optional.of(adminUser));
+
+        CreateVoucherRequest req = CreateVoucherRequest.builder()
+                .code("OVERPERCENT")
+                .title("Over 100 Percent")
+                .voucherType(VoucherType.PERCENTAGE)
+                .discountValue(new BigDecimal("150"))
+                .build();
+
+        CustomException ex = assertThrows(CustomException.class, () -> voucherService.createVoucher(adminAccountId, req));
+        assertEquals("Mức giảm theo phần trăm không được vượt quá 100%", ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("44. Create Voucher: Fixed amount quá lớn (> 500M) bị từ chối")
+    void test44_createVoucher_fixedAmountGreaterThan500M_rejected() {
+        User adminUser = createTestUserWithRole("ADMIN");
+        UUID adminAccountId = adminUser.getAccount().getId();
+        when(userRepository.findByAccountId(adminAccountId)).thenReturn(Optional.of(adminUser));
+
+        CreateVoucherRequest req = CreateVoucherRequest.builder()
+                .code("OVER500M")
+                .title("Over 500 Million")
+                .voucherType(VoucherType.FIXED_AMOUNT)
+                .discountValue(new BigDecimal("1000000000")) // 1 tỷ
+                .build();
+
+        CustomException ex = assertThrows(CustomException.class, () -> voucherService.createVoucher(adminAccountId, req));
+        assertEquals("Số tiền giảm giá không được vượt quá 500.000.000đ", ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("45. Create Voucher: Shop discount lớn hơn minOrderValue bị từ chối")
+    void test45_createVoucher_shopDiscountGreaterThanMinOrder_rejected() {
+        User bizUser = createTestUserWithRole("BUSINESS");
+        UUID bizAccountId = bizUser.getAccount().getId();
+        when(userRepository.findByAccountId(bizAccountId)).thenReturn(Optional.of(bizUser));
+        when(shopRepository.findByUserId(bizUser.getId())).thenReturn(Optional.of(testShop));
+
+        CreateVoucherRequest req = CreateVoucherRequest.builder()
+                .code("SHOPDISCOVER")
+                .title("Shop Discount Over Min Order")
+                .voucherType(VoucherType.FIXED_AMOUNT)
+                .discountValue(new BigDecimal("500000"))
+                .minOrderValue(new BigDecimal("200000"))
+                .build();
+
+        CustomException ex = assertThrows(CustomException.class, () -> voucherService.createVoucher(bizAccountId, req));
+        assertTrue(ex.getMessage().contains("Giá trị giảm giá không được lớn hơn giá trị đơn hàng tối thiểu"));
+    }
+
+    @Test
+    @DisplayName("46. Create Voucher: Số cực lớn vượt giới hạn DB (> 10^10) bị từ chối")
+    void test46_createVoucher_discountValueExceedsDbLimit_rejected() {
+        User adminUser = createTestUserWithRole("ADMIN");
+        UUID adminAccountId = adminUser.getAccount().getId();
+        when(userRepository.findByAccountId(adminAccountId)).thenReturn(Optional.of(adminUser));
+
+        CreateVoucherRequest req = CreateVoucherRequest.builder()
+                .code("HUGE_NUM")
+                .title("Huge Number")
+                .voucherType(VoucherType.FIXED_AMOUNT)
+                .discountValue(new BigDecimal("10000000000000000000")) // 20 chữ số
+                .build();
+
+        CustomException ex = assertThrows(CustomException.class, () -> voucherService.createVoucher(adminAccountId, req));
+        assertEquals("Giá trị giảm giá quá lớn, vượt quá giới hạn hệ thống cho phép", ex.getMessage());
+    }
 }

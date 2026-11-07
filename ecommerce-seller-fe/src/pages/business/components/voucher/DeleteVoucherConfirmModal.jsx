@@ -104,7 +104,7 @@ export default function DeleteVoucherConfirmModal({
               </p>
             ) : (
               <p>
-                Voucher này sẽ được chuyển sang trạng thái <strong>Đã hủy (DELETED)</strong>. Sau khi thực hiện, Voucher không thể được sử dụng hoặc thao tác lại.
+                Voucher này sẽ được chuyển sang trạng thái <strong>Đã hủy</strong>. Sau khi thực hiện, Voucher không thể được sử dụng hoặc thao tác lại.
               </p>
             )}
           </div>

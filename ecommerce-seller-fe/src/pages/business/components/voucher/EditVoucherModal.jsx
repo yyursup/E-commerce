@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { HiOutlinePencilAlt, HiOutlineX, HiOutlineExclamationCircle, HiOutlineLockClosed } from 'react-icons/hi'
+import { HiOutlinePencilAlt, HiOutlineX, HiOutlineExclamationCircle, HiOutlineLockClosed, HiOutlineChevronDown } from 'react-icons/hi'
 import toast from 'react-hot-toast'
 import voucherService from '../../../../services/voucher'
 import { cn } from '../../../../lib/cn'
@@ -93,9 +93,40 @@ export default function EditVoucherModal({ isOpen, onClose, onSuccess, voucher, 
       return
     }
 
+    const discountNum = Number(formData.discountValue)
+    if (formData.voucherType === 'PERCENTAGE') {
+      if (discountNum < 1 || discountNum > 100) {
+        toast.error('Mức giảm theo phần trăm phải nằm trong khoảng từ 1% đến 100%')
+        return
+      }
+    } else if (formData.voucherType === 'FIXED_AMOUNT') {
+      if (discountNum > 500000000) {
+        toast.error('Số tiền giảm không được vượt quá 500.000.000đ')
+        return
+      }
+      if (formData.minOrderValue && Number(formData.minOrderValue) > 0 && discountNum > Number(formData.minOrderValue)) {
+        toast.error('Số tiền giảm không được lớn hơn giá trị đơn hàng tối thiểu')
+        return
+      }
+    } else if (formData.voucherType === 'FREE_SHIPPING') {
+      if (discountNum > 50000000) {
+        toast.error('Mức trợ phí ship tối đa không được vượt quá 50.000.000đ')
+        return
+      }
+    }
+
+    if (formData.maxDiscountAmount && Number(formData.maxDiscountAmount) > 500000000) {
+      toast.error('Mức giảm tối đa không được vượt quá 500.000.000đ')
+      return
+    }
+
     // 3. Validate minOrderValue
     if (formData.minOrderValue && Number(formData.minOrderValue) < 0) {
       toast.error('Giá trị đơn hàng tối thiểu không được âm')
+      return
+    }
+    if (formData.minOrderValue && Number(formData.minOrderValue) > 9999999999) {
+      toast.error('Giá trị đơn tối thiểu vượt quá giới hạn hệ thống cho phép')
       return
     }
 
@@ -107,12 +138,19 @@ export default function EditVoucherModal({ isOpen, onClose, onSuccess, voucher, 
         toast.error(`Số lượng phát hành không được nhỏ hơn số lượt đã dùng (${usedCount} lượt)`)
         return
       }
+      if (usageLimitNum > 10000000) {
+        toast.error('Tổng lượt sử dụng không được vượt quá 10.000.000 lượt')
+        return
+      }
     }
 
     // 5. Validate userUsageLimit
-    if (formData.userUsageLimit !== '' && Number(formData.userUsageLimit) < 1) {
-      toast.error('Lượt dùng mỗi khách hàng phải từ 1 lượt trở lên')
-      return
+    if (formData.userUsageLimit !== '') {
+      const uul = Number(formData.userUsageLimit)
+      if (uul < 1 || uul > 100) {
+        toast.error('Lượt dùng mỗi khách hàng phải từ 1 đến 100 lượt')
+        return
+      }
     }
 
     const now = new Date()
@@ -186,14 +224,14 @@ export default function EditVoucherModal({ isOpen, onClose, onSuccess, voucher, 
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
           className={cn(
-            'w-full max-w-xl rounded-3xl border p-6 sm:p-8 shadow-2xl max-h-[90vh] flex flex-col',
+            'w-full max-w-2xl rounded-3xl border p-6 sm:p-8 shadow-2xl max-h-[90vh] flex flex-col',
             isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-stone-200'
           )}
         >
           {/* Header */}
-          <div className={cn("flex items-center justify-between pb-4 border-b", isDark ? "border-slate-800" : "border-stone-100")}>
+          <div className={cn("flex items-center justify-between pb-4 border-b shrink-0", isDark ? "border-slate-800" : "border-stone-100")}>
             <div className="flex items-center gap-2.5">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500 text-white font-bold">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500 text-white font-bold shrink-0">
                 <HiOutlinePencilAlt className="h-5 w-5" />
               </span>
               <div>
@@ -214,10 +252,10 @@ export default function EditVoucherModal({ isOpen, onClose, onSuccess, voucher, 
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="py-4 overflow-y-auto space-y-4 flex-1 text-xs">
+          <form onSubmit={handleSubmit} className="py-4 overflow-y-auto space-y-4 flex-1 text-xs pr-1">
             {/* Voucher Code (Khóa cứng) & Title */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="min-w-0">
                 <label className={cn("block font-bold mb-1 flex items-center gap-1", isDark ? "text-slate-200" : "text-stone-700")}>
                   <HiOutlineLockClosed className="h-3.5 w-3.5 text-stone-400" />
                   Mã Voucher <span className="text-[11px] font-normal text-stone-400">(Không thể sửa)</span>
@@ -234,7 +272,7 @@ export default function EditVoucherModal({ isOpen, onClose, onSuccess, voucher, 
                 />
               </div>
 
-              <div>
+              <div className="min-w-0">
                 <label className={cn("block font-bold mb-1", isDark ? "text-slate-200" : "text-stone-700")}>
                   Tên Chương Trình <span className="text-rose-500">*</span>
                 </label>
@@ -253,29 +291,56 @@ export default function EditVoucherModal({ isOpen, onClose, onSuccess, voucher, 
               </div>
             </div>
 
+            {/* Description */}
+            <div>
+              <label className={cn("block font-bold mb-1", isDark ? "text-slate-200" : "text-stone-700")}>
+                Mô Tả & Điều Kiện Áp Dụng
+              </label>
+              <textarea
+                name="description"
+                rows="2"
+                placeholder="Mô tả điều kiện tham gia chiến dịch..."
+                value={formData.description}
+                onChange={handleInputChange}
+                className={cn(
+                  'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-amber-500 resize-none',
+                  isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-200 bg-stone-50 text-stone-900'
+                )}
+              />
+            </div>
+
             {/* Voucher Type & Discount Value */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="min-w-0">
                 <label className={cn("block font-bold mb-1", isDark ? "text-slate-200" : "text-stone-700")}>
                   Loại Giảm Giá
                 </label>
-                <select
-                  name="voucherType"
-                  value={formData.voucherType}
-                  onChange={handleInputChange}
-                  className={cn(
-                    'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-amber-500',
-                    isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-200 bg-stone-50 text-stone-900'
-                  )}
-                >
-                  <option value="PERCENTAGE">Theo Phần Trăm (%)</option>
-                  <option value="FIXED_AMOUNT">Số Tiền Cố Định (VNĐ)</option>
-                  <option value="FREE_SHIPPING">Hỗ Trợ Phí Vận Chuyển</option>
-                </select>
+                <div className="relative">
+                  <select
+                    name="voucherType"
+                    value={formData.voucherType}
+                    onChange={handleInputChange}
+                    className={cn(
+                      'w-full appearance-none rounded-xl border px-3.5 py-2.5 pr-10 outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer',
+                      isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-200 bg-stone-50 text-stone-900'
+                    )}
+                  >
+                    <option value="PERCENTAGE">Theo Phần Trăm (%)</option>
+                    <option value="FIXED_AMOUNT">Số Tiền Cố Định (VNĐ)</option>
+                    <option value="FREE_SHIPPING">Hỗ Trợ Phí Vận Chuyển</option>
+                  </select>
+                  <HiOutlineChevronDown className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400 dark:text-slate-400" />
+                </div>
               </div>
 
-              <div>
-                <label className={cn("block font-bold mb-1", isDark ? "text-slate-200" : "text-stone-700")}>
+              <div className="min-w-0">
+                <label className={cn("block font-bold mb-1 truncate", isDark ? "text-slate-200" : "text-stone-700")} title={
+                  formData.voucherType === 'PERCENTAGE'
+                    ? 'Tỷ Lệ Giảm (%)'
+                    : formData.voucherType === 'FREE_SHIPPING'
+                    ? 'Mức Trợ Phí Ship Tối Đa (VNĐ)'
+                    : 'Số Tiền Giảm (VNĐ)'
+                }>
                   {formData.voucherType === 'PERCENTAGE'
                     ? 'Tỷ Lệ Giảm (%)'
                     : formData.voucherType === 'FREE_SHIPPING'
@@ -288,6 +353,7 @@ export default function EditVoucherModal({ isOpen, onClose, onSuccess, voucher, 
                   name="discountValue"
                   required
                   min="1"
+                  max={formData.voucherType === 'PERCENTAGE' ? '100' : formData.voucherType === 'FREE_SHIPPING' ? '50000000' : '500000000'}
                   placeholder={formData.voucherType === 'PERCENTAGE' ? 'VD: 15 (%)' : 'VD: 30000 (VNĐ)'}
                   value={formData.discountValue}
                   onChange={handleInputChange}
@@ -300,8 +366,8 @@ export default function EditVoucherModal({ isOpen, onClose, onSuccess, voucher, 
             </div>
 
             {/* Min Order & Max Discount */}
-            <div className={cn("grid gap-4", formData.voucherType === 'PERCENTAGE' ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1")}>
-              <div>
+            <div className={cn("grid gap-4", formData.voucherType === 'PERCENTAGE' ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1")}>
+              <div className="min-w-0">
                 <label className={cn("block font-bold mb-1", isDark ? "text-slate-200" : "text-stone-700")}>
                   Đơn Hàng Tối Thiểu (VNĐ)
                 </label>
@@ -309,6 +375,7 @@ export default function EditVoucherModal({ isOpen, onClose, onSuccess, voucher, 
                   type="number"
                   name="minOrderValue"
                   min="0"
+                  max="9999999999"
                   placeholder="VD: 150000"
                   value={formData.minOrderValue}
                   onChange={handleInputChange}
@@ -320,7 +387,7 @@ export default function EditVoucherModal({ isOpen, onClose, onSuccess, voucher, 
               </div>
 
               {formData.voucherType === 'PERCENTAGE' && (
-                <div>
+                <div className="min-w-0">
                   <label className={cn("block font-bold mb-1", isDark ? "text-slate-200" : "text-stone-700")}>
                     Mức Giảm Tối Đa (VNĐ)
                   </label>
@@ -328,6 +395,7 @@ export default function EditVoucherModal({ isOpen, onClose, onSuccess, voucher, 
                     type="number"
                     name="maxDiscountAmount"
                     min="1"
+                    max="500000000"
                     placeholder="VD: 100000"
                     value={formData.maxDiscountAmount}
                     onChange={handleInputChange}
@@ -341,8 +409,8 @@ export default function EditVoucherModal({ isOpen, onClose, onSuccess, voucher, 
             </div>
 
             {/* Usage Limit & User Usage Limit */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="min-w-0">
                 <label className={cn("block font-bold mb-1", isDark ? "text-slate-200" : "text-stone-700")}>
                   Tổng Số Lượt Phát Hành {usedCount > 0 && <span className="text-amber-500 font-normal">(Đã dùng: {usedCount})</span>}
                 </label>
@@ -350,6 +418,7 @@ export default function EditVoucherModal({ isOpen, onClose, onSuccess, voucher, 
                   type="number"
                   name="usageLimit"
                   min={usedCount || 1}
+                  max="10000000"
                   placeholder="Bỏ trống nếu không giới hạn"
                   value={formData.usageLimit}
                   onChange={handleInputChange}
@@ -366,7 +435,7 @@ export default function EditVoucherModal({ isOpen, onClose, onSuccess, voucher, 
                 )}
               </div>
 
-              <div>
+              <div className="min-w-0">
                 <label className={cn("block font-bold mb-1", isDark ? "text-slate-200" : "text-stone-700")}>
                   Lượt Dùng Mỗi Khách Hàng
                 </label>
@@ -374,6 +443,7 @@ export default function EditVoucherModal({ isOpen, onClose, onSuccess, voucher, 
                   type="number"
                   name="userUsageLimit"
                   min="1"
+                  max="100"
                   placeholder="VD: 1"
                   value={formData.userUsageLimit}
                   onChange={handleInputChange}
@@ -386,8 +456,8 @@ export default function EditVoucherModal({ isOpen, onClose, onSuccess, voucher, 
             </div>
 
             {/* Start & End Date */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="min-w-0">
                 <label className={cn("block font-bold mb-1", isDark ? "text-slate-200" : "text-stone-700")}>
                   Ngày Bắt Đầu <span className="text-rose-500">*</span>
                 </label>
@@ -404,7 +474,7 @@ export default function EditVoucherModal({ isOpen, onClose, onSuccess, voucher, 
                 />
               </div>
 
-              <div>
+              <div className="min-w-0">
                 <label className={cn("block font-bold mb-1", isDark ? "text-slate-200" : "text-stone-700")}>
                   Ngày Kết Thúc (HSD)
                 </label>
@@ -419,24 +489,6 @@ export default function EditVoucherModal({ isOpen, onClose, onSuccess, voucher, 
                   )}
                 />
               </div>
-            </div>
-
-            {/* Description */}
-            <div>
-              <label className={cn("block font-bold mb-1", isDark ? "text-slate-200" : "text-stone-700")}>
-                Mô Tả & Điều Kiện Áp Dụng
-              </label>
-              <textarea
-                name="description"
-                rows="2"
-                placeholder="VD: Áp dụng cho mọi khách hàng mua sắm tại shop..."
-                value={formData.description}
-                onChange={handleInputChange}
-                className={cn(
-                  'w-full rounded-xl border px-3.5 py-2 text-xs outline-none focus:ring-2 focus:ring-amber-500',
-                  isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-200 bg-stone-50 text-stone-900'
-                )}
-              />
             </div>
 
             {/* First Order Only Checkbox */}

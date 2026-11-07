@@ -132,15 +132,15 @@ export default function AdminVoucherTable({
                         v.voucherType === 'FREE_SHIPPING'
                           ? 'bg-blue-500/10 text-blue-500 border border-blue-500/20'
                           : v.voucherType === 'PERCENTAGE'
-                          ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20'
-                          : 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
+                            ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20'
+                            : 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
                       )}
                     >
                       {v.voucherType === 'FREE_SHIPPING'
                         ? 'Trợ Phí Ship GHN'
                         : v.voucherType === 'PERCENTAGE'
-                        ? 'Giảm Theo %'
-                        : 'Giảm Tiền Mặt'}
+                          ? 'Giảm Theo %'
+                          : 'Giảm Tiền Mặt'}
                     </span>
                   </td>
                   <td className="p-4 whitespace-nowrap">
@@ -148,8 +148,8 @@ export default function AdminVoucherTable({
                       {v.voucherType === 'PERCENTAGE'
                         ? `Giảm ${v.discountValue}% (Tối đa ${v.maxDiscountAmount ? Number(v.maxDiscountAmount).toLocaleString('vi-VN') + 'đ' : '∞'})`
                         : v.voucherType === 'FREE_SHIPPING'
-                        ? `Tối đa ${Number(v.discountValue || 50000).toLocaleString('vi-VN')}₫`
-                        : `Giảm ${Number(v.discountValue).toLocaleString('vi-VN')}₫`}
+                          ? `Tối đa ${Number(v.discountValue || 50000).toLocaleString('vi-VN')}₫`
+                          : `Giảm ${Number(v.discountValue).toLocaleString('vi-VN')}₫`}
                     </span>
                   </td>
                   <td className={cn('p-4 whitespace-nowrap font-semibold', isDark ? 'text-slate-200' : 'text-stone-800')}>
@@ -227,11 +227,11 @@ export default function AdminVoucherTable({
                             'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all active:scale-95',
                             isStarted
                               ? isDark
-                              ? 'border-amber-500/30 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20'
-                              : 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100'
+                                ? 'border-amber-500/30 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20'
+                                : 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100'
                               : isDark
-                              ? 'border-rose-500/30 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20'
-                              : 'border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100'
+                                ? 'border-rose-500/30 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20'
+                                : 'border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100'
                           )}
                           title={isStarted ? 'Kết thúc sớm voucher toàn sàn' : 'Xóa voucher toàn sàn'}
                         >
@@ -250,13 +250,12 @@ export default function AdminVoucherTable({
                             v.status === 'DELETED'
                               ? 'Voucher đã bị xóa'
                               : v.status === 'EXPIRED'
-                              ? 'Voucher đã hết hạn'
-                              : v.status === 'EXHAUSTED'
-                              ? 'Voucher đã hết lượt sử dụng'
-                              : 'Voucher không khả dụng để thao tác'
+                                ? 'Voucher đã hết hạn'
+                                : v.status === 'EXHAUSTED'
+                                  ? 'Voucher đã hết lượt sử dụng'
+                                  : 'Voucher không khả dụng để thao tác'
                           }
                         >
-                          (Khóa)
                         </span>
                       )}
                     </div>

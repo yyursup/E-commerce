@@ -176,8 +176,8 @@ export default function VoucherDetailModal({
                 {voucher.voucherType === 'PERCENTAGE'
                   ? `Giảm ${voucher.discountValue}%`
                   : voucher.voucherType === 'FREE_SHIPPING'
-                  ? 'Miễn phí vận chuyển'
-                  : formatVND(voucher.discountValue)}
+                    ? 'Miễn phí vận chuyển'
+                    : formatVND(voucher.discountValue)}
               </span>
               {voucher.maxDiscountAmount && voucher.voucherType === 'PERCENTAGE' && (
                 <span className={cn('text-xs block font-medium', isDark ? 'text-slate-400' : 'text-stone-500')}>
@@ -194,7 +194,7 @@ export default function VoucherDetailModal({
                 <HiOutlineTag className="h-4 w-4 text-amber-500" /> Đơn hàng tối thiểu:
               </span>
               <p className="font-bold text-sm sm:text-base">
-                {voucher.minOrderValue ? formatVND(voucher.minOrderValue) : '0₫ (Không yêu cầu)'}
+                {voucher.minOrderValue ? formatVND(voucher.minOrderValue) : '0₫'}
               </p>
             </div>
 

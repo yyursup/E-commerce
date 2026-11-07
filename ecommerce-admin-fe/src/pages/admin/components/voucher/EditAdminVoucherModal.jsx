@@ -6,6 +6,7 @@ import {
   HiOutlineExclamationCircle,
   HiOutlineLockClosed,
   HiOutlineGlobe,
+  HiOutlineChevronDown,
 } from 'react-icons/hi'
 import toast from 'react-hot-toast'
 import voucherService from '../../../../services/voucher'
@@ -94,9 +95,36 @@ export default function EditAdminVoucherModal({ isOpen, onClose, onSuccess, vouc
       return
     }
 
+    const discountNum = Number(formData.discountValue)
+    if (formData.voucherType === 'PERCENTAGE') {
+      if (discountNum < 1 || discountNum > 100) {
+        toast.error('Mức giảm theo phần trăm phải nằm trong khoảng từ 1% đến 100%')
+        return
+      }
+    } else if (formData.voucherType === 'FIXED_AMOUNT') {
+      if (discountNum > 500000000) {
+        toast.error('Số tiền giảm không được vượt quá 500.000.000đ')
+        return
+      }
+    } else if (formData.voucherType === 'FREE_SHIPPING') {
+      if (discountNum > 50000000) {
+        toast.error('Mức trợ phí ship tối đa không được vượt quá 50.000.000đ')
+        return
+      }
+    }
+
+    if (formData.maxDiscountAmount && Number(formData.maxDiscountAmount) > 500000000) {
+      toast.error('Mức giảm tối đa không được vượt quá 500.000.000đ')
+      return
+    }
+
     // 3. Validate minOrderValue
     if (formData.minOrderValue && Number(formData.minOrderValue) < 0) {
       toast.error('Giá trị đơn hàng tối thiểu không được âm')
+      return
+    }
+    if (formData.minOrderValue && Number(formData.minOrderValue) > 9999999999) {
+      toast.error('Giá trị đơn tối thiểu vượt quá giới hạn hệ thống cho phép')
       return
     }
 
@@ -108,12 +136,19 @@ export default function EditAdminVoucherModal({ isOpen, onClose, onSuccess, vouc
         toast.error(`Số lượng phát hành không được nhỏ hơn số lượt đã dùng (${usedCount} lượt)`)
         return
       }
+      if (usageLimitNum > 10000000) {
+        toast.error('Tổng lượt sử dụng không được vượt quá 10.000.000 lượt')
+        return
+      }
     }
 
     // 5. Validate userUsageLimit
-    if (formData.userUsageLimit !== '' && Number(formData.userUsageLimit) < 1) {
-      toast.error('Lượt dùng mỗi tài khoản phải từ 1 lượt trở lên')
-      return
+    if (formData.userUsageLimit !== '') {
+      const uul = Number(formData.userUsageLimit)
+      if (uul < 1 || uul > 100) {
+        toast.error('Lượt dùng mỗi tài khoản phải từ 1 đến 100 lượt')
+        return
+      }
     }
 
     const now = new Date()
@@ -190,14 +225,14 @@ export default function EditAdminVoucherModal({ isOpen, onClose, onSuccess, vouc
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
           className={cn(
-            'w-full max-w-xl rounded-3xl border p-6 sm:p-8 shadow-2xl max-h-[90vh] flex flex-col',
+            'w-full max-w-2xl rounded-3xl border p-6 sm:p-8 shadow-2xl max-h-[90vh] flex flex-col',
             isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-stone-200'
           )}
         >
           {/* Header */}
-          <div className={cn("flex items-center justify-between pb-4 border-b", isDark ? "border-slate-800" : "border-stone-100")}>
+          <div className={cn("flex items-center justify-between pb-4 border-b shrink-0", isDark ? "border-slate-800" : "border-stone-100")}>
             <div className="flex items-center gap-2.5">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-500 text-white font-bold">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-500 text-white font-bold shrink-0">
                 <HiOutlinePencilAlt className="h-5 w-5" />
               </span>
               <div>
@@ -218,10 +253,10 @@ export default function EditAdminVoucherModal({ isOpen, onClose, onSuccess, vouc
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="py-4 overflow-y-auto space-y-4 flex-1 text-xs">
+          <form onSubmit={handleSubmit} className="py-4 overflow-y-auto space-y-4 flex-1 text-xs pr-1">
             {/* Voucher Code & Scope (Read-only) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="min-w-0">
                 <label className={cn("block font-bold mb-1 flex items-center gap-1", isDark ? "text-slate-200" : "text-stone-700")}>
                   <HiOutlineLockClosed className="h-3.5 w-3.5 text-stone-400" />
                   Mã Voucher Sàn <span className="text-[11px] font-normal text-stone-400">(Không thể sửa)</span>
@@ -238,7 +273,7 @@ export default function EditAdminVoucherModal({ isOpen, onClose, onSuccess, vouc
                 />
               </div>
 
-              <div>
+              <div className="min-w-0">
                 <label className={cn("block font-bold mb-1 flex items-center gap-1", isDark ? "text-slate-200" : "text-stone-700")}>
                   <HiOutlineGlobe className="h-3.5 w-3.5 text-blue-500" />
                   Phạm Vi Tài Trợ
@@ -290,28 +325,37 @@ export default function EditAdminVoucherModal({ isOpen, onClose, onSuccess, vouc
             </div>
 
             {/* Voucher Type & Discount Value */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="min-w-0">
                 <label className={cn("block font-bold mb-1", isDark ? "text-slate-200" : "text-stone-700")}>
                   Loại Khuyến Mãi
                 </label>
-                <select
-                  name="voucherType"
-                  value={formData.voucherType}
-                  onChange={handleInputChange}
-                  className={cn(
-                    'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-amber-500',
-                    isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-200 bg-stone-50 text-stone-900'
-                  )}
-                >
-                  <option value="FREE_SHIPPING">Miễn Phí Vận Chuyển (GHN Express)</option>
-                  <option value="PERCENTAGE">Giảm Theo Phần Trăm Toàn Sàn (%)</option>
-                  <option value="FIXED_AMOUNT">Giảm Số Tiền Cố Định (VNĐ)</option>
-                </select>
+                <div className="relative">
+                  <select
+                    name="voucherType"
+                    value={formData.voucherType}
+                    onChange={handleInputChange}
+                    className={cn(
+                      'w-full appearance-none rounded-xl border px-3.5 py-2.5 pr-10 outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer',
+                      isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-200 bg-stone-50 text-stone-900'
+                    )}
+                  >
+                    <option value="FREE_SHIPPING">Miễn Phí Vận Chuyển (GHN Express)</option>
+                    <option value="PERCENTAGE">Giảm Theo Phần Trăm Toàn Sàn (%)</option>
+                    <option value="FIXED_AMOUNT">Giảm Số Tiền Cố Định (VNĐ)</option>
+                  </select>
+                  <HiOutlineChevronDown className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400 dark:text-slate-400" />
+                </div>
               </div>
 
-              <div>
-                <label className={cn("block font-bold mb-1", isDark ? "text-slate-200" : "text-stone-700")}>
+              <div className="min-w-0">
+                <label className={cn("block font-bold mb-1 truncate", isDark ? "text-slate-200" : "text-stone-700")} title={
+                  formData.voucherType === 'PERCENTAGE'
+                    ? 'Tỷ Lệ Giảm (%)'
+                    : formData.voucherType === 'FREE_SHIPPING'
+                    ? 'Mức Trợ Phí Ship Tối Đa (VNĐ)'
+                    : 'Số Tiền Giảm (VNĐ)'
+                }>
                   {formData.voucherType === 'PERCENTAGE'
                     ? 'Tỷ Lệ Giảm (%)'
                     : formData.voucherType === 'FREE_SHIPPING'
@@ -324,6 +368,7 @@ export default function EditAdminVoucherModal({ isOpen, onClose, onSuccess, vouc
                   name="discountValue"
                   required
                   min="1"
+                  max={formData.voucherType === 'PERCENTAGE' ? '100' : formData.voucherType === 'FREE_SHIPPING' ? '50000000' : '500000000'}
                   placeholder={formData.voucherType === 'PERCENTAGE' ? 'VD: 15' : 'VD: 50000'}
                   value={formData.discountValue}
                   onChange={handleInputChange}
@@ -336,8 +381,8 @@ export default function EditAdminVoucherModal({ isOpen, onClose, onSuccess, vouc
             </div>
 
             {/* Min Order & Max Discount */}
-            <div className={cn("grid gap-4", formData.voucherType === 'PERCENTAGE' ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1")}>
-              <div>
+            <div className={cn("grid gap-4", formData.voucherType === 'PERCENTAGE' ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1")}>
+              <div className="min-w-0">
                 <label className={cn("block font-bold mb-1", isDark ? "text-slate-200" : "text-stone-700")}>
                   Giá Trị Đơn Tối Thiểu (VNĐ)
                 </label>
@@ -345,6 +390,7 @@ export default function EditAdminVoucherModal({ isOpen, onClose, onSuccess, vouc
                   type="number"
                   name="minOrderValue"
                   min="0"
+                  max="9999999999"
                   placeholder="VD: 250000"
                   value={formData.minOrderValue}
                   onChange={handleInputChange}
@@ -356,7 +402,7 @@ export default function EditAdminVoucherModal({ isOpen, onClose, onSuccess, vouc
               </div>
 
               {formData.voucherType === 'PERCENTAGE' && (
-                <div>
+                <div className="min-w-0">
                   <label className={cn("block font-bold mb-1", isDark ? "text-slate-200" : "text-stone-700")}>
                     Mức Giảm Tối Đa (VNĐ)
                   </label>
@@ -364,6 +410,7 @@ export default function EditAdminVoucherModal({ isOpen, onClose, onSuccess, vouc
                     type="number"
                     name="maxDiscountAmount"
                     min="1"
+                    max="500000000"
                     placeholder="VD: 100000"
                     value={formData.maxDiscountAmount}
                     onChange={handleInputChange}
@@ -377,8 +424,8 @@ export default function EditAdminVoucherModal({ isOpen, onClose, onSuccess, vouc
             </div>
 
             {/* Usage Limit & User Usage Limit */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="min-w-0">
                 <div className="flex items-center justify-between mb-1">
                   <label className={cn("font-bold", isDark ? "text-slate-200" : "text-stone-700")}>
                     Tổng Lượt Sử Dụng
@@ -393,6 +440,7 @@ export default function EditAdminVoucherModal({ isOpen, onClose, onSuccess, vouc
                   type="number"
                   name="usageLimit"
                   min={usedCount || 0}
+                  max="10000000"
                   placeholder="Để trống nếu không giới hạn"
                   value={formData.usageLimit}
                   onChange={handleInputChange}
@@ -403,7 +451,7 @@ export default function EditAdminVoucherModal({ isOpen, onClose, onSuccess, vouc
                 />
               </div>
 
-              <div>
+              <div className="min-w-0">
                 <label className={cn("block font-bold mb-1", isDark ? "text-slate-200" : "text-stone-700")}>
                   Lượt Dùng Mỗi Tài Khoản
                 </label>
@@ -411,6 +459,7 @@ export default function EditAdminVoucherModal({ isOpen, onClose, onSuccess, vouc
                   type="number"
                   name="userUsageLimit"
                   min="1"
+                  max="100"
                   placeholder="Mặc định: 1"
                   value={formData.userUsageLimit}
                   onChange={handleInputChange}
@@ -433,8 +482,8 @@ export default function EditAdminVoucherModal({ isOpen, onClose, onSuccess, vouc
             )}
 
             {/* Start & End Date */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="min-w-0">
                 <label className={cn("block font-bold mb-1", isDark ? "text-slate-200" : "text-stone-700")}>
                   Ngày Bắt Đầu <span className="text-rose-500">*</span>
                 </label>
@@ -451,7 +500,7 @@ export default function EditAdminVoucherModal({ isOpen, onClose, onSuccess, vouc
                 />
               </div>
 
-              <div>
+              <div className="min-w-0">
                 <label className={cn("block font-bold mb-1", isDark ? "text-slate-200" : "text-stone-700")}>
                   Ngày Kết Thúc (HSD)
                 </label>

@@ -608,6 +608,15 @@ public class VoucherServiceImpl implements VoucherService {
                     .orElseThrow(() -> new CustomException("Không tìm thấy ngành hàng"));
         }
 
+        validateVoucherParameters(
+                req.getVoucherType(),
+                req.getDiscountValue(),
+                req.getMaxDiscountAmount(),
+                req.getMinOrderValue(),
+                req.getUsageLimit(),
+                req.getUserUsageLimit(),
+                scope);
+
         Voucher voucher = Voucher.builder()
                 .code(code)
                 .title(req.getTitle() != null ? req.getTitle().trim() : "")
@@ -741,6 +750,22 @@ public class VoucherServiceImpl implements VoucherService {
         if (req.getUsageLimit() != null && req.getUsageLimit() < voucher.getUsedCount()) {
             throw new CustomException("Số lượng giới hạn không được nhỏ hơn số lượt đã sử dụng (" + voucher.getUsedCount() + ")");
         }
+
+        VoucherType targetType = req.getVoucherType() != null ? req.getVoucherType() : voucher.getVoucherType();
+        BigDecimal targetDiscount = req.getDiscountValue() != null ? req.getDiscountValue() : voucher.getDiscountValue();
+        BigDecimal targetMaxDiscount = req.getMaxDiscountAmount() != null ? req.getMaxDiscountAmount() : voucher.getMaxDiscountAmount();
+        BigDecimal targetMinOrder = req.getMinOrderValue() != null ? req.getMinOrderValue() : voucher.getMinOrderValue();
+        Integer targetUsage = req.getUsageLimit() != null ? req.getUsageLimit() : voucher.getUsageLimit();
+        Integer targetUserUsage = req.getUserUsageLimit() != null ? req.getUserUsageLimit() : voucher.getUserUsageLimit();
+
+        validateVoucherParameters(
+                targetType,
+                targetDiscount,
+                targetMaxDiscount,
+                targetMinOrder,
+                targetUsage,
+                targetUserUsage,
+                voucher.getScope());
 
         // Cập nhật các trường được phép
         if (req.getTitle() != null && !req.getTitle().isBlank()) {
@@ -1040,5 +1065,82 @@ public class VoucherServiceImpl implements VoucherService {
             return;
         }
         voucherRepository.updateStatusByShopId(shopId, VoucherStatus.ACTIVE, VoucherStatus.INACTIVE);
+    }
+
+    private void validateVoucherParameters(
+            VoucherType voucherType,
+            BigDecimal discountValue,
+            BigDecimal maxDiscountAmount,
+            BigDecimal minOrderValue,
+            Integer usageLimit,
+            Integer userUsageLimit,
+            VoucherScope scope) {
+
+        BigDecimal MAX_DB_NUMERIC = new BigDecimal("9999999999.99");
+        BigDecimal MAX_MONETARY_DISCOUNT = new BigDecimal("500000000"); // 500.000.000đ
+
+        if (discountValue != null) {
+            if (discountValue.compareTo(BigDecimal.ZERO) <= 0) {
+                throw new CustomException("Giá trị giảm giá phải lớn hơn 0");
+            }
+            if (discountValue.compareTo(MAX_DB_NUMERIC) > 0) {
+                throw new CustomException("Giá trị giảm giá quá lớn, vượt quá giới hạn hệ thống cho phép");
+            }
+            if (voucherType == VoucherType.PERCENTAGE) {
+                if (discountValue.compareTo(new BigDecimal("100")) > 0) {
+                    throw new CustomException("Mức giảm theo phần trăm không được vượt quá 100%");
+                }
+            } else if (voucherType == VoucherType.FREE_SHIPPING) {
+                if (discountValue.compareTo(new BigDecimal("50000000")) > 0) {
+                    throw new CustomException("Mức trợ phí vận chuyển tối đa không được vượt quá 50.000.000đ");
+                }
+            } else if (voucherType == VoucherType.FIXED_AMOUNT) {
+                if (discountValue.compareTo(MAX_MONETARY_DISCOUNT) > 0) {
+                    throw new CustomException("Số tiền giảm giá không được vượt quá 500.000.000đ");
+                }
+                if (scope == VoucherScope.SHOP && minOrderValue != null && minOrderValue.compareTo(BigDecimal.ZERO) > 0) {
+                    if (discountValue.compareTo(minOrderValue) > 0) {
+                        throw new CustomException("Giá trị giảm giá không được lớn hơn giá trị đơn hàng tối thiểu ("
+                                + minOrderValue + "đ)");
+                    }
+                }
+            }
+        }
+
+        if (maxDiscountAmount != null) {
+            if (maxDiscountAmount.compareTo(BigDecimal.ZERO) <= 0) {
+                throw new CustomException("Mức giảm tối đa phải lớn hơn 0");
+            }
+            if (maxDiscountAmount.compareTo(MAX_MONETARY_DISCOUNT) > 0) {
+                throw new CustomException("Mức giảm tối đa không được vượt quá 500.000.000đ");
+            }
+        }
+
+        if (minOrderValue != null) {
+            if (minOrderValue.compareTo(BigDecimal.ZERO) < 0) {
+                throw new CustomException("Giá trị đơn hàng tối thiểu không được âm");
+            }
+            if (minOrderValue.compareTo(MAX_DB_NUMERIC) > 0) {
+                throw new CustomException("Giá trị đơn hàng tối thiểu quá lớn, vượt quá giới hạn hệ thống cho phép");
+            }
+        }
+
+        if (usageLimit != null) {
+            if (usageLimit <= 0) {
+                throw new CustomException("Tổng lượt sử dụng phải lớn hơn 0");
+            }
+            if (usageLimit > 10_000_000) {
+                throw new CustomException("Tổng lượt sử dụng không được vượt quá 10.000.000 lượt");
+            }
+        }
+
+        if (userUsageLimit != null) {
+            if (userUsageLimit <= 0) {
+                throw new CustomException("Lượt dùng mỗi tài khoản phải lớn hơn 0");
+            }
+            if (userUsageLimit > 100) {
+                throw new CustomException("Lượt dùng mỗi tài khoản không được vượt quá 100 lượt");
+            }
+        }
     }
 }

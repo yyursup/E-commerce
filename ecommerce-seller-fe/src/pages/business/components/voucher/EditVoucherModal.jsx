@@ -252,7 +252,7 @@ export default function EditVoucherModal({ isOpen, onClose, onSuccess, voucher, 
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="py-4 overflow-y-auto space-y-4 flex-1 text-xs pr-1">
+          <form onSubmit={handleSubmit} className="py-4 overflow-y-auto space-y-4 flex-1 text-xs px-1.5">
             {/* Voucher Code (Khóa cứng) & Title */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="min-w-0">

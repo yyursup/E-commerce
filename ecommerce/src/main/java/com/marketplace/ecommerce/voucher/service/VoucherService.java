@@ -36,6 +36,16 @@ public interface VoucherService {
     VoucherResponse createVoucher(UUID accountId, CreateVoucherRequest request);
 
     List<VoucherResponse> getShopManageVouchers(UUID accountId);
+
+    List<VoucherResponse> getPlatformManageVouchers(UUID accountId);
+
+    VoucherResponse updateVoucher(UUID accountId, UUID voucherId, UpdateVoucherRequest request);
+
+    VoucherResponse deleteVoucher(UUID accountId, UUID voucherId);
+
+    default VoucherResponse deleteOrEndVoucher(UUID accountId, UUID voucherId) {
+        return deleteVoucher(accountId, voucherId);
+    }
     
     /**
      * Vô hiệu hóa toàn bộ voucher đang hoạt động (ACTIVE) của gian hàng

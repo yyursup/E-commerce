@@ -4,5 +4,6 @@ public enum VoucherStatus {
     ACTIVE,
     INACTIVE,
     EXPIRED,
-    EXHAUSTED
+    EXHAUSTED,
+    DELETED
 }

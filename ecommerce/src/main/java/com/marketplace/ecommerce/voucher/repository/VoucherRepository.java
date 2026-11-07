@@ -82,6 +82,8 @@ public interface VoucherRepository extends JpaRepository<Voucher, UUID> {
 
     List<Voucher> findByShopIdOrderByCreatedAtDesc(UUID shopId);
 
+    List<Voucher> findByScopeOrderByCreatedAtDesc(VoucherScope scope);
+
     @Modifying
     @Query("UPDATE Voucher v SET v.status = :newStatus, v.updatedAt = CURRENT_TIMESTAMP WHERE v.shop.id = :shopId AND v.status = :targetStatus")
     int updateStatusByShopId(

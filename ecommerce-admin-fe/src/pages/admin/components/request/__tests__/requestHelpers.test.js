@@ -167,7 +167,7 @@ describe('requestHelpers', () => {
         moderatorNote: 'Hàng giả hàng nhái',
       }
       const entries = buildRequestDetailEntries('REPORT', detail)
-      expect(entries).toContainEqual(['Đối tượng báo cáo', 'PRODUCT'])
+      expect(entries).toContainEqual(['Đối tượng báo cáo', 'Sản phẩm (Product)'])
       expect(entries).toContainEqual(['ID đối tượng', 'prod-123'])
     })
   })

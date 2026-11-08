@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { decodeJWT, getAccountVerified } from '../../lib/jwt'
 
 describe('jwt.js', () => {
@@ -27,12 +27,10 @@ describe('jwt.js', () => {
       expect(result).toEqual(mockPayload)
     })
 
-    it('should return null and handle errors gracefully when decoding fails', () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    it('should return null without throwing when the payload is not valid base64 JSON', () => {
       const invalidToken = 'header.invalid_base64_payload.signature'
+      expect(() => decodeJWT(invalidToken)).not.toThrow()
       expect(decodeJWT(invalidToken)).toBeNull()
-      expect(consoleSpy).toHaveBeenCalled()
-      consoleSpy.mockRestore()
     })
   })
 

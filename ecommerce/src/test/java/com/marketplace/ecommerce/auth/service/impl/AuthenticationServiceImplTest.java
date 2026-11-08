@@ -433,13 +433,12 @@ class AuthenticationServiceImplTest {
     }
 
     @Test
-    @DisplayName("OAuth2 login Google và Facebook ném CustomException khi token sai")
+    @DisplayName("OAuth2 login Google ném CustomException khi token sai")
     void testOAuth2_Errors() {
         com.marketplace.ecommerce.auth.dto.request.OAuth2Request req = new com.marketplace.ecommerce.auth.dto.request.OAuth2Request();
         req.setToken("invalid_oauth_token");
 
         assertThrows(CustomException.class, () -> authenticationService.oauth2LoginGoogle(req));
-        assertThrows(CustomException.class, () -> authenticationService.oauth2LoginFacebook(req));
     }
 
     
@@ -547,16 +546,6 @@ class AuthenticationServiceImplTest {
         OAuth2Request req = new OAuth2Request();
         req.setToken("google-token");
         assertThrows(CustomException.class, () -> authenticationService.oauth2LoginGoogle(req));
-    }
-
-    @Test
-    @DisplayName("oauth2LoginFacebook: Ném CustomException khi token không hợp lệ hoặc lỗi kết nối")
-    void testOauth2LoginFacebook_AllBranches() {
-        ReflectionTestUtils.setField(authenticationService, "facebookClientId", "fb-client-id-123");
-        ReflectionTestUtils.setField(authenticationService, "facebookClientSecret", "fb-secret-456");
-        OAuth2Request req = new OAuth2Request();
-        req.setToken("fb-token");
-        assertThrows(CustomException.class, () -> authenticationService.oauth2LoginFacebook(req));
     }
 
     @Test

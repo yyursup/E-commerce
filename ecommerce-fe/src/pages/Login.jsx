@@ -12,9 +12,7 @@ import authService from '../services/auth'
 import cartService from '../services/cart'
 import voucherService from '../services/voucher'
 import { useGoogleLogin } from '@react-oauth/google'
-import FBLogin from '@greatsumini/react-facebook-login'
-const FacebookLogin = FBLogin.default || FBLogin;
-import { FaFacebook, FaGoogle } from 'react-icons/fa'
+import { FaGoogle } from 'react-icons/fa'
 export default function Login() {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
   const navigate = useNavigate()
@@ -106,19 +104,6 @@ export default function Login() {
     onSuccess: handleGoogleSuccess,
     onError: () => toast.error('Đăng nhập Google thất bại')
   });
-
-  const handleFacebookResponse = async (response) => {
-    if (response.accessToken) {
-      try {
-        const res = await authService.oauth2Facebook(response.accessToken);
-        await handleOAuthSuccess(res);
-      } catch (error) {
-        toast.error(error?.message || 'Đăng nhập Facebook thất bại');
-      }
-    } else {
-      toast.error('Đăng nhập Facebook thất bại');
-    }
-  };
 
   const onSubmit = async (data) => {
     try {
@@ -354,7 +339,7 @@ export default function Login() {
               </div>
             </div>
 
-            <div className="mt-6 grid grid-cols-2 gap-3">
+            <div className="mt-6 grid grid-cols-1 gap-3">
               <button
                 type="button"
                 onClick={() => handleGoogleLogin()}
@@ -366,25 +351,6 @@ export default function Login() {
                 <FaGoogle className="text-rose-500" />
                 Google
               </button>
-              
-              <FacebookLogin
-                appId={import.meta.env.VITE_FACEBOOK_APP_ID || 'dummy_app_id'}
-                onSuccess={handleFacebookResponse}
-                onFail={() => toast.error('Đăng nhập Facebook thất bại')}
-                render={({ onClick }) => (
-                  <button
-                    type="button"
-                    onClick={onClick}
-                    className={cn(
-                      "flex w-full items-center justify-center gap-3 rounded-xl border px-3 py-2.5 text-sm font-semibold transition-all hover:bg-slate-50 dark:hover:bg-slate-800",
-                      isDark ? 'border-slate-700 text-white' : 'border-stone-200 text-stone-700'
-                    )}
-                  >
-                    <FaFacebook className="text-blue-600" />
-                    Facebook
-                  </button>
-                )}
-              />
             </div>
           </div>
 

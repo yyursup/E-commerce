@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { getAccessToken, setAccessToken, clearAccessToken } from '../../lib/auth'
 
 describe('auth.js', () => {

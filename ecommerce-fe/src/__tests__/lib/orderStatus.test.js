@@ -5,7 +5,9 @@ import {
   getOrderStatusLabel,
   formatOrderCurrency,
   formatOrderDate,
-  ORDER_STATUS_BADGE_MAP
+  ORDER_STATUS_BADGE_MAP,
+  getReturnStatusLabel,
+  getOrderEffectiveStatus,
 } from '../../lib/orderStatus'
 
 describe('orderStatus.js', () => {
@@ -74,8 +76,6 @@ describe('orderStatus.js', () => {
 
   describe('ReturnStatus & EffectiveStatus', () => {
     it('should distinguish ReturnStatus from OrderStatus for identical keys', () => {
-      const { getReturnStatusLabel, getOrderStatusLabel, getOrderEffectiveStatus } = require('../../lib/orderStatus')
-      
       // SHIPPED: Order is 'Đã giao hàng', Return is 'Đang giao hàng hoàn'
       expect(getOrderStatusLabel('SHIPPED')).toBe('Đã giao hàng')
       expect(getReturnStatusLabel('SHIPPED')).toBe('Đang giao hàng hoàn')
@@ -90,7 +90,6 @@ describe('orderStatus.js', () => {
     })
 
     it('should prioritize ReturnStatus when order has active return', () => {
-      const { getOrderEffectiveStatus } = require('../../lib/orderStatus')
       const order = { status: 'DELIVERED', returnInfo: { status: 'DISPUTED' } }
       const effective = getOrderEffectiveStatus(order)
 
@@ -100,7 +99,6 @@ describe('orderStatus.js', () => {
     })
 
     it('should fallback to OrderStatus when order return is cancelled', () => {
-      const { getOrderEffectiveStatus } = require('../../lib/orderStatus')
       const order = { status: 'COMPLETED', returnInfo: { status: 'CANCELLED' } }
       const effective = getOrderEffectiveStatus(order)
 

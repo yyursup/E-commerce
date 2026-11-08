@@ -47,7 +47,8 @@ public class UserSeeder {
         // Sellers
         initializeUser(initializeAccount("seller1", "apple.reseller@gmail.com", "0987654321", "seller123@", businessRole),
                 "Nguyễn Thành Đạt (Apple Official)", "apple.reseller@gmail.com", "0987654321",
-                LocalDate.of(1988, 5, 15), GenderType.MALE, "987654321012");
+                LocalDate.of(1988, 5, 15), GenderType.MALE, "987654321012",
+                "Vietcombank", "0071001234567", "NGUYEN THANH DAT");
 
         initializeUser(initializeAccount("seller2", "samsung.official@gmail.com", "0987654322", "seller123@", businessRole),
                 "Trần Quang Huy (Samsung Experience)", "samsung.official@gmail.com", "0987654322",
@@ -72,7 +73,8 @@ public class UserSeeder {
         // Customers
         initializeUser(initializeAccount("customer1", "customer1@gmail.com", "0901234567", "customer123@", customerRole),
                 "Lê Văn Mua Hàng", "customer1@gmail.com", "0901234567",
-                LocalDate.of(1995, 3, 10), GenderType.MALE, "223344556677");
+                LocalDate.of(1995, 3, 10), GenderType.MALE, "223344556677",
+                "MBBank", "0901234567", "LE VAN MUA HANG");
 
         initializeUser(initializeAccount("customer2", "customer2@gmail.com", "0909876543", "customer123@", customerRole),
                 "Phạm Thị Mua Sắm", "customer2@gmail.com", "0909876543",
@@ -114,7 +116,22 @@ public class UserSeeder {
 
     private User initializeUser(Account account, String fullName, String email, String phone, 
             LocalDate dob, GenderType gender, String citizenId) {
+        return initializeUser(account, fullName, email, phone, dob, gender, citizenId, null, null, null);
+    }
+
+    private User initializeUser(Account account, String fullName, String email, String phone, 
+            LocalDate dob, GenderType gender, String citizenId,
+            String bankName, String bankAccountNumber, String bankAccountName) {
         return userRepository.findByAccountId(account.getId())
+                .map(existing -> {
+                    if (bankName != null && (existing.getBankName() == null || existing.getBankName().isBlank())) {
+                        existing.setBankName(bankName);
+                        existing.setBankAccountNumber(bankAccountNumber);
+                        existing.setBankAccountName(bankAccountName);
+                        return userRepository.save(existing);
+                    }
+                    return existing;
+                })
                 .orElseGet(() -> {
                     User user = User.builder()
                             .account(account)
@@ -124,6 +141,9 @@ public class UserSeeder {
                             .dateOfBirth(dob)
                             .gender(gender)
                             .identityCardNumber(citizenId)
+                            .bankName(bankName)
+                            .bankAccountNumber(bankAccountNumber)
+                            .bankAccountName(bankAccountName)
                             .build();
                     return userRepository.save(user);
                 });

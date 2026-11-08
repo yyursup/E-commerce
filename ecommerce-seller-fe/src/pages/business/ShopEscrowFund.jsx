@@ -942,6 +942,164 @@ export default function ShopEscrowFund() {
           </div>
         </div>
       )}
+
+      {/* MODAL RÚT TIỀN DOANH THU VỀ TÀI KHOẢN NGÂN HÀNG */}
+      {showWithdrawModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+          <div
+            className={cn(
+              'w-full max-w-md rounded-2xl border p-6 shadow-2xl relative space-y-4 animate-in fade-in zoom-in-95',
+              isDark ? 'border-slate-800 bg-slate-900 text-slate-100' : 'border-stone-200 bg-white text-stone-900'
+            )}
+          >
+            <div className="flex items-center justify-between border-b pb-3 border-stone-100 dark:border-slate-800">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-amber-500/10 text-amber-500">
+                  <HiOutlineCash className="h-5 w-5" />
+                </div>
+                <h2 className="text-base font-bold">Rút tiền doanh thu về ngân hàng</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowWithdrawModal(false)}
+                className="p-1 rounded-lg text-stone-400 hover:text-stone-600 dark:hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Bank info preview */}
+            <div className={cn(
+              'p-3.5 rounded-xl border text-xs space-y-1',
+              isDark ? 'border-slate-800 bg-slate-800/50' : 'border-amber-100 bg-amber-50/50'
+            )}>
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-stone-900 dark:text-white">{user?.bankName}</span>
+                <span className="font-mono font-bold text-amber-600 dark:text-amber-400">{user?.bankAccountNumber}</span>
+              </div>
+              <div className="text-[11px] text-stone-500 dark:text-slate-400">
+                Chủ tài khoản: <span className="font-semibold uppercase text-stone-700 dark:text-slate-300">{user?.bankAccountName || user?.fullName}</span>
+              </div>
+            </div>
+
+            <form onSubmit={handleWithdrawSubmit} className="space-y-4 text-xs">
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="font-semibold text-stone-700 dark:text-slate-300">
+                    Số tiền muốn rút <span className="text-red-500">*</span>
+                  </label>
+                  <span className="text-[11px] text-stone-500 dark:text-slate-400">
+                    Khả dụng: <strong className="text-emerald-600 dark:text-emerald-400">{formatVND(wallet?.availableBalance)}</strong>
+                  </span>
+                </div>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={withdrawAmount ? Number(withdrawAmount).toLocaleString('vi-VN') : ''}
+                    onChange={(e) => {
+                      const raw = e.target.value.replace(/\D/g, '')
+                      setWithdrawAmount(raw)
+                    }}
+                    placeholder="Tối thiểu 100.000"
+                    className={cn(
+                      'w-full rounded-xl px-4 py-2.5 font-mono text-sm font-bold border transition-all focus:ring-2 focus:ring-amber-500 focus:outline-none pr-12',
+                      isDark ? 'border-slate-700 bg-slate-800 text-white placeholder:text-slate-500' : 'border-stone-200 bg-stone-50 text-stone-900 placeholder:text-stone-400'
+                    )}
+                  />
+                  <span className="absolute right-3.5 top-1/2 -translate-y-1/2 font-bold text-stone-400">₫</span>
+                </div>
+
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {[100000, 200000, 500000, 1000000].map((amt) => (
+                    <button
+                      key={amt}
+                      type="button"
+                      onClick={() => setWithdrawAmount(String(amt))}
+                      className={cn(
+                        'px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-colors',
+                        Number(withdrawAmount) === amt
+                          ? 'border-amber-500 bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                          : 'border-stone-200 dark:border-slate-700 hover:border-amber-500/50 text-stone-600 dark:text-slate-400'
+                      )}
+                    >
+                      {amt.toLocaleString('vi-VN')} ₫
+                    </button>
+                  ))}
+                  {Number(wallet?.availableBalance) >= 100000 && (
+                    <button
+                      type="button"
+                      onClick={() => setWithdrawAmount(String(Math.floor(wallet.availableBalance)))}
+                      className="px-2.5 py-1 rounded-lg text-[11px] font-bold border border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 transition-colors"
+                    >
+                      Tất cả số dư
+                    </button>
+                  )}
+                </div>
+                <p className="mt-1 text-[11px] text-stone-400">
+                  Số tiền rút tối thiểu: <strong>100.000 VNĐ</strong>
+                </p>
+              </div>
+
+              <div>
+                <label className="block font-semibold mb-1 text-stone-700 dark:text-slate-300">
+                  Ghi chú rút tiền (Không bắt buộc)
+                </label>
+                <input
+                  type="text"
+                  value={withdrawNote}
+                  onChange={(e) => setWithdrawNote(e.target.value)}
+                  placeholder="VD: Rút tiền doanh thu tuần này"
+                  maxLength={100}
+                  className={cn(
+                    'w-full rounded-xl px-4 py-2 border transition-all focus:ring-2 focus:ring-amber-500 focus:outline-none',
+                    isDark ? 'border-slate-700 bg-slate-800 text-white placeholder:text-slate-500' : 'border-stone-200 bg-stone-50 text-stone-900 placeholder:text-stone-400'
+                  )}
+                />
+              </div>
+
+              <div className="rounded-xl p-3 bg-amber-500/10 border border-amber-500/20 text-stone-700 dark:text-slate-300 text-[11px] space-y-1">
+                <div className="flex items-start gap-1.5 font-semibold text-amber-600 dark:text-amber-400">
+                  <HiOutlineInformationCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                  <span>Quy trình xử lý rút tiền:</span>
+                </div>
+                <p className="text-stone-500 dark:text-slate-400 pl-5">
+                  Số tiền rút sẽ được tạm khóa trong ví. Ban Quản Trị sàn sẽ phê duyệt và chuyển tiền về tài khoản ngân hàng của bạn. Thông báo xác nhận sẽ được gửi qua Email.
+                </p>
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowWithdrawModal(false)}
+                  className={cn(
+                    'px-4 py-2.5 rounded-xl font-semibold border transition-colors cursor-pointer',
+                    isDark ? 'border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700' : 'border-stone-200 bg-stone-100 text-stone-600 hover:bg-stone-200'
+                  )}
+                >
+                  Hủy bỏ
+                </button>
+                <button
+                  type="submit"
+                  disabled={withdrawSubmitting || !withdrawAmount || Number(withdrawAmount) < 100000 || Number(withdrawAmount) > (wallet?.availableBalance || 0)}
+                  className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl font-bold transition-all bg-amber-500 hover:bg-amber-600 text-stone-950 active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {withdrawSubmitting ? (
+                    <>
+                      <HiOutlineRefresh className="h-4 w-4 animate-spin" />
+                      Đang xử lý...
+                    </>
+                  ) : (
+                    <>
+                      <HiOutlineCheckCircle className="h-4 w-4" />
+                      Xác nhận rút tiền
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

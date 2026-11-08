@@ -15,22 +15,48 @@ import { useThemeStore } from '../store/useThemeStore'
 import { useAuthStore } from '../store/useAuthStore'
 import { cn } from '../lib/cn'
 import BankSelector from '../components/BankSelector'
+import authService from '../services/auth'
 import escrowFundService from '../services/escrowFund'
 import shopService from '../services/shop'
+import walletService from '../services/wallet'
 
 export default function ShopSettings() {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
-  const { user } = useAuthStore()
+  const { user, updateUser } = useAuthStore()
 
   const [shopName, setShopName] = useState(user?.shopName || 'Gian hàng chính hãng')
   const [phone, setPhone] = useState('0987654321')
   const [address, setAddress] = useState('Kho hàng 123 Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh')
-  const [bankName, setBankName] = useState('Vietcombank')
-  const [accountNumber, setAccountNumber] = useState('998877665544')
-  const [accountName, setAccountName] = useState(user?.email || 'NGUYEN VAN A')
+  const [bankName, setBankName] = useState(user?.bankName || 'Vietcombank')
+  const [accountNumber, setAccountNumber] = useState(user?.bankAccountNumber || '998877665544')
+  const [accountName, setAccountName] = useState(user?.bankAccountName || user?.fullName || user?.email || 'NGUYEN VAN A')
 
   // Escrow States
   const [escrowFund, setEscrowFund] = useState(null)
+
+  useEffect(() => {
+    if (user) {
+      if (user.bankName) setBankName(user.bankName)
+      if (user.bankAccountNumber) setAccountNumber(user.bankAccountNumber)
+      if (user.bankAccountName) setAccountName(user.bankAccountName)
+    }
+
+    // Sync latest user profile with bank info from backend
+    authService.getUserProfile().then((profile) => {
+      if (profile) {
+        if (profile.bankName) setBankName(profile.bankName)
+        if (profile.bankAccountNumber) setAccountNumber(profile.bankAccountNumber)
+        if (profile.bankAccountName) setAccountName(profile.bankAccountName)
+        if (updateUser) {
+          updateUser({
+            bankName: profile.bankName,
+            bankAccountNumber: profile.bankAccountNumber,
+            bankAccountName: profile.bankAccountName,
+          })
+        }
+      }
+    }).catch(() => {})
+  }, [user, updateUser])
 
   useEffect(() => {
     const fetchEscrow = async () => {
@@ -44,9 +70,28 @@ export default function ShopSettings() {
     fetchEscrow()
   }, [])
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault()
-    toast.success('Đã lưu thông tin cài đặt gian hàng và kho GHN thành công!')
+    try {
+      if (bankName && accountNumber && accountName) {
+        await walletService.updateBankInfo({
+          bankName: bankName.trim(),
+          bankAccountNumber: accountNumber.trim(),
+          bankAccountName: accountName.trim().toUpperCase(),
+        })
+        if (updateUser) {
+          updateUser({
+            bankName: bankName.trim(),
+            bankAccountNumber: accountNumber.trim(),
+            bankAccountName: accountName.trim().toUpperCase(),
+          })
+        }
+      }
+      toast.success('Đã lưu thông tin cài đặt gian hàng và tài khoản ngân hàng thành công!')
+    } catch (err) {
+      console.error('Lỗi cập nhật bank info:', err)
+      toast.error(err?.message || 'Có lỗi xảy ra khi lưu thông tin')
+    }
   }
 
   // Derived states

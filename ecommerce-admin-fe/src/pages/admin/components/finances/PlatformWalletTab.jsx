@@ -50,7 +50,7 @@ export default function PlatformWalletTab() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-bold">Số Dư Ví Hệ Thống Của Nền Tảng</h2>
+          <h2 className="text-lg font-bold">Số dư ví hệ thống của nền tảng</h2>
           <p className={cn('mt-1 text-xs', isDark ? 'text-slate-400' : 'text-stone-500')}>
             Giám sát nguồn tiền khả dụng và tiền cọc tạm giữ đang bảo chứng giao dịch
           </p>
@@ -84,7 +84,7 @@ export default function PlatformWalletTab() {
           <p className={cn('text-sm', isDark ? 'text-red-400' : 'text-red-600')}>{error}</p>
           <button
             onClick={() => fetchWallet()}
-            className="mt-4 rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-white hover:bg-amber-600 shadow-sm"
+            className="mt-4 rounded-xl px-4 py-2 text-xs font-bold bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
           >
             Thử lại
           </button>
@@ -98,10 +98,8 @@ export default function PlatformWalletTab() {
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 p-6 text-white shadow-lg shadow-amber-500/20"
+            className="relative overflow-hidden rounded-2xl p-6 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
           >
-            <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/10" />
-            <div className="absolute -bottom-4 -left-4 h-20 w-20 rounded-full bg-white/5" />
             <div className="relative">
               <p className="text-sm font-medium text-amber-100">Tổng số dư toàn sàn</p>
               <p className="mt-1 text-4xl font-extrabold tracking-tight">{formatCurrency(total)}</p>
@@ -158,7 +156,7 @@ export default function PlatformWalletTab() {
                   <HiOutlineLockClosed className="h-5 w-5 text-amber-500" />
                 </div>
                 <span className={cn('text-sm font-bold', isDark ? 'text-amber-400' : 'text-amber-700')}>
-                  Đang bị khóa (Escrow)
+                  Đang bị khóa
                 </span>
               </div>
               <p className={cn('text-2xl font-black', isDark ? 'text-white' : 'text-stone-900')}>
@@ -188,7 +186,7 @@ export default function PlatformWalletTab() {
             </div>
             <ul className={cn('space-y-2 text-xs leading-relaxed', isDark ? 'text-slate-300' : 'text-stone-600')}>
               <li>• <strong>Số dư khả dụng:</strong> Tiền thực thu từ phí hoa hồng các đơn hàng đã hoàn tất. Sàn có thể rút hoặc sử dụng để vận hành.</li>
-              <li>• <strong>Đang bị khóa:</strong> Tiền tạm giữ an toàn qua Escrow Smart Contract / DB Ledger. Chỉ được giải phóng cho Người bán sau khi Đơn hàng đạt trạng thái DELIVERED và hết thời hạn khiếu nại (3 ngày đồng kiểm).</li>
+              <li>• <strong>Đang bị khóa:</strong> Tiền tạm giữ an toàn trên sổ cái ký quỹ của sàn. Chỉ được giải phóng cho Người bán sau khi Đơn hàng đạt trạng thái DELIVERED và hết thời hạn khiếu nại (3 ngày đồng kiểm).</li>
             </ul>
           </motion.div>
         </>

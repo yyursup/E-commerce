@@ -154,7 +154,7 @@ export default function SellerDisputeActionModal({
                   : 'Nhập lời nhắn gửi khách hàng...'
               }
               className={cn(
-                'w-full rounded-xl border p-3 text-xs outline-hidden focus:ring-2 focus:ring-amber-500',
+                'w-full rounded-xl border p-3 text-xs outline-hidden focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                 isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-stone-50 border-stone-200 text-stone-900 placeholder-stone-400'
               )}
             />

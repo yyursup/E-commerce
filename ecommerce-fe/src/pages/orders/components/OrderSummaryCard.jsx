@@ -142,7 +142,7 @@ export default function OrderSummaryCard({
             className="w-full mt-2 inline-flex items-center justify-center gap-2 py-2 px-3 rounded-xl border border-stone-200 dark:border-slate-700 bg-stone-50 dark:bg-slate-800/80 hover:bg-stone-100 dark:hover:bg-slate-700 text-xs font-bold text-stone-700 dark:text-slate-200 transition-all active:scale-[0.98]"
           >
             <HiOutlineDocumentText className="h-4 w-4 text-stone-500" />
-            Xem & In Phiếu Hóa Đơn Đối Soát (Invoice Slip)
+            Xem & in phiếu hóa đơn đối soát
           </button>
         </div>
 

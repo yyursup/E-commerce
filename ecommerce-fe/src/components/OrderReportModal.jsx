@@ -249,7 +249,7 @@ export default function OrderReportModal({ isOpen, onClose, order, onSuccess }) 
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="text-base sm:text-lg font-bold tracking-tight">Khiếu Nại & Bảo Vệ Đơn Hàng</h3>
+                    <h3 className="text-base sm:text-lg font-bold tracking-tight">Khiếu nại & bảo vệ đơn hàng</h3>
                     <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-500/10 text-rose-500 border border-rose-500/20">
                       Dispute Center
                     </span>
@@ -615,7 +615,7 @@ export default function OrderReportModal({ isOpen, onClose, order, onSuccess }) 
                   </div>
                   <div className="space-y-1 text-xs">
                     <p className="font-bold flex items-center gap-1.5 text-amber-700 dark:text-amber-300">
-                      Bảo Chứng Thanh Toán Ký Quỹ (Escrow Protection)
+                      Bảo chứng thanh toán ký quỹ
                     </p>
                     <p className="leading-relaxed text-[11px] opacity-90">
                       Khi gửi khiếu nại, tiền đơn hàng sẽ được <strong>tạm khóa an toàn</strong> trong tài khoản ký quỹ của sàn. Người bán có tối đa <strong>72 giờ</strong> để phản hồi hoặc giải trình. Nếu không có phản hồi giải trình hợp lệ, toàn bộ <strong>100% số tiền</strong> sẽ được tự động hoàn trả vào Ví của bạn.

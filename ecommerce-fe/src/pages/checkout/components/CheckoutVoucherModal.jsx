@@ -111,7 +111,7 @@ export default function CheckoutVoucherModal({
                         </div>
                         <div>
                             <h3 className={cn("text-lg font-bold leading-tight", isDark ? "text-white" : "text-stone-900")}>
-                                Chọn Voucher Cho Đơn Hàng
+                                Chọn voucher cho đơn hàng
                             </h3>
                             <p className="text-xs text-stone-500 dark:text-slate-400">
                                 Áp dụng tối đa 1 Voucher Shop và 1 Voucher Sàn

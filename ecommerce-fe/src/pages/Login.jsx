@@ -55,7 +55,7 @@ export default function Login() {
 
   const handleOAuthSuccess = async (res) => {
     if (res.role === 'ADMIN') {
-      toast.error('Tài khoản Quản trị viên vui lòng đăng nhập tại Cổng Quản Trị (Port 3002).')
+      toast.error('Tài khoản Quản trị viên vui lòng đăng nhập tại Cổng Quản Trị.')
       return
     }
 
@@ -111,7 +111,7 @@ export default function Login() {
       const res = await authService.login(data)
 
       if (res.role === 'ADMIN') {
-        toast.error('Tài khoản Quản trị viên vui lòng đăng nhập tại Cổng Quản Trị (Port 3002).')
+        toast.error('Tài khoản Quản trị viên vui lòng đăng nhập tại Cổng Quản Trị.')
         return
       }
 

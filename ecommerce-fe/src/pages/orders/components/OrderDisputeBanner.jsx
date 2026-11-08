@@ -310,7 +310,7 @@ export default function OrderDisputeBanner({ order, returnInfo, report: reportPr
             <div className="flex items-center gap-2.5 text-rose-600 dark:text-rose-400">
               <HiOutlineExclamationCircle className="h-6 w-6 shrink-0" />
               <h4 className="text-base font-bold text-stone-900 dark:text-white">
-                Xác Nhận Rút Khiếu Nại Đơn Hàng?
+                Xác nhận rút khiếu nại đơn hàng?
               </h4>
             </div>
 
@@ -363,7 +363,7 @@ export default function OrderDisputeBanner({ order, returnInfo, report: reportPr
             )}
           >
             <h4 className="text-base font-bold text-stone-900 dark:text-white">
-              Yêu Cầu Ban Quản Trị Sàn Can Thiệp
+              Yêu cầu ban quản trị sàn can thiệp
             </h4>
             <p className="text-xs text-stone-600 dark:text-slate-300 leading-relaxed">
               Nếu hai bên không tìm được tiếng nói chung, bạn có thể chuyển hồ sơ lên BQT sàn. Admin sẽ xem xét bằng chứng và đưa ra phán quyết cuối cùng.

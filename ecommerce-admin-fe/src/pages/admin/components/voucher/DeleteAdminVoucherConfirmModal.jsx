@@ -53,7 +53,7 @@ export default function DeleteAdminVoucherConfirmModal({
             <div className={cn(
               'flex h-9 w-9 items-center justify-center rounded-2xl shrink-0',
               isStarted
-                ? isDark ? 'bg-amber-500/15 text-amber-400' : 'bg-amber-100 text-amber-600'
+                ? isDark ? 'bg-slate-800 text-white' : 'bg-stone-100 text-stone-950'
                 : isDark ? 'bg-rose-500/15 text-rose-400' : 'bg-rose-100 text-rose-600'
             )}>
               {isStarted ? (
@@ -100,7 +100,7 @@ export default function DeleteAdminVoucherConfirmModal({
           )}>
             {isStarted ? (
               <p>
-                Voucher này sẽ được kết thúc sớm và chuyển sang trạng thái <strong>Tạm dừng (INACTIVE)</strong>. Lịch sử sử dụng Voucher vẫn được giữ nguyên.
+                Voucher này sẽ được kết thúc sớm và chuyển sang trạng thái <strong>Tạm dừng</strong>. Lịch sử sử dụng Voucher vẫn được giữ nguyên.
               </p>
             ) : (
               <p>

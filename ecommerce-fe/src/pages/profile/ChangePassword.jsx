@@ -38,7 +38,7 @@ export default function ChangePassword({ isDark }) {
         <div>
             <div className="border-b pb-4 mb-6 border-stone-200 dark:border-slate-700">
                 <h2 className={cn("text-3xl font-bold tracking-[-0.03em]", isDark ? "text-white" : "text-stone-900")}>
-                    Đổi Mật Khẩu
+                    Đổi mật khẩu
                 </h2>
                 <p className={cn("text-sm mt-1", isDark ? "text-slate-400" : "text-stone-500")}>
                     Để bảo mật tài khoản, vui lòng không chia sẻ mật khẩu cho người khác
@@ -50,7 +50,7 @@ export default function ChangePassword({ isDark }) {
                     <div>
                         <div className="flex items-center">
                             <label className={cn("w-36 text-right pr-4 text-sm font-medium", isDark ? "text-slate-400" : "text-stone-500")}>
-                                Mật Khẩu Hiện Tại
+                                Mật khẩu hiện tại
                             </label>
                             <input
                                 type="password"
@@ -75,7 +75,7 @@ export default function ChangePassword({ isDark }) {
                     <div>
                         <div className="flex items-center">
                             <label className={cn("w-36 text-right pr-4 text-sm font-medium", isDark ? "text-slate-400" : "text-stone-500")}>
-                                Mật Khẩu Mới
+                                Mật khẩu mới
                             </label>
                             <input
                                 type="password"
@@ -104,7 +104,7 @@ export default function ChangePassword({ isDark }) {
                     <div>
                         <div className="flex items-center">
                             <label className={cn("w-36 text-right pr-4 text-sm font-medium", isDark ? "text-slate-400" : "text-stone-500")}>
-                                Xác Nhận Mật Khẩu
+                                Xác nhận mật khẩu
                             </label>
                             <input
                                 type="password"

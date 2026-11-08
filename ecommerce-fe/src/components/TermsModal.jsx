@@ -75,7 +75,7 @@ export default function TermsModal({ open, onClose, onAccept }) {
     <Modal
       open={open}
       onClose={onClose}
-      title="Điều Khoản Dịch Vụ & Chính Sách Vận Hành Sàn E-Commerce"
+      title="Điều khoản dịch vụ & chính sách vận hành sàn E-Commerce"
       size="2xl"
     >
       <div className="flex flex-col h-[75vh]">

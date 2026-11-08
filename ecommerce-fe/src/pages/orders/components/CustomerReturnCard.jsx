@@ -160,7 +160,7 @@ export default function CustomerReturnCard({ returnInfo, order, report, isDark: 
           </div>
           <div>
             <h3 className={cn('text-sm sm:text-base font-bold', isDark ? 'text-white' : 'text-stone-900')}>
-              Quy Trình Trả Hàng & Hoàn Tiền (Return & Refund)
+              Quy trình trả hàng & hoàn tiền
             </h3>
             <p className={cn('text-[11px]', isDark ? 'text-slate-400' : 'text-stone-500')}>
               Mã yêu cầu hoàn: <span className="font-mono font-semibold">{returnInfo.id?.substring(0, 8)}...</span>
@@ -267,7 +267,7 @@ export default function CustomerReturnCard({ returnInfo, order, report, isDark: 
             >
               <HiOutlineShieldCheck className="h-4 w-4 text-purple-500 shrink-0" />
               <div>
-                <p className="text-[11px] text-stone-400 dark:text-slate-400">Hạn chót Shop kiểm hàng (72h):</p>
+                <p className="text-[11px] text-stone-400 dark:text-slate-400">Hạn chót Shop kiểm hàng:</p>
                 <p className="font-bold">{formatOrderDate(returnInfo.sellerInspectionDeadline)}</p>
               </div>
             </div>

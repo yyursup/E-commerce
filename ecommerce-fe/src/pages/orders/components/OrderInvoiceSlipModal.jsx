@@ -44,7 +44,7 @@ export default function OrderInvoiceSlipModal({
         <div className="print:hidden flex items-center justify-between px-6 py-4 border-b border-stone-200 dark:border-slate-800 bg-stone-50/80 dark:bg-slate-800/50">
           <div className="flex items-center gap-2">
             <HiOutlineShieldCheck className="h-5 w-5 text-emerald-500" />
-            <span className="font-bold text-sm">Phiếu Hóa Đơn Thanh Toán & Đối Soát Điện Tử</span>
+            <span className="font-bold text-sm">Phiếu hóa đơn thanh toán & đối soát điện tử</span>
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -53,7 +53,7 @@ export default function OrderInvoiceSlipModal({
               className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold shadow transition-all active:scale-95 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
             >
               <HiOutlinePrinter className="h-4 w-4" />
-              In / Xuất PDF
+              In / xuất PDF
             </button>
             <button
               type="button"
@@ -75,7 +75,7 @@ export default function OrderInvoiceSlipModal({
                   E-COMMERCE MARKETPLACE
                 </span>
                 <p className="text-xs text-stone-400 print:text-stone-600 mt-0.5">
-                  Nền Tảng Thương Mại Điện Tử Thiết Bị & Linh Kiện Điện Tử
+                  Nền tảng thương mại điện tử thiết bị & linh kiện điện tử
                 </p>
                 <p className="text-[11px] text-stone-400 print:text-stone-600">
                   Hệ thống hạch toán dòng tiền Escrow đối soát độc lập
@@ -99,7 +99,7 @@ export default function OrderInvoiceSlipModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 p-4 rounded-xl bg-stone-50 dark:bg-slate-800/50 print:bg-transparent print:border print:border-stone-300">
             <div>
               <h4 className="text-xs font-bold uppercase tracking-wider text-stone-400 print:text-stone-600 mb-2">
-                Thông Tin Khách Hàng (Người Mua)
+                Thông tin khách hàng (Người mua)
               </h4>
               <p className="font-bold text-stone-900 dark:text-white print:text-black">
                 {order.shippingName || order.userName}
@@ -117,7 +117,7 @@ export default function OrderInvoiceSlipModal({
 
             <div>
               <h4 className="text-xs font-bold uppercase tracking-wider text-stone-400 print:text-stone-600 mb-2">
-                Thông Tin Gian Hàng & Vận Chuyển
+                Thông tin gian hàng & vận chuyển
               </h4>
               <p className="font-bold text-stone-900 dark:text-white print:text-black">
                 {order.shopName || 'Gian Hàng Đối Tác'}
@@ -140,7 +140,7 @@ export default function OrderInvoiceSlipModal({
           {/* Items Table */}
           <div className="space-y-2">
             <h4 className="text-xs font-bold uppercase tracking-wider text-stone-400 print:text-stone-600">
-              Chi Tiết Sản Phẩm Thanh Toán
+              Chi tiết sản phẩm thanh toán
             </h4>
             <div className="overflow-x-auto rounded-xl border border-stone-200 dark:border-slate-800 print:border-black">
               <table className="w-full text-left text-xs border-collapse">

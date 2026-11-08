@@ -49,7 +49,7 @@ export default function DealsCategoryModal({
             <div className="flex items-center justify-between pb-4 border-b border-stone-100 dark:border-slate-800">
               <div className="flex items-center gap-2">
                 <HiOutlineViewGrid className="h-5 w-5 text-amber-500" />
-                <h3 className="text-lg font-bold">Tất Cả Ngành Hàng ({categories.length})</h3>
+                <h3 className="text-lg font-bold">Tất cả ngành hàng ({categories.length})</h3>
               </div>
               <button
                 onClick={onClose}
@@ -107,7 +107,7 @@ export default function DealsCategoryModal({
                       : 'border-stone-200 bg-stone-50 hover:bg-stone-100 text-stone-700'
                 )}
               >
-                <span className="text-xs font-bold">Tất Cả Ngành Hàng</span>
+                <span className="text-xs font-bold">Tất cả ngành hàng</span>
                 <span className="text-[11px] text-stone-400 dark:text-slate-500 mt-1">
                   {totalProductsCount} sản phẩm
                 </span>

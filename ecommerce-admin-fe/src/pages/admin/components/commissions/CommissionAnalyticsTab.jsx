@@ -52,7 +52,7 @@ function BarChart({ data, isDark }) {
                     <div key={idx} className="group relative flex h-full min-w-[40px] flex-1 flex-col items-center justify-end gap-2">
                         <div
                             className={cn(
-                                'pointer-events-none absolute bottom-full mb-2 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs opacity-0 shadow-lg transition-all duration-200 group-hover:-translate-y-1 group-hover:opacity-100',
+                                'pointer-events-none absolute bottom-full mb-2 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs opacity-0 transition-all duration-200 group-hover:-translate-y-1 group-hover:opacity-100',
                                 isDark ? 'bg-slate-700 text-white' : 'bg-stone-800 text-white',
                             )}
                         >
@@ -96,7 +96,7 @@ function MonthlyCommissionSummary({ item, isDark }) {
                     </p>
                     <p className="mt-2 text-2xl font-bold">{label}</p>
                 </div>
-                <div className={cn('rounded-full px-3 py-1 text-xs font-medium', isDark ? 'bg-amber-500/15 text-amber-300' : 'bg-amber-100 text-amber-700')}>
+                <div className={cn('rounded-full px-3 py-1 text-xs font-medium', isDark ? 'bg-slate-800 text-white' : 'bg-stone-100 text-stone-950')}>
                     1 tháng dữ liệu
                 </div>
             </div>
@@ -443,7 +443,7 @@ export default function CommissionAnalyticsTab() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.36 }}
                 className={cn(
-                    'rounded-2xl border shadow-sm overflow-hidden',
+                    'rounded-2xl border overflow-hidden',
                     isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white',
                 )}
             >
@@ -510,7 +510,7 @@ export default function CommissionAnalyticsTab() {
                     </div>
                     <button
                         type="submit"
-                        className="rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-white hover:bg-amber-600 transition shadow-sm"
+                        className="rounded-xl px-4 py-2 text-xs font-bold transition shadow-sm bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
                     >
                         Lọc
                     </button>

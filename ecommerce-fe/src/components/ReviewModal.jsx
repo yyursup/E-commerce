@@ -322,7 +322,7 @@ export default function ReviewModal({ isOpen, onClose, subOrderId, productId, pr
                                         )}
                                     >
                                         <HiOutlineCamera className="h-4 w-4 text-amber-500" />
-                                        <span>Thêm Hình Ảnh</span>
+                                        <span>Thêm hình ảnh</span>
                                         {images.length > 0 && (
                                             <span className="text-[11px] font-mono font-bold text-amber-500">
                                                 ({images.length}/5)

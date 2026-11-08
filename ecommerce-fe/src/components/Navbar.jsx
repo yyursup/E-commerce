@@ -127,7 +127,7 @@ export default function Navbar() {
             className="font-semibold text-white hover:underline flex items-center gap-1.5"
           >
             <HiOutlineShoppingBag className="h-3.5 w-3.5" />
-            <span>Kênh Người Bán</span>
+            <span>Kênh người bán</span>
           </a>
           <span className="hidden sm:inline text-stone-300 dark:text-slate-700">|</span>
           <a
@@ -385,7 +385,7 @@ export default function Navbar() {
                       )}
                     >
                       <HiOutlineShoppingBag className="h-4 w-4" />
-                      Kênh Người Bán (Seller Centre)
+                      Kênh người bán
                     </a>
                   </MenuItem>
                   <MenuItem>
@@ -647,7 +647,7 @@ export default function Navbar() {
                     className="rounded-lg px-4 py-3 text-left text-sm font-semibold text-amber-600 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-slate-800 flex items-center gap-2"
                   >
                     <HiOutlineShoppingBag className="h-4 w-4" />
-                    <span>Kênh Người Bán (Seller Centre)</span>
+                    <span>Kênh người bán</span>
                   </a>
                   <Link
                     to="/my-orders"

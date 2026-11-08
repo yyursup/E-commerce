@@ -175,7 +175,7 @@ export default function ProfileInfo({ isDark }) {
             {/* Header */}
             <div className="border-b pb-5 mb-8 border-stone-200 dark:border-slate-800">
                 <h2 className={cn('text-3xl font-bold tracking-[-0.03em]', isDark ? 'text-white' : 'text-stone-900')}>
-                    Hồ Sơ Của Tôi
+                    Hồ sơ của tôi
                 </h2>
                 <p className={cn('text-xs sm:text-sm mt-1.5', isDark ? 'text-slate-400' : 'text-stone-500')}>
                     Quản lý thông tin cá nhân và ảnh đại diện để bảo mật tài khoản
@@ -370,7 +370,7 @@ export default function ProfileInfo({ isDark }) {
                             )}
                         >
                             <FiUpload size={14} className="text-amber-500" />
-                            <span>Chọn Ảnh Mới</span>
+                            <span>Chọn ảnh mới</span>
                         </button>
 
                         {/* Guidelines */}

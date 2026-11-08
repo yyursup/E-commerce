@@ -94,7 +94,7 @@ export default function NotificationTab({ isDark }) {
       <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-stone-200 dark:border-slate-800">
         <div>
           <h2 className={cn('text-3xl font-bold tracking-[-0.03em]', isDark ? 'text-white' : 'text-stone-900')}>
-            Thông Báo Của Tôi
+            Thông báo của tôi
           </h2>
           <p className={cn('text-xs mt-0.5', isDark ? 'text-slate-400' : 'text-stone-500')}>
             Cập nhật tin tức đơn hàng, ưu đãi và voucher mới từ các shop bạn theo dõi

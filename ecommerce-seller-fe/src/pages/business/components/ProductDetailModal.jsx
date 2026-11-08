@@ -54,13 +54,13 @@ export default function ProductDetailModal({
       return { label: 'Đang mở bán', color: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' }
     }
     if (st === 'PENDING_APPROVAL') {
-      return { label: 'Chờ duyệt kiểm định', color: 'bg-amber-500/20 text-amber-500 border border-amber-500/40 font-bold' }
+      return { label: 'Chờ duyệt kiểm định', color: 'border font-bold bg-stone-100 text-stone-950 border-stone-950' }
     }
     if (st === 'REJECTED') {
       return { label: 'Bị từ chối duyệt', color: 'bg-rose-500/20 text-rose-500 border border-rose-500/40 font-bold' }
     }
     if (st === 'DRAFT') {
-      return { label: 'Bản nháp', color: 'bg-amber-500/15 text-amber-400 border-amber-500/30' }
+      return { label: 'Bản nháp', color: 'bg-slate-800 text-white border-white' }
     }
     if (st === 'INACTIVE') {
       return { label: 'Tạm ngưng', color: 'bg-sky-500/15 text-sky-400 border-sky-500/30' }
@@ -74,7 +74,7 @@ export default function ProductDetailModal({
       case 'GRADE_OPEN_BOX': return 'Đã mở hộp / Trưng bày (99%)'
       case 'GRADE_LIKE_NEW': return 'Đã qua sử dụng - Như mới (Like New 99%)'
       case 'GRADE_FAIR': return 'Đã qua sử dụng - Có xước nhẹ (90-95%)'
-      case 'GRADE_AS_IS': return 'Thanh lý / Xác máy (As-is)'
+      case 'GRADE_AS_IS': return 'Thanh lý / Xác máy'
       default: return null
     }
   }
@@ -110,13 +110,13 @@ export default function ProductDetailModal({
           <div className="flex items-center gap-2.5 min-w-0">
             <div className={cn(
               'flex h-9 w-9 items-center justify-center rounded-2xl shrink-0',
-              isDark ? 'bg-amber-500/15 text-amber-400' : 'bg-amber-100 text-amber-600'
+              isDark ? 'bg-slate-800 text-white' : 'bg-stone-100 text-stone-950'
             )}>
               <HiOutlineCube className="h-5 w-5" />
             </div>
             <div className="min-w-0">
               <h2 className="text-base sm:text-lg font-bold truncate">
-                Chi Tiết Sản Phẩm
+                Chi tiết sản phẩm
               </h2>
               <p className={cn('text-xs truncate', isDark ? 'text-slate-400' : 'text-stone-500')}>
                 Mã sản phẩm: <span className="font-mono font-bold text-amber-500">#{product.id?.slice(0, 8) || 'N/A'}</span>
@@ -158,7 +158,7 @@ export default function ProductDetailModal({
             </div>
           )}
           {product.status === 'PENDING_APPROVAL' && (
-            <div className="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 text-xs sm:text-sm text-amber-600 dark:text-amber-400">
+            <div className="rounded-2xl border p-4 text-xs sm:text-sm dark:text-amber-400 bg-stone-100 text-stone-950 border-stone-950">
               <div className="font-bold flex items-center gap-1.5 mb-1 text-sm">
                 <span>⏳ Đang chờ xét duyệt kiểm định công nghệ</span>
               </div>
@@ -393,7 +393,7 @@ export default function ProductDetailModal({
 
               {/* Pin */}
               <div>
-                <span className={cn('block text-[11px] mb-1', isDark ? 'text-slate-400' : 'text-stone-500')}>Dung lượng pin (Health)</span>
+                <span className={cn('block text-[11px] mb-1', isDark ? 'text-slate-400' : 'text-stone-500')}>Dung lượng pin</span>
                 <span className="font-bold">
                   {product.batteryHealth ? `${product.batteryHealth}%` : 'Không áp dụng / Chưa đo'}
                 </span>
@@ -499,7 +499,7 @@ export default function ProductDetailModal({
                 onClose?.()
                 onEdit?.(product)
               }}
-              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-amber-500/25 hover:from-amber-600 hover:to-orange-600 active:scale-95 transition-all"
+              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-xs font-bold shadow-md active:scale-95 transition-all bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
             >
               <HiOutlinePencilAlt className="h-4 w-4" />
               Chỉnh sửa sản phẩm

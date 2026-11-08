@@ -198,7 +198,7 @@ export default function SellerDisputeSection({ orderId, order, returnInfo, isDar
   if (loading && !report) {
     return (
       <div className="border-b border-stone-200 dark:border-slate-800 p-6 animate-pulse">
-        <div className="h-20 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-xs font-semibold text-amber-500 gap-2">
+        <div className="h-20 rounded-2xl border flex items-center justify-center text-xs font-semibold gap-2 bg-stone-100 text-stone-950 border-stone-950">
           <HiOutlineClock className="h-4 w-4 animate-spin" />
           <span>Đang kiểm tra và tải hồ sơ khiếu nại từ người mua...</span>
         </div>
@@ -217,13 +217,13 @@ export default function SellerDisputeSection({ orderId, order, returnInfo, isDar
         >
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-start gap-3">
-              <div className="p-2.5 rounded-xl bg-amber-500 text-white shrink-0 mt-0.5 shadow-xs">
+              <div className="p-2.5 rounded-xl shrink-0 mt-0.5 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200">
                 <HiOutlineExclamationCircle className="h-6 w-6" />
               </div>
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <h3 className="font-bold text-base sm:text-lg text-amber-800 dark:text-amber-200">
-                    Yêu Cầu Khiếu Nại — Thương Lượng 1:1
+                    Yêu cầu khiếu nại — thương lượng 1:1
                   </h3>
                   <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/30">
                     {order?.disputeStatus || 'DIRECT_NEGOTIATION'}
@@ -238,10 +238,10 @@ export default function SellerDisputeSection({ orderId, order, returnInfo, isDar
             <button
               type="button"
               onClick={loadReport}
-              className="inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-600 px-4 py-2 text-xs font-bold text-white shadow-xs transition-all shrink-0"
+              className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all shrink-0 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
             >
               <HiOutlineRefresh className="h-4 w-4" />
-              <span>Tải Lại Chi Tiết</span>
+              <span>Tải lại chi tiết</span>
             </button>
           </div>
         </div>
@@ -278,7 +278,7 @@ export default function SellerDisputeSection({ orderId, order, returnInfo, isDar
     <div className="border-b border-stone-200 dark:border-slate-800 p-4 sm:p-6">
       <div
         className={cn(
-          'rounded-3xl border transition-all duration-200 shadow-xs overflow-hidden',
+          'rounded-3xl border transition-all duration-200 overflow-hidden',
           isNegotiating
             ? isDark
               ? 'border-amber-500/30 bg-amber-950/20'
@@ -325,28 +325,28 @@ export default function SellerDisputeSection({ orderId, order, returnInfo, isDar
             <button
               type="button"
               onClick={() => setIsChatOpen(true)}
-              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-700 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition-all duration-150 active:scale-[0.98]"
+              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition-all duration-150 active:scale-[0.98] bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
             >
               <HiOutlineChatAlt2 className="h-4 w-4" />
-              <span>Phòng Thương Lượng Trực Tiếp</span>
+              <span>Phòng thương lượng trực tiếp</span>
             </button>
 
             <button
               type="button"
               onClick={() => setActiveModal('REFUND')}
-              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition-all duration-150 active:scale-[0.98]"
+              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-4 py-2.5 text-xs font-bold text-white transition-all duration-150 active:scale-[0.98]"
             >
               <HiOutlineCheck className="h-4 w-4" />
-              <span>Đồng ý Hoàn Tiền</span>
+              <span>Đồng ý hoàn tiền</span>
             </button>
 
             <button
               type="button"
               onClick={() => setActiveModal('RETURN')}
-              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-xl bg-sky-600 hover:bg-sky-700 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition-all duration-150 active:scale-[0.98]"
+              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition-all duration-150 active:scale-[0.98] bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
             >
               <HiOutlineArrowNarrowRight className="h-4 w-4" />
-              <span>Đồng ý Nhận Lại Hàng Đổi Trả</span>
+              <span>Đồng ý nhận lại hàng đổi trả</span>
             </button>
 
             <button
@@ -355,7 +355,7 @@ export default function SellerDisputeSection({ orderId, order, returnInfo, isDar
               className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 px-4 py-2.5 text-xs font-bold text-rose-600 dark:text-rose-400 transition-all duration-150 active:scale-[0.98]"
             >
               <HiOutlineX className="h-4 w-4" />
-              <span>Từ Chối & Chuyển Lên Ban Quản Trị Sàn</span>
+              <span>Từ chối & chuyển lên ban quản trị sàn</span>
             </button>
           </div>
         )}
@@ -406,10 +406,10 @@ export default function SellerDisputeSection({ orderId, order, returnInfo, isDar
                   <button
                     type="button"
                     onClick={openRejectOrExplainModal}
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 px-4 py-2 text-xs font-bold text-white shadow-sm transition-all duration-150 active:scale-[0.98]"
+                    className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition-all duration-150 active:scale-[0.98] bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
                   >
                     <HiOutlineUpload className="h-4 w-4" />
-                    <span>Gửi Giải Trình Cho BQT Sàn</span>
+                    <span>Gửi giải trình cho BQT sàn</span>
                   </button>
                 </div>
               )}

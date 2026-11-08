@@ -24,7 +24,7 @@ const getConditionBadge = (grade) => {
     case 'GRADE_OPEN_BOX':
       return { label: 'Mở hộp / Trưng bày 99%', color: 'border-sky-500/30 bg-sky-500/10 text-sky-500' }
     case 'GRADE_LIKE_NEW':
-      return { label: 'Like New 99%', color: 'border-amber-500/30 bg-amber-500/10 text-amber-500' }
+      return { label: 'Like New 99%', color: 'bg-stone-100 text-stone-950 border-stone-950' }
     case 'GRADE_FAIR':
       return { label: 'Cũ 90-95%', color: 'border-orange-500/30 bg-orange-500/10 text-orange-500' }
     case 'GRADE_AS_IS':
@@ -130,17 +130,17 @@ export default function AdminProductModeration() {
     <div className="space-y-6">
       {/* Top Header */}
       <div className={cn(
-        'rounded-2xl border p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4',
+        'rounded-2xl border p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4',
         isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
       )}>
         <div>
           <div className="flex items-center gap-2.5">
-            <div className={cn('p-2 rounded-xl', isDark ? 'bg-amber-500/15 text-amber-400' : 'bg-amber-100 text-amber-600')}>
+            <div className={cn('p-2 rounded-xl', isDark ? 'bg-slate-800 text-white' : 'bg-stone-100 text-stone-950')}>
               <HiOutlineShieldCheck className="h-6 w-6" />
             </div>
             <div>
               <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
-                Kiểm Duyệt Sản Phẩm Công Nghệ
+                Kiểm duyệt sản phẩm công nghệ
               </h1>
               <p className={cn('text-xs mt-0.5', isDark ? 'text-slate-400' : 'text-stone-500')}>
                 Hệ thống kiểm duyệt đồ điện tử đã qua sử dụng (Like New, Cũ), thiết bị kiểm định, và shop cần thẩm định trước khi mở bán.
@@ -175,8 +175,8 @@ export default function AdminProductModeration() {
             className={cn(
               'w-full rounded-xl pl-10 pr-4 py-2 text-xs border outline-none transition',
               isDark
-                ? 'border-slate-800 bg-slate-900 text-slate-100 placeholder-slate-500 focus:border-amber-500'
-                : 'border-stone-200 bg-white text-stone-900 placeholder-stone-400 focus:border-amber-500'
+                ? 'border-slate-800 bg-slate-900 text-slate-100 placeholder-slate-500 focus:border-stone-950 dark:focus:border-white'
+                : 'border-stone-200 bg-white text-stone-900 placeholder-stone-400 focus:border-stone-950 dark:focus:border-white'
             )}
           />
           <HiOutlineSearch className={cn('absolute left-3 top-2.5 h-4 w-4', isDark ? 'text-slate-400' : 'text-stone-400')} />
@@ -353,7 +353,7 @@ export default function AdminProductModeration() {
                       type="button"
                       disabled={isProcessing}
                       onClick={() => handleApprove(prod.id, prod.name)}
-                      className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95 shadow-md shadow-emerald-600/20 transition disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95 transition disabled:opacity-50"
                     >
                       <HiOutlineCheckCircle className="h-4 w-4" />
                       Phê duyệt
@@ -384,7 +384,7 @@ export default function AdminProductModeration() {
                   <HiOutlineExclamation className="h-6 w-6" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold">Từ Chối Kiểm Duyệt Sản Phẩm</h3>
+                  <h3 className="text-base font-bold">Từ chối kiểm duyệt sản phẩm</h3>
                   <p className={cn('text-xs', isDark ? 'text-slate-400' : 'text-stone-500')}>
                     Sản phẩm: <span className="font-semibold text-rose-500">{rejectingProduct.name}</span>
                   </p>

@@ -273,7 +273,7 @@ export default function AdminDisputeChatAuditSection({
     if (isSystem) {
       return (
         <div key={msg.id} className="flex justify-center my-2">
-          <div className="max-w-md sm:max-w-lg rounded-xl bg-stone-200/90 dark:bg-slate-800/90 border border-stone-300/60 dark:border-slate-700 px-4 py-2 text-center text-xs text-stone-700 dark:text-slate-300 shadow-xs space-y-0.5">
+          <div className="max-w-md sm:max-w-lg rounded-xl bg-stone-200/90 dark:bg-slate-800/90 border border-stone-300/60 dark:border-slate-700 px-4 py-2 text-center text-xs text-stone-700 dark:text-slate-300 space-y-0.5">
             <div className="font-bold flex items-center justify-center gap-1.5 text-stone-900 dark:text-slate-200">
               <HiOutlineShieldCheck className="h-4 w-4 text-orange-500 shrink-0" />
               <span>{msg.senderName || 'Hệ Thống Tranh Chấp'}</span>
@@ -318,7 +318,7 @@ export default function AdminDisputeChatAuditSection({
 
         <div
           className={cn(
-            'rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed break-words shadow-xs space-y-2',
+            'rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed break-words space-y-2',
             isCustomer
               ? isDark
                 ? 'bg-slate-800 text-slate-100 border border-slate-700 rounded-tl-xs'
@@ -408,10 +408,10 @@ export default function AdminDisputeChatAuditSection({
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <h4 className="text-xs sm:text-sm font-bold text-stone-900 dark:text-white">
-                  Lịch Sử Đối Chất Thương Lượng 1:1
+                  Lịch sử đối chất thương lượng 1:1
                 </h4>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30">
-                  Audit View (Read-Only)
+                  Audit View
                 </span>
                 {isClosed ? (
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-stone-200 dark:bg-slate-700 text-stone-700 dark:text-slate-300">
@@ -529,7 +529,7 @@ export default function AdminDisputeChatAuditSection({
                     {thread?.title || 'Phòng Thương Lượng Tranh Chấp Đối Soát'}
                   </h3>
                   <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30">
-                    Audit View Toàn Màn Hình
+                    Audit view toàn màn hình
                   </span>
                   {isClosed ? (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-stone-200 dark:bg-slate-700 text-stone-700 dark:text-slate-300">
@@ -583,7 +583,7 @@ export default function AdminDisputeChatAuditSection({
                   className={cn(
                     'px-3 py-1.5 rounded-xl text-xs font-bold transition-all',
                     filterType === 'ALL'
-                      ? 'bg-purple-600 text-white shadow-xs'
+                      ? 'shadow-xs bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                       : 'bg-stone-100 dark:bg-slate-800 text-stone-600 dark:text-slate-300 hover:bg-stone-200'
                   )}
                 >
@@ -595,7 +595,7 @@ export default function AdminDisputeChatAuditSection({
                   className={cn(
                     'px-3 py-1.5 rounded-xl text-xs font-bold transition-all',
                     filterType === 'CUSTOMER'
-                      ? 'bg-sky-600 text-white shadow-xs'
+                      ? 'shadow-xs bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                       : 'bg-stone-100 dark:bg-slate-800 text-stone-600 dark:text-slate-300 hover:bg-stone-200'
                   )}
                 >
@@ -607,7 +607,7 @@ export default function AdminDisputeChatAuditSection({
                   className={cn(
                     'px-3 py-1.5 rounded-xl text-xs font-bold transition-all',
                     filterType === 'SELLER'
-                      ? 'bg-purple-600 text-white shadow-xs'
+                      ? 'shadow-xs bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                       : 'bg-stone-100 dark:bg-slate-800 text-stone-600 dark:text-slate-300 hover:bg-stone-200'
                   )}
                 >

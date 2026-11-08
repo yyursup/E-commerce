@@ -111,8 +111,8 @@ export default function ReviewModal({ isOpen, onClose, subOrderId, productId, pr
                                     onChange={(e) => setComment(e.target.value)}
                                     placeholder="Sản phẩm dùng rất tốt, đóng gói cẩn thận..."
                                     className={cn(
-                                        'w-full rounded-2xl border p-4 text-sm transition focus:outline-none focus:ring-2 focus:ring-amber-500/50',
-                                        isDark ? 'border-slate-700 bg-slate-800 focus:border-amber-500' : 'border-stone-200 bg-stone-50 focus:border-amber-500'
+                                        'w-full rounded-2xl border p-4 text-sm transition focus:outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
+                                        isDark ? 'border-slate-700 bg-slate-800 focus:border-stone-950 dark:focus:border-white' : 'border-stone-200 bg-stone-50 focus:border-stone-950 dark:focus:border-white'
                                     )}
                                 />
                             </div>
@@ -121,7 +121,7 @@ export default function ReviewModal({ isOpen, onClose, subOrderId, productId, pr
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className="w-full flex items-center justify-center gap-2 rounded-2xl bg-amber-500 px-6 py-4 font-bold text-white shadow-lg shadow-amber-500/30 transition hover:bg-amber-600 disabled:opacity-50"
+                                    className="w-full flex items-center justify-center gap-2 rounded-2xl px-6 py-4 font-bold shadow-lg transition disabled:opacity-50 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
                                 >
                                     {loading ? 'Đang gửi...' : 'Gửi đánh giá'}
                                 </button>

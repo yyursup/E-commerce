@@ -181,10 +181,10 @@ export default function Policy({ defaultKey }) {
             <div>
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border mb-2 bg-stone-100 text-stone-950 border-stone-950">
                 <HiOutlineShieldCheck className="h-4 w-4" />
-                Bộ Quy Chuẩn & Bảo Vệ Khách Hàng
+                Bộ quy chuẩn & bảo vệ khách hàng
               </div>
               <h1 className="text-2xl sm:text-3xl font-black flex items-center gap-2.5">
-                <span>Trung Tâm Chính Sách & Pháp Lý Sàn</span>
+                <span>Trung tâm chính sách & pháp lý sàn</span>
               </h1>
               <p
                 className={cn(
@@ -438,7 +438,7 @@ export default function Policy({ defaultKey }) {
                     : 'bg-white border-amber-300 text-amber-700 hover:bg-amber-500 hover:text-white'
                 )}
               >
-                Gửi Yêu Cầu Hỗ Trợ / Khiếu Nại
+                Gửi yêu cầu hỗ trợ / khiếu nại
               </button>
             </div>
           </aside>

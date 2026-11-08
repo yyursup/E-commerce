@@ -25,7 +25,7 @@ function formatPrice(value) {
   if (value == null) return ''
   const n = Number(value)
   if (Number.isNaN(n)) return ''
-  return new Intl.NumberFormat('vi-VN').format(n) + ' đ'
+  return new Intl.NumberFormat('vi-VN').format + ' đ'
 }
 
 function formatTime(isoString) {
@@ -517,7 +517,7 @@ export default function ChatbotButton() {
           'fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full shadow-lg transition-all hover:scale-110 hover:shadow-xl',
           isOpen
             ? 'bg-rose-500 text-white hover:bg-rose-600'
-            : 'bg-gradient-to-br from-amber-500 to-amber-600 text-white hover:from-amber-600 hover:to-amber-700',
+            : 'bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200',
         )}
         aria-label="Mở chat"
       >
@@ -572,7 +572,7 @@ export default function ChatbotButton() {
             <div
               className={cn(
                 'flex flex-col border-b px-4 pt-3 pb-2',
-                isDark ? 'border-slate-800 bg-slate-850' : 'border-stone-200 bg-amber-500 text-white',
+                isDark ? 'border-slate-800 bg-slate-850' : 'border-stone-200 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200',
               )}
             >
               <div className="flex items-center justify-between">
@@ -665,7 +665,7 @@ export default function ChatbotButton() {
                         className={cn(
                           'max-w-[85%] rounded-2xl px-4 py-2.5 text-sm shadow-sm',
                           msg.type === 'user'
-                            ? 'rounded-tr-xs bg-amber-500 text-white'
+                            ? 'rounded-tr-xs bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                             : isDark ? 'rounded-tl-xs bg-slate-800 text-slate-100 border border-slate-700' : 'rounded-tl-xs bg-stone-100 text-stone-900 border border-stone-200',
                         )}
                       >
@@ -712,7 +712,7 @@ export default function ChatbotButton() {
                           className={cn(
                             'rounded-xl border px-3 py-1.5 text-xs font-medium transition',
                             opt.actionPayload === 'HANDOFF_LIVE_CHAT'
-                              ? 'border-amber-500/50 bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20'
+                              ? 'dark:text-amber-400 hover:bg-amber-500/20 bg-stone-100 text-stone-950 border-stone-950'
                               : isDark
                                 ? 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700'
                                 : 'border-stone-300 bg-white text-stone-700 hover:bg-stone-100',
@@ -745,7 +745,7 @@ export default function ChatbotButton() {
                       placeholder={inputHint || 'Nhập tin nhắn...'}
                       disabled={botLoading}
                       className={cn(
-                        'flex-1 rounded-xl border px-3.5 py-2 text-sm outline-none transition focus:ring-2 focus:ring-amber-500/20',
+                        'flex-1 rounded-xl border px-3.5 py-2 text-sm outline-none transition focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                         isDark
                           ? 'border-slate-700 bg-slate-800 text-white placeholder:opacity-50'
                           : 'border-stone-300 bg-white text-stone-900 placeholder:opacity-50',
@@ -755,7 +755,7 @@ export default function ChatbotButton() {
                       type="button"
                       onClick={handleBotSend}
                       disabled={!botInputValue.trim() || botLoading}
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white transition hover:bg-amber-600 disabled:opacity-40"
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition disabled:opacity-40 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
                     >
                       <HiOutlinePaperAirplane className="h-5 w-5" />
                     </button>
@@ -767,7 +767,7 @@ export default function ChatbotButton() {
               <>
                 {!token ? (
                   <div className="flex flex-1 flex-col items-center justify-center p-6 text-center">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-amber-500/10 text-amber-500 mb-3">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-full mb-3 bg-stone-100 text-stone-950">
                       <HiOutlineUserGroup className="h-7 w-7" />
                     </div>
                     <h4 className="font-bold text-sm">Yêu cầu đăng nhập</h4>
@@ -777,7 +777,7 @@ export default function ChatbotButton() {
                     <Link
                       to="/login"
                       onClick={() => setIsOpen(false)}
-                      className="mt-4 inline-flex rounded-xl bg-amber-500 px-5 py-2 text-xs font-bold text-white shadow hover:bg-amber-600 transition"
+                      className="mt-4 inline-flex rounded-xl px-5 py-2 text-xs font-bold shadow transition bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
                     >
                       Đăng nhập ngay
                     </Link>
@@ -815,11 +815,11 @@ export default function ChatbotButton() {
                                     value={editingContent}
                                     onChange={(e) => setEditingContent(e.target.value)}
                                     onKeyDown={(e) => { if (e.key === 'Enter') handleSaveEdit(); if (e.key === 'Escape') handleCancelEdit() }}
-                                    className={cn('flex-1 rounded-xl border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-500/30',
+                                    className={cn('flex-1 rounded-xl border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                                       isDark ? 'border-slate-600 bg-slate-800 text-white' : 'border-stone-300 bg-white text-stone-900'
                                     )}
                                   />
-                                  <button onClick={handleSaveEdit} className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500 text-white hover:bg-amber-600"><HiCheck className="h-4 w-4" /></button>
+                                  <button onClick={handleSaveEdit} className="flex h-9 w-9 items-center justify-center rounded-xl bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"><HiCheck className="h-4 w-4" /></button>
                                   <button onClick={handleCancelEdit} className={cn('flex h-9 w-9 items-center justify-center rounded-xl border', isDark ? 'border-slate-600 hover:bg-slate-700' : 'border-stone-300 hover:bg-stone-100')}><HiX className="h-4 w-4" /></button>
                                 </div>
                               ) : (
@@ -897,7 +897,7 @@ export default function ChatbotButton() {
                                     className={cn(
                                       'rounded-2xl px-4 py-2.5 text-sm shadow-sm',
                                       isMe
-                                        ? 'rounded-tr-xs bg-amber-500 text-white'
+                                        ? 'rounded-tr-xs bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                                         : isDark
                                           ? 'rounded-tl-xs bg-slate-800 text-slate-100 border border-slate-700'
                                           : 'rounded-tl-xs bg-stone-100 text-stone-900 border border-stone-200',
@@ -983,7 +983,7 @@ export default function ChatbotButton() {
                             ? 'border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-750'
                             : 'border-stone-300 bg-white text-stone-600 hover:bg-stone-100',
                         )}
-                        title="Đính kèm video (max 50MB)"
+                        title="Đính kèm video"
                       >
                         <HiOutlineVideoCamera className="h-4 w-4" />
                       </button>
@@ -996,7 +996,7 @@ export default function ChatbotButton() {
                         placeholder="Nhắn tin cho nhân viên..."
                         disabled={liveSending}
                         className={cn(
-                          'flex-1 rounded-xl border px-3.5 py-2 text-sm outline-none transition focus:ring-2 focus:ring-amber-500/20',
+                          'flex-1 rounded-xl border px-3.5 py-2 text-sm outline-none transition focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                           isDark
                             ? 'border-slate-700 bg-slate-800 text-white placeholder:opacity-50'
                             : 'border-stone-300 bg-white text-stone-900 placeholder:opacity-50',
@@ -1006,7 +1006,7 @@ export default function ChatbotButton() {
                       <button
                         type="submit"
                         disabled={!liveInputValue.trim() || liveSending}
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white transition hover:bg-amber-600 disabled:opacity-40"
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition disabled:opacity-40 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
                       >
                         <HiOutlinePaperAirplane className="h-4 w-4" />
                       </button>

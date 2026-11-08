@@ -60,9 +60,9 @@ export default function Footer() {
 
           <div className="flex flex-col gap-2.5 text-sm">
             <h2 className="font-sans text-sm font-semibold tracking-normal text-white">Thanh toán</h2>
-            <span>VNPay · Ví E-Commerce</span>
+            <span>VNPay · ví E-Commerce</span>
             <h2 className="mt-2 font-sans text-sm font-semibold tracking-normal text-white">Vận chuyển</h2>
-            <span>Giao Hàng Nhanh (GHN)</span>
+            <span>Giao hàng nhanh (GHN)</span>
             <h2 className="mt-2 font-sans text-sm font-semibold tracking-normal text-white">Định danh</h2>
             <span>VNPT eKYC</span>
           </div>

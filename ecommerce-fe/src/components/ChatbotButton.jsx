@@ -29,7 +29,7 @@ function formatPrice(value) {
   if (value == null) return ''
   const n = Number(value)
   if (Number.isNaN(n)) return ''
-  return new Intl.NumberFormat('vi-VN').format(n) + ' đ'
+  return new Intl.NumberFormat('vi-VN').format + ' đ'
 }
 
 export default function ChatbotButton() {

@@ -267,10 +267,10 @@ export default function ShopEscrowFund() {
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2.5">
             <HiOutlineShieldCheck className="h-8 w-8 text-amber-500" />
-            Quỹ Ký Quỹ & Độ Uy Tín Gian Hàng
+            Quỹ ký quỹ & độ uy tín gian hàng
           </h1>
           <p className={cn('text-sm mt-1', isDark ? 'text-slate-400' : 'text-stone-500')}>
-            Vốn điều lệ cam kết trách nhiệm pháp lý bảo chứng giao dịch an toàn (Escrow Capital Deposit).
+            Vốn điều lệ cam kết trách nhiệm pháp lý bảo chứng giao dịch an toàn.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -298,10 +298,10 @@ export default function ShopEscrowFund() {
                 setShowTopUpModal(true)
               }}
               className={cn(
-                'flex items-center gap-2 rounded-xl px-5 py-2 text-sm font-semibold text-white shadow-lg transition',
+                'flex items-center gap-2 rounded-xl px-5 py-2 text-sm font-semibold text-white transition',
                 isPendingActivation
-                  ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 shadow-amber-500/25 ring-2 ring-amber-500/50'
-                  : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 shadow-amber-500/20'
+                  ? 'ring-2 ring-amber-500/50 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
+                  : 'bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
               )}
             >
               <HiOutlineCash className="h-4 w-4" />
@@ -327,7 +327,7 @@ export default function ShopEscrowFund() {
                   Yêu cầu đóng gian hàng & hoàn trả Quỹ ký quỹ đang được xử lý
                 </h3>
                 <p className={cn('text-sm mt-1', isDark ? 'text-slate-300' : 'text-stone-700')}>
-                  Gian hàng của bạn hiện đã chuyển sang trạng thái <strong>Tạm ngừng nhận đơn hàng mới (INACTIVE)</strong>.
+                  Gian hàng của bạn hiện đã chuyển sang trạng thái <strong>Tạm ngừng nhận đơn hàng mới</strong>.
                   Ban Quản Trị sàn đang đối soát các điều kiện: không còn đơn đang vận chuyển, mọi đơn hoàn thành đã qua 7 ngày cooling period, không còn khiếu nại tranh chấp hay thâm hụt quỹ.
                 </p>
                 <div className="mt-2 text-xs font-semibold text-purple-400">
@@ -366,11 +366,11 @@ export default function ShopEscrowFund() {
         <div className="rounded-2xl border border-amber-500/50 bg-gradient-to-r from-amber-500/15 via-amber-500/10 to-transparent p-6 shadow-sm">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-start gap-4">
-              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-amber-500/20 text-amber-500">
+              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-stone-100 text-stone-950">
                 <HiOutlineShieldCheck className="h-7 w-7" />
               </div>
               <div>
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-700 dark:text-amber-300 mb-1 border border-amber-500/30">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold dark:text-amber-300 mb-1 border bg-stone-100 text-stone-950 border-stone-950">
                   <HiOutlineClock className="h-3.5 w-3.5" /> Chờ nạp tiền ký quỹ để kích hoạt
                 </div>
                 <h3 className="text-base font-bold text-stone-900 dark:text-white">
@@ -391,7 +391,7 @@ export default function ShopEscrowFund() {
                 setTopUpAmount(String(remainingToActivate || fund?.committedAmount || 1000000))
                 setShowTopUpModal(true)
               }}
-              className="flex-shrink-0 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-amber-500/25 hover:from-amber-600 hover:to-orange-600 active:scale-95 transition"
+              className="flex-shrink-0 rounded-xl px-6 py-3 text-sm font-bold active:scale-95 transition bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
             >
               Nạp tiền kích hoạt ngay &rarr;
             </button>
@@ -405,7 +405,7 @@ export default function ShopEscrowFund() {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-start gap-4">
               <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-rose-500/20 text-rose-500">
-                <HiOutlineExclamation className="h-7 w-7 animate-bounce" />
+                <HiOutlineExclamation className="h-7 w-7" />
               </div>
               <div>
                 <h3 className="text-base font-bold text-rose-500">
@@ -427,7 +427,7 @@ export default function ShopEscrowFund() {
                 setTopUpAmount(String(fund?.deficitAmount || 1000000))
                 setShowTopUpModal(true)
               }}
-              className="flex-shrink-0 rounded-xl bg-rose-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-rose-600/30 hover:bg-rose-700 transition"
+              className="flex-shrink-0 rounded-xl bg-rose-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-rose-700 transition"
             >
               Nạp bù quỹ ngay
             </button>
@@ -440,15 +440,15 @@ export default function ShopEscrowFund() {
         {/* Card 1: Số dư Quỹ ký quỹ */}
         <div
           className={cn(
-            'rounded-2xl border p-6 shadow-sm relative overflow-hidden',
+            'rounded-2xl border p-6 relative overflow-hidden',
             isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
           )}
         >
           <div className="flex items-center justify-between">
             <span className={cn('text-xs font-semibold uppercase tracking-wider', isDark ? 'text-slate-400' : 'text-stone-500')}>
-              Số Dư Quỹ Ký Quỹ
+              Số dư quỹ ký quỹ
             </span>
-            <div className={cn('flex h-9 w-9 items-center justify-center rounded-lg', isDark ? 'bg-amber-500/10 text-amber-400' : 'bg-amber-50 text-amber-600')}>
+            <div className={cn('flex h-9 w-9 items-center justify-center rounded-lg', isDark ? 'bg-slate-800 text-white' : 'bg-stone-100 text-stone-950')}>
               <HiOutlineCreditCard className="h-5 w-5" />
             </div>
           </div>
@@ -470,13 +470,13 @@ export default function ShopEscrowFund() {
         {/* Card 2: Cấp độ uy tín (Trust Level) */}
         <div
           className={cn(
-            'rounded-2xl border p-6 shadow-sm relative overflow-hidden',
+            'rounded-2xl border p-6 relative overflow-hidden',
             isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
           )}
         >
           <div className="flex items-center justify-between">
             <span className={cn('text-xs font-semibold uppercase tracking-wider', isDark ? 'text-slate-400' : 'text-stone-500')}>
-              Cấp Độ Uy Tín Gian Hàng
+              Cấp độ uy tín gian hàng
             </span>
             <div className={cn('flex h-9 w-9 items-center justify-center rounded-lg', isDark ? 'bg-blue-500/10 text-blue-400' : 'bg-blue-50 text-blue-600')}>
               <HiOutlineShieldCheck className="h-5 w-5" />
@@ -491,7 +491,7 @@ export default function ShopEscrowFund() {
             </span>
           </div>
           <div className="mt-3">
-            <div className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500/15 px-3 py-1 text-xs font-bold text-amber-500 border border-amber-500/30">
+            <div className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1 text-xs font-bold border bg-stone-100 text-stone-950 border-stone-950">
               {fund?.tierName || `Cấp độ ${fund?.currentTrustLevel} sao`}
             </div>
           </div>
@@ -503,14 +503,14 @@ export default function ShopEscrowFund() {
         {/* Card 3: Trạng thái quỹ & Chính sách */}
         <div
           className={cn(
-            'rounded-2xl border p-6 shadow-sm flex flex-col justify-between',
+            'rounded-2xl border p-6 flex flex-col justify-between',
             isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
           )}
         >
           <div>
             <div className="flex items-center justify-between">
               <span className={cn('text-xs font-semibold uppercase tracking-wider', isDark ? 'text-slate-400' : 'text-stone-500')}>
-                Trạng Thái Quỹ
+                Trạng thái quỹ
               </span>
               <span
                 className={cn(
@@ -520,12 +520,12 @@ export default function ShopEscrowFund() {
                     : fund?.status === 'DEFICIT'
                       ? 'bg-rose-500/15 text-rose-500 animate-pulse'
                       : fund?.status === 'PENDING_DEPOSIT'
-                        ? 'bg-amber-500/15 text-amber-500 border border-amber-500/30'
+                        ? 'border bg-stone-100 text-stone-950 border-stone-950'
                         : fund?.status === 'REFUND_PENDING'
                           ? 'bg-purple-500/15 text-purple-400 border border-purple-500/30 animate-pulse'
                           : fund?.status === 'REFUNDED'
                             ? 'bg-slate-500/15 text-slate-400 border border-slate-500/30'
-                            : 'bg-amber-500/15 text-amber-500'
+                            : 'bg-stone-100 text-stone-950'
                 )}
               >
                 {fund?.status === 'ACTIVE'
@@ -622,7 +622,7 @@ export default function ShopEscrowFund() {
       >
         <h2 className="text-base font-bold flex items-center gap-2 mb-4">
           <HiOutlineInformationCircle className="h-5 w-5 text-blue-400" />
-          Bảng Quy Chuẩn Ngưỡng Ký Quỹ & Đặc Quyền Sao (Admin Configured)
+          Bảng quy chuẩn ngưỡng ký quỹ & đặc quyền sao
         </h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           {trustLevels.map((lvl) => {
@@ -633,7 +633,7 @@ export default function ShopEscrowFund() {
                 className={cn(
                   'rounded-xl border p-4 transition relative',
                   isCurrent
-                    ? 'border-amber-500 bg-amber-500/10 shadow-md ring-1 ring-amber-500'
+                    ? 'border-amber-500 bg-amber-500/10 ring-1 ring-amber-500'
                     : isDark
                       ? 'border-slate-800 bg-slate-950/60'
                       : 'border-stone-200 bg-stone-50'
@@ -641,7 +641,7 @@ export default function ShopEscrowFund() {
               >
                 {isCurrent && (
                   <span className="absolute -top-2.5 right-3 rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-extrabold text-white">
-                    Hạng Hiện Tại
+                    Hạng hiện tại
                   </span>
                 )}
                 <div className="flex items-center gap-1 mb-2">
@@ -665,13 +665,13 @@ export default function ShopEscrowFund() {
       {/* SỔ CÁI LỊCH SỬ BIẾN ĐỘNG QUỸ (ESCROW LEDGER) */}
       <div
         className={cn(
-          'rounded-2xl border shadow-sm overflow-hidden',
+          'rounded-2xl border overflow-hidden',
           isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
         )}
       >
         <div className="p-6 border-b border-slate-700/40 flex items-center justify-between">
           <div>
-            <h2 className="text-base font-bold">Lịch Sử Biến Động Số Dư Quỹ Ký Quỹ</h2>
+            <h2 className="text-base font-bold">Lịch sử biến động số dư quỹ ký quỹ</h2>
             <p className={cn('text-xs mt-1', isDark ? 'text-slate-400' : 'text-stone-500')}>
               Sổ cái minh bạch ghi lại mọi giao dịch nạp đầu, nạp bù, trích đền bù tranh chấp.
             </p>
@@ -809,7 +809,7 @@ export default function ShopEscrowFund() {
                   value={topUpAmount}
                   onChange={(e) => setTopUpAmount(e.target.value)}
                   className={cn(
-                    'w-full rounded-xl border px-4 py-2.5 text-sm font-semibold outline-none focus:ring-2 focus:ring-amber-500',
+                    'w-full rounded-xl border px-4 py-2.5 text-sm font-semibold outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                     isDark ? 'border-slate-700 bg-slate-950 text-white' : 'border-stone-300 bg-stone-50 text-stone-800'
                   )}
                 />
@@ -823,7 +823,7 @@ export default function ShopEscrowFund() {
                       type="button"
                       key={idx}
                       onClick={() => setTopUpAmount(String(amt))}
-                      className="rounded-lg bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-500 hover:bg-amber-500/20"
+                      className="rounded-lg px-2.5 py-1 text-xs font-medium hover:bg-amber-500/20 bg-stone-100 text-stone-950"
                     >
                       +{formatVND(amt)}
                     </button>
@@ -839,7 +839,7 @@ export default function ShopEscrowFund() {
                   value={topUpNote}
                   onChange={(e) => setTopUpNote(e.target.value)}
                   className={cn(
-                    'w-full rounded-xl border px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-500',
+                    'w-full rounded-xl border px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                     isDark ? 'border-slate-700 bg-slate-950 text-white' : 'border-stone-300 bg-stone-50 text-stone-800'
                   )}
                 />
@@ -852,7 +852,7 @@ export default function ShopEscrowFund() {
               )}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 text-white font-bold text-xs tracking-wider">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg font-bold text-xs tracking-wider bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200">
                       VNPAY
                     </div>
                     <div>
@@ -870,7 +870,7 @@ export default function ShopEscrowFund() {
                 </div>
               </div>
 
-              <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs text-amber-600 dark:text-amber-400">
+              <div className="rounded-xl border p-3.5 text-xs dark:text-amber-400 bg-stone-100 text-stone-950 border-stone-950">
                 <span className="font-bold">Lưu ý:</span> Bạn sẽ được chuyển hướng sang cổng thanh toán VNPay để hoàn tất giao dịch. Sau khi thanh toán thành công, hệ thống tự động ghi nhận số dư và cập nhật Cấp sao uy tín cho gian hàng của bạn.
               </div>
 
@@ -886,7 +886,7 @@ export default function ShopEscrowFund() {
                 <button
                   type="submit"
                   disabled={topUpSubmitting}
-                  className="rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-2.5 text-sm font-bold text-white hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 shadow-lg shadow-blue-500/20 flex items-center gap-2 transition"
+                  className="rounded-xl px-5 py-2.5 text-sm font-bold disabled:opacity-50 flex items-center gap-2 transition bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
                 >
                   <HiOutlineCreditCard className="h-4 w-4" />
                   {topUpSubmitting ? 'Đang tạo giao dịch...' : 'Thanh toán qua VNPay'}
@@ -908,7 +908,7 @@ export default function ShopEscrowFund() {
           >
             <h2 className="text-xl font-bold text-rose-500 flex items-center gap-2">
               <HiOutlineLockClosed className="h-6 w-6" />
-              Đóng Gian Hàng & Hoàn Quỹ
+              Đóng gian hàng & hoàn quỹ
             </h2>
             <div className="mt-3 space-y-3 text-xs leading-relaxed text-slate-300">
               <p>

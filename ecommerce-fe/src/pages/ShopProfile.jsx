@@ -429,7 +429,7 @@ export default function ShopProfile() {
                   {isOwner ? (
                     <span className="inline-flex items-center gap-1.5 rounded-xl border px-4 py-2 text-xs font-bold bg-slate-800 text-white border-white">
                       <HiOutlineCheck className="h-4 w-4 text-amber-400" />
-                      Gian Hàng Của Bạn
+                      Gian hàng của bạn
                     </span>
                   ) : (
                     <>
@@ -550,7 +550,7 @@ export default function ShopProfile() {
                   <HiOutlineClock className="h-5 w-5" />
                 </span>
                 <div>
-                  <div className="text-slate-400 text-xs">Tỉ Lệ Phản Hồi</div>
+                  <div className="text-slate-400 text-xs">Tỉ lệ phản hồi</div>
                   <div className="font-bold text-white text-base">{shop?.responseRate || '100%'}</div>
                 </div>
               </div>
@@ -560,7 +560,7 @@ export default function ShopProfile() {
                   <HiOutlineUserAdd className="h-5 w-5" />
                 </span>
                 <div>
-                  <div className="text-slate-400 text-xs">Người Theo Dõi</div>
+                  <div className="text-slate-400 text-xs">Người theo dõi</div>
                   <div className="font-bold text-white text-base">
                     {typeof followerCount === 'number'
                       ? (followerCount >= 1000 ? (followerCount / 1000).toFixed(1) + 'k' : followerCount)
@@ -574,7 +574,7 @@ export default function ShopProfile() {
                   <HiOutlineBadgeCheck className="h-5 w-5" />
                 </span>
                 <div>
-                  <div className="text-slate-400 text-xs">Tham Gia Sàn</div>
+                  <div className="text-slate-400 text-xs">Tham gia sàn</div>
                   <div className="font-bold text-white text-base">{formatJoinedTime(shop?.createdAt)}</div>
                 </div>
               </div>
@@ -584,7 +584,7 @@ export default function ShopProfile() {
                   <HiOutlineLocationMarker className="h-5 w-5" />
                 </span>
                 <div className="truncate">
-                  <div className="text-slate-400 text-xs">Kho Gửi Hàng GHN</div>
+                  <div className="text-slate-400 text-xs">Kho gửi hàng GHN</div>
                   <div className="font-bold text-white text-base truncate">{shop?.city || 'Hà Nội'}</div>
                 </div>
               </div>
@@ -649,7 +649,7 @@ export default function ShopProfile() {
               <HiOutlineTicket className="h-5 w-5" />
             </span>
             <div>
-              <span className="text-sm font-bold block text-rose-500">Mã Giảm Giá Độc Quyền Của Shop</span>
+              <span className="text-sm font-bold block text-rose-500">Mã giảm giá độc quyền của shop</span>
               <span className="text-xs text-stone-500 dark:text-slate-400">Thu thập voucher để áp dụng khi thanh toán đơn hàng tại shop này</span>
             </div>
           </div>
@@ -730,7 +730,7 @@ export default function ShopProfile() {
                 : 'border-transparent text-stone-500 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white'
             )}
           >
-            Dạo Shop & Ưu Đãi
+            Dạo shop & ưu đãi
           </button>
 
           <button
@@ -742,7 +742,7 @@ export default function ShopProfile() {
                 : 'border-transparent text-stone-500 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white'
             )}
           >
-            Hồ Sơ & Định Danh Shop
+            Hồ sơ & định danh shop
           </button>
         </div>
       </section>
@@ -765,8 +765,8 @@ export default function ShopProfile() {
                 {[
                   { id: 'popular', label: 'Phổ biến' },
                   { id: 'newest', label: 'Mới nhất' },
-                  { id: 'price_asc', label: 'Giá: Thấp → Cao' },
-                  { id: 'price_desc', label: 'Giá: Cao → Thấp' },
+                  { id: 'price_asc', label: 'Giá: Thấp → cao' },
+                  { id: 'price_desc', label: 'Giá: Cao → thấp' },
                 ].map((item) => (
                   <button
                     key={item.id}
@@ -853,9 +853,9 @@ export default function ShopProfile() {
               <div className="max-w-xl">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-xs font-bold uppercase tracking-wider mb-3">
                   <HiOutlineTag className="h-4 w-4" />
-                  Ưu Đãi Đặc Biệt Từ Gian Hàng
+                  Ưu đãi đặc biệt từ gian hàng
                 </span>
-                <h2 className="text-2xl sm:text-4xl font-black">Khám Phá Bộ Sưu Tập Mới Nhất</h2>
+                <h2 className="text-2xl sm:text-4xl font-black">Khám phá bộ sưu tập mới nhất</h2>
                 <p className="mt-2 text-sm text-white/90">
                   Tận hưởng giảm giá đến 30%, tích lũy voucher và chính sách ký quỹ bảo đảm tài chính Escrow.
                 </p>
@@ -875,10 +875,10 @@ export default function ShopProfile() {
                   <div className="flex items-center gap-2">
                     <HiStar className="h-5 w-5 text-amber-500" />
                     <h3 className={cn('text-lg font-bold', isDark ? 'text-white' : 'text-stone-900')}>
-                      Sản Phẩm Nổi Bật Của Shop
+                      Sản phẩm nổi bật của shop
                     </h3>
                     <span className="text-[11px] font-bold border px-2 py-0.5 rounded-full bg-stone-100 text-stone-950 border-stone-950">
-                      Được Đẩy Bởi Shop
+                      Được đẩy bởi shop
                     </span>
                   </div>
                 </div>
@@ -902,7 +902,7 @@ export default function ShopProfile() {
             <div>
               <div className="flex items-center justify-between mb-4">
                 <h3 className={cn('text-lg font-bold', isDark ? 'text-white' : 'text-stone-900')}>
-                  Sản Phẩm Bán Chạy Nhất Của Shop
+                  Sản phẩm bán chạy nhất của shop
                 </h3>
                 <button
                   onClick={() => setActiveTab('ALL_PRODUCTS')}
@@ -946,7 +946,7 @@ export default function ShopProfile() {
                   <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-amber-500/5 border border-amber-500/10">
                     <HiOutlineShieldCheck className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
                     <div>
-                      <div className="font-bold text-stone-900 dark:text-white">Ký Quỹ Escrow An Toàn 100%</div>
+                      <div className="font-bold text-stone-900 dark:text-white">Ký quỹ escrow an toàn 100%</div>
                       <div className="text-stone-500 dark:text-slate-400 mt-0.5">Tiền giữ trong ví sàn cho đến khi bạn nhận và hài lòng với hàng.</div>
                     </div>
                   </div>
@@ -954,7 +954,7 @@ export default function ShopProfile() {
                   <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-blue-500/5 border border-blue-500/10">
                     <HiOutlineTruck className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" />
                     <div>
-                      <div className="font-bold text-stone-900 dark:text-white">Giao Hàng Nhanh (GHN Express)</div>
+                      <div className="font-bold text-stone-900 dark:text-white">Giao hàng nhanh</div>
                       <div className="text-stone-500 dark:text-slate-400 mt-0.5">Lấy hàng trực tiếp từ kho shop, giao toàn quốc trong 24-48h.</div>
                     </div>
                   </div>

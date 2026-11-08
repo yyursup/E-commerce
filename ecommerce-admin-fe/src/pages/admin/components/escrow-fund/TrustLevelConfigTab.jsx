@@ -197,7 +197,7 @@ export default function TrustLevelConfigTab() {
         <div>
           <h2 className="text-lg font-bold flex items-center gap-2">
             <HiOutlineShieldCheck className="h-5 w-5 text-amber-500 flex-shrink-0" />
-            Cấu Hình 5 Bậc Sao & Ngưỡng Ký Quỹ (Trust Level Configurations)
+            Cấu hình 5 bậc sao & ngưỡng ký quỹ
           </h2>
           <p className={cn('text-xs mt-0.5', isDark ? 'text-slate-400' : 'text-stone-500')}>
             Thiết lập hạn mức ký quỹ từ 1★ đến 5★, mức giảm hoa hồng và cam kết bảo chứng độ uy tín.
@@ -215,11 +215,11 @@ export default function TrustLevelConfigTab() {
           >
             <button
               onClick={() => handleToggleView('cards')}
-              title="Chuyển sang dạng Thẻ trực quan (Bento Grid)"
+              title="Chuyển sang dạng Thẻ trực quan"
               className={cn(
                 'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition',
                 viewMode === 'cards'
-                  ? 'bg-amber-500 text-white shadow-sm'
+                  ? 'shadow-sm bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                   : isDark
                   ? 'text-slate-400 hover:text-slate-200'
                   : 'text-stone-600 hover:text-stone-900'
@@ -234,7 +234,7 @@ export default function TrustLevelConfigTab() {
               className={cn(
                 'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition',
                 viewMode === 'table'
-                  ? 'bg-amber-500 text-white shadow-sm'
+                  ? 'shadow-sm bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                   : isDark
                   ? 'text-slate-400 hover:text-slate-200'
                   : 'text-stone-600 hover:text-stone-900'
@@ -300,14 +300,14 @@ export default function TrustLevelConfigTab() {
         <Link
           to="/commissions?tab=policies"
           className={cn(
-            'inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold shrink-0 transition shadow-sm border',
+            'inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold shrink-0 transition border',
             isDark
               ? 'bg-slate-800 hover:bg-slate-700 text-amber-400 border-slate-700'
               : 'bg-white hover:bg-amber-50 text-amber-700 border-amber-200'
           )}
         >
           <HiOutlineCash className="h-4 w-4 text-amber-500" />
-          <span>Mô Phỏng Phí & Ưu Đãi</span>
+          <span>Mô phỏng phí & ưu đãi</span>
           <HiOutlineArrowNarrowRight className="h-4 w-4" />
         </Link>
       </div>
@@ -329,7 +329,7 @@ export default function TrustLevelConfigTab() {
               <div
                 key={cfg.starLevel}
                 className={cn(
-                  'rounded-2xl border p-5 flex flex-col justify-between transition-all duration-200 shadow-sm relative group',
+                  'rounded-2xl border p-5 flex flex-col justify-between transition-all duration-200 relative group',
                   theme.border,
                   isDark ? 'bg-slate-900 text-slate-100' : 'bg-white text-stone-900'
                 )}
@@ -356,7 +356,7 @@ export default function TrustLevelConfigTab() {
                       onClick={() => handleOpenEdit(cfg)}
                       className={cn(
                         'flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition shadow-sm',
-                        'bg-amber-500 text-white hover:bg-amber-600 active:scale-95'
+                        'active:scale-95 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                       )}
                       title={`Chỉnh sửa cấu hình bậc ${cfg.starLevel} sao`}
                     >
@@ -468,7 +468,7 @@ export default function TrustLevelConfigTab() {
       {!loading && viewMode === 'table' && (
         <div
           className={cn(
-            'rounded-2xl border shadow-sm overflow-hidden',
+            'rounded-2xl border overflow-hidden',
             isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
           )}
         >
@@ -487,10 +487,10 @@ export default function TrustLevelConfigTab() {
                 )}
               >
                 <tr>
-                  <th className="px-4 py-3.5 w-44">Bậc Sao & Hạng</th>
-                  <th className="px-4 py-3.5 w-52">Hạn Mức Ký Quỹ</th>
+                  <th className="px-4 py-3.5 w-44">Bậc sao & hạng</th>
+                  <th className="px-4 py-3.5 w-52">Hạn mức ký quỹ</th>
                   <th className="px-4 py-3.5 w-28 text-center">Giảm Phí</th>
-                  <th className="px-4 py-3.5 min-w-[200px]">Quyền Lợi & Đặc Quyền</th>
+                  <th className="px-4 py-3.5 min-w-[200px]">Quyền lợi & đặc quyền</th>
                   <th className="px-4 py-3.5 w-44 text-right">Thao Tác</th>
                 </tr>
               </thead>
@@ -575,7 +575,7 @@ export default function TrustLevelConfigTab() {
                           onClick={() => handleOpenEdit(cfg)}
                           className={cn(
                             'inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition shadow-sm',
-                            'bg-amber-500 text-white hover:bg-amber-600 active:scale-95'
+                            'active:scale-95 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                           )}
                           title="Chỉnh sửa cấu hình bậc sao này"
                         >
@@ -603,7 +603,7 @@ export default function TrustLevelConfigTab() {
           >
             <h3 className="text-lg sm:text-xl font-bold flex items-center gap-2">
               <HiOutlineShieldCheck className="h-6 w-6 text-amber-500 shrink-0" />
-              <span>Chỉnh Sửa Bậc Uy Tín {editingConfig.starLevel} Sao</span>
+              <span>Chỉnh sửa bậc uy tín {editingConfig.starLevel} Sao</span>
             </h3>
             <p className={cn('text-xs mt-1', isDark ? 'text-slate-400' : 'text-stone-500')}>
               Điều chỉnh tên gọi, mức tiền ký quỹ, chiết khấu hoa hồng và đặc quyền.
@@ -618,7 +618,7 @@ export default function TrustLevelConfigTab() {
                   value={tierName}
                   onChange={(e) => setTierName(e.target.value)}
                   className={cn(
-                    'w-full rounded-xl border px-4 py-2.5 text-sm font-semibold outline-none focus:ring-2 focus:ring-amber-500',
+                    'w-full rounded-xl border px-4 py-2.5 text-sm font-semibold outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                     isDark ? 'border-slate-700 bg-slate-950 text-white' : 'border-stone-300 bg-stone-50 text-stone-800'
                   )}
                 />
@@ -635,7 +635,7 @@ export default function TrustLevelConfigTab() {
                     value={minDeposit}
                     onChange={(e) => setMinDeposit(e.target.value)}
                     className={cn(
-                      'w-full rounded-xl border px-4 py-2.5 text-sm font-semibold outline-none focus:ring-2 focus:ring-amber-500',
+                      'w-full rounded-xl border px-4 py-2.5 text-sm font-semibold outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                       isDark ? 'border-slate-700 bg-slate-950 text-white' : 'border-stone-300 bg-stone-50 text-stone-800'
                     )}
                   />
@@ -655,7 +655,7 @@ export default function TrustLevelConfigTab() {
                     value={maxDeposit}
                     onChange={(e) => setMaxDeposit(e.target.value)}
                     className={cn(
-                      'w-full rounded-xl border px-4 py-2.5 text-sm font-semibold outline-none focus:ring-2 focus:ring-amber-500',
+                      'w-full rounded-xl border px-4 py-2.5 text-sm font-semibold outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                       isDark ? 'border-slate-700 bg-slate-950 text-white' : 'border-stone-300 bg-stone-50 text-stone-800'
                     )}
                   />
@@ -678,7 +678,7 @@ export default function TrustLevelConfigTab() {
                   value={commissionDiscount}
                   onChange={(e) => setCommissionDiscount(e.target.value)}
                   className={cn(
-                    'w-full rounded-xl border px-4 py-2.5 text-sm font-semibold outline-none focus:ring-2 focus:ring-amber-500',
+                    'w-full rounded-xl border px-4 py-2.5 text-sm font-semibold outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                     isDark ? 'border-slate-700 bg-slate-950 text-white' : 'border-stone-300 bg-stone-50 text-stone-800'
                   )}
                 />
@@ -695,7 +695,7 @@ export default function TrustLevelConfigTab() {
                   onChange={(e) => setBenefitsDescription(e.target.value)}
                   placeholder="Mô tả quyền lợi ưu tiên hiển thị, bảo chứng đền bù khi có khiếu nại..."
                   className={cn(
-                    'w-full rounded-xl border px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-500',
+                    'w-full rounded-xl border px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                     isDark ? 'border-slate-700 bg-slate-950 text-white' : 'border-stone-300 bg-stone-50 text-stone-800'
                   )}
                 />
@@ -707,7 +707,7 @@ export default function TrustLevelConfigTab() {
                   id="isActiveTier"
                   checked={isActive}
                   onChange={(e) => setIsActive(e.target.checked)}
-                  className="h-4 w-4 rounded border-slate-600 text-amber-500 focus:ring-amber-500 cursor-pointer"
+                  className="h-4 w-4 rounded border-slate-600 text-amber-500 focus:ring-stone-950/30 dark:focus:ring-white/40 cursor-pointer"
                 />
                 <label htmlFor="isActiveTier" className="text-xs font-semibold cursor-pointer">
                   Kích hoạt bậc xếp hạng này
@@ -734,7 +734,7 @@ export default function TrustLevelConfigTab() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="rounded-xl bg-amber-500 px-5 py-2 text-sm font-bold text-white hover:bg-amber-600 disabled:opacity-50 shadow-sm transition"
+                  className="rounded-xl px-5 py-2 text-sm font-bold disabled:opacity-50 transition bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
                 >
                   {submitting ? 'Đang lưu...' : 'Lưu thay đổi'}
                 </button>

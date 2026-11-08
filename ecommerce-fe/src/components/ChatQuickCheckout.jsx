@@ -16,7 +16,7 @@ const fmt = (v) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency:
 
 const PAYMENT_METHODS = [
   { value: 'WALLET', label: 'Ví số dư tài khoản' },
-  { value: 'VNPAY', label: 'VNPay (ATM / QR)' },
+  { value: 'VNPAY', label: 'VNPay' },
 ]
 
 /**

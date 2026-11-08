@@ -53,7 +53,7 @@ export default function AdminEscrowOrderSection({
         <div className="flex items-center justify-between border-b pb-2.5 dark:border-slate-800 border-stone-200">
           <div className="flex items-center gap-2">
             <HiOutlineShoppingBag className="h-4 w-4 text-amber-500" />
-            <h4 className="font-bold text-xs uppercase tracking-wider">Thông Tin Đơn Hàng Gốc</h4>
+            <h4 className="font-bold text-xs uppercase tracking-wider">Thông tin đơn hàng gốc</h4>
           </div>
           <div className="flex items-center gap-2">
             <span className="font-mono text-xs font-semibold">#{order?.orderNumber || order?.id}</span>
@@ -153,7 +153,7 @@ export default function AdminEscrowOrderSection({
         >
           <div className="flex items-center gap-1.5 font-bold text-emerald-500 dark:text-emerald-400 text-xs">
             <HiOutlineShoppingBag className="h-4 w-4 shrink-0" />
-            Thông tin Gian hàng (Shop)
+            Thông tin Gian hàng
           </div>
           <p className="font-semibold text-stone-900 dark:text-white text-xs">{shopName}</p>
           <div className="space-y-1 text-stone-600 dark:text-slate-400 text-[11px]">

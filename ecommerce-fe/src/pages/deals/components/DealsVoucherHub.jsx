@@ -29,7 +29,7 @@ export default function DealsVoucherHub({
           </span>
           <div>
             <h2 className={cn('text-lg sm:text-2xl font-bold tracking-tight', isDark ? 'text-white' : 'text-stone-900')}>
-              Kho Voucher Nổi Bật
+              Kho voucher nổi bật
             </h2>
             <p className="text-xs sm:text-sm text-stone-500 dark:text-slate-400">
               Lưu mã sàn và mã shop để tự động áp dụng khi đặt hàng thanh toán

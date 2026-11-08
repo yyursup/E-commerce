@@ -41,8 +41,8 @@ export default function SellerProductCard({ product, onView, onEdit, onDelete })
       className={cn(
         'group relative overflow-hidden rounded-2xl border transition-all duration-300',
         isDark
-          ? 'border-slate-700/50 bg-slate-800/50 hover:border-slate-600 hover:shadow-xl hover:shadow-black/20'
-          : 'border-stone-200/80 bg-white hover:border-amber-200 hover:shadow-xl hover:shadow-amber-500/10',
+          ? 'border-slate-700/50 bg-slate-800/50 hover:border-slate-600 hover:shadow-black/20'
+          : 'border-stone-200/80 bg-white hover:border-amber-200 hover:shadow-amber-500/10',
       )}
     >
       {/* Status Badge */}
@@ -101,7 +101,7 @@ export default function SellerProductCard({ product, onView, onEdit, onDelete })
               e.stopPropagation()
               onView?.(product)
             }}
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-white/95 py-2.5 text-sm font-medium text-stone-800 shadow-lg backdrop-blur hover:bg-white"
+            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-white/95 py-2.5 text-sm font-medium text-stone-800 backdrop-blur hover:bg-white"
           >
             <HiOutlineEye className="h-4 w-4" />
             Xem
@@ -113,7 +113,7 @@ export default function SellerProductCard({ product, onView, onEdit, onDelete })
               e.stopPropagation()
               onEdit?.(product)
             }}
-            className="rounded-xl bg-white/95 p-2.5 text-amber-600 shadow-lg backdrop-blur hover:bg-white hover:text-amber-700"
+            className="rounded-xl bg-white/95 p-2.5 text-amber-600 backdrop-blur hover:bg-white hover:text-amber-700"
             title="Chỉnh sửa"
           >
             <HiOutlinePencil className="h-5 w-5" />
@@ -125,7 +125,7 @@ export default function SellerProductCard({ product, onView, onEdit, onDelete })
               e.stopPropagation()
               onDelete?.(product)
             }}
-            className="rounded-xl bg-white/95 p-2.5 text-red-600 shadow-lg backdrop-blur hover:bg-white hover:text-red-700"
+            className="rounded-xl bg-white/95 p-2.5 text-red-600 backdrop-blur hover:bg-white hover:text-red-700"
             title="Xóa"
           >
             <HiOutlineTrash className="h-5 w-5" />

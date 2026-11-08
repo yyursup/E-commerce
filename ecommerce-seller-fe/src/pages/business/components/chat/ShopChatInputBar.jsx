@@ -66,7 +66,7 @@ export default function ShopChatInputBar({
               <p className="text-xs font-bold flex items-center gap-2 text-stone-900 dark:text-white">
                 <span>{selectedThread?.type === 'DISPUTE' ? 'Phòng thương lượng tranh chấp đã đóng' : 'Cuộc hội thoại đã đóng'}</span>
                 <span className="rounded-md bg-stone-200 dark:bg-slate-800 px-2 py-0.5 text-[10px] font-semibold text-stone-600 dark:text-slate-400 border border-stone-300/60 dark:border-slate-700">
-                  Chỉ đọc (Read-only)
+                  Chỉ đọc
                 </span>
               </p>
               <p className="text-[11px] text-stone-500 dark:text-slate-400 truncate mt-0.5">
@@ -116,7 +116,7 @@ export default function ShopChatInputBar({
             className={cn(
               'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition-all active:scale-95',
               showMediaPopover
-                ? 'border-amber-500 bg-amber-500 text-white shadow-sm'
+                ? 'border-amber-500 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                 : isDark
                   ? 'border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-750'
                   : 'border-stone-300 bg-white text-stone-600 hover:bg-stone-100'
@@ -137,7 +137,7 @@ export default function ShopChatInputBar({
             className={cn(
               'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition-all active:scale-95',
               showEmojiPicker
-                ? 'border-amber-500 bg-amber-500 text-white shadow-sm'
+                ? 'border-amber-500 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                 : isDark
                   ? 'border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-750'
                   : 'border-stone-300 bg-white text-stone-600 hover:bg-stone-100'
@@ -155,7 +155,7 @@ export default function ShopChatInputBar({
             placeholder="Nhập câu trả lời tư vấn cho khách hàng..."
             disabled={sending}
             className={cn(
-              'flex-1 rounded-xl border px-4 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-amber-500/20',
+              'flex-1 rounded-xl border px-4 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
               isDark
                 ? 'border-slate-700 bg-slate-800 text-white placeholder:opacity-50'
                 : 'border-stone-300 bg-white text-stone-900 placeholder:opacity-50'
@@ -165,7 +165,7 @@ export default function ShopChatInputBar({
           <button
             type="submit"
             disabled={!replyText.trim() || sending}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white transition hover:bg-amber-600 disabled:opacity-40"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition disabled:opacity-40 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
             title="Gửi câu trả lời"
           >
             <HiOutlinePaperAirplane className="h-5 w-5" />

@@ -112,7 +112,7 @@ export default function DeductCompensationModal({ fund, onClose, onSuccess, form
         return 'bg-rose-500/10 text-rose-500 border-rose-500/30'
       case 'PROCESSING':
       case 'CONFIRMED':
-        return 'bg-amber-500/10 text-amber-500 border-amber-500/30'
+        return 'bg-stone-100 text-stone-950 border-stone-950'
       default:
         return 'bg-slate-500/10 text-slate-400 border-slate-500/30'
     }
@@ -184,7 +184,7 @@ export default function DeductCompensationModal({ fund, onClose, onSuccess, form
         )}
       >
         <h2 className="text-lg sm:text-xl font-bold text-rose-500">
-          Trích Quỹ Ký Quỹ Bồi Thường Cho Người Mua
+          Trích quỹ ký quỹ bồi thường cho người mua
         </h2>
         <p className={cn('text-xs mt-1', isDark ? 'text-slate-400' : 'text-stone-500')}>
           Áp dụng cho gian hàng <span className="font-bold text-amber-500">{fund.shopName}</span>.
@@ -195,7 +195,7 @@ export default function DeductCompensationModal({ fund, onClose, onSuccess, form
           {/* Mã Đơn Hàng */}
           <div>
             <div className="flex items-center justify-between mb-1">
-              <label className="block text-xs font-semibold">Mã Đơn Hàng *</label>
+              <label className="block text-xs font-semibold">Mã đơn hàng *</label>
               {shopOrders.length > 0 && (
                 <button
                   type="button"
@@ -347,7 +347,7 @@ export default function DeductCompensationModal({ fund, onClose, onSuccess, form
           {/* Mã Báo Cáo Vi Phạm */}
           <div>
             <div className="flex items-center justify-between mb-1">
-              <label className="block text-xs font-semibold">Mã Báo Cáo Vi Phạm</label>
+              <label className="block text-xs font-semibold">Mã báo cáo vi phạm</label>
               {shopReports.length > 0 && (
                 <button
                   type="button"

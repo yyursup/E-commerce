@@ -19,8 +19,8 @@ import { cn } from '../lib/cn'
 const heroBanners = [
   {
     id: 1,
-    badge: 'Sàn Thương Mại Điện Tử & Đồ Công Nghệ',
-    title: 'Hệ Sinh Thái Đồ Công Nghệ Chính Hãng',
+    badge: 'Sàn thương mại điện tử & đồ công nghệ',
+    title: 'Hệ sinh thái đồ công nghệ chính hãng',
     subtitle: 'Điện thoại, Laptop, Tablet, Linh kiện PC từ Apple, Samsung, Sony, Asus. Đầy đủ hóa đơn VAT & Bảo hành chính hãng.',
     ctaText: 'Khám phá ngay',
     ctaLink: '/products',
@@ -30,8 +30,8 @@ const heroBanners = [
   },
   {
     id: 2,
-    badge: 'Thị Trường Đồ Cũ Like New 99%',
-    title: 'Máy Cũ Kiểm Định - An Tâm Tuyệt Đối',
+    badge: 'Thị trường đồ cũ like new 99%',
+    title: 'Máy cũ kiểm định - an tâm tuyệt đối',
     subtitle: 'Đội ngũ thẩm định chuyên nghiệp kiểm tra pin, bo mạch, màn hình. Minh bạch tình trạng máy & lịch sử sửa chữa.',
     ctaText: 'Xem máy Like New',
     ctaLink: '/products',
@@ -41,8 +41,8 @@ const heroBanners = [
   },
   {
     id: 3,
-    badge: 'Cơ Chế Ký Quỹ Độc Quyền Escrow',
-    title: 'Giao Dịch Đồ Công Nghệ Giá Trị Cao',
+    badge: 'Cơ chế ký quỹ độc quyền escrow',
+    title: 'Giao dịch đồ công nghệ giá trị cao',
     subtitle: 'Tiền được khóa an toàn tại Escrow sàn. Sau khi nhận máy và test trong 3 ngày hài lòng, tiền mới được giải ngân cho Shop.',
     ctaText: 'Tìm hiểu Escrow',
     ctaAction: 'escrow',
@@ -52,8 +52,8 @@ const heroBanners = [
   },
   {
     id: 4,
-    badge: 'Vận Chuyển An Toàn GHN',
-    title: 'Giao Hàng Công Nghệ Toàn Quốc',
+    badge: 'Vận chuyển an toàn GHN',
+    title: 'Giao hàng công nghệ toàn quốc',
     subtitle: 'Đóng gói chống sốc chuyên dụng, bảo hiểm 100% giá trị thiết bị điện tử cùng Giao Hàng Nhanh (GHN).',
     ctaText: 'Săn mã Freeship',
     ctaLink: '/deals',
@@ -67,35 +67,35 @@ const quickServices = [
   {
     id: 'deals',
     icon: HiOutlineTag,
-    label: 'Mã Giảm Giá Tech',
+    label: 'Mã giảm giá tech',
     color: 'text-stone-950 bg-stone-100 dark:text-white dark:bg-slate-800',
     link: '/deals',
   },
   {
     id: 'used-tech',
     icon: HiOutlineBadgeCheck,
-    label: 'Đồ Cũ Kiểm Định',
+    label: 'Đồ cũ kiểm định',
     color: 'text-stone-950 bg-stone-100 dark:text-white dark:bg-slate-800',
     link: '/products',
   },
   {
     id: 'ghn',
     icon: HiOutlineTruck,
-    label: 'Giao Chống Sốc GHN',
+    label: 'Giao chống sốc GHN',
     color: 'text-stone-950 bg-stone-100 dark:text-white dark:bg-slate-800',
     action: 'ghn',
   },
   {
     id: 'escrow',
     icon: HiOutlineShieldCheck,
-    label: 'Ký Quỹ Escrow',
+    label: 'Ký quỹ escrow',
     color: 'text-stone-950 bg-stone-100 dark:text-white dark:bg-slate-800',
     action: 'escrow',
   },
   {
     id: 'ai-bot',
     icon: HiOutlineSparkles,
-    label: 'AI Tư Vấn Cấu Hình',
+    label: 'AI tư vấn cấu hình',
     color: 'text-stone-950 bg-amber-500',
     action: 'ai_bot',
   },
@@ -236,7 +236,7 @@ export default function Hero() {
                   TECH MALL
                 </span>
                 <h3 className="mt-1.5 text-xl font-bold group-hover:underline">
-                  Đại Lý Phân Phối Ủy Quyền
+                  Đại lý phân phối ủy quyền
                 </h3>
                 <p className="text-xs text-stone-900">Apple, Samsung, Sony, Asus chính hãng</p>
               </div>
@@ -256,7 +256,7 @@ export default function Hero() {
                   LIKE NEW 99%
                 </span>
                 <h3 className="mt-1.5 text-xl font-bold group-hover:underline">
-                  Chợ Thiết Bị Cũ Kiểm Định
+                  Chợ thiết bị cũ kiểm định
                 </h3>
                 <p className="text-xs text-slate-300">Bao test 3 ngày cùng Escrow ký quỹ</p>
               </div>
@@ -338,7 +338,7 @@ export default function Hero() {
       <Modal
         open={escrowModalOpen}
         onClose={() => setEscrowModalOpen(false)}
-        title="Chính Sách Ký Quỹ Escrow 100% An Toàn"
+        title="Chính sách ký quỹ escrow 100% an toàn"
         size="lg"
       >
         <div className="space-y-5 p-1 sm:p-2">
@@ -348,10 +348,10 @@ export default function Hero() {
             </div>
             <div>
               <h4 className="text-base font-bold text-emerald-600 dark:text-emerald-400">
-                Cơ Chế Bảo Vệ Tài Chính Người Mua Độc Quyền
+                Cơ chế bảo vệ tài chính người mua độc quyền
               </h4>
               <p className="mt-1 text-xs sm:text-sm text-stone-600 dark:text-slate-300 leading-relaxed">
-                Khi mua thiết bị công nghệ giá trị cao trên sàn E-Commerce, số tiền bạn thanh toán sẽ được khóa an toàn tại <strong>Ví Ký Quỹ Escrow</strong> của hệ thống và chỉ được giải ngân cho người bán khi bạn hoàn toàn hài lòng.
+                Khi mua thiết bị công nghệ giá trị cao trên sàn E-Commerce, số tiền bạn thanh toán sẽ được khóa an toàn tại <strong>Ví ký quỹ escrow</strong> của hệ thống và chỉ được giải ngân cho người bán khi bạn hoàn toàn hài lòng.
               </p>
             </div>
           </div>
@@ -398,7 +398,7 @@ export default function Hero() {
       <Modal
         open={ghnModalOpen}
         onClose={() => setGhnModalOpen(false)}
-        title="Quy Chuẩn Giao Hàng Chống Sốc & Bảo Hiểm GHN Express"
+        title="Quy chuẩn giao hàng chống sốc & bảo hiểm GHN Express"
         size="lg"
       >
         <div className="space-y-5 p-1 sm:p-2">
@@ -408,10 +408,10 @@ export default function Hero() {
             </div>
             <div>
               <h4 className="text-base font-bold text-blue-600 dark:text-blue-400">
-                Đối Tác Vận Chuyển Chiến Lược Thiết Bị Công Nghệ
+                Đối tác vận chuyển chiến lược thiết bị công nghệ
               </h4>
               <p className="mt-1 text-xs sm:text-sm text-stone-600 dark:text-slate-300 leading-relaxed">
-                Toàn bộ đơn hàng trên sàn E-Commerce được đồng bộ vận hành tự động qua mạng lưới <strong>Giao Hàng Nhanh (GHN Express)</strong> với tiêu chuẩn đóng gói chống va đập và bảo hiểm giá trị cao.
+                Toàn bộ đơn hàng trên sàn E-Commerce được đồng bộ vận hành tự động qua mạng lưới <strong>Giao hàng nhanh</strong> với tiêu chuẩn đóng gói chống va đập và bảo hiểm giá trị cao.
               </p>
             </div>
           </div>

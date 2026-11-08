@@ -103,7 +103,7 @@ export default function OrderSummarySection({ order, isDark, returnInfo }) {
           icon: HiOutlineLockClosed,
           label: 'Tạm giữ trong Escrow',
           subLabel: 'Đang bảo đảm giao hàng',
-          classes: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30',
+          classes: 'dark:text-amber-400 bg-stone-100 text-stone-950 border-stone-950',
         }
     }
   }
@@ -118,10 +118,10 @@ export default function OrderSummarySection({ order, isDark, returnInfo }) {
         <div>
           <h3 className={cn('text-base font-bold flex items-center gap-2', isDark ? 'text-white' : 'text-stone-900')}>
             <HiOutlineCash className="h-5 w-5 text-amber-500" />
-            Bảng Kê Đối Soát Kế Toán Đơn Hàng
+            Bảng kê đối soát kế toán đơn hàng
           </h3>
           <p className="text-xs text-stone-400 mt-0.5">
-            Quyết toán dòng tiền minh bạch giữa Người mua, Shop và Sàn E-commerce
+            Quyết toán dòng tiền minh bạch giữa Người mua, Shop và Sàn E-Commerce
           </p>
         </div>
         <div className={cn('inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold', badge.classes)}>
@@ -136,7 +136,7 @@ export default function OrderSummarySection({ order, isDark, returnInfo }) {
       {/* 2. Dòng tiền thanh toán từ Người mua (Buyer Inflow) */}
       <div className="space-y-3">
         <h4 className="text-xs font-bold uppercase tracking-wider text-stone-400">
-          1. Dòng Tiền Người Mua Thanh Toán (Buyer Inflow)
+          1. Dòng tiền người mua thanh toán
         </h4>
 
         {/* Merchandise Subtotal */}
@@ -153,7 +153,7 @@ export default function OrderSummarySection({ order, isDark, returnInfo }) {
         <div className="flex justify-between text-sm">
           <span className={cn('flex items-center gap-1.5', isDark ? 'text-slate-400' : 'text-stone-600')}>
             <HiOutlineTruck className="h-4 w-4 text-indigo-500" />
-            <span>Cước giao hàng (GHN Express)</span>
+            <span>Cước giao hàng</span>
           </span>
           <span className={cn('font-semibold font-mono', isDark ? 'text-white' : 'text-stone-900')}>
             {formatCurrency(shippingFee)}
@@ -184,7 +184,7 @@ export default function OrderSummarySection({ order, isDark, returnInfo }) {
                 <HiOutlineTag className="h-3.5 w-3.5" />
                 Voucher Sàn {order.platformVoucherCode && `(${order.platformVoucherCode})`}
               </span>
-              <span className="text-xs text-blue-500/80 hidden sm:inline">(Sàn E-commerce tài trợ 100%)</span>
+              <span className="text-xs text-blue-500/80 hidden sm:inline">(Sàn E-Commerce tài trợ 100%)</span>
             </span>
             <span className="font-bold font-mono text-blue-500">
               -{formatCurrency(platformDiscount)}
@@ -196,7 +196,7 @@ export default function OrderSummarySection({ order, isDark, returnInfo }) {
         <div className="border-t border-dashed border-stone-200 dark:border-slate-800 pt-2 flex items-baseline justify-between">
           <div>
             <span className={cn('text-sm font-bold block', isDark ? 'text-white' : 'text-stone-900')}>
-              Tổng Người Mua Thực Tế Thanh Toán
+              Tổng người mua thực tế thanh toán
             </span>
             <span className="text-[11px] text-stone-400">
               Phương thức:{' '}
@@ -218,7 +218,7 @@ export default function OrderSummarySection({ order, isDark, returnInfo }) {
       {/* 3. Chi tiết khấu trừ & Thực nhận của Shop (Seller Settlement Outflow) */}
       <div className="space-y-3 pt-2 border-t border-stone-200 dark:border-slate-800">
         <h4 className="text-xs font-bold uppercase tracking-wider text-stone-400">
-          2. Chi Tiết Quyết Toán Thực Nhận Của Shop (Seller Net Payout)
+          2. Chi tiết quyết toán thực nhận của shop
         </h4>
 
         {/* Commission Base */}
@@ -235,7 +235,7 @@ export default function OrderSummarySection({ order, isDark, returnInfo }) {
         {/* Platform Commission Deduction */}
         <div className="flex justify-between text-sm">
           <span className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold dark:text-amber-400 border bg-stone-100 text-stone-950 border-stone-950">
               <HiOutlineReceiptTax className="h-3.5 w-3.5" />
               Khấu trừ Phí hoa hồng sàn {commissionRate != null ? `(${commissionRate}%)` : ''}
             </span>
@@ -299,7 +299,7 @@ export default function OrderSummarySection({ order, isDark, returnInfo }) {
       {(showEscrowHeld || showEscrowDelivered || showEscrowCompleted || isRefunded || isCancelled) && (
         <div className="border-t border-stone-200 dark:border-slate-800 pt-4">
           <h4 className="text-xs font-bold uppercase tracking-wider mb-3 text-stone-400">
-            3. Bảo Đảm Ký Quỹ Escrow (An Toàn Dòng Tiền)
+            3. Bảo đảm ký quỹ escrow (An toàn dòng tiền)
           </h4>
 
           {isRefunded && (() => {

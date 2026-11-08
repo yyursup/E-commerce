@@ -25,14 +25,14 @@ const AUDIENCE_OPTIONS = [
 ]
 
 const CATEGORY_OPTIONS = [
-  { value: 'ESCROW', label: 'Bảo Vệ Escrow' },
-  { value: 'RETURN_REFUND', label: 'Đổi Trả & Khiếu Nại' },
-  { value: 'CONDITION_GRADE', label: 'Phân Hạng Hàng Cũ & Like New' },
-  { value: 'SHIPPING', label: 'Vận Chuyển GHN & Đồng Kiểm' },
-  { value: 'SELLER_RULES', label: 'Quy Chế Người Bán' },
-  { value: 'DISCIPLINE', label: 'Kỷ Luật & Điểm Uy Tín' },
-  { value: 'PRIVACY', label: 'Chính Sách Bảo Mật' },
-  { value: 'GENERAL', label: 'Quy Chế Hoạt Động Chung' },
+  { value: 'ESCROW', label: 'Bảo vệ escrow' },
+  { value: 'RETURN_REFUND', label: 'Đổi trả & khiếu nại' },
+  { value: 'CONDITION_GRADE', label: 'Phân hạng hàng cũ & like new' },
+  { value: 'SHIPPING', label: 'Vận chuyển GHN & đồng kiểm' },
+  { value: 'SELLER_RULES', label: 'Quy chế người bán' },
+  { value: 'DISCIPLINE', label: 'Kỷ luật & điểm uy tín' },
+  { value: 'PRIVACY', label: 'Chính sách bảo mật' },
+  { value: 'GENERAL', label: 'Quy chế hoạt động chung' },
 ]
 
 const CATEGORY_MAP = {
@@ -231,13 +231,13 @@ export default function AdminPolicies() {
       {/* 1. Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20 mb-2">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border mb-2 bg-stone-100 text-stone-950 border-stone-950">
             <HiOutlineShieldCheck className="h-4 w-4" />
-            Hệ Thống Quản Lý Quy Chế Tập Trung
+            Hệ thống quản lý quy chế tập trung
           </div>
           <h1 className="text-2xl sm:text-3xl font-black flex items-center gap-2.5">
             <HiOutlineDocumentText className="h-7 w-7 text-amber-500 shrink-0" />
-            <span>Chính Sách & Quy Định Nền Tảng</span>
+            <span>Chính sách & quy định nền tảng</span>
           </h1>
           <p className={cn('mt-1.5 text-xs sm:text-sm max-w-2xl', isDark ? 'text-slate-400' : 'text-stone-500')}>
             Hệ thống chính sách động: cấu hình toàn bộ quy chế hoạt động sàn, điều khoản ký quỹ Escrow, đổi trả, phân hạng và căn cứ phán quyết tranh chấp
@@ -248,10 +248,10 @@ export default function AdminPolicies() {
           <button
             type="button"
             onClick={handleOpenCreatePolicy}
-            className="inline-flex items-center gap-2 rounded-2xl bg-amber-500 hover:bg-amber-600 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-amber-500/25 transition active:scale-95"
+            className="inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-bold transition active:scale-95 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
           >
             <HiOutlinePlus className="h-4 w-4" />
-            <span>Thêm Chính Sách Mới</span>
+            <span>Thêm chính sách mới</span>
           </button>
 
           <button
@@ -282,7 +282,7 @@ export default function AdminPolicies() {
             <p className={cn('text-xs font-medium', isDark ? 'text-slate-400' : 'text-stone-500')}>
               Tổng văn bản
             </p>
-            <div className="p-2 rounded-xl bg-amber-500/10 text-amber-500">
+            <div className="p-2 rounded-xl bg-stone-100 text-stone-950">
               <HiOutlineDocumentText className="h-4 w-4" />
             </div>
           </div>
@@ -362,7 +362,7 @@ export default function AdminPolicies() {
             onChange={(e) => setPolicySearch(e.target.value)}
             placeholder="Tìm theo tên chính sách, mã key hoặc tóm tắt..."
             className={cn(
-              'w-full pl-10 pr-9 py-2.5 rounded-2xl text-xs border focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition',
+              'w-full pl-10 pr-9 py-2.5 rounded-2xl text-xs border focus:outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40 transition',
               isDark
                 ? 'bg-slate-950 border-slate-800 text-slate-100 placeholder-slate-500'
                 : 'bg-stone-50 border-stone-200 text-stone-900 placeholder-stone-400'
@@ -384,7 +384,7 @@ export default function AdminPolicies() {
             value={policyAudienceFilter}
             onChange={(e) => setPolicyAudienceFilter(e.target.value)}
             className={cn(
-              'px-3 py-2.5 rounded-2xl text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition',
+              'px-3 py-2.5 rounded-2xl text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40 transition',
               isDark ? 'bg-slate-950 border-slate-800 text-slate-200' : 'bg-stone-50 border-stone-200 text-stone-700'
             )}
           >
@@ -397,7 +397,7 @@ export default function AdminPolicies() {
             value={policyCategoryFilter}
             onChange={(e) => setPolicyCategoryFilter(e.target.value)}
             className={cn(
-              'px-3 py-2.5 rounded-2xl text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition',
+              'px-3 py-2.5 rounded-2xl text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40 transition',
               isDark ? 'bg-slate-950 border-slate-800 text-slate-200' : 'bg-stone-50 border-stone-200 text-stone-700'
             )}
           >
@@ -413,7 +413,7 @@ export default function AdminPolicies() {
             value={policyStatusFilter}
             onChange={(e) => setPolicyStatusFilter(e.target.value)}
             className={cn(
-              'px-3 py-2.5 rounded-2xl text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition',
+              'px-3 py-2.5 rounded-2xl text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40 transition',
               isDark ? 'bg-slate-950 border-slate-800 text-slate-200' : 'bg-stone-50 border-stone-200 text-stone-700'
             )}
           >

@@ -278,7 +278,7 @@ export default function DiscountPoliciesTab() {
         <div>
           <h2 className="text-lg font-bold flex items-center gap-2">
             <HiOutlineShieldCheck className="h-5 w-5 text-amber-500" />
-            Ưu Đãi Thâm Niên & Ma Trận Phí Sàn (Seniority & Fee Simulator)
+            Ưu đãi thâm niên & ma trận phí sàn
           </h2>
           <p className={cn('text-xs', isDark ? 'text-slate-400' : 'text-stone-500')}>
             Quản trị ưu đãi thâm niên hoạt động, tra cứu ma trận giảm trừ ký quỹ tập trung và công cụ mô phỏng phí sàn đa chiều.
@@ -313,7 +313,7 @@ export default function DiscountPoliciesTab() {
           <div>
             <h3 className="text-sm font-bold flex items-center gap-2">
               <HiStar className="h-4 w-4 text-amber-400" />
-              Ma Trận Ưu Đãi Ký Quỹ Đang Áp Dụng (Trust Level Discounts)
+              Ma trận ưu đãi ký quỹ đang áp dụng
             </h3>
             <p className={cn('text-xs mt-0.5', isDark ? 'text-slate-400' : 'text-stone-500')}>
               Hạn mức tiền ký quỹ và mức % hoa hồng được giảm trừ tương ứng cho 5 bậc sao uy tín.
@@ -323,13 +323,13 @@ export default function DiscountPoliciesTab() {
           <button
             onClick={() => navigate('/trust-config?tab=configs')}
             className={cn(
-              'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition shadow-sm self-start sm:self-auto',
-              'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 hover:bg-amber-500 hover:text-white'
+              'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition self-start sm:self-auto',
+              'dark:text-amber-400 border hover:bg-amber-500 hover:text-white bg-stone-100 text-stone-950 border-stone-950'
             )}
             title="Chuyển đến Hub Quỹ Ký Quỹ để cấu hình số tiền và quyền lợi bậc sao"
           >
             <HiOutlineExternalLink className="h-4 w-4" />
-            <span>Quản lý Bậc Sao tại Hub Ký Quỹ</span>
+            <span>Quản lý bậc sao tại hub ký quỹ</span>
           </button>
         </div>
 
@@ -385,7 +385,7 @@ export default function DiscountPoliciesTab() {
         <div className="flex items-center gap-2 text-[11px] text-slate-400 pt-1">
           <HiOutlineInformationCircle className="h-4 w-4 text-amber-500 flex-shrink-0" />
           <span>
-            Bậc sao ký quỹ được quản lý tập trung tại <strong>Trung Tâm Quỹ Ký Quỹ & Bậc Sao</strong> nhằm bảo toàn nguyên tắc duy nhất nguồn dữ liệu (Single Source of Truth).
+            Bậc sao ký quỹ được quản lý tập trung tại <strong>Trung tâm quỹ ký quỹ & bậc sao</strong> nhằm bảo toàn nguyên tắc duy nhất nguồn dữ liệu (Single Source of Truth).
           </span>
         </div>
       </div>
@@ -395,7 +395,7 @@ export default function DiscountPoliciesTab() {
         <div>
           <h3 className="text-base font-bold flex items-center gap-2">
             <HiOutlineClock className="h-5 w-5 text-blue-500" />
-            2. Chính Sách Ưu Đãi Thâm Niên Hoạt Động (Seniority Policy CRUD)
+            2. Chính sách ưu đãi thâm niên hoạt động
           </h3>
           <p className={cn('text-xs', isDark ? 'text-slate-400' : 'text-stone-500')}>
             Chính sách khuyến khích các gian hàng đồng hành lâu dài cùng sàn và duy trì tiêu chuẩn vận hành không vi phạm.
@@ -404,7 +404,7 @@ export default function DiscountPoliciesTab() {
 
         <div
           className={cn(
-            'rounded-2xl border shadow-sm overflow-hidden',
+            'rounded-2xl border overflow-hidden',
             isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
           )}
         >
@@ -416,9 +416,9 @@ export default function DiscountPoliciesTab() {
               )}
             >
               <tr>
-                <th className="px-4 py-3.5 w-48">Mốc Thâm Niên</th>
+                <th className="px-4 py-3.5 w-48">Mốc thâm niên</th>
                 <th className="px-4 py-3.5 w-32 text-center">Giảm Thêm</th>
-                <th className="px-4 py-3.5 min-w-[220px]">Quy Chuẩn Áp Dụng</th>
+                <th className="px-4 py-3.5 min-w-[220px]">Quy chuẩn áp dụng</th>
                 <th className="px-4 py-3.5 w-44 text-right">Thao Tác</th>
               </tr>
             </thead>
@@ -485,7 +485,7 @@ export default function DiscountPoliciesTab() {
                           onClick={() => handleOpenEditSeniority(pol)}
                           className={cn(
                             'inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition shadow-sm',
-                            'bg-blue-600 text-white hover:bg-blue-700 active:scale-95'
+                            'active:scale-95 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                           )}
                         >
                           <HiOutlinePencilAlt className="h-3.5 w-3.5" />
@@ -512,7 +512,7 @@ export default function DiscountPoliciesTab() {
           <div>
             <h3 className="text-base font-bold flex items-center gap-2">
               <HiOutlineCalculator className="h-5 w-5 text-emerald-500" />
-              3. Trình Mô Phỏng & Thử Nghiệm Phí Sàn Live (Interactive Fee Calculator)
+              3. Trình mô phỏng & thử nghiệm phí sàn live
             </h3>
             <p className={cn('text-xs mt-0.5', isDark ? 'text-slate-400' : 'text-stone-500')}>
               Thử nghiệm trực tiếp công thức tính hoa hồng động 3 tầng theo từng thông số ngành hàng, mức ký quỹ và thâm niên hoạt động.
@@ -536,7 +536,7 @@ export default function DiscountPoliciesTab() {
                   value={selectedCatId}
                   onChange={(e) => setSelectedCatId(e.target.value)}
                   className={cn(
-                    'w-full rounded-xl border px-3 py-2 text-xs font-semibold outline-none focus:ring-2 focus:ring-amber-500',
+                    'w-full rounded-xl border px-3 py-2 text-xs font-semibold outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                     isDark ? 'border-slate-700 bg-slate-950 text-white' : 'border-stone-300 bg-stone-50 text-stone-800'
                   )}
                 >
@@ -557,14 +557,14 @@ export default function DiscountPoliciesTab() {
                   value={selectedCondition}
                   onChange={(e) => setSelectedCondition(e.target.value)}
                   className={cn(
-                    'w-full rounded-xl border px-3 py-2 text-xs font-semibold outline-none focus:ring-2 focus:ring-amber-500',
+                    'w-full rounded-xl border px-3 py-2 text-xs font-semibold outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                     isDark ? 'border-slate-700 bg-slate-950 text-white' : 'border-stone-300 bg-stone-50 text-stone-800'
                   )}
                 >
                   <option value="GRADE_NEW">Mới 100% Nguyên Seal (Áp dụng Base Rate ngành)</option>
                   <option value="GRADE_LIKE_NEW">Like New 99% (Thu {platformSettings.commission_used_goods_rate}%)</option>
                   <option value="GRADE_FAIR">Cũ Dùng Tốt 90-95% (Thu {platformSettings.commission_used_goods_rate}%)</option>
-                  <option value="GRADE_AS_IS">Xác / Linh Kiện Bán Đứt (Thu {platformSettings.commission_used_goods_rate}%)</option>
+                  <option value="GRADE_AS_IS">Xác / linh kiện bán đứt (Thu {platformSettings.commission_used_goods_rate}%)</option>
                 </select>
               </div>
             </div>
@@ -577,7 +577,7 @@ export default function DiscountPoliciesTab() {
                   value={selectedStarLevel}
                   onChange={(e) => setSelectedStarLevel(Number(e.target.value))}
                   className={cn(
-                    'w-full rounded-xl border px-3 py-2 text-xs font-semibold outline-none focus:ring-2 focus:ring-amber-500',
+                    'w-full rounded-xl border px-3 py-2 text-xs font-semibold outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                     isDark ? 'border-slate-700 bg-slate-950 text-white' : 'border-stone-300 bg-stone-50 text-stone-800'
                   )}
                 >
@@ -650,7 +650,7 @@ export default function DiscountPoliciesTab() {
             <div>
               <div className="flex items-center justify-between pb-3 border-b border-slate-700/20">
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Kết quả tính toán</span>
-                <span className="inline-flex items-center rounded-xl bg-amber-500/10 px-2.5 py-1 text-xs font-extrabold text-amber-500">
+                <span className="inline-flex items-center rounded-xl px-2.5 py-1 text-xs font-extrabold bg-stone-100 text-stone-950">
                   {simulationResult.finalRate.toFixed(2)}%
                 </span>
               </div>
@@ -675,8 +675,8 @@ export default function DiscountPoliciesTab() {
                 </div>
 
                 {simulationResult.isFloorApplied && (
-                  <div className="flex items-center justify-between text-amber-500 bg-amber-500/10 p-2 rounded-lg text-[11px]">
-                    <span>⚠️ Kích hoạt ngưỡng sàn tối thiểu (Floor Rate):</span>
+                  <div className="flex items-center justify-between p-2 rounded-lg text-[11px] bg-stone-100 text-stone-950">
+                    <span>⚠️ Kích hoạt ngưỡng sàn tối thiểu:</span>
                     <span className="font-bold">{simulationResult.floorRate.toFixed(1)}%</span>
                   </div>
                 )}
@@ -696,7 +696,7 @@ export default function DiscountPoliciesTab() {
               </div>
 
               <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-700/20">
-                <span className="font-bold text-emerald-500">Shop thực nhận (Net):</span>
+                <span className="font-bold text-emerald-500">Shop thực nhận:</span>
                 <span className="text-sm font-extrabold text-emerald-500">{formatVND(simulationResult.sellerPayout)}</span>
               </div>
             </div>
@@ -716,7 +716,7 @@ export default function DiscountPoliciesTab() {
             <div className="flex items-center justify-between pb-4 border-b border-slate-700/30">
               <h3 className="text-base font-bold flex items-center gap-2">
                 <HiOutlineClock className="h-5 w-5 text-blue-500" />
-                <span>Chỉnh Sửa Chính Sách Thâm Niên</span>
+                <span>Chỉnh sửa chính sách thâm niên</span>
               </h3>
               <button
                 type="button"
@@ -746,7 +746,7 @@ export default function DiscountPoliciesTab() {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold mb-1">
-                    Giảm Trừ Hoa Hồng (%)
+                    Giảm trừ hoa hồng (%)
                   </label>
                   <input
                     type="number"
@@ -765,7 +765,7 @@ export default function DiscountPoliciesTab() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold mb-1">Tên Hạng / Nhãn Chính Sách</label>
+                <label className="block text-xs font-semibold mb-1">Tên hạng / nhãn chính sách</label>
                 <input
                   type="text"
                   required
@@ -779,7 +779,7 @@ export default function DiscountPoliciesTab() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold mb-1">Mô Tả Áp Dụng</label>
+                <label className="block text-xs font-semibold mb-1">Mô tả áp dụng</label>
                 <textarea
                   rows="3"
                   value={seniorityDesc}
@@ -817,7 +817,7 @@ export default function DiscountPoliciesTab() {
                 <button
                   type="submit"
                   disabled={submittingSeniority}
-                  className="rounded-xl bg-blue-600 px-5 py-2 text-sm font-bold text-white hover:bg-blue-700 disabled:opacity-50 shadow-sm"
+                  className="rounded-xl px-5 py-2 text-sm font-bold disabled:opacity-50 shadow-sm bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
                 >
                   {submittingSeniority ? 'Đang lưu...' : 'Lưu thay đổi'}
                 </button>

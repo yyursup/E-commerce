@@ -48,7 +48,7 @@ export default function AdminReportEscrowSection({
       default:
         return {
           label: 'Đang tạm giữ an toàn',
-          className: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30',
+          className: 'dark:text-amber-400 bg-stone-100 text-stone-950 border-stone-950',
         }
     }
   }
@@ -58,14 +58,14 @@ export default function AdminReportEscrowSection({
   return (
     <div
       className={cn(
-        'rounded-2xl border p-4 transition-all shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3',
+        'rounded-2xl border p-4 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3',
         isDark
           ? 'bg-slate-800/40 border-slate-700/70 text-slate-200'
           : 'bg-amber-50/30 border-amber-200/70 text-stone-800',
       )}
     >
       <div className="flex items-center gap-3">
-        <span className="p-2.5 rounded-xl bg-amber-500/15 text-amber-500 shrink-0">
+        <span className="p-2.5 rounded-xl shrink-0 bg-stone-100 text-stone-950">
           <HiOutlineCreditCard className="h-5 w-5" />
         </span>
         <div>

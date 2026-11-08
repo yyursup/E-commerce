@@ -55,8 +55,8 @@ export default function DealsProductGrid({
               )}
             >
               <option value="DEFAULT">Sắp xếp: Mặc định</option>
-              <option value="PRICE_ASC">Giá: Thấp đến Cao</option>
-              <option value="PRICE_DESC">Giá: Cao đến Thấp</option>
+              <option value="PRICE_ASC">Giá: Thấp đến cao</option>
+              <option value="PRICE_DESC">Giá: Cao đến thấp</option>
             </select>
 
             {/* Reset to ALL button */}

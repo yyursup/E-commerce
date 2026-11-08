@@ -10,7 +10,7 @@ export default function VoucherMetrics({ vouchers, isDark }) {
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
       <div className={cn('rounded-2xl border p-5 shadow-sm', isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white')}>
         <div className="flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-500">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-stone-100 text-stone-950">
             <HiOutlineTicket className="h-6 w-6" />
           </span>
           <div>

@@ -46,7 +46,7 @@ export default function CheckoutVoucherSection({
                 <div className="flex items-center gap-2">
                     <HiOutlineTicket className="w-5 h-5 text-stone-950 dark:text-white" />
                     <h2 className={cn("font-bold text-xl", isDark ? "text-white" : "text-stone-900")}>
-                        Mã Giảm Giá / Voucher
+                        Mã giảm giá / voucher
                     </h2>
                 </div>
                 <button

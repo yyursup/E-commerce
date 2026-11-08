@@ -12,10 +12,10 @@ export default function DealsHeroBanner({
           <div className="max-w-2xl">
             <span className="inline-flex items-center gap-1.5 font-mono text-xs font-medium uppercase tracking-wider mb-3">
               <HiOutlineFire className="h-4 w-4" />
-              Săn Deal Hot & Kho Mã Giảm Giá
+              Săn deal hot & kho mã giảm giá
             </span>
             <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-[-0.04em] leading-[0.98]">
-              Trung Tâm Khuyến Mãi E-Commerce
+              Trung tâm khuyến mãi E-Commerce
             </h1>
             <p className="mt-2.5 text-xs sm:text-base text-stone-900 leading-relaxed">
               Thu thập voucher giảm giá toàn sàn, mã miễn phí vận chuyển GHN và săn deal giảm giá trực tiếp từ các sản phẩm chính hãng.

@@ -637,12 +637,12 @@ export default function SellerRegister() {
       >
         <div className="flex items-center gap-3">
           <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/20 group-hover:scale-105 transition-transform">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl shadow-md group-hover:scale-105 transition-transform bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200">
               <HiOutlineShoppingBag className="h-6 w-6" />
             </div>
             <div>
-              <span className="text-base font-black tracking-tight bg-gradient-to-r from-amber-600 to-orange-500 bg-clip-text text-transparent">
-                Kênh Người Bán
+              <span className="text-base font-black tracking-tight">
+                Kênh người bán
               </span>
               <span className="hidden sm:inline-block ml-2 text-[11px] font-semibold text-stone-400 dark:text-slate-400">
                 Đăng ký mở gian hàng
@@ -760,7 +760,7 @@ export default function SellerRegister() {
               {restoredKycSession && (
                 <div className={cn(
                   'mb-6 rounded-2xl p-4 border text-left flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 transition-colors',
-                  isDark ? 'bg-amber-500/10 border-amber-500/20 text-amber-300' : 'bg-amber-50 border-amber-200 text-amber-900'
+                  isDark ? 'bg-slate-800 text-white border-white' : 'bg-amber-50 border-amber-200 text-amber-900'
                 )}>
                   <div className="text-xs space-y-0.5">
                     <p className="font-bold flex items-center gap-1.5">
@@ -802,7 +802,7 @@ export default function SellerRegister() {
                           setKycError(null)
                           setCurrentStep(3)
                         }}
-                        className="whitespace-nowrap rounded-xl bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-600"
+                        className="whitespace-nowrap rounded-xl px-3 py-1.5 text-xs font-semibold bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
                       >
                         Chụp lại selfie (Bước 3)
                       </button>
@@ -835,7 +835,7 @@ export default function SellerRegister() {
                           className={cn(
                             'flex h-10 w-10 items-center justify-center rounded-full border-2 font-semibold transition',
                             currentStep >= step
-                              ? 'border-amber-500 bg-amber-500 text-white'
+                              ? 'border-amber-500 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                               : isDark
                                 ? 'border-slate-600 text-slate-400'
                                 : 'border-stone-300 text-stone-400',
@@ -960,10 +960,10 @@ export default function SellerRegister() {
                         onClick={() => handleUpload('front')}
                         disabled={isUploading}
                         className={cn(
-                          'w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white shadow-lg transition',
+                          'w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white transition',
                           isUploading
                             ? 'cursor-not-allowed bg-amber-500/60'
-                            : 'bg-amber-500 hover:bg-amber-600',
+                            : 'bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200',
                         )}
                       >
                         <HiOutlineCloudUpload className="h-5 w-5" />
@@ -1053,10 +1053,10 @@ export default function SellerRegister() {
                           onClick={() => handleUpload('back')}
                           disabled={isUploading}
                           className={cn(
-                            'flex-1 inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white shadow-lg transition',
+                            'flex-1 inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white transition',
                             isUploading
                               ? 'cursor-not-allowed bg-amber-500/60'
-                              : 'bg-amber-500 hover:bg-amber-600',
+                              : 'bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200',
                           )}
                         >
                           <HiOutlineCloudUpload className="h-5 w-5" />
@@ -1150,10 +1150,10 @@ export default function SellerRegister() {
                         onClick={() => handleUpload('selfie')}
                         disabled={isUploading}
                         className={cn(
-                          'w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white shadow-lg transition',
+                          'w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white transition',
                           isUploading
                             ? 'cursor-not-allowed bg-amber-500/60'
-                            : 'bg-amber-500 hover:bg-amber-600',
+                            : 'bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200',
                         )}
                       >
                         <HiOutlineCloudUpload className="h-5 w-5" />
@@ -1262,10 +1262,10 @@ export default function SellerRegister() {
                         onClick={handleReviewAndCompare}
                         disabled={isComparing || !frontUploaded || !selfieUploaded}
                         className={cn(
-                          'flex-1 inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white shadow-lg transition',
+                          'flex-1 inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white transition',
                           isComparing || !frontUploaded || !selfieUploaded
                             ? 'cursor-not-allowed bg-amber-500/60'
-                            : 'bg-amber-500 hover:bg-amber-600',
+                            : 'bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200',
                         )}
                       >
                         {isComparing ? 'Đang xác minh...' : 'Xác minh danh tính'}
@@ -1342,7 +1342,7 @@ export default function SellerRegister() {
               {/* Account Registration Notice Banner */}
               <div className={cn(
                 'mb-6 rounded-2xl p-4 border text-left transition-colors',
-                isDark ? 'bg-amber-500/10 border-amber-500/20 text-amber-300' : 'bg-amber-50 border-amber-200 text-amber-900'
+                isDark ? 'bg-slate-800 text-white border-white' : 'bg-amber-50 border-amber-200 text-amber-900'
               )}>
                 <div className="text-xs space-y-1">
                   <p className="font-bold">
@@ -1393,7 +1393,7 @@ export default function SellerRegister() {
                     'w-full rounded-xl py-2.5 text-xs font-bold transition-all flex items-center justify-center gap-2',
                     sellerType === 'INDIVIDUAL'
                       ? isDark
-                        ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/20'
+                        ? 'bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                         : 'bg-white text-amber-600 shadow-sm'
                       : isDark
                         ? 'text-slate-400 hover:text-white hover:bg-slate-700/50'
@@ -1409,7 +1409,7 @@ export default function SellerRegister() {
                     'w-full rounded-xl py-2.5 text-xs font-bold transition-all flex items-center justify-center gap-2',
                     sellerType === 'BUSINESS'
                       ? isDark
-                        ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/20'
+                        ? 'bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                         : 'bg-white text-amber-600 shadow-sm'
                       : isDark
                         ? 'text-slate-400 hover:text-white hover:bg-slate-700/50'
@@ -1429,7 +1429,7 @@ export default function SellerRegister() {
                   {/* Ảnh bìa gian hàng */}
                   <div>
                     <label className={cn('mb-1.5 block text-sm font-medium', isDark ? 'text-slate-300' : 'text-stone-700')}>
-                      Ảnh bìa gian hàng (Cover Banner)
+                      Ảnh bìa gian hàng
                     </label>
                     <ShopCoverImageUpload
                       value={watch('coverImageUrl')}
@@ -1451,7 +1451,7 @@ export default function SellerRegister() {
                       <input
                         type="text"
                         placeholder="VD: TechZone Official"
-                        className={cn('w-full rounded-xl border py-3 pl-10 pr-4 text-sm outline-none transition placeholder:opacity-60', isDark ? 'border-slate-600 bg-slate-800/50 text-white placeholder:text-slate-500 focus:border-amber-500/60 focus:ring-2 focus:ring-amber-500/20' : 'border-stone-300 bg-stone-50/80 text-stone-900 placeholder:text-stone-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20', errors.shopName && 'border-red-500/70 focus:border-red-500 focus:ring-red-500/20')}
+                        className={cn('w-full rounded-xl border py-3 pl-10 pr-4 text-sm outline-none transition placeholder:opacity-60', isDark ? 'border-slate-600 bg-slate-800/50 text-white placeholder:text-slate-500 focus:border-stone-950 dark:focus:border-white focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40' : 'border-stone-300 bg-stone-50/80 text-stone-900 placeholder:text-stone-400 focus:border-stone-950 dark:focus:border-white focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40', errors.shopName && 'border-red-500/70 focus:border-red-500 focus:ring-red-500/20')}
                         {...register('shopName', {
                           required: 'Vui lòng nhập tên shop',
                           minLength: { value: 3, message: 'Tên shop tối thiểu 3 ký tự' },
@@ -1470,7 +1470,7 @@ export default function SellerRegister() {
                       <textarea
                         rows={3}
                         placeholder="Giới thiệu ngắn về shop..."
-                        className={cn('w-full rounded-xl border py-3 pl-10 pr-4 text-sm outline-none transition placeholder:opacity-60', isDark ? 'border-slate-600 bg-slate-800/50 text-white placeholder:text-slate-500 focus:border-amber-500/60 focus:ring-2 focus:ring-amber-500/20' : 'border-stone-300 bg-stone-50/80 text-stone-900 placeholder:text-stone-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20', errors.description && 'border-red-500/70 focus:border-red-500 focus:ring-red-500/20')}
+                        className={cn('w-full rounded-xl border py-3 pl-10 pr-4 text-sm outline-none transition placeholder:opacity-60', isDark ? 'border-slate-600 bg-slate-800/50 text-white placeholder:text-slate-500 focus:border-stone-950 dark:focus:border-white focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40' : 'border-stone-300 bg-stone-50/80 text-stone-900 placeholder:text-stone-400 focus:border-stone-950 dark:focus:border-white focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40', errors.description && 'border-red-500/70 focus:border-red-500 focus:ring-red-500/20')}
                         {...register('description', { maxLength: { value: 5000, message: 'Tối đa 5000 ký tự' } })}
                       />
                     </div>
@@ -1555,7 +1555,7 @@ export default function SellerRegister() {
                         <div className="relative">
                           <HiOutlineDocumentText className={cn('absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2', isDark ? 'text-slate-500' : 'text-stone-400')} />
                           <select
-                            className={cn('w-full appearance-none rounded-xl border py-3 pl-10 pr-4 text-sm outline-none transition', isDark ? 'border-slate-600 bg-slate-800/50 text-white focus:border-amber-500/60' : 'border-stone-300 bg-stone-50/80 text-stone-900 focus:border-amber-500', errors.businessType && 'border-red-500/70')}
+                            className={cn('w-full appearance-none rounded-xl border py-3 pl-10 pr-4 text-sm outline-none transition', isDark ? 'border-slate-600 bg-slate-800/50 text-white focus:border-stone-950 dark:focus:border-white' : 'border-stone-300 bg-stone-50/80 text-stone-900 focus:border-stone-950 dark:focus:border-white', errors.businessType && 'border-red-500/70')}
                             {...register('businessType', { required: 'Vui lòng chọn loại hình kinh doanh' })}
                           >
                             <option value="">-- Chọn loại hình --</option>
@@ -1678,7 +1678,7 @@ export default function SellerRegister() {
                               }
                             }
                           }}
-                          className="rounded text-amber-500 focus:ring-amber-500 h-4 w-4"
+                          className="rounded text-amber-500 focus:ring-stone-950/30 dark:focus:ring-white/40 h-4 w-4"
                         />
                         <span>Địa chỉ lấy hàng giống Địa chỉ trụ sở</span>
                       </label>
@@ -1718,7 +1718,7 @@ export default function SellerRegister() {
                             setValue('returnAddress', watch('pickupAddress') || '', { shouldValidate: true })
                           }
                         }}
-                        className="rounded text-amber-500 focus:ring-amber-500 h-4 w-4"
+                        className="rounded text-amber-500 focus:ring-stone-950/30 dark:focus:ring-white/40 h-4 w-4"
                       />
                       <span>Địa chỉ trả hàng giống Địa chỉ lấy hàng</span>
                     </label>
@@ -1874,11 +1874,11 @@ export default function SellerRegister() {
                   {/* Thông tin giải thích đồng bộ phong cách với banner đầu form */}
                   <div className={cn(
                     'rounded-2xl p-4 border text-left transition-colors',
-                    isDark ? 'bg-amber-500/10 border-amber-500/20 text-amber-300' : 'bg-amber-50/70 border-amber-200/80 text-amber-900'
+                    isDark ? 'bg-slate-800 text-white border-white' : 'bg-amber-50/70 border-amber-200/80 text-amber-900'
                   )}>
                     <div className="text-xs space-y-1">
                       <p className="font-bold">
-                        Bảo chứng giao dịch an toàn (Escrow Capital Deposit)
+                        Bảo chứng giao dịch an toàn
                       </p>
                       <p className={isDark ? 'text-slate-300' : 'text-stone-600'}>
                         Tiền ký quỹ có bản chất tương tự &quot;Vốn điều lệ&quot; cam kết trách nhiệm và uy tín của gian hàng trên sàn. Bạn có thể chọn <strong>bán hàng thông thường (1★)</strong> hoặc <strong>ký quỹ bảo chứng để nâng cao độ uy tín (2★ - 5★)</strong>.
@@ -1917,7 +1917,7 @@ export default function SellerRegister() {
                         <div className={cn(
                           'h-5 w-5 rounded-full border flex items-center justify-center shrink-0 mt-0.5 transition-colors',
                           !isEscrowChecked
-                            ? 'border-amber-500 bg-amber-500 text-white'
+                            ? 'border-amber-500 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                             : 'border-stone-300 dark:border-slate-600'
                         )}>
                           {!isEscrowChecked && <div className="h-2 w-2 rounded-full bg-white" />}
@@ -1945,7 +1945,7 @@ export default function SellerRegister() {
                       <div className="flex items-start justify-between gap-2">
                         <div className="space-y-1">
                           <div className="flex items-center gap-2">
-                            <span className="text-sm font-bold text-stone-900 dark:text-white">Ký Quỹ Bảo Chứng</span>
+                            <span className="text-sm font-bold text-stone-900 dark:text-white">Ký quỹ bảo chứng</span>
                             <span className="rounded-md bg-amber-500/15 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 text-[10px] font-semibold border border-amber-500/20">
                               2★ - 5★ Uy Tín
                             </span>
@@ -1957,7 +1957,7 @@ export default function SellerRegister() {
                         <div className={cn(
                           'h-5 w-5 rounded-full border flex items-center justify-center shrink-0 mt-0.5 transition-colors',
                           isEscrowChecked
-                            ? 'border-amber-500 bg-amber-500 text-white'
+                            ? 'border-amber-500 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                             : 'border-stone-300 dark:border-slate-600'
                         )}>
                           {isEscrowChecked && <div className="h-2 w-2 rounded-full bg-white" />}
@@ -1987,7 +1987,7 @@ export default function SellerRegister() {
                                 className={cn(
                                   'rounded-xl border p-3 text-left transition-all',
                                   isSelected
-                                    ? 'border-amber-500 bg-amber-500/10 text-amber-600 dark:text-amber-400 ring-1 ring-amber-500 shadow-xs'
+                                    ? 'dark:text-amber-400 ring-1 ring-amber-500 bg-stone-100 text-stone-950 border-stone-950'
                                     : isDark
                                     ? 'border-slate-700 bg-slate-800/40 text-slate-300 hover:bg-slate-800'
                                     : 'border-stone-200 bg-stone-50/60 text-stone-700 hover:bg-stone-100'
@@ -2025,8 +2025,8 @@ export default function SellerRegister() {
                             className={cn(
                               'w-full rounded-xl border py-2.5 pl-4 pr-16 text-sm font-semibold outline-none transition',
                               isDark
-                                ? 'border-slate-600 bg-slate-800/50 text-white placeholder:text-slate-500 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20'
-                                : 'border-stone-300 bg-stone-50/80 text-stone-900 placeholder:text-stone-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20'
+                                ? 'border-slate-600 bg-slate-800/50 text-white placeholder:text-slate-500 focus:border-stone-950 dark:focus:border-white focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40'
+                                : 'border-stone-300 bg-stone-50/80 text-stone-900 placeholder:text-stone-400 focus:border-stone-950 dark:focus:border-white focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40'
                             )}
                           />
                           <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-stone-400 dark:text-slate-500 pointer-events-none">
@@ -2104,10 +2104,10 @@ export default function SellerRegister() {
                     type="submit"
                     disabled={isSubmitting}
                     className={cn(
-                      'w-full rounded-xl py-3.5 text-sm font-semibold text-white shadow-lg transition',
+                      'w-full rounded-xl py-3.5 text-sm font-semibold text-white transition',
                       isSubmitting
                         ? 'cursor-not-allowed bg-amber-500/60'
-                        : 'bg-amber-500 hover:bg-amber-600 active:scale-[0.99]',
+                        : 'active:scale-[0.99] bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200',
                     )}
                   >
                     {isSubmitting ? 'Đang gửi...' : 'Gửi đăng ký'}

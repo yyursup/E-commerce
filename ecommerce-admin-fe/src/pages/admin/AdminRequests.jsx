@@ -29,8 +29,8 @@ const getStatusBadge = (status, isDark) => {
       return {
         label: 'Chờ duyệt',
         className: isDark
-          ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
-          : 'bg-amber-50 text-amber-700 border border-amber-200',
+          ? 'border bg-slate-800 text-white border-white'
+          : 'border bg-stone-100 text-stone-950 border-stone-950',
       }
   }
 }
@@ -83,7 +83,7 @@ export default function AdminRequests() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">Quản Lý Yêu Cầu & Xét Duyệt</h1>
+          <h1 className="text-2xl font-semibold">Quản lý yêu cầu & xét duyệt</h1>
           <p className={cn('text-sm mt-0.5', isDark ? 'text-slate-400' : 'text-stone-500')}>
             Danh sách yêu cầu mở gian hàng và khiếu nại tài khoản bị cấm (Tổng: {totalElements})
           </p>
@@ -98,8 +98,8 @@ export default function AdminRequests() {
             className={cn(
               'rounded-lg border px-3 py-2 text-sm outline-none transition',
               isDark
-                ? 'border-slate-700 bg-slate-900 text-slate-100 focus:border-amber-500/60'
-                : 'border-stone-300 bg-white text-stone-700 focus:border-amber-500',
+                ? 'border-slate-700 bg-slate-900 text-slate-100 focus:border-stone-950 dark:focus:border-white'
+                : 'border-stone-300 bg-white text-stone-700 focus:border-stone-950 dark:focus:border-white',
             )}
           >
             <option value="">Tất cả loại yêu cầu</option>
@@ -115,8 +115,8 @@ export default function AdminRequests() {
             className={cn(
               'rounded-lg border px-3 py-2 text-sm outline-none transition',
               isDark
-                ? 'border-slate-700 bg-slate-900 text-slate-100 focus:border-amber-500/60'
-                : 'border-stone-300 bg-white text-stone-700 focus:border-amber-500',
+                ? 'border-slate-700 bg-slate-900 text-slate-100 focus:border-stone-950 dark:focus:border-white'
+                : 'border-stone-300 bg-white text-stone-700 focus:border-stone-950 dark:focus:border-white',
             )}
           >
             <option value="">Tất cả trạng thái</option>
@@ -223,8 +223,8 @@ export default function AdminRequests() {
                       className={cn(
                         'inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold transition',
                         isDark
-                          ? 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30'
-                          : 'bg-amber-100 text-amber-700 hover:bg-amber-200',
+                          ? 'hover:bg-amber-500/30 bg-slate-800 text-white'
+                          : 'hover:bg-amber-200 bg-stone-100 text-stone-950',
                       )}
                     >
                       Xem xét →

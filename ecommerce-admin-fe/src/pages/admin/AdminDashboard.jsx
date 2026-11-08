@@ -5,14 +5,10 @@ import {
   HiOutlineUsers,
   HiOutlineShoppingBag,
   HiOutlineChartBar,
-  HiOutlineCurrencyDollar,
-  HiOutlineShieldCheck,
   HiOutlineBan,
-  HiOutlineCheckCircle,
   HiOutlineClipboardCheck,
   HiOutlineSearch,
   HiOutlineCube,
-  HiOutlineTrendingUp,
   HiOutlineExclamationCircle,
   HiOutlineRefresh,
   HiOutlineCog,
@@ -156,11 +152,8 @@ export default function AdminDashboard() {
           <div>
             <div className="flex items-center gap-3">
               <h1 className={cn('text-3xl font-extrabold tracking-tight', isDark ? 'text-white' : 'text-stone-900')}>
-                Tổng Quan Sàn Giao Dịch
+                Tổng quan sàn giao dịch
               </h1>
-              <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-500 border border-emerald-500/20">
-                Server-Side Realtime
-              </span>
             </div>
             <p className={cn('mt-1 text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
               Hệ thống giám sát dòng tiền GMV, Quỹ bảo lãnh Escrow và ngách thiết bị điện tử
@@ -215,7 +208,7 @@ export default function AdminDashboard() {
                   className={cn(
                     'px-2.5 py-1 rounded-lg transition-all',
                     timelineFilter === p.id
-                      ? 'bg-blue-600 text-white shadow-sm'
+                      ? 'shadow-sm bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                       : isDark
                       ? 'text-slate-400 hover:text-white'
                       : 'text-stone-600 hover:text-stone-900',
@@ -282,7 +275,7 @@ export default function AdminDashboard() {
             </div>
             <button
               onClick={handleApplyCustomDate}
-              className="px-3.5 py-1.5 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition"
+              className="px-3.5 py-1.5 rounded-lg font-semibold transition bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
             >
               Áp dụng
             </button>
@@ -305,17 +298,11 @@ export default function AdminDashboard() {
                 <span className={cn('text-xs font-semibold uppercase tracking-wider', isDark ? 'text-slate-400' : 'text-stone-500')}>
                   Tổng GMV
                 </span>
-                <span className="rounded bg-blue-500/10 px-1.5 py-0.5 text-[10px] font-bold text-blue-500 border border-blue-500/20">
-                  Trong kỳ
-                </span>
-              </div>
-              <div className="rounded-xl bg-blue-500/10 p-2 text-blue-500 shrink-0">
-                <HiOutlineTrendingUp className="h-5 w-5" />
               </div>
             </div>
             <div className="mt-3">
               <p>
-                {renderCurrency(analytics?.totalGmv, 'text-blue-500')}
+                {renderCurrency(analytics?.totalGmv, 'text-stone-950 dark:text-white')}
               </p>
               <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs font-medium">
                 {analytics?.gmvGrowthRate != null ? (
@@ -350,19 +337,13 @@ export default function AdminDashboard() {
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5">
                 <span className={cn('text-xs font-semibold uppercase tracking-wider', isDark ? 'text-slate-400' : 'text-stone-500')}>
-                  Doanh Thu Quyết Toán
+                  Doanh thu quyết toán
                 </span>
-                <span className="rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-bold text-emerald-500 border border-emerald-500/20">
-                  Trong kỳ
-                </span>
-              </div>
-              <div className="rounded-xl bg-emerald-500/10 p-2 text-emerald-500 shrink-0">
-                <HiOutlineCheckCircle className="h-5 w-5" />
               </div>
             </div>
             <div className="mt-3">
               <p>
-                {renderCurrency(analytics?.settledRevenue, 'text-emerald-500')}
+                {renderCurrency(analytics?.settledRevenue, 'text-stone-950 dark:text-white')}
               </p>
               <div className={cn("mt-1 flex flex-wrap items-center gap-1.5 text-xs font-medium", isDark ? 'text-slate-400' : 'text-stone-500')}>
                 <span>{analytics?.completedOrders || 0} đơn đã giao trong kỳ</span>
@@ -388,24 +369,18 @@ export default function AdminDashboard() {
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5">
                 <span className={cn('text-xs font-semibold uppercase tracking-wider', isDark ? 'text-slate-400' : 'text-stone-500')}>
-                  Quỹ Ký Quỹ Escrow
+                  Quỹ ký quỹ escrow
                 </span>
-                <span className="rounded bg-purple-500/10 px-1.5 py-0.5 text-[10px] font-bold text-purple-400 border border-purple-500/20">
-                  Thời gian thực
-                </span>
-              </div>
-              <div className="rounded-xl bg-purple-500/10 p-2 text-purple-500 shrink-0">
-                <HiOutlineShieldCheck className="h-5 w-5" />
               </div>
             </div>
             <div className="mt-3">
               <p>
-                {renderCurrency(analytics?.activeEscrowBalance, 'text-purple-500')}
+                {renderCurrency(analytics?.activeEscrowBalance, 'text-stone-950 dark:text-white')}
               </p>
-              <div className={cn("mt-1 flex flex-wrap items-center gap-1.5 text-xs font-medium", isDark ? 'text-purple-400' : 'text-purple-600')}>
+              <div className={cn("mt-1 flex flex-wrap items-center gap-1.5 text-xs font-medium", isDark ? 'text-slate-400' : 'text-stone-500')}>
                 <span>Bảo lãnh vận chuyển & 3 ngày đồng kiểm</span>
               </div>
-              <p className={cn("text-[11px] mt-1.5 truncate text-purple-400/80")}>
+              <p className={cn("text-[11px] mt-1.5 truncate", isDark ? "text-slate-400" : "text-stone-500")}>
                 Đang tạm giữ chờ giải ngân
               </p>
             </div>
@@ -424,21 +399,15 @@ export default function AdminDashboard() {
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5">
                 <span className={cn('text-xs font-semibold uppercase tracking-wider', isDark ? 'text-slate-400' : 'text-stone-500')}>
-                  Hoa Hồng Sàn Thực Thu
+                  Hoa hồng sàn thực thu
                 </span>
-                <span className="rounded bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-bold text-amber-500 border border-amber-500/20">
-                  Trong kỳ
-                </span>
-              </div>
-              <div className="rounded-xl bg-amber-500/10 p-2 text-amber-500 shrink-0">
-                <HiOutlineCurrencyDollar className="h-5 w-5" />
               </div>
             </div>
             <div className="mt-3">
               <p>
-                {renderCurrency(analytics?.totalPlatformCommission, 'text-amber-500')}
+                {renderCurrency(analytics?.totalPlatformCommission, 'text-stone-950 dark:text-white')}
               </p>
-              <div className={cn("mt-1 flex flex-wrap items-center gap-1.5 text-xs font-medium", isDark ? 'text-amber-400' : 'text-amber-600')}>
+              <div className={cn("mt-1 flex flex-wrap items-center gap-1.5 text-xs font-medium", isDark ? 'text-slate-400' : 'text-stone-500')}>
                 <span>Tỷ lệ hoa hồng sàn trung bình: ~5.0%</span>
               </div>
               <p className={cn("text-[11px] mt-1.5 truncate", isDark ? "text-slate-400" : "text-stone-500")}>
@@ -460,9 +429,8 @@ export default function AdminDashboard() {
               <p className={cn('text-xs font-medium', isDark ? 'text-slate-400' : 'text-stone-500')}>
                 Tỷ lệ hoàn thành đơn
               </p>
-              <span className="rounded bg-emerald-500/10 px-1 py-0.2 text-[9px] font-bold text-emerald-500 border border-emerald-500/20">Trong kỳ</span>
             </div>
-            <p className="mt-1 text-xl font-bold text-emerald-500">{analytics?.fulfillmentRate || 0}%</p>
+            <p className="mt-1 text-xl font-bold">{analytics?.fulfillmentRate || 0}%</p>
             <p className="text-[11px] text-slate-500">{analytics?.totalOrders || 0} đơn phát sinh trong kỳ</p>
           </div>
           <div>
@@ -470,9 +438,8 @@ export default function AdminDashboard() {
               <p className={cn('text-xs font-medium', isDark ? 'text-slate-400' : 'text-stone-500')}>
                 Tỷ lệ hoàn hàng / lỗi
               </p>
-              <span className="rounded bg-amber-500/10 px-1 py-0.2 text-[9px] font-bold text-amber-500 border border-amber-500/20">Trong kỳ</span>
             </div>
-            <p className="mt-1 text-xl font-bold text-amber-500">{analytics?.returnRate || 0}%</p>
+            <p className="mt-1 text-xl font-bold">{analytics?.returnRate || 0}%</p>
             <p className="text-[11px] text-slate-500">{analytics?.returnedOrders || 0} đơn đã hoàn tiền</p>
           </div>
           <div>
@@ -480,7 +447,6 @@ export default function AdminDashboard() {
               <p className={cn('text-xs font-medium', isDark ? 'text-slate-400' : 'text-stone-500')}>
                 Tranh chấp đang xử lý
               </p>
-              <span className="rounded bg-rose-500/10 px-1 py-0.2 text-[9px] font-bold text-rose-400 border border-rose-500/20">Thời gian thực</span>
             </div>
             <p className="mt-1 text-xl font-bold text-rose-500">{analytics?.pendingDisputesCount || 0} vụ</p>
             <p className="text-[11px] text-slate-500">Tỷ lệ: {analytics?.disputeRate || 0}%</p>
@@ -490,9 +456,8 @@ export default function AdminDashboard() {
               <p className={cn('text-xs font-medium', isDark ? 'text-slate-400' : 'text-stone-500')}>
                 Shop đã định danh eKYC
               </p>
-              <span className="rounded bg-blue-500/10 px-1 py-0.2 text-[9px] font-bold text-blue-400 border border-blue-500/20">Mạng lưới</span>
             </div>
-            <p className="mt-1 text-xl font-bold text-blue-500">{analytics?.kycVerificationRate || 0}%</p>
+            <p className="mt-1 text-xl font-bold">{analytics?.kycVerificationRate || 0}%</p>
             <p className="text-[11px] text-slate-500">
               {analytics?.verifiedKycShops || 0} / {analytics?.totalShops || 0} gian hàng
             </p>
@@ -510,7 +475,7 @@ export default function AdminDashboard() {
             <div>
               <div className="flex items-center gap-2">
                 <h2 className={cn('text-lg font-bold', isDark ? 'text-white' : 'text-stone-900')}>
-                  Xu Hướng Doanh Số GMV & Hoa Hồng Sàn Theo Ngày
+                  Xu hướng doanh số GMV & hoa hồng sàn theo ngày
                 </h2>
                 {analytics?.startDate && analytics?.endDate && (
                   <span className={cn('text-[11px] px-2 py-0.5 rounded-md font-semibold', isDark ? 'bg-slate-800 text-slate-300' : 'bg-stone-100 text-stone-600')}>
@@ -572,7 +537,6 @@ export default function AdminDashboard() {
             ) : (
               <div className="flex w-full items-center justify-between gap-2 overflow-hidden">
                 <div className="flex items-center gap-1.5 truncate">
-                  <span>💡</span>
                   <span className="truncate">Rê chuột vào cột ngày để xem chi tiết doanh số & hoa hồng</span>
                 </div>
                 <div className="flex items-center gap-2 shrink-0 font-medium">
@@ -618,7 +582,7 @@ export default function AdminDashboard() {
                     {/* Tooltip nổi phía trên cột - cố định vị trí, không animation giật */}
                     <div
                       className={cn(
-                        'pointer-events-none absolute -top-11 left-1/2 z-30 -translate-x-1/2 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs shadow-xl transition-opacity duration-100 border',
+                        'pointer-events-none absolute -top-11 left-1/2 z-30 -translate-x-1/2 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs transition-opacity duration-100 border',
                         isHovered
                           ? 'opacity-100'
                           : 'opacity-0 pointer-events-none',
@@ -687,7 +651,7 @@ export default function AdminDashboard() {
           >
             <div className="border-b pb-4 mb-4">
               <h2 className={cn('text-lg font-bold', isDark ? 'text-white' : 'text-stone-900')}>
-                Cơ Cấu Thiết Bị Theo Tình Trạng Máy
+                Cơ cấu thiết bị theo tình trạng máy
               </h2>
               <p className={cn('text-xs', isDark ? 'text-slate-400' : 'text-stone-500')}>
                 Phân tích tỷ trọng doanh số giữa Mới Seal, Like New 99% và Hàng Xác As-is
@@ -730,7 +694,7 @@ export default function AdminDashboard() {
             <div className="flex items-center justify-between border-b pb-4 mb-4">
               <div>
                 <h2 className={cn('text-lg font-bold', isDark ? 'text-white' : 'text-stone-900')}>
-                  Top Gian Hàng Dẫn Đầu Doanh Số
+                  Top gian hàng dẫn đầu doanh số
                 </h2>
                 <p className={cn('text-xs', isDark ? 'text-slate-400' : 'text-stone-500')}>
                   Xếp hạng theo tổng doanh thu đã quyết toán
@@ -745,7 +709,7 @@ export default function AdminDashboard() {
               {(analytics?.topShops || []).map((s, index) => (
                 <div key={s.shopId || index} className="flex items-center justify-between py-3">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-500/10 text-xs font-bold text-amber-500">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold bg-stone-100 text-stone-950">
                       {index + 1}
                     </div>
                     <div>
@@ -775,12 +739,12 @@ export default function AdminDashboard() {
           )}
         >
           <div className="flex items-start gap-4">
-            <div className="rounded-xl bg-amber-500/10 p-3 text-amber-500">
+            <div className="rounded-xl p-3 bg-stone-100 text-stone-950">
               <HiOutlineCog className="h-6 w-6" />
             </div>
             <div>
               <h2 className={cn('text-base font-bold', isDark ? 'text-white' : 'text-stone-900')}>
-                Biểu Phí Hoa Hồng Theo Ngành Hàng & Chính Sách Giảm Trừ
+                Biểu phí hoa hồng theo ngành hàng & chính sách giảm trừ
               </h2>
               <p className={cn('text-xs mt-1 leading-relaxed', isDark ? 'text-slate-300' : 'text-stone-600')}>
                 Toàn bộ cấu hình hoa hồng 3 tầng (Biểu phí danh mục, Giảm trừ Ký quỹ 1★-5★, Ưu đãi Thâm niên) đã được tập trung tại Trung Tâm Quản Lý Hoa Hồng.
@@ -790,9 +754,9 @@ export default function AdminDashboard() {
 
           <Link
             to="/commissions?tab=categories"
-            className="inline-flex items-center gap-2 whitespace-nowrap rounded-xl bg-amber-500 px-5 py-2.5 text-xs font-bold text-white hover:bg-amber-600 transition shadow-md shadow-amber-500/20"
+            className="inline-flex items-center gap-2 whitespace-nowrap rounded-xl px-5 py-2.5 text-xs font-bold transition shadow-md bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
           >
-            Quản lý Biểu Phí Chi Tiết →
+            Quản lý biểu phí chi tiết →
           </Link>
         </div>
 
@@ -806,7 +770,7 @@ export default function AdminDashboard() {
           <div className="flex items-center justify-between border-b pb-4 mb-4">
             <div>
               <h2 className={cn('text-lg font-bold', isDark ? 'text-white' : 'text-stone-900')}>
-                Người Dùng Mới Hoạt Động
+                Người dùng mới hoạt động
               </h2>
               <p className={cn('text-xs', isDark ? 'text-slate-400' : 'text-stone-500')}>
                 Tổng số {analytics?.totalBuyers || 0} tài khoản trên hệ sinh thái sàn

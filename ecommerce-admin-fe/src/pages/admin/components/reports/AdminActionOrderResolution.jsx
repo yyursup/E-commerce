@@ -36,7 +36,7 @@ export default function AdminActionOrderResolution({
           className={cn(
             'flex items-center gap-2 p-2.5 rounded-xl border cursor-pointer transition',
             resolutionType === 'RETURN_AND_REFUND'
-              ? 'border-amber-500 bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold'
+              ? 'dark:text-amber-400 font-bold bg-stone-100 text-stone-950 border-stone-950'
               : isDark
                 ? 'border-slate-700 bg-slate-800 text-slate-300'
                 : 'border-stone-200 bg-stone-50 text-stone-700',

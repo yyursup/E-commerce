@@ -103,12 +103,12 @@ export default function ShopVouchers() {
     <div className="space-y-6">
       {/* Top Banner & Actions (Đồng bộ chuẩn với Quản lý Sản phẩm) */}
       <div className={cn(
-        'rounded-3xl border p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-colors',
+        'rounded-3xl border p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-colors',
         isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
       )}>
         <div>
           <h1 className={cn('text-2xl font-bold tracking-tight', isDark ? 'text-white' : 'text-stone-900')}>
-            Quản Lý Voucher Gian Hàng
+            Quản lý voucher gian hàng
           </h1>
           <p className={cn('text-xs mt-1', isDark ? 'text-slate-400' : 'text-stone-500')}>
             Tổng số: <span className="font-extrabold text-amber-500">{vouchers.length}</span> mã giảm giá độc quyền
@@ -143,7 +143,7 @@ export default function ShopVouchers() {
               "flex-1 sm:flex-initial flex items-center justify-center gap-2 rounded-2xl px-5 py-2.5 text-xs font-bold transition-all shadow-md",
               isShopClosed
                 ? "bg-stone-300 text-stone-500 dark:bg-slate-800 dark:text-slate-500 cursor-not-allowed shadow-none"
-                : "bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 active:scale-95 shadow-amber-500/25"
+                : "active:scale-95 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
             )}
             title={isShopClosed ? 'Gian hàng đã đóng cửa' : undefined}
           >
@@ -177,10 +177,10 @@ export default function ShopVouchers() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className={cn(
-              'w-full rounded-2xl pl-10 pr-4 py-2.5 text-xs border outline-none transition-all focus:ring-2 focus:ring-amber-500/40',
+              'w-full rounded-2xl pl-10 pr-4 py-2.5 text-xs border outline-none transition-all focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
               isDark
-                ? 'border-slate-800 bg-slate-900 text-slate-100 placeholder-slate-500 focus:border-amber-500'
-                : 'border-stone-200 bg-white text-stone-900 placeholder-stone-400 focus:border-amber-500'
+                ? 'border-slate-800 bg-slate-900 text-slate-100 placeholder-slate-500 focus:border-stone-950 dark:focus:border-white'
+                : 'border-stone-200 bg-white text-stone-900 placeholder-stone-400 focus:border-stone-950 dark:focus:border-white'
             )}
           />
           <HiOutlineSearch className={cn('absolute left-3.5 top-3 h-4 w-4', isDark ? 'text-slate-400' : 'text-stone-400')} />
@@ -200,7 +200,7 @@ export default function ShopVouchers() {
                 className={cn(
                   'px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all',
                   isActive
-                    ? 'bg-amber-500 text-white shadow-md shadow-amber-500/25'
+                    ? 'bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                     : isDark
                       ? 'text-slate-300 hover:text-white hover:bg-slate-800'
                       : 'text-stone-600 hover:text-stone-900 hover:bg-white'

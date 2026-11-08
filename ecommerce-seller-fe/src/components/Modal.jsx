@@ -107,7 +107,7 @@ export function PromoModalContent({ image, title, description, ctaText, onCta })
         <button
           type="button"
           onClick={onCta}
-          className="w-full rounded-xl bg-amber-500 py-3 text-sm font-semibold text-white transition hover:bg-amber-600"
+          className="w-full rounded-xl py-3 text-sm font-semibold transition bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
         >
           {ctaText}
         </button>

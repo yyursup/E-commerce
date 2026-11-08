@@ -100,7 +100,7 @@ export default function AdminActionEscrowSplit({
               className={cn(
                 'text-[10px] font-bold px-2 py-1 rounded-lg border transition active:scale-95',
                 buyerPct === preset.buyer
-                  ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+                  ? 'border-indigo-600 shadow-sm bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                   : isDark
                     ? 'border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-750'
                     : 'border-stone-200 bg-white text-stone-700 hover:bg-stone-100',
@@ -142,7 +142,7 @@ export default function AdminActionEscrowSplit({
               className={cn(
                 'text-[10px] font-medium px-2 py-1 rounded-lg border transition active:scale-95 text-left',
                 actionModal.note === tag
-                  ? 'bg-indigo-600 text-white border-indigo-600 font-bold'
+                  ? 'border-indigo-600 font-bold bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                   : isDark
                     ? 'border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-750'
                     : 'border-stone-200 bg-stone-100 text-stone-700 hover:bg-stone-200',

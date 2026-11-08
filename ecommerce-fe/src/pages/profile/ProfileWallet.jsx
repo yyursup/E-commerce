@@ -226,8 +226,6 @@ export default function ProfileWallet({ isDark: isDarkProp }) {
                 animate={{ opacity: 1, y: 0 }}
                 className="relative overflow-hidden rounded-2xl p-6 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
             >
-                <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/10" />
-                <div className="absolute -bottom-4 -left-4 h-20 w-20 rounded-full bg-white/5" />
                 <div className="relative">
                     <p className="text-sm font-medium text-amber-100">Tổng tài sản</p>
                     <p className="mt-1 text-4xl font-bold tracking-tight">{formatCurrency(total)}</p>
@@ -313,7 +311,7 @@ export default function ProfileWallet({ isDark: isDarkProp }) {
                         </div>
                         <div>
                             <h3 className={cn('text-base font-bold', isDark ? 'text-white' : 'text-stone-900')}>
-                                Tài Khoản Ngân Hàng Liên Kết
+                                Tài khoản ngân hàng liên kết
                             </h3>
                             <p className={cn('text-xs mt-0.5', isDark ? 'text-slate-400' : 'text-stone-500')}>
                                 Dùng để nhận tiền hoàn trả từ khiếu nại hoặc rút tiền từ số dư ví

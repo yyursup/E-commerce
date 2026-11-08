@@ -74,11 +74,11 @@ export default function AppealModal({
               isDark ? 'border-slate-800 bg-slate-900/60' : 'border-stone-100 bg-stone-50/50'
             )}>
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-500 border border-amber-500/20 shadow-sm">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border shadow-sm bg-stone-100 text-stone-950 border-stone-950">
                   <HiOutlineShieldCheck className="h-5 w-5" />
                 </div>
                 <div>
-                  <h2 className="text-base font-bold tracking-tight">Gửi Đơn Kháng Cáo Vi Phạm</h2>
+                  <h2 className="text-base font-bold tracking-tight">Gửi đơn kháng cáo vi phạm</h2>
                   <p className={cn('text-xs mt-0.5', isDark ? 'text-slate-400' : 'text-stone-500')}>
                     Giải trình và đính kèm bằng chứng để khôi phục điểm uy tín
                   </p>
@@ -105,7 +105,7 @@ export default function AppealModal({
                     Sự vụ vi phạm cần kháng cáo <span className="text-rose-500">*</span>
                   </label>
                   {appealableViolations.length > 1 && (
-                    <span className="text-[11px] font-semibold text-amber-500 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/20">
+                    <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full border bg-stone-100 text-stone-950 border-stone-950">
                       {appealableViolations.length} vi phạm
                     </span>
                   )}
@@ -239,7 +239,7 @@ export default function AppealModal({
                   onChange={(e) => setDescription(e.target.value)}
                   required
                   className={cn(
-                    'w-full rounded-2xl p-3.5 text-xs border outline-none resize-none leading-relaxed transition focus:ring-2 focus:ring-amber-500/20',
+                    'w-full rounded-2xl p-3.5 text-xs border outline-none resize-none leading-relaxed transition focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                     isDark ? 'border-slate-800 bg-slate-800 text-white placeholder-slate-500' : 'border-stone-200 bg-white text-stone-900 placeholder-stone-400'
                   )}
                 />
@@ -322,7 +322,7 @@ export default function AppealModal({
                       </div>
                     ) : (
                       <div className="flex flex-col items-center justify-center gap-1.5 py-1">
-                        <div className="p-2 rounded-full bg-amber-500/10 text-amber-500">
+                        <div className="p-2 rounded-full bg-stone-100 text-stone-950">
                           <HiOutlineUpload className="h-5 w-5" />
                         </div>
                         <span className="text-xs font-bold">
@@ -349,7 +349,7 @@ export default function AppealModal({
                 <button
                   type="submit"
                   disabled={submitting || uploadingImage || !selectedViolation || appealableViolations.length === 0}
-                  className="px-5 py-2.5 rounded-2xl text-xs font-bold text-white bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 active:scale-95 shadow-md shadow-amber-500/25 disabled:opacity-50 transition-all"
+                  className="px-5 py-2.5 rounded-2xl text-xs font-bold active:scale-95 shadow-md disabled:opacity-50 transition-all bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
                 >
                   {submitting ? 'Đang gửi...' : 'Nộp đơn kháng cáo'}
                 </button>

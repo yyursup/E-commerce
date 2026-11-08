@@ -62,12 +62,12 @@ export default function AdminReportDisputeSideBySide({
         {isVid ? (
           <>
             <video src={url} className="h-full w-full object-cover" muted />
-            <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-md text-[9px] font-extrabold uppercase bg-rose-600 text-white tracking-wider shadow-sm flex items-center gap-1 z-10">
+            <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-md text-[9px] font-extrabold uppercase bg-rose-600 text-white tracking-wider flex items-center gap-1 z-10">
               <HiOutlineVideoCamera className="h-3 w-3" />
               Video
             </div>
             <div className="absolute inset-0 bg-black/40 group-hover:bg-black/60 transition-colors flex items-center justify-center">
-              <div className="p-2 rounded-full bg-white/90 text-stone-900 shadow-md group-hover:scale-110 transition-transform">
+              <div className="p-2 rounded-full bg-white/90 text-stone-900 group-hover:scale-110 transition-transform">
                 <HiOutlinePlay className="h-4 w-4 fill-current ml-0.5" />
               </div>
             </div>
@@ -176,7 +176,7 @@ export default function AdminReportDisputeSideBySide({
             <div className="flex items-center justify-between pb-1 border-b border-sky-200/60 dark:border-sky-900/60">
               <span className="text-xs font-bold text-sky-600 dark:text-sky-400 flex items-center gap-1.5">
                 <HiOutlineShoppingBag className="h-4 w-4" />
-                2. Phía Người Bán (Shop)
+                2. Phía người bán
               </span>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-bold border bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20">
                 Bị tố cáo
@@ -196,7 +196,7 @@ export default function AdminReportDisputeSideBySide({
                       ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30'
                       : sellerAction === 'ACCEPT_REFUND'
                         ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
-                        : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30',
+                        : 'dark:text-amber-400 bg-stone-100 text-stone-950 border-stone-950',
                   )}
                 >
                   {sellerAction === 'ACCEPT_REFUND' && 'Đồng ý hoàn tiền ngay'}
@@ -265,7 +265,7 @@ export default function AdminReportDisputeSideBySide({
               </span>
               <div>
                 <h4 className="text-xs font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400">
-                  Khiếu Nại Kiện Hàng Hoàn Trả Từ Phía Shop
+                  Khiếu nại kiện hàng hoàn trả từ phía shop
                 </h4>
                 <p className="text-[11px] text-stone-500 dark:text-slate-400">
                   Phát sinh sau khi Buyer gửi hàng hoàn về kho và Shop kiểm tra kiện hàng.

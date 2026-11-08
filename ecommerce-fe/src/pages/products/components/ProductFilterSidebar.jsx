@@ -68,7 +68,7 @@ export default function ProductFilterSidebar({
               isDark ? 'text-white' : 'text-stone-900'
             )}
           >
-            Bộ Lọc Tìm Kiếm
+            Bộ lọc tìm kiếm
           </h2>
           {hasActiveFilters && (
             <button
@@ -144,7 +144,7 @@ export default function ProductFilterSidebar({
               isDark ? 'text-slate-400' : 'text-stone-500'
             )}
           >
-            Tình Trạng Máy
+            Tình trạng máy
           </h3>
           <div className="space-y-1">
             {CONDITION_OPTIONS.map((opt) => {

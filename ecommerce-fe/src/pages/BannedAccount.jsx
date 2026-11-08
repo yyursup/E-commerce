@@ -190,7 +190,7 @@ export default function BannedAccount() {
             </div>
             <div>
               <h1 className="text-xl font-bold tracking-tight">
-                {isUnbanned ? 'Tài Khoản Đã Được Mở Khóa Kỷ Luật' : 'Tài Khoản Đã Bị Khóa Vĩnh Viễn'}
+                {isUnbanned ? 'Tài khoản đã được mở khóa kỷ luật' : 'Tài khoản đã bị khóa vĩnh viễn'}
               </h1>
               <p className={`${isUnbanned ? 'text-emerald-100' : 'text-stone-300'} text-sm mt-0.5`}>
                 Tài khoản: <span className="font-mono font-medium">{statusData?.username || user?.email}</span>
@@ -216,7 +216,7 @@ export default function BannedAccount() {
                   <HiOutlineCheckCircle className="w-7 h-7 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
                   <div className="space-y-1">
                     <h3 className="font-bold text-base text-emerald-950 dark:text-emerald-100">
-                      Đơn Xem Xét Đã Được Phê Duyệt Thành Công!
+                      Đơn xem xét đã được phê duyệt thành công!
                     </h3>
                     <p className="text-sm text-emerald-800 dark:text-emerald-300 leading-relaxed">
                       Ban Quản Trị đã chấp thuận đơn khiếu nại mã <span className="font-mono font-semibold">{latestAppeal?.displayCode || ''}</span> của bạn.
@@ -240,7 +240,7 @@ export default function BannedAccount() {
               {/* Khối Điều Hướng Quay Lại / Đăng Nhập Lại Rõ Ràng */}
               <div className="bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 rounded-md p-6 text-center space-y-4">
                 <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                  Làm Mới Phiên Làm Việc Để Tiếp Tục Sử Dụng Sàn
+                  Làm mới phiên làm việc để tiếp tục sử dụng sàn
                 </h4>
                 <p className="text-xs text-slate-600 dark:text-slate-400 max-w-md mx-auto">
                   Hệ thống cần làm mới phiên đăng nhập để cập nhật quyền truy cập mới cho tài khoản của bạn.
@@ -252,14 +252,14 @@ export default function BannedAccount() {
                     className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-sm font-semibold transition-all"
                   >
                     <HiOutlineRefresh className="w-4 h-4 mr-2" />
-                    Đăng Nhập Lại Ngay
+                    Đăng nhập lại ngay
                   </button>
                   <button
                     type="button"
                     onClick={handleGoHome}
                     className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-2.5 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-md text-sm font-medium transition-all"
                   >
-                    Về Trang Chủ Sàn
+                    Về trang chủ sàn
                   </button>
                 </div>
               </div>
@@ -284,7 +284,7 @@ export default function BannedAccount() {
                 <div className="bg-slate-100 dark:bg-slate-800/40 border border-slate-300 dark:border-slate-700 rounded-md p-6 text-center space-y-3">
                   <HiOutlineXCircle className="w-12 h-12 text-rose-600 dark:text-rose-400 mx-auto" />
                   <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-                    Quyết Định Khóa Vĩnh Viễn Không Thể Khiếu Nại
+                    Quyết định khóa vĩnh viễn không thể khiếu nại
                   </h3>
                   <p className="text-sm text-slate-600 dark:text-slate-400 max-w-lg mx-auto leading-relaxed">
                     Đơn xem xét kỷ luật trước đó của bạn đã bị Quản trị viên từ chối sau khi thẩm tra toàn diện. Theo quy chế của sàn, phán quyết này là chung cuộc và không được phép gửi thêm bất kỳ đơn khiếu nại nào trong tương lai.
@@ -312,7 +312,7 @@ export default function BannedAccount() {
                   <HiOutlineClock className="w-12 h-12 text-sky-600 dark:text-sky-400 mx-auto animate-pulse" />
                   <div>
                     <h3 className="text-lg font-bold text-sky-950 dark:text-sky-100">
-                      Đơn Xem Xét Đang Chờ Xử Lý
+                      Đơn xem xét đang chờ xử lý
                     </h3>
                     <p className="text-sm text-sky-800 dark:text-sky-300 mt-1 max-w-lg mx-auto">
                       Bạn đã gửi đơn xem xét kỷ luật mã <span className="font-mono font-semibold">{latestAppeal?.displayCode}</span>. Ban Quản Trị đang tiến hành rà soát dữ liệu và sẽ phản hồi sớm nhất.
@@ -359,7 +359,7 @@ export default function BannedAccount() {
                   <div className="border-b border-slate-200 dark:border-slate-800 pb-3">
                     <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center">
                       <HiOutlineDocumentText className="w-5 h-5 mr-2 text-rose-600 dark:text-rose-500" />
-                      Gửi Đơn Xem Xét Kỷ Luật Tài Khoản
+                      Gửi đơn xem xét kỷ luật tài khoản
                     </h2>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                       Vui lòng trình bày rõ nguyên nhân vi phạm, các biện pháp khắc phục và kèm theo hình ảnh đối soát hợp lệ (nếu có) để Ban Quản Trị xem xét gỡ bỏ lệnh cấm vĩnh viễn cho tài khoản.

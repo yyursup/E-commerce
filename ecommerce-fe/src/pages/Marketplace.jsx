@@ -93,10 +93,10 @@ export default function Marketplace() {
           <div className="max-w-2xl">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 backdrop-blur px-3 py-1 text-xs font-semibold uppercase tracking-wider mb-3">
               <HiOutlineShieldCheck className="h-4 w-4 text-emerald-300" />
-              100% Shop Đã Xác Thực VNPT eKYC
+              100% shop đã xác thực VNPT eKYC
             </span>
             <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight">
-              Khám Phá Gian Hàng
+              Khám phá gian hàng
             </h1>
             <p className="mt-3 text-sm sm:text-base text-white/90">
               Kết nối trực tiếp với các nhà bán hàng và thương hiệu chính hãng được bảo vệ bởi hệ thống Ký quỹ Escrow và vận chuyển toàn quốc GHN.
@@ -117,7 +117,6 @@ export default function Marketplace() {
         </div>
 
         {/* Decorative Circle */}
-        <div className="absolute right-0 top-0 -mr-20 -mt-20 h-96 w-96 rounded-full bg-white/10 blur-3xl pointer-events-none" />
       </section>
 
       {/* Filter Tabs & Controls */}
@@ -293,7 +292,7 @@ export default function Marketplace() {
                     to={`/shop/${shop.id}`}
                     className="flex-1 flex items-center justify-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition-colors bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
                   >
-                    Vào Gian Hàng
+                    Vào gian hàng
                     <HiOutlineArrowRight className="h-3.5 w-3.5" />
                   </Link>
                   {(() => {

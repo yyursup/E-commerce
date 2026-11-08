@@ -200,11 +200,11 @@ export default function AdminExportSettlementModal({
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-stone-200 dark:border-slate-800 bg-stone-50/80 dark:bg-slate-800/50">
           <div className="flex items-center gap-2">
-            <div className="p-2 rounded-xl bg-amber-500/10 text-amber-500">
+            <div className="p-2 rounded-xl bg-stone-100 text-stone-950">
               <HiOutlineDocumentReport className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="font-bold text-sm sm:text-base">Xuất Báo Cáo Đối Soát Kế Toán Toàn Sàn</h3>
+              <h3 className="font-bold text-sm sm:text-base">Xuất báo cáo đối soát kế toán toàn sàn</h3>
               <p className="text-xs text-stone-400">Hạch toán dòng tiền 3 chiều (Khách trả ➔ GHN + Shop + Sàn)</p>
             </div>
           </div>
@@ -223,7 +223,7 @@ export default function AdminExportSettlementModal({
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-stone-400 mb-2 flex items-center gap-1.5">
               <HiOutlineCalendar className="h-4 w-4 text-amber-500" />
-              1. Chọn Kỳ Đối Soát (Thời Gian)
+              1. Chọn kỳ đối soát (Thời gian)
             </label>
             <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
               {[
@@ -241,7 +241,7 @@ export default function AdminExportSettlementModal({
                   className={cn(
                     'py-2 px-1 text-center rounded-xl text-xs font-bold border transition-all',
                     timePreset === preset.id
-                      ? 'border-amber-500 bg-amber-500 text-white shadow-sm'
+                      ? 'border-amber-500 shadow-sm bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                       : isDark
                         ? 'border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700'
                         : 'border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100'
@@ -288,7 +288,7 @@ export default function AdminExportSettlementModal({
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-stone-400 mb-1.5 flex items-center gap-1">
                 <HiOutlineShoppingBag className="h-4 w-4 text-amber-500" />
-                2. Gian Hàng (Shop)
+                2. Gian Hàng
               </label>
               <select
                 value={shopFilter}
@@ -310,7 +310,7 @@ export default function AdminExportSettlementModal({
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-stone-400 mb-1.5 flex items-center gap-1">
                 <HiOutlineFilter className="h-4 w-4 text-amber-500" />
-                3. Trạng Thái Đối Soát
+                3. Trạng thái đối soát
               </label>
               <select
                 value={statusFilter}
@@ -321,7 +321,7 @@ export default function AdminExportSettlementModal({
                 )}
               >
                 <option value="ALL">Tất cả trạng thái đối soát</option>
-                <option value="SETTLED">Đã giải ngân tất toán (SETTLED)</option>
+                <option value="SETTLED">Đã giải ngân tất toán</option>
                 <option value="IN_EXPERIENCE_WINDOW">Đang trong 72h trải nghiệm kiểm hàng</option>
                 <option value="PENDING_ESCROW">Đang tạm giữ an toàn trong Escrow</option>
                 <option value="REFUNDED">Đã hoàn trả 100% cho Người mua</option>
@@ -334,14 +334,14 @@ export default function AdminExportSettlementModal({
           <div className="space-y-2.5 pt-1">
             <div className="flex items-center justify-between text-xs">
               <span className="font-bold uppercase tracking-wider text-stone-400">
-                Thống Kê Cân Đối Dòng Tiền Dự Kiến:
+                Thống kê cân đối dòng tiền dự kiến:
               </span>
               <span className="font-mono font-bold text-amber-500">{stats.count} đơn hàng</span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5">
               <div className="p-3 rounded-xl border border-stone-200 dark:border-slate-800 bg-stone-50 dark:bg-slate-800/50">
-                <span className="text-[10px] text-stone-400 uppercase block font-bold">Khách Đã Trả</span>
+                <span className="text-[10px] text-stone-400 uppercase block font-bold">Khách đã trả</span>
                 <span className="text-sm font-black font-mono text-amber-500">
                   {formatAdminOrderCurrency(stats.buyerTotal)}
                 </span>
@@ -353,13 +353,13 @@ export default function AdminExportSettlementModal({
                 </span>
               </div>
               <div className="p-3 rounded-xl border border-stone-200 dark:border-slate-800 bg-stone-50 dark:bg-slate-800/50">
-                <span className="text-[10px] text-stone-400 uppercase block font-bold">Thực Nhận Shop</span>
+                <span className="text-[10px] text-stone-400 uppercase block font-bold">Thực nhận shop</span>
                 <span className="text-sm font-black font-mono text-amber-600 dark:text-amber-400">
                   {formatAdminOrderCurrency(stats.sellerTotal)}
                 </span>
               </div>
               <div className="p-3 rounded-xl border border-stone-200 dark:border-slate-800 bg-stone-50 dark:bg-slate-800/50">
-                <span className="text-[10px] text-stone-400 uppercase block font-bold">Thuần Sàn Thu</span>
+                <span className="text-[10px] text-stone-400 uppercase block font-bold">Thuần sàn thu</span>
                 <span className={cn('text-sm font-black font-mono', stats.platformNetTotal >= 0 ? 'text-emerald-500' : 'text-rose-500')}>
                   {formatAdminOrderCurrency(stats.platformNetTotal)}
                 </span>
@@ -385,7 +385,7 @@ export default function AdminExportSettlementModal({
               'inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white shadow-lg shadow-amber-500/20 transition-all active:scale-95',
               filteredOrders.length === 0
                 ? 'bg-stone-400 cursor-not-allowed opacity-60'
-                : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 hover:shadow-amber-500/30'
+                : 'bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
             )}
           >
             <HiOutlineDownload className="h-4 w-4" />

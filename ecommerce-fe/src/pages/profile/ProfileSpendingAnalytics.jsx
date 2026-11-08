@@ -82,7 +82,7 @@ export default function ProfileSpendingAnalytics({ isDark }) {
                 <div>
                     <div className="flex items-center gap-2.5">
                         <h2 className={cn("text-3xl font-bold tracking-[-0.03em]", isDark ? "text-white" : "text-stone-900")}>
-                            Sổ Tay Chi Tiêu & Bảo Hành Thiết Bị
+                            Sổ tay chi tiêu & bảo hành thiết bị
                         </h2>
                         <span className="rounded-full px-2.5 py-0.5 text-xs font-bold border bg-stone-100 text-stone-950 border-stone-950">
                             Smart Tech Shopper
@@ -120,7 +120,7 @@ export default function ProfileSpendingAnalytics({ isDark }) {
                 >
                     <div className="flex items-center justify-between">
                         <span className={cn("text-xs font-semibold uppercase tracking-wider", isDark ? "text-slate-400" : "text-stone-500")}>
-                            Tổng Tiền Đã Mua
+                            Tổng tiền đã mua
                         </span>
                         <div className="rounded-xl bg-blue-500/10 p-2 text-blue-500">
                             <HiOutlineCurrencyDollar className="h-5 w-5" />
@@ -146,7 +146,7 @@ export default function ProfileSpendingAnalytics({ isDark }) {
                 >
                     <div className="flex items-center justify-between">
                         <span className={cn("text-xs font-semibold uppercase tracking-wider", isDark ? "text-slate-400" : "text-stone-500")}>
-                            Tổng Đơn Đã Đặt
+                            Tổng đơn đã đặt
                         </span>
                         <div className="rounded-xl bg-purple-500/10 p-2 text-purple-500">
                             <HiOutlineShoppingBag className="h-5 w-5" />
@@ -172,7 +172,7 @@ export default function ProfileSpendingAnalytics({ isDark }) {
                 >
                     <div className="flex items-center justify-between">
                         <span className={cn("text-xs font-semibold uppercase tracking-wider", isDark ? "text-slate-400" : "text-stone-500")}>
-                            Giảm Giá Từ Voucher
+                            Giảm giá từ voucher
                         </span>
                         <div className="rounded-xl bg-rose-500/10 p-2 text-rose-500">
                             <HiOutlineTag className="h-5 w-5" />
@@ -198,7 +198,7 @@ export default function ProfileSpendingAnalytics({ isDark }) {
                 >
                     <div className="flex items-center justify-between">
                         <span className="text-xs font-bold uppercase tracking-wider text-amber-500">
-                            Tiết Kiệm Thông Minh
+                            Tiết kiệm thông minh
                         </span>
                         <div className="rounded-xl p-2 bg-stone-100 text-stone-950">
                             <HiOutlineSparkles className="h-5 w-5" />
@@ -222,7 +222,7 @@ export default function ProfileSpendingAnalytics({ isDark }) {
             >
                 <div className="border-b pb-3 mb-4">
                     <h3 className={cn("text-base font-bold", isDark ? "text-white" : "text-stone-900")}>
-                        Cơ Cấu Chi Tiêu Theo Danh Mục
+                        Cơ cấu chi tiêu theo danh mục
                     </h3>
                     <p className={cn("text-xs", isDark ? "text-slate-400" : "text-stone-500")}>
                         Phân bổ ngân sách vào các nhóm thiết bị điện tử của bạn
@@ -267,7 +267,7 @@ export default function ProfileSpendingAnalytics({ isDark }) {
                 <div className="flex items-center justify-between border-b pb-3 mb-4">
                     <div>
                         <h3 className={cn("text-base font-bold", isDark ? "text-white" : "text-stone-900")}>
-                            Thiết Bị Công Nghệ & Trạng Thái Bảo Hành
+                            Thiết bị công nghệ & trạng thái bảo hành
                         </h3>
                         <p className={cn("text-xs", isDark ? "text-slate-400" : "text-stone-500")}>
                             Quản lý thời hạn bảo hành của các thiết bị bạn đã sở hữu

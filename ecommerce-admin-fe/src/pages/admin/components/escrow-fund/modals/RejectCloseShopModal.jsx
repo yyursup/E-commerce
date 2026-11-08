@@ -43,7 +43,7 @@ export default function RejectCloseShopModal({ shop, onClose, onSuccess }) {
       >
         <h2 className="text-lg sm:text-xl font-bold text-rose-500 flex items-center gap-2">
           <HiOutlineExclamation className="h-6 w-6 shrink-0" />
-          Từ Chối Yêu Cầu Đóng Shop
+          Từ chối yêu cầu đóng shop
         </h2>
         <p className={cn('text-xs mt-1', isDark ? 'text-slate-400' : 'text-stone-500')}>
           Gian hàng: <span className="font-bold text-amber-500">{shop.shopName}</span>
@@ -69,7 +69,7 @@ export default function RejectCloseShopModal({ shop, onClose, onSuccess }) {
 
           <div className={cn(
             'rounded-xl border p-3 text-xs leading-relaxed',
-            isDark ? 'border-amber-500/30 bg-amber-500/10 text-amber-300' : 'border-amber-200 bg-amber-50 text-amber-900'
+            isDark ? 'bg-slate-800 text-white border-white' : 'border-amber-200 bg-amber-50 text-amber-900'
           )}>
             Sau khi từ chối, Quỹ ký quỹ và trạng thái Shop sẽ được phục hồi lại trạng thái <strong>ACTIVE</strong> để tiếp tục kinh doanh bình thường.
           </div>

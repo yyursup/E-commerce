@@ -32,7 +32,7 @@ export default function DealsCategoryBar({
               <HiOutlineTag className="h-4 w-4" />
             </span>
             <h2 className={cn('text-base sm:text-xl font-bold tracking-tight', isDark ? 'text-white' : 'text-stone-900')}>
-              Ưu Đãi Theo Ngành Hàng
+              Ưu đãi theo ngành hàng
             </h2>
           </div>
 

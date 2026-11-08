@@ -14,17 +14,17 @@ export const getStageConfig = (stage) => {
   switch (stage) {
     case 'DIRECT_NEGOTIATION':
       return {
-        label: 'Đang Thương Lượng 1:1',
-        title: 'Yêu Cầu Khiếu Nại — Thương Lượng Trực Tiếp 1:1',
+        label: 'Đang thương lượng 1:1',
+        title: 'Yêu cầu khiếu nại — thương lượng trực tiếp 1:1',
         desc: 'Khách hàng đã nộp khiếu nại. Bạn có 48 giờ để thương lượng trực tiếp nhằm bảo vệ uy tín Shop.',
-        badgeClass: 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30',
+        badgeClass: 'dark:text-amber-400 bg-stone-100 text-stone-950 border-stone-950',
         iconBg: 'bg-amber-500',
         icon: HiOutlineExclamationCircle,
       }
     case 'RETURN_IN_PROGRESS':
       return {
-        label: 'Đang Đổi Trả Hàng',
-        title: 'Tiến Trình Đổi Trả & Thu Hồi Hàng Hoàn',
+        label: 'Đang đổi trả hàng',
+        title: 'Tiến trình đổi trả & thu hồi hàng hoàn',
         desc: 'Shop đã đồng ý đổi trả. Khách hàng đang tiến hành gửi trả kiện hàng về kho của bạn qua đơn vị vận chuyển.',
         badgeClass: 'bg-sky-500/15 text-sky-600 dark:text-sky-400 border-sky-500/30',
         iconBg: 'bg-sky-500',
@@ -32,8 +32,8 @@ export const getStageConfig = (stage) => {
       }
     case 'ESCALATED_TO_ADMIN':
       return {
-        label: 'BQT Đang Phân Xử',
-        title: 'Tranh Chấp Đang Chờ Ban Quản Trị Sàn Phán Quyết',
+        label: 'BQT đang phân xử',
+        title: 'Tranh chấp đang chờ ban quản trị sàn phán quyết',
         desc: 'Hai bên không đạt được thỏa thuận trực tiếp. Ban Quản Trị sàn đang đối soát chứng từ để ban hành phán quyết cuối cùng.',
         badgeClass: 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/30',
         iconBg: 'bg-purple-600',
@@ -41,8 +41,8 @@ export const getStageConfig = (stage) => {
       }
     case 'RESOLVED':
       return {
-        label: 'Đã Giải Quyết',
-        title: 'Hồ Sơ Khiếu Nại Đã Được Giải Quyết',
+        label: 'Đã giải quyết',
+        title: 'Hồ sơ khiếu nại đã được giải quyết',
         desc: 'Vụ việc khiếu nại đã được hai bên thống nhất xử lý thành công.',
         badgeClass: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30',
         iconBg: 'bg-emerald-500',
@@ -50,8 +50,8 @@ export const getStageConfig = (stage) => {
       }
     case 'CLOSED':
       return {
-        label: 'Đã Đóng / Hoàn Tất',
-        title: 'Hồ Sơ Khiếu Nại Đã Đóng & Hoàn Tất Phán Quyết',
+        label: 'Đã đóng / hoàn tất',
+        title: 'Hồ sơ khiếu nại đã đóng & hoàn tất phán quyết',
         desc: 'Hồ sơ khiếu nại đã chính thức khép lại theo phán quyết của Ban Quản Trị hoặc sau khi chu trình hoàn tiền kết thúc.',
         badgeClass: 'bg-slate-500/15 text-slate-700 dark:text-slate-300 border-slate-400/30',
         iconBg: 'bg-slate-700',
@@ -59,8 +59,8 @@ export const getStageConfig = (stage) => {
       }
     case 'CANCELLED':
       return {
-        label: 'Đã Hủy / Rút Đơn',
-        title: 'Khách Hàng Đã Rút Khiếu Nại',
+        label: 'Đã hủy / rút đơn',
+        title: 'Khách hàng đã rút khiếu nại',
         desc: 'Khách hàng đã tự nguyện hủy yêu cầu khiếu nại đối với đơn hàng này.',
         badgeClass: 'bg-stone-500/15 text-stone-600 dark:text-stone-400 border-stone-400/30',
         iconBg: 'bg-stone-500',
@@ -69,9 +69,9 @@ export const getStageConfig = (stage) => {
     default:
       return {
         label: stage || 'Đang Tiếp Nhận',
-        title: 'Hồ Sơ Khiếu Nại Đơn Hàng',
+        title: 'Hồ sơ khiếu nại đơn hàng',
         desc: 'Thông tin khiếu nại và phản hồi đối chất giữa Người mua và Shop.',
-        badgeClass: 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30',
+        badgeClass: 'dark:text-amber-400 bg-stone-100 text-stone-950 border-stone-950',
         iconBg: 'bg-amber-500',
         icon: HiOutlineShieldCheck,
       }
@@ -92,7 +92,7 @@ export default function SellerDisputeHeader({ report, slaRemaining, isNegotiatin
       <div className="flex items-start gap-3.5">
         <div
           className={cn(
-            'p-2.5 rounded-2xl text-white shrink-0 mt-0.5 shadow-md flex items-center justify-center',
+            'p-2.5 rounded-2xl text-white shrink-0 mt-0.5 flex items-center justify-center',
             stageConfig.iconBg
           )}
         >
@@ -127,12 +127,12 @@ export default function SellerDisputeHeader({ report, slaRemaining, isNegotiatin
             className="inline-flex items-center gap-1.5 rounded-xl border border-purple-500/40 bg-purple-500/10 hover:bg-purple-500/20 text-purple-700 dark:text-purple-300 px-3.5 py-2 text-xs font-bold transition-all shadow-xs"
           >
             <HiOutlineChatAlt2 className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-            <span>Phòng Thương Lượng</span>
+            <span>Phòng thương lượng</span>
           </button>
         )}
 
         {isNegotiating && slaRemaining && (
-          <div className="flex items-center gap-2 rounded-2xl bg-amber-500/15 border border-amber-500/30 px-3.5 py-2 text-xs font-bold text-amber-600 dark:text-amber-400 shadow-xs">
+          <div className="flex items-center gap-2 rounded-2xl border px-3.5 py-2 text-xs font-bold dark:text-amber-400 bg-stone-100 text-stone-950 border-stone-950">
             <HiOutlineClock className="h-4 w-4 text-amber-500 animate-pulse" />
             <span>SLA phản hồi: {slaRemaining}</span>
           </div>

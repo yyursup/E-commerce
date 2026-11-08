@@ -186,7 +186,7 @@ export default function ShopOrders() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className={cn('text-2xl sm:text-3xl font-black tracking-tight', isDark ? 'text-white' : 'text-stone-900')}>
-            Quản Lý Đơn Hàng
+            Quản lý đơn hàng
           </h1>
           <p className={cn('mt-1 text-xs sm:text-sm', isDark ? 'text-slate-400' : 'text-stone-500')}>
             Theo dõi tiến trình xử lý đơn, bàn giao vận chuyển GHN và đối soát doanh thu
@@ -199,14 +199,14 @@ export default function ShopOrders() {
             onClick={() => setShowExportModal(true)}
             disabled={orders.length === 0}
             className={cn(
-              'inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-xs sm:text-sm font-bold transition-all shadow-sm active:scale-95',
+              'inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-xs sm:text-sm font-bold transition-all active:scale-95',
               isDark
-                ? 'border-amber-500/30 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20'
+                ? 'hover:bg-amber-500/20 bg-slate-800 text-white border-white'
                 : 'border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100'
             )}
           >
             <HiOutlineDocumentReport className="h-4 w-4 text-amber-500" />
-            <span>Xuất Báo Cáo Đối Soát</span>
+            <span>Xuất báo cáo đối soát</span>
           </button>
 
           <button
@@ -214,7 +214,7 @@ export default function ShopOrders() {
             onClick={fetchOrders}
             disabled={loading}
             className={cn(
-              'inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-xs sm:text-sm font-bold transition-all shadow-sm active:scale-95',
+              'inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-xs sm:text-sm font-bold transition-all active:scale-95',
               isDark
                 ? 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700 hover:text-white'
                 : 'border-stone-200 bg-white text-stone-700 hover:bg-stone-50 hover:text-stone-900'
@@ -237,7 +237,7 @@ export default function ShopOrders() {
         >
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-stone-500 dark:text-slate-400">Cần xử lý & Đóng gói</span>
-            <span className="p-2 rounded-xl bg-amber-500/10 text-amber-500">
+            <span className="p-2 rounded-xl bg-stone-100 text-stone-950">
               <HiOutlineClock className="h-5 w-5" />
             </span>
           </div>
@@ -331,7 +331,7 @@ export default function ShopOrders() {
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Tìm theo Mã đơn, Tên người nhận, SĐT, Mã GHN, Tên sản phẩm..."
             className={cn(
-              'w-full rounded-xl pl-10 pr-9 py-2.5 text-xs sm:text-sm border transition-all focus:outline-none focus:ring-2 focus:ring-amber-500',
+              'w-full rounded-xl pl-10 pr-9 py-2.5 text-xs sm:text-sm border transition-all focus:outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
               isDark
                 ? 'border-slate-800 bg-slate-900 text-white placeholder:text-slate-500'
                 : 'border-stone-200 bg-white text-stone-900 placeholder:text-stone-400 shadow-sm'
@@ -355,7 +355,7 @@ export default function ShopOrders() {
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
             className={cn(
-              'rounded-xl border px-3 py-2.5 text-xs sm:text-sm font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-amber-500',
+              'rounded-xl border px-3 py-2.5 text-xs sm:text-sm font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
               isDark
                 ? 'border-slate-800 bg-slate-900 text-white'
                 : 'border-stone-200 bg-white text-stone-800 shadow-sm'
@@ -418,7 +418,7 @@ export default function ShopOrders() {
             isDark ? 'border-slate-800 bg-slate-900/50' : 'border-stone-200 bg-white shadow-sm'
           )}
         >
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-500">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-stone-100 text-stone-950">
             <HiOutlineShoppingBag className="h-8 w-8" />
           </div>
           <div>
@@ -441,7 +441,7 @@ export default function ShopOrders() {
                 setSearchQuery('')
                 setSelectedTab('ALL')
               }}
-              className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-white shadow hover:bg-amber-600 transition-all active:scale-95"
+              className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all active:scale-95 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
             >
               Xóa bộ lọc tìm kiếm
             </button>

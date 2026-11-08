@@ -19,14 +19,14 @@ export default function ViolationsTable({
   return (
     <div
       className={cn(
-        'rounded-3xl border p-6 shadow-sm transition-colors space-y-4',
+        'rounded-3xl border p-6 transition-colors space-y-4',
         isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
       )}
     >
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
           <h2 className={cn('text-lg font-bold tracking-tight', isDark ? 'text-white' : 'text-stone-900')}>
-            Hồ Sơ Ghi Nhận Điểm Uy Tín
+            Hồ sơ ghi nhận điểm uy tín
           </h2>
           <p className={cn('text-xs', isDark ? 'text-slate-400' : 'text-stone-500')}>
             Danh sách sự vụ vi phạm đã được Ban Quản Trị thẩm định và ghi nhận chế tài
@@ -61,7 +61,7 @@ export default function ViolationsTable({
               <tr className={cn('border-b text-stone-400', isDark ? 'border-slate-800' : 'border-stone-100')}>
                 <th className="py-3 px-4 font-bold w-56 min-w-[200px]">Đối tượng vi phạm</th>
                 <th className="py-3 px-4 font-bold min-w-[240px]">Lý do báo cáo</th>
-                <th className="py-3 px-4 font-bold min-w-[180px]">Phán quyết Ban Quản Trị</th>
+                <th className="py-3 px-4 font-bold min-w-[180px]">Phán quyết ban quản trị</th>
                 <th className="py-3 px-4 font-bold min-w-[100px]">Thời gian</th>
                 <th className="py-3 px-4 font-bold min-w-[130px]">Trạng thái kháng cáo</th>
                 <th className="py-3 px-4 font-bold min-w-[160px] text-right">Thao tác</th>

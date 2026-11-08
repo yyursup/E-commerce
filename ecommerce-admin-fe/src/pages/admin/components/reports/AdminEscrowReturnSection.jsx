@@ -48,7 +48,7 @@ export default function AdminEscrowReturnSection({
         <div className="flex items-center gap-2">
           <HiOutlineTruck className="h-4 w-4 text-purple-500" />
           <h4 className="font-bold text-xs uppercase tracking-wider text-purple-700 dark:text-purple-300">
-            Tiến Trình Đổi Trả / Hoàn Tiền (Return Info)
+            Tiến trình đổi trả / hoàn tiền
           </h4>
         </div>
         <span

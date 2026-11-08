@@ -38,7 +38,7 @@ export default function AdminActionModal({
       case 'PRODUCT':
         return 'Sản phẩm'
       case 'SHOP':
-        return 'Gian hàng (Shop)'
+        return 'Gian hàng'
       case 'ORDER':
         return 'Đơn hàng'
       default:
@@ -89,7 +89,7 @@ export default function AdminActionModal({
 
   const getSubmitButtonConfig = () => {
     if (submitting) {
-      return { text: 'Đang xử lý...', className: 'bg-amber-500 hover:bg-amber-600' }
+      return { text: 'Đang xử lý...', className: 'bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200' }
     }
 
     if (isSellerDispute) {
@@ -146,7 +146,7 @@ export default function AdminActionModal({
       default:
         return {
           text: 'Xác nhận xử lý',
-          className: 'bg-amber-500 hover:bg-amber-600 text-white',
+          className: 'bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200',
         }
     }
   }
@@ -327,7 +327,7 @@ export default function AdminActionModal({
 
             {/* Cảnh báo khi đổi điều khoản nhưng ghi chú đã được chỉnh sửa thủ công */}
             {noteMismatchWarning && (
-              <div className="mb-2.5 p-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300 text-xs flex items-center justify-between gap-2">
+              <div className="mb-2.5 p-2.5 rounded-xl border dark:text-amber-300 text-xs flex items-center justify-between gap-2 bg-stone-100 text-stone-950 border-stone-950">
                 <div className="flex items-center gap-1.5 min-w-0">
                   <span className="shrink-0 text-amber-500 font-bold">⚠️</span>
                   <span className="truncate">

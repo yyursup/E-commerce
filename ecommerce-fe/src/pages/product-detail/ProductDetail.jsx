@@ -42,15 +42,15 @@ import wishlistService from '../../services/wishlist'
 const getConditionDetail = (grade) => {
   switch (grade) {
     case 'GRADE_NEW':
-      return { label: 'Mới 100% Nguyên Seal', color: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' }
+      return { label: 'Mới 100% nguyên seal', color: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' }
     case 'GRADE_OPEN_BOX':
-      return { label: 'Hàng Trưng Bày / Mở Hộp (99%)', color: 'bg-sky-500/15 text-sky-600 dark:text-sky-400 border-sky-500/30' }
+      return { label: 'Hàng trưng bày / mở hộp (99%)', color: 'bg-sky-500/15 text-sky-600 dark:text-sky-400 border-sky-500/30' }
     case 'GRADE_LIKE_NEW':
       return { label: 'Like New 99% - Như Mới', color: 'dark:text-amber-400 bg-stone-100 text-stone-950 border-stone-950' }
     case 'GRADE_FAIR':
-      return { label: 'Đã Qua Sử Dụng (90-95%)', color: 'bg-orange-500/15 text-orange-600 dark:text-orange-400 border-orange-500/30' }
+      return { label: 'Đã qua sử dụng (90-95%)', color: 'bg-orange-500/15 text-orange-600 dark:text-orange-400 border-orange-500/30' }
     case 'GRADE_AS_IS':
-      return { label: 'Thanh Lý / Xác Máy (As-is)', color: 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30' }
+      return { label: 'Thanh lý / xác máy', color: 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30' }
     default:
       return null
   }
@@ -623,7 +623,7 @@ export default function ProductDetail() {
               {/* Escrow Guarantee Row */}
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs py-1">
                 <span className="w-28 shrink-0 text-stone-500 dark:text-slate-400 font-semibold">
-                  Bảo Hiểm Sàn
+                  Bảo hiểm sàn
                 </span>
                 <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 font-medium">
                   <HiOutlineShieldCheck className="h-5 w-5 shrink-0" />
@@ -634,7 +634,7 @@ export default function ProductDetail() {
               {/* Tech Hardware Inspection Row */}
               <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4 text-xs border-t pt-3 border-stone-100 dark:border-slate-800">
                 <span className="w-28 shrink-0 text-stone-500 dark:text-slate-400 font-semibold mt-0.5">
-                  Kiểm Định Máy
+                  Kiểm định máy
                 </span>
                 <div className="space-y-1.5 flex-1">
                   <div className="flex items-center gap-2">
@@ -656,7 +656,7 @@ export default function ProductDetail() {
                 <div className="space-y-1 flex-1">
                   <div className="flex items-center gap-2 text-stone-800 dark:text-slate-200 font-medium">
                     <HiOutlineTruck className="h-4 w-4 text-blue-500 shrink-0" />
-                    <span>Giao Hàng Nhanh (GHN Express) - Toàn Quốc</span>
+                    <span>Giao hàng nhanh - toàn quốc</span>
                   </div>
                   <div className="text-stone-500 dark:text-slate-400 text-[11px] leading-relaxed">
                     Phí vận chuyển và thời gian giao hàng được tính tự động theo địa chỉ nhận hàng tại bước thanh toán.
@@ -750,7 +750,7 @@ export default function ProductDetail() {
                         className="flex items-center gap-1.5"
                       >
                         <HiCheck className="h-5 w-5" />
-                        Đã Thêm Vào Giỏ
+                        Đã thêm vào giỏ
                       </motion.span>
                     ) : (
                       <span className="flex items-center gap-2">
@@ -773,7 +773,7 @@ export default function ProductDetail() {
               <div className="grid grid-cols-3 gap-2 pt-3 text-[11px] text-stone-500 dark:text-slate-400 text-center font-medium">
                 <div className="flex items-center justify-center gap-1">
                   <HiOutlineRefresh className="h-4 w-4 text-rose-500" />
-                  <span>7 Ngày Đổi Trả</span>
+                  <span>7 ngày đổi trả</span>
                 </div>
                 <div className="flex items-center justify-center gap-1">
                   <HiOutlineCheckCircle className="h-4 w-4 text-emerald-500" />
@@ -781,7 +781,7 @@ export default function ProductDetail() {
                 </div>
                 <div className="flex items-center justify-center gap-1">
                   <HiOutlineTruck className="h-4 w-4 text-blue-500" />
-                  <span>Freeship Mọi Nơi</span>
+                  <span>Freeship mọi nơi</span>
                 </div>
               </div>
             </div>
@@ -863,7 +863,7 @@ export default function ProductDetail() {
                           'inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-1.5 text-xs font-medium',
                           isDark ? 'border-slate-800 bg-slate-800/60 text-slate-400' : 'border-stone-200 bg-stone-100 text-stone-500'
                         )}>
-                          Gian Hàng Của Bạn
+                          Gian hàng của bạn
                         </span>
                       )
                     }
@@ -979,26 +979,26 @@ export default function ProductDetail() {
                 <span className="font-medium text-stone-900 dark:text-white text-right">{product.brand || 'Chính Hãng Phân Phối'}</span>
               </div>
               <div className="flex justify-between border-b pb-2 border-stone-100 dark:border-slate-800/80">
-                <span className="text-stone-500 dark:text-slate-400 w-36 shrink-0">Tình Trạng Máy:</span>
+                <span className="text-stone-500 dark:text-slate-400 w-36 shrink-0">Tình trạng máy:</span>
                 <span className="font-bold text-amber-600 dark:text-amber-400 text-right">
                   {getConditionDetail(product.conditionGrade)?.label || 'Tiêu chuẩn'}
                 </span>
               </div>
               <div className="flex justify-between border-b pb-2 border-stone-100 dark:border-slate-800/80">
-                <span className="text-stone-500 dark:text-slate-400 w-36 shrink-0">Pin (Battery Health):</span>
+                <span className="text-stone-500 dark:text-slate-400 w-36 shrink-0">Pin:</span>
                 <span className="font-bold text-emerald-600 dark:text-emerald-400 text-right">
                   {product.batteryHealth ? `${product.batteryHealth}%` : 'Không áp dụng / Chưa đo'}
                 </span>
               </div>
               <div className="flex justify-between border-b pb-2 border-stone-100 dark:border-slate-800/80">
-                <span className="text-stone-500 dark:text-slate-400 w-36 shrink-0">Chế Độ Bảo Hành:</span>
+                <span className="text-stone-500 dark:text-slate-400 w-36 shrink-0">Chế độ bảo hành:</span>
                 <span className="font-medium text-stone-900 dark:text-white text-right">
                   {product.warrantyType === 'OFFICIAL' ? 'Chính hãng toàn quốc' : product.warrantyType === 'SHOP' ? 'Tại gian hàng' : 'Hết BH / Bao test 7 ngày'}
                   {product.warrantyMonths ? ` (${product.warrantyMonths} tháng)` : ''}
                 </span>
               </div>
               <div className="flex justify-between border-b pb-2 border-stone-100 dark:border-slate-800/80">
-                <span className="text-stone-500 dark:text-slate-400 w-36 shrink-0">Linh Kiện & Sửa Chữa:</span>
+                <span className="text-stone-500 dark:text-slate-400 w-36 shrink-0">Linh kiện & sửa chữa:</span>
                 <span className={cn('font-semibold text-right', product.isRepaired ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400')}>
                   {product.isRepaired ? `Đã thay: ${product.repairDetails || 'Có can thiệp'}` : 'Zin 100% nguyên bản'}
                 </span>
@@ -1083,7 +1083,7 @@ export default function ProductDetail() {
           <section className="space-y-4 pt-4">
             <div className="flex items-center justify-between">
               <h3 className="text-2xl font-bold text-stone-950 dark:text-white">
-                Sản Phẩm Khác Của Gian Hàng
+                Sản phẩm khác của gian hàng
               </h3>
               <Link
                 to={`/shop/${currentShopId}`}
@@ -1111,7 +1111,7 @@ export default function ProductDetail() {
                   <HiOutlineShoppingBag className="h-4 w-4" />
                 </span>
                 <h3 className="text-2xl font-bold text-stone-950 dark:text-white">
-                  Gợi Ý Công Nghệ Dành Cho Bạn
+                  Gợi ý công nghệ dành cho bạn
                 </h3>
               </div>
 

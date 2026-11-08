@@ -13,19 +13,19 @@ import WalletLookupTab from './components/finances/WalletLookupTab'
 const TABS = [
   {
     id: 'wallet',
-    label: 'Ví Hệ Thống Sàn',
+    label: 'Ví hệ thống sàn',
     icon: HiOutlineCreditCard,
     desc: 'Số dư khả dụng và tiền đóng băng của toàn sàn giao dịch',
   },
   {
     id: 'escrows',
-    label: 'Tạm Giữ Đơn Hàng (Order Escrow)',
+    label: 'Tạm giữ đơn hàng',
     icon: HiOutlineCurrencyDollar,
     desc: 'Bảo lãnh tiền người mua thanh toán trước, giải ngân cưỡng chế',
   },
   {
     id: 'lookup',
-    label: 'Tra Cứu Ví Thành Viên',
+    label: 'Tra cứu ví thành viên',
     icon: HiOutlineSearch,
     desc: 'Kiểm tra số dư và trạng thái ví của User và Shop',
   },
@@ -47,7 +47,7 @@ export default function AdminPlatformWallet() {
       <div>
         <h1 className="text-2xl font-bold flex items-center gap-2.5">
           <HiOutlineCreditCard className="h-7 w-7 text-amber-500" />
-          Trung Tâm Tài Chính & Dòng Tiền (Financial Hub)
+          Trung tâm tài chính & dòng tiền
         </h1>
         <p className={cn('mt-1 text-sm', isDark ? 'text-slate-400' : 'text-stone-500')}>
           Quản lý tổng thể dòng tiền hệ thống, bảo chứng giao dịch Escrow và tra cứu ví thành viên
@@ -71,7 +71,7 @@ export default function AdminPlatformWallet() {
               className={cn(
                 'flex items-center gap-2.5 rounded-xl px-4 py-3 text-xs font-bold transition-all duration-200',
                 isActive
-                  ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20'
+                  ? 'bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                   : isDark
                     ? 'text-slate-400 hover:text-white hover:bg-slate-800/80'
                     : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'

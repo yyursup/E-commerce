@@ -97,7 +97,7 @@ export default function Home() {
             name: product.name,
             price,
             image: imageUrl,
-            badge: 'Dành Cho Bạn',
+            badge: 'Dành cho bạn',
             rating: product.rating != null ? Number(product.rating) : 5.0,
             reviewCount: product.reviewCount != null ? Number(product.reviewCount) : 0,
             description: product.description,

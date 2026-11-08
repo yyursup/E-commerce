@@ -283,7 +283,7 @@ export default function BankSelector({
                       'w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-left text-xs transition-colors cursor-pointer',
                       isSelected
                         ? isDark
-                          ? 'bg-amber-500/20 text-amber-300 font-semibold'
+                          ? 'font-semibold bg-slate-800 text-white'
                           : 'bg-amber-50 text-amber-800 font-semibold'
                         : isDark
                         ? 'hover:bg-slate-800 text-slate-200'

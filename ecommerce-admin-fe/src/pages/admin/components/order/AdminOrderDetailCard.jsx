@@ -214,7 +214,7 @@ export default function AdminOrderDetailCard({ order, isDark }) {
                 return {
                   icon: HiOutlineLockClosed,
                   label: 'Tạm giữ an toàn trong Escrow',
-                  color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30'
+                  color: 'dark:text-amber-400 bg-stone-100 text-stone-950 border-stone-950'
                 }
             }
           }
@@ -228,10 +228,10 @@ export default function AdminOrderDetailCard({ order, isDark }) {
                 <div>
                   <h3 className={cn('text-base font-bold flex items-center gap-2', isDark ? 'text-white' : 'text-stone-900')}>
                     <HiOutlineCash className="h-5 w-5 text-amber-500" />
-                    Bảng Kê Quyết Toán Dòng Tiền 3 Chiều (Platform Settlement Breakdown)
+                    Bảng kê quyết toán dòng tiền 3 chiều
                   </h3>
                   <p className="text-xs text-stone-400 mt-0.5">
-                    Hạch toán dòng tiền minh bạch: Người mua thanh toán ➔ Đơn vị VC (GHN) + Người bán (Shop) + Sàn E-commerce
+                    Hạch toán dòng tiền minh bạch: Người mua thanh toán ➔ Đơn vị VC (GHN) + Người bán + Sàn E-Commerce
                   </p>
                 </div>
                 <div className={cn('inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold', badge.color)}>
@@ -243,7 +243,7 @@ export default function AdminOrderDetailCard({ order, isDark }) {
               {/* 1. Dòng tiền Người mua trả */}
               <div className="space-y-2.5">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-stone-400">
-                  1. Dòng Tiền Người Mua Thanh Toán (Buyer Inflow)
+                  1. Dòng tiền người mua thanh toán
                 </h4>
                 <div className="flex justify-between text-sm">
                   <span className={isDark ? 'text-slate-400' : 'text-stone-600'}>Tạm tính giá trị hàng hóa</span>
@@ -279,7 +279,7 @@ export default function AdminOrderDetailCard({ order, isDark }) {
                 <div className="flex justify-between items-baseline pt-2 border-t border-dashed border-stone-200 dark:border-slate-800">
                   <div>
                     <span className={cn('text-sm font-bold block', isDark ? 'text-white' : 'text-stone-900')}>
-                      Tổng Khách Đã Thanh Toán
+                      Tổng khách đã thanh toán
                     </span>
                     <span className="text-[11px] text-stone-400">
                       Cổng thanh toán: <strong className="text-stone-600 dark:text-slate-300">{order.paymentMethod || 'COD'}</strong>
@@ -296,7 +296,7 @@ export default function AdminOrderDetailCard({ order, isDark }) {
               <div className="space-y-3 pt-3 border-t border-stone-200 dark:border-slate-800">
                 <div className="flex items-center justify-between">
                   <h4 className="text-xs font-bold uppercase tracking-wider text-stone-400">
-                    2. Phân Bổ Dòng Tiền 3 Chiều (Golden Accounting Equation)
+                    2. Phân bổ dòng tiền 3 chiều
                   </h4>
                   <span className="text-[11px] px-2 py-0.5 rounded font-mono bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-500/20">
                     Cân đối 100% (Khách = GHN + Shop + Sàn)
@@ -311,7 +311,7 @@ export default function AdminOrderDetailCard({ order, isDark }) {
                         <HiOutlineTruck className="h-4 w-4" />
                       </div>
                       <span className="text-xs font-bold uppercase tracking-wide text-stone-500 dark:text-slate-400">
-                        1. Đối Tác GHN
+                        1. Đối tác GHN
                       </span>
                     </div>
                     <div className="space-y-1">
@@ -327,11 +327,11 @@ export default function AdminOrderDetailCard({ order, isDark }) {
                   {/* Chiều 2: Người bán (Shop Payout) */}
                   <div className={cn('p-3.5 rounded-xl border', isDark ? 'border-slate-800 bg-slate-800/50' : 'border-stone-200 bg-stone-50')}>
                     <div className="flex items-center gap-2 mb-1.5">
-                      <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-500">
+                      <div className="p-1.5 rounded-lg bg-stone-100 text-stone-950">
                         <HiOutlineCash className="h-4 w-4" />
                       </div>
                       <span className="text-xs font-bold uppercase tracking-wide text-stone-500 dark:text-slate-400">
-                        2. Thực Nhận Shop
+                        2. Thực nhận shop
                       </span>
                     </div>
                     <div className="space-y-1">
@@ -353,7 +353,7 @@ export default function AdminOrderDetailCard({ order, isDark }) {
                         <HiOutlineReceiptTax className="h-4 w-4" />
                       </div>
                       <span className="text-xs font-bold uppercase tracking-wide text-stone-500 dark:text-slate-400">
-                        3. Doanh Thu Thuần Sàn
+                        3. Doanh thu thuần sàn
                       </span>
                     </div>
                     <div className="space-y-1">

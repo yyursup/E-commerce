@@ -50,7 +50,7 @@ export default function SellerReturnDisputeModal({
                 <span className="p-2 rounded-xl bg-rose-500/15 text-rose-500">
                   <HiOutlineExclamation className="h-5 w-5" />
                 </span>
-                <h3 className="font-bold text-base">Khiếu Nại Kiện Hàng Hoàn Trả</h3>
+                <h3 className="font-bold text-base">Khiếu nại kiện hàng hoàn trả</h3>
               </div>
               <button
                 type="button"

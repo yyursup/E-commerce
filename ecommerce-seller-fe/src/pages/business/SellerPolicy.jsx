@@ -34,7 +34,7 @@ import { getCategoryIcon } from '../../components/policyMetaConstants'
 
 const TABS = [
   { id: 'ALL', label: 'Tất cả quy chế sàn' },
-  { id: 'SELLER', label: 'Dành riêng cho Gian hàng (Shop)' },
+  { id: 'SELLER', label: 'Dành riêng cho Gian hàng' },
   { id: 'ESCROW', label: 'Bảo vệ Escrow & Tiền cọc' },
   { id: 'RETURN', label: 'Đổi trả & Xử lý Khiếu nại' },
   { id: 'SHIPPING', label: 'Vận chuyển cùng GHN' },
@@ -192,12 +192,12 @@ export default function SellerPolicy() {
       >
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 mb-2">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold dark:text-amber-400 border mb-2 bg-stone-100 text-stone-950 border-stone-950">
               <HiOutlineShieldCheck className="h-4 w-4" />
-              <span>Quy Chế Hoạt Động Kênh Người Bán (Merchant Center)</span>
+              <span>Quy chế hoạt động kênh người bán</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
-              Chính Sách & Tiêu Chuẩn Vận Hành Gian Hàng
+              Chính sách & tiêu chuẩn vận hành gian hàng
             </h1>
             <p
               className={cn(
@@ -214,20 +214,20 @@ export default function SellerPolicy() {
               type="button"
               onClick={handlePrint}
               className={cn(
-                'inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-bold transition shadow-xs active:scale-95',
+                'inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-bold transition active:scale-95',
                 isDark
                   ? 'border-slate-800 bg-slate-950 hover:bg-slate-800 text-slate-300'
                   : 'border-stone-200 bg-stone-50 hover:bg-stone-100 text-stone-700'
               )}
             >
               <HiOutlinePrinter className="h-4 w-4" />
-              <span className="hidden sm:inline">In Quy Chế</span>
+              <span className="hidden sm:inline">In quy chế</span>
             </button>
             <button
               type="button"
               onClick={handleShare}
               className={cn(
-                'inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-bold transition shadow-xs active:scale-95',
+                'inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-bold transition active:scale-95',
                 isDark
                   ? 'border-slate-800 bg-slate-950 hover:bg-slate-800 text-slate-300'
                   : 'border-stone-200 bg-stone-50 hover:bg-stone-100 text-stone-700'
@@ -261,7 +261,7 @@ export default function SellerPolicy() {
                           className={cn(
                             'px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap shrink-0 active:scale-95 cursor-pointer select-none',
                             isActive
-                              ? 'bg-amber-500 text-white shadow-md shadow-amber-500/25 font-bold'
+                              ? 'font-bold bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                               : isDark
                                 ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white'
                                 : 'bg-stone-100 text-stone-600 hover:bg-stone-200 hover:text-stone-900'
@@ -298,7 +298,7 @@ export default function SellerPolicy() {
         className={cn(
           'inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition shrink-0',
           mobileMenuOpen
-            ? 'bg-amber-500 text-white border-amber-500'
+            ? 'border-amber-500 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
             : isDark
               ? 'border-slate-800 bg-slate-950 text-slate-200'
               : 'border-stone-200 bg-stone-100 text-stone-800'
@@ -322,7 +322,7 @@ export default function SellerPolicy() {
     {mobileMenuOpen && (
       <div
         className={cn(
-          'rounded-3xl border p-4 space-y-3 shadow-xl animate-in fade-in duration-150',
+          'rounded-3xl border p-4 space-y-3 animate-in fade-in duration-150',
           isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
         )}
       >
@@ -334,7 +334,7 @@ export default function SellerPolicy() {
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Tìm theo tiêu đề hoặc từ khóa..."
             className={cn(
-              'w-full pl-10 pr-4 py-2.5 rounded-2xl text-xs border focus:outline-none focus:ring-2 focus:ring-amber-500/20',
+              'w-full pl-10 pr-4 py-2.5 rounded-2xl text-xs border focus:outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
               isDark
                 ? 'border-slate-800 bg-slate-950 text-slate-100 placeholder-slate-500'
                 : 'border-stone-200 bg-stone-50 text-stone-900 placeholder-stone-400'
@@ -354,7 +354,7 @@ export default function SellerPolicy() {
                 className={cn(
                   'w-full text-left rounded-xl p-2.5 text-xs transition flex items-center gap-2.5',
                   isSelected
-                    ? 'bg-amber-500 text-white font-bold shadow-xs'
+                    ? 'font-bold bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                     : isDark
                       ? 'text-slate-300 hover:bg-slate-800'
                       : 'text-stone-700 hover:bg-stone-100'
@@ -383,7 +383,7 @@ export default function SellerPolicy() {
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Tìm theo tiêu đề hoặc từ khóa..."
           className={cn(
-            'w-full pl-10 pr-9 py-2.5 rounded-2xl text-xs border focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition',
+            'w-full pl-10 pr-9 py-2.5 rounded-2xl text-xs border focus:outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40 transition',
             isDark
               ? 'bg-slate-900 border-slate-800 text-slate-100 placeholder-slate-500'
               : 'bg-white border-stone-200 text-stone-900 placeholder-stone-400'
@@ -429,7 +429,7 @@ export default function SellerPolicy() {
                   className={cn(
                     'w-full text-left rounded-2xl p-3 text-xs transition-all flex items-start gap-3',
                     isSelected
-                      ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20 font-bold'
+                      ? 'font-bold bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                       : isDark
                         ? 'text-slate-300 hover:bg-slate-800/80 hover:text-white border border-transparent'
                         : 'text-stone-700 hover:bg-stone-50 hover:text-stone-900 border border-stone-100'
@@ -442,7 +442,7 @@ export default function SellerPolicy() {
                         ? 'bg-black/20 text-white'
                         : isDark
                           ? 'bg-slate-800 text-amber-400'
-                          : 'bg-amber-50 text-amber-600'
+                          : 'bg-stone-100 text-stone-950'
                     )}
                   >
                     <Icon className="h-4 w-4" />
@@ -468,7 +468,7 @@ export default function SellerPolicy() {
       {/* Thẻ Lưu Ý Kỷ Luật Gian Hàng (Đã sửa nền đục 100%, độ tương phản hoàn hảo) */}
       <div
         className={cn(
-          'rounded-3xl border p-5 shadow-xs transition-colors',
+          'rounded-3xl border p-5 transition-colors',
           isDark
             ? 'border-amber-500/40 bg-slate-900 text-slate-200'
             : 'border-amber-300 bg-amber-50 text-stone-800'
@@ -481,7 +481,7 @@ export default function SellerPolicy() {
           )}
         >
           <HiOutlineExclamationCircle className="h-4 w-4 shrink-0" />
-          <span>Lưu Ý Về Kỷ Luật Gian Hàng</span>
+          <span>Lưu ý về kỷ luật gian hàng</span>
         </div>
         <p
           className={cn(
@@ -490,7 +490,7 @@ export default function SellerPolicy() {
           )}
         >
           Gian hàng tích lũy từ <strong>7 vi phạm</strong> trở lên sẽ bị áp dụng chế tài{' '}
-          <strong>Khóa Vĩnh Viễn (Permanent Ban)</strong>, đóng băng giải ngân toàn bộ số dư và xử lý ký quỹ theo đúng điều khoản cam kết.
+          <strong>Khóa vĩnh viễn</strong>, đóng băng giải ngân toàn bộ số dư và xử lý ký quỹ theo đúng điều khoản cam kết.
         </p>
         <button
           type="button"
@@ -530,13 +530,13 @@ export default function SellerPolicy() {
       ) : (
         <article
           className={cn(
-            'rounded-3xl border p-6 sm:p-9 shadow-xs transition-colors',
+            'rounded-3xl border p-6 sm:p-9 transition-colors',
             isDark ? 'border-slate-800 bg-slate-900 text-slate-100' : 'border-stone-200 bg-white text-stone-900'
           )}
         >
           {/* Meta Header */}
           <div className="flex flex-wrap items-center gap-2 mb-4">
-            <div className="flex items-center gap-1 rounded-lg bg-amber-500/10 border border-amber-500/30 px-2.5 py-1 text-[11px] font-mono font-bold text-amber-500">
+            <div className="flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[11px] font-mono font-bold bg-stone-100 text-stone-950 border-stone-950">
               <span>{currentPolicy.policyKey}</span>
               <button
                 type="button"
@@ -624,10 +624,10 @@ export default function SellerPolicy() {
             <button
               type="button"
               onClick={() => navigate('/chat')}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-500 text-white font-bold hover:bg-amber-600 transition shadow-xs self-start sm:self-center"
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-bold transition self-start sm:self-center bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
             >
               <HiOutlineChat className="h-4 w-4" />
-              <span>Chat Với Quản Trị Viên</span>
+              <span>Chat với quản trị viên</span>
             </button>
           </div>
         </article>
@@ -656,20 +656,20 @@ export default function SellerPolicy() {
         >
           <div className="flex items-center gap-3">
             <Link to="/" className="flex items-center gap-3 group">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/20 group-hover:scale-105 transition-transform">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl shadow-md group-hover:scale-105 transition-transform bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200">
                 <HiOutlineShoppingBag className="h-6 w-6" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-base font-black tracking-tight bg-gradient-to-r from-amber-600 to-orange-500 bg-clip-text text-transparent">
-                    Kênh Người Bán
+                  <span className="text-base font-black tracking-tight">
+                    Kênh người bán
                   </span>
                   <span className="rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold px-1.5 py-0.5 text-[10px] uppercase">
                     Merchant Center
                   </span>
                 </div>
                 <p className="text-[11px] text-stone-500 dark:text-slate-400 font-medium">
-                  Quy Chế Hoạt Động & Tiêu Chuẩn Nền Tảng
+                  Quy chế hoạt động & tiêu chuẩn nền tảng
                 </p>
               </div>
             </Link>
@@ -699,7 +699,7 @@ export default function SellerPolicy() {
             {isAuthenticated ? (
               <Link
                 to={userRole === 'BUSINESS' ? '/dashboard' : '/seller-register'}
-                className="rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-2 text-xs font-bold text-white shadow-md shadow-amber-500/20 hover:from-amber-600 hover:to-orange-600 transition-all"
+                className="rounded-xl px-4 py-2 text-xs font-bold transition-all bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
               >
                 {userRole === 'BUSINESS' ? 'Vào Kênh Quản Trị' : 'Quản Lý Hồ Sơ Shop'}
               </Link>
@@ -718,9 +718,9 @@ export default function SellerPolicy() {
                 </Link>
                 <Link
                   to="/seller-register"
-                  className="rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-2 text-xs font-bold text-white shadow-md shadow-amber-500/20 hover:from-amber-600 hover:to-orange-600 transition-all"
+                  className="rounded-xl px-4 py-2 text-xs font-bold shadow-md transition-all bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
                 >
-                  Đăng Ký Gian Hàng
+                  Đăng ký gian hàng
                 </Link>
               </div>
             )}
@@ -743,11 +743,11 @@ export default function SellerPolicy() {
             <p>© 2026 E-Commerce Marketplace - Kênh Quản Trị & Phát Triển Người Bán.</p>
             <div className="flex items-center gap-4 text-[11px]">
               <a href="http://localhost:3000" className="hover:text-amber-500 transition-colors">
-                Trang Chủ Sàn
+                Trang chủ sàn
               </a>
               <span>•</span>
               <span className="text-stone-500 dark:text-slate-500">
-                Hotline Hỗ Trợ Người Bán: 1900 1234
+                Hotline hỗ trợ người bán: 1900 1234
               </span>
             </div>
           </div>

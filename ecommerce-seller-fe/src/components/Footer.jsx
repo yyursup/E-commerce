@@ -14,12 +14,12 @@ const footerLinkGroups = [
   {
     heading: 'Danh mục ngành hàng',
     links: [
-      { to: '/products?category=dien-tu', label: 'Điện Tử & Công Nghệ' },
-      { to: '/products?category=thoi-trang', label: 'Thời Trang & Phụ Kiện' },
-      { to: '/products?category=nha-cua', label: 'Nhà Cửa & Đời Sống' },
-      { to: '/products?category=sach', label: 'Sách & Văn Phòng Phẩm' },
-      { to: '/products?category=lam-dep', label: 'Sức Khỏe & Sắc Đẹp' },
-      { to: '/products?category=the-thao', label: 'Thể Thao & Dã Ngoại' },
+      { to: '/products?category=dien-tu', label: 'Điện tử & công nghệ' },
+      { to: '/products?category=thoi-trang', label: 'Thời trang & phụ kiện' },
+      { to: '/products?category=nha-cua', label: 'Nhà cửa & đời sống' },
+      { to: '/products?category=sach', label: 'Sách & văn phòng phẩm' },
+      { to: '/products?category=lam-dep', label: 'Sức khỏe & sắc đẹp' },
+      { to: '/products?category=the-thao', label: 'Thể thao & dã ngoại' },
     ],
   },
   {
@@ -33,7 +33,7 @@ const footerLinkGroups = [
     ],
   },
   {
-    heading: 'Về E-commerce',
+    heading: 'Về E-Commerce',
     links: [
       { to: '/about', label: 'Giới thiệu nền tảng' },
       { to: '/seller/register', label: 'Kênh Người Bán (Bán hàng)' },
@@ -51,11 +51,11 @@ export default function Footer() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
             <div className="flex items-center gap-3.5">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-400">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-white">
                 <HiOutlineTruck className="h-6 w-6" />
               </div>
               <div>
-                <h4 className="text-sm font-semibold text-white">Giao Hàng Nhanh (GHN)</h4>
+                <h4 className="text-sm font-semibold text-white">Giao hàng nhanh (GHN)</h4>
                 <p className="text-xs text-slate-400">Tự động tính phí & theo dõi đơn hàng</p>
               </div>
             </div>
@@ -65,7 +65,7 @@ export default function Footer() {
                 <HiOutlineShieldCheck className="h-6 w-6" />
               </div>
               <div>
-                <h4 className="text-sm font-semibold text-white">Ký Quỹ Escrow An Toàn</h4>
+                <h4 className="text-sm font-semibold text-white">Ký quỹ escrow an toàn</h4>
                 <p className="text-xs text-slate-400">Giữ tiền bảo vệ người mua 100%</p>
               </div>
             </div>
@@ -75,8 +75,8 @@ export default function Footer() {
                 <HiOutlineCreditCard className="h-6 w-6" />
               </div>
               <div>
-                <h4 className="text-sm font-semibold text-white">Thanh Toán Trực Tuyến VNPay</h4>
-                <p className="text-xs text-slate-400">ATM, QR Code, Thẻ quốc tế Visa/Master</p>
+                <h4 className="text-sm font-semibold text-white">Thanh toán trực tuyến VNPay</h4>
+                <p className="text-xs text-slate-400">ATM, QR code, thẻ quốc tế visa/Master</p>
               </div>
             </div>
 
@@ -85,7 +85,7 @@ export default function Footer() {
                 <HiOutlineShoppingBag className="h-6 w-6" />
               </div>
               <div>
-                <h4 className="text-sm font-semibold text-white">Định Danh VNPT eKYC</h4>
+                <h4 className="text-sm font-semibold text-white">Định danh VNPT eKYC</h4>
                 <p className="text-xs text-slate-400">Người bán xác thực CCCD & khuôn mặt</p>
               </div>
             </div>
@@ -98,7 +98,7 @@ export default function Footer() {
           {/* Brand & info */}
           <div className="lg:col-span-4">
             <Link to="/" className="inline-flex items-center gap-2.5 font-bold tracking-tight">
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/20">
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl shadow-md bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200">
                 <HiOutlineShoppingBag className="h-6 w-6" />
               </span>
               <span className="text-2xl font-bold tracking-tight text-white">
@@ -151,7 +151,7 @@ export default function Footer() {
         {/* Bottom copyright */}
         <div className="mt-14 flex flex-col items-center justify-between gap-4 border-t border-slate-800/80 pt-8 sm:flex-row">
           <p className="text-xs text-slate-500">
-            © {new Date().getFullYear()} E-commerce Platform. Đồ án Tốt nghiệp Kỹ thuật Phần mềm (SEP490).
+            © {new Date().getFullYear()} E-Commerce Platform. Đồ án Tốt nghiệp Kỹ thuật Phần mềm (SEP490).
           </p>
           <div className="flex gap-6 text-xs text-slate-500">
             <Link to="/privacy" className="hover:text-amber-400">

@@ -64,7 +64,7 @@ export default function AdminVoucherTable({
         </p>
         <button
           onClick={onOpenCreateModal}
-          className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-white hover:bg-amber-600 active:scale-95 transition-all"
+          className="mt-4 inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold active:scale-95 transition-all bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
         >
           <HiOutlinePlus className="h-4 w-4" />
           Phát hành voucher ngay
@@ -85,12 +85,12 @@ export default function AdminVoucherTable({
         <table className="w-full text-left text-xs min-w-[1100px] border-collapse">
           <thead className={cn('border-b text-[11px] font-bold uppercase tracking-wider', isDark ? 'border-slate-800 bg-slate-800/60 text-slate-400' : 'border-stone-200 bg-stone-50 text-stone-600')}>
             <tr>
-              <th className="p-4 min-w-[280px]">Mã Voucher Sàn & Chiến Dịch</th>
-              <th className="p-4 whitespace-nowrap">Loại Khuyến Mãi</th>
+              <th className="p-4 min-w-[280px]">Mã voucher sàn & chiến dịch</th>
+              <th className="p-4 whitespace-nowrap">Loại khuyến mãi</th>
               <th className="p-4 whitespace-nowrap">Mức Giảm</th>
-              <th className="p-4 whitespace-nowrap">Đơn Tối Thiểu</th>
-              <th className="p-4 whitespace-nowrap">Lượt Dùng / Giới Hạn</th>
-              <th className="p-4 whitespace-nowrap">Thời Gian Hiệu Lực</th>
+              <th className="p-4 whitespace-nowrap">Đơn tối thiểu</th>
+              <th className="p-4 whitespace-nowrap">Lượt dùng / giới hạn</th>
+              <th className="p-4 whitespace-nowrap">Thời gian hiệu lực</th>
               <th className="p-4 whitespace-nowrap text-center">Trạng Thái</th>
               <th className="p-4 whitespace-nowrap text-center">Thao Tác</th>
             </tr>
@@ -132,7 +132,7 @@ export default function AdminVoucherTable({
                         v.voucherType === 'FREE_SHIPPING'
                           ? 'bg-blue-500/10 text-blue-500 border border-blue-500/20'
                           : v.voucherType === 'PERCENTAGE'
-                            ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20'
+                            ? 'border bg-stone-100 text-stone-950 border-stone-950'
                             : 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
                       )}
                     >
@@ -206,8 +206,8 @@ export default function AdminVoucherTable({
                           className={cn(
                             'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all active:scale-95',
                             isDark
-                              ? 'border-amber-500/30 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20'
-                              : 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100'
+                              ? 'hover:bg-amber-500/20 bg-slate-800 text-white border-white'
+                              : 'hover:bg-amber-100 bg-stone-100 text-stone-950 border-stone-950'
                           )}
                           title="Chỉnh sửa voucher sàn"
                         >
@@ -227,8 +227,8 @@ export default function AdminVoucherTable({
                             'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all active:scale-95',
                             isStarted
                               ? isDark
-                                ? 'border-amber-500/30 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20'
-                                : 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100'
+                                ? 'hover:bg-amber-500/20 bg-slate-800 text-white border-white'
+                                : 'hover:bg-amber-100 bg-stone-100 text-stone-950 border-stone-950'
                               : isDark
                                 ? 'border-rose-500/30 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20'
                                 : 'border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100'

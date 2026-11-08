@@ -310,7 +310,7 @@ export default function GhnAddressSelector({
           className={cn(
             'rounded-xl px-3 py-2 text-[11px] font-medium border flex items-start gap-1.5 transition-colors',
             isDark
-              ? 'border-amber-500/20 bg-amber-500/10 text-amber-300'
+              ? 'bg-slate-800 text-white border-white'
               : 'border-amber-200 bg-amber-50/80 text-amber-800'
           )}
         >

@@ -99,11 +99,11 @@ export default function SellerDisputeSideBySide({
         <div className="space-y-3">
           <div className="flex items-center justify-between border-b pb-3 border-stone-100 dark:border-slate-800">
             <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/20">
+              <div className="p-1.5 rounded-xl border bg-stone-100 text-stone-950 border-stone-950">
                 <HiOutlineUser className="h-4 w-4" />
               </div>
               <span className={cn('text-xs font-bold uppercase tracking-wider', isDark ? 'text-slate-200' : 'text-stone-800')}>
-                Khiếu Nại Của Người Mua
+                Khiếu nại của người mua
               </span>
             </div>
             {report.createdAt && (
@@ -119,7 +119,7 @@ export default function SellerDisputeSideBySide({
               <span className="text-xs font-bold text-stone-500 dark:text-slate-400 shrink-0 mt-0.5">
                 Lý do:
               </span>
-              <span className="inline-block px-2.5 py-0.5 rounded-lg text-xs font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25">
+              <span className="inline-block px-2.5 py-0.5 rounded-lg text-xs font-bold dark:text-amber-400 border bg-stone-100 text-stone-950 border-stone-950">
                 {report.reason || 'Yêu cầu đổi trả / hoàn tiền'}
               </span>
             </div>
@@ -182,7 +182,7 @@ export default function SellerDisputeSideBySide({
                 <HiOutlineShoppingBag className="h-4 w-4" />
               </div>
               <span className={cn('text-xs font-bold uppercase tracking-wider', isDark ? 'text-slate-200' : 'text-stone-800')}>
-                Phản Hồi & Đối Chất Từ Shop
+                Phản hồi & đối chất từ shop
               </span>
             </div>
             {(report.sellerAction || isReturnDispute) && (
@@ -211,7 +211,7 @@ export default function SellerDisputeSideBySide({
             <div
               className={cn(
                 'p-4 rounded-xl border border-dashed text-xs leading-relaxed space-y-2',
-                isDark ? 'border-amber-500/30 bg-amber-500/5 text-amber-300' : 'border-amber-200 bg-amber-50/60 text-amber-800'
+                isDark ? 'bg-slate-800 text-white border-white' : 'border-amber-200 bg-amber-50/60 text-amber-800'
               )}
             >
               <p className="font-bold">⏳ Shop chưa gửi phản hồi xử lý</p>
@@ -228,7 +228,7 @@ export default function SellerDisputeSideBySide({
             >
               <p className="font-bold">⚖️ Tranh chấp đã chuyển lên Ban Quản Trị sàn</p>
               <p className="text-[11px] opacity-90">
-                Shop chưa nộp hồ sơ giải trình. Vui lòng bấm nút <strong>"Gửi Giải Trình Cho BQT Sàn"</strong> bên dưới để cung cấp bằng chứng đóng hàng đối soát trước khi Quản trị viên phán quyết.
+                Shop chưa nộp hồ sơ giải trình. Vui lòng bấm nút <strong>"Gửi giải trình cho BQT sàn"</strong> bên dưới để cung cấp bằng chứng đóng hàng đối soát trước khi Quản trị viên phán quyết.
               </p>
             </div>
           ) : (

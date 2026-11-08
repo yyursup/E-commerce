@@ -5,8 +5,8 @@ export default function PersonalInfo({ isDark }) {
     return (
         <div>
             <div className="border-b pb-4 mb-6 border-stone-200 dark:border-slate-700">
-                <h2 className={cn("text-xl font-medium", isDark ? "text-white" : "text-stone-900")}>
-                    Thông Tin Cá Nhân
+                <h2 className={cn("text-3xl font-bold tracking-[-0.03em]", isDark ? "text-white" : "text-stone-900")}>
+                    Thông tin cá nhân
                 </h2>
                 <p className={cn("text-sm mt-1", isDark ? "text-slate-400" : "text-stone-500")}>
                     Quản lý thông tin cá nhân của bạn

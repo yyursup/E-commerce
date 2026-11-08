@@ -14,7 +14,7 @@ export default function AdminVoucherMetrics({ vouchers, isDark }) {
             <HiOutlineTicket className="h-6 w-6" />
           </span>
           <div>
-            <div className={cn('text-xs font-medium', isDark ? 'text-slate-400' : 'text-stone-500')}>Voucher Sàn Đã Phát Hành</div>
+            <div className={cn('text-xs font-medium', isDark ? 'text-slate-400' : 'text-stone-500')}>Voucher sàn đã phát hành</div>
             <div className={cn('text-xl font-bold mt-0.5', isDark ? 'text-white' : 'text-stone-900')}>{vouchers.length}</div>
           </div>
         </div>
@@ -26,7 +26,7 @@ export default function AdminVoucherMetrics({ vouchers, isDark }) {
             <HiOutlineCheckCircle className="h-6 w-6" />
           </span>
           <div>
-            <div className={cn('text-xs font-medium', isDark ? 'text-slate-400' : 'text-stone-500')}>Chiến Dịch Đang Chạy</div>
+            <div className={cn('text-xs font-medium', isDark ? 'text-slate-400' : 'text-stone-500')}>Chiến dịch đang chạy</div>
             <div className="text-xl font-bold text-emerald-500 mt-0.5">{activeCount}</div>
           </div>
         </div>
@@ -38,7 +38,7 @@ export default function AdminVoucherMetrics({ vouchers, isDark }) {
             <HiOutlineUsers className="h-6 w-6" />
           </span>
           <div>
-            <div className={cn('text-xs font-medium', isDark ? 'text-slate-400' : 'text-stone-500')}>Tổng Lượt Khách Áp Dụng</div>
+            <div className={cn('text-xs font-medium', isDark ? 'text-slate-400' : 'text-stone-500')}>Tổng lượt khách áp dụng</div>
             <div className="text-xl font-bold text-rose-400 mt-0.5">{totalUsed}</div>
           </div>
         </div>

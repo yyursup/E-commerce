@@ -61,7 +61,7 @@ export default function PolicyPreviewModal({ policy, isDark, onClose, categoryMa
           )}
         >
           <div className="flex items-center gap-3 min-w-0 pr-2">
-            <div className="h-9 w-9 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-500 flex items-center justify-center shrink-0">
+            <div className="h-9 w-9 rounded-xl border flex items-center justify-center shrink-0 bg-stone-100 text-stone-950 border-stone-950">
               <HiOutlineShieldCheck className="h-5 w-5" />
             </div>
             <div className="min-w-0">
@@ -191,7 +191,7 @@ export default function PolicyPreviewModal({ policy, isDark, onClose, categoryMa
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold transition shadow-xs"
+              className="px-4 py-2 rounded-xl font-bold transition shadow-xs bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
             >
               Đóng xem trước
             </button>

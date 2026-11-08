@@ -84,13 +84,13 @@ export default function ShopChatMessageList({
                       if (e.key === 'Escape') handleCancelEdit()
                     }}
                     className={cn(
-                      'flex-1 rounded-xl border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-500/30',
+                      'flex-1 rounded-xl border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                       isDark ? 'border-slate-600 bg-slate-800 text-white' : 'border-stone-300 bg-white text-stone-900'
                     )}
                   />
                   <button
                     onClick={handleSaveEdit}
-                    className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500 text-white hover:bg-amber-600"
+                    className="flex h-9 w-9 items-center justify-center rounded-xl bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
                     title="Lưu"
                   >
                     <HiCheck className="h-4 w-4" />
@@ -137,7 +137,7 @@ export default function ShopChatMessageList({
                         <div
                           onClick={(e) => e.stopPropagation()}
                           className={cn(
-                            'absolute bottom-full right-0 mb-1 z-30 w-32 rounded-xl border p-1 shadow-lg backdrop-blur-md',
+                            'absolute bottom-full right-0 mb-1 z-30 w-32 rounded-xl border p-1 backdrop-blur-md',
                             isDark
                               ? 'border-slate-700 bg-slate-800/95 text-slate-100 shadow-black/50'
                               : 'border-stone-200 bg-white/95 text-stone-800 shadow-stone-300/50'
@@ -175,9 +175,9 @@ export default function ShopChatMessageList({
                   {/* Message bubble */}
                   <div
                     className={cn(
-                      'rounded-2xl text-xs break-words shadow-xs overflow-hidden',
+                      'rounded-2xl text-xs break-words overflow-hidden',
                       isMe
-                        ? 'bg-amber-500 text-white rounded-tr-none'
+                        ? 'rounded-tr-none bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                         : isDark
                           ? 'bg-slate-800 text-white rounded-tl-none border border-slate-700'
                           : 'bg-stone-100 text-stone-900 rounded-tl-none border border-stone-200/80',

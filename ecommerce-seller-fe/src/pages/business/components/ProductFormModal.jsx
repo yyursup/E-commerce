@@ -351,10 +351,10 @@ export default function ProductFormModal({ product = null, onClose, onSuccess })
               required
               placeholder="VD: Tai nghe Apple AirPods Pro Gen 2..."
               className={cn(
-                'w-full rounded-2xl border px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-amber-500/30',
+                'w-full rounded-2xl border px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                 isDark
-                  ? 'border-slate-700 bg-slate-800/80 text-white placeholder-slate-500 focus:border-amber-500'
-                  : 'border-stone-300 bg-white text-stone-900 placeholder-stone-400 focus:border-amber-500'
+                  ? 'border-slate-700 bg-slate-800/80 text-white placeholder-slate-500 focus:border-stone-950 dark:focus:border-white'
+                  : 'border-stone-300 bg-white text-stone-900 placeholder-stone-400 focus:border-stone-950 dark:focus:border-white'
               )}
             />
           </div>
@@ -375,10 +375,10 @@ export default function ProductFormModal({ product = null, onClose, onSuccess })
               rows={3}
               placeholder="Mô tả đặc điểm nổi bật, thông số kỹ thuật, bảo hành..."
               className={cn(
-                'w-full rounded-2xl border px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-amber-500/30',
+                'w-full rounded-2xl border px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                 isDark
-                  ? 'border-slate-700 bg-slate-800/80 text-white placeholder-slate-500 focus:border-amber-500'
-                  : 'border-stone-300 bg-white text-stone-900 placeholder-stone-400 focus:border-amber-500'
+                  ? 'border-slate-700 bg-slate-800/80 text-white placeholder-slate-500 focus:border-stone-950 dark:focus:border-white'
+                  : 'border-stone-300 bg-white text-stone-900 placeholder-stone-400 focus:border-stone-950 dark:focus:border-white'
               )}
             />
           </div>
@@ -401,10 +401,10 @@ export default function ProductFormModal({ product = null, onClose, onSuccess })
                 required
                 placeholder="VD: TECH-10-CF6E"
                 className={cn(
-                  'w-full rounded-2xl border px-4 py-2.5 text-sm font-mono outline-none transition-all focus:ring-2 focus:ring-amber-500/30',
+                  'w-full rounded-2xl border px-4 py-2.5 text-sm font-mono outline-none transition-all focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                   isDark
-                    ? 'border-slate-700 bg-slate-800/80 text-white placeholder-slate-500 focus:border-amber-500'
-                    : 'border-stone-300 bg-white text-stone-900 placeholder-stone-400 focus:border-amber-500'
+                    ? 'border-slate-700 bg-slate-800/80 text-white placeholder-slate-500 focus:border-stone-950 dark:focus:border-white'
+                    : 'border-stone-300 bg-white text-stone-900 placeholder-stone-400 focus:border-stone-950 dark:focus:border-white'
                 )}
               />
             </div>
@@ -435,10 +435,10 @@ export default function ProductFormModal({ product = null, onClose, onSuccess })
                 disabled={variants.length > 0}
                 placeholder="VD: 5690000"
                 className={cn(
-                  'w-full rounded-2xl border px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-amber-500/30',
+                  'w-full rounded-2xl border px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                   isDark
-                    ? 'border-slate-700 bg-slate-800/80 text-white placeholder-slate-500 focus:border-amber-500'
-                    : 'border-stone-300 bg-white text-stone-900 placeholder-stone-400 focus:border-amber-500',
+                    ? 'border-slate-700 bg-slate-800/80 text-white placeholder-slate-500 focus:border-stone-950 dark:focus:border-white'
+                    : 'border-stone-300 bg-white text-stone-900 placeholder-stone-400 focus:border-stone-950 dark:focus:border-white',
                   variants.length > 0 && 'opacity-70 cursor-not-allowed bg-stone-100 dark:bg-slate-950 font-bold'
                 )}
               />
@@ -489,10 +489,10 @@ export default function ProductFormModal({ product = null, onClose, onSuccess })
                 disabled={variants.length > 0}
                 placeholder="VD: 100"
                 className={cn(
-                  'w-full rounded-2xl border px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-amber-500/30',
+                  'w-full rounded-2xl border px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                   isDark
-                    ? 'border-slate-700 bg-slate-800/80 text-white placeholder-slate-500 focus:border-amber-500'
-                    : 'border-stone-300 bg-white text-stone-900 placeholder-stone-400 focus:border-amber-500',
+                    ? 'border-slate-700 bg-slate-800/80 text-white placeholder-slate-500 focus:border-stone-950 dark:focus:border-white'
+                    : 'border-stone-300 bg-white text-stone-900 placeholder-stone-400 focus:border-stone-950 dark:focus:border-white',
                   variants.length > 0 && 'opacity-70 cursor-not-allowed bg-stone-100 dark:bg-slate-950 font-bold'
                 )}
               />
@@ -526,10 +526,10 @@ export default function ProductFormModal({ product = null, onClose, onSuccess })
                 required
                 disabled={loadingCategories}
                 className={cn(
-                  'w-full rounded-2xl border px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-amber-500/30',
+                  'w-full rounded-2xl border px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                   isDark
-                    ? 'border-slate-700 bg-slate-800/80 text-white focus:border-amber-500'
-                    : 'border-stone-300 bg-white text-stone-900 focus:border-amber-500',
+                    ? 'border-slate-700 bg-slate-800/80 text-white focus:border-stone-950 dark:focus:border-white'
+                    : 'border-stone-300 bg-white text-stone-900 focus:border-stone-950 dark:focus:border-white',
                   loadingCategories && 'opacity-50 cursor-not-allowed'
                 )}
               >
@@ -567,8 +567,8 @@ export default function ProductFormModal({ product = null, onClose, onSuccess })
                   { id: 'GRADE_NEW', label: 'Mới 100%', sub: 'Nguyên Seal' },
                   { id: 'GRADE_OPEN_BOX', label: 'Trưng Bày', sub: 'Open Box 99%' },
                   { id: 'GRADE_LIKE_NEW', label: 'Like New', sub: 'Đã qua sử dụng 99%' },
-                  { id: 'GRADE_FAIR', label: 'Cũ Dùng Tốt', sub: '90 - 95%' },
-                  { id: 'GRADE_AS_IS', label: 'Xác / Linh Kiện', sub: 'Bán đứt miễn đổi' },
+                  { id: 'GRADE_FAIR', label: 'Cũ dùng tốt', sub: '90 - 95%' },
+                  { id: 'GRADE_AS_IS', label: 'Xác / linh kiện', sub: 'Bán đứt miễn đổi' },
                 ].map((g) => (
                   <button
                     key={g.id}
@@ -577,7 +577,7 @@ export default function ProductFormModal({ product = null, onClose, onSuccess })
                     className={cn(
                       'p-2.5 rounded-xl border text-center transition-all flex flex-col items-center justify-center',
                       formData.conditionGrade === g.id
-                        ? 'border-amber-500 bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold shadow-sm'
+                        ? 'dark:text-amber-400 font-bold shadow-sm bg-stone-100 text-stone-950 border-stone-950'
                         : isDark
                         ? 'border-slate-700 bg-slate-800 text-slate-300 hover:border-slate-600'
                         : 'border-stone-200 bg-white text-stone-700 hover:border-stone-300'
@@ -606,7 +606,7 @@ export default function ProductFormModal({ product = null, onClose, onSuccess })
                       value={formData.batteryHealth}
                       onChange={(e) => setFormData({ ...formData, batteryHealth: e.target.value })}
                       className={cn(
-                        'w-full rounded-xl border px-3 py-1.5 text-xs outline-none focus:ring-1 focus:ring-amber-500',
+                        'w-full rounded-xl border px-3 py-1.5 text-xs outline-none focus:ring-1 focus:ring-stone-950/30 dark:focus:ring-white/40',
                         isDark ? 'border-slate-700 bg-slate-900 text-white' : 'border-stone-300 bg-white text-stone-900'
                       )}
                     />
@@ -637,7 +637,7 @@ export default function ProductFormModal({ product = null, onClose, onSuccess })
                       value={formData.repairDetails}
                       onChange={(e) => setFormData({ ...formData, repairDetails: e.target.value })}
                       className={cn(
-                        'w-full rounded-xl border px-3 py-1.5 text-xs outline-none focus:ring-1 focus:ring-amber-500',
+                        'w-full rounded-xl border px-3 py-1.5 text-xs outline-none focus:ring-1 focus:ring-stone-950/30 dark:focus:ring-white/40',
                         isDark ? 'border-slate-700 bg-slate-900 text-white' : 'border-stone-300 bg-white text-stone-900'
                       )}
                     />
@@ -656,12 +656,12 @@ export default function ProductFormModal({ product = null, onClose, onSuccess })
                   value={formData.warrantyType}
                   onChange={(e) => setFormData({ ...formData, warrantyType: e.target.value })}
                   className={cn(
-                    'w-full rounded-xl border px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-amber-500/30',
+                    'w-full rounded-xl border px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                     isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-300 bg-white text-stone-900'
                   )}
                 >
                   <option value="OFFICIAL">Bảo hành chính hãng (Apple, Samsung, Sony, DGW...)</option>
-                  <option value="SHOP">Bảo hành tại cửa hàng (Shop Warranty)</option>
+                  <option value="SHOP">Bảo hành tại cửa hàng</option>
                   <option value="NONE">Không bảo hành (Bao test tại chỗ / Hàng xác)</option>
                 </select>
               </div>
@@ -674,7 +674,7 @@ export default function ProductFormModal({ product = null, onClose, onSuccess })
                   value={formData.warrantyMonths}
                   onChange={(e) => setFormData({ ...formData, warrantyMonths: Number(e.target.value) })}
                   className={cn(
-                    'w-full rounded-xl border px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-amber-500/30',
+                    'w-full rounded-xl border px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                     isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-300 bg-white text-stone-900'
                   )}
                 >
@@ -692,7 +692,7 @@ export default function ProductFormModal({ product = null, onClose, onSuccess })
             {/* Thông số kỹ thuật nhanh */}
             <div>
               <label className={cn('mb-1.5 block text-xs font-bold uppercase tracking-wider', isDark ? 'text-slate-300' : 'text-stone-700')}>
-                Thông số kỹ thuật chính (Tech Specs)
+                Thông số kỹ thuật chính
               </label>
               <textarea
                 value={formData.specifications}
@@ -700,7 +700,7 @@ export default function ProductFormModal({ product = null, onClose, onSuccess })
                 rows={2}
                 placeholder="VD: Chip M3 Pro 12-core, RAM 18GB, SSD 512GB, Màn hình Liquid Retina XDR 14.2 inch 120Hz..."
                 className={cn(
-                  'w-full rounded-xl border px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-amber-500/30',
+                  'w-full rounded-xl border px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                   isDark ? 'border-slate-700 bg-slate-800 text-white placeholder-slate-500' : 'border-stone-300 bg-white text-stone-900 placeholder-stone-400'
                 )}
               />
@@ -753,7 +753,7 @@ export default function ProductFormModal({ product = null, onClose, onSuccess })
                     className={cn(
                       'inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-xl border transition-all',
                       showBulkApply
-                        ? 'border-amber-500/50 bg-amber-500/10 text-amber-500'
+                        ? 'bg-stone-100 text-stone-950 border-stone-950'
                         : isDark
                           ? 'border-slate-700 text-slate-300 hover:bg-slate-800'
                           : 'border-stone-300 text-stone-700 hover:bg-stone-100'
@@ -772,7 +772,7 @@ export default function ProductFormModal({ product = null, onClose, onSuccess })
                       { id: null, color: '', size: '', price: formData.basePrice || '', stock: '1' },
                     ])
                   }
-                  className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-amber-500 hover:bg-amber-600 px-3.5 py-1.5 rounded-xl shadow-sm transition-all active:scale-95"
+                  className="inline-flex items-center gap-1.5 text-xs font-bold px-3.5 py-1.5 rounded-xl shadow-sm transition-all active:scale-95 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
                 >
                   <HiOutlinePlusCircle className="h-4 w-4" />
                   Thêm phân loại
@@ -798,7 +798,7 @@ export default function ProductFormModal({ product = null, onClose, onSuccess })
                   value={bulkPrice}
                   onChange={(e) => setBulkPrice(e.target.value)}
                   className={cn(
-                    'w-36 rounded-xl border px-3 py-1.5 text-xs outline-none focus:ring-1 focus:ring-amber-500',
+                    'w-36 rounded-xl border px-3 py-1.5 text-xs outline-none focus:ring-1 focus:ring-stone-950/30 dark:focus:ring-white/40',
                     isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-300 bg-white text-stone-900'
                   )}
                 />
@@ -808,14 +808,14 @@ export default function ProductFormModal({ product = null, onClose, onSuccess })
                   value={bulkStock}
                   onChange={(e) => setBulkStock(e.target.value)}
                   className={cn(
-                    'w-28 rounded-xl border px-3 py-1.5 text-xs outline-none focus:ring-1 focus:ring-amber-500',
+                    'w-28 rounded-xl border px-3 py-1.5 text-xs outline-none focus:ring-1 focus:ring-stone-950/30 dark:focus:ring-white/40',
                     isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-300 bg-white text-stone-900'
                   )}
                 />
                 <button
                   type="button"
                   onClick={handleApplyBulk}
-                  className="text-xs font-bold text-white bg-amber-500 hover:bg-amber-600 px-3 py-1.5 rounded-xl transition-all shadow-sm"
+                  className="text-xs font-bold px-3 py-1.5 rounded-xl transition-all shadow-sm bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
                 >
                   Áp dụng
                 </button>
@@ -1000,10 +1000,10 @@ export default function ProductFormModal({ product = null, onClose, onSuccess })
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                 className={cn(
-                  'w-full rounded-2xl border px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-amber-500/30',
+                  'w-full rounded-2xl border px-4 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                   isDark
-                    ? 'border-slate-700 bg-slate-800/80 text-white focus:border-amber-500'
-                    : 'border-stone-300 bg-white text-stone-900 focus:border-amber-500'
+                    ? 'border-slate-700 bg-slate-800/80 text-white focus:border-stone-950 dark:focus:border-white'
+                    : 'border-stone-300 bg-white text-stone-900 focus:border-stone-950 dark:focus:border-white'
                 )}
               >
                 <option value="PUBLISHED">Đang bán (Hiển thị trên sàn)</option>
@@ -1052,7 +1052,7 @@ export default function ProductFormModal({ product = null, onClose, onSuccess })
                 'rounded-2xl px-6 py-2.5 text-xs font-bold text-white shadow-md transition-all active:scale-95',
                 submitting || duplicateIndices.size > 0
                   ? 'bg-amber-400/60 cursor-not-allowed opacity-70'
-                  : 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 shadow-amber-500/25'
+                  : 'bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
               )}
             >
               {submitting ? 'Đang xử lý...' : product ? 'Cập nhật sản phẩm' : 'Đăng bán sản phẩm'}

@@ -26,7 +26,7 @@ export default function Login() {
 
       // Guard: Admin accounts should not manage shop through seller portal
       if (res.role === 'ADMIN') {
-        toast.error('Tài khoản Quản trị vui lòng đăng nhập tại Cổng Quản Trị (Port 3002).')
+        toast.error('Tài khoản Quản trị vui lòng đăng nhập tại Cổng Quản Trị.')
         return
       }
 
@@ -71,12 +71,12 @@ export default function Login() {
         <div className={cn('rounded-3xl border p-8 shadow-xl', isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white')}>
           <div className="mb-8 text-center">
             <Link to="/" className="inline-block">
-              <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/25">
+              <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl shadow-lg bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200">
                 <HiOutlineShoppingBag className="h-8 w-8" />
               </div>
             </Link>
             <h1 className={cn('text-2xl font-black tracking-tight', isDark ? 'text-white' : 'text-stone-900')}>
-              Kênh Người Bán
+              Kênh người bán
             </h1>
             <p className="mt-1 text-xs text-stone-500 dark:text-slate-400">
               Đăng nhập để quản lý gian hàng, xử lý đơn GHN và doanh thu
@@ -94,7 +94,7 @@ export default function Login() {
                   placeholder="Nhập username của bạn"
                   {...register('username', { required: 'Vui lòng nhập tên đăng nhập' })}
                   className={cn(
-                    'w-full rounded-xl pl-10 pr-4 py-2.5 text-xs border transition-all focus:outline-none focus:ring-2 focus:ring-amber-500',
+                    'w-full rounded-xl pl-10 pr-4 py-2.5 text-xs border transition-all focus:outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                     isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-200 bg-stone-50 text-stone-900'
                   )}
                 />
@@ -113,7 +113,7 @@ export default function Login() {
                   placeholder="Nhập mật khẩu"
                   {...register('password', { required: 'Vui lòng nhập mật khẩu' })}
                   className={cn(
-                    'w-full rounded-xl pl-10 pr-4 py-2.5 text-xs border transition-all focus:outline-none focus:ring-2 focus:ring-amber-500',
+                    'w-full rounded-xl pl-10 pr-4 py-2.5 text-xs border transition-all focus:outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                     isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-200 bg-stone-50 text-stone-900'
                   )}
                 />
@@ -125,7 +125,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full mt-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 py-3 text-xs font-bold text-white shadow-md shadow-amber-500/25 hover:from-amber-600 hover:to-orange-600 transition-all disabled:opacity-50"
+              className="w-full mt-2 rounded-xl py-3 text-xs font-bold transition-all disabled:opacity-50 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
             >
               {isSubmitting ? 'Đang xác thực...' : 'Đăng nhập Kênh Người Bán'}
             </button>

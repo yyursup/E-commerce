@@ -114,7 +114,7 @@ export default function AdminShopRanking() {
                 <span
                   className={cn(
                     'inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em]',
-                    isDark ? 'bg-amber-500/15 text-amber-300' : 'bg-amber-100 text-amber-700',
+                    isDark ? 'bg-slate-800 text-white' : 'bg-stone-100 text-stone-950',
                   )}
                 >
                   Top performer
@@ -134,7 +134,7 @@ export default function AdminShopRanking() {
                     title: 'Doanh thu shop dẫn đầu',
                     value: formatCurrency(leader?.totalRevenue),
                     icon: HiOutlineTrendingUp,
-                    tone: isDark ? 'bg-amber-500/15 text-amber-300' : 'bg-amber-100 text-amber-700',
+                    tone: isDark ? 'bg-slate-800 text-white' : 'bg-stone-100 text-stone-950',
                   },
                   {
                     title: 'Tổng shop trong bảng',
@@ -187,7 +187,7 @@ export default function AdminShopRanking() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.08 }}
               className={cn(
-                'rounded-2xl border p-6 shadow-sm xl:col-span-2',
+                'rounded-2xl border p-6 xl:col-span-2',
                 isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white',
               )}
             >
@@ -263,7 +263,7 @@ export default function AdminShopRanking() {
                               className={cn(
                                 'inline-flex rounded-full px-2.5 py-1 text-xs font-bold',
                                 index === 0
-                                  ? 'bg-amber-500 text-white'
+                                  ? 'bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                                   : index === 1
                                     ? 'bg-slate-400 text-white'
                                     : 'bg-orange-500 text-white',
@@ -352,7 +352,7 @@ export default function AdminShopRanking() {
                             className={cn(
                               'inline-flex rounded-full px-2.5 py-1 text-xs font-bold',
                               Number(shop?.rank) === 1
-                                ? 'bg-amber-500 text-white'
+                                ? 'bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                                 : Number(shop?.rank) === 2
                                   ? 'bg-slate-400 text-white'
                                   : Number(shop?.rank) === 3

@@ -15,29 +15,37 @@ import {
   HiOutlineShieldCheck,
   HiOutlineCash,
   HiOutlineDocumentText,
+  HiOutlineSun,
+  HiOutlineMoon,
 } from 'react-icons/hi'
 import { useAuthStore } from '../../store/useAuthStore'
 import { useThemeStore } from '../../store/useThemeStore'
 import { cn } from '../../lib/cn'
 
 const navItems = [
-  { to: '/dashboard', label: 'Tổng quan Sàn', icon: HiOutlineViewGrid },
-  { to: '/requests', label: 'Duyệt Yêu Cầu & Mở Shop', icon: HiOutlineClipboardCheck },
-  { to: '/moderation', label: 'Kiểm duyệt Sản phẩm', icon: HiOutlineShieldCheck },
-  { to: '/orders', label: 'Gian Hàng & Đơn Hàng', icon: HiOutlineShoppingBag },
-  { to: '/vouchers', label: 'Voucher Toàn Sàn', icon: HiOutlineTicket },
-  { to: '/commissions', label: 'Hoa Hồng & Biểu Phí', icon: HiOutlineChartBar },
-  { to: '/trust-config', label: 'Quỹ Ký Quỹ & Bậc Sao', icon: HiOutlineCash },
-  { to: '/platform-wallet', label: 'Tài Chính & Ví Sàn', icon: HiOutlineCreditCard },
-  { to: '/reports', label: 'Khiếu Nại & Vi Phạm', icon: HiOutlineClipboardCheck },
-  { to: '/policies', label: 'Chính Sách & Quy Chế', icon: HiOutlineDocumentText },
-  { to: '/live-chat', label: 'Live Chat CSKH', icon: HiOutlineChat },
+  { to: '/dashboard', label: 'Tổng quan sàn', icon: HiOutlineViewGrid, group: 'VẬN HÀNH' },
+  { to: '/requests', label: 'Duyệt yêu cầu & mở shop', icon: HiOutlineClipboardCheck, group: 'VẬN HÀNH' },
+  { to: '/moderation', label: 'Kiểm duyệt sản phẩm', icon: HiOutlineShieldCheck, group: 'VẬN HÀNH' },
+  { to: '/orders', label: 'Gian hàng & đơn hàng', icon: HiOutlineShoppingBag, group: 'VẬN HÀNH' },
+  { to: '/reports', label: 'Khiếu nại & vi phạm', icon: HiOutlineClipboardCheck, group: 'VẬN HÀNH' },
+  { to: '/live-chat', label: 'Live chat CSKH', icon: HiOutlineChat, group: 'VẬN HÀNH' },
+  { to: '/platform-wallet', label: 'Tài chính & ví sàn', icon: HiOutlineCreditCard, group: 'TÀI CHÍNH' },
+  { to: '/commissions', label: 'Hoa hồng & biểu phí', icon: HiOutlineChartBar, group: 'TÀI CHÍNH' },
+  { to: '/trust-config', label: 'Ký quỹ & bậc sao', icon: HiOutlineCash, group: 'TÀI CHÍNH' },
+  { to: '/vouchers', label: 'Voucher toàn sàn', icon: HiOutlineTicket, group: 'CẤU HÌNH' },
+  { to: '/policies', label: 'Chính sách & quy chế', icon: HiOutlineDocumentText, group: 'CẤU HÌNH' },
 ]
+
+const groups = navItems.reduce((acc, item) => {
+  ;(acc[item.group] ||= []).push(item)
+  return acc
+}, {})
 
 export default function AdminLayout() {
   const navigate = useNavigate()
   const { isAuthenticated, user, logout } = useAuthStore()
   const isDark = useThemeStore((state) => state.theme) === 'dark'
+  const toggleTheme = useThemeStore((state) => state.toggleTheme)
   const normalizedRole = user?.role?.toUpperCase()?.replace(/^ROLE_/, '')
   const isAdmin = normalizedRole === 'ADMIN'
 
@@ -48,7 +56,7 @@ export default function AdminLayout() {
   if (!isAdmin) {
     return (
       <div className={cn('min-h-[calc(100vh-4rem)] px-4 py-12', isDark ? 'bg-slate-950 text-slate-100' : 'bg-stone-50 text-stone-800')}>
-        <div className="mx-auto max-w-3xl rounded-2xl border border-red-500/40 bg-red-500/10 p-8 text-center">
+        <div className="mx-auto max-w-3xl rounded-lg border border-red-500/40 bg-red-500/10 p-8 text-center">
           <h1 className="text-xl font-semibold text-rose-500">Truy cập bị từ chối</h1>
           <p className="mt-2 text-sm opacity-80">Khu vực này chỉ dành riêng cho tài khoản Quản trị viên sàn.</p>
           <button
@@ -56,7 +64,7 @@ export default function AdminLayout() {
               logout()
               navigate('/login')
             }}
-            className="mt-4 inline-flex rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700"
+            className="mt-4 inline-flex rounded-md bg-stone-950 px-4 py-2 text-sm font-semibold text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950"
           >
             Đăng nhập lại bằng tài khoản Admin
           </button>
@@ -66,62 +74,93 @@ export default function AdminLayout() {
   }
 
   return (
-    <div className={cn('min-h-[calc(100vh-4rem)]', isDark ? 'bg-slate-950 text-slate-100' : 'bg-stone-50 text-stone-900')}>
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="grid gap-6 lg:grid-cols-4">
-          <aside className="lg:col-span-1">
-            <div className={cn('rounded-2xl border p-6 shadow-sm', isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white')}>
-              <div className="mb-6 flex items-center gap-3">
-                <div className={cn('flex h-12 w-12 items-center justify-center rounded-xl', isDark ? 'bg-amber-500/15 text-amber-300' : 'bg-amber-100 text-amber-700')}>
-                  <HiOutlineUserCircle className="h-6 w-6" />
-                </div>
-                <div>
-                  <p className={cn('text-xs uppercase tracking-wide', isDark ? 'text-slate-400' : 'text-stone-500')}>Admin</p>
-                  <p className="text-sm font-semibold">{user?.email || 'Admin account'}</p>
-                </div>
-              </div>
-
-              <nav className="space-y-1">
-                {navItems.map(({ to, label, icon: Icon, end }) => (
-                  <NavLink
-                    key={to}
-                    to={to}
-                    end={end}
-                    className={({ isActive }) => cn(
-                      'flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                      isActive
-                        ? 'bg-amber-500 text-white'
-                        : isDark
-                          ? 'text-slate-300 hover:bg-slate-800'
-                          : 'text-stone-600 hover:bg-stone-100',
-                    )}
-                  >
-                    <Icon className="h-4 w-4" />
-                    {label}
-                  </NavLink>
-                ))}
-              </nav>
-
-              <button
-                onClick={() => {
-                  logout()
-                  navigate('/login')
-                }}
-                className={cn(
-                  'mt-6 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                  isDark ? 'text-red-300 hover:bg-red-500/10' : 'text-red-600 hover:bg-red-50',
-                )}
-              >
-                <HiOutlineLogout className="h-4 w-4" />
-                Logout
-              </button>
-            </div>
-          </aside>
-
-          <main className="lg:col-span-3">
-            <Outlet />
-          </main>
+    <div className={cn('flex min-h-screen', isDark ? 'bg-slate-950 text-slate-100' : 'bg-stone-50 text-stone-950')}>
+      {/* Wrapper paints the black column full height; the aside itself stays pinned */}
+      <div className="hidden w-64 shrink-0 bg-stone-950 lg:block">
+      <aside className="sticky top-0 flex h-screen flex-col gap-5 overflow-y-auto px-3.5 py-5 text-white">
+        <div className="flex flex-col gap-1 px-2">
+          <span className="font-display text-[22px] font-extrabold tracking-[-0.04em]">
+            E-Commerce<span className="text-amber-500">.</span>
+          </span>
+          <span className="font-mono text-[11px] text-stone-400">QUẢN TRỊ SÀN</span>
         </div>
+
+        <nav aria-label="Quản trị sàn" className="flex flex-col gap-4">
+          {Object.entries(groups).map(([group, items]) => (
+            <div key={group} className="flex flex-col gap-0.5">
+              <span className="px-2.5 pb-1 font-mono text-[10px] tracking-[0.06em] text-stone-500">{group}</span>
+              {items.map(({ to, label, icon: Icon }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  className={({ isActive }) => cn(
+                    'flex items-center gap-2.5 rounded-md border-l-[3px] px-2.5 py-2 text-sm transition-colors',
+                    isActive
+                      ? 'border-amber-500 bg-stone-900 font-bold text-white'
+                      : 'border-transparent font-medium text-stone-300 hover:bg-stone-900 hover:text-white',
+                  )}
+                >
+                  <Icon className="h-4 w-4 shrink-0" />
+                  {label}
+                </NavLink>
+              ))}
+            </div>
+          ))}
+        </nav>
+
+        <div className="mt-auto flex flex-col gap-2 border-t border-stone-800 pt-3">
+          <div className="flex items-center gap-2.5 px-2">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-amber-500 text-stone-950">
+              <HiOutlineUserCircle className="h-5 w-5" />
+            </span>
+            <span className="flex min-w-0 flex-col">
+              <strong className="text-[13px]">Quản trị viên</strong>
+              <span className="truncate text-[11px] text-stone-400">{user?.email || 'Admin account'}</span>
+            </span>
+          </div>
+          <button
+            onClick={() => {
+              logout()
+              navigate('/login')
+            }}
+            className="flex items-center gap-2 rounded-md px-2.5 py-2 text-sm text-red-400 hover:bg-stone-900"
+          >
+            <HiOutlineLogout className="h-4 w-4" />
+            Đăng xuất
+          </button>
+        </div>
+      </aside>
+      </div>
+
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className={cn('sticky top-0 z-40 flex items-center justify-between gap-3 border-b px-6 py-3', isDark ? 'border-slate-800 bg-slate-950' : 'border-stone-200 bg-white')}>
+          <span className="font-display text-lg font-extrabold tracking-[-0.03em] lg:hidden">
+            E-Commerce<span className="text-amber-500">.</span> <span className="font-mono text-xs font-medium">ADMIN</span>
+          </span>
+          <span className={cn('hidden font-mono text-xs lg:inline', isDark ? 'text-slate-400' : 'text-stone-500')}>
+            {new Date().toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' }).toUpperCase()}
+          </span>
+          <button
+            onClick={toggleTheme}
+            className={cn('rounded-md p-2 transition-colors', isDark ? 'text-slate-300 hover:bg-slate-800' : 'text-stone-600 hover:bg-stone-100')}
+            aria-label="Đổi giao diện sáng/tối"
+          >
+            {isDark ? <HiOutlineSun className="h-5 w-5" /> : <HiOutlineMoon className="h-5 w-5" />}
+          </button>
+        </header>
+
+        {/* Mobile nav: the sidebar is desktop-only */}
+        <nav aria-label="Quản trị sàn" className={cn('flex gap-1 overflow-x-auto border-b px-4 py-2 lg:hidden', isDark ? 'border-slate-800' : 'border-stone-200')}>
+          {navItems.map(({ to, label }) => (
+            <NavLink key={to} to={to} className={({ isActive }) => cn('shrink-0 rounded-md px-3 py-1.5 text-xs font-semibold', isActive ? 'bg-stone-950 text-white dark:bg-white dark:text-stone-950' : isDark ? 'text-slate-300' : 'text-stone-600')}>
+              {label}
+            </NavLink>
+          ))}
+        </nav>
+
+        <main className="w-full max-w-[1280px] flex-1 px-4 py-7 sm:px-8">
+          <Outlet />
+        </main>
       </div>
     </div>
   )

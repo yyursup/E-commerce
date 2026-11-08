@@ -136,7 +136,7 @@ export default function CategoryRatesTab() {
     try {
       setIsUpdatingFloorRate(true)
       await platformService.updatePlatformSetting('commission_floor_rate', rate)
-      toast.success('Cập nhật ngưỡng sàn tối thiểu (Floor Rate) thành công')
+      toast.success('Cập nhật ngưỡng sàn tối thiểu thành công')
     } catch (err) {
       console.error('Error updating floor rate:', err)
       toast.error(err?.response?.data?.message || 'Không thể cập nhật tỷ lệ sàn tối thiểu')
@@ -155,7 +155,7 @@ export default function CategoryRatesTab() {
     try {
       setIsUpdatingUsedGoodsRate(true)
       await platformService.updatePlatformSetting('commission_used_goods_rate', rate)
-      toast.success('Cập nhật tỷ lệ hoa hồng hàng cũ (Used Goods) thành công')
+      toast.success('Cập nhật tỷ lệ hoa hồng hàng cũ thành công')
     } catch (err) {
       console.error('Error updating used goods rate:', err)
       toast.error(err?.response?.data?.message || 'Không thể cập nhật tỷ lệ hàng cũ')
@@ -184,7 +184,7 @@ export default function CategoryRatesTab() {
         <div>
           <h2 className="text-lg font-bold flex items-center gap-2">
             <HiOutlineCog className="h-5 w-5 text-amber-500" />
-            Biểu Phí Hoa Hồng Theo Danh Mục Ngành Hàng (Category Rates)
+            Biểu phí hoa hồng theo danh mục ngành hàng
           </h2>
           <p className={cn('text-xs', isDark ? 'text-slate-400' : 'text-stone-500')}>
             Admin thiết lập tỷ lệ hoa hồng cơ bản riêng biệt cho từng nhóm sản phẩm công nghệ.
@@ -192,7 +192,7 @@ export default function CategoryRatesTab() {
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="inline-flex items-center gap-2 rounded-xl bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-600 dark:text-amber-400 border border-amber-500/20">
+          <div className="inline-flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-semibold dark:text-amber-400 border bg-stone-100 text-stone-950 border-stone-950">
             <span>Sàn tối thiểu: {floorRate}%</span>
           </div>
           <button
@@ -251,7 +251,7 @@ export default function CategoryRatesTab() {
                 <div
                   key={cat.id}
                   className={cn(
-                    'relative rounded-2xl border p-5 transition-all duration-200 hover:shadow-md flex flex-col justify-between gap-4',
+                    'relative rounded-2xl border p-5 transition-all duration-200 flex flex-col justify-between gap-4',
                     isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white',
                   )}
                 >
@@ -292,7 +292,7 @@ export default function CategoryRatesTab() {
                             value={editRateValue}
                             onChange={(e) => setEditRateValue(e.target.value)}
                             className={cn(
-                              'w-full rounded-xl border px-3 py-2 text-sm font-bold text-center focus:outline-none focus:ring-2 focus:ring-amber-500',
+                              'w-full rounded-xl border px-3 py-2 text-sm font-bold text-center focus:outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                               isDark
                                 ? 'border-slate-700 bg-slate-950 text-white'
                                 : 'border-stone-300 bg-white text-stone-900',
@@ -326,7 +326,7 @@ export default function CategoryRatesTab() {
                     ) : (
                       <div className="flex items-center justify-between">
                         <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Tỷ lệ cơ bản thu sàn:</span>
-                        <span className="inline-flex items-center rounded-xl bg-amber-500/10 px-3 py-1 text-sm font-extrabold text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                        <span className="inline-flex items-center rounded-xl px-3 py-1 text-sm font-extrabold dark:text-amber-400 border bg-stone-100 text-stone-950 border-stone-950">
                           {currentRate.toFixed(1)}%
                         </span>
                       </div>
@@ -342,14 +342,14 @@ export default function CategoryRatesTab() {
       <div className="space-y-3 pt-2">
         <h3 className="text-sm font-bold flex items-center gap-2">
           <HiOutlineShieldCheck className="h-4 w-4 text-amber-500" />
-          Cấu hình chính sách hoa hồng toàn sàn (Platform Dynamic Policies)
+          Cấu hình chính sách hoa hồng toàn sàn
         </h3>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           {/* Card 1: Default Rate */}
           <div
             className={cn(
-              'rounded-2xl p-5 border shadow-sm flex flex-col justify-between gap-3',
+              'rounded-2xl p-5 border flex flex-col justify-between gap-3',
               isDark ? 'border-slate-800 bg-slate-900 text-slate-300' : 'border-stone-200 bg-white text-stone-700'
             )}
           >
@@ -373,7 +373,7 @@ export default function CategoryRatesTab() {
                   value={defaultRate}
                   onChange={(e) => setDefaultRate(e.target.value)}
                   className={cn(
-                    'w-full rounded-xl border px-3 py-1.5 text-xs font-bold text-center focus:outline-none focus:ring-1 focus:ring-amber-500',
+                    'w-full rounded-xl border px-3 py-1.5 text-xs font-bold text-center focus:outline-none focus:ring-1 focus:ring-stone-950/30 dark:focus:ring-white/40',
                     isDark ? 'border-slate-700 bg-slate-950 text-white' : 'border-stone-300 bg-white text-stone-900',
                   )}
                 />
@@ -382,7 +382,7 @@ export default function CategoryRatesTab() {
               <button
                 onClick={handleUpdateDefaultRate}
                 disabled={isUpdatingDefaultRate}
-                className="rounded-xl bg-amber-500 px-3 py-1.5 text-xs font-bold text-white hover:bg-amber-600 disabled:opacity-50 transition shadow-sm"
+                className="rounded-xl px-3 py-1.5 text-xs font-bold disabled:opacity-50 transition bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
               >
                 {isUpdatingDefaultRate ? 'Đang lưu...' : 'Lưu'}
               </button>
@@ -392,7 +392,7 @@ export default function CategoryRatesTab() {
           {/* Card 2: Floor Rate */}
           <div
             className={cn(
-              'rounded-2xl p-5 border shadow-sm flex flex-col justify-between gap-3',
+              'rounded-2xl p-5 border flex flex-col justify-between gap-3',
               isDark ? 'border-slate-800 bg-slate-900 text-slate-300' : 'border-stone-200 bg-white text-stone-700'
             )}
           >
@@ -435,7 +435,7 @@ export default function CategoryRatesTab() {
           {/* Card 3: Used Goods Rate */}
           <div
             className={cn(
-              'rounded-2xl p-5 border shadow-sm flex flex-col justify-between gap-3',
+              'rounded-2xl p-5 border flex flex-col justify-between gap-3',
               isDark ? 'border-slate-800 bg-slate-900 text-slate-300' : 'border-stone-200 bg-white text-stone-700'
             )}
           >
@@ -468,7 +468,7 @@ export default function CategoryRatesTab() {
               <button
                 onClick={handleUpdateUsedGoodsRate}
                 disabled={isUpdatingUsedGoodsRate}
-                className="rounded-xl bg-purple-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-purple-700 disabled:opacity-50 transition shadow-sm"
+                className="rounded-xl px-3 py-1.5 text-xs font-bold disabled:opacity-50 transition shadow-sm bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
               >
                 {isUpdatingUsedGoodsRate ? 'Đang lưu...' : 'Lưu'}
               </button>

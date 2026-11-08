@@ -14,7 +14,7 @@ export default function RejectedNotice() {
         animate={{ opacity: 1, scale: 1 }}
         className="w-full max-w-lg"
       >
-        <div className={cn('rounded-3xl border p-8 shadow-xl text-center space-y-6',
+        <div className={cn('rounded-3xl border p-8 text-center space-y-6',
           isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
         )}>
           <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-rose-500/10 text-rose-500 ring-8 ring-rose-500/5">
@@ -26,7 +26,7 @@ export default function RejectedNotice() {
               Hồ sơ chưa được duyệt
             </span>
             <h1 className={cn('text-2xl font-black', isDark ? 'text-white' : 'text-stone-900')}>
-              Hồ Sơ Cần Bổ Sung Thông Tin
+              Hồ sơ cần bổ sung thông tin
             </h1>
             <p className="mt-2 text-xs text-stone-500 dark:text-slate-400 leading-relaxed max-w-md mx-auto">
               Rất tiếc, hồ sơ đăng ký mở gian hàng của bạn chưa đạt yêu cầu do một số thông tin (ảnh CCCD, giấy phép kinh doanh hoặc địa chỉ kho GHN) chưa chính xác hoặc còn thiếu.
@@ -45,7 +45,7 @@ export default function RejectedNotice() {
           <div className="flex flex-col sm:flex-row gap-3 pt-2">
             <Link
               to="/seller-register"
-              className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-amber-500 py-3 text-xs font-bold text-white shadow-md shadow-amber-500/20 hover:bg-amber-600 transition-all"
+              className="flex-1 flex items-center justify-center gap-2 rounded-xl py-3 text-xs font-bold shadow-md transition-all bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
             >
               <HiOutlinePencilAlt className="h-4 w-4" />
               Chỉnh sửa & Nộp lại hồ sơ

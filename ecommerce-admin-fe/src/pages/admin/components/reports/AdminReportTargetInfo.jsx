@@ -100,15 +100,15 @@ export const renderTargetChips = (targetInfo, isDark) => {
             <div
               key={index}
               className={cn(
-                'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs border shadow-xs transition-all',
+                'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs border transition-all',
                 isPrice
                   ? (isDark ? 'bg-rose-500/10 border-rose-500/30 text-rose-300 font-bold' : 'bg-rose-50 border-rose-200 text-rose-700 font-bold')
                   : isStatus
-                    ? (isDark ? 'bg-amber-500/10 border-amber-500/30 text-amber-300 font-bold' : 'bg-amber-50 border-amber-200 text-amber-700 font-bold')
+                    ? (isDark ? 'font-bold bg-slate-800 text-white border-white' : 'font-bold bg-stone-100 text-stone-950 border-stone-950')
                     : isViolation
                       ? (isDark ? 'bg-rose-500/15 border-rose-500/40 text-rose-400 font-bold' : 'bg-rose-100/70 border-rose-300 text-rose-800 font-bold')
                       : isRating
-                        ? (isDark ? 'bg-amber-500/15 border-amber-500/40 text-amber-300 font-semibold' : 'bg-amber-50 border-amber-200 text-amber-700 font-semibold')
+                        ? (isDark ? 'font-semibold bg-slate-800 text-white border-white' : 'font-semibold bg-stone-100 text-stone-950 border-stone-950')
                         : isCategory
                           ? (isDark ? 'bg-cyan-500/10 border-cyan-500/30 text-cyan-300 font-semibold' : 'bg-cyan-50 border-cyan-200 text-cyan-700 font-semibold')
                           : isQuantity
@@ -131,7 +131,7 @@ export const renderTargetChips = (targetInfo, isDark) => {
 
   const formattedText = targetInfo.replace(/(\d+(?:\.\d+)?)\s*(?:đ|₫)/g, (match, p1) => {
     const parsed = parseFloat(p1)
-    return isNaN(parsed) ? match : new Intl.NumberFormat('vi-VN').format(parsed) + ' đ'
+    return isNaN ? match : new Intl.NumberFormat('vi-VN').format + ' đ'
   })
 
   return (

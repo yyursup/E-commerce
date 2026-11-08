@@ -96,10 +96,10 @@ export default function VoucherDetailModal({
             </div>
             <div className="min-w-0">
               <h2 className="text-base sm:text-lg font-bold truncate">
-                Chi Tiết Mã Giảm Giá
+                Chi tiết mã giảm giá
               </h2>
               <p className={cn('text-xs truncate', isDark ? 'text-slate-400' : 'text-stone-500')}>
-                Phạm vi: <span className="font-bold text-amber-500">Toàn Gian Hàng</span>
+                Phạm vi: <span className="font-bold text-amber-500">Toàn gian hàng</span>
               </p>
             </div>
           </div>
@@ -156,7 +156,7 @@ export default function VoucherDetailModal({
                   className={cn(
                     'p-1.5 rounded-xl border transition-all active:scale-95',
                     isDark
-                      ? 'border-amber-500/40 bg-amber-500/15 text-amber-400 hover:bg-amber-500/25'
+                      ? 'hover:bg-amber-500/25 bg-slate-800 text-white border-white'
                       : 'border-amber-300 bg-amber-100 text-amber-800 hover:bg-amber-200'
                   )}
                   title="Sao chép mã"
@@ -222,7 +222,7 @@ export default function VoucherDetailModal({
             {usageLimit && (
               <div className="h-2 w-full rounded-full bg-stone-200 dark:bg-slate-700 overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-amber-500 to-orange-500 transition-all duration-300"
+                  className="h-full rounded-full transition-all duration-300 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
                   style={{ width: `${usagePercent}%` }}
                 />
               </div>
@@ -270,7 +270,7 @@ export default function VoucherDetailModal({
             <button
               type="button"
               onClick={handleCopyCode}
-              className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-amber-500/20 hover:bg-amber-600 active:scale-95 transition-all"
+              className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold shadow-md active:scale-95 transition-all bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
             >
               {copiedCode ? <HiOutlineCheck className="h-4 w-4" /> : <HiOutlineClipboardCopy className="h-4 w-4" />}
               Sao chép mã voucher
@@ -283,7 +283,7 @@ export default function VoucherDetailModal({
                   onClose?.()
                   onEditVoucher?.(voucher)
                 }}
-                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-amber-500/20 hover:from-amber-600 hover:to-orange-600 active:scale-95 transition-all"
+                className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold shadow-md active:scale-95 transition-all bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
               >
                 <HiOutlinePencilAlt className="h-4 w-4" />
                 Chỉnh sửa voucher
@@ -298,8 +298,8 @@ export default function VoucherDetailModal({
                   'inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition-all active:scale-95 border',
                   isStarted
                     ? isDark
-                      ? 'border-amber-500/40 bg-amber-500/15 text-amber-400 hover:bg-amber-500/25'
-                      : 'border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100'
+                      ? 'hover:bg-amber-500/25 bg-slate-800 text-white border-white'
+                      : 'hover:bg-amber-100 bg-stone-100 text-stone-950 border-stone-950'
                     : isDark
                       ? 'border-rose-500/40 bg-rose-500/15 text-rose-400 hover:bg-rose-500/25'
                       : 'border-rose-300 bg-rose-50 text-rose-700 hover:bg-rose-100'

@@ -187,7 +187,7 @@ export default function AddressManager({ isDark }) {
                 {!isAdding && !editingId && (
                     <button
                         onClick={() => { setIsAdding(true); reset({ isDefault: false }); }}
-                        className="flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600"
+                        className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
                     >
                         <HiPlus className="h-5 w-5" /> Thêm địa chỉ mới
                     </button>
@@ -204,7 +204,7 @@ export default function AddressManager({ isDark }) {
                             <label className={cn("label block text-sm font-medium mb-1", isDark ? "text-gray-300" : "text-gray-700")}>Họ tên người nhận</label>
                             <input
                                 {...register('receiverName', { required: "Vui lòng nhập họ tên" })}
-                                className={cn("w-full rounded-lg border p-2.5 outline-none focus:ring-2 focus:ring-amber-500/20", isDark ? "bg-slate-700 border-slate-600 text-white" : "bg-white border-gray-300")}
+                                className={cn("w-full rounded-lg border p-2.5 outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40", isDark ? "bg-slate-700 border-slate-600 text-white" : "bg-white border-gray-300")}
                                 placeholder="Nguyễn Văn A"
                             />
                             {errors.receiverName && <span className="text-xs text-red-500">{errors.receiverName.message}</span>}
@@ -213,7 +213,7 @@ export default function AddressManager({ isDark }) {
                             <label className={cn("label block text-sm font-medium mb-1", isDark ? "text-gray-300" : "text-gray-700")}>Số điện thoại</label>
                             <input
                                 {...register('receiverPhone', { required: "Vui lòng nhập SĐT", pattern: { value: /^[0-9]{10,11}$/, message: "SĐT không hợp lệ" } })}
-                                className={cn("w-full rounded-lg border p-2.5 outline-none focus:ring-2 focus:ring-amber-500/20", isDark ? "bg-slate-700 border-slate-600 text-white" : "bg-white border-gray-300")}
+                                className={cn("w-full rounded-lg border p-2.5 outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40", isDark ? "bg-slate-700 border-slate-600 text-white" : "bg-white border-gray-300")}
                                 placeholder="0901234567"
                             />
                             {errors.receiverPhone && <span className="text-xs text-red-500">{errors.receiverPhone.message}</span>}
@@ -224,7 +224,7 @@ export default function AddressManager({ isDark }) {
                             <label className={cn("label block text-sm font-medium mb-1", isDark ? "text-gray-300" : "text-gray-700")}>Tỉnh / Thành phố</label>
                             <select
                                 {...register('provinceId', { required: "Chọn Tỉnh/Thành" })}
-                                className={cn("w-full rounded-lg border p-2.5 outline-none focus:ring-2 focus:ring-amber-500/20", isDark ? "bg-slate-700 border-slate-600 text-white" : "bg-white border-gray-300")}
+                                className={cn("w-full rounded-lg border p-2.5 outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40", isDark ? "bg-slate-700 border-slate-600 text-white" : "bg-white border-gray-300")}
                             >
                                 <option value="">Chọn Tỉnh/Thành</option>
                                 {provinces.map(p => (
@@ -238,7 +238,7 @@ export default function AddressManager({ isDark }) {
                             <select
                                 {...register('districtId', { required: "Chọn Quận/Huyện" })}
                                 disabled={!selectedProvinceId}
-                                className={cn("w-full rounded-lg border p-2.5 outline-none focus:ring-2 focus:ring-amber-500/20 disabled:opacity-50", isDark ? "bg-slate-700 border-slate-600 text-white" : "bg-white border-gray-300")}
+                                className={cn("w-full rounded-lg border p-2.5 outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40 disabled:opacity-50", isDark ? "bg-slate-700 border-slate-600 text-white" : "bg-white border-gray-300")}
                             >
                                 <option value="">Chọn Quận/Huyện</option>
                                 {districts.map(d => (
@@ -252,7 +252,7 @@ export default function AddressManager({ isDark }) {
                             <select
                                 {...register('wardCode', { required: "Chọn Phường/Xã" })}
                                 disabled={!selectedDistrictId}
-                                className={cn("w-full rounded-lg border p-2.5 outline-none focus:ring-2 focus:ring-amber-500/20 disabled:opacity-50", isDark ? "bg-slate-700 border-slate-600 text-white" : "bg-white border-gray-300")}
+                                className={cn("w-full rounded-lg border p-2.5 outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40 disabled:opacity-50", isDark ? "bg-slate-700 border-slate-600 text-white" : "bg-white border-gray-300")}
                             >
                                 <option value="">Chọn Phường/Xã</option>
                                 {wards.map(w => (
@@ -266,7 +266,7 @@ export default function AddressManager({ isDark }) {
                             <label className={cn("label block text-sm font-medium mb-1", isDark ? "text-gray-300" : "text-gray-700")}>Địa chỉ cụ thể</label>
                             <input
                                 {...register('addressLine', { required: "Nhập số nhà, tên đường" })}
-                                className={cn("w-full rounded-lg border p-2.5 outline-none focus:ring-2 focus:ring-amber-500/20", isDark ? "bg-slate-700 border-slate-600 text-white" : "bg-white border-gray-300")}
+                                className={cn("w-full rounded-lg border p-2.5 outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40", isDark ? "bg-slate-700 border-slate-600 text-white" : "bg-white border-gray-300")}
                                 placeholder="Số 123, đường ABC..."
                             />
                             {errors.addressLine && <span className="text-xs text-red-500">{errors.addressLine.message}</span>}
@@ -274,14 +274,14 @@ export default function AddressManager({ isDark }) {
 
                         <div className="md:col-span-2">
                             <label className="flex items-center gap-2">
-                                <input type="checkbox" {...register('isDefault')} className="h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500" />
+                                <input type="checkbox" {...register('isDefault')} className="h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-stone-950/30 dark:focus:ring-white/40" />
                                 <span className={cn("text-sm", isDark ? "text-slate-300" : "text-gray-700")}>Đặt làm địa chỉ mặc định</span>
                             </label>
                         </div>
                     </div>
                     <div className="mt-4 flex justify-end gap-3">
                         <button type="button" onClick={onCancel} className="rounded-lg px-4 py-2 text-sm font-medium text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700">Hủy</button>
-                        <button type="submit" className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600">Lưu địa chỉ</button>
+                        <button type="submit" className="rounded-lg px-4 py-2 text-sm font-medium bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200">Lưu địa chỉ</button>
                     </div>
                 </form>
             )}
@@ -316,7 +316,7 @@ export default function AddressManager({ isDark }) {
                         {!addr.isDefault && (
                             <button
                                 onClick={() => onSetDefault(addr.id)}
-                                className="mt-3 text-xs font-medium text-amber-600 hover:underline dark:text-amber-400"
+                                className="mt-3 text-xs font-medium text-stone-950 underline underline-offset-2 dark:text-white"
                             >
                                 Đặt làm mặc định
                             </button>

@@ -344,15 +344,15 @@ export default function AdminReports() {
   const getTargetLabel = (targetType) => {
     switch (targetType) {
       case 'SHOP':
-        return 'Gian hàng (Shop)'
+        return 'Gian hàng'
       case 'PRODUCT':
-        return 'Sản phẩm (Product)'
+        return 'Sản phẩm'
       case 'USER':
-        return 'Tài khoản người dùng (User)'
+        return 'Tài khoản người dùng'
       case 'REVIEW':
-        return 'Đánh giá / Nhận xét (Review)'
+        return 'Đánh giá / Nhận xét'
       case 'ORDER':
-        return 'Đơn hàng (Order)'
+        return 'Đơn hàng'
       default:
         return 'Đối tượng chưa xác định'
     }
@@ -363,17 +363,17 @@ export default function AdminReports() {
       {/* Header */}
       <div
         className={cn(
-          'rounded-3xl border p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-colors',
+          'rounded-3xl border p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-colors',
           isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white',
         )}
       >
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-500 border border-amber-500/25 shadow-sm">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl border bg-stone-100 text-stone-950 border-stone-950">
             <HiOutlineShieldCheck className="h-6 w-6" />
           </div>
           <div>
             <h1 className={cn('text-2xl font-bold tracking-tight', isDark ? 'text-white' : 'text-stone-900')}>
-              Kiểm Soát An Toàn, Vi Phạm & Tranh Chấp (Trust & Safety)
+              Kiểm soát an toàn, vi phạm & tranh chấp
             </h1>
             <p className={cn('text-xs mt-0.5', isDark ? 'text-slate-400' : 'text-stone-500')}>
               Thẩm định báo cáo vi phạm, phân xử tranh chấp đơn hàng và ký quỹ Escrow bảo vệ quyền lợi
@@ -405,7 +405,7 @@ export default function AdminReports() {
       >
         <button
           className={cn(
-            'flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all bg-amber-500 text-white shadow-md shadow-amber-500/25',
+            'flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200',
           )}
         >
           <HiOutlineExclamationCircle className="h-4 w-4" />
@@ -416,7 +416,7 @@ export default function AdminReports() {
       {/* Content Container */}
       <div
         className={cn(
-          'rounded-3xl border p-6 shadow-sm overflow-hidden transition-colors',
+          'rounded-3xl border p-6 overflow-hidden transition-colors',
           isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white',
         )}
       >

@@ -104,7 +104,7 @@ export default function AdminVouchers() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className={cn('text-2xl font-bold tracking-tight', isDark ? 'text-white' : 'text-stone-900')}>
-            Quản Trị Voucher Toàn Sàn
+            Quản trị voucher toàn sàn
           </h1>
           <p className="text-xs sm:text-sm text-stone-500 dark:text-slate-400 mt-1">
             Quản lý ngân sách khuyến mãi, mã trợ giá FreeShip GHN và chiến dịch voucher kích cầu toàn sàn
@@ -113,10 +113,10 @@ export default function AdminVouchers() {
 
         <button
           onClick={() => setShowCreateModal(true)}
-          className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 px-4 py-2.5 text-xs sm:text-sm font-bold text-white shadow-lg shadow-amber-500/25 hover:opacity-95 transition-all active:scale-95 shrink-0"
+          className="inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs sm:text-sm font-bold hover:opacity-95 transition-all active:scale-95 shrink-0 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
         >
           <HiOutlinePlus className="h-5 w-5" />
-          Tạo Voucher Toàn Sàn
+          Tạo voucher toàn sàn
         </button>
       </div>
 
@@ -124,7 +124,7 @@ export default function AdminVouchers() {
       <AdminVoucherMetrics vouchers={vouchers} isDark={isDark} />
 
       {/* 2. Filter & Search Bar */}
-      <div className={cn('rounded-2xl border p-4 shadow-sm flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4', isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white')}>
+      <div className={cn('rounded-2xl border p-4 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4', isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white')}>
         <div className="relative flex-1 max-w-md">
           <input
             type="text"
@@ -132,7 +132,7 @@ export default function AdminVouchers() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className={cn(
-              'w-full rounded-xl pl-9 pr-4 py-2 text-xs border transition-all focus:outline-none focus:ring-2 focus:ring-amber-500',
+              'w-full rounded-xl pl-9 pr-4 py-2 text-xs border transition-all focus:outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
               isDark ? 'border-slate-700 bg-slate-800 text-white placeholder-slate-400' : 'border-stone-200 bg-stone-50 text-stone-900 placeholder-stone-400'
             )}
           />
@@ -153,7 +153,7 @@ export default function AdminVouchers() {
                 className={cn(
                   'px-3 py-1.5 text-xs font-bold rounded-xl transition-all',
                   isActive
-                    ? 'bg-amber-500 text-white shadow-md shadow-amber-500/25'
+                    ? 'bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                     : isDark
                       ? 'text-slate-300 hover:text-white hover:bg-slate-700/60'
                       : 'text-stone-600 hover:text-stone-900 hover:bg-white'

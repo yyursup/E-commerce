@@ -153,7 +153,7 @@ export default function DisputeChatModal({
     if (!file || !thread?.id || thread.isLocked) return
 
     if (!file.type.startsWith('video/')) {
-      toast.error('Chỉ hỗ trợ tệp định dạng video (MP4, WebM, QuickTime)')
+      toast.error('Chỉ hỗ trợ tệp định dạng video')
       return
     }
     if (file.size > 100 * 1024 * 1024) {

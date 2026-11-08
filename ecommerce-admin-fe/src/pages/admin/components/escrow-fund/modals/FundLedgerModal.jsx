@@ -63,7 +63,7 @@ export default function FundLedgerModal({ fund, onClose, formatVND, formatDateTi
           <div>
             <h2 className="text-base sm:text-lg font-bold flex items-center gap-2">
               <HiOutlineClipboardList className="h-5 w-5 sm:h-6 sm:w-6 text-blue-400 shrink-0" />
-              <span>Sổ Cái Quỹ Ký Quỹ: {fund.shopName}</span>
+              <span>Sổ cái quỹ ký quỹ: {fund.shopName}</span>
             </h2>
             <p className="text-xs text-slate-400 mt-0.5">
               Số dư hiện tại: <span className="font-bold text-amber-500">{formatVND(fund.balance)}</span> | Cấp uy tín: {fund.currentTrustLevel}★

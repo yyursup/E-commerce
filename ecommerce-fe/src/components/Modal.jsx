@@ -115,11 +115,11 @@ export function PromoModalContent({ image, title, description, code, ctaText, on
       {code && (
         <div className={cn(
           'flex items-center justify-between p-3 rounded-xl border border-dashed',
-          isDark ? 'border-amber-500/40 bg-amber-500/10 text-amber-400' : 'border-amber-500/50 bg-amber-50 text-amber-800'
+          isDark ? 'bg-slate-800 text-white border-white' : 'border-amber-500/50 bg-amber-50 text-amber-800'
         )}>
           <div className="flex items-center gap-2">
             <span className="text-xs font-medium">Mã Voucher:</span>
-            <span className="font-mono font-bold text-sm tracking-wider uppercase px-2 py-0.5 rounded bg-amber-500 text-white shadow-sm">
+            <span className="font-mono font-bold text-sm tracking-wider uppercase px-2 py-0.5 rounded shadow-sm bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200">
               {code}
             </span>
           </div>
@@ -138,7 +138,7 @@ export function PromoModalContent({ image, title, description, code, ctaText, on
             'w-full rounded-xl py-3 text-sm font-bold text-white shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2',
             isClaimed
               ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/25'
-              : 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 shadow-amber-500/25',
+              : 'bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200',
             (loading || disabled) && 'opacity-60 cursor-not-allowed active:scale-100'
           )}
         >

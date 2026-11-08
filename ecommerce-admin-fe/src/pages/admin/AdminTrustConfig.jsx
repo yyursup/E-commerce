@@ -11,13 +11,13 @@ import TrustLevelConfigTab from './components/escrow-fund/TrustLevelConfigTab'
 const TABS = [
   {
     id: 'funds',
-    label: 'Giám Sát Quỹ & Xử Lý Trích Cọc',
+    label: 'Giám sát quỹ & xử lý trích cọc',
     icon: HiOutlineCash,
     desc: 'Theo dõi số dư quỹ bảo chứng của các gian hàng, cảnh báo hụt quỹ và bồi thường tranh chấp',
   },
   {
     id: 'configs',
-    label: 'Cấu Hình 5 Bậc Sao & Ngưỡng Ký Quỹ',
+    label: 'Cấu hình 5 bậc sao & ngưỡng ký quỹ',
     icon: HiOutlineShieldCheck,
     desc: 'Thiết lập các mốc tiền ký quỹ, mức giảm trừ hoa hồng và đặc quyền theo bậc sao',
   },
@@ -39,7 +39,7 @@ export default function AdminTrustConfig() {
       <div>
         <h1 className="text-2xl font-bold flex items-center gap-2.5">
           <HiOutlineShieldCheck className="h-7 w-7 text-amber-500" />
-          Quản Lý Quỹ Ký Quỹ & Độ Uy Tín Gian Hàng (Trust & Escrow)
+          Quản lý quỹ ký quỹ & độ uy tín gian hàng
         </h1>
         <p className={cn('mt-1 text-sm', isDark ? 'text-slate-400' : 'text-stone-500')}>
           Trung tâm điều hành vốn bảo chứng cam kết, giám sát hụt quỹ và cấu hình định lượng độ uy tín nhà bán
@@ -63,7 +63,7 @@ export default function AdminTrustConfig() {
               className={cn(
                 'flex items-center gap-2.5 rounded-xl px-4 py-3 text-xs font-bold transition-all duration-200',
                 isActive
-                  ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20'
+                  ? 'bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                   : isDark
                     ? 'text-slate-400 hover:text-white hover:bg-slate-800/80'
                     : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'

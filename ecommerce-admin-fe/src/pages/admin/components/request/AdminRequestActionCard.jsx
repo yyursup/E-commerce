@@ -45,7 +45,7 @@ export default function AdminRequestActionCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2, delay: 0.05 }}
       className={cn(
-        'rounded-2xl border p-6 shadow-sm flex flex-col justify-between space-y-6',
+        'rounded-2xl border p-6 flex flex-col justify-between space-y-6',
         isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white',
       )}
     >
@@ -136,7 +136,7 @@ export default function AdminRequestActionCard({
                         <button
                           type="button"
                           onClick={() => setShowLicenseModal(true)}
-                          className="flex items-center gap-1.5 rounded-full bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white shadow-lg transition hover:bg-amber-600"
+                          className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
                         >
                           <HiOutlineEye className="h-4 w-4" /> Phóng to kiểm tra
                         </button>
@@ -149,7 +149,7 @@ export default function AdminRequestActionCard({
                         onClick={() => setShowLicenseModal(true)}
                         className={cn(
                           'flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold transition',
-                          isDark ? 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30' : 'bg-amber-100 text-amber-700 hover:bg-amber-200',
+                          isDark ? 'hover:bg-amber-500/30 bg-slate-800 text-white' : 'hover:bg-amber-200 bg-stone-100 text-stone-950',
                         )}
                       >
                         <HiOutlineEye className="h-4 w-4" /> Soi chi tiết GPKD
@@ -169,7 +169,7 @@ export default function AdminRequestActionCard({
                     </div>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-600 dark:text-amber-400">
+                  <div className="flex items-center gap-2 rounded-xl border p-3 text-xs dark:text-amber-400 bg-stone-100 text-stone-950 border-stone-950">
                     <HiOutlineExclamation className="h-5 w-5 shrink-0" />
                     <span>Hồ sơ Doanh nghiệp nhưng người đăng ký chưa đính kèm ảnh Giấy phép kinh doanh!</span>
                   </div>
@@ -362,7 +362,7 @@ export default function AdminRequestActionCard({
                   ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
                   : detail.status === 'REJECTED'
                     ? 'bg-red-500/15 text-red-600 dark:text-red-400'
-                    : 'bg-amber-500/15 text-amber-600 dark:text-amber-400',
+                    : 'dark:text-amber-400 bg-stone-100 text-stone-950',
               )}
             >
               {detail.status === 'APPROVED' && <HiOutlineCheckCircle className="h-3.5 w-3.5" />}
@@ -403,7 +403,7 @@ export default function AdminRequestActionCard({
                 className={cn(
                   'flex items-center gap-2 p-2.5 rounded-xl border cursor-pointer transition',
                   resolutionType === 'RETURN_AND_REFUND'
-                    ? 'border-amber-500 bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold'
+                    ? 'dark:text-amber-400 font-bold bg-stone-100 text-stone-950 border-stone-950'
                     : isDark
                       ? 'border-slate-700 bg-slate-800 text-slate-300'
                       : 'border-stone-200 bg-stone-50 text-stone-700'
@@ -460,8 +460,8 @@ export default function AdminRequestActionCard({
           className={cn(
             'w-full rounded-xl border px-3.5 py-2.5 text-xs sm:text-sm outline-none transition placeholder:opacity-60',
             isDark
-              ? 'border-slate-700 bg-slate-800 text-slate-100 focus:border-amber-500/60'
-              : 'border-stone-300 bg-white text-stone-800 focus:border-amber-500',
+              ? 'border-slate-700 bg-slate-800 text-slate-100 focus:border-stone-950 dark:focus:border-white'
+              : 'border-stone-300 bg-white text-stone-800 focus:border-stone-950 dark:focus:border-white',
             (!isPending || actionLoading) && 'opacity-60 cursor-not-allowed',
           )}
         />
@@ -473,7 +473,7 @@ export default function AdminRequestActionCard({
               onClick={onApprove}
               disabled={actionLoading}
               className={cn(
-                'flex-1 rounded-xl py-2.5 px-4 text-xs sm:text-sm font-semibold text-white shadow-md transition-all active:scale-[0.98]',
+                'flex-1 rounded-xl py-2.5 px-4 text-xs sm:text-sm font-semibold text-white transition-all active:scale-[0.98]',
                 actionLoading
                   ? 'cursor-not-allowed opacity-50 bg-emerald-600'
                   : 'bg-emerald-600 hover:bg-emerald-500 hover:shadow-emerald-600/25',
@@ -490,7 +490,7 @@ export default function AdminRequestActionCard({
               onClick={onReject}
               disabled={actionLoading}
               className={cn(
-                'flex-1 rounded-xl py-2.5 px-4 text-xs sm:text-sm font-semibold text-white shadow-md transition-all active:scale-[0.98]',
+                'flex-1 rounded-xl py-2.5 px-4 text-xs sm:text-sm font-semibold text-white transition-all active:scale-[0.98]',
                 actionLoading
                   ? 'cursor-not-allowed opacity-50 bg-red-600'
                   : 'bg-red-600 hover:bg-red-500 hover:shadow-red-600/25',

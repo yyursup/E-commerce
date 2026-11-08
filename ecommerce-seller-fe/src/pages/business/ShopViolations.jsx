@@ -110,18 +110,18 @@ export default function ShopViolations() {
       {/* Top Banner Header */}
       <div
         className={cn(
-          'rounded-3xl border p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-colors',
+          'rounded-3xl border p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-colors',
           isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
         )}
       >
         <div>
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-500 border border-amber-500/25">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl border bg-stone-100 text-stone-950 border-stone-950">
               <HiOutlineShieldCheck className="h-6 w-6" />
             </div>
             <div>
               <h1 className={cn('text-2xl font-bold tracking-tight', isDark ? 'text-white' : 'text-stone-900')}>
-                Điểm Uy Tín Shop
+                Điểm uy tín shop
               </h1>
               <p className={cn('text-xs mt-0.5', isDark ? 'text-slate-400' : 'text-stone-500')}>
                 Theo dõi điểm uy tín gian hàng, chu kỳ phục hồi điểm và các quyết định xử lý vi phạm của Ban Quản Trị

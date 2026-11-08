@@ -45,39 +45,39 @@ function OrderPolicyClauseSelectorContent({
       case 'RETURN_REFUND':
       case 'RETURN':
         return {
-          label: 'Đổi Trả & Khiếu Nại',
+          label: 'Đổi trả & khiếu nại',
           className: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20',
         }
       case 'CONDITION_GRADE':
       case 'GRADING':
         return {
-          label: 'Tiêu Chuẩn Hàng Hóa',
+          label: 'Tiêu chuẩn hàng hóa',
           className: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20',
         }
       case 'ESCROW':
         return {
-          label: 'Bảo Vệ Escrow',
+          label: 'Bảo vệ escrow',
           className: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
         }
       case 'SHIPPING':
         return {
-          label: 'Vận Chuyển & GHN',
+          label: 'Vận chuyển & GHN',
           className: 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20',
         }
       case 'SELLER_RULES':
       case 'SELLER':
         return {
-          label: 'Quy Chế Gian Hàng',
-          className: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
+          label: 'Quy chế gian hàng',
+          className: 'dark:text-amber-400 bg-stone-100 text-stone-950 border-stone-950',
         }
       case 'DISCIPLINE':
         return {
-          label: 'Kỷ Luật & Uy Tín',
+          label: 'Kỷ luật & uy tín',
           className: 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20',
         }
       default:
         return {
-          label: 'Quy Chế Chung',
+          label: 'Quy chế chung',
           className: 'bg-stone-500/10 text-stone-600 dark:text-stone-400 border-stone-500/20',
         }
     }
@@ -173,19 +173,19 @@ function OrderPolicyClauseSelectorContent({
       {/* Header bar */}
       <div className="p-3.5 border-b border-stone-100 dark:border-slate-800 flex items-center justify-between gap-2 flex-wrap">
         <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
+          <div className="p-1.5 rounded-xl dark:text-amber-400 bg-stone-100 text-stone-950">
             <HiOutlineBookOpen className="w-4 h-4" />
           </div>
           <div>
             <div className="flex items-center gap-1.5 flex-wrap">
               <span className="text-xs font-bold text-stone-800 dark:text-slate-100">
-                Căn Cứ Chính Sách & Quy Định Nền Tảng
+                Căn cứ chính sách & quy định nền tảng
               </span>
               <span className="text-[10px] font-extrabold px-1.5 py-0.2 rounded-full bg-rose-500 text-white">
                 Bắt buộc
               </span>
               <span className="text-[10px] font-semibold text-stone-400 dark:text-slate-400">
-                (Dynamic Platform Policies)
+                
               </span>
             </div>
           </div>
@@ -197,7 +197,7 @@ function OrderPolicyClauseSelectorContent({
           className={cn(
             'inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition-all',
             isOpen
-              ? 'bg-amber-500 text-white shadow-xs'
+              ? 'bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
               : 'border border-stone-200 dark:border-slate-700 bg-stone-50 dark:bg-slate-800 text-stone-700 dark:text-slate-200 hover:bg-stone-100 dark:hover:bg-slate-700'
           )}
         >
@@ -245,8 +245,8 @@ function OrderPolicyClauseSelectorContent({
               className={cn(
                 'w-full text-xs rounded-xl pl-9 pr-8 py-2 border outline-hidden transition-all',
                 isDark
-                  ? 'bg-slate-800/80 border-slate-700 text-white placeholder-slate-500 focus:border-amber-500'
-                  : 'bg-stone-50 border-stone-200 text-stone-900 placeholder-stone-400 focus:border-amber-500 focus:bg-white'
+                  ? 'bg-slate-800/80 border-slate-700 text-white placeholder-slate-500 focus:border-stone-950 dark:focus:border-white'
+                  : 'bg-stone-50 border-stone-200 text-stone-900 placeholder-stone-400 focus:border-stone-950 dark:focus:border-white focus:bg-white'
               )}
             />
             {searchQuery && (
@@ -268,7 +268,7 @@ function OrderPolicyClauseSelectorContent({
               className={cn(
                 'px-2.5 py-1 rounded-lg transition-all shrink-0 border',
                 activeTab === 'RECOMMENDED'
-                  ? 'bg-amber-500 text-white border-amber-500 shadow-xs'
+                  ? 'border-amber-500 shadow-xs bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                   : 'border-transparent text-stone-500 hover:bg-stone-100 dark:hover:bg-slate-800'
               )}
             >
@@ -280,7 +280,7 @@ function OrderPolicyClauseSelectorContent({
               className={cn(
                 'px-2.5 py-1 rounded-lg transition-all shrink-0 border',
                 activeTab === 'ALL'
-                  ? 'bg-amber-500 text-white border-amber-500 shadow-xs'
+                  ? 'border-amber-500 shadow-xs bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                   : 'border-transparent text-stone-500 hover:bg-stone-100 dark:hover:bg-slate-800'
               )}
             >
@@ -296,7 +296,7 @@ function OrderPolicyClauseSelectorContent({
                   : 'border-transparent text-stone-500 hover:bg-stone-100 dark:hover:bg-slate-800'
               )}
             >
-              Đổi Trả & Khiếu Nại
+              Đổi trả & khiếu nại
             </button>
             <button
               type="button"
@@ -304,11 +304,11 @@ function OrderPolicyClauseSelectorContent({
               className={cn(
                 'px-2.5 py-1 rounded-lg transition-all shrink-0 border',
                 activeTab === 'STANDARDS'
-                  ? 'bg-purple-600 text-white border-purple-600 shadow-xs'
+                  ? 'border-purple-600 shadow-xs bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                   : 'border-transparent text-stone-500 hover:bg-stone-100 dark:hover:bg-slate-800'
               )}
             >
-              Tiêu Chuẩn & Vận Chuyển
+              Tiêu chuẩn & vận chuyển
             </button>
             <button
               type="button"
@@ -320,7 +320,7 @@ function OrderPolicyClauseSelectorContent({
                   : 'border-transparent text-stone-500 hover:bg-stone-100 dark:hover:bg-slate-800'
               )}
             >
-              Gian Hàng & Người Bán
+              Gian hàng & người bán
             </button>
             <button
               type="button"
@@ -332,7 +332,7 @@ function OrderPolicyClauseSelectorContent({
                   : 'border-transparent text-stone-500 hover:bg-stone-100 dark:hover:bg-slate-800'
               )}
             >
-              Người Dùng & Kỷ Luật
+              Người dùng & kỷ luật
             </button>
           </div>
 
@@ -408,7 +408,7 @@ function OrderPolicyClauseSelectorContent({
                       </div>
 
                       {isSelected && (
-                        <div className="p-1 rounded-full bg-amber-500 text-white shrink-0 mt-0.5 shadow-xs">
+                        <div className="p-1 rounded-full shrink-0 mt-0.5 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200">
                           <HiOutlineCheck className="w-3.5 h-3.5" />
                         </div>
                       )}

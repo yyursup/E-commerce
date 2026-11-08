@@ -97,7 +97,7 @@ export default function CategoryGrid() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className={cn('text-xl sm:text-2xl font-bold tracking-tight', isDark ? 'text-white' : 'text-stone-900')}>
-              Danh Mục Ngành Hàng
+              Danh mục ngành hàng
             </h2>
             <p className="text-xs sm:text-sm text-stone-500 dark:text-slate-400 mt-1">
               Khám phá hàng triệu sản phẩm từ các ngành hàng thiết yếu

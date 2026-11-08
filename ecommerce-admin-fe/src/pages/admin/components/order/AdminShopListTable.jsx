@@ -123,7 +123,7 @@ export default function AdminShopListTable({ isDark }) {
           <div className="flex items-center justify-between">
             <div>
               <p className={cn('text-[11px] font-bold uppercase tracking-wider', isDark ? 'text-slate-400' : 'text-stone-500')}>
-                Tổng Gian Hàng
+                Tổng gian hàng
               </p>
               <h3 className="mt-1 text-2xl font-black">{totalShopsCount}</h3>
               <p className={cn('mt-0.5 text-xs', isDark ? 'text-slate-400' : 'text-stone-500')}>
@@ -133,7 +133,7 @@ export default function AdminShopListTable({ isDark }) {
             <div
               className={cn(
                 'flex h-11 w-11 items-center justify-center rounded-xl shrink-0',
-                isDark ? 'bg-amber-500/10 text-amber-400' : 'bg-amber-50 text-amber-600'
+                isDark ? 'bg-slate-800 text-white' : 'bg-stone-100 text-stone-950'
               )}
             >
               <HiOutlineOfficeBuilding className="h-6 w-6" />
@@ -181,7 +181,7 @@ export default function AdminShopListTable({ isDark }) {
           <div className="flex items-center justify-between">
             <div>
               <p className={cn('text-[11px] font-bold uppercase tracking-wider', isDark ? 'text-slate-400' : 'text-stone-500')}>
-                Tổng Đơn Hàng
+                Tổng đơn hàng
               </p>
               <h3 className="mt-1 text-2xl font-black">{totalOrders.toLocaleString()}</h3>
               <p className={cn('mt-0.5 text-xs', isDark ? 'text-slate-400' : 'text-stone-500')}>
@@ -215,7 +215,7 @@ export default function AdminShopListTable({ isDark }) {
           <div className="flex items-center justify-between">
             <div>
               <p className={cn('text-[11px] font-bold uppercase tracking-wider', deficitShopsCount > 0 ? 'text-rose-500' : isDark ? 'text-slate-400' : 'text-stone-500')}>
-                Cảnh Báo Ký Quỹ
+                Cảnh báo ký quỹ
               </p>
               <h3 className="mt-1 text-2xl font-black">
                 {deficitShopsCount}{' '}
@@ -246,7 +246,7 @@ export default function AdminShopListTable({ isDark }) {
       {/* 2. Filter & Controls Bar */}
       <div
         className={cn(
-          'rounded-2xl border p-4 transition-all shadow-sm space-y-3.5',
+          'rounded-2xl border p-4 transition-all space-y-3.5',
           isDark ? 'border-slate-800 bg-slate-900/70' : 'border-stone-200 bg-white'
         )}
       >
@@ -269,7 +269,7 @@ export default function AdminShopListTable({ isDark }) {
                 className={cn(
                   'px-3 py-1.5 rounded-xl text-xs font-bold transition-all border',
                   period === p.val
-                    ? 'border-amber-500 bg-amber-500 text-white shadow-sm shadow-amber-500/20'
+                    ? 'border-amber-500 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                     : isDark
                       ? 'border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700'
                       : 'border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100'
@@ -286,7 +286,7 @@ export default function AdminShopListTable({ isDark }) {
             onClick={fetchShopsPerformance}
             disabled={loading}
             className={cn(
-              'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all shadow-sm active:scale-95 self-start lg:self-auto',
+              'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all active:scale-95 self-start lg:self-auto',
               isDark
                 ? 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700'
                 : 'border-stone-200 bg-white text-stone-700 hover:bg-stone-50'
@@ -307,7 +307,7 @@ export default function AdminShopListTable({ isDark }) {
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
                 className={cn(
-                  'rounded-xl border px-2.5 py-1 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/20',
+                  'rounded-xl border px-2.5 py-1 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                   isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-300 bg-white text-stone-900'
                 )}
               />
@@ -319,7 +319,7 @@ export default function AdminShopListTable({ isDark }) {
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
                 className={cn(
-                  'rounded-xl border px-2.5 py-1 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/20',
+                  'rounded-xl border px-2.5 py-1 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                   isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-300 bg-white text-stone-900'
                 )}
               />
@@ -327,7 +327,7 @@ export default function AdminShopListTable({ isDark }) {
             <button
               type="button"
               onClick={handleApplyCustomDate}
-              className="px-3 py-1 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition-all shadow-sm"
+              className="px-3 py-1 rounded-xl text-xs font-bold transition-all bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
             >
               Áp dụng
             </button>
@@ -350,7 +350,7 @@ export default function AdminShopListTable({ isDark }) {
               }}
               placeholder="Tìm theo tên gian hàng, tên người bán, số điện thoại, email..."
               className={cn(
-                'w-full rounded-xl border pl-9 pr-4 py-2 text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/20',
+                'w-full rounded-xl border pl-9 pr-4 py-2 text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                 isDark
                   ? 'border-slate-700 bg-slate-800 text-white placeholder-slate-500'
                   : 'border-stone-300 bg-white text-stone-900 placeholder-stone-400'
@@ -366,7 +366,7 @@ export default function AdminShopListTable({ isDark }) {
                 setCurrentPage(1)
               }}
               className={cn(
-                'rounded-xl border px-3 py-2 text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/20',
+                'rounded-xl border px-3 py-2 text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                 isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-300 bg-white text-stone-900'
               )}
             >
@@ -382,7 +382,7 @@ export default function AdminShopListTable({ isDark }) {
                 setCurrentPage(1)
                 fetchShopsPerformance()
               }}
-              className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs sm:text-sm font-bold transition-all shadow-sm"
+              className="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
             >
               Tìm kiếm
             </button>
@@ -426,9 +426,9 @@ export default function AdminShopListTable({ isDark }) {
             <table className="w-full text-left border-collapse table-fixed">
               <thead>
                 <tr className={cn('border-b text-xs font-bold uppercase tracking-wider', isDark ? 'border-slate-800 bg-slate-800/60 text-slate-400' : 'border-stone-200 bg-stone-50 text-stone-500')}>
-                  <th className="w-[34%] px-4 py-3.5">Gian Hàng & Người Bán</th>
+                  <th className="w-[34%] px-4 py-3.5">Gian hàng & người bán</th>
                   <th className="w-[22%] px-3 py-3.5 text-right">Doanh Số & Đơn ({period})</th>
-                  <th className="w-[26%] px-3 py-3.5">Quản Lý Ký Quỹ (Escrow)</th>
+                  <th className="w-[26%] px-3 py-3.5">Quản lý ký quỹ</th>
                   <th className="w-[10%] px-2 py-3.5 text-center">Trạng Thái</th>
                   <th className="w-[8%] px-3 py-3.5 text-center">Xem</th>
                 </tr>
@@ -564,7 +564,7 @@ export default function AdminShopListTable({ isDark }) {
                               shop.shopStatus === 'ACTIVE'
                                 ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-500'
                                 : shop.shopStatus === 'WARNED'
-                                  ? 'border-amber-500/30 bg-amber-500/10 text-amber-500'
+                                  ? 'bg-stone-100 text-stone-950 border-stone-950'
                                   : 'border-rose-500/30 bg-rose-500/10 text-rose-500'
                             )}
                           >
@@ -587,7 +587,7 @@ export default function AdminShopListTable({ isDark }) {
                             navigate(`/orders/shops/${shop.shopId}`)
                           }}
                           className={cn(
-                            'inline-flex items-center justify-center h-8 w-8 rounded-xl transition-all shadow-sm active:scale-95 border group-hover:bg-amber-500 group-hover:text-white group-hover:border-amber-500',
+                            'inline-flex items-center justify-center h-8 w-8 rounded-xl transition-all active:scale-95 border group-hover:bg-amber-500 group-hover:text-white group-hover:border-amber-500',
                             isDark
                               ? 'border-slate-700 bg-slate-800 text-slate-300'
                               : 'border-stone-200 bg-stone-50 text-stone-700'

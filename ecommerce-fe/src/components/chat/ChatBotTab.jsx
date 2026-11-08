@@ -5,7 +5,7 @@ function formatPrice(value) {
   if (value == null) return ''
   const n = Number(value)
   if (Number.isNaN(n)) return ''
-  return new Intl.NumberFormat('vi-VN').format(n) + ' đ'
+  return new Intl.NumberFormat('vi-VN').format + ' đ'
 }
 
 export default function ChatBotTab({
@@ -38,7 +38,7 @@ export default function ChatBotTab({
               className={cn(
                 'max-w-[85%] rounded-2xl px-4 py-2.5 text-sm shadow-sm',
                 msg.type === 'user'
-                  ? 'rounded-tr-xs bg-amber-500 text-white'
+                  ? 'rounded-tr-xs bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                   : isDark
                     ? 'rounded-tl-xs bg-slate-800 text-slate-100 border border-slate-700'
                     : 'rounded-tl-xs bg-stone-100 text-stone-900 border border-stone-200',
@@ -75,7 +75,7 @@ export default function ChatBotTab({
                       <button
                         type="button"
                         onClick={() => setQuickBuyProductId(card.id)}
-                        className="shrink-0 rounded-xl bg-amber-500 px-2 text-xs font-semibold text-white hover:bg-amber-600"
+                        className="shrink-0 rounded-xl px-2 text-xs font-semibold bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
                       >
                         Mua ngay
                       </button>
@@ -139,7 +139,7 @@ export default function ChatBotTab({
             }
             disabled={botLoading}
             className={cn(
-              'flex-1 rounded-xl border px-3.5 py-2 text-sm outline-none transition focus:ring-2 focus:ring-amber-500/20',
+              'flex-1 rounded-xl border px-3.5 py-2 text-sm outline-none transition focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
               isDark
                 ? 'border-slate-700 bg-slate-800 text-white placeholder:opacity-50'
                 : 'border-stone-300 bg-white text-stone-900 placeholder:opacity-50',
@@ -149,7 +149,7 @@ export default function ChatBotTab({
             type="button"
             onClick={() => handleBotSend()}
             disabled={!botInputValue.trim() || botLoading}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white transition hover:bg-amber-600 disabled:opacity-40"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition disabled:opacity-40 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
           >
             <HiOutlinePaperAirplane className="h-5 w-5" />
           </button>

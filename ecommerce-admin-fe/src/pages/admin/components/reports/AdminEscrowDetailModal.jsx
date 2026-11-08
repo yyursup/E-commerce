@@ -144,12 +144,12 @@ export default function AdminEscrowDetailModal({
           {/* Header */}
           <div className="px-6 py-4 border-b flex items-center justify-between dark:border-slate-800 border-stone-200 shrink-0">
             <div className="flex items-center gap-2.5">
-              <span className="p-2 rounded-xl bg-amber-500/15 text-amber-500">
+              <span className="p-2 rounded-xl bg-stone-100 text-stone-950">
                 <HiOutlineCash className="h-5 w-5" />
               </span>
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className="font-bold text-base">Hồ Sơ Ký Quỹ & Đối Soát Đơn Hàng</h3>
+                  <h3 className="font-bold text-base">Hồ sơ ký quỹ & đối soát đơn hàng</h3>
                   <span
                     className={cn(
                       'px-2.5 py-0.5 rounded-full text-[11px] font-bold border',
@@ -159,7 +159,7 @@ export default function AdminEscrowDetailModal({
                           ? 'bg-emerald-500/15 text-emerald-500 border-emerald-500/30'
                           : item?.status === 'DISPUTED'
                             ? 'bg-rose-500/15 text-rose-500 border-rose-500/30'
-                            : 'bg-amber-500/15 text-amber-500 border-amber-500/30',
+                            : 'bg-stone-100 text-stone-950 border-stone-950',
                     )}
                   >
                     {settlementHeaderTitle}
@@ -226,7 +226,7 @@ export default function AdminEscrowDetailModal({
                 <div className="space-y-2">
                   <h4 className="text-xs font-bold uppercase tracking-wider text-amber-500 flex items-center gap-1.5">
                     <HiOutlineCash className="h-4 w-4" />
-                    Dòng Tiền Ký Quỹ Escrow
+                    Dòng tiền ký quỹ escrow
                     {hasSettlement && (
                       <span className="ml-1 text-[10px] font-normal text-stone-400">
                         (Đã có phán quyết)
@@ -363,7 +363,7 @@ export default function AdminEscrowDetailModal({
           <div className="px-6 py-4 border-t flex flex-col sm:flex-row sm:items-center justify-between gap-3 dark:border-slate-800 border-stone-200 shrink-0">
             <span className={cn('text-[11px]', isDark ? 'text-slate-400' : 'text-stone-500')}>
               {canAdminSettle
-                ? 'Đơn hàng đang có tranh chấp kiện hoàn (DISPUTED). Admin có toàn quyền can thiệp phân xử.'
+                ? 'Đơn hàng đang có tranh chấp kiện hoàn. Admin có toàn quyền can thiệp phân xử.'
                 : 'Các nút hành động chỉ kích hoạt khi kiện hoàn đang tranh chấp (DISPUTED).'}
             </span>
 
@@ -375,7 +375,7 @@ export default function AdminEscrowDetailModal({
                   setActionModal({
                     isOpen: true,
                     action: 'split_escrow',
-                    title: 'Phân Chia Tiền Ký Quỹ Theo Tỷ Lệ %',
+                    title: 'Phân chia tiền ký quỹ theo tỷ lệ %',
                     description: `Đơn hàng #${item?.orderNumber || ''} - Tiền Escrow: ${formatVND(
                       item?.amount,
                     )}`,
@@ -383,7 +383,7 @@ export default function AdminEscrowDetailModal({
                     type: 'escrow',
                   })
                 }}
-                className="px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 active:scale-95 transition disabled:opacity-40 disabled:pointer-events-none"
+                className="px-3.5 py-2 rounded-xl text-xs font-bold active:scale-95 transition disabled:opacity-40 disabled:pointer-events-none bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
               >
                 Phân chia (%)
               </button>
@@ -395,7 +395,7 @@ export default function AdminEscrowDetailModal({
                   setActionModal({
                     isOpen: true,
                     action: 'release_escrow',
-                    title: 'Giải Ngân Toàn Bộ Cho Shop',
+                    title: 'Giải ngân toàn bộ cho shop',
                     description: `Xác nhận giải ngân ${formatVND(item?.amount)} cho Shop #${
                       item?.shopName || ''
                     }. Khấu trừ 5% hoa hồng sàn.`,
@@ -415,7 +415,7 @@ export default function AdminEscrowDetailModal({
                   setActionModal({
                     isOpen: true,
                     action: 'refund_escrow',
-                    title: 'Hoàn Tiền Toàn Bộ Cho Người Mua',
+                    title: 'Hoàn tiền toàn bộ cho người mua',
                     description: `Xác nhận hoàn 100% số tiền ${formatVND(
                       item?.amount,
                     )} từ quỹ Escrow về ví của Khách hàng.`,

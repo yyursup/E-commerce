@@ -94,7 +94,7 @@ export default function ShopSettings() {
         isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
       )}>
         <h1 className={cn('text-xl font-bold', isDark ? 'text-white' : 'text-stone-900')}>
-          Cài Đặt Gian Hàng & Kho Vận Chuyển
+          Cài đặt gian hàng & kho vận chuyển
         </h1>
         <p className="text-xs text-stone-500 dark:text-slate-400 mt-1">
           Cập nhật thông tin nhận diện cửa hàng và cấu hình kho lấy hàng cho GHN Express
@@ -102,22 +102,22 @@ export default function ShopSettings() {
       </div>
 
       {/* Escrow Section */}
-      <div className={cn('rounded-3xl border p-6 shadow-sm space-y-4 relative overflow-hidden',
+      <div className={cn('rounded-3xl border p-6 space-y-4 relative overflow-hidden',
         isDark ? 'border-amber-900/30 bg-gradient-to-br from-slate-900 to-amber-950/20' : 'border-amber-200 bg-gradient-to-br from-white to-amber-50'
       )}>
         <div className="flex items-center justify-between border-b border-amber-200/50 dark:border-amber-900/50 pb-3">
           <div className="flex items-center gap-2 text-sm font-bold text-amber-600 dark:text-amber-500">
             <HiOutlineShieldCheck className="h-6 w-6" />
-            Loại Hình Gian Hàng (Quỹ Bảo Chứng)
+            Loại hình gian hàng (Quỹ bảo chứng)
           </div>
-          <div className="text-xs font-semibold px-3 py-1 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
+          <div className="text-xs font-semibold px-3 py-1 rounded-full dark:bg-amber-900/40 dark:text-amber-400 bg-stone-100 text-stone-950">
             {isNone ? 'Tiêu Chuẩn' : (isPending ? 'Chờ Ký Quỹ' : 'Đã Ký Quỹ (Uy Tín)')}
           </div>
         </div>
 
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="text-xs text-stone-600 dark:text-slate-300 max-w-lg space-y-2">
-            <p>Nâng cấp gian hàng thành <strong>Gian Hàng Ký Quỹ</strong> để được ưu tiên hiển thị, tăng niềm tin với khách hàng và cấp huy hiệu uy tín.</p>
+            <p>Nâng cấp gian hàng thành <strong>Gian hàng ký quỹ</strong> để được ưu tiên hiển thị, tăng niềm tin với khách hàng và cấp huy hiệu uy tín.</p>
             {isPaid && (
               <p className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-medium">
                 <HiOutlineInformationCircle className="h-4 w-4" />
@@ -141,14 +141,14 @@ export default function ShopSettings() {
                 isPaid 
                   ? 'bg-stone-100 text-stone-400 border-stone-200 cursor-not-allowed dark:bg-slate-800 dark:text-slate-500 dark:border-slate-700' 
                   : (isNone 
-                    ? 'bg-amber-500 text-white border-amber-600 shadow-md shadow-amber-500/20 hover:bg-amber-600'
+                    ? 'border-amber-600 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                     : 'bg-rose-50 text-rose-600 border-rose-200 hover:bg-rose-100 dark:bg-rose-950/30 dark:text-rose-400 dark:border-rose-900/50 hover:dark:bg-rose-900/50')
               )}
             >
               {isNone ? 'Nâng cấp lên Ký Quỹ' : (isPaid ? 'Đã Ký Quỹ' : 'Hủy Yêu Cầu Ký Quỹ')}
             </button>
             {isPaid && (
-              <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 p-2 bg-slate-800 text-white text-[10px] rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 text-center">
+              <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 p-2 bg-slate-800 text-white text-[10px] rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 text-center">
                 Bạn không thể hạ cấp gian hàng. Tiền ký quỹ chỉ được hoàn trả khi bạn Xóa/Đóng gian hàng.
               </div>
             )}
@@ -158,34 +158,34 @@ export default function ShopSettings() {
 
       <form onSubmit={handleSave} className="space-y-6">
         {/* Section 1: Thông tin Shop */}
-        <div className={cn('rounded-3xl border p-6 shadow-sm space-y-4',
+        <div className={cn('rounded-3xl border p-6 space-y-4',
           isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
         )}>
           <div className="flex items-center gap-2 text-sm font-bold text-amber-600 dark:text-amber-400 border-b border-stone-100 dark:border-slate-800 pb-3">
             <HiOutlineOfficeBuilding className="h-5 w-5" />
-            Thông Tin Gian Hàng
+            Thông tin gian hàng
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
             <div>
-              <label className="block font-semibold mb-1 text-stone-700 dark:text-slate-300">Tên Gian Hàng</label>
+              <label className="block font-semibold mb-1 text-stone-700 dark:text-slate-300">Tên gian hàng</label>
               <input
                 type="text"
                 value={shopName}
                 onChange={(e) => setShopName(e.target.value)}
-                className={cn('w-full rounded-xl px-4 py-2.5 border transition-all focus:ring-2 focus:ring-amber-500 focus:outline-none',
+                className={cn('w-full rounded-xl px-4 py-2.5 border transition-all focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40 focus:outline-none',
                   isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-200 bg-stone-50 text-stone-900'
                 )}
               />
             </div>
 
             <div>
-              <label className="block font-semibold mb-1 text-stone-700 dark:text-slate-300">Hotline Cửa Hàng</label>
+              <label className="block font-semibold mb-1 text-stone-700 dark:text-slate-300">Hotline cửa hàng</label>
               <input
                 type="text"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                className={cn('w-full rounded-xl px-4 py-2.5 border transition-all focus:ring-2 focus:ring-amber-500 focus:outline-none',
+                className={cn('w-full rounded-xl px-4 py-2.5 border transition-all focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40 focus:outline-none',
                   isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-200 bg-stone-50 text-stone-900'
                 )}
               />
@@ -194,12 +194,12 @@ export default function ShopSettings() {
         </div>
 
         {/* Section 2: Địa chỉ kho lấy hàng GHN */}
-        <div className={cn('rounded-3xl border p-6 shadow-sm space-y-4',
+        <div className={cn('rounded-3xl border p-6 space-y-4',
           isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
         )}>
           <div className="flex items-center gap-2 text-sm font-bold text-amber-600 dark:text-amber-400 border-b border-stone-100 dark:border-slate-800 pb-3">
             <HiOutlineTruck className="h-5 w-5" />
-            Kho Lấy Hàng GHN Express (Giao Hàng Nhanh)
+            Kho lấy hàng GHN Express (Giao hàng nhanh)
           </div>
 
           <div className="text-xs space-y-4">
@@ -209,7 +209,7 @@ export default function ShopSettings() {
                 type="text"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
-                className={cn('w-full rounded-xl px-4 py-2.5 border transition-all focus:ring-2 focus:ring-amber-500 focus:outline-none',
+                className={cn('w-full rounded-xl px-4 py-2.5 border transition-all focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40 focus:outline-none',
                   isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-200 bg-stone-50 text-stone-900'
                 )}
               />
@@ -223,17 +223,17 @@ export default function ShopSettings() {
         </div>
 
         {/* Section 3: Tài khoản ngân hàng nhận doanh thu */}
-        <div className={cn('rounded-3xl border p-6 shadow-sm space-y-4',
+        <div className={cn('rounded-3xl border p-6 space-y-4',
           isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
         )}>
           <div className="flex items-center gap-2 text-sm font-bold text-amber-600 dark:text-amber-400 border-b border-stone-100 dark:border-slate-800 pb-3">
             <HiOutlineCreditCard className="h-5 w-5" />
-            Tài Khoản Ngân Hàng Nhận Doanh Thu
+            Tài khoản ngân hàng nhận doanh thu
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
             <div>
-              <label className="block font-semibold mb-1 text-stone-700 dark:text-slate-300">Tên Ngân Hàng</label>
+              <label className="block font-semibold mb-1 text-stone-700 dark:text-slate-300">Tên ngân hàng</label>
               <BankSelector
                 value={bankName}
                 onChange={(val) => setBankName(val)}
@@ -243,24 +243,24 @@ export default function ShopSettings() {
             </div>
 
             <div>
-              <label className="block font-semibold mb-1 text-stone-700 dark:text-slate-300">Số Tài Khoản</label>
+              <label className="block font-semibold mb-1 text-stone-700 dark:text-slate-300">Số tài khoản</label>
               <input
                 type="text"
                 value={accountNumber}
                 onChange={(e) => setAccountNumber(e.target.value)}
-                className={cn('w-full rounded-xl px-4 py-2.5 border transition-all focus:ring-2 focus:ring-amber-500 focus:outline-none',
+                className={cn('w-full rounded-xl px-4 py-2.5 border transition-all focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40 focus:outline-none',
                   isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-200 bg-stone-50 text-stone-900'
                 )}
               />
             </div>
 
             <div>
-              <label className="block font-semibold mb-1 text-stone-700 dark:text-slate-300">Tên Chủ Tài Khoản</label>
+              <label className="block font-semibold mb-1 text-stone-700 dark:text-slate-300">Tên chủ tài khoản</label>
               <input
                 type="text"
                 value={accountName}
                 onChange={(e) => setAccountName(e.target.value)}
-                className={cn('w-full rounded-xl px-4 py-2.5 border transition-all focus:ring-2 focus:ring-amber-500 focus:outline-none',
+                className={cn('w-full rounded-xl px-4 py-2.5 border transition-all focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40 focus:outline-none',
                   isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-200 bg-stone-50 text-stone-900'
                 )}
               />
@@ -270,7 +270,7 @@ export default function ShopSettings() {
 
         <button
           type="submit"
-          className="flex items-center justify-center gap-2 rounded-xl bg-amber-500 px-6 py-3 text-xs font-bold text-white shadow-md shadow-amber-500/20 hover:bg-amber-600 transition-all"
+          className="flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-xs font-bold shadow-md transition-all bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
         >
           <HiOutlineSave className="h-4 w-4" />
           Lưu thay đổi cài đặt

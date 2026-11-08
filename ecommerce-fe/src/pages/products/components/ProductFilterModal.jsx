@@ -81,8 +81,8 @@ export default function ProductFilterModal({
                 className={cn(
                   'w-full rounded-xl py-2.5 text-sm font-medium transition',
                   isDark
-                    ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30'
-                    : 'bg-amber-50 text-amber-700 hover:bg-amber-100',
+                    ? 'hover:bg-amber-500/30 bg-slate-800 text-white'
+                    : 'hover:bg-amber-100 bg-stone-100 text-stone-950',
                 )}
               >
                 Xóa tất cả bộ lọc
@@ -97,7 +97,7 @@ export default function ProductFilterModal({
                   isDark ? 'text-slate-400' : 'text-stone-500',
                 )}
               >
-                Tình Trạng Máy
+                Tình trạng máy
               </h3>
               <div className="space-y-1">
                 {CONDITION_OPTIONS.map((opt) => {
@@ -109,7 +109,7 @@ export default function ProductFilterModal({
                       className={cn(
                         'w-full flex items-center justify-between rounded-xl px-3 py-2 text-xs font-medium transition text-left',
                         isSelected
-                          ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold'
+                          ? 'dark:text-amber-400 font-bold bg-stone-100 text-stone-950'
                           : isDark
                             ? 'text-slate-300 hover:bg-slate-800'
                             : 'text-stone-600 hover:bg-stone-100'
@@ -131,7 +131,7 @@ export default function ProductFilterModal({
                   isDark ? 'text-slate-400' : 'text-stone-500',
                 )}
               >
-                Gói Bảo Hành
+                Gói bảo hành
               </h3>
               <div className="space-y-1">
                 {WARRANTY_OPTIONS.map((w) => {
@@ -143,7 +143,7 @@ export default function ProductFilterModal({
                       className={cn(
                         'w-full flex items-center justify-between rounded-xl px-3 py-2 text-xs font-medium transition text-left',
                         isSelected
-                          ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold'
+                          ? 'dark:text-amber-400 font-bold bg-stone-100 text-stone-950'
                           : isDark
                             ? 'text-slate-300 hover:bg-slate-800'
                             : 'text-stone-600 hover:bg-stone-100'

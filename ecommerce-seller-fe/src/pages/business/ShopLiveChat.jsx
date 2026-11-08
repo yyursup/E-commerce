@@ -667,7 +667,7 @@ export default function ShopLiveChat() {
   return (
     <div
       className={cn(
-        'rounded-3xl border shadow-sm flex flex-col h-[calc(100vh-140px)] min-h-[580px] overflow-hidden',
+        'rounded-3xl border flex flex-col h-[calc(100vh-140px)] min-h-[580px] overflow-hidden',
         isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
       )}
     >
@@ -766,7 +766,7 @@ export default function ShopLiveChat() {
             </>
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-500 mb-4">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl mb-4 bg-stone-100 text-stone-950">
                 <HiOutlineChat className="h-8 w-8" />
               </div>
               <h3 className="font-bold text-base mb-1">Chưa chọn cuộc hội thoại nào</h3>

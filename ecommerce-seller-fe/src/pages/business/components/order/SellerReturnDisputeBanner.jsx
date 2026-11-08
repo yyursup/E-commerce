@@ -85,7 +85,7 @@ export default function SellerReturnDisputeBanner({
       <p className="text-[11px] text-stone-600 dark:text-slate-400 leading-relaxed">
         Tình trạng báo cáo: <strong>{conditionText}</strong>.
         {returnInfo.conditionNote ? ` Ghi chú của Shop: "${returnInfo.conditionNote}".` : ''}
-        Tiền ký quỹ tạm thời bị giữ an toàn (HELD / DISPUTED) cho đến khi có phán quyết cuối cùng từ BQT.
+        Tiền ký quỹ tạm thời bị giữ an toàn cho đến khi có phán quyết cuối cùng từ BQT.
       </p>
 
       {returnInfo.sellerEvidenceUrls && (

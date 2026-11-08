@@ -166,7 +166,7 @@ export default function AdminShopDetail() {
         <div className="pt-2">
           <Link
             to="/orders"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500 text-white text-sm font-bold shadow-sm"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold shadow-sm bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
           >
             <HiOutlineArrowLeft className="h-4 w-4" />
             <span>Quay lại danh sách gian hàng</span>
@@ -211,7 +211,7 @@ export default function AdminShopDetail() {
         <Link
           to="/orders"
           className={cn(
-            'inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl border text-xs sm:text-sm font-bold transition-all shadow-sm active:scale-95',
+            'inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl border text-xs sm:text-sm font-bold transition-all active:scale-95',
             isDark
               ? 'border-slate-800 bg-slate-900 text-slate-300 hover:bg-slate-800'
               : 'border-stone-200 bg-white text-stone-700 hover:bg-stone-100'
@@ -228,7 +228,7 @@ export default function AdminShopDetail() {
             loadShopOrders()
           }}
           className={cn(
-            'inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border text-xs font-bold transition-all shadow-sm active:scale-95',
+            'inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border text-xs font-bold transition-all active:scale-95',
             isDark
               ? 'border-slate-800 bg-slate-900 text-slate-300 hover:bg-slate-800'
               : 'border-stone-200 bg-white text-stone-700 hover:bg-stone-50'
@@ -242,7 +242,7 @@ export default function AdminShopDetail() {
         {/* 1. Header Card: Shop Overview Info & Quick Actions */}
         <div
           className={cn(
-            'rounded-2xl border p-6 transition-all shadow-sm space-y-5',
+            'rounded-2xl border p-6 transition-all space-y-5',
             isDark ? 'border-slate-800 bg-slate-900/90' : 'border-stone-200 bg-white'
           )}
         >
@@ -268,7 +268,7 @@ export default function AdminShopDetail() {
                       shop.status === 'ACTIVE'
                         ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-500'
                         : shop.status === 'WARNED'
-                          ? 'border-amber-500/30 bg-amber-500/10 text-amber-500'
+                          ? 'bg-stone-100 text-stone-950 border-stone-950'
                           : 'border-rose-500/30 bg-rose-500/10 text-rose-500'
                     )}
                   >
@@ -277,7 +277,7 @@ export default function AdminShopDetail() {
                   {analytics?.isKycVerified && (
                     <span className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-bold bg-blue-500/10 text-blue-500 border border-blue-500/20">
                       <HiOutlineBadgeCheck className="h-4 w-4" />
-                      eKYC Đã Xác Thực
+                      eKYC đã xác thực
                     </span>
                   )}
                 </div>
@@ -315,42 +315,42 @@ export default function AdminShopDetail() {
                 type="button"
                 onClick={() => setShowAdjustModal(true)}
                 className={cn(
-                  'inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-all shadow-sm active:scale-95',
+                  'inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-all active:scale-95',
                   isDark
-                    ? 'border-amber-500/40 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20'
+                    ? 'hover:bg-amber-500/20 bg-slate-800 text-white border-white'
                     : 'border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100'
                 )}
               >
                 <HiOutlinePencilAlt className="h-4 w-4 text-amber-500" />
-                <span>Điều chỉnh Quỹ Ký Quỹ</span>
+                <span>Điều chỉnh quỹ ký quỹ</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setShowDeductModal(true)}
                 className={cn(
-                  'inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-all shadow-sm active:scale-95',
+                  'inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-all active:scale-95',
                   isDark
                     ? 'border-rose-500/40 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20'
                     : 'border-rose-300 bg-rose-50 text-rose-800 hover:bg-rose-100'
                 )}
               >
                 <HiOutlineMinusCircle className="h-4 w-4 text-rose-500" />
-                <span>Trích Đền Bù</span>
+                <span>Trích đền bù</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setShowLedgerModal(true)}
                 className={cn(
-                  'inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-all shadow-sm active:scale-95',
+                  'inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-all active:scale-95',
                   isDark
                     ? 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700'
                     : 'border-stone-200 bg-stone-100 text-stone-700 hover:bg-stone-200'
                 )}
               >
                 <HiOutlineClipboardList className="h-4 w-4 text-blue-500" />
-                <span>Lịch Sử Sổ Cái Ký Quỹ</span>
+                <span>Lịch sử sổ cái ký quỹ</span>
               </button>
             </div>
           </div>
@@ -374,7 +374,7 @@ export default function AdminShopDetail() {
             <div className="flex items-center justify-between">
               <div>
                 <p className={cn('text-xs font-semibold uppercase tracking-wider', isDeficit ? 'text-rose-500' : isDark ? 'text-slate-400' : 'text-stone-500')}>
-                  Quỹ Bảo Chứng (Ký Quỹ)
+                  Quỹ bảo chứng (Ký quỹ)
                 </p>
                 <h3 className={cn('mt-2 text-2xl font-black', isDeficit ? 'text-rose-500' : 'text-emerald-500')}>
                   {formatCurrency(fund?.balance)}
@@ -408,7 +408,7 @@ export default function AdminShopDetail() {
             <div className="flex items-center justify-between">
               <div>
                 <p className={cn('text-xs font-semibold uppercase tracking-wider', isDark ? 'text-slate-400' : 'text-stone-500')}>
-                  Ký Quỹ Đơn Đang Giữ
+                  Ký quỹ đơn đang giữ
                 </p>
                 <h3 className="mt-2 text-2xl font-black text-amber-500">
                   {formatCurrency(analytics?.pendingEscrowRevenue)}
@@ -420,7 +420,7 @@ export default function AdminShopDetail() {
               <div
                 className={cn(
                   'flex h-12 w-12 items-center justify-center rounded-xl',
-                  isDark ? 'bg-amber-500/10 text-amber-400' : 'bg-amber-50 text-amber-600'
+                  isDark ? 'bg-slate-800 text-white' : 'bg-stone-100 text-stone-950'
                 )}
               >
                 <HiOutlineCash className="h-6 w-6" />
@@ -438,7 +438,7 @@ export default function AdminShopDetail() {
             <div className="flex items-center justify-between">
               <div>
                 <p className={cn('text-xs font-semibold uppercase tracking-wider', isDark ? 'text-slate-400' : 'text-stone-500')}>
-                  Tổng Doanh Số (GMV)
+                  Tổng doanh số (GMV)
                 </p>
                 <h3 className="mt-2 text-2xl font-black text-blue-500">
                   {formatCurrency(analytics?.totalRevenue)}
@@ -468,7 +468,7 @@ export default function AdminShopDetail() {
             <div className="flex items-center justify-between">
               <div>
                 <p className={cn('text-xs font-semibold uppercase tracking-wider', isDark ? 'text-slate-400' : 'text-stone-500')}>
-                  Thực Nhận & Hoa Hồng
+                  Thực nhận & hoa hồng
                 </p>
                 <h3 className="mt-2 text-2xl font-black text-purple-500">
                   {formatCurrency(analytics?.settledNetIncome)}
@@ -492,7 +492,7 @@ export default function AdminShopDetail() {
         {/* 3. Main Section: TẤT CẢ ĐƠN HÀNG CỦA GIAN HÀNG (PHÂN TRANG) */}
         <div
           className={cn(
-            'rounded-2xl border overflow-hidden transition-all shadow-sm space-y-4 p-6',
+            'rounded-2xl border overflow-hidden transition-all space-y-4 p-6',
             isDark ? 'border-slate-800 bg-slate-900/70' : 'border-stone-200 bg-white'
           )}
         >
@@ -500,10 +500,10 @@ export default function AdminShopDetail() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-200 dark:border-slate-800 pb-4">
             <div>
               <h2 className={cn('text-lg font-black', isDark ? 'text-white' : 'text-stone-900')}>
-                Danh Sách Đơn Hàng Của Gian Hàng
+                Danh sách đơn hàng của gian hàng
               </h2>
               <p className={cn('text-xs mt-0.5', isDark ? 'text-slate-400' : 'text-stone-500')}>
-                Tất cả đơn hàng phát sinh từ gian hàng này. Bấm vào từng đơn hàng để xem chi tiết (Order Details).
+                Tất cả đơn hàng phát sinh từ gian hàng này. Bấm vào từng đơn hàng để xem chi tiết.
               </p>
             </div>
 
@@ -513,7 +513,7 @@ export default function AdminShopDetail() {
                 onClick={loadShopOrders}
                 disabled={loadingOrders}
                 className={cn(
-                  'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all shadow-sm active:scale-95',
+                  'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all active:scale-95',
                   isDark
                     ? 'border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700'
                     : 'border-stone-200 bg-white text-stone-700 hover:bg-stone-50'
@@ -539,7 +539,7 @@ export default function AdminShopDetail() {
                   setCurrentPage(1)
                 }}
                 className={cn(
-                  'rounded-xl border px-3 py-1.5 text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/20',
+                  'rounded-xl border px-3 py-1.5 text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                   isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-300 bg-white text-stone-900'
                 )}
               >
@@ -563,7 +563,7 @@ export default function AdminShopDetail() {
                 }}
                 placeholder="Tìm mã đơn, tên người mua, SĐT, mã vận đơn GHN..."
                 className={cn(
-                  'w-full rounded-xl border pl-9 pr-4 py-1.5 text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/20',
+                  'w-full rounded-xl border pl-9 pr-4 py-1.5 text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                   isDark
                     ? 'border-slate-700 bg-slate-800 text-white placeholder-slate-500'
                     : 'border-stone-300 bg-white text-stone-900 placeholder-stone-400'
@@ -599,11 +599,11 @@ export default function AdminShopDetail() {
                 </colgroup>
                 <thead>
                   <tr className={cn('border-b text-xs font-bold uppercase tracking-wider', isDark ? 'border-slate-800 text-slate-400 bg-slate-800/40' : 'border-stone-200 text-stone-500 bg-stone-50')}>
-                    <th className="px-3.5 py-3">Mã Đơn / Ngày Đặt</th>
+                    <th className="px-3.5 py-3">Mã đơn / ngày đặt</th>
                     <th className="px-3.5 py-3">Khách Hàng</th>
                     <th className="px-3.5 py-3">Sản Phẩm</th>
-                    <th className="px-3.5 py-3 text-right">Tổng Tiền & Ký Quỹ</th>
-                    <th className="px-3.5 py-3 text-center">Trạng Thái & Thao Tác</th>
+                    <th className="px-3.5 py-3 text-right">Tổng tiền & ký quỹ</th>
+                    <th className="px-3.5 py-3 text-center">Trạng thái & thao tác</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100 dark:divide-slate-800 text-xs sm:text-sm">
@@ -721,7 +721,7 @@ export default function AdminShopDetail() {
                                 navigate(`/orders/${order.id}`)
                               }}
                               className={cn(
-                                'inline-flex items-center justify-center h-7 w-7 rounded-lg transition-all shadow-sm active:scale-95 border group-hover:bg-amber-500 group-hover:text-white group-hover:border-amber-500 shrink-0',
+                                'inline-flex items-center justify-center h-7 w-7 rounded-lg transition-all active:scale-95 border group-hover:bg-amber-500 group-hover:text-white group-hover:border-amber-500 shrink-0',
                                 isDark
                                   ? 'border-slate-700 bg-slate-800 text-slate-300'
                                   : 'border-stone-200 bg-stone-50 text-stone-700'

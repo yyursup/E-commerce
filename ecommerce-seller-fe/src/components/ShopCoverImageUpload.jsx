@@ -144,7 +144,7 @@ export default function ShopCoverImageUpload({
               className={cn(
                 'px-2.5 py-1 rounded-lg font-medium transition-all',
                 inputMode === 'file'
-                  ? 'bg-amber-500/15 text-amber-500 font-bold border border-amber-500/30'
+                  ? 'font-bold border bg-stone-100 text-stone-950 border-stone-950'
                   : isDark ? 'text-slate-400 hover:text-white' : 'text-stone-600 hover:text-stone-900'
               )}
             >
@@ -156,7 +156,7 @@ export default function ShopCoverImageUpload({
               className={cn(
                 'px-2.5 py-1 rounded-lg font-medium transition-all',
                 inputMode === 'url'
-                  ? 'bg-amber-500/15 text-amber-500 font-bold border border-amber-500/30'
+                  ? 'font-bold border bg-stone-100 text-stone-950 border-stone-950'
                   : isDark ? 'text-slate-400 hover:text-white' : 'text-stone-600 hover:text-stone-900'
               )}
             >
@@ -200,7 +200,7 @@ export default function ShopCoverImageUpload({
               <div
                 className={cn(
                   'mb-2 flex h-11 w-11 items-center justify-center rounded-2xl transition-transform group-hover:scale-110',
-                  isDark ? 'bg-amber-500/15 text-amber-400' : 'bg-amber-100 text-amber-600',
+                  isDark ? 'bg-slate-800 text-white' : 'bg-stone-100 text-stone-950',
                 )}
               >
                 <HiOutlineCloudUpload className="h-6 w-6" />
@@ -230,15 +230,15 @@ export default function ShopCoverImageUpload({
               className={cn(
                 'w-full rounded-xl border py-2.5 pl-10 pr-4 text-xs outline-none transition placeholder:opacity-60',
                 isDark
-                  ? 'border-slate-700 bg-slate-800/50 text-white placeholder:text-slate-500 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20'
-                  : 'border-stone-300 bg-stone-50/80 text-stone-900 placeholder:text-stone-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20',
+                  ? 'border-slate-700 bg-slate-800/50 text-white placeholder:text-slate-500 focus:border-stone-950 dark:focus:border-white focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40'
+                  : 'border-stone-300 bg-stone-50/80 text-stone-900 placeholder:text-stone-400 focus:border-stone-950 dark:focus:border-white focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
               )}
             />
           </div>
           <button
             type="button"
             onClick={handleApplyUrl}
-            className="rounded-xl bg-amber-500 px-4 py-2.5 text-xs font-bold text-white hover:bg-amber-600 transition-all shadow-sm"
+            className="rounded-xl px-4 py-2.5 text-xs font-bold transition-all shadow-sm bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
           >
             Áp dụng
           </button>
@@ -285,7 +285,7 @@ export default function ShopCoverImageUpload({
                 type="button"
                 onClick={() => !disabled && !uploading && fileInputRef.current?.click()}
                 disabled={disabled || uploading}
-                className="inline-flex items-center gap-1 rounded-xl bg-amber-500 hover:bg-amber-600 px-3 py-1.5 text-xs font-bold text-white transition shadow-md shadow-amber-500/25 active:scale-95"
+                className="inline-flex items-center gap-1 rounded-xl px-3 py-1.5 text-xs font-bold transition shadow-md active:scale-95 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
               >
                 <HiOutlineRefresh className="h-3.5 w-3.5" /> Đổi ảnh
               </button>

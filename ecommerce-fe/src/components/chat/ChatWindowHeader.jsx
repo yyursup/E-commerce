@@ -49,10 +49,10 @@ export default function ChatWindowHeader({
               <img
                 src={activeShop.logo}
                 alt={activeShop.name}
-                className="h-9 w-9 rounded-full object-cover border border-amber-500/30 shadow-xs"
+                className="h-9 w-9 rounded-full object-cover border border-stone-200 dark:border-slate-700"
               />
             ) : (
-              <div className="h-9 w-9 rounded-full bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center text-white font-bold text-xs shadow-xs">
+              <div className="h-9 w-9 rounded-full flex items-center justify-center font-bold text-xs bg-stone-950 text-white dark:bg-white dark:text-stone-950">
                 {activeShop.name?.charAt(0)?.toUpperCase() || 'S'}
               </div>
             )}
@@ -136,7 +136,7 @@ export default function ChatWindowHeader({
     <div
       className={cn(
         'flex flex-col border-b px-4 pt-3 pb-2 shrink-0',
-        isDark ? 'border-slate-800 bg-slate-850' : 'border-stone-200 bg-amber-500 text-white',
+        isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-200 bg-stone-950 text-white',
       )}
     >
       <div className="flex items-center justify-between">
@@ -182,14 +182,14 @@ export default function ChatWindowHeader({
       </div>
 
       {/* Tabs */}
-      <div className="mt-3 flex rounded-xl bg-black/10 p-1 text-xs font-semibold">
+      <div className="mt-3 flex rounded-md bg-white/10 p-1 text-xs font-semibold">
         <button
           type="button"
           onClick={() => setActiveTab('bot')}
           className={cn(
-            'flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 transition',
+            'flex flex-1 items-center justify-center gap-1.5 rounded py-1.5 transition',
             activeTab === 'bot'
-              ? 'bg-white text-amber-600 shadow-sm dark:bg-slate-800 dark:text-amber-400'
+              ? 'bg-white text-stone-950'
               : 'text-white/80 hover:text-white',
           )}
         >
@@ -200,9 +200,9 @@ export default function ChatWindowHeader({
           type="button"
           onClick={() => setActiveTab('live')}
           className={cn(
-            'flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 transition',
+            'flex flex-1 items-center justify-center gap-1.5 rounded py-1.5 transition',
             activeTab === 'live'
-              ? 'bg-white text-amber-600 shadow-sm dark:bg-slate-800 dark:text-amber-400'
+              ? 'bg-white text-stone-950'
               : 'text-white/80 hover:text-white',
           )}
         >

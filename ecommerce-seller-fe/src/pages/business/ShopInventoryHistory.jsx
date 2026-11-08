@@ -56,7 +56,7 @@ export default function ShopInventoryHistory() {
       case 'ORDER_PLACED':
         return { label: 'Đơn hàng mới', color: 'bg-rose-500/15 text-rose-500 border border-rose-500/30' }
       case 'ORDER_CANCELLED':
-        return { label: 'Hủy đơn', color: 'bg-amber-500/15 text-amber-500 border border-amber-500/30' }
+        return { label: 'Hủy đơn', color: 'border bg-stone-100 text-stone-950 border-stone-950' }
       case 'MANUAL_ADJUSTMENT':
         return { label: 'Điều chỉnh', color: 'bg-purple-500/15 text-purple-500 border border-purple-500/30' }
       default:
@@ -68,7 +68,7 @@ export default function ShopInventoryHistory() {
     <div className="space-y-6">
       {/* Header */}
       <div className={cn(
-        'rounded-3xl border p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-colors',
+        'rounded-3xl border p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-colors',
         isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
       )}>
         <div>
@@ -107,10 +107,10 @@ export default function ShopInventoryHistory() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className={cn(
-              'w-full rounded-2xl pl-10 pr-4 py-2.5 text-xs border outline-none transition-all focus:ring-2 focus:ring-amber-500/40',
+              'w-full rounded-2xl pl-10 pr-4 py-2.5 text-xs border outline-none transition-all focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
               isDark
-                ? 'border-slate-800 bg-slate-900 text-slate-100 placeholder-slate-500 focus:border-amber-500'
-                : 'border-stone-200 bg-white text-stone-900 placeholder-stone-400 focus:border-amber-500'
+                ? 'border-slate-800 bg-slate-900 text-slate-100 placeholder-slate-500 focus:border-stone-950 dark:focus:border-white'
+                : 'border-stone-200 bg-white text-stone-900 placeholder-stone-400 focus:border-stone-950 dark:focus:border-white'
             )}
           />
           <HiOutlineSearch className={cn('absolute left-3.5 top-3 h-4 w-4', isDark ? 'text-slate-400' : 'text-stone-400')} />
@@ -119,7 +119,7 @@ export default function ShopInventoryHistory() {
 
       {/* Data Table */}
       <div className={cn(
-        'rounded-3xl border shadow-sm overflow-hidden transition-colors',
+        'rounded-3xl border overflow-hidden transition-colors',
         isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
       )}>
         <div className="overflow-x-auto">

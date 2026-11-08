@@ -232,12 +232,12 @@ export default function EditAdminVoucherModal({ isOpen, onClose, onSuccess, vouc
           {/* Header */}
           <div className={cn("flex items-center justify-between pb-4 border-b shrink-0", isDark ? "border-slate-800" : "border-stone-100")}>
             <div className="flex items-center gap-2.5">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-500 text-white font-bold shrink-0">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl font-bold shrink-0 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200">
                 <HiOutlinePencilAlt className="h-5 w-5" />
               </span>
               <div>
                 <h3 className={cn('text-lg font-bold', isDark ? 'text-white' : 'text-stone-900')}>
-                  Chỉnh Sửa Voucher Toàn Sàn
+                  Chỉnh sửa voucher toàn sàn
                 </h3>
                 <p className={cn("text-xs", isDark ? "text-slate-400" : "text-stone-500")}>
                   Chỉ áp dụng khi chiến dịch chưa đến ngày phát hành
@@ -276,13 +276,13 @@ export default function EditAdminVoucherModal({ isOpen, onClose, onSuccess, vouc
               <div className="min-w-0">
                 <label className={cn("block font-bold mb-1 flex items-center gap-1", isDark ? "text-slate-200" : "text-stone-700")}>
                   <HiOutlineGlobe className="h-3.5 w-3.5 text-blue-500" />
-                  Phạm Vi Tài Trợ
+                  Phạm vi tài trợ
                 </label>
                 <div className={cn(
                   'w-full rounded-xl border px-3.5 py-2.5 font-bold flex items-center gap-2',
                   isDark ? 'border-slate-700 bg-slate-800/40 text-blue-400' : 'border-stone-200 bg-blue-50/60 text-blue-700'
                 )}>
-                  <span>Toàn Sàn (PLATFORM)</span>
+                  <span>Toàn Sàn</span>
                 </div>
               </div>
             </div>
@@ -300,7 +300,7 @@ export default function EditAdminVoucherModal({ isOpen, onClose, onSuccess, vouc
                 value={formData.title}
                 onChange={handleInputChange}
                 className={cn(
-                  'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-amber-500',
+                  'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                   isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-200 bg-stone-50 text-stone-900'
                 )}
               />
@@ -309,7 +309,7 @@ export default function EditAdminVoucherModal({ isOpen, onClose, onSuccess, vouc
             {/* Description */}
             <div>
               <label className={cn("block font-bold mb-1", isDark ? "text-slate-200" : "text-stone-700")}>
-                Mô Tả & Điều Kiện Áp Dụng
+                Mô tả & điều kiện áp dụng
               </label>
               <textarea
                 name="description"
@@ -318,7 +318,7 @@ export default function EditAdminVoucherModal({ isOpen, onClose, onSuccess, vouc
                 value={formData.description}
                 onChange={handleInputChange}
                 className={cn(
-                  'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-amber-500 resize-none',
+                  'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40 resize-none',
                   isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-200 bg-stone-50 text-stone-900'
                 )}
               />
@@ -328,7 +328,7 @@ export default function EditAdminVoucherModal({ isOpen, onClose, onSuccess, vouc
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="min-w-0">
                 <label className={cn("block font-bold mb-1", isDark ? "text-slate-200" : "text-stone-700")}>
-                  Loại Khuyến Mãi
+                  Loại khuyến mãi
                 </label>
                 <div className="relative">
                   <select
@@ -336,13 +336,13 @@ export default function EditAdminVoucherModal({ isOpen, onClose, onSuccess, vouc
                     value={formData.voucherType}
                     onChange={handleInputChange}
                     className={cn(
-                      'w-full appearance-none rounded-xl border px-3.5 py-2.5 pr-10 outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer',
+                      'w-full appearance-none rounded-xl border px-3.5 py-2.5 pr-10 outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40 cursor-pointer',
                       isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-200 bg-stone-50 text-stone-900'
                     )}
                   >
-                    <option value="FREE_SHIPPING">Miễn Phí Vận Chuyển (GHN Express)</option>
-                    <option value="PERCENTAGE">Giảm Theo Phần Trăm Toàn Sàn (%)</option>
-                    <option value="FIXED_AMOUNT">Giảm Số Tiền Cố Định (VNĐ)</option>
+                    <option value="FREE_SHIPPING">Miễn phí vận chuyển</option>
+                    <option value="PERCENTAGE">Giảm theo phần trăm toàn sàn (%)</option>
+                    <option value="FIXED_AMOUNT">Giảm số tiền cố định (VNĐ)</option>
                   </select>
                   <HiOutlineChevronDown className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400 dark:text-slate-400" />
                 </div>
@@ -373,7 +373,7 @@ export default function EditAdminVoucherModal({ isOpen, onClose, onSuccess, vouc
                   value={formData.discountValue}
                   onChange={handleInputChange}
                   className={cn(
-                    'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-amber-500',
+                    'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                     isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-200 bg-stone-50 text-stone-900'
                   )}
                 />
@@ -384,7 +384,7 @@ export default function EditAdminVoucherModal({ isOpen, onClose, onSuccess, vouc
             <div className={cn("grid gap-4", formData.voucherType === 'PERCENTAGE' ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1")}>
               <div className="min-w-0">
                 <label className={cn("block font-bold mb-1", isDark ? "text-slate-200" : "text-stone-700")}>
-                  Giá Trị Đơn Tối Thiểu (VNĐ)
+                  Giá trị đơn tối thiểu (VNĐ)
                 </label>
                 <input
                   type="number"
@@ -395,7 +395,7 @@ export default function EditAdminVoucherModal({ isOpen, onClose, onSuccess, vouc
                   value={formData.minOrderValue}
                   onChange={handleInputChange}
                   className={cn(
-                    'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-amber-500',
+                    'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                     isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-200 bg-stone-50 text-stone-900'
                   )}
                 />
@@ -404,7 +404,7 @@ export default function EditAdminVoucherModal({ isOpen, onClose, onSuccess, vouc
               {formData.voucherType === 'PERCENTAGE' && (
                 <div className="min-w-0">
                   <label className={cn("block font-bold mb-1", isDark ? "text-slate-200" : "text-stone-700")}>
-                    Mức Giảm Tối Đa (VNĐ)
+                    Mức giảm tối đa (VNĐ)
                   </label>
                   <input
                     type="number"
@@ -415,7 +415,7 @@ export default function EditAdminVoucherModal({ isOpen, onClose, onSuccess, vouc
                     value={formData.maxDiscountAmount}
                     onChange={handleInputChange}
                     className={cn(
-                      'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-amber-500',
+                      'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                       isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-200 bg-stone-50 text-stone-900'
                     )}
                   />
@@ -428,7 +428,7 @@ export default function EditAdminVoucherModal({ isOpen, onClose, onSuccess, vouc
               <div className="min-w-0">
                 <div className="flex items-center justify-between mb-1">
                   <label className={cn("font-bold", isDark ? "text-slate-200" : "text-stone-700")}>
-                    Tổng Lượt Sử Dụng
+                    Tổng lượt sử dụng
                   </label>
                   {usedCount > 0 && (
                     <span className="text-[11px] text-amber-500 font-semibold">
@@ -445,7 +445,7 @@ export default function EditAdminVoucherModal({ isOpen, onClose, onSuccess, vouc
                   value={formData.usageLimit}
                   onChange={handleInputChange}
                   className={cn(
-                    'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-amber-500',
+                    'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                     isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-200 bg-stone-50 text-stone-900'
                   )}
                 />
@@ -453,7 +453,7 @@ export default function EditAdminVoucherModal({ isOpen, onClose, onSuccess, vouc
 
               <div className="min-w-0">
                 <label className={cn("block font-bold mb-1", isDark ? "text-slate-200" : "text-stone-700")}>
-                  Lượt Dùng Mỗi Tài Khoản
+                  Lượt dùng mỗi tài khoản
                 </label>
                 <input
                   type="number"
@@ -464,7 +464,7 @@ export default function EditAdminVoucherModal({ isOpen, onClose, onSuccess, vouc
                   value={formData.userUsageLimit}
                   onChange={handleInputChange}
                   className={cn(
-                    'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-amber-500',
+                    'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                     isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-200 bg-stone-50 text-stone-900'
                   )}
                 />
@@ -473,10 +473,10 @@ export default function EditAdminVoucherModal({ isOpen, onClose, onSuccess, vouc
 
             {/* Cảnh báo khi usageLimit == usedCount */}
             {isUsageLimitEqualUsed && (
-              <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-amber-600 dark:text-amber-400 flex items-start gap-2">
+              <div className="rounded-xl border p-3 dark:text-amber-400 flex items-start gap-2 bg-stone-100 text-stone-950 border-stone-950">
                 <HiOutlineExclamationCircle className="h-5 w-5 shrink-0 mt-0.5" />
                 <p className="leading-relaxed">
-                  <strong>Lưu ý:</strong> Giới hạn lượt sử dụng mới ({formData.usageLimit}) bằng đúng số lượt đã dùng ({usedCount}). Voucher sẽ tự động chuyển sang trạng thái <strong>Hết lượt (EXHAUSTED)</strong> sau khi cập nhật.
+                  <strong>Lưu ý:</strong> Giới hạn lượt sử dụng mới ({formData.usageLimit}) bằng đúng số lượt đã dùng ({usedCount}). Voucher sẽ tự động chuyển sang trạng thái <strong>Hết lượt</strong> sau khi cập nhật.
                 </p>
               </div>
             )}
@@ -494,7 +494,7 @@ export default function EditAdminVoucherModal({ isOpen, onClose, onSuccess, vouc
                   value={formData.startDate}
                   onChange={handleInputChange}
                   className={cn(
-                    'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-amber-500',
+                    'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                     isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-200 bg-stone-50 text-stone-900'
                   )}
                 />
@@ -502,7 +502,7 @@ export default function EditAdminVoucherModal({ isOpen, onClose, onSuccess, vouc
 
               <div className="min-w-0">
                 <label className={cn("block font-bold mb-1", isDark ? "text-slate-200" : "text-stone-700")}>
-                  Ngày Kết Thúc (HSD)
+                  Ngày kết thúc (HSD)
                 </label>
                 <input
                   type="datetime-local"
@@ -510,7 +510,7 @@ export default function EditAdminVoucherModal({ isOpen, onClose, onSuccess, vouc
                   value={formData.endDate}
                   onChange={handleInputChange}
                   className={cn(
-                    'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-amber-500',
+                    'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                     isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-200 bg-stone-50 text-stone-900'
                   )}
                 />
@@ -546,7 +546,7 @@ export default function EditAdminVoucherModal({ isOpen, onClose, onSuccess, vouc
               <button
                 type="submit"
                 disabled={updating}
-                className="px-6 py-2.5 rounded-xl font-bold text-white bg-amber-500 hover:bg-amber-600 shadow-md shadow-amber-500/25 transition-all disabled:opacity-50 flex items-center gap-2"
+                className="px-6 py-2.5 rounded-xl font-bold shadow-md transition-all disabled:opacity-50 flex items-center gap-2 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
               >
                 {updating && (
                   <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-r-transparent" />

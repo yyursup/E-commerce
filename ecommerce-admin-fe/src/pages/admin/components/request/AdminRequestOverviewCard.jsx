@@ -37,7 +37,7 @@ export default function AdminRequestOverviewCard({ detail, isDark }) {
               }}
               className={cn(
                 'p-2 rounded-lg transition hover:shadow-sm',
-                isDark ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' : 'bg-white text-stone-500 hover:bg-stone-100 shadow-sm border border-stone-200'
+                isDark ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' : 'bg-white text-stone-500 hover:bg-stone-100 border border-stone-200'
               )}
               title="Copy Mã yêu cầu"
             >

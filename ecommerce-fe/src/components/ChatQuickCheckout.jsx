@@ -16,7 +16,7 @@ const fmt = (v) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency:
 
 const PAYMENT_METHODS = [
   { value: 'WALLET', label: 'Ví số dư tài khoản' },
-  { value: 'VNPAY', label: 'VNPay (ATM / QR)' },
+  { value: 'VNPAY', label: 'VNPay' },
 ]
 
 /**
@@ -208,7 +208,7 @@ export default function ChatQuickCheckout({ productId, isDark, onClose }) {
       {isAuthenticated && product && (
         <div className={cn('flex gap-2 border-t p-3', isDark ? 'border-slate-800' : 'border-stone-200')}>
           <button type="button" disabled={submitting} onClick={quote ? placeOrder : goToConfirm}
-            className="flex-1 rounded-xl bg-amber-500 py-2 text-sm font-semibold text-white hover:bg-amber-600 disabled:opacity-50">
+            className="flex-1 rounded-xl py-2 text-sm font-semibold disabled:opacity-50 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200">
             {submitting ? 'Đang xử lý...' : quote ? (paymentMethod === 'VNPAY' ? 'Thanh toán VNPay' : 'Đặt hàng') : 'Tiếp tục'}
           </button>
         </div>

@@ -64,7 +64,7 @@ export default function AdjustFundModal({ shop, onClose, onSuccess, formatVND })
       >
         <h2 className="text-lg sm:text-xl font-bold flex items-center gap-2">
           <HiOutlinePencilAlt className="h-6 w-6 text-amber-500 shrink-0" />
-          Điều Chỉnh Quỹ Ký Quỹ & Cấp Sao Uy Tín
+          Điều chỉnh quỹ ký quỹ & cấp sao uy tín
         </h2>
         <p className={cn('text-xs mt-1', isDark ? 'text-slate-400' : 'text-stone-500')}>
           Gian hàng: <span className="font-bold text-amber-500">{shop.shopName}</span>
@@ -83,7 +83,7 @@ export default function AdjustFundModal({ shop, onClose, onSuccess, formatVND })
                 value={balance}
                 onChange={(e) => setBalance(e.target.value)}
                 className={cn(
-                  'w-full rounded-xl border px-4 py-2.5 text-sm font-semibold outline-none focus:ring-2 focus:ring-amber-500',
+                  'w-full rounded-xl border px-4 py-2.5 text-sm font-semibold outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                   isDark ? 'border-slate-700 bg-slate-950 text-white' : 'border-stone-300 bg-stone-50 text-stone-800'
                 )}
               />
@@ -102,7 +102,7 @@ export default function AdjustFundModal({ shop, onClose, onSuccess, formatVND })
                 value={committed}
                 onChange={(e) => setCommitted(e.target.value)}
                 className={cn(
-                  'w-full rounded-xl border px-4 py-2.5 text-sm font-semibold outline-none focus:ring-2 focus:ring-amber-500',
+                  'w-full rounded-xl border px-4 py-2.5 text-sm font-semibold outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                   isDark ? 'border-slate-700 bg-slate-950 text-white' : 'border-stone-300 bg-stone-50 text-stone-800'
                 )}
               />
@@ -125,7 +125,7 @@ export default function AdjustFundModal({ shop, onClose, onSuccess, formatVND })
                   className={cn(
                     'flex flex-col items-center justify-center rounded-xl border py-2 text-xs font-bold transition',
                     starLevel === String(star)
-                      ? 'border-amber-500 bg-amber-500/15 text-amber-500 ring-1 ring-amber-500'
+                      ? 'ring-1 ring-amber-500 bg-stone-100 text-stone-950 border-stone-950'
                       : isDark
                       ? 'border-slate-800 bg-slate-950/60 text-slate-400 hover:text-white'
                       : 'border-stone-200 bg-stone-50 text-stone-600 hover:bg-stone-100'
@@ -149,13 +149,13 @@ export default function AdjustFundModal({ shop, onClose, onSuccess, formatVND })
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               className={cn(
-                'w-full rounded-xl border px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-500',
+                'w-full rounded-xl border px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                 isDark ? 'border-slate-700 bg-slate-950 text-white' : 'border-stone-300 bg-stone-50 text-stone-800'
               )}
             />
           </div>
 
-          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-600 dark:text-amber-400 leading-relaxed">
+          <div className="rounded-xl border p-3 text-xs dark:text-amber-400 leading-relaxed bg-stone-100 text-stone-950 border-stone-950">
             <span className="font-bold">Lưu ý:</span> Khi điều chỉnh số dư, hệ thống sẽ tự động ghi nhận một giao dịch biến động sổ cái loại <strong>ADMIN_ADJUSTMENT</strong> để đảm bảo tính minh bạch và đối soát tài chính.
           </div>
 
@@ -174,7 +174,7 @@ export default function AdjustFundModal({ shop, onClose, onSuccess, formatVND })
             <button
               type="submit"
               disabled={submitting}
-              className="rounded-xl bg-amber-500 px-5 py-2 text-sm font-bold text-white hover:bg-amber-600 disabled:opacity-50 shadow-sm"
+              className="rounded-xl px-5 py-2 text-sm font-bold disabled:opacity-50 shadow-sm bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
             >
               {submitting ? 'Đang lưu...' : 'Lưu điều chỉnh'}
             </button>

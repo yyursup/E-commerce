@@ -158,7 +158,7 @@ export default function BannedAccount() {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-4">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rose-600 mb-4"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-stone-950 dark:border-white mb-4"></div>
         <p className="text-slate-600 dark:text-slate-400 text-sm font-medium">Đang kiểm tra tình trạng tài khoản...</p>
       </div>
     )
@@ -176,23 +176,23 @@ export default function BannedAccount() {
     (currentStrikes < 7 && latestAppeal?.status === 'APPROVED')
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-100 to-slate-200 dark:from-slate-950 dark:to-slate-900 py-10 px-4 sm:px-6 lg:px-8 flex flex-col items-center transition-colors duration-200">
-      <div className="w-full max-w-3xl bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+    <div className="min-h-screen bg-stone-50 dark:bg-slate-950 py-10 px-4 sm:px-6 lg:px-8 flex flex-col items-center transition-colors duration-200">
+      <div className="w-full max-w-3xl bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden">
         {/* Header Thông Báo */}
-        <div className={`${isUnbanned ? 'bg-emerald-600' : 'bg-rose-600'} px-6 py-6 text-white flex items-center justify-between transition-colors`}>
+        <div className={`${isUnbanned ? 'bg-emerald-700' : 'bg-stone-950'} px-6 py-6 text-white flex items-center justify-between transition-colors`}>
           <div className="flex items-center space-x-3">
-            <div className={`p-3 ${isUnbanned ? 'bg-emerald-700/60' : 'bg-rose-700/60'} rounded-xl`}>
+            <div className={`p-3 ${isUnbanned ? 'bg-emerald-800/60' : 'bg-amber-500 text-stone-950'} rounded-md`}>
               {isUnbanned ? (
                 <HiOutlineCheckCircle className="w-8 h-8 text-emerald-100" />
               ) : (
-                <HiOutlineShieldExclamation className="w-8 h-8 text-rose-100" />
+                <HiOutlineShieldExclamation className="w-8 h-8" />
               )}
             </div>
             <div>
               <h1 className="text-xl font-bold tracking-tight">
-                {isUnbanned ? 'Tài Khoản Đã Được Mở Khóa Kỷ Luật' : 'Tài Khoản Đã Bị Khóa Vĩnh Viễn'}
+                {isUnbanned ? 'Tài khoản đã được mở khóa kỷ luật' : 'Tài khoản đã bị khóa vĩnh viễn'}
               </h1>
-              <p className={`${isUnbanned ? 'text-emerald-100' : 'text-rose-100'} text-sm mt-0.5`}>
+              <p className={`${isUnbanned ? 'text-emerald-100' : 'text-stone-300'} text-sm mt-0.5`}>
                 Tài khoản: <span className="font-mono font-medium">{statusData?.username || user?.email}</span>
                 {isUnbanned && ' (Trạng thái: Tạm đình chỉ 14 ngày)'}
               </p>
@@ -200,7 +200,7 @@ export default function BannedAccount() {
           </div>
           <button
             onClick={handleLogout}
-            className={`inline-flex items-center px-3.5 py-2 border ${isUnbanned ? 'border-emerald-400/80 hover:bg-emerald-700/80' : 'border-rose-400/80 hover:bg-rose-700/80'} rounded-lg text-sm font-medium text-white transition-colors`}
+            className={`inline-flex items-center px-3.5 py-2 border ${isUnbanned ? 'border-emerald-400/80 hover:bg-emerald-700/80' : 'border-stone-600 hover:bg-stone-800'} rounded-lg text-sm font-medium text-white transition-colors`}
           >
             <HiOutlineLogout className="w-4 h-4 mr-1.5" />
             Đăng xuất
@@ -211,12 +211,12 @@ export default function BannedAccount() {
           {/* Trường hợp Tài Khoản Đã Được Phê Duyệt Mở Khóa */}
           {isUnbanned ? (
             <div className="space-y-6">
-              <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/80 rounded-xl p-5 sm:p-6 space-y-3">
+              <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/80 rounded-md p-5 sm:p-6 space-y-3">
                 <div className="flex items-start space-x-3">
                   <HiOutlineCheckCircle className="w-7 h-7 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
                   <div className="space-y-1">
                     <h3 className="font-bold text-base text-emerald-950 dark:text-emerald-100">
-                      Đơn Xem Xét Đã Được Phê Duyệt Thành Công!
+                      Đơn xem xét đã được phê duyệt thành công!
                     </h3>
                     <p className="text-sm text-emerald-800 dark:text-emerald-300 leading-relaxed">
                       Ban Quản Trị đã chấp thuận đơn khiếu nại mã <span className="font-mono font-semibold">{latestAppeal?.displayCode || ''}</span> của bạn.
@@ -238,9 +238,9 @@ export default function BannedAccount() {
               </div>
 
               {/* Khối Điều Hướng Quay Lại / Đăng Nhập Lại Rõ Ràng */}
-              <div className="bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 rounded-xl p-6 text-center space-y-4">
+              <div className="bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 rounded-md p-6 text-center space-y-4">
                 <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                  Làm Mới Phiên Làm Việc Để Tiếp Tục Sử Dụng Sàn
+                  Làm mới phiên làm việc để tiếp tục sử dụng sàn
                 </h4>
                 <p className="text-xs text-slate-600 dark:text-slate-400 max-w-md mx-auto">
                   Hệ thống cần làm mới phiên đăng nhập để cập nhật quyền truy cập mới cho tài khoản của bạn.
@@ -249,17 +249,17 @@ export default function BannedAccount() {
                   <button
                     type="button"
                     onClick={handleReLogin}
-                    className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold shadow-sm transition-all"
+                    className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-sm font-semibold transition-all"
                   >
                     <HiOutlineRefresh className="w-4 h-4 mr-2" />
-                    Đăng Nhập Lại Ngay
+                    Đăng nhập lại ngay
                   </button>
                   <button
                     type="button"
                     onClick={handleGoHome}
-                    className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-2.5 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-sm font-medium transition-all"
+                    className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-2.5 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-md text-sm font-medium transition-all"
                   >
-                    Về Trang Chủ Sàn
+                    Về trang chủ sàn
                   </button>
                 </div>
               </div>
@@ -267,7 +267,7 @@ export default function BannedAccount() {
           ) : (
             <>
               {/* Card Thống kê Vi Phạm */}
-              <div className="bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 rounded-xl p-4 sm:p-5 flex items-start space-x-4">
+              <div className="bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 rounded-md p-4 sm:p-5 flex items-start space-x-4">
                 <HiOutlineExclamationCircle className="w-6 h-6 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
                 <div className="text-sm text-rose-900 dark:text-rose-200 space-y-1">
                   <div className="font-semibold text-base text-rose-950 dark:text-rose-100">
@@ -281,10 +281,10 @@ export default function BannedAccount() {
 
               {/* Trường Hợp 1: Đã từng bị REJECTED -> Khóa vĩnh viễn không được gửi thêm */}
               {isPermanentlyRejected && (
-                <div className="bg-slate-100 dark:bg-slate-800/40 border border-slate-300 dark:border-slate-700 rounded-xl p-6 text-center space-y-3">
+                <div className="bg-slate-100 dark:bg-slate-800/40 border border-slate-300 dark:border-slate-700 rounded-md p-6 text-center space-y-3">
                   <HiOutlineXCircle className="w-12 h-12 text-rose-600 dark:text-rose-400 mx-auto" />
                   <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-                    Quyết Định Khóa Vĩnh Viễn Không Thể Khiếu Nại
+                    Quyết định khóa vĩnh viễn không thể khiếu nại
                   </h3>
                   <p className="text-sm text-slate-600 dark:text-slate-400 max-w-lg mx-auto leading-relaxed">
                     Đơn xem xét kỷ luật trước đó của bạn đã bị Quản trị viên từ chối sau khi thẩm tra toàn diện. Theo quy chế của sàn, phán quyết này là chung cuộc và không được phép gửi thêm bất kỳ đơn khiếu nại nào trong tương lai.
@@ -308,11 +308,11 @@ export default function BannedAccount() {
 
               {/* Trường Hợp 2: Đang có đơn PENDING */}
               {isPending && (
-                <div className="bg-sky-50 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-900/50 rounded-xl p-6 text-center space-y-4">
+                <div className="bg-sky-50 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-900/50 rounded-md p-6 text-center space-y-4">
                   <HiOutlineClock className="w-12 h-12 text-sky-600 dark:text-sky-400 mx-auto animate-pulse" />
                   <div>
                     <h3 className="text-lg font-bold text-sky-950 dark:text-sky-100">
-                      Đơn Xem Xét Đang Chờ Xử Lý
+                      Đơn xem xét đang chờ xử lý
                     </h3>
                     <p className="text-sm text-sky-800 dark:text-sky-300 mt-1 max-w-lg mx-auto">
                       Bạn đã gửi đơn xem xét kỷ luật mã <span className="font-mono font-semibold">{latestAppeal?.displayCode}</span>. Ban Quản Trị đang tiến hành rà soát dữ liệu và sẽ phản hồi sớm nhất.
@@ -359,7 +359,7 @@ export default function BannedAccount() {
                   <div className="border-b border-slate-200 dark:border-slate-800 pb-3">
                     <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center">
                       <HiOutlineDocumentText className="w-5 h-5 mr-2 text-rose-600 dark:text-rose-500" />
-                      Gửi Đơn Xem Xét Kỷ Luật Tài Khoản
+                      Gửi đơn xem xét kỷ luật tài khoản
                     </h2>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                       Vui lòng trình bày rõ nguyên nhân vi phạm, các biện pháp khắc phục và kèm theo hình ảnh đối soát hợp lệ (nếu có) để Ban Quản Trị xem xét gỡ bỏ lệnh cấm vĩnh viễn cho tài khoản.
@@ -376,7 +376,7 @@ export default function BannedAccount() {
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
                       placeholder="Mô tả chi tiết nguyên nhân, cam kết tuân thủ và giải trình lý do xin xem xét kỷ luật..."
-                      className="w-full px-3.5 py-2.5 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800/80 rounded-xl text-sm focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-all text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500"
+                      className="w-full px-3.5 py-2.5 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800/80 rounded-md text-sm focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-all text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500"
                       required
                     />
                     <span className="text-xs text-slate-400 dark:text-slate-500 mt-1 block">
@@ -445,14 +445,14 @@ export default function BannedAccount() {
                       <button
                         type="button"
                         onClick={handleLogout}
-                        className="px-4 py-2 border border-slate-300 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                        className="px-4 py-2 border border-slate-300 dark:border-slate-700 rounded-md text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                       >
                         Đăng xuất
                       </button>
                       <button
                         type="submit"
                         disabled={submitting}
-                        className="inline-flex items-center px-5 py-2.5 bg-rose-600 hover:bg-rose-700 disabled:bg-rose-300 dark:disabled:bg-rose-900 text-white rounded-xl text-sm font-medium shadow-sm transition-all"
+                        className="inline-flex items-center px-5 py-2.5 bg-stone-950 hover:bg-stone-800 disabled:opacity-40 text-white dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200 rounded-md text-sm font-medium transition-all"
                       >
                         {submitting ? 'Đang gửi...' : 'Nộp Đơn Xem Xét'}
                       </button>

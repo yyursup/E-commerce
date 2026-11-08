@@ -120,10 +120,10 @@ export default function AdvancedSearchBar() {
                     onFocus={() => setIsFocused(true)}
                     placeholder="Tìm kiếm sản phẩm, danh mục, shop..."
                     className={cn(
-                        'w-full rounded-full pl-11 pr-4 py-2.5 text-sm border transition-all focus:outline-none focus:ring-2 focus:ring-amber-500',
+                        'w-full h-11 rounded-md pl-11 pr-4 text-[15px] border transition-colors focus:outline-none focus:ring-2 focus:ring-stone-950 dark:focus:ring-white',
                         isDark
-                            ? 'bg-slate-800/80 border-slate-700 text-white placeholder-slate-400 focus:bg-slate-800 focus:border-amber-500/50'
-                            : 'bg-stone-100/90 border-stone-200 text-stone-900 placeholder-stone-400 focus:bg-white focus:border-amber-500'
+                            ? 'bg-slate-900 border-slate-700 text-white placeholder-slate-400 focus:border-slate-400'
+                            : 'bg-stone-50 border-stone-200 text-stone-950 placeholder-stone-500 focus:bg-white focus:border-stone-950'
                     )}
                 />
                 <HiOutlineSearch className={cn(

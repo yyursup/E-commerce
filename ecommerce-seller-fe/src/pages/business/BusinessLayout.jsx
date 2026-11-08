@@ -33,7 +33,7 @@ export default function BusinessLayout() {
           <p className="mt-2 text-sm opacity-80">Khu vực này chỉ dành cho tài khoản doanh nghiệp.</p>
           <button
             onClick={() => navigate('/')}
-            className="mt-4 inline-flex rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white"
+            className="mt-4 inline-flex rounded-lg px-4 py-2 text-sm font-semibold bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
           >
             Về trang chủ
           </button>
@@ -69,7 +69,7 @@ export default function BusinessLayout() {
                       className={({ isActive }) => cn(
                         'flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                         isActive
-                          ? 'bg-blue-500 text-white'
+                          ? 'bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                           : isDark
                             ? 'text-slate-300 hover:bg-slate-800'
                             : 'text-stone-600 hover:bg-stone-100',

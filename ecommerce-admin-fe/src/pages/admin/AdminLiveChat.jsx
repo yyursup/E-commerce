@@ -514,7 +514,7 @@ export default function AdminLiveChat() {
       {/* Header */}
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-500">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-stone-100 text-stone-950">
             <HiOutlineChat className="h-6 w-6" />
           </div>
           <div>
@@ -698,7 +698,7 @@ export default function AdminLiveChat() {
                 )}
               >
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-500 text-white font-bold">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full font-bold bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200">
                     {selectedThread.customerAvatar ? (
                       <img
                         src={selectedThread.customerAvatar}
@@ -775,11 +775,11 @@ export default function AdminLiveChat() {
                               value={editingContent}
                               onChange={(e) => setEditingContent(e.target.value)}
                               onKeyDown={(e) => { if (e.key === 'Enter') handleSaveEdit(); if (e.key === 'Escape') handleCancelEdit() }}
-                              className={cn('flex-1 rounded-xl border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-500/30',
+                              className={cn('flex-1 rounded-xl border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                                 isDark ? 'border-slate-600 bg-slate-800 text-white' : 'border-stone-300 bg-white text-stone-900'
                               )}
                             />
-                            <button onClick={handleSaveEdit} className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500 text-white hover:bg-amber-600"><HiCheck className="h-4 w-4" /></button>
+                            <button onClick={handleSaveEdit} className="flex h-9 w-9 items-center justify-center rounded-xl bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"><HiCheck className="h-4 w-4" /></button>
                             <button onClick={handleCancelEdit} className={cn('flex h-9 w-9 items-center justify-center rounded-xl border', isDark ? 'border-slate-600 hover:bg-slate-700' : 'border-stone-300 hover:bg-stone-100')}><HiX className="h-4 w-4" /></button>
                           </div>
                         ) : (
@@ -810,7 +810,7 @@ export default function AdminLiveChat() {
                                   <div
                                     onClick={(e) => e.stopPropagation()}
                                     className={cn(
-                                      'absolute bottom-full mb-1.5 z-40 min-w-[130px] rounded-xl border p-1 shadow-xl backdrop-blur-md animate-in fade-in zoom-in-95',
+                                      'absolute bottom-full mb-1.5 z-40 min-w-[130px] rounded-xl border p-1 backdrop-blur-md animate-in fade-in zoom-in-95',
                                       isMe ? 'right-0' : 'left-0',
                                       isDark
                                         ? 'border-slate-700 bg-slate-800/95 text-slate-200 shadow-black/40'
@@ -857,7 +857,7 @@ export default function AdminLiveChat() {
                               className={cn(
                                 'rounded-2xl px-4 py-2.5 text-sm shadow-sm',
                                 isMe
-                                  ? 'rounded-tr-xs bg-amber-500 text-white'
+                                  ? 'rounded-tr-xs bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                                   : isDark
                                     ? 'rounded-tl-xs bg-slate-800 text-slate-100 border border-slate-700'
                                     : 'rounded-tl-xs bg-white text-stone-800 border border-stone-200',
@@ -969,7 +969,7 @@ export default function AdminLiveChat() {
                     className={cn(
                       'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition-all active:scale-95',
                       showMediaPopover
-                        ? 'border-amber-500 bg-amber-500 text-white shadow-sm'
+                        ? 'border-amber-500 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                         : isDark
                           ? 'border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-750'
                           : 'border-stone-300 bg-white text-stone-600 hover:bg-stone-100'
@@ -990,7 +990,7 @@ export default function AdminLiveChat() {
                     className={cn(
                       'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition-all active:scale-95',
                       showEmojiPicker
-                        ? 'border-amber-500 bg-amber-500 text-white shadow-sm'
+                        ? 'border-amber-500 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                         : isDark
                           ? 'border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-750'
                           : 'border-stone-300 bg-white text-stone-600 hover:bg-stone-100'
@@ -1008,7 +1008,7 @@ export default function AdminLiveChat() {
                     placeholder="Nhập tin nhắn phản hồi..."
                     disabled={sending}
                     className={cn(
-                      'flex-1 rounded-xl border px-4 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-amber-500/30',
+                      'flex-1 rounded-xl border px-4 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                       isDark
                         ? 'border-slate-700 bg-slate-800 text-white placeholder:opacity-50'
                         : 'border-stone-200 bg-white text-stone-900 placeholder:opacity-50',
@@ -1018,7 +1018,7 @@ export default function AdminLiveChat() {
                   <button
                     type="submit"
                     disabled={!replyText.trim() || sending}
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white transition hover:bg-amber-600 disabled:opacity-40 disabled:cursor-not-allowed shadow"
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition disabled:opacity-40 disabled:cursor-not-allowed bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
                   >
                     <HiOutlinePaperAirplane className="h-5 w-5 rotate-90" />
                   </button>
@@ -1050,7 +1050,7 @@ export default function AdminLiveChat() {
             <button
               type="button"
               onClick={() => setPreviewMedia(null)}
-              className="absolute -top-3 -right-3 flex h-8 w-8 items-center justify-center rounded-full bg-white text-stone-900 shadow hover:bg-stone-200"
+              className="absolute -top-3 -right-3 flex h-8 w-8 items-center justify-center rounded-full bg-white text-stone-900 hover:bg-stone-200"
             >
               <HiX className="h-5 w-5" />
             </button>

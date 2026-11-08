@@ -6,7 +6,7 @@ import cartService from '../services/cart'
 import { useThemeStore } from '../store/useThemeStore'
 import { cn } from '../lib/cn'
 import { motion, AnimatePresence } from 'framer-motion'
-import { HiOutlineTrash, HiMinus, HiPlus, HiArrowRight, HiOutlineShoppingBag, HiTicket } from 'react-icons/hi'
+import { HiOutlineTrash, HiMinus, HiPlus, HiArrowRight, HiTicket } from 'react-icons/hi'
 import toast from 'react-hot-toast'
 import Footer from '../components/Footer'
 
@@ -86,275 +86,186 @@ export default function Cart() {
         navigate('/checkout', { state: { shopId } });
     }
 
+    const fmt = (n) => new Intl.NumberFormat('vi-VN').format(Math.round(Number(n) || 0)) + '₫'
+    const ink = isDark ? 'text-white' : 'text-stone-950'
+    const muted = isDark ? 'text-slate-400' : 'text-stone-600'
+    const panel = isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
+    const page = cn('min-h-screen flex flex-col', isDark ? 'bg-slate-950 text-slate-100' : 'bg-stone-50 text-stone-950')
+    const primaryBtn = cn('inline-flex items-center justify-center gap-2 rounded-md px-5 py-3.5 text-[15px] font-bold transition-colors', isDark ? 'bg-white text-stone-950 hover:bg-stone-200' : 'bg-stone-950 text-white hover:bg-stone-800')
+    const ghostBtn = cn('inline-flex items-center justify-center rounded-md border px-5 py-3.5 text-[15px] font-bold', isDark ? 'border-white text-white' : 'border-stone-950 text-stone-950')
+
+    const emptyState = ({ kicker, title, body, children }) => (
+        <div className={page}>
+            <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col justify-center gap-5 px-4 py-16 sm:px-6 lg:px-8">
+                <span className={cn('font-mono text-xs uppercase tracking-[0.06em]', muted)}>{kicker}</span>
+                <h1 className={cn('max-w-xl text-5xl font-bold leading-none tracking-[-0.04em] sm:text-6xl', ink)}>{title}</h1>
+                <p className={cn('max-w-md text-[17px] leading-relaxed', muted)}>{body}</p>
+                <div className="flex flex-wrap gap-2.5">{children}</div>
+            </main>
+            <Footer />
+        </div>
+    )
+
     if (!isAuthenticated) {
         return (
-            <div className={cn("min-h-screen flex flex-col justify-between transition-colors", isDark ? "bg-slate-950 text-slate-100" : "bg-stone-50 text-stone-900")}>
-                <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-8 text-center my-8">
-                    <div className="mb-6 rounded-full bg-amber-100 p-6 dark:bg-amber-900/20">
-                        <HiOutlineShoppingBag className="h-12 w-12 text-amber-600 dark:text-amber-500" />
-                    </div>
-                    <h2 className={cn("mb-2 text-2xl font-bold", isDark ? "text-white" : "text-stone-900")}>
-                        Bạn chưa đăng nhập
-                    </h2>
-                    <p className={cn("mb-8 max-w-sm", isDark ? "text-slate-400" : "text-stone-500")}>
-                        Vui lòng đăng nhập để xem giỏ hàng và thực hiện mua sắm
-                    </p>
-                    <Link
-                        to="/login"
-                        className="rounded-xl bg-amber-500 px-8 py-3 font-bold text-white transition hover:bg-amber-600 hover:shadow-lg hover:shadow-amber-500/25 active:scale-95"
-                    >
-                        Đăng nhập ngay
-                    </Link>
-                </div>
-                <Footer />
-            </div>
+            emptyState({ kicker: "Giỏ hàng", title: "Đăng nhập để xem giỏ hàng.", body: "Giỏ hàng được lưu theo tài khoản, nên bạn đổi thiết bị vẫn còn nguyên.", children: (<>
+                <Link to="/login" className={primaryBtn}>Đăng nhập</Link>
+                <Link to="/products" className={ghostBtn}>Xem sản phẩm</Link>
+            </>) })
         )
     }
 
     if (loading) {
         return (
-            <div className={cn("min-h-screen flex flex-col justify-between transition-colors", isDark ? "bg-slate-950 text-slate-100" : "bg-stone-50 text-stone-900")}>
-                <div className="flex-1 flex items-center justify-center">
-                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent"></div>
-                </div>
+            <div className={page}>
+                <main className="mx-auto grid w-full max-w-7xl flex-1 gap-6 px-4 py-10 sm:px-6 lg:grid-cols-[2fr_1fr] lg:px-8" aria-busy="true" aria-label="Đang tải giỏ hàng">
+                    <div className="flex flex-col gap-3">
+                        {[0, 1, 2].map((i) => <div key={i} className={cn('h-36 animate-pulse rounded-lg border', panel)} />)}
+                    </div>
+                    <div className={cn('h-64 animate-pulse rounded-lg border', panel)} />
+                </main>
                 <Footer />
             </div>
         )
     }
 
-    // Handle Empty Cart
     if (!items || items.length === 0) {
         return (
-            <div className={cn("min-h-screen flex flex-col justify-between transition-colors", isDark ? "bg-slate-950 text-slate-100" : "bg-stone-50 text-stone-900")}>
-                <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-8 text-center my-8">
-                    <motion.div
-                        initial={{ scale: 0.8, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        className="mb-6"
-                    >
-                        <img
-                            src="https://cdni.iconscout.com/illustration/premium/thumb/empty-cart-2130356-1800917.png"
-                            alt="Empty Cart"
-                            className="w-64 opacity-80 grayscale mix-blend-luminosity hover:grayscale-0 transition-all duration-500"
-                        />
-                    </motion.div>
-
-                    <h2 className={cn("mb-2 text-2xl font-bold", isDark ? "text-white" : "text-stone-900")}>
-                        Giỏ hàng trống
-                    </h2>
-                    <p className={cn("mb-8 text-sm", isDark ? "text-slate-400" : "text-stone-500")}>
-                        Có vẻ như bạn chưa thêm sản phẩm nào vào giỏ hàng.
-                    </p>
-                    <Link
-                        to="/"
-                        className="rounded-xl bg-amber-500 px-8 py-3 text-sm font-bold text-white transition hover:bg-amber-600 hover:shadow-lg hover:shadow-amber-500/25 active:scale-95"
-                    >
-                        Tiếp tục mua sắm
-                    </Link>
-                </div>
-                <Footer />
-            </div>
+            emptyState({ kicker: "Giỏ hàng · 0 sản phẩm", title: "Giỏ hàng đang trống.", body: "Những gì bạn thêm sẽ được giữ ở đây khi đăng nhập, kể cả khi đổi thiết bị.", children: (<>
+                <Link to="/products" className={primaryBtn}>Xem sản phẩm</Link>
+                <Link to="/deals" className={ghostBtn}>Xem ưu đãi</Link>
+            </>) })
         )
     }
 
-    // Group items by Shop
+    // Group items by shop: each shop checks out as its own order
     const groupedItems = items.reduce((groups, item) => {
-        const shopName = item.shopName || 'Unknown Shop';
-        const shopId = item.shopId;
-        if (!groups[shopName]) {
-            groups[shopName] = {
-                shopId,
-                shopName,
-                items: []
-            };
-        }
-        groups[shopName].items.push(item);
-        return groups;
-    }, {});
+        const key = item.shopId ?? item.shopName ?? 'unknown'
+        if (!groups[key]) groups[key] = { shopId: item.shopId, shopName: item.shopName || 'Gian hàng', items: [] }
+        groups[key].items.push(item)
+        return groups
+    }, {})
+    const shops = Object.values(groupedItems)
+    const totalQty = items.reduce((acc, item) => acc + item.quantity, 0)
 
     return (
-        <div className={cn("min-h-screen flex flex-col justify-between transition-colors", isDark ? "bg-slate-950 text-slate-100" : "bg-stone-50 text-stone-900")}>
-            <div className="flex-1 py-10 px-4 sm:px-6 lg:px-8">
-                <div className="mx-auto max-w-7xl">
-                <h1 className={cn("mb-8 text-3xl font-bold", isDark ? "text-white" : "text-stone-900")}>
-                    Giỏ hàng của bạn
-                    <span className="ml-3 text-lg font-normal text-stone-500">
-                        ({items.length} sản phẩm)
-                    </span>
-                </h1>
+        <div className={page}>
+            <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
+                <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+                    <h1 className={cn('text-4xl font-bold tracking-[-0.03em] sm:text-5xl', ink)}>Giỏ hàng</h1>
+                    <span className={cn('font-mono text-sm', muted)}>{totalQty} SẢN PHẨM · {shops.length} GIAN HÀNG</span>
+                </div>
 
-                <div className="grid gap-8 lg:grid-cols-12">
-                    {/* Left Column: Cart Items List */}
-                    <div className="lg:col-span-8 space-y-6">
+                <div className="grid items-start gap-6 lg:grid-cols-[2fr_1fr]">
+                    <div className="flex flex-col gap-4">
                         <AnimatePresence>
-                            {Object.values(groupedItems).map((group) => (
-                                <motion.div
-                                    key={group.shopName}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, x: -20 }}
-                                    className={cn(
-                                        "overflow-hidden rounded-2xl border shadow-sm transition-all",
-                                        isDark ? "border-slate-800 bg-slate-900" : "border-stone-200 bg-white"
-                                    )}
-                                >
-                                    {/* Header: Shop Name */}
-                                    <div className={cn("px-6 py-4 border-b flex justify-between items-center", isDark ? "border-slate-800 bg-slate-800/50" : "border-stone-100 bg-stone-50")}>
-                                        <div className="flex items-center gap-2">
-                                            <div className="p-1.5 bg-amber-100 rounded-lg dark:bg-amber-900/30">
-                                                <HiOutlineShoppingBag className="w-5 h-5 text-amber-600 dark:text-amber-500" />
-                                            </div>
-                                            <span className={cn("font-bold text-lg", isDark ? "text-white" : "text-stone-800")}>
-                                                {group.shopName}
+                            {shops.map((group) => {
+                                const shopTotal = group.items.reduce((a, it) => a + Number(it.totalPrice || 0), 0)
+                                return (
+                                    <motion.section
+                                        key={group.shopId ?? group.shopName}
+                                        initial={{ opacity: 0, y: 12 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0 }}
+                                        aria-label={`Sản phẩm của ${group.shopName}`}
+                                        className={cn('overflow-hidden rounded-lg border', panel)}
+                                    >
+                                        <header className={cn('flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3', isDark ? 'border-slate-800' : 'border-stone-100')}>
+                                            <span className="flex items-center gap-2">
+                                                <span className={cn('font-mono text-[11px]', muted)}>BÁN BỞI</span>
+                                                {group.shopId ? (
+                                                    <Link to={`/shop/${group.shopId}`} className={cn('font-semibold hover:underline', ink)}>{group.shopName}</Link>
+                                                ) : (
+                                                    <span className={cn('font-semibold', ink)}>{group.shopName}</span>
+                                                )}
                                             </span>
-                                        </div>
-                                        {/* Checkout Button for this shop */}
-                                        <button
-                                            onClick={() => handleCheckout(group.shopId)}
-                                            disabled={!group.shopId}
-                                            className={cn(
-                                                "px-4 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center gap-2",
-                                                group.shopId
-                                                    ? "bg-amber-500 text-white hover:bg-amber-600 shadow-lg shadow-amber-500/20"
-                                                    : "bg-stone-200 text-stone-400 cursor-not-allowed"
-                                            )}
-                                        >
-                                            Mua từ Shop này <HiArrowRight />
-                                        </button>
-                                    </div>
+                                            <span className={cn('font-mono text-sm', ink)}>{fmt(shopTotal)}</span>
+                                        </header>
 
-                                    {/* Items List */}
-                                    <div className="divide-y divide-stone-100 dark:divide-slate-800">
-                                        {group.items.map((item) => (
-                                            <div key={item.id} className="p-6 transition-colors hover:bg-stone-50/50 dark:hover:bg-slate-800/50">
-                                                <div className="flex gap-4 sm:gap-6">
-                                                    {/* Product Image */}
-                                                    <div className="shrink-0">
-                                                        <img
-                                                            src={item.productImageUrl || '/product-placeholder.svg'}
-                                                            alt={item.productName}
-                                                            className="h-24 w-24 rounded-xl object-cover border border-stone-100 shadow-sm dark:border-slate-700 bg-stone-100 dark:bg-slate-800"
-                                                            onError={(e) => {
-                                                              e.target.src = '/product-placeholder.svg'
-                                                            }}
-                                                        />
-                                                    </div>
-
-                                                    {/* Product Info */}
-                                                    <div className="flex flex-1 flex-col justify-between">
-                                                        <div>
-                                                            <div className="flex justify-between items-start">
-                                                                <h3 className={cn("text-base font-medium line-clamp-2 pr-4", isDark ? "text-white" : "text-stone-900")}>
-                                                                    <Link to={`/products/${item.productId}`} className="hover:text-amber-500 transition-colors">
-                                                                        {item.productName}
-                                                                    </Link>
-                                                                </h3>
-                                                                <div className="mt-1 flex items-center gap-1.5 flex-wrap">
-                                                                    {item.conditionGrade && (
-                                                                        <span className={cn("text-[11px] font-semibold px-2 py-0.5 rounded-full border", getConditionBadge(item.conditionGrade)?.cls)}>
-                                                                            {getConditionBadge(item.conditionGrade)?.label}
-                                                                        </span>
-                                                                    )}
-                                                                    {item.warrantyType && (
-                                                                        <span className={cn("text-[11px] font-medium px-2 py-0.5 rounded-full border", getWarrantyBadge(item.warrantyType, item.warrantyMonths)?.cls)}>
-                                                                            {getWarrantyBadge(item.warrantyType, item.warrantyMonths)?.label}
-                                                                        </span>
-                                                                    )}
-                                                                    {(item.variantColor || item.variantSize) && (
-                                                                        <span className="text-[11px] text-stone-500 dark:text-slate-400 font-medium bg-stone-100 dark:bg-slate-800 px-2 py-0.5 rounded">
-                                                                            Phân loại: {[item.variantColor, item.variantSize].filter(Boolean).join(' - ')}
-                                                                        </span>
-                                                                    )}
+                                        <ul className={cn('divide-y', isDark ? 'divide-slate-800' : 'divide-stone-100')}>
+                                            {group.items.map((item) => {
+                                                const cond = item.conditionGrade ? getConditionBadge(item.conditionGrade) : null
+                                                const war = item.warrantyType ? getWarrantyBadge(item.warrantyType, item.warrantyMonths) : null
+                                                const meta = [cond?.label, war?.label, [item.variantColor, item.variantSize].filter(Boolean).join(' · ')].filter(Boolean).join(' · ')
+                                                return (
+                                                    <li key={item.id} className="grid grid-cols-[96px_minmax(0,1fr)] gap-4 p-4 sm:grid-cols-[120px_minmax(0,1fr)]">
+                                                        <Link to={`/products/${item.productId}`} className={cn('block aspect-square overflow-hidden rounded-md', isDark ? 'bg-slate-800' : 'bg-stone-100')}>
+                                                            <img
+                                                                src={item.productImageUrl || '/product-placeholder.svg'}
+                                                                alt={item.productName}
+                                                                className={cn('h-full w-full object-contain p-2', !isDark && 'mix-blend-multiply')}
+                                                                onError={(e) => { e.target.src = '/product-placeholder.svg' }}
+                                                            />
+                                                        </Link>
+                                                        <div className="flex min-w-0 flex-col gap-2.5">
+                                                            <div className="flex flex-wrap justify-between gap-2">
+                                                                <div className="flex min-w-0 flex-col gap-1">
+                                                                    <Link to={`/products/${item.productId}`} className={cn('text-[17px] font-semibold leading-snug hover:underline', ink)}>{item.productName}</Link>
+                                                                    {meta && <span className={cn('font-mono text-xs uppercase', muted)}>{meta}</span>}
                                                                 </div>
-                                                                <button
-                                                                    onClick={() => handleRemoveItem(item.id)}
-                                                                    className="p-2 text-stone-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-all dark:hover:bg-red-900/20 absolute top-0 right-0 sm:relative"
-                                                                    title="Xóa sản phẩm"
-                                                                >
-                                                                    <HiOutlineTrash className="h-5 w-5" />
-                                                                </button>
+                                                                <div className="text-right">
+                                                                    <strong className={cn('block font-mono text-lg', ink)}>{fmt(item.totalPrice)}</strong>
+                                                                    <span className={cn('font-mono text-xs', muted)}>{fmt(item.unitPrice)} / chiếc</span>
+                                                                </div>
                                                             </div>
-                                                            <p className={cn("mt-1 text-sm font-medium", isDark ? "text-amber-400" : "text-amber-600")}>
-                                                                {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.unitPrice)}
-                                                            </p>
-                                                        </div>
-
-                                                        <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
-                                                            {/* Quantity Control */}
-                                                            <div className={cn(
-                                                                "flex items-center rounded-lg border",
-                                                                isDark ? "border-slate-700 bg-slate-800" : "border-stone-200 bg-white"
-                                                            )}>
-                                                                <button
-                                                                    onClick={() => handleQuantityChange(item.id, item.quantity, -1)}
-                                                                    disabled={item.quantity <= 1}
-                                                                    className="p-2 hover:text-amber-600 disabled:opacity-30 disabled:hover:text-inherit transition-colors"
-                                                                >
-                                                                    <HiMinus className="h-3 w-3" />
+                                                            <div className="mt-auto flex flex-wrap items-center gap-3">
+                                                                <div role="group" aria-label={`Số lượng ${item.productName}`} className={cn('flex items-center rounded-md border', isDark ? 'border-slate-700' : 'border-stone-300')}>
+                                                                    <button type="button" aria-label="Giảm" onClick={() => handleQuantityChange(item.id, item.quantity, -1)} disabled={item.quantity <= 1} className="flex h-10 w-10 items-center justify-center disabled:opacity-30">
+                                                                        <HiMinus className="h-3.5 w-3.5" />
+                                                                    </button>
+                                                                    <span aria-live="polite" className={cn('w-8 text-center font-mono font-semibold', ink)}>{item.quantity}</span>
+                                                                    <button type="button" aria-label="Tăng" onClick={() => handleQuantityChange(item.id, item.quantity, 1)} className="flex h-10 w-10 items-center justify-center">
+                                                                        <HiPlus className="h-3.5 w-3.5" />
+                                                                    </button>
+                                                                </div>
+                                                                <button type="button" onClick={() => handleRemoveItem(item.id)} className="inline-flex items-center gap-1.5 px-1 py-2 text-[13px] text-red-700 underline dark:text-red-400">
+                                                                    <HiOutlineTrash className="h-4 w-4" /> Xóa
                                                                 </button>
-                                                                <span className={cn("w-10 text-center text-sm font-semibold", isDark ? "text-white" : "text-stone-900")}>
-                                                                    {item.quantity}
-                                                                </span>
-                                                                <button
-                                                                    onClick={() => handleQuantityChange(item.id, item.quantity, 1)}
-                                                                    className="p-2 hover:text-amber-600 transition-colors"
-                                                                >
-                                                                    <HiPlus className="h-3 w-3" />
-                                                                </button>
-                                                            </div>
-
-                                                            {/* Item Total */}
-                                                            <div className={cn("text-right font-bold", isDark ? "text-white" : "text-stone-900")}>
-                                                                {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.totalPrice)}
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </motion.div>
-                            ))}
+                                                    </li>
+                                                )
+                                            })}
+                                        </ul>
+
+                                        <footer className={cn('flex flex-wrap items-center justify-between gap-3 border-t px-4 py-3', isDark ? 'border-slate-800 bg-slate-950/40' : 'border-stone-100 bg-stone-50')}>
+                                            <span className={cn('text-[13px]', muted)}>Mỗi gian hàng là một đơn riêng, phí giao tính ở bước thanh toán.</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleCheckout(group.shopId)}
+                                                disabled={!group.shopId}
+                                                className={cn(primaryBtn, 'px-4 py-2.5 text-sm disabled:cursor-not-allowed disabled:opacity-40')}
+                                            >
+                                                Thanh toán đơn này <HiArrowRight className="h-4 w-4" />
+                                            </button>
+                                        </footer>
+                                    </motion.section>
+                                )
+                            })}
                         </AnimatePresence>
                     </div>
 
-                    {/* Right Column: Order Summary (Global) */}
-                    <div className="lg:col-span-4">
-                        <div className={cn(
-                            "sticky top-24 rounded-2xl border p-6 shadow-sm",
-                            isDark ? "border-slate-800 bg-slate-900" : "border-stone-200 bg-white"
-                        )}
-                        >
-                            <div className="flex items-center gap-2 mb-4">
-                                <HiTicket className="w-5 h-5 text-amber-500" />
-                                <h2 className={cn("font-bold text-lg", isDark ? "text-white" : "text-stone-900")}>Tóm tắt giỏ hàng</h2>
-                            </div>
-
-                            <div className="space-y-3 pb-4 border-b border-stone-100 dark:border-slate-800">
-                                <div className="flex justify-between text-sm">
-                                    <span className={isDark ? "text-slate-400" : "text-stone-600"}>Tổng số lượng</span>
-                                    <span className={isDark ? "text-white" : "text-stone-900"}>{items.reduce((acc, item) => acc + item.quantity, 0)} sản phẩm</span>
-                                </div>
-                            </div>
-
-                            <div className="flex justify-between items-center py-4">
-                                <span className={cn("font-bold text-lg", isDark ? "text-white" : "text-stone-900")}>Tổng tiền tạm tính</span>
-                                <span className="font-bold text-xl text-amber-500">
-                                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(total)}
-                                </span>
-                            </div>
-
-                            <div className={cn("mt-4 p-4 rounded-xl text-sm", isDark ? "bg-slate-800 text-slate-300" : "bg-stone-50 text-stone-600")}>
-                                <p>
-                                    * Phí vận chuyển và mã giảm giá sẽ được tính ở bước thanh toán. <br />
-                                    * Vui lòng chọn "Mua từ Shop này" ở từng danh sách sản phẩm để tiến hành đặt hàng theo từng Shop.
-                                </p>
-                            </div>
+                    <aside aria-labelledby="cart-summary" className={cn('sticky top-36 flex flex-col gap-4 rounded-lg border p-5', panel)}>
+                        <h2 id="cart-summary" className={cn('text-2xl font-bold', ink)}>Tóm tắt</h2>
+                        <dl className="flex flex-col gap-2.5 text-sm">
+                            <div className="flex justify-between"><dt className={muted}>Số lượng</dt><dd className={cn('font-mono', ink)}>{totalQty} sản phẩm</dd></div>
+                            <div className="flex justify-between"><dt className={muted}>Gian hàng</dt><dd className={cn('font-mono', ink)}>{shops.length}</dd></div>
+                            <div className="flex justify-between"><dt className={muted}>Phí giao hàng</dt><dd className={muted}>Tính ở bước tiếp</dd></div>
+                        </dl>
+                        <div className={cn('flex items-baseline justify-between border-t pt-4', isDark ? 'border-slate-800' : 'border-stone-200')}>
+                            <span className="font-semibold">Tạm tính</span>
+                            <strong className={cn('font-mono text-2xl', ink)}>{fmt(total)}</strong>
                         </div>
-                    </div>
+                        {shops.length === 1 && shops[0].shopId && (
+                            <button type="button" onClick={() => handleCheckout(shops[0].shopId)} className={primaryBtn}>Thanh toán</button>
+                        )}
+                        <p className={cn('flex items-start gap-2 text-xs leading-relaxed', muted)}>
+                            <HiTicket className="mt-0.5 h-4 w-4 shrink-0" />
+                            Mã giảm giá áp dụng ở bước thanh toán. Thanh toán qua VNPay hoặc ví; tiền được giữ an toàn đến khi bạn xác nhận đã nhận hàng.
+                        </p>
+                    </aside>
                 </div>
-            </div>
-            </div>
+            </main>
             <Footer />
         </div>
     )

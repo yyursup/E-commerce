@@ -62,14 +62,14 @@ export default function AdminLogin() {
       >
         <div className={cn('rounded-3xl border p-8 shadow-2xl', isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white')}>
           <div className="mb-8 text-center">
-            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-tr from-rose-600 to-amber-600 text-white shadow-lg shadow-rose-600/25">
+            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-lg bg-stone-950 text-white dark:bg-white dark:text-stone-950">
               <HiOutlineShieldCheck className="h-8 w-8" />
             </div>
             <h1 className={cn('text-2xl font-black tracking-tight', isDark ? 'text-white' : 'text-stone-900')}>
-              Cổng Quản Trị Sàn
+              Cổng quản trị sàn
             </h1>
             <p className="mt-1 text-xs text-stone-500 dark:text-slate-400 font-medium">
-              E-commerce Platform Administration Portal
+              E-Commerce Platform Administration Portal
             </p>
           </div>
 
@@ -119,7 +119,7 @@ export default function AdminLogin() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full mt-2 rounded-xl bg-gradient-to-r from-rose-600 to-amber-600 py-3 text-xs font-bold text-white shadow-md shadow-rose-500/25 hover:from-rose-700 hover:to-amber-700 transition-all disabled:opacity-50"
+              className="w-full mt-2 rounded-md py-3 text-xs font-bold bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200 transition-all disabled:opacity-50"
             >
               {isSubmitting ? 'Đang xác thực bảo mật...' : 'Đăng nhập Cổng Quản Trị'}
             </button>
@@ -133,7 +133,7 @@ export default function AdminLogin() {
             </p>
             <p>
               <a href="http://localhost:3001" target="_blank" rel="noreferrer" className="hover:underline">
-                Đến Kênh Người Bán
+                Đến kênh người bán
               </a>
             </p>
           </div>

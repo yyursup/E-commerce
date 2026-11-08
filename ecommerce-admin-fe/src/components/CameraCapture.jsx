@@ -186,7 +186,7 @@ export default function CameraCapture({ onCapture, onClose, isDark }) {
             className={cn(
               'flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white transition',
               isStreaming && !countdown
-                ? 'bg-amber-500 hover:bg-amber-600'
+                ? 'bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                 : 'bg-gray-400 cursor-not-allowed',
             )}
           >

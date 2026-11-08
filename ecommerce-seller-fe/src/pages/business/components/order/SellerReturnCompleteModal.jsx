@@ -43,7 +43,7 @@ export default function SellerReturnCompleteModal({
                 <span className="p-2 rounded-xl bg-emerald-500/15 text-emerald-500">
                   <HiOutlineCheckCircle className="h-5 w-5" />
                 </span>
-                <h3 className="font-bold text-base">Xác Nhận Hàng Đạt & Hoàn Tiền</h3>
+                <h3 className="font-bold text-base">Xác nhận hàng đạt & hoàn tiền</h3>
               </div>
               <button
                 type="button"
@@ -55,13 +55,13 @@ export default function SellerReturnCompleteModal({
             </div>
 
             <p className={cn('text-xs leading-relaxed', isDark ? 'text-slate-400' : 'text-stone-600')}>
-              Bạn xác nhận đã nhận lại sản phẩm hoàn trả trong tình trạng nguyên vẹn. Hệ thống sẽ hoàn tiền cho Khách hàng từ tài khoản ký quỹ sàn (Escrow).
+              Bạn xác nhận đã nhận lại sản phẩm hoàn trả trong tình trạng nguyên vẹn. Hệ thống sẽ hoàn tiền cho Khách hàng từ tài khoản ký quỹ sàn.
             </p>
 
             {/* Chi tiết cước vận chuyển 2 chiều trích từ Quỹ Shop */}
             <div className={cn(
               'p-3.5 rounded-xl border text-xs space-y-2',
-              isDark ? 'bg-amber-500/10 border-amber-500/25 text-amber-300' : 'bg-amber-50 border-amber-200 text-amber-900'
+              isDark ? 'bg-slate-800 text-white border-white' : 'bg-amber-50 border-amber-200 text-amber-900'
             )}>
               <div className="flex items-center justify-between font-bold">
                 <span className="flex items-center gap-1.5">
@@ -83,7 +83,7 @@ export default function SellerReturnCompleteModal({
                 </div>
               </div>
               <p className="text-[10px] text-stone-500 dark:text-slate-400 italic pt-1 border-t border-amber-500/20 leading-normal">
-                * Khoản cước này sẽ được tự động trích từ Quỹ Ký Quỹ Bảo Chứng Gian Hàng (ShopEscrowFund) để thanh toán cho đơn vị vận chuyển GHN.
+                * Khoản cước này sẽ được tự động trích từ Quỹ Ký Quỹ Bảo Chứng Gian Hàng để thanh toán cho đơn vị vận chuyển GHN.
               </p>
             </div>
 

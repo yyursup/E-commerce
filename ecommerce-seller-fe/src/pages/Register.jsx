@@ -101,7 +101,7 @@ export default function Register() {
           {/* Header */}
           <div className="mb-6 text-center">
             <Link to="/" className="inline-block">
-              <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/25">
+              <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl shadow-lg bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200">
                 <HiOutlineShoppingBag className="h-8 w-8" />
               </div>
             </Link>
@@ -111,10 +111,10 @@ export default function Register() {
                 isDark ? 'text-white' : 'text-stone-900'
               )}
             >
-              Đăng Ký Kênh Người Bán
+              Đăng ký kênh người bán
             </h1>
             <p className="mt-1 text-xs text-stone-500 dark:text-slate-400">
-              Tạo tài khoản để bắt đầu kinh doanh và mở gian hàng trên E-commerce
+              Tạo tài khoản để bắt đầu kinh doanh và mở gian hàng trên E-Commerce
             </p>
           </div>
 
@@ -137,7 +137,7 @@ export default function Register() {
                   autoComplete="username"
                   placeholder="Nhập username"
                   className={cn(
-                    'w-full rounded-xl pl-10 pr-4 py-2.5 text-xs border transition-all focus:outline-none focus:ring-2 focus:ring-amber-500',
+                    'w-full rounded-xl pl-10 pr-4 py-2.5 text-xs border transition-all focus:outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                     isDark
                       ? 'border-slate-700 bg-slate-800 text-white placeholder:text-slate-500'
                       : 'border-stone-200 bg-stone-50 text-stone-900 placeholder:text-stone-400',
@@ -184,7 +184,7 @@ export default function Register() {
                   autoComplete="tel"
                   placeholder="0912345678"
                   className={cn(
-                    'w-full rounded-xl pl-10 pr-4 py-2.5 text-xs border transition-all focus:outline-none focus:ring-2 focus:ring-amber-500',
+                    'w-full rounded-xl pl-10 pr-4 py-2.5 text-xs border transition-all focus:outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                     isDark
                       ? 'border-slate-700 bg-slate-800 text-white placeholder:text-slate-500'
                       : 'border-stone-200 bg-stone-50 text-stone-900 placeholder:text-stone-400',
@@ -225,7 +225,7 @@ export default function Register() {
                   autoComplete="email"
                   placeholder="seller@example.com"
                   className={cn(
-                    'w-full rounded-xl pl-10 pr-4 py-2.5 text-xs border transition-all focus:outline-none focus:ring-2 focus:ring-amber-500',
+                    'w-full rounded-xl pl-10 pr-4 py-2.5 text-xs border transition-all focus:outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                     isDark
                       ? 'border-slate-700 bg-slate-800 text-white placeholder:text-slate-500'
                       : 'border-stone-200 bg-stone-50 text-stone-900 placeholder:text-stone-400',
@@ -264,7 +264,7 @@ export default function Register() {
                   autoComplete="new-password"
                   placeholder="Tối thiểu 6 ký tự"
                   className={cn(
-                    'w-full rounded-xl pl-10 pr-4 py-2.5 text-xs border transition-all focus:outline-none focus:ring-2 focus:ring-amber-500',
+                    'w-full rounded-xl pl-10 pr-4 py-2.5 text-xs border transition-all focus:outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                     isDark
                       ? 'border-slate-700 bg-slate-800 text-white placeholder:text-slate-500'
                       : 'border-stone-200 bg-stone-50 text-stone-900 placeholder:text-stone-400',
@@ -303,7 +303,7 @@ export default function Register() {
                   autoComplete="new-password"
                   placeholder="Nhập lại mật khẩu"
                   className={cn(
-                    'w-full rounded-xl pl-10 pr-4 py-2.5 text-xs border transition-all focus:outline-none focus:ring-2 focus:ring-amber-500',
+                    'w-full rounded-xl pl-10 pr-4 py-2.5 text-xs border transition-all focus:outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                     isDark
                       ? 'border-slate-700 bg-slate-800 text-white placeholder:text-slate-500'
                       : 'border-stone-200 bg-stone-50 text-stone-900 placeholder:text-stone-400',
@@ -328,7 +328,7 @@ export default function Register() {
                   id="agreeToTerms"
                   type="checkbox"
                   className={cn(
-                    'mt-0.5 h-3.5 w-3.5 rounded border text-amber-500 focus:ring-amber-500 cursor-pointer',
+                    'mt-0.5 h-3.5 w-3.5 rounded border text-amber-500 focus:ring-stone-950/30 dark:focus:ring-white/40 cursor-pointer',
                     isDark ? 'border-slate-700 bg-slate-800' : 'border-stone-300 bg-white',
                     errors.agreeToTerms && 'border-rose-500 ring-1 ring-rose-500'
                   )}
@@ -351,7 +351,7 @@ export default function Register() {
                   >
                     Quy chế hoạt động & Điều khoản Kênh Người Bán
                   </button>{' '}
-                  của sàn E-commerce.
+                  của sàn E-Commerce.
                 </label>
               </div>
               {errors.agreeToTerms && (
@@ -363,7 +363,7 @@ export default function Register() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full mt-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 py-3 text-xs font-bold text-white shadow-md shadow-amber-500/25 hover:from-amber-600 hover:to-orange-600 transition-all disabled:opacity-50"
+              className="w-full mt-2 rounded-xl py-3 text-xs font-bold transition-all disabled:opacity-50 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
             >
               {isSubmitting ? 'Đang tạo tài khoản...' : 'Tạo Tài Khoản & Tiếp Tục Mở Shop'}
             </button>

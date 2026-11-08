@@ -36,7 +36,7 @@ export default function ViolationDetailModal({
                   )}>
                     {detailViolation.targetType === 'SHOP' ? 'Gian hàng' : 'Sản phẩm'}
                   </span>
-                  <h2 className="text-base font-bold">Hồ Sơ Vi Phạm #{String(detailViolation.reportId || detailViolation.targetId).substring(0, 8)}</h2>
+                  <h2 className="text-base font-bold">Hồ sơ vi phạm #{String(detailViolation.reportId || detailViolation.targetId).substring(0, 8)}</h2>
                 </div>
                 <p className={cn('text-xs mt-0.5', isDark ? 'text-slate-400' : 'text-stone-500')}>
                   Thời gian ghi nhận: {detailViolation.createdAt ? new Date(detailViolation.createdAt).toLocaleString('vi-VN') : 'Gần đây'}
@@ -92,7 +92,7 @@ export default function ViolationDetailModal({
               )}
               <div className={cn(
                 'p-3.5 rounded-2xl border text-xs leading-relaxed',
-                isDark ? 'border-amber-500/20 bg-amber-500/5 text-amber-300' : 'border-amber-200 bg-amber-50/50 text-amber-800'
+                isDark ? 'bg-slate-800 text-white border-white' : 'border-amber-200 bg-amber-50/50 text-amber-800'
               )}>
                 {detailViolation.adminNote || 'Hồ sơ đã được Ban Quản Trị kiểm duyệt, xác minh bằng chứng và áp dụng chế tài tương ứng.'}
               </div>
@@ -180,7 +180,7 @@ export default function ViolationDetailModal({
                                 href={imgUrl}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow"
+                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold shadow bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
                               >
                                 <HiOutlineExternalLink className="h-4 w-4" />
                                 Xem ảnh gốc

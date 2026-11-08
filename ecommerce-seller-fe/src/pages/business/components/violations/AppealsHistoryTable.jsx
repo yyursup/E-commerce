@@ -15,14 +15,14 @@ export default function AppealsHistoryTable({
   return (
     <div
       className={cn(
-        'rounded-3xl border p-6 shadow-sm transition-colors space-y-4',
+        'rounded-3xl border p-6 transition-colors space-y-4',
         isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
       )}
     >
       <div className="flex items-center justify-between">
         <div>
           <h2 className={cn('text-lg font-bold tracking-tight', isDark ? 'text-white' : 'text-stone-900')}>
-            Lịch Sử Đơn Kháng Cáo
+            Lịch sử đơn kháng cáo
           </h2>
           <p className={cn('text-xs', isDark ? 'text-slate-400' : 'text-stone-500')}>
             Danh sách các hồ sơ giải trình đang được Quản trị viên sàn thẩm định để khôi phục điểm uy tín
@@ -83,7 +83,7 @@ export default function AppealsHistoryTable({
                           href={imgUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-500/25 bg-amber-500/5 hover:bg-amber-500/10 text-amber-500 text-xs font-semibold transition"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border hover:bg-amber-500/10 text-xs font-semibold transition bg-stone-100 text-stone-950 border-stone-950"
                         >
                           <HiOutlinePhotograph className="h-4 w-4" />
                           {appealImgs.length === 1 ? 'Hình ảnh' : `Hình ảnh #${aIdx + 1}`}

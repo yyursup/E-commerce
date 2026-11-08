@@ -23,7 +23,7 @@ export default function AdminOrders() {
         <div>
           <h1 className="text-2xl font-black flex items-center gap-2.5">
             <HiOutlineOfficeBuilding className="h-7 w-7 text-amber-500" />
-            <span>Gian Hàng & Đơn Hàng</span>
+            <span>Gian hàng & đơn hàng</span>
           </h1>
           <p className={cn('mt-1 text-sm', isDark ? 'text-slate-400' : 'text-stone-500')}>
             Danh sách tất cả các gian hàng trên sàn. Click vào gian hàng bất kỳ để xem toàn bộ đơn hàng và quản lý ký quỹ.

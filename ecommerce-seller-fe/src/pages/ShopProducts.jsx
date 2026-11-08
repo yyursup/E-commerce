@@ -165,7 +165,7 @@ export default function ShopProducts() {
     if (st === 'PENDING_APPROVAL') {
       return {
         label: 'Chờ duyệt kiểm định',
-        color: 'bg-amber-500/20 text-amber-500 border border-amber-500/40 font-bold',
+        color: 'border font-bold bg-stone-100 text-stone-950 border-stone-950',
       }
     }
     if (st === 'REJECTED') {
@@ -205,7 +205,7 @@ export default function ShopProducts() {
       case 'GRADE_OPEN_BOX':
         return { label: 'Trưng bày 99%', color: 'border-sky-500/30 bg-sky-500/10 text-sky-500' }
       case 'GRADE_LIKE_NEW':
-        return { label: 'Like New 99%', color: 'border-amber-500/30 bg-amber-500/10 text-amber-500' }
+        return { label: 'Like New 99%', color: 'bg-stone-100 text-stone-950 border-stone-950' }
       case 'GRADE_FAIR':
         return { label: 'Cũ 90-95%', color: 'border-orange-500/30 bg-orange-500/10 text-orange-500' }
       case 'GRADE_AS_IS':
@@ -219,19 +219,19 @@ export default function ShopProducts() {
     <div className="space-y-6">
       {/* Top Banner & Actions */}
       <div className={cn(
-        'rounded-3xl border p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-colors',
+        'rounded-3xl border p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-colors',
         isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
       )}>
         <div>
           <h1 className={cn('text-2xl font-bold tracking-tight', isDark ? 'text-white' : 'text-stone-900')}>
-            Quản Lý Sản Phẩm
+            Quản lý sản phẩm
           </h1>
           <div className="flex items-center gap-3 mt-1 flex-wrap">
             <p className={cn('text-xs', isDark ? 'text-slate-400' : 'text-stone-500')}>
               Tổng số: <span className="font-extrabold text-amber-500">{products.length}</span> sản phẩm trong gian hàng
             </p>
             {featuredCount > 0 && (
-              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-500 bg-amber-500/10 border border-amber-500/25 px-2.5 py-0.5 rounded-full">
+              <span className="inline-flex items-center gap-1 text-[11px] font-bold border px-2.5 py-0.5 rounded-full bg-stone-100 text-stone-950 border-stone-950">
                 <HiStar className="h-3.5 w-3.5" />
                 Đang đẩy: {featuredCount}/5 sản phẩm
               </span>
@@ -261,7 +261,7 @@ export default function ShopProducts() {
               "flex-1 sm:flex-initial flex items-center justify-center gap-2 rounded-2xl px-5 py-2.5 text-xs font-bold transition-all shadow-md",
               isShopClosed || isPendingDeposit
                 ? "bg-stone-300 text-stone-500 dark:bg-slate-800 dark:text-slate-500 cursor-not-allowed shadow-none"
-                : "bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 active:scale-95 shadow-amber-500/25"
+                : "active:scale-95 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
             )}
             title={isShopClosed ? 'Gian hàng đã đóng cửa' : undefined}
           >
@@ -284,7 +284,7 @@ export default function ShopProducts() {
           </div>
           <button
             onClick={() => navigate('/escrow-fund')}
-            className="px-4 py-2 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs shadow transition shrink-0"
+            className="px-4 py-2 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs transition shrink-0"
           >
             Xem Quỹ & Ví &rarr;
           </button>
@@ -304,7 +304,7 @@ export default function ShopProducts() {
           </div>
           <button
             onClick={() => navigate('/escrow-fund')}
-            className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow transition shrink-0"
+            className="px-4 py-2 rounded-xl font-bold text-xs transition shrink-0 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
           >
             Nạp ký quỹ kích hoạt &rarr;
           </button>
@@ -321,10 +321,10 @@ export default function ShopProducts() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className={cn(
-              'w-full rounded-2xl pl-10 pr-4 py-2.5 text-xs border outline-none transition-all focus:ring-2 focus:ring-amber-500/40',
+              'w-full rounded-2xl pl-10 pr-4 py-2.5 text-xs border outline-none transition-all focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
               isDark
-                ? 'border-slate-800 bg-slate-900 text-slate-100 placeholder-slate-500 focus:border-amber-500'
-                : 'border-stone-200 bg-white text-stone-900 placeholder-stone-400 focus:border-amber-500'
+                ? 'border-slate-800 bg-slate-900 text-slate-100 placeholder-slate-500 focus:border-stone-950 dark:focus:border-white'
+                : 'border-stone-200 bg-white text-stone-900 placeholder-stone-400 focus:border-stone-950 dark:focus:border-white'
             )}
           />
           <HiOutlineSearch className={cn('absolute left-3.5 top-3 h-4 w-4', isDark ? 'text-slate-400' : 'text-stone-400')} />
@@ -353,7 +353,7 @@ export default function ShopProducts() {
                 className={cn(
                   'px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all',
                   isActive
-                    ? 'bg-amber-500 text-white shadow-md shadow-amber-500/25'
+                    ? 'bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                     : isDark
                       ? 'text-slate-300 hover:text-white hover:bg-slate-800'
                       : 'text-stone-600 hover:text-stone-900 hover:bg-white'
@@ -424,10 +424,10 @@ export default function ShopProducts() {
                   'group rounded-2xl border p-4 sm:p-5 transition-all duration-200 cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-4 relative',
                   isFeatured
                     ? isDark
-                      ? 'border-amber-500/50 bg-amber-500/5 hover:border-amber-400 hover:shadow-lg hover:shadow-amber-500/10'
-                      : 'border-amber-400/60 bg-amber-50/40 hover:border-amber-500 hover:shadow-md hover:shadow-amber-500/10'
+                      ? 'border-amber-500/50 bg-amber-500/5 hover:border-amber-400 hover:shadow-amber-500/10'
+                      : 'border-amber-400/60 bg-amber-50/40 hover:border-amber-500 hover:shadow-amber-500/10'
                     : isDark
-                      ? 'border-slate-800 bg-slate-900 hover:border-amber-500/50 hover:bg-slate-900/90 hover:shadow-lg hover:shadow-amber-500/5'
+                      ? 'border-slate-800 bg-slate-900 hover:border-amber-500/50 hover:bg-slate-900/90 hover:shadow-amber-500/5'
                       : 'border-stone-200 bg-white hover:border-amber-400 hover:bg-amber-50/20 hover:shadow-md'
                 )}
                 title="Nhấp để xem chi tiết sản phẩm"
@@ -457,8 +457,8 @@ export default function ShopProducts() {
                         <span className={cn(
                           'font-mono font-bold text-[11px] px-2 py-0.5 rounded-lg border tracking-wider shrink-0',
                           isDark
-                            ? 'border-amber-500/25 bg-amber-500/10 text-amber-400'
-                            : 'border-amber-500/30 bg-amber-50 text-amber-700'
+                            ? 'bg-slate-800 text-white border-white'
+                            : 'bg-stone-100 text-stone-950 border-stone-950'
                         )}>
                           SKU: {prod.sku}
                         </span>
@@ -498,12 +498,12 @@ export default function ShopProducts() {
                         </span>
                       )}
                       {prod.flagged && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-bold text-amber-500 border border-amber-500/30 shrink-0">
+                        <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold border shrink-0 bg-stone-100 text-stone-950 border-stone-950">
                           <HiOutlineExclamation className="h-3.5 w-3.5" /> Bị cảnh báo ({prod.reportCount || 0} tố cáo)
                         </span>
                       )}
                       {isFeatured && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] font-bold text-amber-500 border border-amber-500/25 shrink-0">
+                        <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold border shrink-0 bg-stone-100 text-stone-950 border-stone-950">
                           <HiStar className="h-3 w-3" /> Đang đẩy
                         </span>
                       )}
@@ -539,7 +539,7 @@ export default function ShopProducts() {
                       </div>
                     )}
                     {prod.status === 'PENDING_APPROVAL' && (
-                      <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-2 text-xs text-amber-500 font-medium">
+                      <div className="rounded-xl border p-2 text-xs font-medium bg-stone-100 text-stone-950 border-stone-950">
                         Đang chờ Admin duyệt sản phẩm công nghệ (kiểm tra ngoại quan / thông số).
                       </div>
                     )}
@@ -576,7 +576,7 @@ export default function ShopProducts() {
                         : formatVND(minPrice || price)}
                     </span>
                     {prod.variants?.length > 0 && (
-                      <span className="block text-[11px] font-semibold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20 mt-0.5 md:ml-auto w-fit">
+                      <span className="block text-[11px] font-semibold px-2 py-0.5 rounded-md border mt-0.5 md:ml-auto w-fit bg-stone-100 text-stone-950 border-stone-950">
                         {prod.variants.length} phân loại
                       </span>
                     )}
@@ -599,7 +599,7 @@ export default function ShopProducts() {
                           className={cn(
                             'p-2 rounded-xl border transition-all active:scale-95 disabled:opacity-50',
                             isFeatured
-                              ? 'border-amber-500/50 bg-amber-500/15 text-amber-500 hover:bg-amber-500/25'
+                              ? 'hover:bg-amber-500/25 bg-stone-100 text-stone-950 border-stone-950'
                               : isDark
                                 ? 'border-slate-800 bg-slate-800/80 text-slate-400 hover:text-amber-400 hover:border-amber-500/40'
                                 : 'border-stone-200 bg-stone-50 text-stone-400 hover:text-amber-500 hover:border-amber-400'

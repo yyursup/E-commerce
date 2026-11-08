@@ -160,12 +160,12 @@ export default function CreateAdminVoucherModal({ isOpen, onClose, onSuccess, is
         >
           <div className={cn("flex items-center justify-between pb-4 border-b shrink-0", isDark ? "border-slate-800" : "border-stone-100")}>
             <div className="flex items-center gap-2.5">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-500 text-white font-bold shrink-0">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl font-bold shrink-0 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200">
                 <HiOutlineTicket className="h-5 w-5" />
               </span>
               <div>
                 <h3 className={cn('text-lg font-bold', isDark ? 'text-white' : 'text-stone-900')}>
-                  Tạo Voucher Toàn Sàn
+                  Tạo voucher toàn sàn
                 </h3>
                 <p className={cn("text-xs", isDark ? "text-slate-400" : "text-stone-500")}>Chi phí chiết khấu/vận chuyển do Sàn chi trả</p>
               </div>
@@ -193,7 +193,7 @@ export default function CreateAdminVoucherModal({ isOpen, onClose, onSuccess, is
                   value={formData.code}
                   onChange={handleInputChange}
                   className={cn(
-                    'w-full rounded-xl border px-3.5 py-2.5 uppercase font-mono font-bold tracking-wider outline-none focus:ring-2 focus:ring-amber-500',
+                    'w-full rounded-xl border px-3.5 py-2.5 uppercase font-mono font-bold tracking-wider outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                     isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-200 bg-stone-50 text-stone-900'
                   )}
                 />
@@ -211,7 +211,7 @@ export default function CreateAdminVoucherModal({ isOpen, onClose, onSuccess, is
                   value={formData.title}
                   onChange={handleInputChange}
                   className={cn(
-                    'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-amber-500',
+                    'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                     isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-200 bg-stone-50 text-stone-900'
                   )}
                 />
@@ -221,7 +221,7 @@ export default function CreateAdminVoucherModal({ isOpen, onClose, onSuccess, is
             {/* Description */}
             <div>
               <label className={cn("block font-bold mb-1", isDark ? "text-slate-200" : "text-stone-700")}>
-                Mô Tả & Điều Kiện Áp Dụng
+                Mô tả & điều kiện áp dụng
               </label>
               <textarea
                 name="description"
@@ -230,7 +230,7 @@ export default function CreateAdminVoucherModal({ isOpen, onClose, onSuccess, is
                 value={formData.description}
                 onChange={handleInputChange}
                 className={cn(
-                  'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-amber-500 resize-none',
+                  'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40 resize-none',
                   isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-200 bg-stone-50 text-stone-900'
                 )}
               />
@@ -240,7 +240,7 @@ export default function CreateAdminVoucherModal({ isOpen, onClose, onSuccess, is
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="min-w-0">
                 <label className={cn("block font-bold mb-1", isDark ? "text-slate-200" : "text-stone-700")}>
-                  Loại Khuyến Mãi
+                  Loại khuyến mãi
                 </label>
                 <div className="relative">
                   <select
@@ -248,13 +248,13 @@ export default function CreateAdminVoucherModal({ isOpen, onClose, onSuccess, is
                     value={formData.voucherType}
                     onChange={handleInputChange}
                     className={cn(
-                      'w-full appearance-none rounded-xl border px-3.5 py-2.5 pr-10 outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer',
+                      'w-full appearance-none rounded-xl border px-3.5 py-2.5 pr-10 outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40 cursor-pointer',
                       isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-200 bg-stone-50 text-stone-900'
                     )}
                   >
-                    <option value="FREE_SHIPPING">Miễn Phí Vận Chuyển (GHN Express)</option>
-                    <option value="PERCENTAGE">Giảm Theo Phần Trăm Toàn Sàn (%)</option>
-                    <option value="FIXED_AMOUNT">Giảm Số Tiền Cố Định (VNĐ)</option>
+                    <option value="FREE_SHIPPING">Miễn phí vận chuyển</option>
+                    <option value="PERCENTAGE">Giảm theo phần trăm toàn sàn (%)</option>
+                    <option value="FIXED_AMOUNT">Giảm số tiền cố định (VNĐ)</option>
                   </select>
                   <HiOutlineChevronDown className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400 dark:text-slate-400" />
                 </div>
@@ -285,7 +285,7 @@ export default function CreateAdminVoucherModal({ isOpen, onClose, onSuccess, is
                   value={formData.discountValue}
                   onChange={handleInputChange}
                   className={cn(
-                    'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-amber-500',
+                    'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                     isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-200 bg-stone-50 text-stone-900'
                   )}
                 />
@@ -296,7 +296,7 @@ export default function CreateAdminVoucherModal({ isOpen, onClose, onSuccess, is
             <div className={cn("grid gap-4", formData.voucherType === 'PERCENTAGE' ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1")}>
               <div className="min-w-0">
                 <label className={cn("block font-bold mb-1", isDark ? "text-slate-200" : "text-stone-700")}>
-                  Giá Trị Đơn Tối Thiểu (VNĐ)
+                  Giá trị đơn tối thiểu (VNĐ)
                 </label>
                 <input
                   type="number"
@@ -307,7 +307,7 @@ export default function CreateAdminVoucherModal({ isOpen, onClose, onSuccess, is
                   value={formData.minOrderValue}
                   onChange={handleInputChange}
                   className={cn(
-                    'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-amber-500',
+                    'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                     isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-200 bg-stone-50 text-stone-900'
                   )}
                 />
@@ -316,7 +316,7 @@ export default function CreateAdminVoucherModal({ isOpen, onClose, onSuccess, is
               {formData.voucherType === 'PERCENTAGE' && (
                 <div className="min-w-0">
                   <label className={cn("block font-bold mb-1", isDark ? "text-slate-200" : "text-stone-700")}>
-                    Mức Giảm Tối Đa (VNĐ)
+                    Mức giảm tối đa (VNĐ)
                   </label>
                   <input
                     type="number"
@@ -327,7 +327,7 @@ export default function CreateAdminVoucherModal({ isOpen, onClose, onSuccess, is
                     value={formData.maxDiscountAmount}
                     onChange={handleInputChange}
                     className={cn(
-                      'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-amber-500',
+                      'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                       isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-200 bg-stone-50 text-stone-900'
                     )}
                   />
@@ -339,7 +339,7 @@ export default function CreateAdminVoucherModal({ isOpen, onClose, onSuccess, is
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="min-w-0">
                 <label className={cn("block font-bold mb-1", isDark ? "text-slate-200" : "text-stone-700")}>
-                  Tổng Lượt Sử Dụng Toàn Sàn
+                  Tổng lượt sử dụng toàn sàn
                 </label>
                 <input
                   type="number"
@@ -350,7 +350,7 @@ export default function CreateAdminVoucherModal({ isOpen, onClose, onSuccess, is
                   value={formData.usageLimit}
                   onChange={handleInputChange}
                   className={cn(
-                    'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-amber-500',
+                    'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                     isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-200 bg-stone-50 text-stone-900'
                   )}
                 />
@@ -358,7 +358,7 @@ export default function CreateAdminVoucherModal({ isOpen, onClose, onSuccess, is
 
               <div className="min-w-0">
                 <label className={cn("block font-bold mb-1", isDark ? "text-slate-200" : "text-stone-700")}>
-                  Lượt Dùng Mỗi Tài Khoản
+                  Lượt dùng mỗi tài khoản
                 </label>
                 <input
                   type="number"
@@ -369,7 +369,7 @@ export default function CreateAdminVoucherModal({ isOpen, onClose, onSuccess, is
                   value={formData.userUsageLimit}
                   onChange={handleInputChange}
                   className={cn(
-                    'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-amber-500',
+                    'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                     isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-200 bg-stone-50 text-stone-900'
                   )}
                 />
@@ -380,7 +380,7 @@ export default function CreateAdminVoucherModal({ isOpen, onClose, onSuccess, is
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="min-w-0">
                 <label className={cn("block font-bold mb-1", isDark ? "text-slate-200" : "text-stone-700")}>
-                  Ngày Bắt Đầu
+                  Ngày bắt đầu
                 </label>
                 <input
                   type="datetime-local"
@@ -388,7 +388,7 @@ export default function CreateAdminVoucherModal({ isOpen, onClose, onSuccess, is
                   value={formData.startDate}
                   onChange={handleInputChange}
                   className={cn(
-                    'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-amber-500',
+                    'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                     isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-200 bg-stone-50 text-stone-900'
                   )}
                 />
@@ -396,7 +396,7 @@ export default function CreateAdminVoucherModal({ isOpen, onClose, onSuccess, is
 
               <div className="min-w-0">
                 <label className={cn("block font-bold mb-1", isDark ? "text-slate-200" : "text-stone-700")}>
-                  Ngày Kết Thúc (HSD)
+                  Ngày kết thúc (HSD)
                 </label>
                 <input
                   type="datetime-local"
@@ -404,7 +404,7 @@ export default function CreateAdminVoucherModal({ isOpen, onClose, onSuccess, is
                   value={formData.endDate}
                   onChange={handleInputChange}
                   className={cn(
-                    'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-amber-500',
+                    'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                     isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-200 bg-stone-50 text-stone-900'
                   )}
                 />
@@ -422,7 +422,7 @@ export default function CreateAdminVoucherModal({ isOpen, onClose, onSuccess, is
               <button
                 type="submit"
                 disabled={creating}
-                className="px-6 py-2.5 rounded-xl font-bold text-white bg-amber-500 hover:bg-amber-600 shadow-md shadow-amber-500/25 transition-all"
+                className="px-6 py-2.5 rounded-xl font-bold shadow-md transition-all bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
               >
                 {creating ? 'Đang tạo...' : 'Phát Hành Voucher Sàn'}
               </button>

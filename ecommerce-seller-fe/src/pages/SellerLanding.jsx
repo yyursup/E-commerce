@@ -50,17 +50,17 @@ export default function SellerLanding() {
     },
     {
       icon: HiOutlineShieldCheck,
-      title: 'Ký Quỹ Escrow An Toàn',
+      title: 'Ký quỹ escrow an toàn',
       desc: 'Hệ thống bảo vệ dòng tiền ký quỹ tự động. Tiền bán hàng về ví ngay khi khách hàng xác nhận nhận hàng.',
     },
     {
       icon: HiOutlineIdentification,
-      title: 'Xác Minh Danh Tính eKYC & GPKD',
+      title: 'Xác minh danh tính eKYC & GPKD',
       desc: 'Quy trình thẩm định minh bạch với công nghệ nhận diện CCCD và Giấy phép kinh doanh, bảo vệ uy tín người bán.',
     },
     {
       icon: HiOutlineChartBar,
-      title: 'Báo Cáo & Thống Kê Thời Gian Thực',
+      title: 'Báo cáo & thống kê thời gian thực',
       desc: 'Theo dõi chi tiết doanh số, lượng đơn theo trạng thái và đối soát dòng tiền hoa hồng sàn minh bạch.',
     },
   ]
@@ -73,12 +73,12 @@ export default function SellerLanding() {
     },
     {
       number: '02',
-      title: 'Ban Quản Trị Phê Duyệt',
+      title: 'Ban quản trị phê duyệt',
       desc: 'Hồ sơ được thẩm định và kích hoạt quyền kinh doanh trên sàn.',
     },
     {
       number: '03',
-      title: 'Đăng Sản Phẩm & Bán Hàng',
+      title: 'Đăng sản phẩm & bán hàng',
       desc: 'Tải sản phẩm lên MinIO, liên kết kho GHN và đón nhận đơn hàng đầu tiên.',
     },
   ]
@@ -90,12 +90,12 @@ export default function SellerLanding() {
         isDark ? 'border-slate-800 bg-slate-900/90' : 'border-stone-200 bg-white/90'
       )}>
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/20">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200">
             <HiOutlineShoppingBag className="h-6 w-6" />
           </div>
           <div>
-            <span className="text-base font-black tracking-tight bg-gradient-to-r from-amber-600 to-orange-500 bg-clip-text text-transparent">
-              Kênh Người Bán
+            <span className="text-base font-black tracking-tight">
+              Kênh người bán
             </span>
             <span className="hidden sm:inline-block ml-2 text-[11px] font-medium text-stone-400">
               E-Commerce Marketplace
@@ -125,12 +125,12 @@ export default function SellerLanding() {
             <div className="flex items-center gap-2">
               <button
                 onClick={handlePrimaryAction}
-                className="rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-2 text-xs font-bold text-white shadow-md shadow-amber-500/20 hover:from-amber-600 hover:to-orange-600 transition-all"
+                className="rounded-xl px-4 py-2 text-xs font-bold transition-all bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
               >
                 {userRole === 'BUSINESS'
                   ? 'Vào Kênh Quản Trị'
                   : sellerStatus === 'PENDING'
-                  ? 'Xem Hồ Sơ Đang Chờ Duyệt'
+                  ? 'Xem hồ sơ đang chờ duyệt'
                   : sellerStatus === 'REJECTED'
                   ? 'Xem Phản Hồi Từ Chối'
                   : 'Hoàn Tất Đăng Ký Shop'}
@@ -157,9 +157,9 @@ export default function SellerLanding() {
               </Link>
               <Link
                 to="/register"
-                className="rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-2 text-xs font-bold text-white shadow-md shadow-amber-500/20 hover:from-amber-600 hover:to-orange-600 transition-all"
+                className="rounded-xl px-4 py-2 text-xs font-bold shadow-md transition-all bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
               >
-                Đăng ký Mở Shop
+                Đăng ký mở shop
               </Link>
             </div>
           )}
@@ -174,14 +174,11 @@ export default function SellerLanding() {
           transition={{ duration: 0.5 }}
           className="max-w-3xl space-y-6"
         >
-          <span className="inline-flex items-center gap-2 rounded-full bg-amber-500/10 border border-amber-500/20 px-4 py-1.5 text-xs font-extrabold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
-            ⭐ Nền Tảng Bán Hàng Trực Tuyến Chuyên Nghiệp
-          </span>
 
           <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight">
-            Kinh Doanh Dễ Dàng, Tiếp Cận{' '}
-            <span className="bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent">
-              Hàng Triệu Khách Hàng
+            Kinh doanh dễ dàng, tiếp cận{' '}
+            <span className="text-amber-600 dark:text-amber-500">
+              hàng triệu khách hàng
             </span>
           </h1>
 
@@ -192,7 +189,7 @@ export default function SellerLanding() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
             <button
               onClick={handlePrimaryAction}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 px-8 py-4 text-sm font-bold text-white shadow-xl shadow-amber-500/25 hover:from-amber-600 hover:to-orange-600 transition-all group"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl px-8 py-4 text-sm font-bold transition-all group bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
             >
               <span>
                 {isAuthenticated
@@ -212,7 +209,7 @@ export default function SellerLanding() {
                 )}
               >
                 <HiOutlineLogin className="h-4 w-4" />
-                Đăng nhập Kênh Người Bán
+                Đăng nhập kênh người bán
               </Link>
             )}
           </div>
@@ -223,7 +220,7 @@ export default function SellerLanding() {
       <section className={cn('py-16 px-4 sm:px-8 border-t border-b', isDark ? 'bg-slate-900/40 border-slate-800/80' : 'bg-stone-100/60 border-stone-200')}>
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12 space-y-2">
-            <h2 className="text-2xl font-black">Tại Sao Nên Bán Hàng Cùng Chúng Tôi?</h2>
+            <h2 className="text-2xl font-black">Tại sao nên bán hàng cùng chúng tôi?</h2>
             <p className="text-xs text-stone-500 dark:text-slate-400">Những công cụ mạnh mẽ hỗ trợ nhà bán hàng tăng trưởng doanh thu</p>
           </div>
 
@@ -237,7 +234,7 @@ export default function SellerLanding() {
                     isDark ? 'border-slate-800 bg-slate-900/90 hover:border-amber-500/30' : 'border-stone-200 bg-white hover:border-amber-500/40'
                   )}
                 >
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-500 mb-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl mb-4 bg-stone-100 text-stone-950">
                     <Icon className="h-6 w-6" />
                   </div>
                   <h3 className="text-sm font-bold mb-2">{feat.title}</h3>
@@ -252,7 +249,7 @@ export default function SellerLanding() {
       {/* 3 Simple Steps */}
       <section className="py-16 px-4 sm:px-8 max-w-6xl mx-auto">
         <div className="text-center mb-12 space-y-2">
-          <h2 className="text-2xl font-black">3 Bước Đơn Giản Để Bắt Đầu</h2>
+          <h2 className="text-2xl font-black">3 bước đơn giản để bắt đầu</h2>
           <p className="text-xs text-stone-500 dark:text-slate-400">Quy trình gia nhập tinh gọn, xét duyệt nhanh chóng</p>
         </div>
 
@@ -274,7 +271,7 @@ export default function SellerLanding() {
         <div className="mt-12 text-center">
           <button
             onClick={handlePrimaryAction}
-            className="inline-flex items-center gap-2 rounded-2xl bg-amber-500 px-8 py-3.5 text-xs font-bold text-white shadow-lg shadow-amber-500/20 hover:bg-amber-600 transition-all"
+            className="inline-flex items-center gap-2 rounded-2xl px-8 py-3.5 text-xs font-bold transition-all bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
           >
             Đăng ký Gian hàng Ngay
           </button>

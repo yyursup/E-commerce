@@ -267,10 +267,10 @@ export default function ReviewModal({ isOpen, onClose, subOrderId, productId, pr
                                     onChange={(e) => setComment(e.target.value)}
                                     placeholder="Sản phẩm dùng rất tốt, đóng gói cẩn thận, giao hàng nhanh chóng..."
                                     className={cn(
-                                        'w-full rounded-2xl border p-3.5 text-xs sm:text-sm transition focus:outline-none focus:ring-2 focus:ring-amber-500/50 resize-none',
+                                        'w-full rounded-2xl border p-3.5 text-xs sm:text-sm transition focus:outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40 resize-none',
                                         isDark
-                                            ? 'border-slate-700 bg-slate-800 text-white placeholder:text-slate-500 focus:border-amber-500'
-                                            : 'border-stone-200 bg-stone-50 text-stone-900 placeholder:text-stone-400 focus:border-amber-500'
+                                            ? 'border-slate-700 bg-slate-800 text-white placeholder:text-slate-500 focus:border-stone-950 dark:focus:border-white'
+                                            : 'border-stone-200 bg-stone-50 text-stone-900 placeholder:text-stone-400 focus:border-stone-950 dark:focus:border-white'
                                     )}
                                 />
                             </div>
@@ -322,7 +322,7 @@ export default function ReviewModal({ isOpen, onClose, subOrderId, productId, pr
                                         )}
                                     >
                                         <HiOutlineCamera className="h-4 w-4 text-amber-500" />
-                                        <span>Thêm Hình Ảnh</span>
+                                        <span>Thêm hình ảnh</span>
                                         {images.length > 0 && (
                                             <span className="text-[11px] font-mono font-bold text-amber-500">
                                                 ({images.length}/5)
@@ -427,7 +427,7 @@ export default function ReviewModal({ isOpen, onClose, subOrderId, productId, pr
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className="w-full flex items-center justify-center gap-2 rounded-2xl bg-amber-500 py-3.5 px-6 font-bold text-sm text-white shadow-lg shadow-amber-500/25 transition hover:bg-amber-600 disabled:opacity-50 cursor-pointer"
+                                    className="w-full flex items-center justify-center gap-2 rounded-2xl py-3.5 px-6 font-bold text-sm shadow-lg transition disabled:opacity-50 cursor-pointer bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
                                 >
                                     {loading ? (
                                         <>

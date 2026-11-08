@@ -135,7 +135,7 @@ export default function ProductQuickView({ product, onAddToCart }) {
           type="button"
           onClick={handleAddToCartClick}
           disabled={addingToCart}
-          className="relative mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 py-3 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50"
+          className="relative mt-4 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold transition disabled:opacity-50 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
         >
           <AnimatePresence mode="wait">
             {showAddAnimation ? (

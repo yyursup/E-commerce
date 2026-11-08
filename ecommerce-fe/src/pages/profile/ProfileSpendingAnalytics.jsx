@@ -64,7 +64,7 @@ export default function ProfileSpendingAnalytics({ isDark }) {
                 <p className="text-sm text-red-500">{error}</p>
                 <button
                     onClick={fetchAnalytics}
-                    className="mt-4 rounded-xl bg-amber-500 px-5 py-2 text-sm font-bold text-white hover:bg-amber-600 transition"
+                    className="mt-4 rounded-xl px-5 py-2 text-sm font-bold transition bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
                 >
                     Thử lại
                 </button>
@@ -81,10 +81,10 @@ export default function ProfileSpendingAnalytics({ isDark }) {
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b pb-5">
                 <div>
                     <div className="flex items-center gap-2.5">
-                        <h2 className={cn("text-2xl font-black tracking-tight", isDark ? "text-white" : "text-stone-900")}>
-                            Sổ Tay Chi Tiêu & Bảo Hành Thiết Bị
+                        <h2 className={cn("text-3xl font-bold tracking-[-0.03em]", isDark ? "text-white" : "text-stone-900")}>
+                            Sổ tay chi tiêu & bảo hành thiết bị
                         </h2>
-                        <span className="rounded-full bg-amber-500/10 px-2.5 py-0.5 text-xs font-bold text-amber-500 border border-amber-500/20">
+                        <span className="rounded-full px-2.5 py-0.5 text-xs font-bold border bg-stone-100 text-stone-950 border-stone-950">
                             Smart Tech Shopper
                         </span>
                     </div>
@@ -120,7 +120,7 @@ export default function ProfileSpendingAnalytics({ isDark }) {
                 >
                     <div className="flex items-center justify-between">
                         <span className={cn("text-xs font-semibold uppercase tracking-wider", isDark ? "text-slate-400" : "text-stone-500")}>
-                            Tổng Tiền Đã Mua
+                            Tổng tiền đã mua
                         </span>
                         <div className="rounded-xl bg-blue-500/10 p-2 text-blue-500">
                             <HiOutlineCurrencyDollar className="h-5 w-5" />
@@ -146,7 +146,7 @@ export default function ProfileSpendingAnalytics({ isDark }) {
                 >
                     <div className="flex items-center justify-between">
                         <span className={cn("text-xs font-semibold uppercase tracking-wider", isDark ? "text-slate-400" : "text-stone-500")}>
-                            Tổng Đơn Đã Đặt
+                            Tổng đơn đã đặt
                         </span>
                         <div className="rounded-xl bg-purple-500/10 p-2 text-purple-500">
                             <HiOutlineShoppingBag className="h-5 w-5" />
@@ -172,7 +172,7 @@ export default function ProfileSpendingAnalytics({ isDark }) {
                 >
                     <div className="flex items-center justify-between">
                         <span className={cn("text-xs font-semibold uppercase tracking-wider", isDark ? "text-slate-400" : "text-stone-500")}>
-                            Giảm Giá Từ Voucher
+                            Giảm giá từ voucher
                         </span>
                         <div className="rounded-xl bg-rose-500/10 p-2 text-rose-500">
                             <HiOutlineTag className="h-5 w-5" />
@@ -192,15 +192,15 @@ export default function ProfileSpendingAnalytics({ isDark }) {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.15 }}
                     className={cn(
-                        "rounded-2xl border p-5 shadow-xs relative overflow-hidden",
+                        "rounded-2xl border p-5 relative overflow-hidden",
                         isDark ? "border-amber-500/30 bg-amber-500/5" : "border-amber-200 bg-amber-50/60"
                     )}
                 >
                     <div className="flex items-center justify-between">
                         <span className="text-xs font-bold uppercase tracking-wider text-amber-500">
-                            Tiết Kiệm Thông Minh
+                            Tiết kiệm thông minh
                         </span>
-                        <div className="rounded-xl bg-amber-500/20 p-2 text-amber-500">
+                        <div className="rounded-xl p-2 bg-stone-100 text-stone-950">
                             <HiOutlineSparkles className="h-5 w-5" />
                         </div>
                     </div>
@@ -222,7 +222,7 @@ export default function ProfileSpendingAnalytics({ isDark }) {
             >
                 <div className="border-b pb-3 mb-4">
                     <h3 className={cn("text-base font-bold", isDark ? "text-white" : "text-stone-900")}>
-                        Cơ Cấu Chi Tiêu Theo Danh Mục
+                        Cơ cấu chi tiêu theo danh mục
                     </h3>
                     <p className={cn("text-xs", isDark ? "text-slate-400" : "text-stone-500")}>
                         Phân bổ ngân sách vào các nhóm thiết bị điện tử của bạn
@@ -267,7 +267,7 @@ export default function ProfileSpendingAnalytics({ isDark }) {
                 <div className="flex items-center justify-between border-b pb-3 mb-4">
                     <div>
                         <h3 className={cn("text-base font-bold", isDark ? "text-white" : "text-stone-900")}>
-                            Thiết Bị Công Nghệ & Trạng Thái Bảo Hành
+                            Thiết bị công nghệ & trạng thái bảo hành
                         </h3>
                         <p className={cn("text-xs", isDark ? "text-slate-400" : "text-stone-500")}>
                             Quản lý thời hạn bảo hành của các thiết bị bạn đã sở hữu
@@ -319,7 +319,7 @@ export default function ProfileSpendingAnalytics({ isDark }) {
                                                 {item.productName}
                                             </p>
                                             <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
-                                                <span className={cn("rounded-md px-2 py-0.5 font-semibold border text-[10px]", isDark ? "bg-amber-500/10 text-amber-400 border-amber-500/20" : "bg-amber-50 text-amber-700 border-amber-200")}>
+                                                <span className={cn("rounded-md px-2 py-0.5 font-semibold border text-[10px]", isDark ? "bg-slate-800 text-white border-white" : "bg-stone-100 text-stone-950 border-stone-950")}>
                                                     {item.conditionGradeLabel}
                                                 </span>
                                                 <span className={cn("text-[11px]", isDark ? "text-slate-400" : "text-stone-600")}>

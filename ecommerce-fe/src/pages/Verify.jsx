@@ -149,8 +149,8 @@ export default function Verify() {
                                     className={cn(
                                         'h-12 w-12 rounded-lg border text-center text-xl font-bold outline-none transition',
                                         isDark
-                                            ? 'border-slate-600 bg-slate-800/50 text-white focus:border-amber-500/60 focus:ring-2 focus:ring-amber-500/20'
-                                            : 'border-stone-300 bg-stone-50/80 text-stone-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20',
+                                            ? 'border-slate-600 bg-slate-800/50 text-white focus:border-stone-950 dark:focus:border-white focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40'
+                                            : 'border-stone-300 bg-stone-50/80 text-stone-900 focus:border-stone-950 dark:focus:border-white focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                                     )}
                                 />
                             ))}
@@ -160,10 +160,10 @@ export default function Verify() {
                             type="submit"
                             disabled={isSubmitting}
                             className={cn(
-                                'w-full rounded-xl py-3.5 text-sm font-semibold text-white shadow-lg transition',
+                                'w-full rounded-xl py-3.5 text-sm font-semibold text-white transition',
                                 isSubmitting
                                     ? 'cursor-not-allowed bg-amber-500/60'
-                                    : 'bg-amber-500 hover:bg-amber-600 active:scale-[0.99]',
+                                    : 'active:scale-[0.99] bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200',
                             )}
                         >
                             {isSubmitting ? 'Đang xác thực...' : 'Xác thực'}
@@ -179,7 +179,7 @@ export default function Verify() {
                         Không nhận được mã?{' '}
                         <button
                             type="button"
-                            className="font-medium text-amber-600 hover:underline dark:text-amber-400"
+                            className="font-medium text-stone-950 underline underline-offset-2 dark:text-white"
                             onClick={() => toast.success('Đã gửi lại mã!')}
                         >
                             Gửi lại

@@ -50,7 +50,7 @@ export default function WalletLookupTab() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-bold">Tra Cứu Số Dư Ví Thành Viên (User / Seller Wallet)</h2>
+        <h2 className="text-lg font-bold">Tra cứu số dư ví thành viên</h2>
         <p className={cn('text-xs', isDark ? 'text-slate-400' : 'text-stone-500')}>
           Tra cứu số dư thực tế, tiền khả dụng và tiền đóng băng của bất kỳ người dùng hoặc gian hàng nào
         </p>
@@ -81,8 +81,8 @@ export default function WalletLookupTab() {
               className={cn(
                 'flex-1 rounded-xl border px-4 py-2.5 text-sm outline-none transition',
                 isDark
-                  ? 'border-slate-700 bg-slate-950 text-slate-100 focus:border-amber-500'
-                  : 'border-stone-300 bg-white text-stone-700 focus:border-amber-500',
+                  ? 'border-slate-700 bg-slate-950 text-slate-100 focus:border-stone-950 dark:focus:border-white'
+                  : 'border-stone-300 bg-white text-stone-700 focus:border-stone-950 dark:focus:border-white',
               )}
             />
             <button
@@ -90,7 +90,7 @@ export default function WalletLookupTab() {
               disabled={loading}
               className={cn(
                 'rounded-xl px-5 py-2.5 text-sm font-bold transition shadow-sm',
-                'bg-amber-500 text-white hover:bg-amber-600',
+                'bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200',
                 loading && 'cursor-not-allowed opacity-60',
               )}
             >
@@ -101,7 +101,7 @@ export default function WalletLookupTab() {
 
         {wallet && (
           <div className="mt-6 border-t border-slate-700/30 pt-6">
-            <h3 className="text-sm font-bold mb-4">Kết Quả Tra Cứu</h3>
+            <h3 className="text-sm font-bold mb-4">Kết quả tra cứu</h3>
             <div className="grid gap-4 sm:grid-cols-3">
               <div
                 className={cn(

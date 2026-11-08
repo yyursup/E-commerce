@@ -29,7 +29,7 @@ export default function ShopChatHeader({
               className="h-10 w-10 rounded-full object-cover border border-amber-500/20"
             />
           ) : (
-            <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center text-white font-bold text-sm shadow-xs">
+            <div className="h-10 w-10 rounded-full flex items-center justify-center font-bold text-sm bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200">
               {selectedThread.customerName?.charAt(0)?.toUpperCase() || 'K'}
             </div>
           )}

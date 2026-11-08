@@ -22,8 +22,8 @@ export default function ProductSortDropdown({ value, onChange }) {
         className={cn(
           'appearance-none rounded-xl border py-2.5 pl-4 pr-10 text-sm font-medium outline-none transition',
           isDark
-            ? 'border-slate-600 bg-slate-800/50 text-slate-300 focus:border-amber-500/60 focus:ring-2 focus:ring-amber-500/20'
-            : 'border-stone-300 bg-white text-stone-700 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20',
+            ? 'border-slate-600 bg-slate-800/50 text-slate-300 focus:border-stone-950 dark:focus:border-white focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40'
+            : 'border-stone-300 bg-white text-stone-700 focus:border-stone-950 dark:focus:border-white focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
         )}
       >
         {SORT_OPTIONS.map((option) => (

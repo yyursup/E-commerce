@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -20,6 +20,7 @@ import {
   HiOutlineChat,
 } from 'react-icons/hi'
 import { cn } from '../lib/cn'
+import { SELLER_PORTAL_URL } from '../lib/sellerPortal'
 import { useThemeStore } from '../store/useThemeStore'
 import { useAuthStore } from '../store/useAuthStore'
 import { useCartStore } from '../store/useCartStore'
@@ -52,6 +53,7 @@ export default function Navbar() {
   const [unreadNotifCount, setUnreadNotifCount] = useState(0)
 
   const navigate = useNavigate()
+  const { pathname } = useLocation()
 
   const handleSearchSubmit = (e) => {
     e.preventDefault()
@@ -111,27 +113,25 @@ export default function Navbar() {
       className={cn(
         'sticky top-0 z-50 w-full border-b transition-colors',
         isDark
-          ? 'border-slate-700/50 bg-slate-900/95 backdrop-blur'
-          : 'border-stone-200/80 bg-white/95 backdrop-blur',
+          ? 'border-slate-800 bg-slate-950'
+          : 'border-stone-200 bg-white',
       )}
     >
       {/* Top micro bar */}
-      <div className={cn('border-b py-1 px-4 sm:px-8 text-[11px] flex justify-between items-center transition-colors',
-        isDark ? 'bg-slate-950/80 border-slate-800 text-slate-400' : 'bg-stone-50 border-stone-200 text-stone-500'
-      )}>
+      <div className="flex items-center justify-between bg-stone-950 px-4 py-2 text-xs text-stone-300 sm:px-8">
         <div className="flex items-center gap-4">
           <a
-            href="http://localhost:3001"
+            href={SELLER_PORTAL_URL}
             target="_blank"
             rel="noreferrer"
-            className="font-semibold text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1.5"
+            className="font-semibold text-white hover:underline flex items-center gap-1.5"
           >
             <HiOutlineShoppingBag className="h-3.5 w-3.5" />
-            <span>Kênh Người Bán</span>
+            <span>Kênh người bán</span>
           </a>
           <span className="hidden sm:inline text-stone-300 dark:text-slate-700">|</span>
           <a
-            href="http://localhost:3001/register"
+            href={`${SELLER_PORTAL_URL}/register`}
             target="_blank"
             rel="noreferrer"
             className="hidden sm:inline hover:text-amber-500 transition-colors"
@@ -139,29 +139,20 @@ export default function Navbar() {
             Trở thành Người bán
           </a>
         </div>
-        <div className="flex items-center gap-3 text-stone-400 text-[10px]">
-          <span>Hotline CSKH: 1900 1234</span>
+        <div className="hidden items-center gap-3 md:flex">
+          <span>Tiền được giữ an toàn trong ký quỹ đến khi bạn nhận hàng · Hotline 1900 1234</span>
         </div>
       </div>
       <nav className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8 gap-4 md:gap-8">
         {/* Logo */}
         <Link
           to="/"
-          className="flex items-center gap-2.5 font-bold tracking-tight shrink-0"
+          className={cn(
+            'shrink-0 font-display text-2xl font-extrabold tracking-[-0.04em]',
+            isDark ? 'text-white' : 'text-stone-950',
+          )}
         >
-          <span
-            className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/25"
-          >
-            <HiOutlineShoppingBag className="h-6 w-6" />
-          </span>
-          <span
-            className={cn(
-              'text-xl font-bold tracking-tight',
-              isDark ? 'text-white' : 'text-stone-900',
-            )}
-          >
-            E-<span className="text-amber-500">commerce</span>
-          </span>
+          E-Commerce<span className="text-amber-500">.</span>
         </Link>
 
         <AdvancedSearchBar />
@@ -174,10 +165,10 @@ export default function Navbar() {
           <Link
             to="/profile?tab=notifications"
             className={cn(
-              'group relative hidden sm:flex h-9 w-9 items-center justify-center rounded-xl transition-colors',
+              'group relative hidden sm:flex h-11 w-11 items-center justify-center rounded-md transition-colors',
               isDark
-                ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-amber-400'
-                : 'bg-stone-100 text-stone-600 hover:bg-stone-200 hover:text-amber-500',
+                ? 'text-slate-200 hover:bg-slate-800 hover:text-amber-400'
+                : 'text-stone-950 hover:bg-stone-100 hover:text-amber-500',
             )}
             title="Thông báo của tôi"
           >
@@ -193,10 +184,10 @@ export default function Navbar() {
           <Link
             to="/profile?tab=wishlist"
             className={cn(
-              'group relative hidden sm:flex h-9 w-9 items-center justify-center rounded-xl transition-colors',
+              'group relative hidden sm:flex h-11 w-11 items-center justify-center rounded-md transition-colors',
               isDark
-                ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-rose-400'
-                : 'bg-stone-100 text-stone-600 hover:bg-stone-200 hover:text-rose-500',
+                ? 'text-slate-200 hover:bg-slate-800 hover:text-rose-400'
+                : 'text-stone-950 hover:bg-stone-100 hover:text-rose-500',
             )}
             title="Sản phẩm yêu thích"
           >
@@ -212,19 +203,16 @@ export default function Navbar() {
           <Link
             to="/cart"
             className={cn(
-              'group relative flex h-9 w-9 items-center justify-center rounded-xl transition-colors',
+              'group relative flex h-11 items-center gap-2 rounded-md px-3 text-sm font-semibold transition-colors',
               isDark
-                ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white'
-                : 'bg-stone-100 text-stone-600 hover:bg-stone-200 hover:text-stone-900',
+                ? 'bg-white text-stone-950 hover:bg-stone-200'
+                : 'bg-stone-950 text-white hover:bg-stone-800',
             )}
-            title="Giỏ hàng"
+            aria-label={`Giỏ hàng, ${totalItems} sản phẩm`}
           >
             <HiOutlineShoppingBag className="h-5 w-5" />
-            {totalItems > 0 && (
-              <span className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-white shadow-sm ring-2 ring-white dark:ring-slate-900">
-                {totalItems}
-              </span>
-            )}
+            <span className="hidden lg:inline">Giỏ hàng</span>
+            <span className="rounded bg-amber-500 px-1.5 font-mono text-xs text-stone-950">{totalItems}</span>
           </Link>
 
           {/* Chat / Inbox Button */}
@@ -233,10 +221,10 @@ export default function Navbar() {
             onClick={() => openInbox()}
             title="Hộp thư & Trò chuyện"
             className={cn(
-              'group relative hidden sm:flex h-9 w-9 items-center justify-center rounded-xl transition-colors',
+              'group relative hidden sm:flex h-11 w-11 items-center justify-center rounded-md transition-colors',
               isDark
-                ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white'
-                : 'bg-stone-100 text-stone-600 hover:bg-stone-200 hover:text-stone-900',
+                ? 'text-slate-200 hover:bg-slate-800 hover:text-white'
+                : 'text-stone-950 hover:bg-stone-100 hover:text-stone-900',
             )}
           >
             <HiOutlineChat className="h-5 w-5" />
@@ -377,7 +365,7 @@ export default function Navbar() {
                               ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
                               : (user?.reputationScore ?? 100) >= 70
                               ? "bg-blue-500/15 text-blue-600 dark:text-blue-400"
-                              : "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                              : "dark:text-amber-400 bg-stone-100 text-stone-950"
                           )}
                         >
                           🛡️ {user?.reputationScore ?? 100}đ Uy tín
@@ -388,7 +376,7 @@ export default function Navbar() {
                   {/* Seller Portal Link */}
                   <MenuItem>
                     <a
-                      href="http://localhost:3001"
+                      href={SELLER_PORTAL_URL}
                       target="_blank"
                       rel="noreferrer"
                       className={cn(
@@ -397,7 +385,7 @@ export default function Navbar() {
                       )}
                     >
                       <HiOutlineShoppingBag className="h-4 w-4" />
-                      Kênh Người Bán (Seller Centre)
+                      Kênh người bán
                     </a>
                   </MenuItem>
                   <MenuItem>
@@ -505,18 +493,18 @@ export default function Navbar() {
       {/* Secondary Nav Bar for Links (Desktop) */}
       <div className={cn(
           "hidden md:flex border-t items-center",
-          isDark ? "border-slate-800 bg-slate-900/90" : "border-stone-100 bg-white"
+          isDark ? "border-slate-800 bg-slate-950" : "border-stone-200 bg-white"
       )}>
-        <div className="mx-auto flex h-10 w-full max-w-7xl items-center gap-6 px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto flex h-11 w-full max-w-7xl items-stretch gap-7 px-4 sm:px-6 lg:px-8">
           {navLinks.map(({ to, label }) => (
             <Link
               key={to}
               to={to}
               className={cn(
-                'text-sm font-medium transition-colors flex items-center gap-1.5',
-                isDark
-                  ? 'text-slate-300 hover:text-amber-500'
-                  : 'text-stone-600 hover:text-amber-500'
+                'flex items-center gap-1.5 border-b-2 text-sm font-medium transition-colors',
+                (to === '/' ? pathname === '/' : pathname.startsWith(to))
+                  ? (isDark ? 'border-white text-white' : 'border-stone-950 text-stone-950')
+                  : (isDark ? 'border-transparent text-slate-300 hover:text-white' : 'border-transparent text-stone-600 hover:text-stone-950')
               )}
             >
               {label}
@@ -552,7 +540,7 @@ export default function Navbar() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Tìm kiếm sản phẩm, shop..."
                   className={cn(
-                    'w-full rounded-xl pl-10 pr-4 py-2.5 text-sm border focus:outline-none focus:ring-2 focus:ring-amber-500',
+                    'w-full rounded-xl pl-10 pr-4 py-2.5 text-sm border focus:outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                     isDark
                       ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-400'
                       : 'bg-stone-100 border-stone-200 text-stone-900 placeholder-stone-400',
@@ -652,14 +640,14 @@ export default function Navbar() {
                   </div>
                   {/* Seller Portal Link - Mobile */}
                   <a
-                    href="http://localhost:3001"
+                    href={SELLER_PORTAL_URL}
                     target="_blank"
                     rel="noreferrer"
                     onClick={() => setMobileOpen(false)}
                     className="rounded-lg px-4 py-3 text-left text-sm font-semibold text-amber-600 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-slate-800 flex items-center gap-2"
                   >
                     <HiOutlineShoppingBag className="h-4 w-4" />
-                    <span>Kênh Người Bán (Seller Centre)</span>
+                    <span>Kênh người bán</span>
                   </a>
                   <Link
                     to="/my-orders"

@@ -197,19 +197,19 @@ export default function SellerReturnSection({ returnInfo, order, report, isDark:
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       className={cn(
-        'rounded-2xl border p-5 shadow-sm space-y-4',
+        'rounded-2xl border p-5 space-y-4',
         isDark ? 'border-amber-500/30 bg-slate-900/90' : 'border-amber-200 bg-amber-50/40',
       )}
     >
       {/* 1. Header */}
       <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-stone-200 dark:border-slate-800">
         <div className="flex items-center gap-2">
-          <div className="p-2 rounded-xl bg-amber-500 text-white shadow-sm">
+          <div className="p-2 rounded-xl bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200">
             <HiOutlineTruck className="h-5 w-5" />
           </div>
           <div>
             <h3 className={cn('text-sm sm:text-base font-bold', isDark ? 'text-white' : 'text-stone-900')}>
-              Xử Lý Yêu Cầu Trả Hàng & Hoàn Tiền
+              Xử lý yêu cầu trả hàng & hoàn tiền
             </h3>
             <p className={cn('text-[11px]', isDark ? 'text-slate-400' : 'text-stone-500')}>
               Mã yêu cầu: <span className="font-mono font-semibold">{returnInfo.id?.substring(0, 8)}...</span>
@@ -320,7 +320,7 @@ export default function SellerReturnSection({ returnInfo, order, report, isDark:
             </div>
           </div>
           <p className="text-[10px] text-stone-400 dark:text-slate-500 italic pt-0.5">
-            * Khoản cước này được tự động trích từ Quỹ Ký Quỹ Gian Hàng (ShopEscrowFund) nộp về Sàn để thanh toán cho đơn vị vận chuyển GHN khi hoàn tất.
+            * Khoản cước này được tự động trích từ Quỹ Ký Quỹ Gian Hàng nộp về Sàn để thanh toán cho đơn vị vận chuyển GHN khi hoàn tất.
           </p>
         </div>
       )}
@@ -341,7 +341,7 @@ export default function SellerReturnSection({ returnInfo, order, report, isDark:
             <button
               type="button"
               onClick={() => setShowCompleteModal(true)}
-              className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:scale-95 transition shadow-sm inline-flex items-center justify-center gap-1.5"
+              className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:scale-95 transition inline-flex items-center justify-center gap-1.5"
             >
               <HiOutlineCheckCircle className="h-4 w-4" />
               Xác nhận nhận hàng đạt & Hoàn tiền
@@ -349,7 +349,7 @@ export default function SellerReturnSection({ returnInfo, order, report, isDark:
             <button
               type="button"
               onClick={() => setShowDisputeModal(true)}
-              className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 active:scale-95 transition shadow-sm inline-flex items-center justify-center gap-1.5"
+              className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 active:scale-95 transition inline-flex items-center justify-center gap-1.5"
             >
               <HiOutlineExclamation className="h-4 w-4" />
               Khiếu nại kiện hàng (Hỏng / Sai hàng)

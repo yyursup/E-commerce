@@ -153,7 +153,7 @@ export default function DisputeChatModal({
     if (!file || !thread?.id || thread.isLocked) return
 
     if (!file.type.startsWith('video/')) {
-      toast.error('Chỉ hỗ trợ tệp định dạng video (MP4, WebM, QuickTime)')
+      toast.error('Chỉ hỗ trợ tệp định dạng video')
       return
     }
     if (file.size > 100 * 1024 * 1024) {
@@ -299,7 +299,7 @@ export default function DisputeChatModal({
                     className={cn(
                       'rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed break-words shadow-xs space-y-1.5',
                       isMine
-                        ? 'bg-purple-600 text-white rounded-tr-xs'
+                        ? 'rounded-tr-xs bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                         : isDark
                         ? 'bg-slate-800 text-slate-100 border border-slate-700/80 rounded-tl-xs'
                         : 'bg-white text-stone-900 border border-stone-200 rounded-tl-xs'
@@ -433,7 +433,7 @@ export default function DisputeChatModal({
             <button
               type="submit"
               disabled={!text.trim() || sending || uploadingImage || uploadingVideo}
-              className="p-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white transition-all shrink-0 shadow-xs"
+              className="p-2.5 rounded-xl disabled:opacity-50 transition-all shrink-0 shadow-xs bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
             >
               <HiOutlinePaperAirplane className="h-5 w-5 rotate-90" />
             </button>

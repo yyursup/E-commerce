@@ -67,7 +67,7 @@ export default function OrderItemsList({
                       productName: item.productName,
                     })
                   }
-                  className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-500 transition hover:bg-amber-500/20"
+                  className="mt-2 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition hover:bg-amber-500/20 bg-stone-100 text-stone-950"
                 >
                   <HiOutlineStar className="h-4 w-4" />
                   Viết đánh giá

@@ -75,7 +75,7 @@ export default function AdminEscrowTab({
                         ? 'bg-blue-500/10 text-blue-400 border-blue-500/30'
                         : item.status === 'DISPUTED'
                           ? 'bg-rose-500/10 text-rose-400 border-rose-500/30'
-                          : 'bg-amber-500/10 text-amber-400 border-amber-500/30',
+                          : 'bg-slate-800 text-white border-white',
                   )}
                 >
                   {item.status === 'DISPUTED'
@@ -100,7 +100,7 @@ export default function AdminEscrowTab({
                             ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
                             : returnStatus === 'CANCELLED'
                               ? 'bg-stone-500/10 text-stone-400 border-stone-500/30'
-                              : 'bg-amber-500/10 text-amber-400 border-amber-500/30',
+                              : 'bg-slate-800 text-white border-white',
                     )}
                   >
                     {returnStatus === 'RETURNED'
@@ -151,7 +151,7 @@ export default function AdminEscrowTab({
                 ) : returnStatus === 'RETURNED' ? (
                   <span className="text-purple-400 font-medium inline-flex items-center gap-1">
                     <HiOutlineExclamation className="h-3.5 w-3.5 shrink-0" />
-                    <span>Kiện hàng hoàn đã giao tới Người bán (đang trong 72h kiểm hàng). Admin chỉ can thiệp khi Shop khiếu nại (DISPUTED).</span>
+                    <span>Kiện hàng hoàn đã giao tới Người bán (đang trong 72h kiểm hàng). Admin chỉ can thiệp khi Shop khiếu nại.</span>
                   </span>
                 ) : (returnStatus === 'WAITING_FOR_SHIPMENT' || returnStatus === 'SHIPPED') ? (
                   <span className="text-amber-400 font-medium inline-flex items-center gap-1">

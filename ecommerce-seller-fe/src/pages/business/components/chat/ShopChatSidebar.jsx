@@ -52,11 +52,11 @@ export default function ShopChatSidebar({
       {/* Header */}
       <div className="p-4 border-b border-stone-200/80 dark:border-slate-800 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/10 text-amber-500">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-stone-100 text-stone-950">
             <HiOutlineChat className="h-5 w-5" />
           </div>
           <div>
-            <h2 className="text-sm font-bold">Tin Nhắn Khách Hàng</h2>
+            <h2 className="text-sm font-bold">Tin nhắn khách hàng</h2>
             <div className="flex items-center gap-1.5 text-[11px]">
               <span
                 className={cn(
@@ -123,7 +123,7 @@ export default function ShopChatSidebar({
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Tìm khách hàng hoặc tin nhắn..."
             className={cn(
-              'w-full pl-9 pr-3 py-2 rounded-xl text-xs outline-none border transition focus:ring-2 focus:ring-amber-500/20',
+              'w-full pl-9 pr-3 py-2 rounded-xl text-xs outline-none border transition focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
               isDark
                 ? 'border-slate-700 bg-slate-800 text-white placeholder:opacity-40'
                 : 'border-stone-300 bg-white text-stone-900 placeholder:opacity-40'
@@ -183,7 +183,7 @@ export default function ShopChatSidebar({
                       className="h-11 w-11 rounded-full object-cover border border-amber-500/20 shadow-xs"
                     />
                   ) : (
-                    <div className="h-11 w-11 rounded-full bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center text-white font-bold text-sm shadow-xs">
+                    <div className="h-11 w-11 rounded-full flex items-center justify-center font-bold text-sm bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200">
                       {t.customerName?.charAt(0)?.toUpperCase() || 'K'}
                     </div>
                   )}

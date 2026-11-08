@@ -108,7 +108,7 @@ export default function ChatLiveInputBar({
             className={cn(
               'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border transition-all active:scale-95',
               showMediaPopover
-                ? 'border-amber-500 bg-amber-500 text-white shadow-sm'
+                ? 'border-amber-500 shadow-sm bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                 : isDark
                   ? 'border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-750'
                   : 'border-stone-300 bg-white text-stone-600 hover:bg-stone-100',
@@ -129,7 +129,7 @@ export default function ChatLiveInputBar({
             className={cn(
               'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border transition-all active:scale-95',
               showEmojiPicker
-                ? 'border-amber-500 bg-amber-500 text-white shadow-sm'
+                ? 'border-amber-500 shadow-sm bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                 : isDark
                   ? 'border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-750'
                   : 'border-stone-300 bg-white text-stone-600 hover:bg-stone-100',
@@ -147,7 +147,7 @@ export default function ChatLiveInputBar({
             placeholder={activeShop ? `Gửi tin nhắn...` : 'Nhắn tin cho nhân viên...'}
             disabled={liveSending}
             className={cn(
-              'flex-1 rounded-xl border px-3.5 py-2 text-sm outline-none transition focus:ring-2 focus:ring-amber-500/20',
+              'flex-1 rounded-xl border px-3.5 py-2 text-sm outline-none transition focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
               isDark
                 ? 'border-slate-700 bg-slate-800 text-white placeholder:opacity-50'
                 : 'border-stone-300 bg-white text-stone-900 placeholder:opacity-50',
@@ -157,7 +157,7 @@ export default function ChatLiveInputBar({
           <button
             type="submit"
             disabled={!liveInputValue.trim() || liveSending}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white transition hover:bg-amber-600 disabled:opacity-40"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition disabled:opacity-40 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
             title="Gửi"
           >
             <HiOutlinePaperAirplane className="h-4 w-4" />

@@ -35,7 +35,7 @@ export default function ReturnAddressSnapshot({ returnInfo, isDark }) {
         <button
           type="button"
           onClick={copyAddress}
-          className="text-[11px] font-medium text-amber-600 dark:text-amber-400 hover:underline inline-flex items-center gap-1 shrink-0"
+          className="text-[11px] font-medium text-stone-950 underline underline-offset-2 dark:text-white inline-flex items-center gap-1 shrink-0"
         >
           <HiOutlineClipboardCopy className="h-3.5 w-3.5" />
           {copied ? 'Đã sao chép' : 'Sao chép địa chỉ'}

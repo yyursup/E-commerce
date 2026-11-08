@@ -31,7 +31,7 @@ export default function ShopHealthOverview({
     if (shopStatus === 'WARNED' || reputationScore < 70) {
       return {
         label: violationCount >= 5 ? 'Cảnh báo rủi ro cao' : 'Cảnh báo giảm uy tín',
-        color: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
+        color: 'bg-slate-800 text-white border-white',
       }
     }
     if (reputationScore === 100) {
@@ -52,10 +52,10 @@ export default function ShopHealthOverview({
     <div className="space-y-6">
       {/* Cảnh báo kỷ luật cấp độ 2: Tạm ngưng 14 ngày & Giữ Escrow */}
       {shopStatus === 'SUSPENDED' && (
-        <div className="rounded-3xl border border-rose-500/30 bg-rose-500/10 p-6 shadow-sm backdrop-blur-sm">
+        <div className="rounded-3xl border border-rose-500/30 bg-rose-500/10 p-6 backdrop-blur-sm">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-start gap-4">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-rose-500 text-white shadow-lg shadow-rose-500/30">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-rose-500 text-white shadow-rose-500/30">
                 <HiOutlineExclamation className="h-7 w-7 stroke-[2.5]" />
               </div>
               <div className="space-y-1">
@@ -87,10 +87,10 @@ export default function ShopHealthOverview({
 
       {/* Cảnh báo kỷ luật cấp độ 1: Cảnh báo gian hàng */}
       {shopStatus === 'WARNED' && (
-        <div className="rounded-3xl border border-amber-500/30 bg-amber-500/10 p-6 shadow-sm backdrop-blur-sm">
+        <div className="rounded-3xl border border-amber-500/30 bg-amber-500/10 p-6 backdrop-blur-sm">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-start gap-4">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-500 text-white shadow-lg shadow-amber-500/30">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200">
                 <HiOutlineExclamation className="h-7 w-7 stroke-[2.5]" />
               </div>
               <div className="space-y-1">
@@ -116,7 +116,7 @@ export default function ShopHealthOverview({
         {/* Reputation Score Card */}
         <div
           className={cn(
-            'rounded-3xl border p-6 shadow-sm flex flex-col justify-between transition-colors',
+            'rounded-3xl border p-6 flex flex-col justify-between transition-colors',
             isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
           )}
         >
@@ -174,14 +174,14 @@ export default function ShopHealthOverview({
         {/* 30-Day Monthly Decay Explanation */}
         <div
           className={cn(
-            'lg:col-span-2 rounded-3xl border p-6 shadow-sm flex flex-col justify-between transition-colors',
+            'lg:col-span-2 rounded-3xl border p-6 flex flex-col justify-between transition-colors',
             isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
           )}
         >
           <div>
             <div className="flex items-center gap-2 mb-3 text-amber-500">
               <HiOutlineClock className="h-5 w-5" />
-              <h3 className="font-bold text-sm">Cơ Chế Phục Hồi Điểm Uy Tín (Chu Kỳ 30 Ngày)</h3>
+              <h3 className="font-bold text-sm">Cơ chế phục hồi điểm uy tín (Chu kỳ 30 ngày)</h3>
             </div>
             <p className={cn('text-xs leading-relaxed', isDark ? 'text-slate-300' : 'text-stone-600')}>
               Hệ thống áp dụng chính sách <strong>Phục hồi điểm uy tín định kỳ 30 ngày</strong>: Nếu trong vòng 30 ngày liên tục, gian hàng hoạt động chuẩn mực và không phát sinh bất kỳ báo cáo vi phạm nào được xác nhận, hệ thống sẽ tự động khôi phục <strong>+15 điểm uy tín</strong> (tương đương xóa bỏ <code>1 lần vi phạm</code>) cho đến khi đạt điểm tối đa <strong>100 điểm</strong>.

@@ -20,7 +20,7 @@ export default function AdminEscrowSettlementCard({
         <div className="flex items-center gap-2">
           <HiOutlineCash className="h-4 w-4 text-emerald-500" />
           <h4 className="font-bold text-xs uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
-            Kết Quả Phán Quyết Ký Quỹ Đã Thực Hiện
+            Kết quả phán quyết ký quỹ đã thực hiện
           </h4>
         </div>
         <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25">

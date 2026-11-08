@@ -191,7 +191,7 @@ export default function ShopOrderDetail() {
           <button
             type="button"
             onClick={fetchOrder}
-            className="rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-white shadow hover:bg-amber-600 transition-all"
+            className="rounded-xl px-4 py-2 text-xs font-bold transition-all bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
           >
             Thử tải lại
           </button>
@@ -201,9 +201,9 @@ export default function ShopOrderDetail() {
   }
 
   const steps = [
-    { num: 1, title: 'Đã Đặt Hàng', desc: 'Khách xác nhận đơn' },
-    { num: 2, title: 'Đóng Gói Hàng', desc: 'Shop chuẩn bị hàng' },
-    { num: 3, title: 'Vận Chuyển GHN', desc: 'Bàn giao shipper GHN' },
+    { num: 1, title: 'Đã đặt hàng', desc: 'Khách xác nhận đơn' },
+    { num: 2, title: 'Đóng gói hàng', desc: 'Shop chuẩn bị hàng' },
+    { num: 3, title: 'Vận chuyển GHN', desc: 'Bàn giao shipper GHN' },
     {
       num: 4,
       title: order?.status === 'REFUNDED' ? 'Đã Hoàn Tiền' : 'Giao Thành Công',
@@ -260,7 +260,7 @@ export default function ShopOrderDetail() {
                 className="px-3 py-1 text-xs"
               />
               {order.hasActiveDispute && !returnInfo && !order.returnInfo && order.disputeStatus === 'DIRECT_NEGOTIATION' && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400 animate-pulse">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border dark:text-amber-400 animate-pulse bg-stone-100 text-stone-950 border-stone-950">
                   <HiOutlineExclamation className="h-3.5 w-3.5 text-amber-500" />
                   <span>Đang có khiếu nại (Thương lượng 1:1)</span>
                 </span>
@@ -282,7 +282,7 @@ export default function ShopOrderDetail() {
             onClick={fetchOrder}
             disabled={loading || actionLoading}
             className={cn(
-              'inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-xs font-bold transition-all shadow-sm self-start sm:self-auto',
+              'inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-xs font-bold transition-all self-start sm:self-auto',
               isDark
                 ? 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700 hover:text-white'
                 : 'border-stone-200 bg-white text-stone-700 hover:bg-stone-50 hover:text-stone-900'
@@ -324,9 +324,9 @@ export default function ShopOrderDetail() {
                         isCancelled
                           ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20'
                           : isDone
-                            ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/25'
+                            ? 'bg-emerald-500 text-white shadow-emerald-500/25'
                             : isCurr
-                              ? 'bg-amber-500 text-white shadow-md shadow-amber-500/25 ring-4 ring-amber-500/20'
+                              ? 'ring-4 ring-amber-500/20 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                               : isDark
                                 ? 'bg-slate-800 text-slate-500 border border-slate-700'
                                 : 'bg-stone-200 text-stone-500'

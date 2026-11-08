@@ -119,7 +119,7 @@ export default function EscrowFundSupervisionTab() {
         <div>
           <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2.5">
             <HiOutlineCash className="h-7 w-7 sm:h-8 sm:w-8 text-amber-500 shrink-0" />
-            <span>Giám Sát Quỹ Ký Quỹ Toàn Sàn (Escrow Fund Supervision)</span>
+            <span>Giám sát quỹ ký quỹ toàn sàn</span>
           </h1>
           <p className={cn('text-xs sm:text-sm mt-1', isDark ? 'text-slate-400' : 'text-stone-500')}>
             Theo dõi vốn bảo chứng cam kết của tất cả gian hàng, cảnh báo hụt quỹ và phân xử trích bồi thường tranh chấp.
@@ -148,7 +148,7 @@ export default function EscrowFundSupervisionTab() {
           )}
         >
           <span className={cn('text-xs font-semibold uppercase tracking-wider', isDark ? 'text-slate-400' : 'text-stone-500')}>
-            Tổng Quỹ Bảo Chứng Trên Trang
+            Tổng quỹ bảo chứng trên trang
           </span>
           <h3 className="mt-2 sm:mt-3 text-xl sm:text-2xl font-black text-amber-500">{formatVND(totalBalanceAll)}</h3>
           <p className="mt-1 text-xs text-slate-400">Tiền cọc cam kết bảo vệ người mua</p>
@@ -161,7 +161,7 @@ export default function EscrowFundSupervisionTab() {
           )}
         >
           <span className={cn('text-xs font-semibold uppercase tracking-wider', isDark ? 'text-slate-400' : 'text-stone-500')}>
-            Gian Hàng Ký Quỹ
+            Gian hàng ký quỹ
           </span>
           <h3 className="mt-2 sm:mt-3 text-xl sm:text-2xl font-black">{totalElements} Shop</h3>
           <p className="mt-1 text-xs text-slate-400">Đã kích hoạt Quỹ ký quỹ trên hệ thống</p>
@@ -169,7 +169,7 @@ export default function EscrowFundSupervisionTab() {
 
         <div
           className={cn(
-            'rounded-2xl border p-4 sm:p-5 shadow-sm sm:col-span-2 lg:col-span-1',
+            'rounded-2xl border p-4 sm:p-5 sm:col-span-2 lg:col-span-1',
             deficitCount > 0
               ? 'border-rose-500/40 bg-rose-500/10'
               : isDark
@@ -178,7 +178,7 @@ export default function EscrowFundSupervisionTab() {
           )}
         >
           <span className={cn('text-xs font-semibold uppercase tracking-wider', deficitCount > 0 ? 'text-rose-500' : isDark ? 'text-slate-400' : 'text-stone-500')}>
-            Cảnh Báo Hụt Quỹ (Deficit)
+            Cảnh báo hụt quỹ
           </span>
           <h3 className={cn('mt-2 sm:mt-3 text-xl sm:text-2xl font-black', deficitCount > 0 ? 'text-rose-500 animate-pulse' : 'text-emerald-500')}>
             {deficitCount} Gian Hàng
@@ -195,7 +195,7 @@ export default function EscrowFundSupervisionTab() {
             className={cn(
               'px-3.5 py-1.5 text-xs font-semibold rounded-xl border transition whitespace-nowrap',
               filterTab === 'ALL'
-                ? 'border-amber-500 bg-amber-500 text-white'
+                ? 'border-amber-500 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                 : isDark
                 ? 'border-slate-800 bg-slate-900 text-slate-400 hover:text-white'
                 : 'border-stone-200 bg-white text-stone-600 hover:text-stone-900'
@@ -222,7 +222,7 @@ export default function EscrowFundSupervisionTab() {
             className={cn(
               'px-3.5 py-1.5 text-xs font-semibold rounded-xl border transition flex items-center gap-1.5 whitespace-nowrap',
               filterTab === 'REFUND_PENDING'
-                ? 'border-purple-500 bg-purple-500 text-white'
+                ? 'border-purple-500 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                 : isDark
                 ? 'border-slate-800 bg-slate-900 text-slate-400 hover:text-purple-400'
                 : 'border-stone-200 bg-white text-stone-600 hover:text-purple-600'
@@ -241,7 +241,7 @@ export default function EscrowFundSupervisionTab() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className={cn(
-              'w-full rounded-xl border py-2 pl-9 pr-4 text-xs outline-none focus:ring-2 focus:ring-amber-500',
+              'w-full rounded-xl border py-2 pl-9 pr-4 text-xs outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
               isDark ? 'border-slate-800 bg-slate-900 text-slate-100 placeholder-slate-500' : 'border-stone-200 bg-white text-stone-900 placeholder-stone-400'
             )}
           />
@@ -266,11 +266,11 @@ export default function EscrowFundSupervisionTab() {
             <thead className={cn('uppercase tracking-wider', isDark ? 'bg-slate-950 text-slate-400' : 'bg-stone-100 text-stone-600')}>
               <tr>
                 <th className="px-4 py-3 sm:px-6 sm:py-3.5">Gian hàng</th>
-                <th className="px-4 py-3 sm:px-6 sm:py-3.5">Cấp Uy Tín</th>
-                <th className="px-4 py-3 sm:px-6 sm:py-3.5">Số Dư Quỹ Thực Tế</th>
-                <th className="px-4 py-3 sm:px-6 sm:py-3.5">Mức Cọc Cam Kết</th>
+                <th className="px-4 py-3 sm:px-6 sm:py-3.5">Cấp uy tín</th>
+                <th className="px-4 py-3 sm:px-6 sm:py-3.5">Số dư quỹ thực tế</th>
+                <th className="px-4 py-3 sm:px-6 sm:py-3.5">Mức cọc cam kết</th>
                 <th className="px-4 py-3 sm:px-6 sm:py-3.5">Trạng Thái</th>
-                <th className="px-4 py-3 sm:px-6 sm:py-3.5">Thiếu Hụt & Hạn Chót</th>
+                <th className="px-4 py-3 sm:px-6 sm:py-3.5">Thiếu hụt & hạn chót</th>
                 <th className="px-4 py-3 sm:px-6 sm:py-3.5 text-right">Thao Tác</th>
               </tr>
             </thead>
@@ -325,7 +325,7 @@ export default function EscrowFundSupervisionTab() {
                           <HiOutlineExclamation className="h-3.5 w-3.5" /> Hụt quỹ
                         </span>
                       ) : item.status === 'PENDING_DEPOSIT' ? (
-                        <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/10 px-2 py-0.5 text-xs font-semibold text-amber-500 border border-amber-500/20">
+                        <span className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold border bg-stone-100 text-stone-950 border-stone-950">
                           <HiOutlineClock className="h-3.5 w-3.5" /> Chờ nạp cọc
                         </span>
                       ) : item.status === 'REFUND_PENDING' ? (
@@ -378,7 +378,7 @@ export default function EscrowFundSupervisionTab() {
                       )}
                       <button
                         onClick={() => setAdjustShop(item)}
-                        className="inline-flex items-center gap-1 rounded-lg bg-amber-500/10 px-2.5 py-1.5 text-xs font-semibold text-amber-500 hover:bg-amber-500/20 transition border border-amber-500/20"
+                        className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold hover:bg-amber-500/20 transition border bg-stone-100 text-stone-950 border-stone-950"
                         title="Điều chỉnh quỹ ký quỹ & cấp sao uy tín"
                       >
                         <HiOutlinePencilAlt className="h-3.5 w-3.5" /> Điều chỉnh

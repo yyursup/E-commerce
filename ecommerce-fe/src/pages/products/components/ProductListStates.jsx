@@ -53,8 +53,8 @@ export default function ProductListStates({ loading, error, empty, hasActiveFilt
               className={cn(
                 'mt-4 rounded-xl px-4 py-2 text-sm font-medium',
                 isDark
-                  ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30'
-                  : 'bg-amber-500 text-white hover:bg-amber-600',
+                  ? 'hover:bg-amber-500/30 bg-slate-800 text-white'
+                  : 'bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200',
               )}
             >
               Xóa bộ lọc

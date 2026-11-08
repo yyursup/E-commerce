@@ -62,7 +62,7 @@ export default function Pagination({
               value={pageSize}
               onChange={(e) => onPageSizeChange(Number(e.target.value))}
               className={cn(
-                'rounded-lg border px-2.5 py-1 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500/20',
+                'rounded-lg border px-2.5 py-1 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                 isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-300 bg-white text-stone-900'
               )}
             >
@@ -128,7 +128,7 @@ export default function Pagination({
                   className={cn(
                     'h-8 min-w-[32px] px-2 rounded-lg border text-xs font-bold transition-all',
                     active
-                      ? 'border-amber-500 bg-amber-500 text-white shadow-sm shadow-amber-500/20'
+                      ? 'border-amber-500 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                       : isDark
                         ? 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700'
                         : 'border-stone-200 bg-white text-stone-700 hover:bg-stone-50'

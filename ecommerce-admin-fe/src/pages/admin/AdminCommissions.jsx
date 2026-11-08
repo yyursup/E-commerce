@@ -13,19 +13,19 @@ import DiscountPoliciesTab from './components/commissions/DiscountPoliciesTab'
 const TABS = [
   {
     id: 'analytics',
-    label: 'Thống Kê & Lịch Sử Thu Phí',
+    label: 'Thống kê & lịch sử thu phí',
     icon: HiOutlineChartBar,
     desc: 'Tổng quan doanh thu, biểu đồ phân tích và danh sách đơn hàng',
   },
   {
     id: 'categories',
-    label: 'Biểu Phí Ngành Hàng (Base Rate)',
+    label: 'Biểu phí ngành hàng',
     icon: HiOutlineViewGrid,
     desc: 'Cấu hình tỷ lệ hoa hồng cơ bản theo danh mục sản phẩm công nghệ',
   },
   {
     id: 'policies',
-    label: 'Ưu Đãi Thâm Niên & Mô Phỏng Phí',
+    label: 'Ưu đãi thâm niên & mô phỏng phí',
     icon: HiOutlineShieldCheck,
     desc: 'Quản trị thâm niên hoạt động, tra cứu ma trận ký quỹ và công cụ mô phỏng phí sàn',
   },
@@ -47,7 +47,7 @@ export default function AdminCommissions() {
       <div>
         <h1 className="text-2xl font-bold flex items-center gap-2.5">
           <HiOutlineChartBar className="h-7 w-7 text-amber-500" />
-          Trung Tâm Quản Lý Hoa Hồng & Biểu Phí Toàn Sàn
+          Trung tâm quản lý hoa hồng & biểu phí toàn sàn
         </h1>
         <p className={cn('mt-1 text-sm', isDark ? 'text-slate-400' : 'text-stone-500')}>
           Quản lý toàn diện cơ chế tính hoa hồng động 3 tầng (Biểu phí ngành hàng - Giảm trừ ký quỹ - Ưu đãi thâm niên)
@@ -71,7 +71,7 @@ export default function AdminCommissions() {
               className={cn(
                 'flex items-center gap-2.5 rounded-xl px-4 py-3 text-xs font-bold transition-all duration-200',
                 isActive
-                  ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20'
+                  ? 'bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                   : isDark
                     ? 'text-slate-400 hover:text-white hover:bg-slate-800/80'
                     : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'

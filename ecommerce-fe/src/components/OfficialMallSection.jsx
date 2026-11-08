@@ -51,7 +51,7 @@ export default function OfficialMallSection() {
                   E-Mall
                 </span>
                 <h2 className={cn('text-xl sm:text-2xl font-bold tracking-tight', isDark ? 'text-white' : 'text-stone-900')}>
-                  Gian Hàng Chính Hãng Đã Xác Thực
+                  Gian hàng chính hãng đã xác thực
                 </h2>
               </div>
               <p className="text-xs sm:text-sm text-stone-500 dark:text-slate-400 mt-1">
@@ -63,7 +63,7 @@ export default function OfficialMallSection() {
             <div className="flex flex-wrap items-center gap-4 text-xs font-semibold">
               <div className="flex items-center gap-1.5 text-rose-500">
                 <HiOutlineRefresh className="h-4 w-4" />
-                <span>7 Ngày Đổi Trả</span>
+                <span>7 ngày đổi trả</span>
               </div>
               <div className="flex items-center gap-1.5 text-emerald-500">
                 <HiOutlineShieldCheck className="h-4 w-4" />
@@ -71,7 +71,7 @@ export default function OfficialMallSection() {
               </div>
               <div className="flex items-center gap-1.5 text-blue-500">
                 <HiOutlineTruck className="h-4 w-4" />
-                <span>Giao Toàn Quốc GHN</span>
+                <span>Giao toàn quốc GHN</span>
               </div>
               <Link
                 to="/marketplace"

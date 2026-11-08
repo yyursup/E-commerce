@@ -99,7 +99,7 @@ export default function PendingApproval() {
       >
         <div
           className={cn(
-            'rounded-3xl border p-8 shadow-xl text-center space-y-6',
+            'rounded-3xl border p-8 text-center space-y-6',
             isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
           )}
         >
@@ -109,7 +109,7 @@ export default function PendingApproval() {
               <HiOutlineXCircle className="h-10 w-10" />
             </div>
           ) : (
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-amber-500/10 text-amber-500 ring-8 ring-amber-500/5">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl ring-8 ring-amber-500/5 bg-stone-100 text-stone-950">
               <HiOutlineClock className="h-10 w-10 animate-pulse" />
             </div>
           )}
@@ -121,7 +121,7 @@ export default function PendingApproval() {
                 Hồ sơ chưa được duyệt
               </span>
             ) : (
-              <span className="inline-block rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-extrabold px-3 py-1 uppercase tracking-wider mb-2">
+              <span className="inline-block rounded-full dark:text-amber-400 text-xs font-extrabold px-3 py-1 uppercase tracking-wider mb-2 bg-stone-100 text-stone-950">
                 Hồ sơ đang chờ duyệt
               </span>
             )}
@@ -177,7 +177,7 @@ export default function PendingApproval() {
             {isRejected ? (
               <Link
                 to="/seller-register"
-                className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 py-3 text-xs font-bold text-white shadow-md shadow-amber-500/20 hover:from-amber-600 hover:to-orange-600 transition-all"
+                className="flex-1 flex items-center justify-center gap-2 rounded-xl py-3 text-xs font-bold shadow-md transition-all bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
               >
                 <HiOutlinePencilAlt className="h-4 w-4" />
                 Đăng ký lại / Nộp lại hồ sơ
@@ -186,7 +186,7 @@ export default function PendingApproval() {
               <button
                 onClick={() => handleCheckStatus(false)}
                 disabled={checking}
-                className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-amber-500 py-3 text-xs font-bold text-white shadow-md shadow-amber-500/20 hover:bg-amber-600 transition-all disabled:opacity-50"
+                className="flex-1 flex items-center justify-center gap-2 rounded-xl py-3 text-xs font-bold transition-all disabled:opacity-50 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
               >
                 <HiOutlineRefresh className={cn('h-4 w-4', checking && 'animate-spin')} />
                 {checking ? 'Đang kiểm tra...' : 'Kiểm tra lại trạng thái'}

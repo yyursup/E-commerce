@@ -231,12 +231,12 @@ export default function EditVoucherModal({ isOpen, onClose, onSuccess, voucher, 
           {/* Header */}
           <div className={cn("flex items-center justify-between pb-4 border-b shrink-0", isDark ? "border-slate-800" : "border-stone-100")}>
             <div className="flex items-center gap-2.5">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500 text-white font-bold shrink-0">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl font-bold shrink-0 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200">
                 <HiOutlinePencilAlt className="h-5 w-5" />
               </span>
               <div>
                 <h3 className={cn('text-lg font-bold', isDark ? 'text-white' : 'text-stone-900')}>
-                  Chỉnh Sửa Voucher Shop
+                  Chỉnh sửa voucher shop
                 </h3>
                 <p className={cn("text-xs", isDark ? "text-slate-400" : "text-stone-500")}>
                   Chỉ áp dụng khi voucher chưa bắt đầu phát hành
@@ -284,7 +284,7 @@ export default function EditVoucherModal({ isOpen, onClose, onSuccess, voucher, 
                   value={formData.title}
                   onChange={handleInputChange}
                   className={cn(
-                    'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-amber-500',
+                    'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                     isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-200 bg-stone-50 text-stone-900'
                   )}
                 />
@@ -294,7 +294,7 @@ export default function EditVoucherModal({ isOpen, onClose, onSuccess, voucher, 
             {/* Description */}
             <div>
               <label className={cn("block font-bold mb-1", isDark ? "text-slate-200" : "text-stone-700")}>
-                Mô Tả & Điều Kiện Áp Dụng
+                Mô tả & điều kiện áp dụng
               </label>
               <textarea
                 name="description"
@@ -303,7 +303,7 @@ export default function EditVoucherModal({ isOpen, onClose, onSuccess, voucher, 
                 value={formData.description}
                 onChange={handleInputChange}
                 className={cn(
-                  'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-amber-500 resize-none',
+                  'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40 resize-none',
                   isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-200 bg-stone-50 text-stone-900'
                 )}
               />
@@ -313,7 +313,7 @@ export default function EditVoucherModal({ isOpen, onClose, onSuccess, voucher, 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="min-w-0">
                 <label className={cn("block font-bold mb-1", isDark ? "text-slate-200" : "text-stone-700")}>
-                  Loại Giảm Giá
+                  Loại giảm giá
                 </label>
                 <div className="relative">
                   <select
@@ -321,13 +321,13 @@ export default function EditVoucherModal({ isOpen, onClose, onSuccess, voucher, 
                     value={formData.voucherType}
                     onChange={handleInputChange}
                     className={cn(
-                      'w-full appearance-none rounded-xl border px-3.5 py-2.5 pr-10 outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer',
+                      'w-full appearance-none rounded-xl border px-3.5 py-2.5 pr-10 outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40 cursor-pointer',
                       isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-200 bg-stone-50 text-stone-900'
                     )}
                   >
-                    <option value="PERCENTAGE">Theo Phần Trăm (%)</option>
-                    <option value="FIXED_AMOUNT">Số Tiền Cố Định (VNĐ)</option>
-                    <option value="FREE_SHIPPING">Hỗ Trợ Phí Vận Chuyển</option>
+                    <option value="PERCENTAGE">Theo phần trăm (%)</option>
+                    <option value="FIXED_AMOUNT">Số tiền cố định (VNĐ)</option>
+                    <option value="FREE_SHIPPING">Hỗ trợ phí vận chuyển</option>
                   </select>
                   <HiOutlineChevronDown className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400 dark:text-slate-400" />
                 </div>
@@ -358,7 +358,7 @@ export default function EditVoucherModal({ isOpen, onClose, onSuccess, voucher, 
                   value={formData.discountValue}
                   onChange={handleInputChange}
                   className={cn(
-                    'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-amber-500',
+                    'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                     isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-200 bg-stone-50 text-stone-900'
                   )}
                 />
@@ -369,7 +369,7 @@ export default function EditVoucherModal({ isOpen, onClose, onSuccess, voucher, 
             <div className={cn("grid gap-4", formData.voucherType === 'PERCENTAGE' ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1")}>
               <div className="min-w-0">
                 <label className={cn("block font-bold mb-1", isDark ? "text-slate-200" : "text-stone-700")}>
-                  Đơn Hàng Tối Thiểu (VNĐ)
+                  Đơn hàng tối thiểu (VNĐ)
                 </label>
                 <input
                   type="number"
@@ -380,7 +380,7 @@ export default function EditVoucherModal({ isOpen, onClose, onSuccess, voucher, 
                   value={formData.minOrderValue}
                   onChange={handleInputChange}
                   className={cn(
-                    'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-amber-500',
+                    'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                     isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-200 bg-stone-50 text-stone-900'
                   )}
                 />
@@ -389,7 +389,7 @@ export default function EditVoucherModal({ isOpen, onClose, onSuccess, voucher, 
               {formData.voucherType === 'PERCENTAGE' && (
                 <div className="min-w-0">
                   <label className={cn("block font-bold mb-1", isDark ? "text-slate-200" : "text-stone-700")}>
-                    Mức Giảm Tối Đa (VNĐ)
+                    Mức giảm tối đa (VNĐ)
                   </label>
                   <input
                     type="number"
@@ -400,7 +400,7 @@ export default function EditVoucherModal({ isOpen, onClose, onSuccess, voucher, 
                     value={formData.maxDiscountAmount}
                     onChange={handleInputChange}
                     className={cn(
-                      'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-amber-500',
+                      'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                       isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-200 bg-stone-50 text-stone-900'
                     )}
                   />
@@ -423,7 +423,7 @@ export default function EditVoucherModal({ isOpen, onClose, onSuccess, voucher, 
                   value={formData.usageLimit}
                   onChange={handleInputChange}
                   className={cn(
-                    'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-amber-500',
+                    'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                     isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-200 bg-stone-50 text-stone-900'
                   )}
                 />
@@ -437,7 +437,7 @@ export default function EditVoucherModal({ isOpen, onClose, onSuccess, voucher, 
 
               <div className="min-w-0">
                 <label className={cn("block font-bold mb-1", isDark ? "text-slate-200" : "text-stone-700")}>
-                  Lượt Dùng Mỗi Khách Hàng
+                  Lượt dùng mỗi khách hàng
                 </label>
                 <input
                   type="number"
@@ -448,7 +448,7 @@ export default function EditVoucherModal({ isOpen, onClose, onSuccess, voucher, 
                   value={formData.userUsageLimit}
                   onChange={handleInputChange}
                   className={cn(
-                    'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-amber-500',
+                    'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                     isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-200 bg-stone-50 text-stone-900'
                   )}
                 />
@@ -468,7 +468,7 @@ export default function EditVoucherModal({ isOpen, onClose, onSuccess, voucher, 
                   value={formData.startDate}
                   onChange={handleInputChange}
                   className={cn(
-                    'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-amber-500',
+                    'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                     isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-200 bg-stone-50 text-stone-900'
                   )}
                 />
@@ -476,7 +476,7 @@ export default function EditVoucherModal({ isOpen, onClose, onSuccess, voucher, 
 
               <div className="min-w-0">
                 <label className={cn("block font-bold mb-1", isDark ? "text-slate-200" : "text-stone-700")}>
-                  Ngày Kết Thúc (HSD)
+                  Ngày kết thúc (HSD)
                 </label>
                 <input
                   type="datetime-local"
@@ -484,7 +484,7 @@ export default function EditVoucherModal({ isOpen, onClose, onSuccess, voucher, 
                   value={formData.endDate}
                   onChange={handleInputChange}
                   className={cn(
-                    'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-amber-500',
+                    'w-full rounded-xl border px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                     isDark ? 'border-slate-700 bg-slate-800 text-white' : 'border-stone-200 bg-stone-50 text-stone-900'
                   )}
                 />
@@ -499,7 +499,7 @@ export default function EditVoucherModal({ isOpen, onClose, onSuccess, voucher, 
                 name="isFirstOrderOnly"
                 checked={formData.isFirstOrderOnly}
                 onChange={handleInputChange}
-                className="h-4 w-4 rounded border-stone-300 text-amber-500 focus:ring-amber-500"
+                className="h-4 w-4 rounded border-stone-300 text-amber-500 focus:ring-stone-950/30 dark:focus:ring-white/40"
               />
               <label htmlFor="isFirstOrderOnly" className={cn("text-xs font-medium cursor-pointer", isDark ? "text-slate-300" : "text-stone-700")}>
                 Chỉ dành riêng cho đơn hàng đầu tiên của khách tại shop
@@ -519,7 +519,7 @@ export default function EditVoucherModal({ isOpen, onClose, onSuccess, voucher, 
               <button
                 type="submit"
                 disabled={updating || isShopClosed}
-                className="px-6 py-2.5 rounded-xl font-bold text-white bg-amber-500 hover:bg-amber-600 shadow-md shadow-amber-500/25 transition-all disabled:opacity-50"
+                className="px-6 py-2.5 rounded-xl font-bold shadow-md transition-all disabled:opacity-50 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
               >
                 {updating ? 'Đang cập nhật...' : 'Lưu Thay Đổi'}
               </button>

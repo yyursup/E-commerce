@@ -147,9 +147,9 @@ export default function ShopOrderTabs({
               type="button"
               onClick={() => handleTabClick(tab.id)}
               className={cn(
-                'rounded-xl px-4 py-2.5 text-xs sm:text-sm font-bold transition-all shrink-0 flex items-center gap-2 shadow-sm active:scale-98',
+                'rounded-xl px-4 py-2.5 text-xs sm:text-sm font-bold transition-all shrink-0 flex items-center gap-2 active:scale-98',
                 isSelected
-                  ? 'bg-amber-500 text-white shadow-md shadow-amber-500/25 ring-2 ring-amber-500/20'
+                  ? 'ring-2 ring-amber-500/20 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                   : isDark
                   ? 'bg-slate-900 border border-slate-800 text-slate-300 hover:bg-slate-800 hover:text-white hover:border-slate-700'
                   : 'bg-white border border-stone-200 text-stone-700 hover:bg-stone-100 hover:text-stone-900'
@@ -175,11 +175,11 @@ export default function ShopOrderTabs({
                   isSelected
                     ? 'bg-white/25 text-white'
                     : tab.highlight
-                    ? 'bg-rose-500 text-white shadow-sm shadow-rose-500/30 animate-pulse'
+                    ? 'bg-rose-500 text-white animate-pulse'
                     : tab.count > 0
                     ? isDark
                       ? 'bg-slate-800 text-amber-400 border border-slate-700'
-                      : 'bg-amber-50 text-amber-700 border border-amber-200/60'
+                      : 'border bg-stone-100 text-stone-950 border-stone-950'
                     : isDark
                     ? 'bg-slate-800/80 text-slate-500'
                     : 'bg-stone-100 text-stone-400'

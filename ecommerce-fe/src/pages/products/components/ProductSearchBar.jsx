@@ -41,8 +41,8 @@ export default function ProductSearchBar({ value, onChange, onSubmit, onClear })
           className={cn(
             'w-full rounded-xl border py-2.5 pl-10 pr-10 text-sm outline-none transition',
             isDark
-              ? 'border-slate-600 bg-slate-800/50 text-white placeholder:text-slate-500 focus:border-amber-500/60 focus:ring-2 focus:ring-amber-500/20'
-              : 'border-stone-300 bg-white text-stone-900 placeholder:text-stone-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20',
+              ? 'border-slate-600 bg-slate-800/50 text-white placeholder:text-slate-500 focus:border-stone-950 dark:focus:border-white focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40'
+              : 'border-stone-300 bg-white text-stone-900 placeholder:text-stone-400 focus:border-stone-950 dark:focus:border-white focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
           )}
         />
         {localValue && (

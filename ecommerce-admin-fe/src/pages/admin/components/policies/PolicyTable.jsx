@@ -48,7 +48,7 @@ export default function PolicyTable({
   if (!policies || policies.length === 0) {
     return (
       <div className="py-20 text-center space-y-3">
-        <div className="mx-auto w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
+        <div className="mx-auto w-12 h-12 rounded-2xl flex items-center justify-center bg-stone-100 text-stone-950">
           <HiOutlineShieldCheck className="h-6 w-6" />
         </div>
         <p className="text-sm font-semibold text-stone-400">Không tìm thấy chính sách nào phù hợp</p>
@@ -215,7 +215,7 @@ export default function PolicyTable({
               <div className="flex items-start justify-between gap-2">
                 <div className="space-y-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-md">
+                    <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-stone-100 text-stone-950">
                       #{p.displayOrder}
                     </span>
                     <span
@@ -254,7 +254,7 @@ export default function PolicyTable({
 
               {/* Key & Category */}
               <div className="flex flex-wrap items-center gap-2 text-[11px]">
-                <div className="flex items-center gap-1 font-mono text-amber-500 bg-amber-500/5 px-2 py-0.5 rounded-md border border-amber-500/15">
+                <div className="flex items-center gap-1 font-mono px-2 py-0.5 rounded-md border bg-stone-100 text-stone-950 border-stone-950">
                   <span>{p.policyKey}</span>
                   <button
                     type="button"
@@ -293,7 +293,7 @@ export default function PolicyTable({
                 <button
                   type="button"
                   onClick={() => onEdit(p)}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold text-amber-500 bg-amber-500/10 hover:bg-amber-500/20 transition"
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold hover:bg-amber-500/20 transition bg-stone-100 text-stone-950"
                 >
                   <HiOutlinePencilAlt className="h-3.5 w-3.5" />
                   Sửa

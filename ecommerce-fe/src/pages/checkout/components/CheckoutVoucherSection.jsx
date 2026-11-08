@@ -41,17 +41,17 @@ export default function CheckoutVoucherSection({
     const hasAnyApplied = Boolean(shopV || platV)
 
     return (
-        <div className={cn("rounded-2xl border p-6 shadow-sm space-y-4", isDark ? "border-slate-800 bg-slate-900" : "border-stone-200 bg-white")}>
+        <div className={cn("rounded-lg border p-6 space-y-4", isDark ? "border-slate-800 bg-slate-900" : "border-stone-200 bg-white")}>
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                    <HiOutlineTicket className="w-5 h-5 text-amber-500" />
-                    <h2 className={cn("font-bold text-lg", isDark ? "text-white" : "text-stone-900")}>
-                        Mã Giảm Giá / Voucher
+                    <HiOutlineTicket className="w-5 h-5 text-stone-950 dark:text-white" />
+                    <h2 className={cn("font-bold text-xl", isDark ? "text-white" : "text-stone-900")}>
+                        Mã giảm giá / voucher
                     </h2>
                 </div>
                 <button
                     onClick={handleOpenModal}
-                    className="text-xs font-bold text-amber-500 hover:text-amber-600 flex items-center gap-1 transition-colors"
+                    className="text-xs font-bold text-stone-950 underline underline-offset-2 dark:text-white flex items-center gap-1"
                 >
                     <HiOutlineTag className="w-4 h-4" />
                     Chọn Voucher Có Sẵn ({availableCount})
@@ -66,7 +66,7 @@ export default function CheckoutVoucherSection({
                     onChange={(e) => handleInputChange(e.target.value.toUpperCase())}
                     placeholder="Nhập mã voucher (Sàn hoặc Shop)..."
                     className={cn(
-                        "flex-1 rounded-xl border px-4 py-2.5 text-sm uppercase font-mono tracking-wider outline-none transition-all focus:ring-2 focus:ring-amber-500",
+                        "flex-1 rounded-xl border px-4 py-2.5 text-sm uppercase font-mono tracking-wider outline-none transition-all focus:ring-2 focus:ring-stone-950 dark:focus:ring-white",
                         isDark ? "bg-slate-800 border-slate-700 text-white placeholder-slate-500" : "bg-stone-50 border-stone-200 text-stone-900"
                     )}
                     onKeyDown={(e) => {
@@ -80,10 +80,10 @@ export default function CheckoutVoucherSection({
                     onClick={() => onApplyVoucher && onApplyVoucher()}
                     disabled={applying || !voucherCodeInput.trim()}
                     className={cn(
-                        "px-5 py-2.5 rounded-xl font-bold text-sm text-white shadow-sm transition-all",
+                        "px-5 py-2.5 rounded-xl font-bold text-sm text-white transition-all",
                         applying || !voucherCodeInput.trim()
                             ? "bg-stone-300 dark:bg-slate-700 cursor-not-allowed text-stone-500"
-                            : "bg-amber-500 hover:bg-amber-600 active:scale-95"
+                            : "active:scale-95 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
                     )}
                 >
                     {applying ? 'Đang kiểm tra...' : 'Áp dụng'}

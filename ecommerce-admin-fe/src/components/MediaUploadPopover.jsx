@@ -53,7 +53,7 @@ export default function MediaUploadPopover({ isOpen, onClose, onPickImage, onPic
             )}
             title="Gửi hình ảnh"
           >
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500/10 text-amber-500 group-hover:bg-amber-500 group-hover:text-white transition-colors">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl group-hover:bg-amber-500 group-hover:text-white transition-colors bg-stone-100 text-stone-950">
               <HiOutlinePhotograph className="h-6 w-6" />
             </div>
             <span className="text-[11px] font-semibold text-stone-600 dark:text-slate-300">Hình ảnh</span>

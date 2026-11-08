@@ -256,7 +256,7 @@ export default function ProductQuickView({ product, onAddToCart }) {
                         'rounded-xl border px-3 py-1.5 text-xs font-bold transition-all text-left flex items-center gap-1.5',
                         isOut && 'opacity-40 cursor-not-allowed border-stone-200 line-through',
                         isSelected
-                          ? 'border-amber-500 bg-amber-500/10 text-amber-600 dark:text-amber-400 ring-1 ring-amber-500'
+                          ? 'dark:text-amber-400 ring-1 ring-amber-500 bg-stone-100 text-stone-950 border-stone-950'
                           : isDark
                           ? 'border-slate-700 hover:border-slate-600 text-slate-300 bg-slate-800/40'
                           : 'border-stone-200 hover:border-stone-300 text-stone-700 bg-stone-50/50'
@@ -309,7 +309,7 @@ export default function ProductQuickView({ product, onAddToCart }) {
             type="button"
             onClick={handleAddToCartClick}
             disabled={addingToCart || displayStock <= 0}
-            className="relative flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 py-3 text-sm font-bold text-white shadow-lg shadow-amber-500/25 transition hover:opacity-95 active:scale-95 disabled:opacity-50"
+            className="relative flex w-full items-center justify-center gap-2 rounded-2xl py-3 text-sm font-bold shadow-lg transition hover:opacity-95 active:scale-95 disabled:opacity-50 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
           >
             <AnimatePresence mode="wait">
               {showAddAnimation ? (

@@ -137,11 +137,11 @@ export default function ProductCard({ product, onQuickView, dataAos, dataAosDela
                 onClick={(e) => e.stopPropagation()}
                 className="truncate max-w-[130px] font-semibold text-amber-600 dark:text-amber-400 hover:underline"
               >
-                {shopName || categoryName || 'E-commerce'}
+                {shopName || categoryName || 'E-Commerce'}
               </Link>
             ) : (
               <span className="truncate max-w-[130px] font-medium text-amber-600 dark:text-amber-400">
-                {shopName || categoryName || 'E-commerce'}
+                {shopName || categoryName || 'E-Commerce'}
               </span>
             )}
             <span className="text-[10px] text-stone-400 dark:text-slate-500 shrink-0">

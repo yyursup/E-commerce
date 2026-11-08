@@ -15,7 +15,7 @@ function formatPrice(value) {
   if (value == null) return ''
   const n = Number(value)
   if (Number.isNaN(n)) return ''
-  return new Intl.NumberFormat('vi-VN').format(n) + ' đ'
+  return new Intl.NumberFormat('vi-VN').format + ' đ'
 }
 
 export default function ChatLiveTab({
@@ -294,7 +294,7 @@ export default function ChatLiveTab({
   if (!token) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center p-6 text-center">
-        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-amber-500/10 text-amber-500 mb-3">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full mb-3 bg-stone-100 text-stone-950">
           <HiOutlineUserGroup className="h-7 w-7" />
         </div>
         <h4 className="font-bold text-sm">Yêu cầu đăng nhập</h4>
@@ -304,7 +304,7 @@ export default function ChatLiveTab({
         <Link
           to="/login"
           onClick={closeChat}
-          className="mt-4 inline-flex rounded-xl bg-amber-500 px-5 py-2 text-xs font-bold text-white shadow hover:bg-amber-600 transition"
+          className="mt-4 inline-flex rounded-xl px-5 py-2 text-xs font-bold shadow transition bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
         >
           Đăng nhập ngay
         </Link>
@@ -366,7 +366,7 @@ export default function ChatLiveTab({
             type="button"
             onClick={handleSendProductCard}
             disabled={liveSending}
-            className="shrink-0 rounded-lg bg-amber-500 px-2.5 py-1 text-xs font-bold text-white shadow-xs hover:bg-amber-600 transition active:scale-95 disabled:opacity-50"
+            className="shrink-0 rounded-lg px-2.5 py-1 text-xs font-bold shadow-xs transition active:scale-95 disabled:opacity-50 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
           >
             Gửi sản phẩm
           </button>

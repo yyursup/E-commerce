@@ -30,7 +30,7 @@ const ORDER_REPORT_REASONS = [
     title: 'Lỗi phần cứng / Không khởi động',
     desc: 'Thiết bị không lên nguồn, lỗi sạc, sọc màn hình, liệt cảm ứng hoặc lỗi chức năng chính',
     icon: HiOutlineExclamationCircle,
-    color: 'text-amber-500 bg-amber-500/10 border-amber-500/20',
+    color: 'bg-stone-100 text-stone-950 border-stone-950',
   },
   {
     value: 'NOT_AS_DESCRIBED',
@@ -249,7 +249,7 @@ export default function OrderReportModal({ isOpen, onClose, order, onSuccess }) 
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="text-base sm:text-lg font-bold tracking-tight">Khiếu Nại & Bảo Vệ Đơn Hàng</h3>
+                    <h3 className="text-base sm:text-lg font-bold tracking-tight">Khiếu nại & bảo vệ đơn hàng</h3>
                     <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-500/10 text-rose-500 border border-rose-500/20">
                       Dispute Center
                     </span>
@@ -304,7 +304,7 @@ export default function OrderReportModal({ isOpen, onClose, order, onSuccess }) 
                   </div>
                 </div>
                 <div className="flex items-center gap-2 self-start sm:self-auto">
-                  <span className="px-3 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase bg-amber-500/10 text-amber-500 border border-amber-500/25">
+                  <span className="px-3 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase border bg-stone-100 text-stone-950 border-stone-950">
                     {order.status}
                   </span>
                 </div>
@@ -490,7 +490,7 @@ export default function OrderReportModal({ isOpen, onClose, order, onSuccess }) 
                   <span className={cn(
                     'text-xs font-bold px-2 py-0.5 rounded-full border font-mono',
                     imageCount === 4 && videoCount === 1
-                      ? 'bg-amber-500/10 text-amber-500 border-amber-500/30'
+                      ? 'bg-stone-100 text-stone-950 border-stone-950'
                       : 'bg-stone-100 dark:bg-slate-800 text-stone-500 dark:text-slate-400 border-stone-200 dark:border-slate-700'
                   )}>
                     {imageCount}/4 ảnh • {videoCount}/1 video
@@ -610,12 +610,12 @@ export default function OrderReportModal({ isOpen, onClose, order, onSuccess }) 
                   : 'bg-gradient-to-r from-amber-50 via-amber-50/50 to-orange-50/30 border-amber-200 text-amber-950'
               )}>
                 <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 shrink-0 border border-amber-500/25">
+                  <div className="p-2 rounded-xl dark:text-amber-400 shrink-0 border bg-stone-100 text-stone-950 border-stone-950">
                     <HiOutlineShieldCheck className="h-5 w-5" />
                   </div>
                   <div className="space-y-1 text-xs">
                     <p className="font-bold flex items-center gap-1.5 text-amber-700 dark:text-amber-300">
-                      Bảo Chứng Thanh Toán Ký Quỹ (Escrow Protection)
+                      Bảo chứng thanh toán ký quỹ
                     </p>
                     <p className="leading-relaxed text-[11px] opacity-90">
                       Khi gửi khiếu nại, tiền đơn hàng sẽ được <strong>tạm khóa an toàn</strong> trong tài khoản ký quỹ của sàn. Người bán có tối đa <strong>72 giờ</strong> để phản hồi hoặc giải trình. Nếu không có phản hồi giải trình hợp lệ, toàn bộ <strong>100% số tiền</strong> sẽ được tự động hoàn trả vào Ví của bạn.

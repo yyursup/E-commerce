@@ -146,7 +146,7 @@ export default function Verify() {
           {/* Header */}
           <div className="mb-6 text-center">
             <Link to="/" className="inline-block">
-              <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/25">
+              <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl shadow-lg bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200">
                 <HiOutlineShoppingBag className="h-8 w-8" />
               </div>
             </Link>
@@ -156,7 +156,7 @@ export default function Verify() {
                 isDark ? 'text-white' : 'text-stone-900'
               )}
             >
-              Xác Thực Tài Khoản
+              Xác thực tài khoản
             </h1>
             <p className="mt-1 text-xs text-stone-500 dark:text-slate-400">
               Nhập mã OTP 6 số đã được gửi tới địa chỉ <strong className="text-amber-500">{email}</strong>
@@ -178,8 +178,8 @@ export default function Verify() {
                   className={cn(
                     'h-12 w-12 rounded-xl border text-center text-lg font-bold outline-none transition',
                     isDark
-                      ? 'border-slate-700 bg-slate-800 text-white focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20'
-                      : 'border-stone-200 bg-stone-50 text-stone-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20'
+                      ? 'border-slate-700 bg-slate-800 text-white focus:border-stone-950 dark:focus:border-white focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40'
+                      : 'border-stone-200 bg-stone-50 text-stone-900 focus:border-stone-950 dark:focus:border-white focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40'
                   )}
                 />
               ))}
@@ -188,7 +188,7 @@ export default function Verify() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 py-3 text-xs font-bold text-white shadow-md shadow-amber-500/25 hover:from-amber-600 hover:to-orange-600 transition-all disabled:opacity-50"
+              className="w-full rounded-xl py-3 text-xs font-bold transition-all disabled:opacity-50 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
             >
               {isSubmitting ? 'Đang xác thực...' : 'Xác Thực & Mở Gian Hàng'}
             </button>

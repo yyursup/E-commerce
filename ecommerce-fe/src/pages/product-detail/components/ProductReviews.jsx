@@ -107,7 +107,7 @@ export default function ProductReviews({ productId }) {
             className={cn(
               'rounded-full px-4 py-1.5 text-sm font-medium transition',
               filterRating === null
-                ? 'bg-amber-500 text-white'
+                ? 'bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                 : isDark
                   ? 'bg-slate-800 text-slate-300 hover:bg-slate-700'
                   : 'bg-stone-100 text-stone-600 hover:bg-stone-200',
@@ -127,7 +127,7 @@ export default function ProductReviews({ productId }) {
               className={cn(
                 'flex items-center gap-1 rounded-full px-4 py-1.5 text-sm font-medium transition',
                 filterRating === star
-                  ? 'bg-amber-500 text-white'
+                  ? 'bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                   : isDark
                     ? 'bg-slate-800 text-slate-300 hover:bg-slate-700'
                     : 'bg-stone-100 text-stone-600 hover:bg-stone-200',
@@ -146,7 +146,7 @@ export default function ProductReviews({ productId }) {
             'p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3',
             myReview.status === 'HIDDEN'
               ? 'border-rose-500/30 bg-rose-500/10 text-rose-300'
-              : 'border-amber-500/30 bg-amber-500/10 text-amber-300',
+              : 'bg-slate-800 text-white border-white',
           )}
         >
           <div className="space-y-1">
@@ -193,7 +193,7 @@ export default function ProductReviews({ productId }) {
                       className="h-10 w-10 flex-shrink-0 rounded-full object-cover"
                     />
                   ) : (
-                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-amber-500 font-bold text-white">
+                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full font-bold bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200">
                       {review.userFullName?.charAt(0) || 'U'}
                     </div>
                   )}
@@ -252,7 +252,7 @@ export default function ProductReviews({ productId }) {
                             <div
                               key={index}
                               onClick={() => setSelectedMedia({ url: mediaUrl, isVideo: false })}
-                              className="relative h-20 w-20 rounded-xl overflow-hidden border border-stone-200 dark:border-slate-700 bg-stone-100 dark:bg-slate-800 cursor-pointer shadow-xs group"
+                              className="relative h-20 w-20 rounded-xl overflow-hidden border border-stone-200 dark:border-slate-700 bg-stone-100 dark:bg-slate-800 cursor-pointer group"
                             >
                               <img
                                 src={mediaUrl}
@@ -383,7 +383,7 @@ export default function ProductReviews({ productId }) {
                 src={selectedMedia.url}
                 controls
                 autoPlay
-                className="max-h-[82vh] max-w-full rounded-2xl shadow-2xl bg-black"
+                className="max-h-[82vh] max-w-full rounded-2xl bg-black"
               />
             ) : (
               <img
@@ -438,14 +438,14 @@ function ReplyForm({ reviewId, onSuccess }) {
         className={cn(
           'flex-1 rounded-lg border px-3 py-1.5 text-sm outline-none transition',
           isDark
-            ? 'border-slate-700 bg-slate-800 text-white focus:border-amber-500'
-            : 'border-stone-200 bg-stone-50 text-stone-900 focus:border-amber-500',
+            ? 'border-slate-700 bg-slate-800 text-white focus:border-stone-950 dark:focus:border-white'
+            : 'border-stone-200 bg-stone-50 text-stone-900 focus:border-stone-950 dark:focus:border-white',
         )}
       />
       <button
         type="submit"
         disabled={loading || !reply.trim()}
-        className="rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-amber-600 disabled:opacity-50"
+        className="rounded-lg px-3 py-1.5 text-xs font-bold transition disabled:opacity-50 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
       >
         {loading ? '...' : 'Gửi'}
       </button>

@@ -244,7 +244,7 @@ export default function ReportCreate() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2 }}
           className={cn(
-            'overflow-hidden rounded-3xl border shadow-sm',
+            'overflow-hidden rounded-lg border',
             isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white',
           )}
         >
@@ -252,7 +252,7 @@ export default function ReportCreate() {
             <div className="flex items-start gap-4">
               <div
                 className={cn(
-                  'flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl',
+                  'flex h-12 w-12 shrink-0 items-center justify-center rounded-md',
                   isDark ? 'bg-red-500/15 text-red-300' : 'bg-red-50 text-red-600',
                 )}
               >
@@ -285,7 +285,7 @@ export default function ReportCreate() {
           >
             <div
               className={cn(
-                'rounded-2xl border px-4 py-3',
+                'rounded-md border px-4 py-3',
                 isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white',
               )}
             >
@@ -303,7 +303,7 @@ export default function ReportCreate() {
             </div>
             <div
               className={cn(
-                'rounded-2xl border px-4 py-3',
+                'rounded-md border px-4 py-3',
                 isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white',
               )}
             >
@@ -347,11 +347,11 @@ export default function ReportCreate() {
                     type="button"
                     onClick={() => setSelectedReason(reason.value)}
                     className={cn(
-                      'flex items-center justify-between rounded-2xl border px-4 py-3 text-left text-sm font-medium transition',
+                      'flex items-center justify-between rounded-md border px-4 py-3 text-left text-sm font-medium transition',
                       selectedReason === reason.value
                         ? isDark
-                          ? 'border-red-500/60 bg-red-500/10 text-red-200'
-                          : 'border-red-200 bg-red-50 text-red-700'
+                          ? 'border-2 border-white bg-slate-800 text-white font-semibold'
+                          : 'border-2 border-stone-950 bg-stone-50 text-stone-950 font-semibold'
                         : isDark
                           ? 'border-slate-800 bg-slate-950/50 text-slate-300 hover:border-slate-700'
                           : 'border-stone-200 bg-white text-stone-700 hover:border-stone-300',
@@ -388,9 +388,9 @@ export default function ReportCreate() {
                 maxLength={5000}
                 placeholder={reportMeta.descriptionPlaceholder}
                 className={cn(
-                  'w-full rounded-2xl border px-4 py-3 text-sm outline-none transition',
+                  'w-full rounded-md border px-4 py-3 text-sm outline-none transition',
                   isDark
-                    ? 'border-slate-700 bg-slate-950/60 text-slate-100 placeholder:text-slate-500 focus:border-red-500/60'
+                    ? 'border-slate-700 bg-slate-950/60 text-slate-100 placeholder:text-slate-500 focus:border-slate-400'
                     : 'border-stone-300 bg-white text-stone-900 placeholder:text-stone-400 focus:border-red-400',
                 )}
               />
@@ -473,7 +473,7 @@ export default function ReportCreate() {
                 {evidenceImageCount >= 4 && evidenceVideoCount >= 1 ? (
                   <div
                     className={cn(
-                      'w-full border border-dashed rounded-2xl p-3 text-center transition',
+                      'w-full border border-dashed rounded-md p-3 text-center transition',
                       isDark ? 'border-slate-800 bg-slate-900/40 text-slate-400' : 'border-stone-200 bg-stone-50 text-stone-500'
                     )}
                   >
@@ -483,21 +483,21 @@ export default function ReportCreate() {
                   <div
                     onClick={() => evidenceFileRef.current?.click()}
                     className={cn(
-                      'w-full border-2 border-dashed rounded-2xl p-4 text-center cursor-pointer transition',
+                      'w-full border-2 border-dashed rounded-md p-4 text-center cursor-pointer transition',
                       uploadingEvidence ? 'opacity-50 pointer-events-none' : '',
                       isDark
-                        ? 'border-slate-700 hover:border-red-500 bg-slate-950/60'
-                        : 'border-stone-300 hover:border-red-500 bg-white'
+                        ? 'border-slate-700 hover:border-stone-950 dark:hover:border-white bg-slate-950/60'
+                        : 'border-stone-300 hover:border-stone-950 dark:hover:border-white bg-white'
                     )}
                   >
                     {uploadingEvidence ? (
                       <div className="flex flex-col items-center justify-center gap-1 py-1">
-                        <div className="h-5 w-5 animate-spin rounded-full border-2 border-red-500 border-r-transparent" />
-                        <span className="text-xs font-medium text-red-500">Đang tải tệp lên...</span>
+                        <div className="h-5 w-5 animate-spin rounded-full border-2 border-stone-950 border-r-transparent dark:border-white" />
+                        <span className="text-xs font-medium">Đang tải tệp lên...</span>
                       </div>
                     ) : (
                       <div className="flex flex-col items-center justify-center gap-1 py-1">
-                        <HiOutlineUpload className="h-5 w-5 text-red-500" />
+                        <HiOutlineUpload className="h-5 w-5" />
                         <span className="text-xs font-semibold">
                           {evidenceUrls.length > 0 ? '+ Thêm tệp bằng chứng' : 'Tải ảnh/video bằng chứng lên'}
                         </span>
@@ -563,7 +563,7 @@ export default function ReportCreate() {
                 {coverImageUrls.length >= 4 ? (
                   <div
                     className={cn(
-                      'w-full border border-dashed rounded-2xl p-3 text-center transition',
+                      'w-full border border-dashed rounded-md p-3 text-center transition',
                       isDark ? 'border-slate-800 bg-slate-900/40 text-slate-400' : 'border-stone-200 bg-stone-50 text-stone-500'
                     )}
                   >
@@ -573,21 +573,21 @@ export default function ReportCreate() {
                   <div
                     onClick={() => coverFileRef.current?.click()}
                     className={cn(
-                      'w-full border-2 border-dashed rounded-2xl p-4 text-center cursor-pointer transition',
+                      'w-full border-2 border-dashed rounded-md p-4 text-center cursor-pointer transition',
                       uploadingCover ? 'opacity-50 pointer-events-none' : '',
                       isDark
-                        ? 'border-slate-700 hover:border-red-500 bg-slate-950/60'
-                        : 'border-stone-300 hover:border-red-500 bg-white'
+                        ? 'border-slate-700 hover:border-stone-950 dark:hover:border-white bg-slate-950/60'
+                        : 'border-stone-300 hover:border-stone-950 dark:hover:border-white bg-white'
                     )}
                   >
                     {uploadingCover ? (
                       <div className="flex flex-col items-center justify-center gap-1 py-1">
-                        <div className="h-5 w-5 animate-spin rounded-full border-2 border-red-500 border-r-transparent" />
-                        <span className="text-xs font-medium text-red-500">Đang tải ảnh lên...</span>
+                        <div className="h-5 w-5 animate-spin rounded-full border-2 border-stone-950 border-r-transparent dark:border-white" />
+                        <span className="text-xs font-medium">Đang tải ảnh lên...</span>
                       </div>
                     ) : (
                       <div className="flex flex-col items-center justify-center gap-1 py-1">
-                        <HiOutlineUpload className="h-5 w-5 text-red-500" />
+                        <HiOutlineUpload className="h-5 w-5" />
                         <span className="text-xs font-semibold">
                           {coverImageUrls.length > 0 ? '+ Thêm ảnh minh họa' : 'Tải ảnh minh họa lên'}
                         </span>
@@ -621,8 +621,8 @@ export default function ReportCreate() {
                   type="submit"
                   disabled={isSubmitting || !targetId || uploadingEvidence || uploadingCover}
                   className={cn(
-                    'rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition',
-                    'bg-red-600 hover:bg-red-700',
+                    'rounded-md px-6 py-3 text-sm font-bold transition',
+                    'bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200',
                     (isSubmitting || !targetId || uploadingEvidence || uploadingCover) && 'cursor-not-allowed opacity-60',
                   )}
                 >

@@ -33,7 +33,7 @@ export default function Pagination({ currentPage, totalPages, onPageChange }) {
               className={cn(
                 'rounded-lg px-4 py-2 text-sm font-medium transition',
                 currentPage === i
-                  ? 'bg-amber-500 text-white'
+                  ? 'bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                   : isDark
                     ? 'bg-slate-800 text-slate-300 hover:bg-slate-700'
                     : 'bg-white text-stone-700 hover:bg-stone-50',

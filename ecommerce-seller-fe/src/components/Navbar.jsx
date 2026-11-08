@@ -95,7 +95,7 @@ export default function Navbar() {
           className="flex items-center gap-2.5 font-bold tracking-tight shrink-0"
         >
           <span
-            className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/25"
+            className="flex h-10 w-10 items-center justify-center rounded-xl shadow-md bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
           >
             <HiOutlineShoppingBag className="h-6 w-6" />
           </span>
@@ -120,7 +120,7 @@ export default function Navbar() {
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Tìm kiếm sản phẩm, danh mục, shop..."
             className={cn(
-              'w-full rounded-full pl-10 pr-4 py-2 text-sm border transition-all focus:outline-none focus:ring-2 focus:ring-amber-500',
+              'w-full rounded-full pl-10 pr-4 py-2 text-sm border transition-all focus:outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
               isDark
                 ? 'bg-slate-800/80 border-slate-700 text-white placeholder-slate-400 focus:bg-slate-800'
                 : 'bg-stone-100/90 border-stone-200 text-stone-900 placeholder-stone-400 focus:bg-white',
@@ -290,7 +290,7 @@ export default function Navbar() {
                         )}
                       >
                         <HiOutlineChartBar className="h-4 w-4" />
-                        Dashboard Doanh Nghiệp
+                        Dashboard doanh nghiệp
                       </Link>
                     </MenuItem>
                   )}
@@ -430,7 +430,7 @@ export default function Navbar() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Tìm kiếm sản phẩm, shop..."
                   className={cn(
-                    'w-full rounded-xl pl-10 pr-4 py-2.5 text-sm border focus:outline-none focus:ring-2 focus:ring-amber-500',
+                    'w-full rounded-xl pl-10 pr-4 py-2.5 text-sm border focus:outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                     isDark
                       ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-400'
                       : 'bg-stone-100 border-stone-200 text-stone-900 placeholder-stone-400',
@@ -499,7 +499,7 @@ export default function Navbar() {
                       onClick={() => setMobileOpen(false)}
                       className="rounded-lg px-4 py-3 text-left text-sm font-medium text-stone-700 hover:bg-stone-50 dark:text-slate-300 dark:hover:bg-slate-800"
                     >
-                      Dashboard Doanh Nghiệp
+                      Dashboard doanh nghiệp
                     </Link>
                   )}
 

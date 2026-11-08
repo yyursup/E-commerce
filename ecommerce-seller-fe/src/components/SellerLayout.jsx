@@ -34,16 +34,16 @@ import shopService from '../services/shop'
 import escrowFundService from '../services/escrowFund'
 
 const navItems = [
-  { to: '/dashboard', label: 'Tổng quan (Dashboard)', icon: HiOutlineViewGrid },
-  { to: '/orders', label: 'Quản lý Đơn hàng', icon: HiOutlineShoppingBag },
-  { to: '/products', label: 'Quản lý Sản phẩm', icon: HiOutlineArchive },
-  { to: '/inventory-history', label: 'Lịch sử Kho hàng', icon: HiOutlineClipboardList },
-  { to: '/vouchers', label: 'Mã Giảm Giá Shop', icon: HiOutlineTicket },
-  { to: '/escrow-fund', label: 'Quỹ Ký Quỹ & Uy Tín', icon: HiOutlineCash },
-  { to: '/violations', label: 'Điểm uy tín Shop', icon: HiOutlineShieldCheck },
-  { to: '/chat', label: 'Tin nhắn (Chat CSKH)', icon: HiOutlineChat, isChat: true },
-  { to: '/policy', label: 'Chính sách & Quy định', icon: HiOutlineDocumentText },
-  { to: '/settings', label: 'Cài đặt Kho & Gian hàng', icon: HiOutlineCog },
+  { to: '/dashboard', label: 'Tổng quan', icon: HiOutlineViewGrid, group: 'BÁN HÀNG' },
+  { to: '/orders', label: 'Đơn hàng', icon: HiOutlineShoppingBag, group: 'BÁN HÀNG' },
+  { to: '/products', label: 'Sản phẩm', icon: HiOutlineArchive, group: 'BÁN HÀNG' },
+  { to: '/inventory-history', label: 'Lịch sử kho', icon: HiOutlineClipboardList, group: 'BÁN HÀNG' },
+  { to: '/vouchers', label: 'Voucher shop', icon: HiOutlineTicket, group: 'BÁN HÀNG' },
+  { to: '/escrow-fund', label: 'Ký quỹ & doanh thu', icon: HiOutlineCash, group: 'TÀI CHÍNH' },
+  { to: '/violations', label: 'Vi phạm & uy tín', icon: HiOutlineShieldCheck, group: 'GIAN HÀNG' },
+  { to: '/chat', label: 'Tin nhắn', icon: HiOutlineChat, isChat: true, group: 'GIAN HÀNG' },
+  { to: '/policy', label: 'Chính sách', icon: HiOutlineDocumentText, group: 'GIAN HÀNG' },
+  { to: '/settings', label: 'Cài đặt', icon: HiOutlineCog, group: 'GIAN HÀNG' },
 ]
 
 export default function SellerLayout() {
@@ -165,132 +165,129 @@ export default function SellerLayout() {
   const isNoneEscrow = escrowFund && (Number(escrowFund.balance || 0) <= 0 && Number(escrowFund.committedAmount || 0) <= 0)
 
 
+  const groups = navItems.reduce((acc, item) => {
+    ;(acc[item.group] ||= []).push(item)
+    return acc
+  }, {})
+
   return (
-    <div className={cn('min-h-screen flex flex-col', isDark ? 'bg-slate-950 text-slate-100' : 'bg-stone-50 text-stone-900')}>
-      {/* Top Navbar */}
-      <header className={cn('sticky top-0 z-40 border-b backdrop-blur px-6 py-3 flex items-center justify-between',
-        isDark ? 'bg-slate-900/95 border-slate-800' : 'bg-white/95 border-stone-200'
-      )}>
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-amber-500 to-orange-500 text-white font-black shadow-md shadow-amber-500/20">
-            <HiOutlineShoppingBag className="h-6 w-6" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-base font-black tracking-tight text-amber-500">Kênh Người Bán</span>
-              <span className="rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold px-1.5 py-0.5 text-[10px] uppercase">
-                Seller Centre
-              </span>
-            </div>
-            <p className="text-xs text-stone-500 dark:text-slate-400 font-medium">Hệ thống quản lý gian hàng đa kênh</p>
-          </div>
+    <div className={cn('flex min-h-screen', isDark ? 'bg-slate-950 text-slate-100' : 'bg-stone-50 text-stone-950')}>
+      {/* Sidebar */}
+      {/* Wrapper paints the black column full height; the aside itself stays pinned */}
+      <div className="hidden w-64 shrink-0 bg-stone-950 lg:block">
+      <aside className="sticky top-0 flex h-screen flex-col gap-5 overflow-y-auto px-3.5 py-5 text-white">
+        <div className="flex flex-col gap-1 px-2">
+          <span className="font-display text-[22px] font-extrabold tracking-[-0.04em]">
+            E-Commerce<span className="text-amber-500">.</span>
+          </span>
+          <span className="font-mono text-[11px] text-stone-400">KÊNH NGƯỜI BÁN</span>
         </div>
 
-        <div className="flex items-center gap-3">
-          {shopId && (
-            <a
-              href={`http://localhost:3000/shop/${shopId}`}
-              target="_blank"
-              rel="noreferrer"
-              className="hidden sm:inline-flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition-colors"
-            >
-              <HiOutlineExternalLink className="h-4 w-4" />
-              Xem Shop trên sàn
-            </a>
-          )}
+        <nav aria-label="Kênh người bán" className="flex flex-col gap-4">
+          {Object.entries(groups).map(([group, items]) => (
+            <div key={group} className="flex flex-col gap-0.5">
+              <span className="px-2.5 pb-1 font-mono text-[10px] tracking-[0.06em] text-stone-500">{group}</span>
+              {items.map(({ to, label, icon: Icon, isChat, isEscrowRelated }) => {
+                const isDisabled = isEscrowRelated && isNoneEscrow
+                return (
+                  <NavLink
+                    key={to}
+                    to={isDisabled ? '#' : to}
+                    onClick={(e) => {
+                      if (isDisabled) {
+                        e.preventDefault()
+                        toast.error('Vui lòng tham gia Quỹ Ký Quỹ để sử dụng tính năng này.')
+                      }
+                    }}
+                    className={({ isActive }) => cn(
+                      'flex items-center justify-between rounded-md border-l-[3px] px-2.5 py-2 text-sm transition-colors',
+                      isDisabled
+                        ? 'cursor-not-allowed border-transparent text-stone-600'
+                        : isActive
+                          ? 'border-amber-500 bg-stone-900 font-bold text-white'
+                          : 'border-transparent font-medium text-stone-300 hover:bg-stone-900 hover:text-white',
+                    )}
+                  >
+                    <span className="flex items-center gap-2.5">
+                      <Icon className="h-4 w-4 shrink-0" />
+                      {label}
+                    </span>
+                    {isChat && unreadChatTotal > 0 && (
+                      <span className="rounded bg-amber-500 px-1.5 font-mono text-[11px] text-stone-950">
+                        {unreadChatTotal > 99 ? '99+' : unreadChatTotal}
+                      </span>
+                    )}
+                  </NavLink>
+                )
+              })}
+            </div>
+          ))}
+        </nav>
 
-          <a
-            href="http://localhost:3000"
-            target="_blank"
-            rel="noreferrer"
-            className="text-xs font-medium text-stone-500 dark:text-slate-400 hover:text-amber-500 transition-colors"
-          >
-            Về sàn mua sắm &rarr;
-          </a>
-
-          <button
-            onClick={toggleTheme}
-            className="rounded-xl p-2 text-stone-500 hover:bg-stone-100 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors"
-            aria-label="Toggle theme"
-          >
-            {isDark ? <HiOutlineSun className="h-5 w-5 text-amber-400" /> : <HiOutlineMoon className="h-5 w-5" />}
+        <div className="mt-auto flex flex-col gap-2 border-t border-stone-800 pt-3">
+          <div className="flex items-center gap-2.5 px-2">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-amber-500 font-bold text-stone-950">
+              {(user?.shopName || user?.email || 'S').charAt(0).toUpperCase()}
+            </span>
+            <span className="flex min-w-0 flex-col">
+              <strong className="truncate text-[13px]">{user?.shopName || 'Gian hàng của tôi'}</strong>
+              <span className="truncate text-[11px] text-stone-400">{user?.email}</span>
+            </span>
+          </div>
+          <button onClick={handleLogout} className="flex items-center gap-2 rounded-md px-2.5 py-2 text-sm text-red-400 hover:bg-stone-900">
+            <HiOutlineLogout className="h-4 w-4" />
+            Đăng xuất
           </button>
         </div>
-      </header>
+      </aside>
+      </div>
 
-      {/* Main Body with Sidebar */}
-      <div className="flex-1 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
-        <div className="grid gap-6 lg:grid-cols-4">
-          {/* Sidebar */}
-          <aside className="lg:col-span-1">
-            <div className={cn('sticky top-20 rounded-2xl border p-5 shadow-sm space-y-5',
-              isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
-            )}>
-              {/* Shop Badge Card */}
-              <div className="flex items-center gap-3 pb-4 border-b border-stone-100 dark:border-slate-800">
-                <div className="h-11 w-11 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center text-white font-bold text-lg shadow-sm">
-                  {(user?.shopName || user?.email || 'S').charAt(0).toUpperCase()}
-                </div>
-                <div className="overflow-hidden">
-                  <h3 className="font-bold text-sm truncate">{user?.shopName || 'Gian hàng của tôi'}</h3>
-                  <p className="text-[11px] text-stone-400 truncate">{user?.email}</p>
-                </div>
-              </div>
-
-              {/* Navigation */}
-              <nav className="space-y-1">
-                {navItems.map(({ to, label, icon: Icon, isChat, isEscrowRelated }) => {
-                  const isDisabled = isEscrowRelated && isNoneEscrow
-                  return (
-                    <NavLink
-                      key={to}
-                      to={isDisabled ? '#' : to}
-                      onClick={(e) => {
-                        if (isDisabled) {
-                          e.preventDefault()
-                          toast.error('Vui lòng tham gia Quỹ Ký Quỹ để sử dụng tính năng này.')
-                        }
-                      }}
-                      className={({ isActive }) => cn(
-                        'flex items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-semibold transition-all',
-                        isDisabled
-                          ? 'opacity-50 cursor-not-allowed text-stone-400 dark:text-slate-500'
-                          : isActive
-                            ? 'bg-amber-500 text-white shadow-sm shadow-amber-500/20'
-                            : isDark
-                              ? 'text-slate-300 hover:bg-slate-800'
-                              : 'text-stone-600 hover:bg-stone-100',
-                      )}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <Icon className="h-4 w-4 shrink-0" />
-                        <span>{label}</span>
-                      </div>
-                      {isChat && unreadChatTotal > 0 && (
-                        <span className="flex h-5 min-w-5 px-1.5 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white shadow-xs">
-                          {unreadChatTotal > 99 ? '99+' : unreadChatTotal}
-                        </span>
-                      )}
-                    </NavLink>
-                  )
-                })}
-              </nav>
-
-              <button
-                onClick={handleLogout}
-                className="w-full flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors"
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className={cn('sticky top-0 z-40 flex items-center justify-between gap-3 border-b px-6 py-3', isDark ? 'border-slate-800 bg-slate-950' : 'border-stone-200 bg-white')}>
+          <span className="font-display text-lg font-extrabold tracking-[-0.03em] lg:hidden">
+            E-Commerce<span className="text-amber-500">.</span> <span className="font-mono text-xs font-medium">SELLER</span>
+          </span>
+          <span className={cn('hidden font-mono text-xs lg:inline', isDark ? 'text-slate-400' : 'text-stone-500')}>
+            {new Date().toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' }).toUpperCase()}
+          </span>
+          <div className="flex items-center gap-3">
+            {shopId && (
+              <a
+                href={`http://localhost:3000/shop/${shopId}`}
+                target="_blank"
+                rel="noreferrer"
+                className={cn('hidden items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-semibold sm:inline-flex', isDark ? 'border-slate-600 text-white hover:bg-slate-800' : 'border-stone-950 text-stone-950 hover:bg-stone-100')}
               >
-                <HiOutlineLogout className="h-4 w-4" />
-                Đăng xuất
-              </button>
-            </div>
-          </aside>
+                <HiOutlineExternalLink className="h-4 w-4" />
+                Xem shop trên sàn
+              </a>
+            )}
+            <a href="http://localhost:3000" target="_blank" rel="noreferrer" className={cn('text-xs font-medium hover:underline', isDark ? 'text-slate-300' : 'text-stone-600')}>
+              Về sàn mua sắm →
+            </a>
+            <button
+              onClick={toggleTheme}
+              className={cn('rounded-md p-2 transition-colors', isDark ? 'text-slate-300 hover:bg-slate-800' : 'text-stone-600 hover:bg-stone-100')}
+              aria-label="Đổi giao diện sáng/tối"
+            >
+              {isDark ? <HiOutlineSun className="h-5 w-5" /> : <HiOutlineMoon className="h-5 w-5" />}
+            </button>
+          </div>
+        </header>
 
-          {/* Main Workspace */}
-          <main className="lg:col-span-3">
+        {/* Mobile nav: the sidebar is desktop-only */}
+        <nav aria-label="Kênh người bán" className={cn('flex gap-1 overflow-x-auto border-b px-4 py-2 lg:hidden', isDark ? 'border-slate-800' : 'border-stone-200')}>
+          {navItems.map(({ to, label }) => (
+            <NavLink key={to} to={to} className={({ isActive }) => cn('shrink-0 rounded-md px-3 py-1.5 text-xs font-semibold', isActive ? 'bg-stone-950 text-white dark:bg-white dark:text-stone-950' : isDark ? 'text-slate-300' : 'text-stone-600')}>
+              {label}
+            </NavLink>
+          ))}
+        </nav>
+
+        <main className="w-full max-w-[1280px] flex-1 px-4 py-7 sm:px-8">
             {/* Banner thông báo gian hàng đã đóng cửa (CLOSED) */}
             {user?.shopStatus === 'CLOSED' && (
-              <div className="mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-2xl border border-rose-500/40 bg-gradient-to-r from-rose-500/15 via-rose-500/10 to-rose-500/5 px-4 py-3.5 text-xs text-rose-800 dark:text-rose-200 shadow-sm">
+              <div className="mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-lg border border-rose-500/40 bg-rose-500/10 px-4 py-3.5 text-xs text-rose-800 dark:text-rose-200">
                 <div className="flex items-center gap-2">
                   <HiOutlineExclamation className="h-5 w-5 text-rose-500 shrink-0" />
                   <span>
@@ -299,7 +296,7 @@ export default function SellerLayout() {
                 </div>
                 <NavLink
                   to="/escrow-fund"
-                  className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs shadow-sm transition shrink-0 self-end sm:self-auto"
+                  className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-md bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition shrink-0 self-end sm:self-auto"
                 >
                   Xem quỹ & ví &rarr;
                 </NavLink>
@@ -308,13 +305,13 @@ export default function SellerLayout() {
 
             {/* Banner yêu cầu nạp ký quỹ để kích hoạt gian hàng */}
             {user?.shopStatus === 'PENDING_DEPOSIT' && (
-              <div className="mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-2xl border border-amber-500/40 bg-gradient-to-r from-amber-500/15 via-amber-500/10 to-amber-500/5 px-4 py-3.5 text-xs text-amber-800 dark:text-amber-200 shadow-sm">
+              <div className="mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3.5 text-xs text-amber-900 dark:text-amber-100">
                 <span>
                   Hồ sơ gian hàng đã được duyệt! Vui lòng <strong>nạp đủ số tiền ký quỹ cam kết</strong> để kích hoạt gian hàng và mở khóa tính năng đăng bán sản phẩm.
                 </span>
                 <NavLink
                   to="/escrow-fund"
-                  className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-sm transition shrink-0 self-end sm:self-auto"
+                  className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-md bg-stone-950 hover:bg-stone-800 text-white dark:bg-white dark:text-stone-950 font-bold text-xs transition shrink-0 self-end sm:self-auto"
                 >
                   Nạp ký quỹ kích hoạt &rarr;
                 </NavLink>
@@ -323,7 +320,7 @@ export default function SellerLayout() {
 
             {/* Top Banner cảnh báo vi phạm tinh gọn chuẩn Responsive */}
             {Boolean(user?.shopStatus === 'WARNED' || user?.shopStatus === 'SUSPENDED' || (Number(user?.shopViolationCount ?? user?.violationCount ?? 0) >= 3)) && (
-              <div className="mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 rounded-2xl border border-amber-500/35 bg-amber-500/10 px-4 py-3 text-xs text-amber-600 dark:text-amber-400">
+              <div className="mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 rounded-lg border border-amber-500/35 bg-amber-500/10 px-4 py-3 text-xs text-amber-900 dark:text-amber-100">
                 <span>
                   Gian hàng đang ở trạng thái <strong>{user?.shopStatus === 'SUSPENDED' ? 'Tạm ngưng hoạt động' : 'Cảnh báo vi phạm'}</strong> ({user?.shopViolationCount ?? user?.violationCount ?? 0}/7 vi phạm). Sản phẩm có thể bị tạm ẩn và tiền ký quỹ Escrow được tạm giữ để đảm bảo an toàn.
                 </span>
@@ -333,8 +330,7 @@ export default function SellerLayout() {
               </div>
             )}
             <Outlet />
-          </main>
-        </div>
+        </main>
       </div>
 
       {/* Incoming customer message notification popup when not on /chat */}

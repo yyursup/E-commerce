@@ -18,8 +18,8 @@ import { cn } from '../lib/cn'
 const heroBanners = [
   {
     id: 1,
-    badge: 'Sàn Thương Mại Điện Tử & Đồ Công Nghệ',
-    title: 'Hệ Sinh Thái Đồ Công Nghệ Chính Hãng',
+    badge: 'Sàn thương mại điện tử & đồ công nghệ',
+    title: 'Hệ sinh thái đồ công nghệ chính hãng',
     subtitle: 'Điện thoại, Laptop, Tablet, Linh kiện PC từ Apple, Samsung, Sony, Asus. Đầy đủ hóa đơn VAT & Bảo hành chính hãng.',
     ctaText: 'Khám phá ngay',
     ctaLink: '/products',
@@ -29,8 +29,8 @@ const heroBanners = [
   },
   {
     id: 2,
-    badge: 'Thị Trường Đồ Cũ Like New 99%',
-    title: 'Máy Cũ Kiểm Định - An Tâm Tuyệt Đối',
+    badge: 'Thị trường đồ cũ like new 99%',
+    title: 'Máy cũ kiểm định - an tâm tuyệt đối',
     subtitle: 'Đội ngũ thẩm định chuyên nghiệp kiểm tra pin, bo mạch, màn hình. Minh bạch tình trạng máy & lịch sử sửa chữa.',
     ctaText: 'Xem máy Like New',
     ctaLink: '/products',
@@ -40,8 +40,8 @@ const heroBanners = [
   },
   {
     id: 3,
-    badge: 'Cơ Chế Ký Quỹ Độc Quyền Escrow',
-    title: 'Giao Dịch Đồ Công Nghệ Giá Trị Cao',
+    badge: 'Cơ chế ký quỹ độc quyền escrow',
+    title: 'Giao dịch đồ công nghệ giá trị cao',
     subtitle: 'Tiền được khóa an toàn tại Escrow sàn. Sau khi nhận máy và test trong 3 ngày hài lòng, tiền mới được giải ngân cho Shop.',
     ctaText: 'Tìm hiểu Escrow',
     ctaLink: '/help',
@@ -51,8 +51,8 @@ const heroBanners = [
   },
   {
     id: 4,
-    badge: 'Vận Chuyển An Toàn GHN',
-    title: 'Giao Hàng Công Nghệ Toàn Quốc',
+    badge: 'Vận chuyển an toàn GHN',
+    title: 'Giao hàng công nghệ toàn quốc',
     subtitle: 'Đóng gói chống sốc chuyên dụng, bảo hiểm 100% giá trị thiết bị điện tử cùng Giao Hàng Nhanh (GHN).',
     ctaText: 'Săn mã Freeship',
     ctaLink: '/deals',
@@ -63,12 +63,12 @@ const heroBanners = [
 ]
 
 const quickServices = [
-  { icon: HiOutlineTag, label: 'Mã Giảm Giá Sàn', color: 'text-rose-500 bg-rose-500/10 dark:bg-rose-500/20', link: '/deals' },
+  { icon: HiOutlineTag, label: 'Mã giảm giá sàn', color: 'text-rose-500 bg-rose-500/10 dark:bg-rose-500/20', link: '/deals' },
   { icon: HiOutlineTruck, label: 'Freeship Xtra GHN', color: 'text-blue-500 bg-blue-500/10 dark:bg-blue-500/20', link: '/deals' },
-  { icon: HiOutlineBadgeCheck, label: 'Shop eKYC Uy Tín', color: 'text-amber-500 bg-amber-500/10 dark:bg-amber-500/20', link: '/marketplace' },
-  { icon: HiOutlineShieldCheck, label: 'Ký Quỹ Escrow', color: 'text-emerald-500 bg-emerald-500/10 dark:bg-emerald-500/20', link: '/help' },
-  { icon: HiOutlineCreditCard, label: 'Ví & Nạp Tiền', color: 'text-purple-500 bg-purple-500/10 dark:bg-purple-500/20', link: '/profile/wallet' },
-  { icon: HiOutlineSparkles, label: 'Gợi Ý AI Thông Minh', color: 'text-orange-500 bg-orange-500/10 dark:bg-orange-500/20', link: '/products' },
+  { icon: HiOutlineBadgeCheck, label: 'Shop eKYC uy tín', color: 'dark:bg-amber-500/20 bg-stone-100 text-stone-950', link: '/marketplace' },
+  { icon: HiOutlineShieldCheck, label: 'Ký quỹ escrow', color: 'text-emerald-500 bg-emerald-500/10 dark:bg-emerald-500/20', link: '/help' },
+  { icon: HiOutlineCreditCard, label: 'Ví & nạp tiền', color: 'text-purple-500 bg-purple-500/10 dark:bg-purple-500/20', link: '/profile/wallet' },
+  { icon: HiOutlineSparkles, label: 'Gợi ý AI thông minh', color: 'text-orange-500 bg-orange-500/10 dark:bg-orange-500/20', link: '/products' },
 ]
 
 export default function Hero() {
@@ -192,7 +192,7 @@ export default function Hero() {
                   MALL OFFICIAL
                 </span>
                 <h3 className="mt-1.5 text-base font-bold group-hover:text-amber-400 transition-colors">
-                  Gian Hàng Chính Hãng
+                  Gian hàng chính hãng
                 </h3>
                 <p className="text-xs text-slate-300">Đã kiểm duyệt CCCD & eKYC 100%</p>
               </div>
@@ -212,7 +212,7 @@ export default function Hero() {
                   HOT DEALS
                 </span>
                 <h3 className="mt-1.5 text-base font-bold group-hover:text-rose-400 transition-colors">
-                  Kho Voucher & Mã Khuyến Mãi
+                  Kho voucher & mã khuyến mãi
                 </h3>
                 <p className="text-xs text-slate-300">Thu thập voucher giảm sâu hôm nay</p>
               </div>

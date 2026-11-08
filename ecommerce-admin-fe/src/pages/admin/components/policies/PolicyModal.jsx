@@ -67,7 +67,7 @@ export default function PolicyModal({
           )}
         >
           <h2 className="text-base sm:text-lg font-bold flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-500 flex items-center justify-center shrink-0">
+            <div className="h-8 w-8 rounded-xl border flex items-center justify-center shrink-0 bg-stone-100 text-stone-950 border-stone-950">
               <HiOutlineDocumentText className="h-5 w-5" />
             </div>
             <span>{editingPolicy ? 'Chỉnh Sửa Văn Bản Chính Sách' : 'Thêm Chính Sách Nền Tảng Mới'}</span>
@@ -89,7 +89,7 @@ export default function PolicyModal({
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
             <div className="sm:col-span-5">
               <label className="block text-xs font-bold uppercase tracking-wider mb-1.5 opacity-70">
-                Mã Định Danh (Policy Key) *
+                Mã định danh *
               </label>
               <input
                 type="text"
@@ -104,7 +104,7 @@ export default function PolicyModal({
                 }
                 placeholder="VD: ESCROW_PAYMENT_PROTECTION"
                 className={cn(
-                  'w-full px-3.5 py-2.5 rounded-xl text-xs font-mono border focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition',
+                  'w-full px-3.5 py-2.5 rounded-xl text-xs font-mono border focus:outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40 transition',
                   isDark ? 'bg-slate-950 border-slate-800 text-amber-400' : 'bg-stone-50 border-stone-200 text-amber-700',
                   editingPolicy && 'opacity-60 cursor-not-allowed'
                 )}
@@ -116,7 +116,7 @@ export default function PolicyModal({
 
             <div className="sm:col-span-7">
               <label className="block text-xs font-bold uppercase tracking-wider mb-1.5 opacity-70">
-                Tiêu Đề Văn Bản Chính Sách *
+                Tiêu đề văn bản chính sách *
               </label>
               <input
                 type="text"
@@ -125,7 +125,7 @@ export default function PolicyModal({
                 onChange={(e) => setPolicyForm({ ...policyForm, title: e.target.value })}
                 placeholder="VD: Quy Trình Ký Quỹ Escrow Và Cơ Chế Bảo Vệ Người Mua"
                 className={cn(
-                  'w-full px-3.5 py-2.5 rounded-xl text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition',
+                  'w-full px-3.5 py-2.5 rounded-xl text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40 transition',
                   isDark ? 'bg-slate-950 border-slate-800' : 'bg-stone-50 border-stone-200'
                 )}
               />
@@ -139,13 +139,13 @@ export default function PolicyModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider mb-1.5 opacity-70">
-                Đối Tượng Áp Dụng
+                Đối tượng áp dụng
               </label>
               <select
                 value={policyForm.targetAudience}
                 onChange={(e) => setPolicyForm({ ...policyForm, targetAudience: e.target.value })}
                 className={cn(
-                  'w-full px-3.5 py-2.5 rounded-xl text-xs border focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition',
+                  'w-full px-3.5 py-2.5 rounded-xl text-xs border focus:outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40 transition',
                   isDark ? 'bg-slate-950 border-slate-800' : 'bg-stone-50 border-stone-200'
                 )}
               >
@@ -159,13 +159,13 @@ export default function PolicyModal({
 
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider mb-1.5 opacity-70">
-                Danh Mục Nghiệp Vụ
+                Danh mục nghiệp vụ
               </label>
               <select
                 value={policyForm.category}
                 onChange={(e) => setPolicyForm({ ...policyForm, category: e.target.value })}
                 className={cn(
-                  'w-full px-3.5 py-2.5 rounded-xl text-xs border focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition',
+                  'w-full px-3.5 py-2.5 rounded-xl text-xs border focus:outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40 transition',
                   isDark ? 'bg-slate-950 border-slate-800' : 'bg-stone-50 border-stone-200'
                 )}
               >
@@ -179,7 +179,7 @@ export default function PolicyModal({
 
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider mb-1.5 opacity-70">
-                Số Hiệu Phiên Bản
+                Số hiệu phiên bản
               </label>
               <input
                 type="text"
@@ -187,7 +187,7 @@ export default function PolicyModal({
                 onChange={(e) => setPolicyForm({ ...policyForm, version: e.target.value })}
                 placeholder="VD: 1.0 hoặc 2.1"
                 className={cn(
-                  'w-full px-3.5 py-2.5 rounded-xl text-xs font-mono border focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition',
+                  'w-full px-3.5 py-2.5 rounded-xl text-xs font-mono border focus:outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40 transition',
                   isDark ? 'bg-slate-950 border-slate-800' : 'bg-stone-50 border-stone-200'
                 )}
               />
@@ -195,7 +195,7 @@ export default function PolicyModal({
 
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider mb-1.5 opacity-70">
-                Thứ Tự Sắp Xếp
+                Thứ tự sắp xếp
               </label>
               <input
                 type="number"
@@ -204,7 +204,7 @@ export default function PolicyModal({
                   setPolicyForm({ ...policyForm, displayOrder: parseInt(e.target.value) || 0 })
                 }
                 className={cn(
-                  'w-full px-3.5 py-2.5 rounded-xl text-xs font-mono border focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition',
+                  'w-full px-3.5 py-2.5 rounded-xl text-xs font-mono border focus:outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40 transition',
                   isDark ? 'bg-slate-950 border-slate-800' : 'bg-stone-50 border-stone-200'
                 )}
               />
@@ -214,7 +214,7 @@ export default function PolicyModal({
           {/* Summary Box */}
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider mb-1.5 opacity-70">
-              Tóm Tắt Nhanh (Executive Summary)
+              Tóm tắt nhanh
             </label>
             <textarea
               rows={2}
@@ -222,7 +222,7 @@ export default function PolicyModal({
               onChange={(e) => setPolicyForm({ ...policyForm, summary: e.target.value })}
               placeholder="Tóm tắt ngắn gọn 1-2 câu về nội dung cốt lõi của chính sách giúp người dùng nắm bắt nhanh..."
               className={cn(
-                'w-full px-3.5 py-2.5 rounded-xl text-xs border focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition leading-relaxed',
+                'w-full px-3.5 py-2.5 rounded-xl text-xs border focus:outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40 transition leading-relaxed',
                 isDark ? 'bg-slate-950 border-slate-800' : 'bg-stone-50 border-stone-200'
               )}
             />
@@ -238,7 +238,7 @@ export default function PolicyModal({
                   className={cn(
                     'inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-xs',
                     activeTab === 'editor'
-                      ? 'bg-amber-500 text-white shadow-amber-500/25'
+                      ? 'bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                       : isDark
                         ? 'bg-slate-800 text-slate-400 hover:text-white'
                         : 'bg-stone-100 text-stone-600 hover:text-stone-900'
@@ -253,7 +253,7 @@ export default function PolicyModal({
                   className={cn(
                     'inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-xs',
                     activeTab === 'preview'
-                      ? 'bg-amber-500 text-white shadow-amber-500/25'
+                      ? 'bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                       : isDark
                         ? 'bg-slate-800 text-slate-400 hover:text-white'
                         : 'bg-stone-100 text-stone-600 hover:text-stone-900'
@@ -297,13 +297,13 @@ export default function PolicyModal({
                   onChange={(e) => setPolicyForm({ ...policyForm, content: e.target.value })}
                   placeholder="Nhập nội dung chính sách định dạng Markdown (# Tiêu đề, ## Mục con, - Danh sách, | Bảng |, > Lưu ý)..."
                   className={cn(
-                    'w-full px-4 py-3 rounded-2xl text-xs font-mono border focus:outline-none focus:ring-2 focus:ring-amber-500/20 leading-relaxed transition',
+                    'w-full px-4 py-3 rounded-2xl text-xs font-mono border focus:outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40 leading-relaxed transition',
                     isDark ? 'bg-slate-950 border-slate-800 text-slate-200' : 'bg-stone-50 border-stone-200 text-stone-800'
                   )}
                 />
                 <div className="flex items-center gap-1.5 text-[10px] text-stone-400">
                   <HiOutlineInformationCircle className="h-3.5 w-3.5 shrink-0" />
-                  <span>Hỗ trợ Markdown đầy đủ: Tiêu đề (#), Đậm (**text**), Danh sách (- item), Bảng (| Cột |) và Trích dẫn (&gt;)</span>
+                  <span>Hỗ trợ Markdown đầy đủ: Tiêu đề (#), Đậm (**text**), Danh sách, Bảng (| Cột |) và Trích dẫn (&gt;)</span>
                 </div>
               </div>
             )}
@@ -334,7 +334,7 @@ export default function PolicyModal({
                 type="checkbox"
                 checked={policyForm.isActive}
                 onChange={(e) => setPolicyForm({ ...policyForm, isActive: e.target.checked })}
-                className="h-4 w-4 rounded text-amber-500 focus:ring-amber-500 border-stone-300 dark:border-slate-700"
+                className="h-4 w-4 rounded text-amber-500 focus:ring-stone-950/30 dark:focus:ring-white/40 border-stone-300 dark:border-slate-700"
               />
               <span className="text-xs font-bold">Kích hoạt và công bố chính sách ngay lập tức</span>
             </label>
@@ -353,7 +353,7 @@ export default function PolicyModal({
             <button
               type="submit"
               disabled={saving}
-              className="px-5 py-2.5 rounded-xl text-xs font-bold bg-amber-500 text-white hover:bg-amber-600 shadow-md shadow-amber-500/20 transition disabled:opacity-50 flex items-center gap-2"
+              className="px-5 py-2.5 rounded-xl text-xs font-bold shadow-md transition disabled:opacity-50 flex items-center gap-2 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
             >
               {saving ? (
                 <>

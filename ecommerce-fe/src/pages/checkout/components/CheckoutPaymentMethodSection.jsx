@@ -41,9 +41,9 @@ export default function CheckoutPaymentMethodSection({
     ]
 
     return (
-        <div className={cn("rounded-2xl border p-6 shadow-sm space-y-4", isDark ? "border-slate-800 bg-slate-900" : "border-stone-200 bg-white")}>
+        <div className={cn("rounded-lg border p-6 space-y-4", isDark ? "border-slate-800 bg-slate-900" : "border-stone-200 bg-white")}>
             <div className="flex items-center justify-between">
-                <h2 className={cn("font-bold text-lg", isDark ? "text-white" : "text-stone-900")}>
+                <h2 className={cn("font-bold text-xl", isDark ? "text-white" : "text-stone-900")}>
                     Phương thức thanh toán
                 </h2>
                 <span className="text-xs text-stone-500 dark:text-slate-400">
@@ -74,8 +74,8 @@ export default function CheckoutPaymentMethodSection({
                                     : "cursor-pointer",
                                 !isDisabled && isSelected
                                     ? isDark
-                                        ? "border-amber-500/80 bg-amber-500/10 ring-1 ring-amber-500/50"
-                                        : "border-amber-500 bg-amber-50/50 ring-1 ring-amber-500"
+                                        ? "border-white bg-slate-800 ring-1 ring-white"
+                                        : "border-stone-950 bg-stone-50 ring-1 ring-stone-950"
                                     : !isDisabled && (isDark
                                         ? "border-slate-800 bg-slate-800/40 hover:bg-slate-800/80"
                                         : "border-stone-200 bg-stone-50/50 hover:bg-stone-100/70")
@@ -90,7 +90,7 @@ export default function CheckoutPaymentMethodSection({
                                     if (!isDisabled) setPaymentMethod(method.id)
                                 }}
                                 className={cn(
-                                    "mt-1 text-amber-600 focus:ring-amber-500 h-4 w-4 border-stone-300 dark:border-slate-600",
+                                    "mt-1 h-4 w-4 border-stone-300 dark:border-slate-600",
                                     isDisabled ? "cursor-not-allowed" : "cursor-pointer"
                                 )}
                             />
@@ -100,7 +100,7 @@ export default function CheckoutPaymentMethodSection({
                                     ? isDark ? "bg-slate-800 text-slate-500" : "bg-stone-200 text-stone-400"
                                     : method.id === 'WALLET'
                                         ? "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400"
-                                        : "bg-amber-100 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400"
+                                        : "dark:bg-amber-950/40 dark:text-amber-400 bg-stone-100 text-stone-950"
                             )}>
                                 <Icon className="w-5 h-5" />
                             </div>
@@ -116,7 +116,7 @@ export default function CheckoutPaymentMethodSection({
                                                 ? "bg-rose-500/10 text-rose-600 dark:text-rose-400"
                                                 : method.id === 'WALLET'
                                                     ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                                                    : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                                                    : "dark:text-amber-400 bg-stone-100 text-stone-950"
                                         )}>
                                             {method.badge}
                                         </span>
@@ -135,7 +135,7 @@ export default function CheckoutPaymentMethodSection({
                                 )}
                             </div>
                             {isSelected && !isDisabled && (
-                                <HiOutlineCheckCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                                <HiOutlineCheckCircle className="w-5 h-5 text-stone-950 dark:text-white shrink-0 mt-0.5" />
                             )}
                         </div>
                     )

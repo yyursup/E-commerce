@@ -2,6 +2,68 @@
 
 /* Class-based dark mode */
 @custom-variant dark (&:where(.dark, .dark *));
+/* E-Commerce design tokens: graphite neutrals + signal orange (see TECHORA canvas).
+   Remapping the palettes the codebase already uses restyles every page without touching class names. */
+@theme {
+  --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-display: 'Bricolage Grotesque', 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --color-amber-50: #fff4ee;  --color-amber-100: #ffe6d9; --color-amber-200: #ffc8b0;
+  --color-amber-300: #ffa47f; --color-amber-400: #ff7b4a; --color-amber-500: #ff5b1f;
+  --color-amber-600: #e04a12; --color-amber-700: #b33a0c; --color-amber-800: #8c2e0b;
+  --color-amber-900: #6b240c; --color-amber-950: #3d1405;
+  --color-orange-50: #fff4ee;  --color-orange-100: #ffe6d9; --color-orange-200: #ffc8b0;
+  --color-orange-300: #ffa47f; --color-orange-400: #ff7b4a; --color-orange-500: #f0500f;
+  --color-orange-600: #d14310; --color-orange-700: #a8360b; --color-orange-800: #842b0b;
+  --color-orange-900: #6b240c; --color-orange-950: #3d1405;
+
+  --color-stone-50: #f1f2f4;  --color-stone-100: #e6e8eb; --color-stone-200: #d9dce0;
+  --color-stone-300: #c4c9cf; --color-stone-400: #9aa1a9; --color-stone-500: #6b727a;
+  --color-stone-600: #50565e; --color-stone-700: #3a3f45; --color-stone-800: #2a2f35;
+  --color-stone-900: #1b1e22; --color-stone-950: #0d0f11;
+  --color-slate-50: #f7f8f9;  --color-slate-100: #eceef0; --color-slate-200: #d9dce0;
+  --color-slate-300: #c4c9cf; --color-slate-400: #a3a9b1; --color-slate-500: #7b828c;
+  --color-slate-600: #575e68; --color-slate-700: #3d434b; --color-slate-800: #2d3239;
+  --color-slate-900: #21252b; --color-slate-950: #181b20;
+  /* In-between shades the chat widgets use (slate-850 / slate-750) */
+  --color-slate-850: #272b31; --color-slate-750: #353a41;
+  --color-gray-50: #f7f8f9;   --color-gray-100: #eceef0;  --color-gray-200: #d9dce0;
+  --color-gray-300: #c4c9cf;  --color-gray-400: #9aa1a9;  --color-gray-500: #6b727a;
+  --color-gray-600: #50565e;  --color-gray-700: #3a3f45;  --color-gray-800: #2a2f35;
+  --color-gray-900: #1b1e22;  --color-gray-950: #0d0f11;
+
+  /* Dark mode is charcoal (#181b20 page, #21252b cards), not pure black, so surfaces stay distinguishable. */
+  /* Tighter corners: the design uses 4-8px, not pill-soft cards */
+  --radius-lg: 0.375rem;
+  --radius-xl: 0.5rem;
+  --radius-2xl: 0.5rem;
+  --radius-3xl: 0.75rem;
+}
+
+/* Orange is light: text on it is ink, not white (white on #ff5b1f fails contrast) */
+.bg-amber-500.text-white, .bg-amber-400.text-white, .bg-orange-500.text-white,
+.from-amber-500.text-white, .from-amber-400.text-white {
+  color: #0d0f11;
+}
+
+@layer base {
+  .dark body {
+    background-color: var(--color-slate-950);
+    color: #e6e8eb;
+  }
+  input[type='radio'], input[type='checkbox'] {
+    accent-color: var(--color-stone-950);
+  }
+  .dark input[type='radio'], .dark input[type='checkbox'] {
+    accent-color: #ffffff;
+  }
+  h1, h2, h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
+}
+
 
 /* Slick Carousel */
 @import "slick-carousel/slick/slick.css";
@@ -23,8 +85,8 @@ body {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #fafaf9;
-  color: #1c1917;
+  background-color: #f1f2f4;
+  color: #0d0f11;
 }
 
 :root.dark body,

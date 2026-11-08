@@ -88,15 +88,15 @@ export default function Marketplace() {
   return (
     <div className={cn(isDark ? 'bg-slate-950' : 'bg-stone-50/50')}>
       {/* Marketplace Header Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-r from-amber-600 via-orange-600 to-rose-600 text-white py-14 sm:py-18">
+      <section className="relative overflow-hidden bg-stone-950 text-white py-14 sm:py-18">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="max-w-2xl">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 backdrop-blur px-3 py-1 text-xs font-semibold uppercase tracking-wider mb-3">
               <HiOutlineShieldCheck className="h-4 w-4 text-emerald-300" />
-              100% Shop Đã Xác Thực VNPT eKYC
+              100% shop đã xác thực VNPT eKYC
             </span>
             <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight">
-              Khám Phá Gian Hàng
+              Khám phá gian hàng
             </h1>
             <p className="mt-3 text-sm sm:text-base text-white/90">
               Kết nối trực tiếp với các nhà bán hàng và thương hiệu chính hãng được bảo vệ bởi hệ thống Ký quỹ Escrow và vận chuyển toàn quốc GHN.
@@ -109,7 +109,7 @@ export default function Marketplace() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Tìm kiếm shop theo tên, ngành hàng, địa chỉ..."
-                className="w-full rounded-2xl pl-11 pr-4 py-3 text-sm text-stone-900 placeholder-stone-400 bg-white shadow-xl focus:outline-none focus:ring-2 focus:ring-amber-300"
+                className="w-full rounded-2xl pl-11 pr-4 py-3 text-sm text-stone-900 placeholder-stone-400 bg-white focus:outline-none focus:ring-2 focus:ring-amber-300"
               />
               <HiOutlineSearch className="absolute left-4 h-5 w-5 text-stone-400" />
             </div>
@@ -117,7 +117,6 @@ export default function Marketplace() {
         </div>
 
         {/* Decorative Circle */}
-        <div className="absolute right-0 top-0 -mr-20 -mt-20 h-96 w-96 rounded-full bg-white/10 blur-3xl pointer-events-none" />
       </section>
 
       {/* Filter Tabs & Controls */}
@@ -136,7 +135,7 @@ export default function Marketplace() {
                 className={cn(
                   'rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all shrink-0',
                   selectedCity === city
-                    ? 'bg-amber-500 text-white shadow-md shadow-amber-500/25'
+                    ? 'bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                     : isDark
                       ? 'bg-slate-800 text-slate-300 hover:bg-slate-700'
                       : 'bg-white border border-stone-200 text-stone-700 hover:bg-stone-100'
@@ -159,7 +158,7 @@ export default function Marketplace() {
                 className={cn(
                   'rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all shrink-0',
                   selectedCategory === cat
-                    ? 'bg-amber-500 text-white shadow-md shadow-amber-500/25'
+                    ? 'bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                     : isDark
                       ? 'bg-slate-800 text-slate-300 hover:bg-slate-700'
                       : 'bg-white border border-stone-200 text-stone-700 hover:bg-stone-100'
@@ -203,7 +202,7 @@ export default function Marketplace() {
               <div
                 key={shop.id}
                 className={cn(
-                  'group flex flex-col rounded-3xl border overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl',
+                  'group flex flex-col rounded-3xl border overflow-hidden transition-all duration-300 hover:shadow-xl',
                   isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
                 )}
               >
@@ -227,7 +226,7 @@ export default function Marketplace() {
                 {/* Logo & Basic Info */}
                 <div>
                   <div className="flex items-end justify-between -mt-8 mb-3">
-                    <div className="relative h-16 w-16 rounded-2xl overflow-hidden border-2 border-white dark:border-slate-900 shadow-md shrink-0 bg-white">
+                    <div className="relative h-16 w-16 rounded-2xl overflow-hidden border-2 border-white dark:border-slate-900 shrink-0 bg-white">
                       <img src={shop.logo} alt={shop.name} className="h-full w-full object-cover" />
                     </div>
                     {shop.ekycVerified && (
@@ -291,9 +290,9 @@ export default function Marketplace() {
                 <div className="mt-5 pt-4 border-t border-stone-100 dark:border-slate-800 flex items-center gap-2">
                   <Link
                     to={`/shop/${shop.id}`}
-                    className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-white hover:bg-amber-600 transition-colors shadow-sm"
+                    className="flex-1 flex items-center justify-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition-colors bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
                   >
-                    Vào Gian Hàng
+                    Vào gian hàng
                     <HiOutlineArrowRight className="h-3.5 w-3.5" />
                   </Link>
                   {(() => {
@@ -342,16 +341,16 @@ export default function Marketplace() {
         )}
 
         {/* Bottom Callout: Become a Seller */}
-        <div className="mt-14 rounded-3xl bg-gradient-to-r from-amber-500 to-orange-500 p-8 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="mt-14 rounded-3xl p-8 flex flex-col md:flex-row items-center justify-between gap-6 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200">
           <div>
-            <h3 className="text-2xl font-black">Bạn muốn mở gian hàng trên E-commerce?</h3>
+            <h3 className="text-2xl font-black">Bạn muốn mở gian hàng trên E-Commerce?</h3>
             <p className="mt-1 text-sm text-white/90">
               Định danh eKYC nhanh chóng trong 3 phút, tiếp cận hàng triệu khách hàng và tận hưởng nền tảng ký quỹ Escrow bảo đảm tài chính.
             </p>
           </div>
           <Link
             to="/seller/register"
-            className="shrink-0 rounded-2xl bg-white px-6 py-3 text-sm font-bold text-stone-900 hover:bg-stone-100 transition-all shadow-md active:scale-95"
+            className="shrink-0 rounded-2xl bg-white px-6 py-3 text-sm font-bold text-stone-900 hover:bg-stone-100 transition-all active:scale-95"
           >
             Đăng ký bán hàng ngay
           </Link>

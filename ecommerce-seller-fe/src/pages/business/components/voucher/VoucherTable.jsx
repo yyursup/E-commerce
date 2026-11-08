@@ -88,7 +88,7 @@ export default function VoucherTable({
           ) : (
             <button
               onClick={onOpenCreateModal}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-2 text-xs font-bold text-white shadow-md shadow-amber-500/20 hover:from-amber-600 hover:to-orange-600 active:scale-95 transition-all"
+              className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold active:scale-95 transition-all bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
             >
               <HiOutlinePlus className="h-4 w-4" />
               Tạo voucher ngay
@@ -129,7 +129,7 @@ export default function VoucherTable({
             className={cn(
               'group rounded-2xl border p-4 sm:p-5 transition-all duration-200 cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-4 relative',
               isDark
-                ? 'border-slate-800 bg-slate-900 hover:border-amber-500/50 hover:bg-slate-900/90 hover:shadow-lg hover:shadow-amber-500/5'
+                ? 'border-slate-800 bg-slate-900 hover:border-amber-500/50 hover:bg-slate-900/90 hover:shadow-amber-500/5'
                 : 'border-stone-200 bg-white hover:border-amber-400 hover:bg-amber-50/20 hover:shadow-md'
             )}
             title="Nhấp để xem chi tiết mã giảm giá"
@@ -144,7 +144,7 @@ export default function VoucherTable({
                     ? isDark ? 'border-rose-500/30 bg-rose-500/10 text-rose-400' : 'border-rose-200 bg-rose-50 text-rose-600'
                     : v.voucherType === 'FREE_SHIPPING'
                     ? isDark ? 'border-blue-500/30 bg-blue-500/10 text-blue-400' : 'border-blue-200 bg-blue-50 text-blue-600'
-                    : isDark ? 'border-amber-500/30 bg-amber-500/10 text-amber-400' : 'border-amber-200 bg-amber-50 text-amber-600'
+                    : isDark ? 'bg-slate-800 text-white border-white' : 'bg-stone-100 text-stone-950 border-stone-950'
                 )}
               >
                 <HiOutlineTicket className="h-6 w-6 sm:h-7 sm:w-7" />
@@ -177,7 +177,7 @@ export default function VoucherTable({
                     className={cn(
                       'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg border font-mono font-black text-xs uppercase tracking-wider transition-all active:scale-95',
                       isDark
-                        ? 'border-amber-500/30 bg-amber-500/15 text-amber-400 hover:bg-amber-500/25'
+                        ? 'hover:bg-amber-500/25 bg-slate-800 text-white border-white'
                         : 'border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100'
                     )}
                     title="Nhấp để sao chép mã"
@@ -255,8 +255,8 @@ export default function VoucherTable({
                     className={cn(
                       'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all active:scale-95',
                       isDark
-                        ? 'border-amber-500/30 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20'
-                        : 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100'
+                        ? 'hover:bg-amber-500/20 bg-slate-800 text-white border-white'
+                        : 'hover:bg-amber-100 bg-stone-100 text-stone-950 border-stone-950'
                     )}
                     title="Chỉnh sửa voucher"
                   >
@@ -277,8 +277,8 @@ export default function VoucherTable({
                       'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all active:scale-95',
                       isStarted
                         ? isDark
-                          ? 'border-amber-500/30 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20'
-                          : 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100'
+                          ? 'hover:bg-amber-500/20 bg-slate-800 text-white border-white'
+                          : 'hover:bg-amber-100 bg-stone-100 text-stone-950 border-stone-950'
                         : isDark
                           ? 'border-rose-500/30 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20'
                           : 'border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100'

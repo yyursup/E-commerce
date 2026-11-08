@@ -60,7 +60,7 @@ export default function AdminReportsTab({
                         ? 'bg-rose-500/10 text-rose-400 border-rose-500/30'
                         : item.status === 'REJECTED'
                           ? 'bg-slate-500/10 text-slate-400 border-slate-500/30'
-                          : 'bg-amber-500/10 text-amber-400 border-amber-500/30',
+                          : 'bg-slate-800 text-white border-white',
                     )}
                   >
                     {item.status === 'APPROVED'
@@ -72,7 +72,7 @@ export default function AdminReportsTab({
                 )}
 
                 {item.stage === 'ESCALATED_TO_ADMIN' && (
-                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold border bg-amber-500/10 text-amber-500 border-amber-500/30">
+                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold border bg-stone-100 text-stone-950 border-stone-950">
                     Chờ BQT phân xử
                   </span>
                 )}
@@ -174,7 +174,7 @@ export default function AdminReportsTab({
                     <>
                       <button
                         onClick={() => (handleOpenActionModal ? handleOpenActionModal('REPORT_APPROVE', item) : setActionModal({ isOpen: true, type: 'REPORT_APPROVE', item, note: '' }))}
-                        className="flex items-center gap-1 px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:scale-95 shadow-sm transition-all"
+                        className="flex items-center gap-1 px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:scale-95 transition-all"
                         title="Chấp thuận Shop khiếu nại (Giải ngân tiền hàng cho Shop)"
                       >
                         <HiOutlineCheck className="h-4 w-4" />
@@ -193,7 +193,7 @@ export default function AdminReportsTab({
                     <>
                       <button
                         onClick={() => (handleOpenActionModal ? handleOpenActionModal('REPORT_APPROVE', item) : setActionModal({ isOpen: true, type: 'REPORT_APPROVE', item, note: '' }))}
-                        className="flex items-center gap-1 px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 active:scale-95 shadow-sm transition-all"
+                        className="flex items-center gap-1 px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 active:scale-95 transition-all"
                       >
                         <HiOutlineCheck className="h-4 w-4" />
                         {item.targetType === 'ORDER' ? 'Buyer thắng (Hoàn tiền)' : 'Xác nhận vi phạm'}

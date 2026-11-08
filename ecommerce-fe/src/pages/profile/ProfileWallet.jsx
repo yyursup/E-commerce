@@ -180,7 +180,7 @@ export default function ProfileWallet({ isDark: isDarkProp }) {
                 <p className={cn('text-sm', isDark ? 'text-red-400' : 'text-red-600')}>{error}</p>
                 <button
                     onClick={() => fetchData()}
-                    className="mt-4 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600"
+                    className="mt-4 rounded-lg px-4 py-2 text-sm font-medium bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
                 >
                     Thử lại
                 </button>
@@ -197,7 +197,7 @@ export default function ProfileWallet({ isDark: isDarkProp }) {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className={cn('text-xl font-bold', isDark ? 'text-white' : 'text-stone-900')}>
+                    <h2 className={cn('text-3xl font-bold tracking-[-0.03em]', isDark ? 'text-white' : 'text-stone-900')}>
                         Ví của tôi
                     </h2>
                     <p className={cn('mt-1 text-sm', isDark ? 'text-slate-400' : 'text-stone-500')}>
@@ -224,10 +224,8 @@ export default function ProfileWallet({ isDark: isDarkProp }) {
             <motion.div
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 p-6 text-white shadow-lg shadow-amber-500/20"
+                className="relative overflow-hidden rounded-2xl p-6 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
             >
-                <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/10" />
-                <div className="absolute -bottom-4 -left-4 h-20 w-20 rounded-full bg-white/5" />
                 <div className="relative">
                     <p className="text-sm font-medium text-amber-100">Tổng tài sản</p>
                     <p className="mt-1 text-4xl font-bold tracking-tight">{formatCurrency(total)}</p>
@@ -245,21 +243,21 @@ export default function ProfileWallet({ isDark: isDarkProp }) {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 }}
                     className={cn(
-                        'rounded-xl border p-5',
+                        'rounded-lg border p-5',
                         isDark
-                            ? 'border-emerald-800/30 bg-emerald-900/20'
-                            : 'border-emerald-100 bg-emerald-50'
+                            ? 'border-slate-800 bg-slate-900'
+                            : 'border-stone-200 bg-white'
                     )}
                 >
                     <div className="flex items-center gap-3 mb-3">
-                        <div className="p-2 rounded-full bg-emerald-500/10">
-                            <HiOutlineCurrencyDollar className="h-5 w-5 text-emerald-500" />
+                        <div className="p-2 rounded-md bg-stone-100 dark:bg-slate-800">
+                            <HiOutlineCurrencyDollar className="h-5 w-5 text-stone-950 dark:text-white" />
                         </div>
-                        <span className={cn('text-sm font-semibold', isDark ? 'text-emerald-400' : 'text-emerald-700')}>
+                        <span className={cn('font-mono text-xs uppercase tracking-wide', isDark ? 'text-slate-400' : 'text-stone-600')}>
                             Số dư khả dụng
                         </span>
                     </div>
-                    <p className={cn('text-2xl font-bold', isDark ? 'text-white' : 'text-stone-900')}>
+                    <p className={cn('font-mono text-3xl font-semibold', isDark ? 'text-white' : 'text-stone-950')}>
                         {formatCurrency(available)}
                     </p>
                     <p className={cn('mt-2 text-xs', isDark ? 'text-slate-400' : 'text-stone-500')}>
@@ -273,21 +271,21 @@ export default function ProfileWallet({ isDark: isDarkProp }) {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.15 }}
                     className={cn(
-                        'rounded-xl border p-5',
+                        'rounded-lg border p-5',
                         isDark
-                            ? 'border-amber-800/30 bg-amber-900/20'
-                            : 'border-amber-100 bg-amber-50'
+                            ? 'border-slate-800 bg-slate-900'
+                            : 'border-stone-200 bg-white'
                     )}
                 >
                     <div className="flex items-center gap-3 mb-3">
-                        <div className="p-2 rounded-full bg-amber-500/10">
-                            <HiOutlineLockClosed className="h-5 w-5 text-amber-500" />
+                        <div className="p-2 rounded-md bg-amber-500">
+                            <HiOutlineLockClosed className="h-5 w-5 text-stone-950" />
                         </div>
-                        <span className={cn('text-sm font-semibold', isDark ? 'text-amber-400' : 'text-amber-700')}>
+                        <span className={cn('font-mono text-xs uppercase tracking-wide', isDark ? 'text-slate-400' : 'text-stone-600')}>
                             Đang trong Escrow
                         </span>
                     </div>
-                    <p className={cn('text-2xl font-bold', isDark ? 'text-white' : 'text-stone-900')}>
+                    <p className={cn('font-mono text-3xl font-semibold', isDark ? 'text-white' : 'text-stone-950')}>
                         {formatCurrency(escrowHeld)}
                     </p>
                     <p className={cn('mt-2 text-xs', isDark ? 'text-slate-400' : 'text-stone-500')}>
@@ -302,18 +300,18 @@ export default function ProfileWallet({ isDark: isDarkProp }) {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.18 }}
                 className={cn(
-                    'rounded-2xl border p-6 shadow-sm space-y-4',
+                    'rounded-2xl border p-6 space-y-4',
                     isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
                 )}
             >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 dark:border-slate-800 pb-3">
                     <div className="flex items-center gap-2.5">
-                        <div className="p-2 rounded-xl bg-amber-500/10 text-amber-500">
+                        <div className="p-2 rounded-xl bg-stone-100 text-stone-950">
                             <HiOutlineCreditCard className="h-5 w-5" />
                         </div>
                         <div>
                             <h3 className={cn('text-base font-bold', isDark ? 'text-white' : 'text-stone-900')}>
-                                Tài Khoản Ngân Hàng Liên Kết
+                                Tài khoản ngân hàng liên kết
                             </h3>
                             <p className={cn('text-xs mt-0.5', isDark ? 'text-slate-400' : 'text-stone-500')}>
                                 Dùng để nhận tiền hoàn trả từ khiếu nại hoặc rút tiền từ số dư ví
@@ -364,7 +362,7 @@ export default function ProfileWallet({ isDark: isDarkProp }) {
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                             <div className="flex items-center gap-4">
                                 {/* Bank Logo */}
-                                <div className="h-12 w-16 rounded-xl bg-white p-1 flex items-center justify-center border border-stone-200 shadow-xs shrink-0">
+                                <div className="h-12 w-16 rounded-xl bg-white p-1 flex items-center justify-center border border-stone-200 shrink-0">
                                     {linkedBank.bankData?.logo ? (
                                         <img
                                             src={linkedBank.bankData.logo}
@@ -455,7 +453,7 @@ export default function ProfileWallet({ isDark: isDarkProp }) {
                                     onChange={(e) => setAccountNumber(e.target.value.replace(/\D/g, ''))}
                                     placeholder="VD: 19036888888888"
                                     className={cn(
-                                        'w-full rounded-xl px-4 py-2.5 border transition-all focus:ring-2 focus:ring-amber-500 focus:outline-none text-xs',
+                                        'w-full rounded-xl px-4 py-2.5 border transition-all focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40 focus:outline-none text-xs',
                                         isDark
                                             ? 'border-slate-700 bg-slate-800 text-white placeholder:text-slate-500'
                                             : 'border-stone-200 bg-stone-50 text-stone-900 placeholder:text-stone-400'
@@ -474,7 +472,7 @@ export default function ProfileWallet({ isDark: isDarkProp }) {
                                     onChange={(e) => setAccountName(e.target.value.toUpperCase())}
                                     placeholder="VD: NGUYEN VAN A"
                                     className={cn(
-                                        'w-full rounded-xl px-4 py-2.5 border uppercase transition-all focus:ring-2 focus:ring-amber-500 focus:outline-none text-xs',
+                                        'w-full rounded-xl px-4 py-2.5 border uppercase transition-all focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40 focus:outline-none text-xs',
                                         isDark
                                             ? 'border-slate-700 bg-slate-800 text-white placeholder:text-slate-500'
                                             : 'border-stone-200 bg-stone-50 text-stone-900 placeholder:text-stone-400'
@@ -486,7 +484,7 @@ export default function ProfileWallet({ isDark: isDarkProp }) {
                         <div className="flex items-center gap-3 pt-1">
                             <button
                                 type="submit"
-                                className="flex items-center justify-center gap-2 rounded-xl bg-amber-500 px-6 py-2.5 text-xs font-bold text-white shadow-md shadow-amber-500/20 hover:bg-amber-600 transition-all cursor-pointer"
+                                className="flex items-center justify-center gap-2 rounded-xl px-6 py-2.5 text-xs font-bold transition-all cursor-pointer bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
                             >
                                 <HiOutlineSave className="h-4 w-4" />
                                 {linkedBank ? 'Lưu thay đổi' : 'Lưu liên kết ngân hàng'}
@@ -520,7 +518,7 @@ export default function ProfileWallet({ isDark: isDarkProp }) {
                         'py-8 px-4 text-center border-2 border-dashed rounded-2xl transition-all',
                         isDark ? 'border-slate-800 bg-slate-900/40' : 'border-stone-200 bg-stone-50/50'
                     )}>
-                        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-500 mb-3">
+                        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl mb-3 bg-stone-100 text-stone-950">
                             <HiOutlineCreditCard className="h-6 w-6" />
                         </div>
                         <p className={cn('text-sm font-bold', isDark ? 'text-slate-200' : 'text-stone-800')}>
@@ -532,7 +530,7 @@ export default function ProfileWallet({ isDark: isDarkProp }) {
                         <button
                             type="button"
                             onClick={() => setIsEditingBank(true)}
-                            className="mt-4 inline-flex items-center gap-2 rounded-xl bg-amber-500 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-amber-500/20 hover:bg-amber-600 transition-all cursor-pointer"
+                            className="mt-4 inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-bold transition-all cursor-pointer bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
                         >
                             <HiOutlinePlus className="h-4 w-4" />
                             Liên kết ngân hàng ngay
@@ -547,7 +545,7 @@ export default function ProfileWallet({ isDark: isDarkProp }) {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
                 className={cn(
-                    'rounded-xl border p-5',
+                    'rounded-lg border p-5',
                     isDark ? 'border-slate-700 bg-slate-800/50' : 'border-stone-200 bg-stone-50'
                 )}
             >

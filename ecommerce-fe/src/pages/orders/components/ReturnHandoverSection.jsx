@@ -52,7 +52,7 @@ export default function ReturnHandoverSection({
                   className={cn(
                     'text-[10px] font-semibold px-1.5 py-0.5 rounded border',
                     isDark
-                      ? 'text-amber-400 bg-amber-500/15 border-amber-500/25'
+                      ? 'bg-slate-800 text-white border-white'
                       : 'text-amber-800 bg-amber-50 border-amber-300',
                   )}
                 >
@@ -74,7 +74,7 @@ export default function ReturnHandoverSection({
                 className={cn(
                   'font-bold font-mono text-sm mt-0.5 px-2 py-0.5 rounded inline-block border',
                   isDark
-                    ? 'text-amber-300 bg-amber-500/15 border-amber-500/30'
+                    ? 'bg-slate-800 text-white border-white'
                     : 'text-amber-800 bg-amber-50 border-amber-300',
                 )}
               >
@@ -100,7 +100,7 @@ export default function ReturnHandoverSection({
               type="button"
               disabled={submitting}
               onClick={onHandoverToCarrier}
-              className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 active:scale-95 transition shadow-sm disabled:opacity-50 inline-flex items-center justify-center gap-2"
+              className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs font-bold active:scale-95 transition disabled:opacity-50 inline-flex items-center justify-center gap-2 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
             >
               <HiOutlineTruck className="h-4 w-4" />
               {submitting ? 'Đang cập nhật...' : 'Xác nhận đã bàn giao hàng cho shipper GHN'}

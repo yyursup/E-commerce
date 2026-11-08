@@ -45,7 +45,7 @@ export default function ShopOrderCard({ order, isDark, onQuickStatusUpdate, acti
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.98 }}
       className={cn(
-        'group rounded-2xl border transition-all duration-200 hover:shadow-lg overflow-hidden',
+        'group rounded-2xl border transition-all duration-200 overflow-hidden',
         isDark
           ? 'border-slate-800 bg-slate-900/90 hover:border-slate-700'
           : 'border-stone-200 bg-white hover:border-stone-300 shadow-sm'
@@ -73,7 +73,7 @@ export default function ShopOrderCard({ order, isDark, onQuickStatusUpdate, acti
 
         <div className="flex items-center gap-2 flex-wrap">
           {order.hasActiveDispute && !order.returnInfo && order.disputeStatus === 'DIRECT_NEGOTIATION' && (
-            <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold border border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400">
+            <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold border dark:text-amber-400 bg-stone-100 text-stone-950 border-stone-950">
               Đang khiếu nại (1:1)
             </span>
           )}
@@ -261,9 +261,9 @@ export default function ShopOrderCard({ order, isDark, onQuickStatusUpdate, acti
               type="button"
               disabled={actionLoading}
               onClick={() => onQuickStatusUpdate(order.id, 'PROCESSING')}
-              className="rounded-xl bg-amber-500 hover:bg-amber-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition-all disabled:opacity-50"
+              className="rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all disabled:opacity-50 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
             >
-              Xác Nhận & Đóng Gói
+              Xác nhận & đóng gói
             </button>
           )}
 
@@ -272,7 +272,7 @@ export default function ShopOrderCard({ order, isDark, onQuickStatusUpdate, acti
               type="button"
               disabled={actionLoading}
               onClick={() => onQuickStatusUpdate(order.id, 'SHIPPING')}
-              className="rounded-xl bg-blue-600 hover:bg-blue-700 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition-all disabled:opacity-50"
+              className="rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all disabled:opacity-50 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
             >
               Giao Cho GHN
             </button>
@@ -287,9 +287,9 @@ export default function ShopOrderCard({ order, isDark, onQuickStatusUpdate, acti
                   onQuickStatusUpdate(order.id, 'DELIVERED')
                 }
               }}
-              className="rounded-xl bg-emerald-600 hover:bg-emerald-700 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition-all disabled:opacity-50"
+              className="rounded-xl bg-emerald-600 hover:bg-emerald-700 px-3.5 py-1.5 text-xs font-bold text-white transition-all disabled:opacity-50"
             >
-              Xác Nhận Đã Giao
+              Xác nhận đã giao
             </button>
           )}
 

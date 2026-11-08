@@ -106,12 +106,12 @@ export default function CheckoutVoucherModal({
                 {/* Modal Header */}
                 <div className="flex items-center justify-between p-5 border-b border-stone-100 dark:border-slate-800">
                     <div className="flex items-center gap-2.5">
-                        <div className="p-2 rounded-xl bg-amber-500/10 text-amber-500">
+                        <div className="p-2 rounded-xl bg-stone-100 text-stone-950">
                             <HiOutlineTicket className="w-6 h-6" />
                         </div>
                         <div>
                             <h3 className={cn("text-lg font-bold leading-tight", isDark ? "text-white" : "text-stone-900")}>
-                                Chọn Voucher Cho Đơn Hàng
+                                Chọn voucher cho đơn hàng
                             </h3>
                             <p className="text-xs text-stone-500 dark:text-slate-400">
                                 Áp dụng tối đa 1 Voucher Shop và 1 Voucher Sàn
@@ -133,7 +133,7 @@ export default function CheckoutVoucherModal({
                         className={cn(
                             "px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5",
                             activeTab === 'ALL'
-                                ? "bg-amber-500 text-white shadow-sm"
+                                ? "shadow-sm bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
                                 : isDark ? "text-slate-400 hover:bg-slate-800" : "text-stone-600 hover:bg-stone-200/60"
                         )}
                     >
@@ -360,7 +360,7 @@ export default function CheckoutVoucherModal({
                         </button>
                         <button
                             onClick={handleConfirmApply}
-                            className="px-6 py-2.5 rounded-xl font-bold text-xs text-white bg-amber-500 hover:bg-amber-600 active:scale-95 shadow-md shadow-amber-500/20 transition-all flex items-center gap-1.5"
+                            className="px-6 py-2.5 rounded-xl font-bold text-xs active:scale-95 shadow-md transition-all flex items-center gap-1.5 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
                         >
                             Áp dụng {selectedCount > 0 ? `(${selectedCount} voucher)` : ''}
                         </button>

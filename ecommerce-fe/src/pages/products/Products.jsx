@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { HiOutlineFilter } from 'react-icons/hi'
 import ProductCard from '../../components/ProductCard'
@@ -246,20 +246,20 @@ export default function Products() {
     <div className={cn('min-h-screen', isDark ? 'bg-slate-950' : 'bg-stone-50')}>
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1
-            className={cn(
-              'text-3xl font-bold tracking-tight sm:text-4xl',
-              isDark ? 'text-white' : 'text-stone-900',
-            )}
-          >
-            Tất cả sản phẩm
-          </h1>
-          <p className={cn('mt-2 text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
-            {totalElements > 0
-              ? `Tìm thấy ${totalElements} sản phẩm`
-              : 'Không có sản phẩm nào'}
-          </p>
+        <div className="mb-6 flex flex-col gap-2">
+          <nav aria-label="Đường dẫn" className={cn('flex gap-2 text-[13px]', isDark ? 'text-slate-400' : 'text-stone-600')}>
+            <Link to="/" className="hover:underline">Trang chủ</Link>
+            <span>/</span>
+            <span className={isDark ? 'text-white' : 'text-stone-950'}>{search ? `Tìm “${search}”` : 'Sản phẩm'}</span>
+          </nav>
+          <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+            <h1 className={cn('text-4xl font-bold tracking-[-0.03em] sm:text-5xl', isDark ? 'text-white' : 'text-stone-950')}>
+              {search ? search : 'Tất cả sản phẩm'}
+            </h1>
+            <span className={cn('font-mono text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
+              {totalElements > 0 ? `${totalElements} SẢN PHẨM` : 'KHÔNG CÓ SẢN PHẨM'}
+            </span>
+          </div>
         </div>
 
         {/* Search and Sort Bar */}
@@ -322,7 +322,7 @@ export default function Products() {
             {!loading && !error && products.length > 0 && (
               <>
                 {/* Products Grid */}
-                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
                   {products.map((product, i) => (
                     <ProductCard
                       key={product.id}

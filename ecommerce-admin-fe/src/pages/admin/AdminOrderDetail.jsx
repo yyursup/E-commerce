@@ -82,7 +82,7 @@ export default function AdminOrderDetail() {
       <Link
         to={order?.shopId ? `/orders/shops/${order.shopId}` : '/orders'}
         className={cn(
-          'inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl border text-xs sm:text-sm font-bold transition-all shadow-sm active:scale-95',
+          'inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl border text-xs sm:text-sm font-bold transition-all active:scale-95',
           isDark
             ? 'border-slate-800 bg-slate-900 text-slate-300 hover:bg-slate-800'
             : 'border-stone-200 bg-white text-stone-700 hover:bg-stone-100',

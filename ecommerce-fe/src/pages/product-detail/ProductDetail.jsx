@@ -42,15 +42,15 @@ import wishlistService from '../../services/wishlist'
 const getConditionDetail = (grade) => {
   switch (grade) {
     case 'GRADE_NEW':
-      return { label: 'Mới 100% Nguyên Seal', color: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' }
+      return { label: 'Mới 100% nguyên seal', color: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' }
     case 'GRADE_OPEN_BOX':
-      return { label: 'Hàng Trưng Bày / Mở Hộp (99%)', color: 'bg-sky-500/15 text-sky-600 dark:text-sky-400 border-sky-500/30' }
+      return { label: 'Hàng trưng bày / mở hộp (99%)', color: 'bg-sky-500/15 text-sky-600 dark:text-sky-400 border-sky-500/30' }
     case 'GRADE_LIKE_NEW':
-      return { label: 'Like New 99% - Như Mới', color: 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30' }
+      return { label: 'Like New 99% - Như Mới', color: 'dark:text-amber-400 bg-stone-100 text-stone-950 border-stone-950' }
     case 'GRADE_FAIR':
-      return { label: 'Đã Qua Sử Dụng (90-95%)', color: 'bg-orange-500/15 text-orange-600 dark:text-orange-400 border-orange-500/30' }
+      return { label: 'Đã qua sử dụng (90-95%)', color: 'bg-orange-500/15 text-orange-600 dark:text-orange-400 border-orange-500/30' }
     case 'GRADE_AS_IS':
-      return { label: 'Thanh Lý / Xác Máy (As-is)', color: 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30' }
+      return { label: 'Thanh lý / xác máy', color: 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30' }
     default:
       return null
   }
@@ -392,7 +392,7 @@ export default function ProductDetail() {
           <p className="text-rose-500 font-bold mb-4">{error || 'Sản phẩm không tồn tại hoặc đã ngừng kinh doanh'}</p>
           <button
             onClick={() => navigate('/products')}
-            className="rounded-xl bg-amber-500 px-6 py-2.5 text-xs font-bold text-white hover:bg-amber-600 transition-colors"
+            className="rounded-xl px-6 py-2.5 text-xs font-bold transition-colors bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
           >
             Quay lại sàn mua sắm
           </button>
@@ -455,7 +455,7 @@ export default function ProductDetail() {
         {/* 2. MAIN PRODUCT CARD (Shopee 2-Column Showcase) */}
         <div
           className={cn(
-            'rounded-3xl border p-5 sm:p-7 shadow-sm transition-colors',
+            'rounded-lg border p-5 sm:p-7 transition-colors',
             isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
           )}
         >
@@ -544,7 +544,7 @@ export default function ProductDetail() {
                 </div>
 
                 <div className="flex items-start gap-2.5">
-                  <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-stone-900 dark:text-white leading-snug">
+                  <h1 className="text-3xl sm:text-4xl font-bold leading-[1.08] tracking-[-0.03em] text-stone-950 dark:text-white">
                     {product.name}
                   </h1>
                 </div>
@@ -599,20 +599,20 @@ export default function ProductDetail() {
               {/* Shopee Price Box */}
               <div
                 className={cn(
-                  'rounded-2xl p-4 sm:p-5 flex flex-wrap items-baseline gap-3 sm:gap-4 transition-colors',
-                  isDark ? 'bg-slate-800/70 border border-slate-700/50' : 'bg-stone-50 border border-stone-200/80'
+                  'flex flex-wrap items-baseline gap-3 border-y py-4 sm:gap-4',
+                  isDark ? 'border-slate-800' : 'border-stone-200'
                 )}
               >
                 <div className="flex flex-wrap items-baseline gap-2.5">
-                  <span className="text-2xl sm:text-3xl font-black text-rose-600 dark:text-rose-500">
+                  <span className="font-mono text-3xl sm:text-4xl font-semibold tracking-tight text-stone-950 dark:text-white">
                     {isRangePrice ? `${formatVND(minPrice)} - ${formatVND(maxPrice)}` : formatVND(price)}
                   </span>
                   {originalPrice && originalPrice > price && (
                     <>
-                      <span className="text-sm line-through text-stone-400 dark:text-slate-500">
+                      <span className="font-mono text-sm line-through text-stone-500 dark:text-slate-500">
                         {formatVND(originalPrice)}
                       </span>
-                      <span className="rounded-md bg-rose-500/10 text-rose-600 dark:text-rose-400 px-2 py-0.5 text-xs font-black uppercase">
+                      <span className="rounded bg-amber-500 px-2 py-0.5 font-mono text-[13px] font-semibold text-stone-950">
                         -{Math.round((1 - price / originalPrice) * 100)}%
                       </span>
                     </>
@@ -623,7 +623,7 @@ export default function ProductDetail() {
               {/* Escrow Guarantee Row */}
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs py-1">
                 <span className="w-28 shrink-0 text-stone-500 dark:text-slate-400 font-semibold">
-                  Bảo Hiểm Sàn
+                  Bảo hiểm sàn
                 </span>
                 <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 font-medium">
                   <HiOutlineShieldCheck className="h-5 w-5 shrink-0" />
@@ -634,7 +634,7 @@ export default function ProductDetail() {
               {/* Tech Hardware Inspection Row */}
               <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4 text-xs border-t pt-3 border-stone-100 dark:border-slate-800">
                 <span className="w-28 shrink-0 text-stone-500 dark:text-slate-400 font-semibold mt-0.5">
-                  Kiểm Định Máy
+                  Kiểm định máy
                 </span>
                 <div className="space-y-1.5 flex-1">
                   <div className="flex items-center gap-2">
@@ -656,7 +656,7 @@ export default function ProductDetail() {
                 <div className="space-y-1 flex-1">
                   <div className="flex items-center gap-2 text-stone-800 dark:text-slate-200 font-medium">
                     <HiOutlineTruck className="h-4 w-4 text-blue-500 shrink-0" />
-                    <span>Giao Hàng Nhanh (GHN Express) - Toàn Quốc</span>
+                    <span>Giao hàng nhanh - toàn quốc</span>
                   </div>
                   <div className="text-stone-500 dark:text-slate-400 text-[11px] leading-relaxed">
                     Phí vận chuyển và thời gian giao hàng được tính tự động theo địa chỉ nhận hàng tại bước thanh toán.
@@ -687,7 +687,7 @@ export default function ProductDetail() {
                           className={cn(
                             'rounded-xl border px-3.5 py-2 text-xs font-bold transition-all cursor-pointer',
                             selectedVariant?.id === variant.id
-                              ? 'border-amber-500 bg-amber-500/10 text-amber-600 dark:text-amber-400 ring-1 ring-amber-500'
+                              ? 'dark:text-amber-400 ring-1 ring-amber-500 bg-stone-100 text-stone-950 border-stone-950'
                               : isDark
                               ? 'border-slate-700 hover:border-slate-600 text-slate-300'
                               : 'border-stone-200 hover:border-stone-300 text-stone-700'
@@ -737,7 +737,7 @@ export default function ProductDetail() {
                   onClick={handleAddToCart}
                   disabled={addingToCart}
                   className={cn(
-                    'w-full sm:flex-1 flex items-center justify-center gap-2 rounded-2xl border-2 border-amber-500 bg-amber-500/10 px-6 py-3.5 text-sm font-bold text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition-all active:scale-95 shadow-sm'
+                    'w-full sm:flex-1 flex items-center justify-center gap-2 rounded-md border px-6 py-4 text-base font-bold transition-colors border-stone-950 bg-white text-stone-950 hover:bg-stone-100 dark:border-white dark:bg-transparent dark:text-white dark:hover:bg-slate-800'
                   )}
                 >
                   <AnimatePresence mode="wait">
@@ -750,7 +750,7 @@ export default function ProductDetail() {
                         className="flex items-center gap-1.5"
                       >
                         <HiCheck className="h-5 w-5" />
-                        Đã Thêm Vào Giỏ
+                        Đã thêm vào giỏ
                       </motion.span>
                     ) : (
                       <span className="flex items-center gap-2">
@@ -763,7 +763,7 @@ export default function ProductDetail() {
 
                 <button
                   onClick={handleBuyNow}
-                  className="w-full sm:flex-1 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 px-6 py-3.5 text-sm font-bold text-white hover:opacity-95 transition-all active:scale-95 shadow-lg shadow-amber-500/25 flex items-center justify-center"
+                  className="w-full sm:flex-1 rounded-md px-6 py-4 text-base font-bold transition-colors flex items-center justify-center bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
                 >
                   Mua Ngay
                 </button>
@@ -773,7 +773,7 @@ export default function ProductDetail() {
               <div className="grid grid-cols-3 gap-2 pt-3 text-[11px] text-stone-500 dark:text-slate-400 text-center font-medium">
                 <div className="flex items-center justify-center gap-1">
                   <HiOutlineRefresh className="h-4 w-4 text-rose-500" />
-                  <span>7 Ngày Đổi Trả</span>
+                  <span>7 ngày đổi trả</span>
                 </div>
                 <div className="flex items-center justify-center gap-1">
                   <HiOutlineCheckCircle className="h-4 w-4 text-emerald-500" />
@@ -781,7 +781,7 @@ export default function ProductDetail() {
                 </div>
                 <div className="flex items-center justify-center gap-1">
                   <HiOutlineTruck className="h-4 w-4 text-blue-500" />
-                  <span>Freeship Mọi Nơi</span>
+                  <span>Freeship mọi nơi</span>
                 </div>
               </div>
             </div>
@@ -791,7 +791,7 @@ export default function ProductDetail() {
         {/* 3. CARD GIAN HÀNG (Shopee Shop Overview Banner Card) */}
         <div
           className={cn(
-            'rounded-3xl border p-5 sm:p-6 shadow-sm transition-colors',
+            'rounded-lg border p-5 sm:p-6 transition-colors',
             isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
           )}
         >
@@ -823,7 +823,7 @@ export default function ProductDetail() {
                     className={cn(
                       'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold border shrink-0',
                       (shopData?.trustLevel || 1) >= 4
-                        ? 'bg-amber-500/20 text-amber-500 border-amber-500/40'
+                        ? 'bg-stone-100 text-stone-950 border-stone-950'
                         : (shopData?.trustLevel || 1) >= 2
                         ? 'bg-blue-500/15 text-blue-500 border-blue-500/30'
                         : 'bg-stone-500/10 text-stone-500 border-stone-300 dark:border-slate-700'
@@ -842,7 +842,7 @@ export default function ProductDetail() {
                 <div className="mt-3 flex items-center gap-2">
                   <Link
                     to={`/shop/${currentShopId}`}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3.5 py-1.5 text-xs font-bold text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition-colors"
+                    className="inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-1.5 text-xs font-bold dark:text-amber-400 hover:bg-amber-500/20 transition-colors bg-stone-100 text-stone-950 border-stone-950"
                   >
                     <HiOutlineShoppingBag className="h-3.5 w-3.5" />
                     Xem Shop
@@ -863,7 +863,7 @@ export default function ProductDetail() {
                           'inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-1.5 text-xs font-medium',
                           isDark ? 'border-slate-800 bg-slate-800/60 text-slate-400' : 'border-stone-200 bg-stone-100 text-stone-500'
                         )}>
-                          Gian Hàng Của Bạn
+                          Gian hàng của bạn
                         </span>
                       )
                     }
@@ -958,13 +958,13 @@ export default function ProductDetail() {
         {/* 4. CHI TIẾT SẢN PHẨM & MÔ TẢ (Shopee Specifications & Description) */}
         <div
           className={cn(
-            'rounded-3xl border p-6 sm:p-8 shadow-sm transition-colors space-y-8',
+            'rounded-lg border p-6 sm:p-8 transition-colors space-y-8',
             isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
           )}
         >
           {/* Specifications Table */}
           <div>
-            <h2 className="text-sm font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 mb-4 pb-2 border-b border-stone-100 dark:border-slate-800">
+            <h2 className="text-2xl font-bold text-stone-950 dark:text-white mb-4 pb-3 border-b border-stone-200 dark:border-slate-800">
               CHI TIẾT SẢN PHẨM & TÌNH TRẠNG THIẾT BỊ
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-8 text-xs">
@@ -979,26 +979,26 @@ export default function ProductDetail() {
                 <span className="font-medium text-stone-900 dark:text-white text-right">{product.brand || 'Chính Hãng Phân Phối'}</span>
               </div>
               <div className="flex justify-between border-b pb-2 border-stone-100 dark:border-slate-800/80">
-                <span className="text-stone-500 dark:text-slate-400 w-36 shrink-0">Tình Trạng Máy:</span>
+                <span className="text-stone-500 dark:text-slate-400 w-36 shrink-0">Tình trạng máy:</span>
                 <span className="font-bold text-amber-600 dark:text-amber-400 text-right">
                   {getConditionDetail(product.conditionGrade)?.label || 'Tiêu chuẩn'}
                 </span>
               </div>
               <div className="flex justify-between border-b pb-2 border-stone-100 dark:border-slate-800/80">
-                <span className="text-stone-500 dark:text-slate-400 w-36 shrink-0">Pin (Battery Health):</span>
+                <span className="text-stone-500 dark:text-slate-400 w-36 shrink-0">Pin:</span>
                 <span className="font-bold text-emerald-600 dark:text-emerald-400 text-right">
                   {product.batteryHealth ? `${product.batteryHealth}%` : 'Không áp dụng / Chưa đo'}
                 </span>
               </div>
               <div className="flex justify-between border-b pb-2 border-stone-100 dark:border-slate-800/80">
-                <span className="text-stone-500 dark:text-slate-400 w-36 shrink-0">Chế Độ Bảo Hành:</span>
+                <span className="text-stone-500 dark:text-slate-400 w-36 shrink-0">Chế độ bảo hành:</span>
                 <span className="font-medium text-stone-900 dark:text-white text-right">
                   {product.warrantyType === 'OFFICIAL' ? 'Chính hãng toàn quốc' : product.warrantyType === 'SHOP' ? 'Tại gian hàng' : 'Hết BH / Bao test 7 ngày'}
                   {product.warrantyMonths ? ` (${product.warrantyMonths} tháng)` : ''}
                 </span>
               </div>
               <div className="flex justify-between border-b pb-2 border-stone-100 dark:border-slate-800/80">
-                <span className="text-stone-500 dark:text-slate-400 w-36 shrink-0">Linh Kiện & Sửa Chữa:</span>
+                <span className="text-stone-500 dark:text-slate-400 w-36 shrink-0">Linh kiện & sửa chữa:</span>
                 <span className={cn('font-semibold text-right', product.isRepaired ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400')}>
                   {product.isRepaired ? `Đã thay: ${product.repairDetails || 'Có can thiệp'}` : 'Zin 100% nguyên bản'}
                 </span>
@@ -1051,13 +1051,13 @@ export default function ProductDetail() {
 
           {/* Description Content */}
           <div>
-            <h2 className="text-sm font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 mb-4 pb-2 border-b border-stone-100 dark:border-slate-800">
+            <h2 className="text-2xl font-bold text-stone-950 dark:text-white mb-4 pb-3 border-b border-stone-200 dark:border-slate-800">
               MÔ TẢ SẢN PHẨM
             </h2>
             <div className="prose prose-sm max-w-none text-stone-700 dark:text-slate-300 leading-relaxed space-y-3">
               <p className="whitespace-pre-line">{product.description}</p>
-              <div className="mt-4 p-4 rounded-2xl bg-amber-500/5 border border-amber-500/10 space-y-2 text-xs">
-                <div className="font-bold text-amber-600 dark:text-amber-400">CHÍNH SÁCH BẢO VỆ NGƯỜI MUA TẠI E-COMMERCE:</div>
+              <div className="mt-4 p-4 rounded-lg bg-stone-100 dark:bg-slate-800 space-y-2 text-sm">
+                <div className="font-bold text-stone-950 dark:text-white">Chính sách bảo vệ người mua tại E-Commerce</div>
                 <ul className="list-disc pl-5 space-y-1 text-stone-600 dark:text-slate-400">
                   <li>Tiền thanh toán được bảo vệ 100% trong ví ký quỹ Escrow cho đến khi bạn xác nhận hài lòng.</li>
                   <li>Được đồng kiểm tra hàng cùng nhân viên GHN Express khi nhận bưu phẩm.</li>
@@ -1071,7 +1071,7 @@ export default function ProductDetail() {
         {/* 5. REVIEWS & RATINGS SECTION */}
         <div
           className={cn(
-            'rounded-3xl border p-6 sm:p-8 shadow-sm transition-colors',
+            'rounded-lg border p-6 sm:p-8 transition-colors',
             isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
           )}
         >
@@ -1082,8 +1082,8 @@ export default function ProductDetail() {
         {shopProducts.length > 0 && (
           <section className="space-y-4 pt-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold text-stone-900 dark:text-white">
-                Sản Phẩm Khác Của Gian Hàng
+              <h3 className="text-2xl font-bold text-stone-950 dark:text-white">
+                Sản phẩm khác của gian hàng
               </h3>
               <Link
                 to={`/shop/${currentShopId}`}
@@ -1107,11 +1107,11 @@ export default function ProductDetail() {
           <section className="space-y-4 pt-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-200 dark:border-slate-800 pb-3">
               <div className="flex items-center gap-2">
-                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg border bg-stone-100 text-stone-950 border-stone-950">
                   <HiOutlineShoppingBag className="h-4 w-4" />
                 </span>
-                <h3 className="text-lg font-bold text-stone-900 dark:text-white">
-                  Gợi Ý Công Nghệ Dành Cho Bạn
+                <h3 className="text-2xl font-bold text-stone-950 dark:text-white">
+                  Gợi ý công nghệ dành cho bạn
                 </h3>
               </div>
 
@@ -1123,7 +1123,7 @@ export default function ProductDetail() {
                   className={cn(
                     'px-3 py-1.5 rounded-lg transition-all',
                     recTab === 'similar'
-                      ? 'bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 shadow-sm font-bold'
+                      ? 'bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 font-bold'
                       : 'text-stone-500 dark:text-slate-400 hover:text-stone-800 dark:hover:text-white'
                   )}
                 >
@@ -1135,7 +1135,7 @@ export default function ProductDetail() {
                   className={cn(
                     'px-3 py-1.5 rounded-lg transition-all',
                     recTab === 'accessories'
-                      ? 'bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 shadow-sm font-bold'
+                      ? 'bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 font-bold'
                       : 'text-stone-500 dark:text-slate-400 hover:text-stone-800 dark:hover:text-white'
                   )}
                 >

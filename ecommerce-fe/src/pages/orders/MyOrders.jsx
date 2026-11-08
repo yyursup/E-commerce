@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import {
   HiOutlineShoppingBag,
   HiOutlineCreditCard,
@@ -77,105 +78,86 @@ export default function MyOrders() {
     !order.hasActiveDispute &&
     (!order.returnInfo || order.returnInfo.status === 'CANCELLED')
 
+  const ink = isDark ? 'text-white' : 'text-stone-950'
+  const muted = isDark ? 'text-slate-400' : 'text-stone-600'
+  const panel = isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
+
   if (!isAuthenticated) {
     return (
       <div className={cn('min-h-screen flex items-center justify-center', isDark ? 'bg-slate-950' : 'bg-stone-50')}>
-        <p className={cn('text-lg', isDark ? 'text-slate-400' : 'text-stone-600')}>
-          Vui lòng đăng nhập để xem đơn hàng
-        </p>
+        <p className={cn('text-lg', muted)}>Vui lòng đăng nhập để xem đơn hàng</p>
       </div>
     )
   }
 
   return (
     <div className={cn('min-h-screen px-4 py-8 sm:px-6 lg:px-8', isDark ? 'bg-slate-950' : 'bg-stone-50')}>
-      <div className="mx-auto max-w-7xl">
-        {/* Header & Escrow Summary */}
-        <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+      <div className="mx-auto flex max-w-7xl flex-col gap-6">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
           <div>
-            <h1 className={cn('text-3xl font-bold', isDark ? 'text-white' : 'text-stone-900')}>
-              Đơn hàng của tôi
-            </h1>
-            <p className={cn('mt-2 text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
-              Quản lý và theo dõi đơn hàng của bạn
-            </p>
+            <span className={cn('font-mono text-xs uppercase tracking-[0.06em]', muted)}>Tài khoản</span>
+            <h1 className={cn('mt-1 text-4xl font-bold tracking-[-0.03em] sm:text-5xl', ink)}>Đơn hàng</h1>
           </div>
 
-          {/* Escrow Held Card */}
-          <div
-            className={cn(
-              'flex items-center gap-4 px-5 py-4 rounded-2xl shadow-sm border',
-              isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-stone-200',
-            )}
-          >
-            <div className="p-3 rounded-2xl bg-amber-500/10 text-amber-500 border border-amber-500/20">
-              <HiOutlineCreditCard className="w-6 h-6" />
-            </div>
-            <div>
-              <p className={cn('text-[11px] font-bold uppercase tracking-wider', isDark ? 'text-slate-400' : 'text-stone-500')}>
-                Ký Quỹ Đang Bảo Vệ (Escrow)
-              </p>
-              <p className={cn('text-xl font-bold font-mono text-amber-600 dark:text-amber-400', isDark ? 'text-amber-400' : 'text-amber-600')}>
-                {formatOrderCurrency(statusFilter === '' ? escrowHeld : walletBalance)}
-              </p>
-            </div>
+          {/* Money currently protected by escrow */}
+          <div className="flex min-w-[280px] flex-col gap-1 rounded-lg bg-stone-950 px-5 py-4 text-white dark:border dark:border-slate-800 dark:bg-slate-900">
+            <span className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-wide text-stone-400">
+              <HiOutlineCreditCard className="h-4 w-4" /> Đang giữ trong ký quỹ
+            </span>
+            <strong className="font-mono text-2xl font-semibold">
+              {formatOrderCurrency(statusFilter === '' ? escrowHeld : walletBalance)}
+            </strong>
+            <span className="text-xs text-stone-400">Chỉ chuyển cho shop khi bạn xác nhận đã nhận hàng</span>
           </div>
         </div>
 
-        {/* Status Filter Tabs */}
-        <div className="mb-6 overflow-x-auto pb-2 custom-scrollbar">
-          <div className="flex gap-2 min-w-max">
-            {ORDER_STATUSES.map((status) => (
+        <div role="tablist" aria-label="Lọc theo trạng thái" className={cn('flex overflow-x-auto border-b no-scrollbar', isDark ? 'border-slate-800' : 'border-stone-200')}>
+          {ORDER_STATUSES.map((status) => {
+            const on = statusFilter === status.value
+            return (
               <button
                 key={status.value}
+                role="tab"
+                aria-selected={on}
                 onClick={() => setStatusFilter(status.value)}
                 className={cn(
-                  'rounded-full px-4 py-2 text-xs font-bold transition-all duration-150 border',
-                  statusFilter === status.value
-                    ? 'bg-amber-500 text-white border-amber-500 shadow-sm'
-                    : isDark
-                      ? 'border-slate-800 bg-slate-800/60 text-slate-300 hover:bg-slate-800 hover:border-slate-700'
-                      : 'border-stone-200 bg-white text-stone-600 hover:bg-stone-50 hover:border-stone-300',
+                  '-mb-px shrink-0 border-b-2 px-3.5 py-3 text-sm transition-colors',
+                  on
+                    ? cn('font-bold', isDark ? 'border-white text-white' : 'border-stone-950 text-stone-950')
+                    : cn('border-transparent font-medium', isDark ? 'text-slate-400 hover:text-white' : 'text-stone-600 hover:text-stone-950'),
                 )}
               >
                 {status.label}
               </button>
-            ))}
-          </div>
+            )
+          })}
         </div>
 
-        {/* Loading State */}
         {loading && (
-          <div className="flex items-center justify-center py-16">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
+          <div className="flex flex-col gap-3" aria-busy="true" aria-label="Đang tải đơn hàng">
+            {[0, 1, 2].map((i) => <div key={i} className={cn('h-44 animate-pulse rounded-lg border', panel)} />)}
           </div>
         )}
 
-        {/* Error State */}
         {error && !loading && (
-          <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center dark:border-red-900/40 dark:bg-red-950/20">
-            <p className={cn('text-sm font-medium', isDark ? 'text-red-400' : 'text-red-600')}>{error}</p>
+          <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center dark:border-red-900/40 dark:bg-red-950/20">
+            <p className="text-sm font-medium text-red-700 dark:text-red-400">{error}</p>
+            <button onClick={fetchData} className="mt-3 text-sm font-semibold text-stone-950 underline dark:text-white">Thử lại</button>
           </div>
         )}
 
-        {/* Empty State */}
         {!loading && !error && orders.length === 0 && (
-          <div
-            className={cn(
-              'rounded-3xl border p-12 text-center',
-              isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white',
-            )}
-          >
-            <HiOutlineShoppingBag className={cn('mx-auto h-12 w-12', isDark ? 'text-slate-600' : 'text-stone-300')} />
-            <p className={cn('mt-4 text-sm font-semibold', isDark ? 'text-slate-400' : 'text-stone-600')}>
-              Bạn chưa có đơn hàng nào trong mục này
-            </p>
+          <div className={cn('flex flex-col items-start gap-3 rounded-lg border p-10', panel)}>
+            <HiOutlineShoppingBag className={cn('h-10 w-10', muted)} />
+            <p className={cn('text-lg font-semibold', ink)}>Chưa có đơn hàng nào trong mục này</p>
+            <Link to="/products" className={cn('rounded-md px-4 py-2.5 text-sm font-bold', isDark ? 'bg-white text-stone-950' : 'bg-stone-950 text-white')}>
+              Xem sản phẩm
+            </Link>
           </div>
         )}
 
-        {/* Orders List */}
         {!loading && !error && orders.length > 0 && (
-          <div className="space-y-4">
+          <div className="flex flex-col gap-3">
             {orders.map((order) => (
               <OrderItemCard
                 key={order.id}
@@ -191,7 +173,6 @@ export default function MyOrders() {
           </div>
         )}
 
-        {/* Order Report / Dispute Modal */}
         <OrderReportModal
           isOpen={reportingOrder !== null}
           onClose={() => setReportingOrder(null)}

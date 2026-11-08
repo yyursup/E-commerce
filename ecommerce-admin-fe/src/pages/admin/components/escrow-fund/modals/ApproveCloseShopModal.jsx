@@ -39,7 +39,7 @@ export default function ApproveCloseShopModal({ shop, onClose, onSuccess, format
       >
         <h2 className="text-lg sm:text-xl font-bold text-emerald-500 flex items-center gap-2">
           <HiOutlineCheckCircle className="h-6 w-6 shrink-0" />
-          Phê Duyệt Đóng Shop & Hoàn Quỹ
+          Phê duyệt đóng shop & hoàn quỹ
         </h2>
         <p className={cn('text-xs mt-1', isDark ? 'text-slate-400' : 'text-stone-500')}>
           Gian hàng yêu cầu: <span className="font-bold text-amber-500">{shop.shopName}</span>

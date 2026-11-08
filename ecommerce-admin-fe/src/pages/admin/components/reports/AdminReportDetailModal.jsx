@@ -129,7 +129,7 @@ export default function AdminReportDetailModal({
                       'bg-rose-500/10 text-rose-500 border-rose-500/30',
                     )}
                   >
-                    Báo Cáo Vi Phạm
+                    Báo cáo vi phạm
                   </span>
                   {isSellerReturnDispute && orderReturn?.status === 'DISPUTED' ? (
                     <span className="px-2.5 py-0.5 rounded-full text-xs font-bold border tracking-wide uppercase bg-rose-500/10 text-rose-500 border-rose-500/30">
@@ -143,7 +143,7 @@ export default function AdminReportDetailModal({
                           ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30'
                           : isRejected
                             ? 'bg-rose-500/10 text-rose-500 border-rose-500/30'
-                            : 'bg-amber-500/10 text-amber-500 border-amber-500/30',
+                            : 'bg-stone-100 text-stone-950 border-stone-950',
                       )}
                     >
                       {isApproved

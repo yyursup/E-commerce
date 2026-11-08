@@ -64,7 +64,7 @@ export default function OrderEscrowsTab() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-bold">Danh Sách Tiền Tạm Giữ Đơn Hàng (Order Escrow)</h2>
+          <h2 className="text-lg font-bold">Danh sách tiền tạm giữ đơn hàng</h2>
           <p className={cn('text-xs', isDark ? 'text-slate-400' : 'text-stone-500')}>
             Tổng số: {totalElements} khoản thanh toán đang được giữ bảo lãnh giữa Người Mua và Người Bán
           </p>
@@ -79,8 +79,8 @@ export default function OrderEscrowsTab() {
             className={cn(
               'rounded-xl border px-3 py-2 text-xs font-semibold outline-none transition',
               isDark
-                ? 'border-slate-700 bg-slate-900 text-slate-100 focus:border-amber-500'
-                : 'border-stone-300 bg-white text-stone-700 focus:border-amber-500',
+                ? 'border-slate-700 bg-slate-900 text-slate-100 focus:border-stone-950 dark:focus:border-white'
+                : 'border-stone-300 bg-white text-stone-700 focus:border-stone-950 dark:focus:border-white',
             )}
           >
             {ADMIN_ESCROW_STATUSES.map((status) => (
@@ -105,7 +105,7 @@ export default function OrderEscrowsTab() {
 
       <div
         className={cn(
-          'rounded-2xl border shadow-sm overflow-hidden',
+          'rounded-2xl border overflow-hidden',
           isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white',
         )}
       >

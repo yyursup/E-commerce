@@ -79,13 +79,13 @@ export default function ChatLiveMessageList({
                       if (e.key === 'Escape') handleCancelEdit()
                     }}
                     className={cn(
-                      'flex-1 rounded-xl border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-500/30',
+                      'flex-1 rounded-xl border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                       isDark ? 'border-slate-600 bg-slate-800 text-white' : 'border-stone-300 bg-white text-stone-900'
                     )}
                   />
                   <button
                     onClick={handleSaveEdit}
-                    className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500 text-white hover:bg-amber-600"
+                    className="flex h-9 w-9 items-center justify-center rounded-xl bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
                   >
                     <HiCheck className="h-4 w-4" />
                   </button>
@@ -174,7 +174,7 @@ export default function ChatLiveMessageList({
                     className={cn(
                       'rounded-2xl px-4 py-2.5 text-sm shadow-sm',
                       isMe
-                        ? 'rounded-tr-xs bg-amber-500 text-white'
+                        ? 'rounded-tr-xs bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                         : isDark
                           ? 'rounded-tl-xs bg-slate-800 text-slate-100 border border-slate-700'
                           : 'rounded-tl-xs bg-stone-100 text-stone-900 border border-stone-200',

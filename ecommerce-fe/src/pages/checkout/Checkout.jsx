@@ -504,7 +504,7 @@ export default function Checkout() {
         return (
             <div className={cn("min-h-screen flex flex-col justify-between transition-colors", isDark ? "bg-slate-950 text-slate-100" : "bg-stone-50 text-stone-900")}>
                 <div className="flex-1 flex items-center justify-center">
-                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent"></div>
+                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-stone-950 border-t-transparent dark:border-white"></div>
                 </div>
                 <Footer />
             </div>
@@ -525,7 +525,7 @@ export default function Checkout() {
                         >
                             <HiArrowLeft className={cn("w-6 h-6", isDark ? "text-white" : "text-stone-900")} />
                         </button>
-                        <h1 className={cn("text-2xl font-bold", isDark ? "text-white" : "text-stone-900")}>
+                        <h1 className={cn("text-3xl sm:text-4xl font-bold tracking-[-0.03em]", isDark ? "text-white" : "text-stone-950")}>
                             Thanh toán ({shopName})
                         </h1>
                     </div>

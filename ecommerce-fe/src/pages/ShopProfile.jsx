@@ -370,9 +370,9 @@ export default function ShopProfile() {
         <div className="relative z-10 mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             {/* Left Card: Avatar + Name + Actions (Shopee Style Box) */}
-            <div className="lg:col-span-5 bg-black/40 backdrop-blur-md rounded-3xl p-6 border border-white/10 shadow-2xl flex flex-col sm:flex-row items-center sm:items-start gap-5">
+            <div className="lg:col-span-5 bg-black/40 backdrop-blur-md rounded-3xl p-6 border border-white/10 flex flex-col sm:flex-row items-center sm:items-start gap-5">
               <div className="relative shrink-0">
-                <div className="h-24 w-24 rounded-2xl overflow-hidden border-2 border-white/30 shadow-xl bg-white">
+                <div className="h-24 w-24 rounded-2xl overflow-hidden border-2 border-white/30 bg-white">
                   <img src={shop?.logo} alt={shop?.name} className="h-full w-full object-cover" />
                 </div>
                 {shop?.mallBadge && (
@@ -394,7 +394,7 @@ export default function ShopProfile() {
                   {/* Huy hiệu Độ Uy Tín & Ký Quỹ Bảo Chứng (Trust Level 1-5 sao) */}
                   <div
                     className={cn(
-                      'inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-bold border shadow-sm cursor-help',
+                      'inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-bold border cursor-help',
                       (shop?.trustLevel || 1) >= 4
                         ? 'bg-gradient-to-r from-amber-500/30 to-yellow-500/30 text-amber-300 border-amber-400/50'
                         : (shop?.trustLevel || 1) >= 2
@@ -427,9 +427,9 @@ export default function ShopProfile() {
                 {/* Buttons: Follow + Chat + Report */}
                 <div className="mt-4 flex flex-wrap items-center justify-center sm:justify-start gap-2">
                   {isOwner ? (
-                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-amber-400/40 bg-amber-500/20 px-4 py-2 text-xs font-bold text-amber-300">
+                    <span className="inline-flex items-center gap-1.5 rounded-xl border px-4 py-2 text-xs font-bold bg-slate-800 text-white border-white">
                       <HiOutlineCheck className="h-4 w-4 text-amber-400" />
-                      Gian Hàng Của Bạn
+                      Gian hàng của bạn
                     </span>
                   ) : (
                     <>
@@ -441,7 +441,7 @@ export default function ShopProfile() {
                           isFollowLoading && 'opacity-70 cursor-not-allowed',
                           isFollowing
                             ? 'bg-white/20 text-white hover:bg-white/30 border border-white/20'
-                            : 'bg-amber-500 text-white hover:bg-amber-600'
+                            : 'bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                         )}
                       >
                         {isFollowLoading ? (
@@ -550,7 +550,7 @@ export default function ShopProfile() {
                   <HiOutlineClock className="h-5 w-5" />
                 </span>
                 <div>
-                  <div className="text-slate-400 text-xs">Tỉ Lệ Phản Hồi</div>
+                  <div className="text-slate-400 text-xs">Tỉ lệ phản hồi</div>
                   <div className="font-bold text-white text-base">{shop?.responseRate || '100%'}</div>
                 </div>
               </div>
@@ -560,7 +560,7 @@ export default function ShopProfile() {
                   <HiOutlineUserAdd className="h-5 w-5" />
                 </span>
                 <div>
-                  <div className="text-slate-400 text-xs">Người Theo Dõi</div>
+                  <div className="text-slate-400 text-xs">Người theo dõi</div>
                   <div className="font-bold text-white text-base">
                     {typeof followerCount === 'number'
                       ? (followerCount >= 1000 ? (followerCount / 1000).toFixed(1) + 'k' : followerCount)
@@ -574,7 +574,7 @@ export default function ShopProfile() {
                   <HiOutlineBadgeCheck className="h-5 w-5" />
                 </span>
                 <div>
-                  <div className="text-slate-400 text-xs">Tham Gia Sàn</div>
+                  <div className="text-slate-400 text-xs">Tham gia sàn</div>
                   <div className="font-bold text-white text-base">{formatJoinedTime(shop?.createdAt)}</div>
                 </div>
               </div>
@@ -584,7 +584,7 @@ export default function ShopProfile() {
                   <HiOutlineLocationMarker className="h-5 w-5" />
                 </span>
                 <div className="truncate">
-                  <div className="text-slate-400 text-xs">Kho Gửi Hàng GHN</div>
+                  <div className="text-slate-400 text-xs">Kho gửi hàng GHN</div>
                   <div className="font-bold text-white text-base truncate">{shop?.city || 'Hà Nội'}</div>
                 </div>
               </div>
@@ -596,7 +596,7 @@ export default function ShopProfile() {
       {/* CẢNH BÁO GIAN HÀNG TẠM NGƯNG HOẠT ĐỘNG HOẶC BỊ KHÓA */}
       {(shop?.status === 'SUSPENDED' || (shop?.suspendedUntil && new Date(shop.suspendedUntil) > new Date())) && (
         <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-6">
-          <div className="rounded-2xl border border-rose-500/40 bg-rose-500/10 p-5 shadow-lg backdrop-blur-sm flex items-start gap-4 text-rose-500 dark:text-rose-400">
+          <div className="rounded-2xl border border-rose-500/40 bg-rose-500/10 p-5 backdrop-blur-sm flex items-start gap-4 text-rose-500 dark:text-rose-400">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-500 text-white font-black text-xl shadow-md">
               !
             </span>
@@ -620,7 +620,7 @@ export default function ShopProfile() {
 
       {shop?.status === 'BANNED' && (
         <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-6">
-          <div className="rounded-2xl border border-rose-600/50 bg-rose-600/15 p-5 shadow-lg flex items-start gap-4 text-rose-600 dark:text-rose-300">
+          <div className="rounded-2xl border border-rose-600/50 bg-rose-600/15 p-5 flex items-start gap-4 text-rose-600 dark:text-rose-300">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-600 text-white font-black text-xl shadow-md">
               ✕
             </span>
@@ -640,7 +640,7 @@ export default function ShopProfile() {
       <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 -mt-4 relative z-20">
         <div
           className={cn(
-            'rounded-2xl border p-4 sm:p-5 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4 transition-colors',
+            'rounded-2xl border p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-colors',
             isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
           )}
         >
@@ -649,7 +649,7 @@ export default function ShopProfile() {
               <HiOutlineTicket className="h-5 w-5" />
             </span>
             <div>
-              <span className="text-sm font-bold block text-rose-500">Mã Giảm Giá Độc Quyền Của Shop</span>
+              <span className="text-sm font-bold block text-rose-500">Mã giảm giá độc quyền của shop</span>
               <span className="text-xs text-stone-500 dark:text-slate-400">Thu thập voucher để áp dụng khi thanh toán đơn hàng tại shop này</span>
             </div>
           </div>
@@ -689,7 +689,7 @@ export default function ShopProfile() {
                         ? 'bg-stone-200 dark:bg-slate-800 text-stone-400 cursor-not-allowed'
                         : isSaved
                           ? 'bg-stone-200 dark:bg-slate-800 text-stone-400 cursor-not-allowed'
-                          : 'bg-amber-500 text-white hover:bg-amber-600'
+                          : 'bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                     )}
                   >
                     {isExhausted ? 'Hết lượt' : isSaved ? 'Đã lưu' : 'Lưu'}
@@ -730,7 +730,7 @@ export default function ShopProfile() {
                 : 'border-transparent text-stone-500 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white'
             )}
           >
-            Dạo Shop & Ưu Đãi
+            Dạo shop & ưu đãi
           </button>
 
           <button
@@ -742,7 +742,7 @@ export default function ShopProfile() {
                 : 'border-transparent text-stone-500 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white'
             )}
           >
-            Hồ Sơ & Định Danh Shop
+            Hồ sơ & định danh shop
           </button>
         </div>
       </section>
@@ -765,8 +765,8 @@ export default function ShopProfile() {
                 {[
                   { id: 'popular', label: 'Phổ biến' },
                   { id: 'newest', label: 'Mới nhất' },
-                  { id: 'price_asc', label: 'Giá: Thấp → Cao' },
-                  { id: 'price_desc', label: 'Giá: Cao → Thấp' },
+                  { id: 'price_asc', label: 'Giá: Thấp → cao' },
+                  { id: 'price_desc', label: 'Giá: Cao → thấp' },
                 ].map((item) => (
                   <button
                     key={item.id}
@@ -774,7 +774,7 @@ export default function ShopProfile() {
                     className={cn(
                       'rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all',
                       sortBy === item.id
-                        ? 'bg-amber-500 text-white shadow-sm'
+                        ? 'bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                         : isDark
                         ? 'bg-slate-800 text-slate-300 hover:bg-slate-700'
                         : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
@@ -793,7 +793,7 @@ export default function ShopProfile() {
                   value={searchInShop}
                   onChange={(e) => setSearchInShop(e.target.value)}
                   className={cn(
-                    'w-full rounded-xl pl-9 pr-4 py-2 text-xs border transition-all focus:outline-none focus:ring-2 focus:ring-amber-500',
+                    'w-full rounded-xl pl-9 pr-4 py-2 text-xs border transition-all focus:outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                     isDark
                       ? 'border-slate-700 bg-slate-800 text-white placeholder-slate-400'
                       : 'border-stone-200 bg-stone-50 text-stone-900 placeholder-stone-400'
@@ -829,7 +829,7 @@ export default function ShopProfile() {
                 {searchInShop && (
                   <button
                     onClick={() => setSearchInShop('')}
-                    className="mt-4 rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-white hover:bg-amber-600"
+                    className="mt-4 rounded-xl px-4 py-2 text-xs font-bold bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
                   >
                     Xóa tìm kiếm
                   </button>
@@ -849,19 +849,19 @@ export default function ShopProfile() {
         {activeTab === 'HOME' && (
           <div className="space-y-8">
             {/* Promo Banner inside Shop */}
-            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-amber-500 via-orange-500 to-rose-600 p-8 text-white shadow-xl">
+            <div className="relative overflow-hidden rounded-lg bg-stone-950 p-8 text-white">
               <div className="max-w-xl">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-xs font-bold uppercase tracking-wider mb-3">
                   <HiOutlineTag className="h-4 w-4" />
-                  Ưu Đãi Đặc Biệt Từ Gian Hàng
+                  Ưu đãi đặc biệt từ gian hàng
                 </span>
-                <h2 className="text-2xl sm:text-4xl font-black">Khám Phá Bộ Sưu Tập Mới Nhất</h2>
+                <h2 className="text-2xl sm:text-4xl font-black">Khám phá bộ sưu tập mới nhất</h2>
                 <p className="mt-2 text-sm text-white/90">
                   Tận hưởng giảm giá đến 30%, tích lũy voucher và chính sách ký quỹ bảo đảm tài chính Escrow.
                 </p>
                 <button
                   onClick={() => setActiveTab('ALL_PRODUCTS')}
-                  className="mt-5 rounded-2xl bg-white px-6 py-2.5 text-xs font-black text-amber-600 hover:bg-amber-50 shadow-md transition-all active:scale-95"
+                  className="mt-5 rounded-2xl bg-white px-6 py-2.5 text-xs font-black text-amber-600 hover:bg-amber-50 transition-all active:scale-95"
                 >
                   Mua sắm ngay
                 </button>
@@ -875,10 +875,10 @@ export default function ShopProfile() {
                   <div className="flex items-center gap-2">
                     <HiStar className="h-5 w-5 text-amber-500" />
                     <h3 className={cn('text-lg font-bold', isDark ? 'text-white' : 'text-stone-900')}>
-                      Sản Phẩm Nổi Bật Của Shop
+                      Sản phẩm nổi bật của shop
                     </h3>
-                    <span className="text-[11px] font-bold bg-amber-500/10 text-amber-500 border border-amber-500/25 px-2 py-0.5 rounded-full">
-                      Được Đẩy Bởi Shop
+                    <span className="text-[11px] font-bold border px-2 py-0.5 rounded-full bg-stone-100 text-stone-950 border-stone-950">
+                      Được đẩy bởi shop
                     </span>
                   </div>
                 </div>
@@ -902,7 +902,7 @@ export default function ShopProfile() {
             <div>
               <div className="flex items-center justify-between mb-4">
                 <h3 className={cn('text-lg font-bold', isDark ? 'text-white' : 'text-stone-900')}>
-                  Sản Phẩm Bán Chạy Nhất Của Shop
+                  Sản phẩm bán chạy nhất của shop
                 </h3>
                 <button
                   onClick={() => setActiveTab('ALL_PRODUCTS')}
@@ -946,7 +946,7 @@ export default function ShopProfile() {
                   <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-amber-500/5 border border-amber-500/10">
                     <HiOutlineShieldCheck className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
                     <div>
-                      <div className="font-bold text-stone-900 dark:text-white">Ký Quỹ Escrow An Toàn 100%</div>
+                      <div className="font-bold text-stone-900 dark:text-white">Ký quỹ escrow an toàn 100%</div>
                       <div className="text-stone-500 dark:text-slate-400 mt-0.5">Tiền giữ trong ví sàn cho đến khi bạn nhận và hài lòng với hàng.</div>
                     </div>
                   </div>
@@ -954,7 +954,7 @@ export default function ShopProfile() {
                   <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-blue-500/5 border border-blue-500/10">
                     <HiOutlineTruck className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" />
                     <div>
-                      <div className="font-bold text-stone-900 dark:text-white">Giao Hàng Nhanh (GHN Express)</div>
+                      <div className="font-bold text-stone-900 dark:text-white">Giao hàng nhanh</div>
                       <div className="text-stone-500 dark:text-slate-400 mt-0.5">Lấy hàng trực tiếp từ kho shop, giao toàn quốc trong 24-48h.</div>
                     </div>
                   </div>
@@ -965,7 +965,7 @@ export default function ShopProfile() {
             {/* Shop Legal & Contact Box */}
             <div
               className={cn(
-                'rounded-3xl border p-6 space-y-4 shadow-sm h-fit',
+                'rounded-3xl border p-6 space-y-4 h-fit',
                 isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
               )}
             >

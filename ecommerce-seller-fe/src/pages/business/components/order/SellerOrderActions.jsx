@@ -44,7 +44,7 @@ export default function SellerOrderActions({
     <div className="border-b border-stone-200 dark:border-slate-800 p-6 space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h3 className={cn('text-base font-bold', isDark ? 'text-white' : 'text-stone-900')}>
-          Thao Tác & Xử Lý Đơn Hàng
+          Thao tác & xử lý đơn hàng
         </h3>
 
         {order?.ghnOrderCode && (
@@ -73,7 +73,7 @@ export default function SellerOrderActions({
         <div
           className={cn(
             'p-4 rounded-2xl border text-xs sm:text-sm',
-            isDark ? 'border-amber-500/30 bg-amber-500/10 text-amber-300' : 'border-amber-200 bg-amber-50 text-amber-800'
+            isDark ? 'bg-slate-800 text-white border-white' : 'border-amber-200 bg-amber-50 text-amber-800'
           )}
         >
           ⏳ Đơn hàng đang ở trạng thái <strong>Chờ thanh toán</strong>. Khi khách thanh toán thành công, đơn sẽ tự động chuyển sang <strong>Đã xác nhận</strong> để shop đóng gói.
@@ -84,14 +84,14 @@ export default function SellerOrderActions({
         <div
           className={cn(
             'p-4 rounded-2xl border text-xs sm:text-sm flex items-start gap-3',
-            isDark ? 'border-amber-500/40 bg-amber-500/10 text-amber-300' : 'border-amber-300 bg-amber-50 text-amber-800'
+            isDark ? 'bg-slate-800 text-white border-white' : 'border-amber-300 bg-amber-50 text-amber-800'
           )}
         >
           <HiOutlineExclamation className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
           <div>
             <p className="font-bold">Đơn hàng đang có yêu cầu khiếu nại (Thương lượng trực tiếp 1:1)</p>
             <p className="text-[11px] opacity-90 mt-0.5">
-              Khách hàng đã nộp khiếu nại. Vui lòng xem chi tiết hình ảnh, lý do và phản hồi xử lý ở mục <strong>Yêu Cầu Khiếu Nại</strong> ngay bên dưới.
+              Khách hàng đã nộp khiếu nại. Vui lòng xem chi tiết hình ảnh, lý do và phản hồi xử lý ở mục <strong>Yêu cầu khiếu nại</strong> ngay bên dưới.
             </p>
           </div>
         </div>
@@ -135,10 +135,10 @@ export default function SellerOrderActions({
             type="button"
             disabled={actionLoading}
             onClick={() => onUpdateStatus('PROCESSING')}
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-5 py-2.5 text-xs sm:text-sm font-bold text-white shadow-md shadow-amber-500/20 hover:from-amber-600 hover:to-orange-600 transition-all disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs sm:text-sm font-bold transition-all disabled:opacity-50 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
           >
             <HiOutlineCheck className="h-4 w-4" />
-            <span>Xác Nhận & Bắt Đầu Đóng Gói</span>
+            <span>Xác nhận & bắt đầu đóng gói</span>
           </button>
         )}
 
@@ -147,10 +147,10 @@ export default function SellerOrderActions({
             type="button"
             disabled={actionLoading}
             onClick={() => onUpdateStatus('SHIPPING')}
-            className="inline-flex items-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 px-5 py-2.5 text-xs sm:text-sm font-bold text-white shadow-md shadow-blue-500/20 transition-all disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs sm:text-sm font-bold transition-all disabled:opacity-50 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
           >
             <HiOutlineTruck className="h-4 w-4" />
-            <span>Đã Giao Cho Shipper GHN</span>
+            <span>Đã giao cho shipper GHN</span>
           </button>
         )}
 
@@ -163,10 +163,10 @@ export default function SellerOrderActions({
                 await onUpdateStatus('DELIVERED')
               }
             }}
-            className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-5 py-2.5 text-xs sm:text-sm font-bold text-white shadow-md shadow-emerald-500/20 transition-all disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-5 py-2.5 text-xs sm:text-sm font-bold text-white transition-all disabled:opacity-50"
           >
             <HiOutlineCheckCircle className="h-4 w-4" />
-            <span>Xác Nhận Đã Giao Thành Công</span>
+            <span>Xác nhận đã giao thành công</span>
           </button>
         )}
 
@@ -182,7 +182,7 @@ export default function SellerOrderActions({
             className="inline-flex items-center gap-1.5 rounded-xl border border-rose-300 dark:border-rose-900 bg-rose-50 dark:bg-rose-950/40 px-4 py-2.5 text-xs sm:text-sm font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/60 transition-all disabled:opacity-50"
           >
             <HiOutlineX className="h-4 w-4" />
-            <span>Hủy Đơn Hàng</span>
+            <span>Hủy đơn hàng</span>
           </button>
         )}
       </div>
@@ -209,7 +209,7 @@ export default function SellerOrderActions({
               type="button"
               disabled={actionLoading}
               onClick={onRetryCreateGhn}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 px-4 py-2 text-xs font-bold text-white shadow-sm transition-all disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition-all disabled:opacity-50 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
             >
               <HiOutlineRefresh className={cn('h-3.5 w-3.5', actionLoading && 'animate-spin')} />
               <span>Thử tạo đơn GHN tự động</span>
@@ -224,7 +224,7 @@ export default function SellerOrderActions({
                 onChange={(e) => onGhnOrderCodeChange(e.target.value)}
                 placeholder="Nhập mã vận đơn GHN thủ công..."
                 className={cn(
-                  'rounded-xl border px-3 py-2 text-xs font-mono outline-none transition-all w-52 sm:w-64 focus:ring-2 focus:ring-amber-500',
+                  'rounded-xl border px-3 py-2 text-xs font-mono outline-none transition-all w-52 sm:w-64 focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                   isDark
                     ? 'border-slate-700 bg-slate-900 text-white placeholder:text-slate-500'
                     : 'border-stone-300 bg-white text-stone-900 placeholder:text-stone-400'

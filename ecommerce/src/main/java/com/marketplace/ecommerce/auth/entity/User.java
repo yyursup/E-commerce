@@ -55,6 +55,15 @@ public class User extends BaseEntity {
     @Column(name = "address", length = 255)
     private String address;
 
+    @Column(name = "bank_name", length = 150)
+    private String bankName;
+
+    @Column(name = "bank_account_number", length = 50)
+    private String bankAccountNumber;
+
+    @Column(name = "bank_account_name", length = 150)
+    private String bankAccountName;
+
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "account_id", unique = true, nullable = false)
     private Account account;

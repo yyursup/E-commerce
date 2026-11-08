@@ -17,6 +17,11 @@ import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
+import java.math.BigDecimal;
+import java.text.NumberFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
@@ -159,6 +164,79 @@ public class EmailServiceImpl implements EmailService {
         return String.valueOf(otpValue);
     }
 
+    @Override
+    @Async
+    public void sendWithdrawalEmail(String toEmail, String recipientName, BigDecimal amount,
+                                    String bankName, String bankAccountNumber,
+                                    String txRef, String status, String note) {
+        if (toEmail == null || toEmail.isBlank()) {
+            log.warn("Recipient email is null or blank for withdrawal notification.");
+            return;
+        }
 
+        try {
+            log.info("Sending withdrawal notification email to: {} for tx: {}", toEmail, txRef);
 
+            String statusText;
+            String statusColor;
+            String message;
+            String subject;
+
+            NumberFormat nf = NumberFormat.getInstance(Locale.of("vi", "VN"));
+            String amountFormatted = (amount != null ? nf.format(amount) : "0") + " ₫";
+            String timeStr = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss dd/MM/yyyy"));
+
+            switch (status) {
+                case "APPROVED" -> {
+                    subject = "[E-Commerce] Chuyển tiền thành công - " + txRef;
+                    statusText = "ĐÃ CHUYỂN TIỀN THÀNH CÔNG";
+                    statusColor = "#10b981";
+                    message = "Yêu cầu rút tiền của bạn đã được Ban Quản Trị đối soát và giải ngân thành công vào tài khoản ngân hàng thụ hưởng.";
+                }
+                case "REJECTED" -> {
+                    subject = "[E-Commerce] Yêu cầu rút tiền không thành công - " + txRef;
+                    statusText = "TỪ CHỐI RÚT TIỀN";
+                    statusColor = "#ef4444";
+                    message = "Yêu cầu rút tiền của bạn đã bị từ chối. Số tiền đã được hoàn trả lại vào số dư khả dụng của ví.";
+                }
+                case "CANCELLED" -> {
+                    subject = "[E-Commerce] Đã hủy yêu cầu rút tiền - " + txRef;
+                    statusText = "ĐÃ HỦY LỆNH RÚT TIỀN";
+                    statusColor = "#64748b";
+                    message = "Bạn đã hủy yêu cầu rút tiền thành công. Số tiền đã được hoàn trả lại vào số dư khả dụng của ví.";
+                }
+                default -> {
+                    subject = "[E-Commerce] Tiếp nhận yêu cầu rút tiền - " + txRef;
+                    statusText = "ĐANG CHỜ ĐỐI SOÁT";
+                    statusColor = "#f59e0b";
+                    message = "Hệ thống đã tiếp nhận yêu cầu rút tiền của bạn. Ban Quản Trị sẽ tiến hành đối soát và giải ngân trong vòng 24 giờ làm việc.";
+                }
+            }
+
+            Context context = new Context();
+            context.setVariable("name", recipientName != null && !recipientName.isBlank() ? recipientName : toEmail);
+            context.setVariable("amountFormatted", amountFormatted);
+            context.setVariable("txRef", txRef);
+            context.setVariable("bankName", bankName != null ? bankName : "N/A");
+            context.setVariable("bankAccountNumber", bankAccountNumber != null ? bankAccountNumber : "N/A");
+            context.setVariable("statusText", statusText);
+            context.setVariable("statusColor", statusColor);
+            context.setVariable("message", message);
+            context.setVariable("time", timeStr);
+            context.setVariable("note", note);
+
+            String htmlContent = templateEngine.process("WITHDRAWAL_NOTIFICATION", context);
+
+            MimeMessage mimeMessage = javaMailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, "UTF-8");
+            helper.setTo(toEmail);
+            helper.setSubject(subject);
+            helper.setText(htmlContent, true);
+
+            javaMailSender.send(mimeMessage);
+            log.info("Withdrawal email sent successfully to: {}", toEmail);
+        } catch (Exception e) {
+            log.error("Failed to send withdrawal email to: {}, error: {}", toEmail, e.getMessage());
+        }
+    }
 }

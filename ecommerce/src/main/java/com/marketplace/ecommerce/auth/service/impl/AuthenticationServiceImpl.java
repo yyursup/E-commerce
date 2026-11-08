@@ -340,7 +340,12 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
         Optional<User> userOpt = userRepository.findByAccountId(accountId);
         if (userOpt.isPresent()) {
-            Optional<Shop> shopOpt = shopRepository.findByUserId(userOpt.get().getId());
+            User u = userOpt.get();
+            builder.setBankName(u.getBankName());
+            builder.setBankAccountNumber(u.getBankAccountNumber());
+            builder.setBankAccountName(u.getBankAccountName());
+
+            Optional<Shop> shopOpt = shopRepository.findByUserId(u.getId());
             if (shopOpt.isPresent()) {
                 hasShop = true;
                 Shop s = shopOpt.get();
@@ -349,6 +354,15 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 sellerStatus = "APPROVED";
                 if (s.getStatus() != null) {
                     shopStatus = s.getStatus().name();
+                }
+                if ((builder.getBankName() == null || builder.getBankName().isBlank()) && s.getBankName() != null) {
+                    builder.setBankName(s.getBankName());
+                    builder.setBankAccountNumber(s.getBankAccountNumber());
+                    builder.setBankAccountName(s.getBankAccountName());
+                    u.setBankName(s.getBankName());
+                    u.setBankAccountNumber(s.getBankAccountNumber());
+                    u.setBankAccountName(s.getBankAccountName());
+                    userRepository.save(u);
                 }
             }
         }

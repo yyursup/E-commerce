@@ -31,6 +31,9 @@ export default function Layout() {
               disciplineLevel: profile.disciplineLevel ?? 'NONE',
               lastViolationAt: profile.lastViolationAt || null,
               bannedUntil: profile.bannedUntil || null,
+              bankName: profile.bankName || null,
+              bankAccountNumber: profile.bankAccountNumber || null,
+              bankAccountName: profile.bankAccountName || null,
             })
           }
         })

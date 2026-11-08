@@ -28,4 +28,7 @@ public class LoginResponse {
     private Integer violationCount;
     private String disciplineLevel;
     private LocalDateTime bannedUntil;
+    private String bankName;
+    private String bankAccountNumber;
+    private String bankAccountName;
 }

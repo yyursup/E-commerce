@@ -472,9 +472,6 @@ export default function Checkout() {
             if (paymentMethod === 'WALLET') {
                 toast.success("Đặt hàng & thanh toán bằng ví thành công!")
                 navigate(`/orders/${order.id}`)
-            } else if (paymentMethod === 'COD') {
-                toast.success("Đặt hàng thành công!")
-                navigate(`/orders/${order.id}`)
             } else {
                 // VNPAY
                 toast.success("Đặt hàng thành công! Đang chuyển hướng cổng thanh toán...")

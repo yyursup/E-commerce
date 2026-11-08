@@ -61,7 +61,7 @@ public class TrustLevelConfigSeeder implements CommandLineRunner {
                     .maxDeposit(new BigDecimal("50000000"))
                     .badgeIconUrl("/badges/star-4.png")
                     .commissionDiscount(new BigDecimal("1.00"))
-                    .benefitsDescription("Huy hiệu Đối tác Vàng 4 sao. Được gắn nhãn Gian hàng Đảm bảo, ưu tiên đẩy top tìm kiếm và livestream, giảm 1.0% hoa hồng sàn.")
+                    .benefitsDescription("Huy hiệu Đối tác Vàng 4 sao. Được gắn nhãn Gian hàng Đảm bảo, ưu tiên đẩy top tìm kiếm, giảm 1.0% hoa hồng sàn.")
                     .isActive(true)
                     .build(),
                 TrustLevelConfig.builder()

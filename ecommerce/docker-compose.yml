@@ -56,7 +56,7 @@ services:
     restart: "no"
 
 
-  # Redis - High speed cache & real-time counter cho Livestream (Online viewers, Like count)
+  # Redis - High speed cache & cache dữ liệu nóng
   redis:
     image: redis:7-alpine
     container_name: app-redis

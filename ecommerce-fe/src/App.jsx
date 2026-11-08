@@ -20,8 +20,6 @@ import ReportCreate from './pages/ReportCreate'
 import ProfileWallet from './pages/profile/ProfileWallet'
 import Deals from './pages/deals/Deals'
 import Checkout from './pages/checkout/Checkout'
-import LiveList from './pages/live/LiveList'
-import LiveRoom from './pages/live/LiveRoom'
 import BannedAccount from './pages/BannedAccount'
 import Policy from './pages/Policy'
 import ThemeSync from './components/ThemeSync'
@@ -34,14 +32,12 @@ export default function App() {
     <>
       <ThemeSync />
       <Routes>
-      {/* Standalone Fullscreen Live Room & Banned Screen */}
-      <Route path="/live/:id" element={<LiveRoom />} />
+      {/* Standalone Banned Screen */}
       <Route path="/banned" element={<BannedAccount />} />
 
       <Route element={<Layout />}>
         {/* Public routes */}
         <Route path="/" element={<Home />} />
-        <Route path="/live" element={<LiveList />} />
         <Route path="/deals" element={<Deals />} />
         <Route path="/marketplace" element={<Marketplace />} />
         <Route path="/shop/:shopId" element={<ShopProfile />} />

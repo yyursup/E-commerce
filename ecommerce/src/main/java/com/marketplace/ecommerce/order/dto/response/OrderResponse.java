@@ -189,7 +189,7 @@ public class OrderResponse {
                                 .commissionRate(order.getCommissionRate())
                                 .ghnOrderCode(order.getGhnOrderCode())
                                 .paymentMethod(order.getPaymentMethod() != null ? order.getPaymentMethod().name()
-                                                : "COD")
+                                                : "WALLET")
                                 .items(items)
                                 .createdAt(order.getCreatedAt())
                                 .updatedAt(order.getUpdatedAt())

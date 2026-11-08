@@ -112,7 +112,7 @@ input[type="number"] {
   appearance: textfield;
 }
 
-/* Livestream Animations */
+/* Slide Animations */
 @keyframes slide-up {
   from {
     opacity: 0;

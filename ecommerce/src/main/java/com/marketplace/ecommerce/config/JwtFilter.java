@@ -62,10 +62,6 @@ public class JwtFilter extends OncePerRequestFilter {
             "/api/v1/ws-chat/**",
             "/ws/chat",
             "/ws/chat/**",
-            "/api/v1/livestreams/active",
-            "/api/v1/livestreams/*",
-            "/api/v1/livestreams/*/join",
-            "/api/v1/livestreams/*/like",
             "/api/v1/vouchers",
             "/api/v1/vouchers/shop/**",
             "/api/v1/policies"

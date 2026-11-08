@@ -189,10 +189,10 @@ $$\text{reputationScore} = \max(0, 100 - \text{violationCount} \times 15)$$
 
 | Điểm Uy Tín | Số Gậy Vi Phạm | Xếp Hạng & Huy Hiệu | Quyền Lợi & Chế Tài |
 | :--- | :--- | :--- | :--- |
-| **100 điểm** | 0 gậy | 🛡️ **Chuẩn Mực (Diamond Trust)** | Mở toàn bộ phương thức COD; ưu tiên duyệt khiếu nại hoàn tiền trong 24h. |
+| **100 điểm** | 0 gậy | 🛡️ **Chuẩn Mực (Diamond Trust)** | Ưu tiên duyệt khiếu nại hoàn tiền trong 24h. |
 | **70 - 85 điểm** | 1 - 2 gậy | 🔷 **Uy Tín Tốt (Good Standing)** | Giao dịch và đổi trả theo quy trình tiêu chuẩn; ghi nhận cảnh cáo nhẹ. |
 | **40 - 55 điểm** | 3 - 4 gậy | ⚠️ **Cảnh Báo (Warned)** | Diện giám sát giao dịch; yêu cầu cung cấp video bằng chứng unbox bắt buộc khi khiếu nại. |
-| **15 - 25 điểm** | 5 - 6 gậy | 🛑 **Rủi Ro Cao (Suspended)** | Tạm khóa phương thức thanh toán khi nhận hàng (COD), yêu cầu thanh toán trả trước VNPay. |
+| **15 - 25 điểm** | 5 - 6 gậy | 🛑 **Rủi Ro Cao (Suspended)** | Hạn chế giao dịch; mọi khiếu nại phải qua admin duyệt thủ công. |
 | **0 điểm** | ≥ 7 gậy | ❌ **Khóa Tài Khoản (Banned)** | Vô hiệu hóa tài khoản người mua vĩnh viễn; chặn đăng ký tài khoản mới cùng thông tin. |
 
 ### 8.3. Cơ Chế Tự Động Hồi Phục (Monthly Decay Rule)

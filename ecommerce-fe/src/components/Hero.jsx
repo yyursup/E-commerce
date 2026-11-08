@@ -10,7 +10,6 @@ import {
   HiOutlineTag,
   HiOutlineSparkles,
   HiOutlineBadgeCheck,
-  HiOutlineVideoCamera,
 } from 'react-icons/hi'
 import Modal from './Modal'
 import { useThemeStore } from '../store/useThemeStore'
@@ -92,14 +91,6 @@ const quickServices = [
     label: 'Ký Quỹ Escrow',
     color: 'text-emerald-500 bg-emerald-500/10 dark:bg-emerald-500/20',
     action: 'escrow',
-  },
-  {
-    id: 'live',
-    icon: HiOutlineVideoCamera,
-    label: 'Live Shopping',
-    color: 'text-purple-500 bg-purple-500/10 dark:bg-purple-500/20',
-    link: '/live',
-    isLive: true,
   },
   {
     id: 'ai-bot',
@@ -292,12 +283,6 @@ export default function Hero() {
                     )}
                   >
                     <Icon className="h-6 w-6" />
-                    {service.isLive && (
-                      <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-                        <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500" />
-                      </span>
-                    )}
                   </div>
                   <span
                     className={cn(
@@ -376,7 +361,7 @@ export default function Hero() {
               <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-white text-xs font-bold mb-2">1</span>
               <h5 className="font-bold text-sm text-stone-800 dark:text-slate-100">Khóa Tiền Ký Quỹ</h5>
               <p className="text-xs text-stone-500 dark:text-slate-400 mt-1 leading-relaxed">
-                Tiền thanh toán (VNPay / COD) được bảo lưu an toàn tại ví Escrow sàn. Người bán chưa nhận được tiền.
+                Tiền thanh toán (VNPay / Ví sàn) được bảo lưu an toàn tại ví Escrow sàn. Người bán chưa nhận được tiền.
               </p>
             </div>
 

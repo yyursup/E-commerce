@@ -12,7 +12,6 @@ import {
   HiOutlineTicket,
   HiOutlineChat,
   HiOutlineClipboardList,
-  HiOutlineVideoCamera,
   HiOutlineShieldCheck,
   HiOutlineCash,
   HiOutlineClock,
@@ -36,7 +35,6 @@ import escrowFundService from '../services/escrowFund'
 
 const navItems = [
   { to: '/dashboard', label: 'Tổng quan (Dashboard)', icon: HiOutlineViewGrid },
-  { to: '/live', label: 'Kênh Livestream', icon: HiOutlineVideoCamera },
   { to: '/orders', label: 'Quản lý Đơn hàng', icon: HiOutlineShoppingBag },
   { to: '/products', label: 'Quản lý Sản phẩm', icon: HiOutlineArchive },
   { to: '/inventory-history', label: 'Lịch sử Kho hàng', icon: HiOutlineClipboardList },

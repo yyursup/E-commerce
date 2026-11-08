@@ -200,10 +200,10 @@ public class PolicySeeder {
 
                 ### 2. THANG ĐIỂM UY TÍN NGƯỜI MUA (BUYER CREDIBILITY SCORE)
                 Điểm uy tín tính theo công thức: `reputationScore = max(0, 100 - violationCount * 15)`
-                - **100 điểm (Diamond Trust - 0 gậy)**: Mở toàn bộ phương thức thanh toán COD, ưu tiên xử lý hoàn tiền trong 24h.
+                - **100 điểm (Diamond Trust - 0 gậy)**: Ưu tiên xử lý hoàn tiền trong 24h.
                 - **70 - 85 điểm (Good Standing - 1-2 gậy)**: Giao dịch tiêu chuẩn, ghi nhận cảnh cáo nhẹ.
                 - **40 - 55 điểm (Warned - 3-4 gậy)**: Diện giám sát giao dịch, bắt buộc cung cấp video unbox khi khiếu nại.
-                - **15 - 25 điểm (Suspended - 5-6 gậy)**: Khóa phương thức thanh toán COD, bắt buộc thanh toán trả trước qua VNPay.
+                - **15 - 25 điểm (Suspended - 5-6 gậy)**: Hạn chế giao dịch, mọi khiếu nại phải qua admin duyệt thủ công.
                 - **0 điểm (Banned - ≥ 7 gậy)**: **Khóa tài khoản vĩnh viễn**, chặn đăng ký tài khoản mới bằng cùng số điện thoại/CCCD/Email.
 
                 ### 3. CƠ CHẾ TỰ ĐỘNG HỒI PHỤC (MONTHLY DECAY RULE)
@@ -361,7 +361,7 @@ public class PolicySeeder {
                 ### 3. PHÁN QUYẾT BẢO VỆ GIAN HÀNG
                 - Bác bỏ toàn bộ khiếu nại của Người mua (`decision = REJECT`).
                 - Giải ngân 100% doanh thu đơn hàng cho Người bán qua lệnh `releaseByOrder`.
-                - Trừ điểm uy tín của Người mua theo Thang Điểm 100 và áp dụng chế tài hạn chế COD nếu tái phạm.
+                - Trừ điểm uy tín của Người mua theo Thang Điểm 100 và áp dụng chế tài hạn chế giao dịch nếu tái phạm.
                 """,
                 "DISCIPLINE",
                 "BUYER",

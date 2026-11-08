@@ -50,7 +50,7 @@ export default function DealsProductGrid({
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
               className={cn(
-                'text-xs rounded-xl px-3 py-1.5 border font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500/30',
+                'text-xs rounded-xl px-3 py-1.5 border font-semibold focus:outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                 isDark ? 'border-slate-800 bg-slate-900 text-slate-200' : 'border-stone-200 bg-white text-stone-800'
               )}
             >
@@ -62,7 +62,7 @@ export default function DealsProductGrid({
             {/* Reset to ALL button */}
             <button
               onClick={() => setSelectedCategoryId('ALL')}
-              className="text-xs font-bold px-3 py-1.5 rounded-xl bg-amber-500 text-white hover:bg-amber-600 transition-colors shadow-sm"
+              className="text-xs font-bold px-3 py-1.5 rounded-xl transition-colors bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
             >
               Về tất cả ngành
             </button>
@@ -90,7 +90,7 @@ export default function DealsProductGrid({
           </p>
           <Link
             to="/products"
-            className="mt-5 inline-flex items-center gap-1.5 rounded-xl bg-amber-500 px-5 py-2.5 text-xs font-bold text-white shadow-md hover:bg-amber-600 transition-all"
+            className="mt-5 inline-flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-xs font-bold transition-all bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
           >
             Khám phá toàn bộ sản phẩm
             <HiOutlineArrowRight className="h-4 w-4" />
@@ -114,7 +114,7 @@ export default function DealsProductGrid({
                 <button
                   key={c.id}
                   onClick={() => setSelectedCategoryId(c.id)}
-                  className="rounded-xl border px-3 py-1.5 text-xs font-bold border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500 hover:text-white transition-all"
+                  className="rounded-xl border px-3 py-1.5 text-xs font-bold dark:text-amber-400 hover:bg-amber-500 hover:text-white transition-all bg-stone-100 text-stone-950 border-stone-950"
                 >
                   {c.name} ({categoryProductCounts[c.id]})
                 </button>
@@ -143,7 +143,7 @@ export default function DealsProductGrid({
               <div
                 key={cat.id}
                 className={cn(
-                  'rounded-3xl border overflow-hidden p-5 sm:p-7 shadow-sm transition-colors',
+                  'rounded-3xl border overflow-hidden p-5 sm:p-7 transition-colors',
                   isDark ? 'border-slate-800 bg-slate-900/80' : 'border-stone-200 bg-white'
                 )}
               >
@@ -151,7 +151,7 @@ export default function DealsProductGrid({
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 pb-4 border-b border-stone-100 dark:border-slate-800">
                   <div>
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="rounded-md bg-amber-500/10 border border-amber-500/20 px-2.5 py-0.5 text-xs font-bold text-amber-600 dark:text-amber-400 uppercase">
+                      <span className="rounded-md border px-2.5 py-0.5 text-xs font-bold dark:text-amber-400 uppercase bg-stone-100 text-stone-950 border-stone-950">
                         Ưu đãi ngành
                       </span>
                       <span className="text-xs text-stone-400 font-semibold">{items.length} sản phẩm</span>

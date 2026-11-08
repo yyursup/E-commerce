@@ -37,7 +37,7 @@ export default function ChangePassword({ isDark }) {
     return (
         <div>
             <div className="border-b pb-4 mb-6 border-stone-200 dark:border-slate-700">
-                <h2 className={cn("text-xl font-medium", isDark ? "text-white" : "text-stone-900")}>
+                <h2 className={cn("text-3xl font-bold tracking-[-0.03em]", isDark ? "text-white" : "text-stone-900")}>
                     Đổi Mật Khẩu
                 </h2>
                 <p className={cn("text-sm mt-1", isDark ? "text-slate-400" : "text-stone-500")}>
@@ -55,7 +55,7 @@ export default function ChangePassword({ isDark }) {
                             <input
                                 type="password"
                                 className={cn(
-                                    "flex-1 rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500",
+                                    "flex-1 rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40",
                                     isDark ? "border-slate-700 bg-slate-800 text-white" : "border-stone-300 bg-white text-stone-900",
                                     errors.oldPassword && "border-red-500"
                                 )}
@@ -80,7 +80,7 @@ export default function ChangePassword({ isDark }) {
                             <input
                                 type="password"
                                 className={cn(
-                                    "flex-1 rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500",
+                                    "flex-1 rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40",
                                     isDark ? "border-slate-700 bg-slate-800 text-white" : "border-stone-300 bg-white text-stone-900",
                                     errors.newPassword && "border-red-500"
                                 )}
@@ -109,7 +109,7 @@ export default function ChangePassword({ isDark }) {
                             <input
                                 type="password"
                                 className={cn(
-                                    "flex-1 rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500",
+                                    "flex-1 rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40",
                                     isDark ? "border-slate-700 bg-slate-800 text-white" : "border-stone-300 bg-white text-stone-900",
                                     errors.confirmPassword && "border-red-500"
                                 )}
@@ -137,7 +137,7 @@ export default function ChangePassword({ isDark }) {
                             type="submit"
                             disabled={isSubmitting}
                             className={cn(
-                                "bg-amber-500 text-white px-6 py-2 rounded-sm text-sm font-medium transition-colors",
+                                "px-6 py-2 rounded-sm text-sm font-medium transition-colors bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200",
                                 isSubmitting ? "opacity-70 cursor-not-allowed" : "hover:bg-amber-600"
                             )}
                         >

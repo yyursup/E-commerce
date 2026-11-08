@@ -24,7 +24,7 @@ export default function DealsVoucherHub({
     <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-2.5">
-          <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-amber-500 to-rose-500 text-white shadow-md">
+          <span className="flex h-10 w-10 items-center justify-center rounded-md bg-stone-950 text-white dark:bg-white dark:text-stone-950">
             <HiOutlineTicket className="h-5 w-5" />
           </span>
           <div>
@@ -164,13 +164,13 @@ export default function DealsVoucherHub({
           {/* Side Floating Controls */}
           <button
             onClick={() => scrollVouchers('left')}
-            className="absolute -left-3 top-1/2 -translate-y-1/2 z-10 hidden sm:flex h-9 w-9 items-center justify-center rounded-full bg-white/95 dark:bg-slate-900/95 text-stone-800 dark:text-white shadow-xl border border-stone-200 dark:border-slate-700 backdrop-blur opacity-0 group-hover:opacity-100 transition-all duration-200 hover:scale-110 active:scale-95"
+            className="absolute -left-3 top-1/2 -translate-y-1/2 z-10 hidden sm:flex h-9 w-9 items-center justify-center rounded-full bg-white/95 dark:bg-slate-900/95 text-stone-800 dark:text-white border border-stone-200 dark:border-slate-700 backdrop-blur opacity-0 group-hover:opacity-100 transition-all duration-200 hover:scale-110 active:scale-95"
           >
             <HiOutlineChevronLeft className="h-5 w-5" />
           </button>
           <button
             onClick={() => scrollVouchers('right')}
-            className="absolute -right-3 top-1/2 -translate-y-1/2 z-10 hidden sm:flex h-9 w-9 items-center justify-center rounded-full bg-white/95 dark:bg-slate-900/95 text-stone-800 dark:text-white shadow-xl border border-stone-200 dark:border-slate-700 backdrop-blur opacity-0 group-hover:opacity-100 transition-all duration-200 hover:scale-110 active:scale-95"
+            className="absolute -right-3 top-1/2 -translate-y-1/2 z-10 hidden sm:flex h-9 w-9 items-center justify-center rounded-full bg-white/95 dark:bg-slate-900/95 text-stone-800 dark:text-white border border-stone-200 dark:border-slate-700 backdrop-blur opacity-0 group-hover:opacity-100 transition-all duration-200 hover:scale-110 active:scale-95"
           >
             <HiOutlineChevronRight className="h-5 w-5" />
           </button>
@@ -190,7 +190,7 @@ export default function DealsVoucherHub({
                 <div
                   key={voucher.id || voucher.code}
                   className={cn(
-                    'w-[285px] sm:w-[315px] min-h-[210px] shrink-0 relative rounded-2xl border p-4 sm:p-5 flex flex-col justify-between shadow-sm transition-all duration-300 hover:shadow-md hover:border-amber-500/40',
+                    'w-[285px] sm:w-[315px] min-h-[210px] shrink-0 relative rounded-2xl border p-4 sm:p-5 flex flex-col justify-between transition-all duration-300 hover:border-amber-500/40',
                     isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white',
                     isExhausted && 'opacity-60'
                   )}
@@ -241,12 +241,12 @@ export default function DealsVoucherHub({
                       onClick={() => !isExhausted && onCollectVoucher(voucher)}
                       disabled={isCollected || isExhausted}
                       className={cn(
-                        'rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all shadow-sm flex items-center gap-1.5',
+                        'rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all flex items-center gap-1.5',
                         isExhausted
                           ? 'bg-stone-200 dark:bg-slate-800 text-stone-400 dark:text-slate-500 cursor-not-allowed shadow-none'
                           : isCollected
                             ? 'bg-emerald-500 text-white cursor-default shadow-emerald-500/20'
-                            : 'bg-amber-500 text-white hover:bg-amber-600 active:scale-95 shadow-amber-500/20'
+                            : 'active:scale-95 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                       )}
                     >
                       {isExhausted ? (
@@ -277,7 +277,7 @@ export default function DealsVoucherHub({
               <div
                 key={voucher.id || voucher.code}
                 className={cn(
-                  'min-h-[210px] relative rounded-2xl border p-4 sm:p-5 flex flex-col justify-between shadow-sm transition-all duration-300 hover:shadow-md hover:border-amber-500/40',
+                  'min-h-[210px] relative rounded-2xl border p-4 sm:p-5 flex flex-col justify-between transition-all duration-300 hover:border-amber-500/40',
                   isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white',
                   isExhausted && 'opacity-60'
                 )}
@@ -328,12 +328,12 @@ export default function DealsVoucherHub({
                     onClick={() => !isExhausted && onCollectVoucher(voucher)}
                     disabled={isCollected || isExhausted}
                     className={cn(
-                      'rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all shadow-sm flex items-center gap-1.5',
+                      'rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all flex items-center gap-1.5',
                       isExhausted
                         ? 'bg-stone-200 dark:bg-slate-800 text-stone-400 dark:text-slate-500 cursor-not-allowed shadow-none'
                         : isCollected
                           ? 'bg-emerald-500 text-white cursor-default shadow-emerald-500/20'
-                          : 'bg-amber-500 text-white hover:bg-amber-600 active:scale-95 shadow-amber-500/20'
+                          : 'active:scale-95 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                     )}
                   >
                     {isExhausted ? (

@@ -106,7 +106,7 @@ export default function OrderDisputeBanner({ order, returnInfo, report: reportPr
           className={cn(
             'rounded-2xl p-3.5 sm:p-4 border text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3',
             isDark
-              ? 'bg-amber-500/10 border-amber-500/25 text-amber-300'
+              ? 'bg-slate-800 text-white border-white'
               : 'bg-amber-50 border-amber-200 text-amber-900',
           )}
         >
@@ -128,7 +128,7 @@ export default function OrderDisputeBanner({ order, returnInfo, report: reportPr
       {order.hasActiveDispute && (
         <div
           className={cn(
-            'rounded-2xl p-4 sm:p-5 border text-xs space-y-3 shadow-sm transition-all',
+            'rounded-2xl p-4 sm:p-5 border text-xs space-y-3 transition-all',
             isNegotiating
               ? isDark
                 ? 'bg-amber-500/10 border-amber-500/30 text-amber-200'
@@ -173,7 +173,7 @@ export default function OrderDisputeBanner({ order, returnInfo, report: reportPr
                     className={cn(
                       'px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase border tracking-wider',
                       isNegotiating
-                        ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/30'
+                        ? 'dark:text-amber-400 bg-stone-100 text-stone-950 border-stone-950'
                         : isReturnProgress
                           ? 'bg-sky-500/20 text-sky-600 dark:text-sky-400 border-sky-500/30'
                           : 'bg-purple-500/20 text-purple-600 dark:text-purple-400 border-purple-500/30',
@@ -303,7 +303,7 @@ export default function OrderDisputeBanner({ order, returnInfo, report: reportPr
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
           <div
             className={cn(
-              'w-full max-w-md rounded-2xl border p-6 shadow-2xl space-y-4',
+              'w-full max-w-md rounded-2xl border p-6 space-y-4',
               isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white border-stone-200 text-stone-900'
             )}
           >
@@ -344,7 +344,7 @@ export default function OrderDisputeBanner({ order, returnInfo, report: reportPr
                 type="button"
                 onClick={handleCancelReport}
                 disabled={submitting}
-                className="rounded-xl bg-rose-600 hover:bg-rose-700 px-4 py-2 text-xs font-bold text-white shadow-sm transition-colors"
+                className="rounded-xl bg-rose-600 hover:bg-rose-700 px-4 py-2 text-xs font-bold text-white transition-colors"
               >
                 {submitting ? 'Đang hủy...' : 'Tôi hiểu, xác nhận rút'}
               </button>
@@ -358,7 +358,7 @@ export default function OrderDisputeBanner({ order, returnInfo, report: reportPr
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
           <div
             className={cn(
-              'w-full max-w-md rounded-2xl border p-6 shadow-2xl space-y-4',
+              'w-full max-w-md rounded-2xl border p-6 space-y-4',
               isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white border-stone-200 text-stone-900'
             )}
           >

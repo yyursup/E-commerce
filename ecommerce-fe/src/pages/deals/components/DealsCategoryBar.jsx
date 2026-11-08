@@ -28,7 +28,7 @@ export default function DealsCategoryBar({
         {/* Top Toolbar: Heading & Quick Actions */}
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500/10 text-amber-500">
+            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-stone-100 text-stone-950">
               <HiOutlineTag className="h-4 w-4" />
             </span>
             <h2 className={cn('text-base sm:text-xl font-bold tracking-tight', isDark ? 'text-white' : 'text-stone-900')}>
@@ -46,7 +46,7 @@ export default function DealsCategoryBar({
                 onChange={(e) => setCategorySearch(e.target.value)}
                 placeholder="Tìm nhanh ngành hàng..."
                 className={cn(
-                  'pl-8 pr-7 py-1.5 text-xs rounded-xl border transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/30 w-44 lg:w-56',
+                  'pl-8 pr-7 py-1.5 text-xs rounded-xl border transition-all focus:outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40 w-44 lg:w-56',
                   isDark
                     ? 'border-slate-800 bg-slate-900 text-slate-200 placeholder-slate-500'
                     : 'border-stone-200 bg-white text-stone-800 placeholder-stone-400'
@@ -117,7 +117,7 @@ export default function DealsCategoryBar({
             className={cn(
               'rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 shadow-sm',
               selectedCategoryId === 'ALL'
-                ? 'bg-amber-500 text-white ring-2 ring-amber-500/20'
+                ? 'ring-2 ring-amber-500/20 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                 : isDark
                   ? 'bg-slate-900 border border-slate-800 text-slate-300 hover:bg-slate-800'
                   : 'bg-white border border-stone-200 text-stone-700 hover:bg-stone-100'
@@ -143,7 +143,7 @@ export default function DealsCategoryBar({
                 className={cn(
                   'rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 shadow-sm',
                   isSelected
-                    ? 'bg-amber-500 text-white ring-2 ring-amber-500/20'
+                    ? 'ring-2 ring-amber-500/20 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                     : isDark
                       ? 'bg-slate-900 border border-slate-800 text-slate-300 hover:bg-slate-800'
                       : 'bg-white border border-stone-200 text-stone-700 hover:bg-stone-100'
@@ -153,7 +153,7 @@ export default function DealsCategoryBar({
                 {count > 0 ? (
                   <span className={cn(
                     'rounded-full px-1.5 py-0.2 text-[10px] font-semibold',
-                    isSelected ? 'bg-white/25 text-white' : 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+                    isSelected ? 'bg-white/25 text-white' : 'dark:text-amber-400 bg-stone-100 text-stone-950'
                   )}>
                     {count}
                   </span>

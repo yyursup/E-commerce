@@ -394,8 +394,8 @@ export default function ChatbotButton() {
         className={cn(
           'fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full shadow-lg transition-all hover:scale-110 hover:shadow-xl',
           isOpen
-            ? 'bg-rose-500 text-white hover:bg-rose-600'
-            : 'bg-gradient-to-br from-amber-500 to-amber-600 text-white hover:from-amber-600 hover:to-amber-700',
+            ? 'bg-amber-500 text-stone-950 hover:bg-amber-400'
+            : 'bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200',
         )}
         aria-label="Mở chat"
       >
@@ -446,8 +446,8 @@ export default function ChatbotButton() {
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.3 }}
             className={cn(
-              'fixed bottom-24 right-6 z-50 flex h-[580px] w-[400px] flex-col overflow-hidden rounded-2xl border shadow-2xl',
-              isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white',
+              'fixed bottom-24 right-6 z-50 flex h-[580px] w-[400px] flex-col overflow-hidden rounded-lg border shadow-2xl',
+              isDark ? 'border-slate-600 bg-slate-900 text-slate-100 shadow-black/50' : 'border-stone-300 bg-white text-stone-950',
             )}
           >
             {quickBuyProductId && (

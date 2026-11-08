@@ -25,10 +25,10 @@ export default function CheckoutOrderSummary({
 
     return (
         <div className={cn(
-            "sticky top-6 rounded-2xl border p-6 shadow-sm space-y-4",
+            "sticky top-6 rounded-lg border p-6 space-y-4",
             isDark ? "border-slate-800 bg-slate-900" : "border-stone-200 bg-white"
         )}>
-            <h2 className={cn("font-bold text-lg", isDark ? "text-white" : "text-stone-900")}>
+            <h2 className={cn("font-bold text-xl", isDark ? "text-white" : "text-stone-900")}>
                 Chi tiết thanh toán
             </h2>
 
@@ -42,7 +42,7 @@ export default function CheckoutOrderSummary({
                 <div className="flex justify-between">
                     <span className={isDark ? "text-slate-400" : "text-stone-600"}>Phí vận chuyển</span>
                     {isCalculatingFee ? (
-                        <span className="text-amber-500 animate-pulse">Đang tính...</span>
+                        <span className="animate-pulse text-stone-500">Đang tính...</span>
                     ) : (
                         <span className={cn("font-medium", isDark ? "text-white" : "text-stone-900")}>
                             {shippingFee > 0 ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(shippingFee) : '---'}
@@ -92,7 +92,7 @@ export default function CheckoutOrderSummary({
 
             <div className="py-4 border-y border-stone-100 dark:border-slate-800 flex justify-between items-center">
                 <span className={cn("font-bold", isDark ? "text-white" : "text-stone-900")}>Tổng thanh toán</span>
-                <span className="font-bold text-xl text-amber-500">
+                <span className="font-mono text-2xl font-semibold text-stone-950 dark:text-white">
                     {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(finalTotal)}
                 </span>
             </div>
@@ -101,15 +101,15 @@ export default function CheckoutOrderSummary({
                 onClick={handleOrder}
                 disabled={disabled}
                 className={cn(
-                    "w-full py-3.5 rounded-xl font-bold text-white shadow-lg shadow-amber-500/25 transition-all flex justify-center items-center gap-2",
+                    "w-full py-4 rounded-md text-base font-bold transition-colors flex justify-center items-center gap-2",
                     disabled
-                        ? "bg-stone-400 cursor-not-allowed"
-                        : "bg-amber-500 hover:bg-amber-600 active:scale-95"
+                        ? "bg-stone-300 text-stone-600 cursor-not-allowed dark:bg-slate-800 dark:text-slate-500"
+                        : "bg-amber-500 text-stone-950 hover:bg-amber-400"
                 )}
             >
                 {processing ? (
                     <>
-                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-stone-950 border-t-transparent"></div>
                         Đang xử lý...
                     </>
                 ) : (

@@ -144,7 +144,7 @@ export default function Deals() {
                 ? 'border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-400'
                 : isShopVoucher
                   ? 'border-purple-500 bg-purple-500/10 text-purple-600 dark:text-purple-400'
-                  : 'border-amber-500 bg-amber-500/10 text-amber-600 dark:text-amber-400',
+                  : 'dark:text-amber-400 bg-stone-100 text-stone-950 border-stone-950',
               expiry: v.endDate || v.validTo ? `HSD: ${new Date(v.endDate || v.validTo).toLocaleDateString('vi-VN')}` : 'Còn hạn',
               isClaimed: isUserClaimed,
               isEligible: v.isEligible,

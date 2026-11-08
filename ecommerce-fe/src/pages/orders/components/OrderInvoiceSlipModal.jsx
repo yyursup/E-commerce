@@ -50,7 +50,7 @@ export default function OrderInvoiceSlipModal({
             <button
               type="button"
               onClick={handlePrint}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold shadow transition-all active:scale-95"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold shadow transition-all active:scale-95 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
             >
               <HiOutlinePrinter className="h-4 w-4" />
               In / Xuất PDF
@@ -222,7 +222,7 @@ export default function OrderInvoiceSlipModal({
 
           {/* Footer Note */}
           <div className="pt-4 border-t border-dashed border-stone-200 dark:border-slate-800 text-center text-[11px] text-stone-400 print:text-stone-600">
-            Cảm ơn Quý khách đã mua sắm tại Nền Tảng E-commerce! Đây là phiếu thu điện tử có giá trị kế toán đối soát giao dịch.
+            Cảm ơn Quý khách đã mua sắm tại Nền Tảng E-Commerce! Đây là phiếu thu điện tử có giá trị kế toán đối soát giao dịch.
           </div>
         </div>
 

@@ -9,7 +9,7 @@ const CONDITION_OPTIONS = [
   { value: '', label: 'Tất cả tình trạng' },
   { value: 'GRADE_NEW', label: 'Mới 100% (Nguyên seal)', badge: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' },
   { value: 'GRADE_LIKE_NEW', label: 'Like New 99% (Đẹp)', badge: 'bg-blue-500/10 text-blue-600 dark:text-blue-400' },
-  { value: 'GRADE_FAIR', label: 'Cũ 90-95% (Đã dùng)', badge: 'bg-amber-500/10 text-amber-600 dark:text-amber-400' },
+  { value: 'GRADE_FAIR', label: 'Cũ 90-95% (Đã dùng)', badge: 'dark:text-amber-400 bg-stone-100 text-stone-950' },
   { value: 'GRADE_AS_IS', label: 'Thanh lý / Xác máy', badge: 'bg-rose-500/10 text-rose-600 dark:text-rose-400' },
 ]
 
@@ -99,7 +99,7 @@ export default function ProductFilterSidebar({
               className={cn(
                 'w-full flex items-center justify-between rounded-xl px-3 py-2 text-xs font-medium transition-colors text-left',
                 !selectedCategoryId
-                  ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold'
+                  ? 'dark:text-amber-400 font-bold bg-stone-100 text-stone-950'
                   : isDark
                     ? 'text-slate-300 hover:bg-slate-800'
                     : 'text-stone-600 hover:bg-stone-100'
@@ -121,7 +121,7 @@ export default function ProductFilterSidebar({
                     className={cn(
                       'w-full flex items-center justify-between rounded-xl px-3 py-2 text-xs font-medium transition-colors text-left',
                       isSelected
-                        ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold'
+                        ? 'dark:text-amber-400 font-bold bg-stone-100 text-stone-950'
                         : isDark
                           ? 'text-slate-300 hover:bg-slate-800'
                           : 'text-stone-600 hover:bg-stone-100'
@@ -156,7 +156,7 @@ export default function ProductFilterSidebar({
                   className={cn(
                     'w-full flex items-center justify-between rounded-xl px-3 py-2 text-xs font-medium transition-colors text-left',
                     isSelected
-                      ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold'
+                      ? 'dark:text-amber-400 font-bold bg-stone-100 text-stone-950'
                       : isDark
                         ? 'text-slate-300 hover:bg-slate-800'
                         : 'text-stone-600 hover:bg-stone-100'
@@ -190,7 +190,7 @@ export default function ProductFilterSidebar({
                   className={cn(
                     'w-full flex items-center justify-between rounded-xl px-3 py-2 text-xs font-medium transition-colors text-left',
                     isSelected
-                      ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold'
+                      ? 'dark:text-amber-400 font-bold bg-stone-100 text-stone-950'
                       : isDark
                         ? 'text-slate-300 hover:bg-slate-800'
                         : 'text-stone-600 hover:bg-stone-100'

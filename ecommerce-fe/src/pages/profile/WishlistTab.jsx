@@ -113,7 +113,7 @@ export default function WishlistTab({ isDark }) {
         </p>
         <Link
           to="/products"
-          className="mt-6 inline-flex items-center gap-2 rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-amber-600 transition-colors"
+          className="mt-6 inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-colors bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
         >
           Khám phá sản phẩm ngay
         </Link>
@@ -125,7 +125,7 @@ export default function WishlistTab({ isDark }) {
     <div>
       <div className="flex items-center justify-between border-b pb-4 mb-6 dark:border-slate-800 border-stone-200">
         <div>
-          <h2 className={cn('text-xl font-bold', isDark ? 'text-white' : 'text-stone-900')}>
+          <h2 className={cn('text-3xl font-bold tracking-[-0.03em]', isDark ? 'text-white' : 'text-stone-900')}>
             Sản phẩm yêu thích ({products.length})
           </h2>
           <p className={cn('text-xs mt-1', isDark ? 'text-slate-400' : 'text-stone-500')}>
@@ -173,7 +173,7 @@ export default function WishlistTab({ isDark }) {
                     onClick={(e) => handleRemove(p.id, e)}
                     disabled={actionLoading[p.id]}
                     title="Bỏ yêu thích"
-                    className="absolute right-2 top-2 rounded-full bg-white/90 p-2 text-rose-500 shadow-md backdrop-blur hover:bg-rose-500 hover:text-white transition-colors"
+                    className="absolute right-2 top-2 rounded-full bg-white/90 p-2 text-rose-500 backdrop-blur hover:bg-rose-500 hover:text-white transition-colors"
                   >
                     <HiHeart className="h-4 w-4 fill-current" />
                   </button>
@@ -211,7 +211,7 @@ export default function WishlistTab({ isDark }) {
                 <button
                   onClick={(e) => handleAddToCart(p, e)}
                   disabled={actionLoading[`cart_${p.id}`]}
-                  className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-amber-500 py-2 text-xs font-semibold text-white hover:bg-amber-600 transition-colors disabled:opacity-50"
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-semibold transition-colors disabled:opacity-50 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
                 >
                   <HiOutlineShoppingCart className="h-4 w-4" />
                   {actionLoading[`cart_${p.id}`]

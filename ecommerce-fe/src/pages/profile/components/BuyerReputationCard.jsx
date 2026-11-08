@@ -64,7 +64,7 @@ export default function BuyerReputationCard({ user, isDark }) {
         badge: 'Cảnh Báo (Warned)',
         theme: 'amber',
         badgeClass: isDark
-          ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+          ? 'bg-slate-800 text-white border-white'
           : 'bg-amber-50 text-amber-800 border-amber-200',
         progressBarClass: 'bg-gradient-to-r from-amber-500 to-orange-400',
         scoreTextClass: 'text-amber-500 dark:text-amber-400',
@@ -150,7 +150,7 @@ export default function BuyerReputationCard({ user, isDark }) {
   return (
     <div
       className={cn(
-        'relative overflow-hidden rounded-3xl border p-5 sm:p-7 shadow-xs transition-all mb-8',
+        'relative overflow-hidden rounded-3xl border p-5 sm:p-7 transition-all mb-8',
         tier.cardBg
       )}
     >
@@ -160,7 +160,7 @@ export default function BuyerReputationCard({ user, isDark }) {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-5 border-b border-stone-200/70 dark:border-slate-800/80">
         <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/20 shrink-0">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl shrink-0 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200">
             <HiOutlineShieldCheck className="h-6 w-6" />
           </div>
           <div>
@@ -270,9 +270,9 @@ export default function BuyerReputationCard({ user, isDark }) {
                         'h-2.5 w-full rounded-md transition-all',
                         isHit
                           ? isSevere
-                            ? 'bg-rose-500 shadow-sm shadow-rose-500/30'
+                            ? 'bg-rose-500 shadow-rose-500/30'
                             : isWarn
-                            ? 'bg-amber-500 shadow-sm shadow-amber-500/30'
+                            ? 'bg-amber-500 shadow-amber-500/30'
                             : 'bg-orange-500'
                           : isDark
                           ? 'bg-slate-800'
@@ -331,7 +331,7 @@ export default function BuyerReputationCard({ user, isDark }) {
           type="button"
           onClick={() => setShowPolicyDetails((prev) => !prev)}
           className={cn(
-            'self-start sm:self-auto flex items-center gap-1 font-semibold text-amber-600 dark:text-amber-400 hover:underline cursor-pointer'
+            'self-start sm:self-auto flex items-center gap-1 font-semibold text-stone-950 underline underline-offset-2 dark:text-white cursor-pointer'
           )}
         >
           <HiOutlineInformationCircle className="h-3.5 w-3.5" />

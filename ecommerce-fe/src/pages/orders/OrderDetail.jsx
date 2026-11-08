@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
 import {
   HiOutlineArrowLeft,
   HiOutlineCheckCircle,
@@ -161,171 +160,131 @@ export default function OrderDetail() {
     !order.hasActiveDispute &&
     (!activeReturn || activeReturn.status === 'CANCELLED')
 
+  const ink = isDark ? 'text-white' : 'text-stone-950'
+  const muted = isDark ? 'text-slate-400' : 'text-stone-600'
+  const panel = isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
+  const stepIndex = TRACK_INDEX[order.status]
+  const paymentLabel = order.paymentMethod === 'VNPAY' ? 'VNPay' : order.paymentMethod === 'WALLET' ? 'Ví sàn' : 'COD'
+
   return (
-    <div className={cn('min-h-screen px-4 py-8 sm:px-6 lg:px-8', isDark ? 'bg-slate-950' : 'bg-stone-50')}>
-      <div className="mx-auto max-w-4xl">
-        <Link
-          to="/orders"
-          className={cn(
-            'mb-6 inline-flex items-center gap-2 text-sm font-medium',
-            isDark ? 'text-slate-400 hover:text-white' : 'text-stone-600 hover:text-stone-900',
-          )}
-        >
-          <HiOutlineArrowLeft className="h-4 w-4" />
-          Quay lại danh sách đơn hàng
-        </Link>
+    <div className={cn('min-h-screen px-4 py-6 sm:px-6 lg:px-8', isDark ? 'bg-slate-950' : 'bg-stone-50')}>
+      <div className="mx-auto flex max-w-7xl flex-col gap-5">
+        <nav aria-label="Đường dẫn" className={cn('flex items-center gap-2 text-[13px]', muted)}>
+          <Link to="/orders" className="inline-flex items-center gap-1.5 hover:underline">
+            <HiOutlineArrowLeft className="h-4 w-4" /> Đơn hàng
+          </Link>
+          <span>/</span>
+          <span className={cn('font-mono', ink)}>#{order.orderNumber}</span>
+        </nav>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className={cn('rounded-xl border overflow-hidden', isDark ? 'border-slate-700 bg-slate-900' : 'border-stone-200 bg-white')}
-        >
-          {/* Header */}
-          <div className="border-b p-5 sm:p-6 space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <div className="flex items-center gap-2.5 flex-wrap">
-                  <h1 className={cn('text-xl sm:text-2xl font-bold tracking-tight font-mono', isDark ? 'text-white' : 'text-stone-900')}>
-                    #{order.orderNumber}
-                  </h1>
-                  <span
-                    className={cn(
-                      'text-xs px-2.5 py-0.5 rounded-full font-medium inline-flex items-center gap-1',
-                      order.paymentMethod === 'VNPAY'
-                        ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
-                        : order.paymentMethod === 'WALLET'
-                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
-                          : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 border border-amber-200 dark:border-amber-800',
-                    )}
-                  >
-                    {order.paymentMethod === 'VNPAY'
-                      ? 'VNPay'
-                      : order.paymentMethod === 'WALLET'
-                        ? 'Ví sàn'
-                        : 'COD'}
-                  </span>
-                </div>
-                <p className={cn('text-xs sm:text-sm mt-1', isDark ? 'text-slate-400' : 'text-stone-500')}>
-                  Đặt ngày {formatOrderDate(order.createdAt)}
-                  {order.shopName && (
-                    <span className="font-medium text-stone-700 dark:text-slate-300"> • Cửa hàng: {order.shopName}</span>
-                  )}
-                </p>
-              </div>
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div className="flex flex-col gap-1.5">
+            <h1 className={cn('text-3xl font-bold tracking-[-0.03em] sm:text-4xl', ink)}>{effectiveStatus.label}</h1>
+            <p className={cn('text-sm', muted)}>
+              Đặt ngày {formatOrderDate(order.createdAt)}
+              {order.shopName && <> · {order.shopName}</>}
+              {' · '}
+              <span className="font-mono uppercase">{paymentLabel}</span>
+            </p>
+          </div>
+          <span className={cn('inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm font-bold', effectiveStatus.color)}>
+            <StatusIcon className="h-4 w-4" />
+            {effectiveStatus.label}
+          </span>
+        </div>
 
-              <div className="self-start sm:self-auto shrink-0">
-                <span
-                  className={cn(
-                    'inline-flex items-center gap-2 rounded-2xl px-3.5 py-1.5 text-xs sm:text-sm font-bold shadow-sm border',
-                    effectiveStatus.color,
-                  )}
-                >
-                  <StatusIcon className="h-4 w-4" />
-                  {effectiveStatus.label}
-                </span>
-              </div>
+        {stepIndex !== undefined && (
+          <ol aria-label="Hành trình đơn hàng" className={cn('grid grid-cols-2 gap-1 rounded-lg border p-5 sm:grid-cols-5', panel)}>
+            {TRACK_STEPS.map((label, i) => (
+              <li
+                key={label}
+                aria-current={i === stepIndex ? 'step' : undefined}
+                className={cn(
+                  'flex flex-col gap-1 border-t-[3px] pt-2.5',
+                  i < stepIndex ? (isDark ? 'border-white' : 'border-stone-950') : i === stepIndex ? 'border-amber-500' : isDark ? 'border-slate-700' : 'border-stone-200',
+                )}
+              >
+                <span className={cn('font-mono text-[11px]', muted)}>0{i + 1}</span>
+                <strong className={cn('text-sm', i <= stepIndex ? ink : muted)}>{label}</strong>
+              </li>
+            ))}
+          </ol>
+        )}
+
+        <OrderDisputeBanner order={order} returnInfo={activeReturn} report={report} isDark={isDark} onRefresh={fetchOrder} />
+
+        {canConfirmOrDispute && (
+          <section className={cn('flex flex-wrap items-center justify-between gap-4 rounded-lg border-2 p-5', isDark ? 'border-white bg-slate-900' : 'border-stone-950 bg-white')}>
+            <div className="flex max-w-xl flex-col gap-1">
+              <strong className={cn('text-base', ink)}>Bạn đã nhận được hàng?</strong>
+              <span className={cn('text-sm leading-relaxed', muted)}>
+                Xác nhận để giải ngân cho shop. Nếu hàng có vấn đề, gửi khiếu nại trước khi xác nhận; tiền vẫn được giữ trong ký quỹ.
+              </span>
             </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setShowReportModal(true)}
+                className="inline-flex items-center gap-1.5 rounded-md border border-red-700 px-4 py-3 text-sm font-bold text-red-700 hover:bg-red-50 dark:border-red-400 dark:text-red-400 dark:hover:bg-red-950/30"
+              >
+                <HiOutlineExclamationCircle className="h-4 w-4" />
+                Khiếu nại / Báo sự cố
+              </button>
+              <button
+                type="button"
+                onClick={handleMarkReceived}
+                className={cn('inline-flex items-center gap-2 rounded-md px-4 py-3 text-sm font-bold', isDark ? 'bg-white text-stone-950 hover:bg-stone-200' : 'bg-stone-950 text-white hover:bg-stone-800')}
+              >
+                <HiOutlineCheckCircle className="h-4 w-4" />
+                Đã nhận được hàng
+              </button>
+            </div>
+          </section>
+        )}
 
-            {/* Banners for Escrow Guidance & Disputes */}
-            <OrderDisputeBanner
-              order={order}
-              returnInfo={activeReturn}
-              report={report}
-              isDark={isDark}
-              onRefresh={fetchOrder}
-            />
-
-            {/* Quick Action Bar for DELIVERED */}
-            {canConfirmOrDispute && (
-              <div className="flex flex-wrap items-center gap-2.5 pt-2">
-                <button
-                  type="button"
-                  onClick={handleMarkReceived}
-                  className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition-all duration-150 active:scale-[0.98]"
-                >
-                  <HiOutlineCheckCircle className="h-4 w-4" />
-                  Đã nhận được hàng
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowReportModal(true)}
-                  className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-2.5 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 transition-all duration-150 active:scale-[0.98]"
-                >
-                  <HiOutlineExclamationCircle className="h-4 w-4 text-rose-500" />
-                  Khiếu nại / Báo sự cố
-                </button>
-              </div>
+        <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
+          <div className="flex flex-col gap-5">
+            {activeReturn && (
+              <section className={cn('rounded-lg border p-5 sm:p-6', panel)}>
+                <CustomerReturnCard returnInfo={activeReturn} order={order} report={report} isDark={isDark} onRefresh={fetchOrder} />
+              </section>
             )}
-          </div>
-
-          {/* Return & Refund Process Section */}
-          {activeReturn && (
-            <div className="border-b p-5 sm:p-6">
-              <CustomerReturnCard
-                returnInfo={activeReturn}
-                order={order}
-                report={report}
+            <section className={cn('overflow-hidden rounded-lg border', panel)}>
+              <OrderItemsList
+                items={order.items}
+                orderStatus={order.status}
                 isDark={isDark}
-                onRefresh={fetchOrder}
+                formatCurrency={formatOrderCurrency}
+                onOpenReview={(reviewTarget) =>
+                  setReviewModal({ open: true, productId: reviewTarget.productId, productName: reviewTarget.productName })
+                }
               />
-            </div>
-          )}
-
-          {/* Shipping Address */}
-          <div className="border-b p-6">
-            <h2 className={cn('mb-4 font-semibold', isDark ? 'text-white' : 'text-stone-900')}>
-              Địa chỉ giao hàng
-            </h2>
-            <div className="space-y-2">
-              <div className="flex items-start gap-2">
-                <HiOutlineLocationMarker className={cn('mt-0.5 h-5 w-5', isDark ? 'text-slate-400' : 'text-stone-500')} />
-                <div>
-                  <p className={cn('font-medium', isDark ? 'text-white' : 'text-stone-900')}>
-                    {order.shippingName}
-                  </p>
-                  <p className={cn('text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
-                    {order.shippingAddress}
-                  </p>
-                  <p className={cn('text-sm', isDark ? 'text-slate-400' : 'text-stone-600')}>
-                    {order.shippingWard}, {order.shippingDistrict}, {order.shippingCity}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <HiOutlinePhone className={cn('h-5 w-5', isDark ? 'text-slate-400' : 'text-stone-500')} />
-                <p className={cn('text-sm font-mono', isDark ? 'text-slate-400' : 'text-stone-600')}>
-                  {order.shippingPhone}
-                </p>
-              </div>
-            </div>
+            </section>
           </div>
 
-          {/* Order Items */}
-          <OrderItemsList
-            items={order.items}
-            orderStatus={order.status}
-            isDark={isDark}
-            formatCurrency={formatOrderCurrency}
-            onOpenReview={(reviewTarget) =>
-              setReviewModal({
-                open: true,
-                productId: reviewTarget.productId,
-                productName: reviewTarget.productName,
-              })
-            }
-          />
+          <aside className="flex flex-col gap-5">
+            <section className={cn('overflow-hidden rounded-lg border', panel)}>
+              <OrderSummaryCard order={order} report={report} isDark={isDark} formatCurrency={formatOrderCurrency} onPayNow={handlePayNow} />
+            </section>
+            <section className={cn('flex flex-col gap-2 rounded-lg border p-5 text-sm', panel)}>
+              <h2 className={cn('mb-1 text-xl font-bold', ink)}>Giao đến</h2>
+              <span className={cn('flex items-start gap-2 font-semibold', ink)}>
+                <HiOutlineLocationMarker className={cn('mt-0.5 h-4 w-4 shrink-0', muted)} />
+                {order.shippingName}
+              </span>
+              <span className={cn('pl-6 leading-relaxed', muted)}>
+                {order.shippingAddress}
+                <br />
+                {[order.shippingWard, order.shippingDistrict, order.shippingCity].filter(Boolean).join(', ')}
+              </span>
+              <span className={cn('flex items-center gap-2 font-mono', muted)}>
+                <HiOutlinePhone className="h-4 w-4" />
+                {order.shippingPhone}
+              </span>
+            </section>
+          </aside>
+        </div>
 
-          {/* Order Summary & Escrow */}
-          <OrderSummaryCard
-            order={order}
-            report={report}
-            isDark={isDark}
-            formatCurrency={formatOrderCurrency}
-            onPayNow={handlePayNow}
-          />
-        </motion.div>
-
-        {/* Review Modal */}
         <ReviewModal
           isOpen={reviewModal.open}
           onClose={() => setReviewModal({ open: false, productId: null, productName: '' })}
@@ -334,15 +293,14 @@ export default function OrderDetail() {
           productName={reviewModal.productName}
           onPageRefresh={fetchOrder}
         />
-
-        {/* Order Report / Dispute Modal */}
-        <OrderReportModal
-          isOpen={showReportModal}
-          onClose={() => setShowReportModal(false)}
-          order={order}
-          onSuccess={fetchOrder}
-        />
+        <OrderReportModal isOpen={showReportModal} onClose={() => setShowReportModal(false)} order={order} onSuccess={fetchOrder} />
       </div>
     </div>
   )
+}
+
+const TRACK_STEPS = ['Đặt hàng', 'Shop xác nhận', 'Đang giao', 'Đã giao', 'Hoàn tất · giải ngân']
+// Cancelled/refunded orders have no forward journey, so they show no tracker.
+const TRACK_INDEX = {
+  PENDING_PAYMENT: 0, PENDING: 0, CONFIRMED: 1, PROCESSING: 1, SHIPPING: 2, SHIPPED: 2, DELIVERED: 3, COMPLETED: 4,
 }

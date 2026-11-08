@@ -179,7 +179,7 @@ export default function Policy({ defaultKey }) {
 
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20 mb-2">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border mb-2 bg-stone-100 text-stone-950 border-stone-950">
                 <HiOutlineShieldCheck className="h-4 w-4" />
                 Bộ Quy Chuẩn & Bảo Vệ Khách Hàng
               </div>
@@ -202,7 +202,7 @@ export default function Policy({ defaultKey }) {
                 onClick={handlePrint}
                 title="In văn bản này"
                 className={cn(
-                  'inline-flex items-center gap-1.5 rounded-2xl border px-3.5 py-2.5 text-xs font-bold transition shadow-xs active:scale-95',
+                  'inline-flex items-center gap-1.5 rounded-2xl border px-3.5 py-2.5 text-xs font-bold transition active:scale-95',
                   isDark
                     ? 'border-slate-800 bg-slate-900 text-slate-300 hover:bg-slate-800'
                     : 'border-stone-200 bg-white text-stone-700 hover:bg-stone-100'
@@ -216,7 +216,7 @@ export default function Policy({ defaultKey }) {
                 onClick={handleShare}
                 title="Chia sẻ liên kết"
                 className={cn(
-                  'inline-flex items-center gap-1.5 rounded-2xl border px-3.5 py-2.5 text-xs font-bold transition shadow-xs active:scale-95',
+                  'inline-flex items-center gap-1.5 rounded-2xl border px-3.5 py-2.5 text-xs font-bold transition active:scale-95',
                   isDark
                     ? 'border-slate-800 bg-slate-900 text-slate-300 hover:bg-slate-800'
                     : 'border-stone-200 bg-white text-stone-700 hover:bg-stone-100'
@@ -251,7 +251,7 @@ export default function Policy({ defaultKey }) {
               className={cn(
                 'inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition shrink-0',
                 mobileMenuOpen
-                  ? 'bg-amber-500 text-white border-amber-500'
+                  ? 'border-amber-500 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                   : isDark
                     ? 'border-slate-800 bg-slate-950 text-slate-200'
                     : 'border-stone-200 bg-stone-100 text-stone-800'
@@ -276,7 +276,7 @@ export default function Policy({ defaultKey }) {
           {mobileMenuOpen && (
             <div
               className={cn(
-                'rounded-3xl border p-4 space-y-3 shadow-xl animate-in fade-in duration-150',
+                'rounded-3xl border p-4 space-y-3 animate-in fade-in duration-150',
                 isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
               )}
             >
@@ -288,7 +288,7 @@ export default function Policy({ defaultKey }) {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Tìm kiếm chính sách, quy chế..."
                   className={cn(
-                    'w-full pl-10 pr-4 py-2.5 rounded-2xl text-xs border focus:outline-none focus:ring-2 focus:ring-amber-500/20',
+                    'w-full pl-10 pr-4 py-2.5 rounded-2xl text-xs border focus:outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                     isDark
                       ? 'border-slate-800 bg-slate-950 text-slate-100 placeholder-slate-500'
                       : 'border-stone-200 bg-stone-50 text-stone-900 placeholder-stone-400'
@@ -308,7 +308,7 @@ export default function Policy({ defaultKey }) {
                       className={cn(
                         'w-full text-left rounded-xl p-2.5 text-xs transition flex items-center gap-2.5',
                         isSelected
-                          ? 'bg-amber-500 text-white font-bold shadow-xs'
+                          ? 'font-bold bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                           : isDark
                             ? 'text-slate-300 hover:bg-slate-800'
                             : 'text-stone-700 hover:bg-stone-100'
@@ -337,7 +337,7 @@ export default function Policy({ defaultKey }) {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Tìm kiếm chính sách, quy chế..."
                 className={cn(
-                  'w-full pl-10 pr-4 py-2.5 rounded-2xl border text-xs focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition',
+                  'w-full pl-10 pr-4 py-2.5 rounded-2xl border text-xs focus:outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40 transition',
                   isDark
                     ? 'border-slate-800 bg-slate-900 text-slate-100 placeholder-slate-500'
                     : 'border-stone-200 bg-white text-stone-900 placeholder-stone-400'
@@ -374,7 +374,7 @@ export default function Policy({ defaultKey }) {
                         className={cn(
                           'w-full text-left rounded-2xl p-3 text-xs transition-all flex items-start gap-3',
                           isSelected
-                            ? 'bg-amber-500 text-white shadow-md shadow-amber-500/25 font-bold'
+                            ? 'font-bold bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                             : isDark
                               ? 'text-slate-300 hover:bg-slate-800 hover:text-white'
                               : 'text-stone-700 hover:bg-stone-100 hover:text-stone-950'
@@ -420,7 +420,7 @@ export default function Policy({ defaultKey }) {
               )}
             >
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-amber-500 text-white shadow-md shadow-amber-500/30">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200">
                   <HiOutlineQuestionMarkCircle className="h-5 w-5" />
                 </div>
                 <div>
@@ -471,13 +471,13 @@ export default function Policy({ defaultKey }) {
             ) : (
               <article
                 className={cn(
-                  'rounded-3xl border p-5 sm:p-9 shadow-sm transition',
+                  'rounded-3xl border p-5 sm:p-9 transition',
                   isDark ? 'border-slate-800 bg-slate-900/80 backdrop-blur-md' : 'border-stone-200 bg-white'
                 )}
               >
                 {/* Policy Meta Badges */}
                 <div className="flex flex-wrap items-center gap-2 mb-4">
-                  <div className="flex items-center gap-1 rounded-lg bg-amber-500/10 border border-amber-500/30 px-2.5 py-1 text-[11px] font-mono font-bold text-amber-500">
+                  <div className="flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[11px] font-mono font-bold bg-stone-100 text-stone-950 border-stone-950">
                     <span>{currentPolicy.policyKey}</span>
                     <button
                       type="button"

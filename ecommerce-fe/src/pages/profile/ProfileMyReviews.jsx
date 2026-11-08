@@ -38,7 +38,7 @@ export default function ProfileMyReviews({ isDark }) {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className={cn('text-xl font-bold', isDark ? 'text-white' : 'text-stone-900')}>
+          <h2 className={cn('text-3xl font-bold tracking-[-0.03em]', isDark ? 'text-white' : 'text-stone-900')}>
             Đánh giá của tôi ({totalElements})
           </h2>
           <p className={cn('text-xs mt-0.5', isDark ? 'text-slate-400' : 'text-stone-500')}>
@@ -107,7 +107,7 @@ export default function ProfileMyReviews({ isDark }) {
                         className="h-12 w-12 rounded-xl object-cover border border-stone-200 dark:border-slate-800 shrink-0"
                       />
                     ) : (
-                      <div className="h-12 w-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500 font-bold shrink-0">
+                      <div className="h-12 w-12 rounded-xl border flex items-center justify-center font-bold shrink-0 bg-stone-100 text-stone-950 border-stone-950">
                         SP
                       </div>
                     )}
@@ -141,7 +141,7 @@ export default function ProfileMyReviews({ isDark }) {
                         Đã bị ẩn vi phạm
                       </span>
                     ) : isWarning ? (
-                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-500 border border-amber-500/30">
+                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold border bg-stone-100 text-stone-950 border-stone-950">
                         <HiOutlineExclamationCircle className="h-3.5 w-3.5" />
                         Bị cảnh báo vi phạm
                       </span>

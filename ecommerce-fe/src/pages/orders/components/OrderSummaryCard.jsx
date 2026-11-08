@@ -114,7 +114,7 @@ export default function OrderSummaryCard({
             <span className={cn('text-lg font-semibold', isDark ? 'text-white' : 'text-stone-900')}>
               Tổng cộng
             </span>
-            <span className={cn('text-lg font-bold font-mono text-rose-500 dark:text-rose-400')}>
+            <span className={cn('text-2xl font-semibold font-mono text-stone-950 dark:text-white')}>
               {formatCurrency(order.total)}
             </span>
           </div>
@@ -141,7 +141,7 @@ export default function OrderSummaryCard({
             onClick={() => setShowInvoiceModal(true)}
             className="w-full mt-2 inline-flex items-center justify-center gap-2 py-2 px-3 rounded-xl border border-stone-200 dark:border-slate-700 bg-stone-50 dark:bg-slate-800/80 hover:bg-stone-100 dark:hover:bg-slate-700 text-xs font-bold text-stone-700 dark:text-slate-200 transition-all active:scale-[0.98]"
           >
-            <HiOutlineDocumentText className="h-4 w-4 text-amber-500" />
+            <HiOutlineDocumentText className="h-4 w-4 text-stone-500" />
             Xem & In Phiếu Hóa Đơn Đối Soát (Invoice Slip)
           </button>
         </div>
@@ -294,7 +294,7 @@ export default function OrderSummaryCard({
             <button
               type="button"
               onClick={onPayNow}
-              className="w-full rounded-xl bg-amber-500 py-3 font-bold text-white shadow-lg shadow-amber-500/25 transition-all hover:bg-amber-600 hover:shadow-xl hover:shadow-amber-500/30 active:scale-95"
+              className="w-full rounded-xl py-3 font-bold transition-all active:scale-95 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
             >
               Thanh toán ngay ({formatCurrency(order.total)})
             </button>

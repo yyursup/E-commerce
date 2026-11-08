@@ -8,6 +8,7 @@ import { useThemeStore } from '../store/useThemeStore'
 import { useAuthStore } from '../store/useAuthStore'
 import { useCartStore } from '../store/useCartStore'
 import { cn } from '../lib/cn'
+import AuthShell from '../components/AuthShell'
 import authService from '../services/auth'
 import cartService from '../services/cart'
 import voucherService from '../services/voucher'
@@ -177,30 +178,22 @@ export default function Login() {
   }
 
   return (
-    <div
-      className={cn(
-        'min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12',
-        isDark ? 'bg-slate-950' : 'bg-stone-50',
-      )}
-    >
+    <AuthShell>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="w-full max-w-md"
+        className="w-full max-w-[420px]"
       >
         <div
           className={cn(
-            'rounded-2xl border p-8 shadow-xl',
-            isDark
-              ? 'border-slate-700/50 bg-slate-900/80'
-              : 'border-stone-200/80 bg-white',
+            'p-0',
           )}
         >
-          <div className="mb-8 text-center">
+          <div className="mb-8">
             <h1
               className={cn(
-                'text-2xl font-bold tracking-tight',
+                'text-4xl font-bold tracking-[-0.03em]',
                 isDark ? 'text-white' : 'text-stone-900',
               )}
             >
@@ -242,8 +235,8 @@ export default function Login() {
                   className={cn(
                     'w-full rounded-xl border py-3 pl-10 pr-4 text-sm outline-none transition placeholder:opacity-60',
                     isDark
-                      ? 'border-slate-600 bg-slate-800/50 text-white placeholder:text-slate-500 focus:border-amber-500/60 focus:ring-2 focus:ring-amber-500/20'
-                      : 'border-stone-300 bg-stone-50/80 text-stone-900 placeholder:text-stone-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20',
+                      ? 'border-slate-600 bg-slate-800/50 text-white placeholder:text-slate-500 focus:border-stone-950 dark:focus:border-white focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40'
+                      : 'border-stone-300 bg-stone-50/80 text-stone-900 placeholder:text-stone-400 focus:border-stone-950 dark:focus:border-white focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                     errors.username && 'border-red-500/70 focus:border-red-500 focus:ring-red-500/20',
                   )}
                   {...register('username', {
@@ -295,8 +288,8 @@ export default function Login() {
                   className={cn(
                     'w-full rounded-xl border py-3 pl-10 pr-4 text-sm outline-none transition placeholder:opacity-60',
                     isDark
-                      ? 'border-slate-600 bg-slate-800/50 text-white placeholder:text-slate-500 focus:border-amber-500/60 focus:ring-2 focus:ring-amber-500/20'
-                      : 'border-stone-300 bg-stone-50/80 text-stone-900 placeholder:text-stone-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20',
+                      ? 'border-slate-600 bg-slate-800/50 text-white placeholder:text-slate-500 focus:border-stone-950 dark:focus:border-white focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40'
+                      : 'border-stone-300 bg-stone-50/80 text-stone-900 placeholder:text-stone-400 focus:border-stone-950 dark:focus:border-white focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
                     errors.password && 'border-red-500/70 focus:border-red-500 focus:ring-red-500/20',
                   )}
                   {...register('password', {
@@ -319,10 +312,10 @@ export default function Login() {
               type="submit"
               disabled={isSubmitting}
               className={cn(
-                'w-full rounded-xl py-3.5 text-sm font-semibold text-white shadow-lg transition',
+                'w-full rounded-xl py-3.5 text-sm font-semibold text-white transition',
                 isSubmitting
                   ? 'cursor-not-allowed bg-amber-500/60'
-                  : 'bg-amber-500 hover:bg-amber-600 active:scale-[0.99]',
+                  : 'active:scale-[0.99] bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200',
               )}
             >
               {isSubmitting ? 'Đang đăng nhập...' : 'Đăng nhập'}
@@ -363,7 +356,7 @@ export default function Login() {
             Chưa có tài khoản?{' '}
             <Link
               to="/register"
-              className="font-medium text-amber-600 hover:underline dark:text-amber-400"
+              className="font-medium text-stone-950 underline underline-offset-2 dark:text-white"
             >
               Đăng ký
             </Link>
@@ -371,6 +364,6 @@ export default function Login() {
         </div>
       </motion.div>
 
-    </div>
+    </AuthShell>
   )
 }

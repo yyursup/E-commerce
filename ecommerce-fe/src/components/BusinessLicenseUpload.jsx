@@ -156,7 +156,7 @@ export default function BusinessLicenseUpload({
               <div
                 className={cn(
                   'mb-3 flex h-14 w-14 items-center justify-center rounded-2xl transition-transform group-hover:scale-110',
-                  isDark ? 'bg-amber-500/15 text-amber-400' : 'bg-amber-100 text-amber-600',
+                  isDark ? 'bg-slate-800 text-white' : 'bg-stone-100 text-stone-950',
                 )}
               >
                 <HiOutlineCloudUpload className="h-7 w-7" />
@@ -239,8 +239,8 @@ export default function BusinessLicenseUpload({
                   className={cn(
                     'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition',
                     isDark
-                      ? 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30'
-                      : 'bg-amber-100 text-amber-700 hover:bg-amber-200',
+                      ? 'hover:bg-amber-500/30 bg-slate-800 text-white'
+                      : 'hover:bg-amber-200 bg-stone-100 text-stone-950',
                   )}
                 >
                   <HiOutlineRefresh className="h-3.5 w-3.5" /> Đổi ảnh khác

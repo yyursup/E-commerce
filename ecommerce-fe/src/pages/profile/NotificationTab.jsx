@@ -93,7 +93,7 @@ export default function NotificationTab({ isDark }) {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-stone-200 dark:border-slate-800">
         <div>
-          <h2 className={cn('text-lg font-bold', isDark ? 'text-white' : 'text-stone-900')}>
+          <h2 className={cn('text-3xl font-bold tracking-[-0.03em]', isDark ? 'text-white' : 'text-stone-900')}>
             Thông Báo Của Tôi
           </h2>
           <p className={cn('text-xs mt-0.5', isDark ? 'text-slate-400' : 'text-stone-500')}>
@@ -128,7 +128,7 @@ export default function NotificationTab({ isDark }) {
         </div>
       ) : notifications.length === 0 ? (
         <div className="py-16 text-center space-y-3">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-500">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-stone-100 text-stone-950">
             <HiOutlineBell className="h-7 w-7" />
           </div>
           <h3 className={cn('text-sm font-bold', isDark ? 'text-white' : 'text-stone-900')}>
@@ -167,7 +167,7 @@ export default function NotificationTab({ isDark }) {
                   className={cn(
                     'mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl font-bold shadow-sm',
                     isVoucher
-                      ? 'bg-gradient-to-tr from-amber-500 to-orange-500 text-white'
+                      ? 'bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                       : isOrder
                       ? 'bg-gradient-to-tr from-emerald-500 to-teal-500 text-white'
                       : 'bg-gradient-to-tr from-sky-500 to-blue-500 text-white'
@@ -228,7 +228,7 @@ export default function NotificationTab({ isDark }) {
                           className={cn(
                             'inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-bold border transition-all active:scale-95',
                             isDark
-                              ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 hover:bg-amber-500/30'
+                              ? 'hover:bg-amber-500/30 bg-slate-800 text-white border-white'
                               : 'bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-200'
                           )}
                           title="Sao chép mã voucher"

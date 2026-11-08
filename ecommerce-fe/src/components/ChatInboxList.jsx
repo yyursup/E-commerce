@@ -265,7 +265,7 @@ export default function ChatInboxList({ onClose, notifEnabled, toggleNotif }) {
           )}
         >
           <div className="relative shrink-0">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-600 text-white shadow-sm shadow-amber-500/20 group-hover:scale-105 transition-transform">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl shadow-sm group-hover:scale-105 transition-transform bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200">
               <HiOutlineSparkles className="h-6 w-6" />
             </div>
             <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900" />
@@ -303,7 +303,7 @@ export default function ChatInboxList({ onClose, notifEnabled, toggleNotif }) {
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-1">
               <span className={cn('text-xs font-bold truncate', isDark ? 'text-white' : 'text-stone-900')}>
-                CSKH E-commerce Platform
+                CSKH E-Commerce Platform
               </span>
               {supportThread?.lastMessageAt && (
                 <span className="text-[10px] opacity-50 shrink-0">
@@ -334,7 +334,7 @@ export default function ChatInboxList({ onClose, notifEnabled, toggleNotif }) {
           <div className="py-8 text-center text-xs opacity-50">Đang tải hộp thư...</div>
         ) : shopThreads.length === 0 ? (
           <div className="flex flex-col items-center justify-center px-4 py-12 text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-500 mb-2">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl mb-2 bg-stone-100 text-stone-950">
               <HiOutlineShoppingBag className="h-6 w-6" />
             </div>
             <p className={cn("text-xs font-bold", isDark ? "text-slate-300" : "text-stone-700")}>Chưa có cuộc trò chuyện nào với Shop</p>
@@ -379,7 +379,7 @@ export default function ChatInboxList({ onClose, notifEnabled, toggleNotif }) {
                       className="h-11 w-11 rounded-full object-cover border border-amber-500/20 shadow-xs group-hover:scale-105 transition-transform"
                     />
                   ) : (
-                    <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-tr from-amber-500 to-orange-500 text-white font-black text-sm shadow-xs group-hover:scale-105 transition-transform">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-full font-black text-sm shadow-xs group-hover:scale-105 transition-transform bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200">
                       {shopName.charAt(0).toUpperCase()}
                     </div>
                   )}

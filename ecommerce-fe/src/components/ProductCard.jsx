@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
-import { HiOutlineHeart, HiHeart, HiOutlineShoppingCart, HiStar, HiOutlineCheckCircle } from 'react-icons/hi'
+import { HiOutlineHeart, HiHeart, HiOutlineShoppingCart, HiStar } from 'react-icons/hi'
 import { useThemeStore } from '../store/useThemeStore'
 import { useAuthStore } from '../store/useAuthStore'
 import { useWishlistStore } from '../store/useWishlistStore'
@@ -96,6 +96,17 @@ export default function ProductCard({ product, onQuickView, dataAos, dataAosDela
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0)
   }
 
+  const condition = product.conditionGrade ? getConditionBadge(product.conditionGrade) : null
+  const discountPct =
+    displayOldPrice && displayOldPrice > displayPrice
+      ? Math.round((1 - displayPrice / displayOldPrice) * 100)
+      : 0
+  const openQuickView = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    onQuickView?.({ ...product, image: thumbnailImg, price: displayPrice, oldPrice: displayOldPrice })
+  }
+
   return (
     <motion.article
       data-aos={dataAos ?? 'fade-up'}
@@ -103,190 +114,140 @@ export default function ProductCard({ product, onQuickView, dataAos, dataAosDela
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       className={cn(
-        'group relative flex flex-col justify-between overflow-hidden rounded-2xl border transition-all duration-300',
-        product.featured && 'ring-2 ring-amber-500/50 shadow-md shadow-amber-500/10',
-        isDark
-          ? 'border-slate-800 bg-slate-800/60 hover:border-amber-500/40 hover:shadow-xl hover:shadow-black/30'
-          : 'border-stone-200/90 bg-white hover:border-amber-400 hover:shadow-xl hover:shadow-amber-500/5',
+        'group relative flex flex-col overflow-hidden rounded-lg border p-3 transition-colors duration-200',
+        product.featured && 'ring-2 ring-amber-500',
+        isDark ? 'border-slate-800 bg-slate-900 hover:border-slate-400' : 'border-stone-200 bg-white hover:border-stone-950',
       )}
     >
-      {/* Badges container */}
-      <div className="absolute left-2.5 top-2.5 z-10 flex flex-col gap-1 items-start">
-        {product.featured && (
-          <span className="inline-flex items-center gap-1 rounded-md bg-gradient-to-r from-amber-500 to-orange-500 px-2 py-0.5 text-[10px] font-black text-white shadow-md tracking-wider">
-            ⭐ Nổi bật
-          </span>
-        )}
-        {product.conditionGrade && (
-          (() => {
-            const c = getConditionBadge(product.conditionGrade)
-            return c ? (
-              <span className={cn('rounded-md px-1.5 py-0.5 text-[10px] font-bold shadow-sm', c.color)}>
-                {c.label}
-              </span>
-            ) : null
-          })()
-        )}
-        {product.warrantyMonths && product.warrantyMonths > 0 && (
-          <span className="rounded-md bg-blue-600 text-white px-1.5 py-0.5 text-[10px] font-bold shadow-sm">
-            BH {product.warrantyMonths}T
-          </span>
-        )}
-        {badge && badge !== 'Bestseller' && (
-          <span className="rounded-md bg-amber-500 px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">
-            {badge}
-          </span>
-        )}
-      </div>
-
-      {/* Image */}
-      <Link to={`/products/${id}`} className="relative block aspect-square overflow-hidden bg-stone-100 dark:bg-slate-900">
+      {/* Stage */}
+      <Link
+        to={`/products/${id}`}
+        className={cn('relative block aspect-[4/3] overflow-hidden rounded', isDark ? 'bg-slate-800' : 'bg-stone-100')}
+      >
         <motion.img
           src={thumbnailImg}
           alt={name}
-          className="h-full w-full object-cover transition duration-500"
-          animate={{ scale: hover ? 1.06 : 1 }}
+          className={cn('h-full w-full object-contain p-3', !isDark && 'mix-blend-multiply')}
+          animate={{ scale: hover ? 1.04 : 1 }}
+          transition={{ duration: 0.3 }}
           onError={(e) => {
             e.target.src = '/product-placeholder.svg'
           }}
           loading="lazy"
         />
-        <div
-          className={cn(
-            'absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 transition-opacity duration-300',
-            hover && 'opacity-100',
-          )}
-        />
 
-        {/* Quick actions on hover */}
-        <motion.div
-          initial={false}
-          animate={{
-            opacity: hover ? 1 : 0,
-            y: hover ? 0 : 8,
-          }}
-          className="absolute bottom-3 left-3 right-3 z-10 flex gap-2"
-          onClick={(e) => e.preventDefault()}
+        <span className="absolute left-2 top-2 flex flex-col items-start gap-1">
+          {discountPct > 0 && (
+            <span className="rounded bg-amber-500 px-1.5 py-0.5 font-mono text-[11px] font-semibold text-stone-950">
+              −{discountPct}%
+            </span>
+          )}
+          {product.featured && (
+            <span className="rounded bg-stone-950 px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wider text-white">
+              Nổi bật
+            </span>
+          )}
+          {condition && (
+            <span className="rounded border border-stone-300 bg-white px-1.5 py-0.5 font-mono text-[10px] font-semibold text-stone-950">
+              {condition.label}
+            </span>
+          )}
+          {badge && badge !== 'Bestseller' && (
+            <span className="rounded bg-white px-1.5 py-0.5 font-mono text-[10px] font-semibold text-stone-950">
+              {badge}
+            </span>
+          )}
+        </span>
+
+        <button
+          type="button"
+          onClick={handleWishlistClick}
+          className={cn(
+            'absolute right-2 top-2 flex h-9 w-9 items-center justify-center rounded-md bg-white transition-colors hover:bg-stone-100',
+            wishlisted ? 'text-rose-600' : 'text-stone-950',
+          )}
+          title={wishlisted ? 'Bỏ yêu thích' : 'Thêm vào yêu thích'}
+          aria-label={wishlisted ? 'Bỏ yêu thích' : 'Thêm vào yêu thích'}
+          aria-pressed={wishlisted}
         >
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault()
-              e.stopPropagation()
-              onQuickView?.({
-                ...product,
-                image: thumbnailImg,
-                price: displayPrice,
-                oldPrice: displayOldPrice,
-              })
-            }}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-white/95 py-2 text-xs font-bold text-stone-800 shadow-lg backdrop-blur hover:bg-amber-400 hover:text-stone-900 transition-colors"
-          >
-            <HiOutlineShoppingCart className="h-4 w-4" />
-            Xem nhanh
-          </button>
-          <button
-            type="button"
-            onClick={handleWishlistClick}
-            className={cn(
-              "rounded-xl bg-white/95 p-2 shadow-lg backdrop-blur transition-all",
-              wishlisted
-                ? "text-rose-500 hover:bg-rose-50"
-                : "text-stone-700 hover:bg-white hover:text-rose-500"
-            )}
-            title={wishlisted ? "Bỏ yêu thích" : "Thêm vào yêu thích"}
-            aria-label={wishlisted ? "Bỏ yêu thích" : "Thêm vào yêu thích"}
-          >
-            {wishlisted ? (
-              <HiHeart className="h-4 w-4 fill-current text-rose-500" />
-            ) : (
-              <HiOutlineHeart className="h-4 w-4" />
-            )}
-          </button>
-        </motion.div>
+          {wishlisted ? <HiHeart className="h-4 w-4" /> : <HiOutlineHeart className="h-4 w-4" />}
+        </button>
       </Link>
 
-      {/* Content */}
-      <div className="p-3.5 flex flex-col flex-1 justify-between">
-        <div>
-          {/* Shop / Category Tag */}
-          <div className="mb-1.5 flex items-center justify-between text-[11px] text-stone-400 dark:text-slate-400">
-            {shopId ? (
-              <Link
-                to={`/shop/${shopId}`}
-                onClick={(e) => e.stopPropagation()}
-                className="truncate max-w-[130px] font-semibold text-amber-600 dark:text-amber-400 hover:underline"
-              >
-                {shopName || categoryName || 'E-commerce'}
-              </Link>
-            ) : (
-              <span className="truncate max-w-[130px] font-medium text-amber-600 dark:text-amber-400">
-                {shopName || categoryName || 'E-commerce'}
-              </span>
-            )}
-            {product.sold !== undefined && product.sold !== null && product.sold > 0 && (
-              <span className="text-[10px] text-stone-400 dark:text-slate-500 shrink-0">
-                Đã bán {product.sold}
-              </span>
-            )}
-          </div>
-
-          {/* Quick Hardware Spec Pills */}
-          {(product.batteryHealth || (product.warrantyType && product.warrantyType !== 'NONE')) && (
-            <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
-              {product.batteryHealth && (
-                <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
-                  Pin {product.batteryHealth}%
-                </span>
-              )}
-              {product.warrantyType && product.warrantyType !== 'NONE' && (
-                <span className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded">
-                  {product.warrantyType === 'OFFICIAL' ? 'BH Hãng' : 'BH Shop'}
-                </span>
-              )}
-            </div>
-          )}
-
-          {/* Title */}
-          <Link to={`/products/${id}`}>
-            <h3
-              className={cn(
-                'text-sm font-semibold line-clamp-2 min-h-[40px] transition-colors hover:text-amber-600 dark:hover:text-amber-400 leading-snug',
-                isDark ? 'text-slate-100' : 'text-stone-800',
-              )}
+      {/* Body */}
+      <div className="flex flex-1 flex-col gap-1.5 pt-3">
+        <div className="flex items-center justify-between gap-2 font-mono text-[11px] uppercase tracking-wide text-stone-500 dark:text-slate-400">
+          {shopId ? (
+            <Link
+              to={`/shop/${shopId}`}
+              onClick={(e) => e.stopPropagation()}
+              className="truncate hover:text-stone-950 hover:underline dark:hover:text-white"
             >
-              {name}
-            </h3>
-          </Link>
+              {shopName || categoryName || 'E-Commerce'}
+            </Link>
+          ) : (
+            <span className="truncate">{shopName || categoryName || 'E-Commerce'}</span>
+          )}
+          {product.sold > 0 && <span className="shrink-0 normal-case tracking-normal">Đã bán {product.sold}</span>}
         </div>
 
-        <div>
-          {/* Rating (Real only) */}
-          {product.rating !== undefined && product.rating !== null && Number(product.rating) > 0 && (
-            <div className="mt-2 flex items-center gap-1">
-              <HiStar className="h-3.5 w-3.5 text-amber-400 fill-amber-400" />
-              <span className="text-xs font-bold text-stone-700 dark:text-slate-300">
-                {Number(product.rating).toFixed(1)}
-              </span>
-              {product.reviewCount !== undefined && product.reviewCount !== null && product.reviewCount > 0 && (
-                <span className="text-[10px] text-stone-400 dark:text-slate-500">
-                  ({product.reviewCount})
-                </span>
-              )}
-            </div>
-          )}
-
-          {/* Pricing */}
-          <div className="mt-2 flex flex-wrap items-baseline gap-2">
-            <span className="text-base font-bold text-amber-600 dark:text-amber-400">
-              {isRangePrice ? `${formatVND(minPrice)} - ${formatVND(maxPrice)}` : formatVND(displayPrice)}
-            </span>
-            {displayOldPrice && displayOldPrice > displayPrice && (
-              <span className="text-xs text-stone-400 line-through dark:text-slate-500">
-                {formatVND(displayOldPrice)}
-              </span>
+        <Link to={`/products/${id}`}>
+          <h3
+            className={cn(
+              'line-clamp-2 min-h-[40px] font-sans text-[15px] font-semibold leading-snug tracking-normal hover:underline',
+              isDark ? 'text-slate-100' : 'text-stone-950',
             )}
-          </div>
+          >
+            {name}
+          </h3>
+        </Link>
+
+        {(product.batteryHealth || (product.warrantyType && product.warrantyType !== 'NONE') || product.warrantyMonths > 0) && (
+          <span className="font-mono text-[11px] text-stone-500 dark:text-slate-400">
+            {[
+              product.batteryHealth && `PIN ${product.batteryHealth}%`,
+              product.warrantyType && product.warrantyType !== 'NONE' && (product.warrantyType === 'OFFICIAL' ? 'BH HÃNG' : 'BH SHOP'),
+              product.warrantyMonths > 0 && `${product.warrantyMonths} THÁNG`,
+            ]
+              .filter(Boolean)
+              .join(' · ')}
+          </span>
+        )}
+
+        {Number(rating) > 0 && (
+          <span className="flex items-center gap-1 text-xs text-stone-600 dark:text-slate-400">
+            <HiStar className="h-3.5 w-3.5 text-amber-700 dark:text-amber-400" />
+            {Number(rating).toFixed(1)}
+            {product.reviewCount > 0 && <span>· {product.reviewCount} đánh giá</span>}
+          </span>
+        )}
+
+        <div
+          className={cn(
+            'mt-auto flex items-end justify-between gap-2 border-t pt-2.5',
+            isDark ? 'border-slate-800' : 'border-stone-100',
+          )}
+        >
+          <span className="flex min-w-0 flex-col">
+            <strong className={cn('font-mono text-base font-semibold tracking-tight', isDark ? 'text-white' : 'text-stone-950')}>
+              {isRangePrice ? `từ ${formatVND(minPrice)}` : formatVND(displayPrice)}
+            </strong>
+            {discountPct > 0 && (
+              <s className="font-mono text-xs text-stone-500 dark:text-slate-500">{formatVND(displayOldPrice)}</s>
+            )}
+          </span>
+          <button
+            type="button"
+            onClick={openQuickView}
+            aria-label={`Xem nhanh và thêm ${name} vào giỏ`}
+            title="Xem nhanh"
+            className={cn(
+              'flex h-10 w-10 shrink-0 items-center justify-center rounded-md transition-colors',
+              isDark ? 'bg-white text-stone-950 hover:bg-amber-500' : 'bg-stone-950 text-white hover:bg-amber-500 hover:text-stone-950',
+            )}
+          >
+            <HiOutlineShoppingCart className="h-[18px] w-[18px]" />
+          </button>
         </div>
       </div>
     </motion.article>

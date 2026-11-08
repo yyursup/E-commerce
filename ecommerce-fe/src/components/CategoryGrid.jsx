@@ -121,81 +121,47 @@ export default function CategoryGrid() {
   }, [])
 
   return (
-    <section className="py-8">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className={cn('text-xl sm:text-2xl font-bold tracking-tight', isDark ? 'text-white' : 'text-stone-900')}>
-              Danh Mục Thiết Bị Công Nghệ
-            </h2>
-            <p className="text-xs sm:text-sm text-stone-500 dark:text-slate-400 mt-1">
-              Khám phá hệ sinh thái sản phẩm điện tử chính hãng và đồ cũ Like New kiểm định
-            </p>
-          </div>
-          <Link
-            to="/products"
-            className="text-xs sm:text-sm font-semibold text-amber-500 hover:text-amber-600 transition-colors"
-          >
-            Xem tất cả &rarr;
-          </Link>
-        </div>
+    <section aria-labelledby="home-categories" className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="mb-5 flex items-baseline justify-between gap-3">
+        <h2 id="home-categories" className={cn('text-2xl sm:text-3xl font-bold', isDark ? 'text-white' : 'text-stone-950')}>
+          Danh mục
+        </h2>
+        <Link to="/products" className={cn('text-sm font-semibold hover:underline', isDark ? 'text-white' : 'text-stone-950')}>
+          Tất cả danh mục →
+        </Link>
+      </div>
 
-        {/* Categories Grid (8 Tech Categories) */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 sm:gap-4">
-          {categories.map((category) => {
-            const Icon = category.icon
-            const targetUrl = category.categoryId
-              ? `/products?categoryId=${category.categoryId}`
-              : `/products?search=${encodeURIComponent(category.query || category.name)}`
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
+        {categories.map((category) => {
+          const targetUrl = category.categoryId
+            ? `/products?categoryId=${category.categoryId}`
+            : `/products?search=${encodeURIComponent(category.query || category.name)}`
 
-            return (
-              <Link
-                key={category.id}
-                to={targetUrl}
-                className={cn(
-                  'group flex flex-col items-center text-center p-3 sm:p-4 rounded-2xl border transition-all duration-300 hover:-translate-y-1 hover:shadow-lg',
-                  isDark
-                    ? 'border-slate-800 bg-slate-900/90 hover:border-amber-500/40 hover:bg-slate-800'
-                    : 'border-stone-200/90 bg-white hover:border-amber-400 hover:shadow-amber-500/5'
-                )}
-              >
-                {/* Thumbnail image with subtle icon */}
-                <div className="relative h-16 w-16 sm:h-20 sm:w-20 rounded-2xl overflow-hidden mb-3 shadow-inner">
-                  <img
-                    src={category.image}
-                    alt={category.name}
-                    className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-500"
-                    loading="lazy"
-                  />
-                  <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
-                  <div
-                    className={cn(
-                      'absolute bottom-1 right-1 flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-tr text-white shadow',
-                      category.color
-                    )}
-                  >
-                    <Icon className="h-3.5 w-3.5" />
-                  </div>
-                </div>
-
-                {/* Name */}
-                <h3
-                  className={cn(
-                    'text-xs font-bold line-clamp-2 transition-colors min-h-[32px] flex items-center justify-center',
-                    isDark ? 'text-slate-200 group-hover:text-amber-400' : 'text-stone-800 group-hover:text-amber-600'
-                  )}
-                >
-                  {category.name}
-                </h3>
-
-                <span className="text-[10px] text-stone-400 dark:text-slate-500 mt-1">
-                  {category.itemCount}
-                </span>
-              </Link>
-            )
-          })}
-        </div>
+          return (
+            <Link
+              key={category.id}
+              to={targetUrl}
+              className={cn(
+                'group flex flex-col gap-2.5 rounded-lg border p-3 transition-colors',
+                isDark
+                  ? 'border-slate-800 bg-slate-900 hover:border-slate-400'
+                  : 'border-stone-200 bg-white hover:border-stone-950',
+              )}
+            >
+              <span className={cn('block aspect-[4/3] overflow-hidden rounded', isDark ? 'bg-slate-800' : 'bg-stone-100')}>
+                <img
+                  src={category.image}
+                  alt=""
+                  className="h-full w-full object-cover grayscale-[35%] transition duration-300 group-hover:grayscale-0"
+                  loading="lazy"
+                />
+              </span>
+              <span className={cn('text-sm font-semibold leading-snug', isDark ? 'text-slate-100' : 'text-stone-950')}>
+                {category.name}
+              </span>
+            </Link>
+          )
+        })}
       </div>
     </section>
   )

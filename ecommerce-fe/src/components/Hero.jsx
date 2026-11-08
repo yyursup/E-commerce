@@ -24,7 +24,7 @@ const heroBanners = [
     subtitle: 'Điện thoại, Laptop, Tablet, Linh kiện PC từ Apple, Samsung, Sony, Asus. Đầy đủ hóa đơn VAT & Bảo hành chính hãng.',
     ctaText: 'Khám phá ngay',
     ctaLink: '/products',
-    bgGradient: 'from-blue-700 via-indigo-700 to-slate-900',
+    bgGradient: 'from-stone-950 to-stone-950',
     image: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=1000&h=600&fit=crop',
     tag: 'CHÍNH HÃNG 100%',
   },
@@ -35,7 +35,7 @@ const heroBanners = [
     subtitle: 'Đội ngũ thẩm định chuyên nghiệp kiểm tra pin, bo mạch, màn hình. Minh bạch tình trạng máy & lịch sử sửa chữa.',
     ctaText: 'Xem máy Like New',
     ctaLink: '/products',
-    bgGradient: 'from-amber-600 via-orange-600 to-stone-900',
+    bgGradient: 'from-stone-900 to-stone-900',
     image: 'https://images.unsplash.com/photo-1550009158-9ebf69173e03?w=1000&h=600&fit=crop',
     tag: 'TEST MÁY 3 NGÀY',
   },
@@ -46,7 +46,7 @@ const heroBanners = [
     subtitle: 'Tiền được khóa an toàn tại Escrow sàn. Sau khi nhận máy và test trong 3 ngày hài lòng, tiền mới được giải ngân cho Shop.',
     ctaText: 'Tìm hiểu Escrow',
     ctaAction: 'escrow',
-    bgGradient: 'from-emerald-600 via-teal-700 to-slate-900',
+    bgGradient: 'from-slate-800 to-slate-800',
     image: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?w=1000&h=600&fit=crop',
     tag: 'BẢO VỆ 100%',
   },
@@ -57,7 +57,7 @@ const heroBanners = [
     subtitle: 'Đóng gói chống sốc chuyên dụng, bảo hiểm 100% giá trị thiết bị điện tử cùng Giao Hàng Nhanh (GHN).',
     ctaText: 'Săn mã Freeship',
     ctaLink: '/deals',
-    bgGradient: 'from-purple-700 via-violet-700 to-slate-900',
+    bgGradient: 'from-stone-950 to-stone-950',
     image: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=1000&h=600&fit=crop',
     tag: 'BẢO HIỂM THIẾT BỊ',
   },
@@ -68,35 +68,35 @@ const quickServices = [
     id: 'deals',
     icon: HiOutlineTag,
     label: 'Mã Giảm Giá Tech',
-    color: 'text-rose-500 bg-rose-500/10 dark:bg-rose-500/20',
+    color: 'text-stone-950 bg-stone-100 dark:text-white dark:bg-slate-800',
     link: '/deals',
   },
   {
     id: 'used-tech',
     icon: HiOutlineBadgeCheck,
     label: 'Đồ Cũ Kiểm Định',
-    color: 'text-amber-500 bg-amber-500/10 dark:bg-amber-500/20',
+    color: 'text-stone-950 bg-stone-100 dark:text-white dark:bg-slate-800',
     link: '/products',
   },
   {
     id: 'ghn',
     icon: HiOutlineTruck,
     label: 'Giao Chống Sốc GHN',
-    color: 'text-blue-500 bg-blue-500/10 dark:bg-blue-500/20',
+    color: 'text-stone-950 bg-stone-100 dark:text-white dark:bg-slate-800',
     action: 'ghn',
   },
   {
     id: 'escrow',
     icon: HiOutlineShieldCheck,
     label: 'Ký Quỹ Escrow',
-    color: 'text-emerald-500 bg-emerald-500/10 dark:bg-emerald-500/20',
+    color: 'text-stone-950 bg-stone-100 dark:text-white dark:bg-slate-800',
     action: 'escrow',
   },
   {
     id: 'ai-bot',
     icon: HiOutlineSparkles,
     label: 'AI Tư Vấn Cấu Hình',
-    color: 'text-orange-500 bg-orange-500/10 dark:bg-orange-500/20',
+    color: 'text-stone-950 bg-amber-500',
     action: 'ai_bot',
   },
 ]
@@ -126,7 +126,7 @@ export default function Hero() {
         {/* Banner Area (Shopee Grid Style: Main Slider + 2 Side Banners) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
           {/* Main Slider (8 cols) */}
-          <div className="lg:col-span-8 relative rounded-2xl overflow-hidden shadow-xl min-h-[360px] sm:min-h-[420px] flex items-center">
+          <div className="lg:col-span-8 relative rounded-lg overflow-hidden min-h-[360px] sm:min-h-[420px] flex items-center">
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeBanner.id}
@@ -141,19 +141,19 @@ export default function Hero() {
               >
                 {/* Background image with overlay */}
                 <div
-                  className="absolute inset-0 bg-cover bg-center mix-blend-overlay opacity-35"
+                  className="absolute inset-0 bg-cover bg-center opacity-25 grayscale"
                   style={{ backgroundImage: `url(${activeBanner.image})` }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+                <div className="absolute inset-0 bg-black/40" />
 
                 {/* Content */}
                 <div className="relative z-10 max-w-xl">
-                  <div className="inline-flex items-center gap-2 rounded-full bg-white/20 backdrop-blur-md px-3.5 py-1 text-xs font-semibold text-white mb-3">
-                    <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+                  <div className="inline-flex items-center gap-2 font-mono text-xs font-medium uppercase tracking-wider text-amber-400 mb-3">
+                    <span className="h-2 w-2 rounded-full bg-amber-500" />
                     {activeBanner.badge}
                   </div>
 
-                  <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-white drop-shadow-md">
+                  <h2 className="text-3xl sm:text-5xl font-extrabold leading-[1.02] tracking-[-0.03em] text-white">
                     {activeBanner.title}
                   </h2>
 
@@ -180,7 +180,7 @@ export default function Hero() {
                         <HiOutlineArrowRight className="h-4 w-4" />
                       </Link>
                     )}
-                    <span className="rounded-lg bg-black/40 backdrop-blur-sm px-3 py-1.5 text-xs font-bold tracking-wider text-amber-300 border border-amber-400/30">
+                    <span className="rounded border border-white/30 px-3 py-1.5 font-mono text-xs font-medium tracking-wider text-white">
                       {activeBanner.tag}
                     </span>
                   </div>
@@ -192,7 +192,7 @@ export default function Hero() {
             <button
               onClick={prevSlide}
               aria-label="Slide trước"
-              className="absolute left-3 top-1/2 -translate-y-1/2 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm hover:bg-black/70 transition-all"
+              className="absolute left-3 top-1/2 -translate-y-1/2 z-20 flex h-9 w-9 items-center justify-center rounded-md bg-white/10 text-white hover:bg-white/25 transition-colors"
             >
               <HiOutlineChevronLeft className="h-5 w-5" />
             </button>
@@ -211,8 +211,8 @@ export default function Hero() {
                   key={index}
                   onClick={() => setCurrentSlide(index)}
                   className={cn(
-                    'h-2 rounded-full transition-all duration-300',
-                    index === currentSlide ? 'w-6 bg-white' : 'w-2 bg-white/50 hover:bg-white/80'
+                    'h-1 rounded-sm transition-all duration-300',
+                    index === currentSlide ? 'w-8 bg-amber-500' : 'w-4 bg-white/40 hover:bg-white/70'
                   )}
                   aria-label={`Đi tới banner ${index + 1}`}
                 />
@@ -225,37 +225,37 @@ export default function Hero() {
             {/* Side Card 1 */}
             <Link
               to="/marketplace"
-              className="relative flex-1 rounded-2xl overflow-hidden shadow-md group min-h-[170px] flex items-end p-5 bg-gradient-to-tr from-slate-900 via-slate-800 to-amber-950 text-white"
+              className="relative flex-1 rounded-lg overflow-hidden group min-h-[170px] flex items-end p-5 bg-amber-500 text-stone-950"
             >
               <div
-                className="absolute inset-0 bg-cover bg-center opacity-30 group-hover:scale-105 transition-transform duration-500"
+                className="absolute inset-0 bg-cover bg-center opacity-15 mix-blend-multiply grayscale group-hover:scale-105 transition-transform duration-500"
                 style={{ backgroundImage: `url(https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=500&h=300&fit=crop)` }}
               />
               <div className="relative z-10">
-                <span className="rounded-md bg-amber-500 px-2 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider">
+                <span className="rounded bg-stone-950 px-2 py-0.5 font-mono text-[10px] font-semibold text-white uppercase tracking-wider">
                   TECH MALL
                 </span>
-                <h3 className="mt-1.5 text-base font-bold group-hover:text-amber-400 transition-colors">
+                <h3 className="mt-1.5 text-xl font-bold group-hover:underline">
                   Đại Lý Phân Phối Ủy Quyền
                 </h3>
-                <p className="text-xs text-slate-300">Apple, Samsung, Sony, Asus chính hãng</p>
+                <p className="text-xs text-stone-900">Apple, Samsung, Sony, Asus chính hãng</p>
               </div>
             </Link>
 
             {/* Side Card 2 */}
             <Link
               to="/products"
-              className="relative flex-1 rounded-2xl overflow-hidden shadow-md group min-h-[170px] flex items-end p-5 bg-gradient-to-tr from-indigo-950 via-slate-900 to-rose-950 text-white"
+              className="relative flex-1 rounded-lg overflow-hidden group min-h-[170px] flex items-end p-5 bg-stone-900 text-white"
             >
               <div
                 className="absolute inset-0 bg-cover bg-center opacity-30 group-hover:scale-105 transition-transform duration-500"
                 style={{ backgroundImage: `url(https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?w=500&h=300&fit=crop)` }}
               />
               <div className="relative z-10">
-                <span className="rounded-md bg-emerald-500 px-2 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider">
+                <span className="rounded bg-amber-500 px-2 py-0.5 font-mono text-[10px] font-semibold text-stone-950 uppercase tracking-wider">
                   LIKE NEW 99%
                 </span>
-                <h3 className="mt-1.5 text-base font-bold group-hover:text-emerald-400 transition-colors">
+                <h3 className="mt-1.5 text-xl font-bold group-hover:underline">
                   Chợ Thiết Bị Cũ Kiểm Định
                 </h3>
                 <p className="text-xs text-slate-300">Bao test 3 ngày cùng Escrow ký quỹ</p>
@@ -267,7 +267,7 @@ export default function Hero() {
         {/* Quick Service Icons Strip (Shopee / Tiki Style) */}
         <div
           className={cn(
-            'mt-6 rounded-2xl border p-4 sm:p-5 shadow-sm transition-colors',
+            'mt-6 rounded-lg border p-4 sm:p-5 transition-colors',
             isDark ? 'border-slate-800 bg-slate-900/90' : 'border-stone-200/90 bg-white'
           )}
         >
@@ -278,7 +278,7 @@ export default function Hero() {
                 <>
                   <div
                     className={cn(
-                      'relative flex h-12 w-12 items-center justify-center rounded-2xl mb-2 transition-transform group-hover:scale-110 shadow-sm',
+                      'relative flex h-12 w-12 items-center justify-center rounded-md mb-2 transition-colors',
                       service.color
                     )}
                   >
@@ -351,7 +351,7 @@ export default function Hero() {
                 Cơ Chế Bảo Vệ Tài Chính Người Mua Độc Quyền
               </h4>
               <p className="mt-1 text-xs sm:text-sm text-stone-600 dark:text-slate-300 leading-relaxed">
-                Khi mua thiết bị công nghệ giá trị cao trên sàn E-commerce, số tiền bạn thanh toán sẽ được khóa an toàn tại <strong>Ví Ký Quỹ Escrow</strong> của hệ thống và chỉ được giải ngân cho người bán khi bạn hoàn toàn hài lòng.
+                Khi mua thiết bị công nghệ giá trị cao trên sàn E-Commerce, số tiền bạn thanh toán sẽ được khóa an toàn tại <strong>Ví Ký Quỹ Escrow</strong> của hệ thống và chỉ được giải ngân cho người bán khi bạn hoàn toàn hài lòng.
               </p>
             </div>
           </div>
@@ -366,7 +366,7 @@ export default function Hero() {
             </div>
 
             <div className="rounded-xl border border-stone-200 dark:border-slate-800 p-4 bg-stone-50/50 dark:bg-slate-800/40">
-              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-amber-500 text-white text-xs font-bold mb-2">2</span>
+              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold mb-2 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200">2</span>
               <h5 className="font-bold text-sm text-stone-800 dark:text-slate-100">Bao Test 3 Ngày</h5>
               <p className="text-xs text-stone-500 dark:text-slate-400 mt-1 leading-relaxed">
                 Sau khi nhận máy từ shipper GHN, bạn có trọn vẹn 3 ngày trải nghiệm, kiểm tra phần cứng & hiệu năng máy.
@@ -411,7 +411,7 @@ export default function Hero() {
                 Đối Tác Vận Chuyển Chiến Lược Thiết Bị Công Nghệ
               </h4>
               <p className="mt-1 text-xs sm:text-sm text-stone-600 dark:text-slate-300 leading-relaxed">
-                Toàn bộ đơn hàng trên sàn E-commerce được đồng bộ vận hành tự động qua mạng lưới <strong>Giao Hàng Nhanh (GHN Express)</strong> với tiêu chuẩn đóng gói chống va đập và bảo hiểm giá trị cao.
+                Toàn bộ đơn hàng trên sàn E-Commerce được đồng bộ vận hành tự động qua mạng lưới <strong>Giao Hàng Nhanh (GHN Express)</strong> với tiêu chuẩn đóng gói chống va đập và bảo hiểm giá trị cao.
               </p>
             </div>
           </div>

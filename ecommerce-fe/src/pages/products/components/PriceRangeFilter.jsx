@@ -24,8 +24,8 @@ export default function PriceRangeFilter({ selectedRange, onChange }) {
             'flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm transition',
             selectedRange?.label === range.label
               ? isDark
-                ? 'bg-amber-500/20 text-amber-400'
-                : 'bg-amber-50 text-amber-700'
+                ? 'bg-slate-800 text-white'
+                : 'bg-stone-100 text-stone-950'
               : isDark
                 ? 'text-slate-400 hover:bg-slate-800 hover:text-slate-300'
                 : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900',
@@ -36,7 +36,7 @@ export default function PriceRangeFilter({ selectedRange, onChange }) {
             name="priceRange"
             checked={selectedRange?.label === range.label}
             onChange={() => onChange?.(range)}
-            className="h-4 w-4 border-stone-300 text-amber-500 focus:ring-amber-500"
+            className="h-4 w-4 border-stone-300 text-amber-500 focus:ring-stone-950/30 dark:focus:ring-white/40"
           />
           {range.label}
         </label>

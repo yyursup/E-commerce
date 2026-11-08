@@ -150,10 +150,10 @@ export default function ProfileInfo({ isDark }) {
     };
 
     const inputClass = cn(
-        'w-full rounded-xl border px-3.5 py-2.5 text-sm transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/50',
+        'w-full rounded-xl border px-3.5 py-2.5 text-sm transition-all focus:outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
         isDark
-            ? 'border-slate-700 bg-slate-800/80 text-white placeholder-slate-500 focus:border-amber-500'
-            : 'border-stone-300 bg-white text-stone-900 placeholder-stone-400 focus:border-amber-500 shadow-2xs'
+            ? 'border-slate-700 bg-slate-800/80 text-white placeholder-slate-500 focus:border-stone-950 dark:focus:border-white'
+            : 'border-stone-300 bg-white text-stone-900 placeholder-stone-400 focus:border-stone-950 dark:focus:border-white shadow-2xs'
     );
 
     const labelClass = cn(
@@ -168,13 +168,13 @@ export default function ProfileInfo({ isDark }) {
 
             <div
                 className={cn(
-                    'rounded-3xl border p-5 sm:p-8 shadow-sm transition-colors',
+                    'rounded-3xl border p-5 sm:p-8 transition-colors',
                     isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
                 )}
             >
             {/* Header */}
             <div className="border-b pb-5 mb-8 border-stone-200 dark:border-slate-800">
-                <h2 className={cn('text-xl sm:text-2xl font-bold tracking-tight', isDark ? 'text-white' : 'text-stone-900')}>
+                <h2 className={cn('text-3xl font-bold tracking-[-0.03em]', isDark ? 'text-white' : 'text-stone-900')}>
                     Hồ Sơ Của Tôi
                 </h2>
                 <p className={cn('text-xs sm:text-sm mt-1.5', isDark ? 'text-slate-400' : 'text-stone-500')}>
@@ -256,7 +256,7 @@ export default function ProfileInfo({ isDark }) {
                                             className={cn(
                                                 'px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all border cursor-pointer',
                                                 isSelected
-                                                    ? 'border-amber-500 bg-amber-500/10 text-amber-600 dark:text-amber-400 ring-1 ring-amber-500'
+                                                    ? 'dark:text-amber-400 ring-1 ring-amber-500 bg-stone-100 text-stone-950 border-stone-950'
                                                     : isDark
                                                     ? 'border-slate-700 bg-slate-800 text-slate-300 hover:border-slate-600'
                                                     : 'border-stone-200 bg-stone-50 text-stone-700 hover:border-stone-300'
@@ -305,7 +305,7 @@ export default function ProfileInfo({ isDark }) {
                                 type="submit"
                                 disabled={loading}
                                 className={cn(
-                                    'flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 px-8 py-3 text-sm font-bold text-white shadow-lg shadow-amber-500/25 transition-all active:scale-95 cursor-pointer',
+                                    'flex items-center justify-center gap-2 rounded-2xl px-8 py-3 text-sm font-bold transition-all active:scale-95 cursor-pointer bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200',
                                     loading && 'opacity-70 cursor-not-allowed'
                                 )}
                             >
@@ -324,7 +324,7 @@ export default function ProfileInfo({ isDark }) {
                     {/* ── Right: Avatar Uploader ── */}
                     <div className="lg:w-72 flex flex-col items-center justify-start lg:border-l border-stone-200 dark:border-slate-800 lg:pl-10 pt-2 pb-6 lg:pb-0">
                         {/* Avatar preview */}
-                        <div className="relative group w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden mb-5 bg-stone-100 dark:bg-slate-800 border-4 border-stone-200 dark:border-slate-700 shadow-md flex items-center justify-center">
+                        <div className="relative group w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden mb-5 bg-stone-100 dark:bg-slate-800 border-4 border-stone-200 dark:border-slate-700 flex items-center justify-center">
                             {avatarPreview ? (
                                 <img
                                     src={avatarPreview}

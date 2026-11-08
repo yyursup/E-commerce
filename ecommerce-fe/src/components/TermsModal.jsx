@@ -75,7 +75,7 @@ export default function TermsModal({ open, onClose, onAccept }) {
     <Modal
       open={open}
       onClose={onClose}
-      title="Điều Khoản Dịch Vụ & Chính Sách Vận Hành Sàn E-commerce"
+      title="Điều Khoản Dịch Vụ & Chính Sách Vận Hành Sàn E-Commerce"
       size="2xl"
     >
       <div className="flex flex-col h-[75vh]">
@@ -98,7 +98,7 @@ export default function TermsModal({ open, onClose, onAccept }) {
                     className={cn(
                       'flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all select-none shrink-0 max-w-[260px]',
                       isActive
-                        ? 'bg-amber-500 text-white shadow-sm shadow-amber-500/25 font-bold'
+                        ? 'shadow-sm font-bold bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                         : 'text-stone-700 dark:text-slate-300 hover:text-stone-950 dark:hover:text-white hover:bg-stone-200/70 dark:hover:bg-slate-800'
                     )}
                   >
@@ -128,7 +128,7 @@ export default function TermsModal({ open, onClose, onAccept }) {
               <button
                 type="button"
                 onClick={loadPolicies}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-amber-500 hover:bg-amber-600 text-white shadow-sm transition"
+                className="px-4 py-2 rounded-xl text-xs font-semibold shadow-sm transition bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
               >
                 Tải lại dữ liệu
               </button>
@@ -206,7 +206,7 @@ export default function TermsModal({ open, onClose, onAccept }) {
                   onAccept()
                   onClose()
                 }}
-                className="flex-1 sm:flex-initial px-5 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white shadow-md shadow-amber-500/20 transition flex items-center justify-center gap-1.5"
+                className="flex-1 sm:flex-initial px-5 py-2 rounded-xl text-xs font-bold shadow-md transition flex items-center justify-center gap-1.5 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
               >
                 <HiOutlineCheckCircle className="h-4 w-4" />
                 Tôi đã đọc & đồng ý

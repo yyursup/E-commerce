@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
 import Home from './pages/Home'
@@ -9,7 +9,6 @@ import Register from './pages/Register'
 import Verify from './pages/Verify'
 import ForgotPassword from './pages/ForgotPassword'
 import Cart from './pages/Cart'
-import Kyc from './pages/kyc/Kyc'
 import Profile from './pages/Profile'
 import PaymentResult from './pages/PaymentResult'
 import MyOrders from './pages/orders/MyOrders'
@@ -23,6 +22,8 @@ import Checkout from './pages/checkout/Checkout'
 import BannedAccount from './pages/BannedAccount'
 import Policy from './pages/Policy'
 import ThemeSync from './components/ThemeSync'
+import ExternalRedirect from './components/ExternalRedirect'
+import { SELLER_PORTAL_URL } from './lib/sellerPortal'
 import { useTokenLifecycle } from './hooks/useTokenLifecycle'
 
 export default function App() {
@@ -65,7 +66,7 @@ export default function App() {
         {/* Redirect seller register to Seller Portal */}
         <Route
           path="/seller/register"
-          element={<Navigate to="http://localhost:3001/register" replace />}
+          element={<ExternalRedirect to={`${SELLER_PORTAL_URL}/register`} />}
         />
 
         {/* Protected routes - require CUSTOMER or BUSINESS authentication */}
@@ -130,14 +131,6 @@ export default function App() {
           element={
             <ProtectedRoute requireAuth={true} allowedRoles={['CUSTOMER', 'BUSINESS']}>
               <OrderDetail />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/kyc"
-          element={
-            <ProtectedRoute requireAuth={true} allowedRoles={['CUSTOMER', 'BUSINESS']}>
-              <Kyc />
             </ProtectedRoute>
           }
         />

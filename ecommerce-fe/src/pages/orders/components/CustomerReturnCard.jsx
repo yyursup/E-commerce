@@ -148,14 +148,14 @@ export default function CustomerReturnCard({ returnInfo, order, report, isDark: 
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       className={cn(
-        'rounded-2xl border p-5 shadow-sm space-y-4',
+        'rounded-2xl border p-5 space-y-4',
         isDark ? 'border-amber-500/30 bg-slate-900/90' : 'border-amber-200 bg-amber-50/40',
       )}
     >
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-stone-200 dark:border-slate-800">
         <div className="flex items-center gap-2">
-          <div className="p-2 rounded-xl bg-amber-500 text-white shadow-sm">
+          <div className="p-2 rounded-xl bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200">
             <HiOutlineTruck className="h-5 w-5" />
           </div>
           <div>
@@ -196,7 +196,7 @@ export default function CustomerReturnCard({ returnInfo, order, report, isDark: 
             </div>
           </div>
 
-          <div className="p-3.5 rounded-xl bg-white dark:bg-slate-800/90 border border-stone-200 dark:border-slate-700/80 shadow-sm space-y-2">
+          <div className="p-3.5 rounded-xl bg-white dark:bg-slate-800/90 border border-stone-200 dark:border-slate-700/80 space-y-2">
             {returnInfo.conditionStatus && (
               <div className="flex items-center gap-2 pb-1.5 border-b border-stone-100 dark:border-slate-700/60">
                 <span className="text-[11px] font-medium text-stone-500 dark:text-slate-400">Tình trạng Shop ghi nhận:</span>
@@ -279,7 +279,7 @@ export default function CustomerReturnCard({ returnInfo, order, report, isDark: 
       {returnInfo.returnTrackingCode && returnInfo.status !== 'WAITING_FOR_SHIPMENT' && (
         <div
           className={cn(
-            'p-3.5 rounded-2xl border text-xs flex flex-wrap items-center justify-between gap-3 shadow-sm transition-colors',
+            'p-3.5 rounded-2xl border text-xs flex flex-wrap items-center justify-between gap-3 transition-colors',
             isDark ? 'border-slate-800 bg-slate-800/80 text-slate-200' : 'border-stone-200/90 bg-white text-stone-800',
           )}
         >
@@ -304,7 +304,7 @@ export default function CustomerReturnCard({ returnInfo, order, report, isDark: 
               <strong
                 className={cn(
                   'font-mono font-bold px-2 py-0.5 rounded-md border text-xs tracking-wider inline-block',
-                  isDark ? 'text-amber-300 bg-amber-500/15 border-amber-500/30' : 'text-amber-800 bg-amber-50 border-amber-300',
+                  isDark ? 'bg-slate-800 text-white border-white' : 'text-amber-800 bg-amber-50 border-amber-300',
                 )}
               >
                 {returnInfo.returnTrackingCode}

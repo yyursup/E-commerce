@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { useThemeStore } from '../store/useThemeStore';
 import { cn } from '../lib/cn';
 import { HiCheckCircle, HiXCircle } from 'react-icons/hi';
@@ -7,7 +7,6 @@ import Footer from '../components/Footer';
 
 export default function PaymentResult() {
     const [searchParams] = useSearchParams();
-    const navigate = useNavigate();
     const isDark = useThemeStore((s) => s.theme) === 'dark';
 
     const [status, setStatus] = useState('loading'); // loading, success, failed
@@ -33,62 +32,55 @@ export default function PaymentResult() {
         }
     }, [searchParams]);
 
+    const ink = isDark ? 'text-white' : 'text-stone-950'
+    const muted = isDark ? 'text-slate-400' : 'text-stone-600'
+    const primary = cn('flex-1 rounded-md py-3.5 text-center font-bold', isDark ? 'bg-white text-stone-950 hover:bg-stone-200' : 'bg-stone-950 text-white hover:bg-stone-800')
+    const secondary = cn('flex-1 rounded-md border py-3.5 text-center font-bold', isDark ? 'border-white text-white' : 'border-stone-950 text-stone-950')
+    const view = {
+        loading: { band: 'bg-stone-950 dark:bg-white', tag: 'VNPAY · ĐANG XÁC NHẬN', tagC: muted, title: 'Đang xử lý thanh toán…', body: 'Vui lòng không tắt trình duyệt. Chúng tôi đang chờ VNPay trả kết quả.' },
+        success: { band: 'bg-emerald-700', tag: 'VNPAY · THÀNH CÔNG', tagC: 'text-emerald-700 dark:text-emerald-400', title: 'Thanh toán thành công', body: 'Tiền được giữ trong ký quỹ và chỉ chuyển cho shop khi bạn xác nhận đã nhận hàng.' },
+        failed: { band: 'bg-red-700', tag: 'VNPAY · CHƯA HOÀN TẤT', tagC: 'text-red-700 dark:text-red-400', title: 'Thanh toán chưa hoàn tất', body: `${message} Không có khoản tiền nào bị trừ; bạn có thể thanh toán lại từ trang đơn hàng.` },
+    }[status]
+
     return (
-        <div className={cn("min-h-screen flex flex-col justify-between transition-colors", isDark ? "bg-slate-950 text-slate-100" : "bg-stone-50 text-stone-900")}>
-            <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-8 text-center my-8">
-                <div className={cn("max-w-md w-full p-8 rounded-3xl border shadow-xl transition-all", isDark ? "bg-slate-900 border-slate-800" : "bg-white border-stone-100")}>
-
-                    {status === 'loading' && (
-                        <div className="flex flex-col items-center">
-                            <div className="w-16 h-16 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mb-6"></div>
-                            <h2 className={cn("text-xl font-bold", isDark ? "text-white" : "text-stone-900")}>Đang xử lý...</h2>
-                            <p className={cn("mt-2", isDark ? "text-slate-400" : "text-stone-500")}>Vui lòng không tắt trình duyệt</p>
-                        </div>
-                    )}
-
-                    {status === 'success' && (
-                        <div className="flex flex-col items-center animate-in zoom-in duration-300">
-                            <HiCheckCircle className="w-20 h-20 text-green-500 mb-6" />
-                            <h2 className={cn("text-2xl font-bold text-green-500 mb-2")}>Thanh toán thành công!</h2>
-                            {transactionId && (
-                                <p className={cn("text-xs font-mono mb-4 px-3 py-1 rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400")}>
-                                    Mã GD: {transactionId}
-                                </p>
-                            )}
-                            <p className={cn("text-sm mb-8", isDark ? "text-slate-400" : "text-stone-500")}>
-                                Đơn hàng của bạn đã được xác nhận và đang chờ xử lý.
-                            </p>
-                            <div className="flex gap-3 w-full">
-                                <Link to="/my-orders" className={cn("flex-1 py-3 rounded-xl font-semibold transition text-center", isDark ? "bg-slate-800 text-white hover:bg-slate-700" : "bg-stone-100 text-stone-900 hover:bg-stone-200")}>
-                                    Xem đơn hàng
-                                </Link>
-                                <Link to="/" className="flex-1 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-semibold transition text-center">
-                                    Tiếp tục mua sắm
-                                </Link>
+        <div className={cn('flex min-h-screen flex-col', isDark ? 'bg-slate-950' : 'bg-stone-50')}>
+            <main className="flex flex-1 items-center justify-center px-4 py-12">
+                <section aria-live="polite" className={cn('w-full max-w-[560px] overflow-hidden rounded-lg border', isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white')}>
+                    <div className={cn('h-2', view.band)} />
+                    <div className="flex flex-col gap-4 p-8">
+                        <span className={cn('flex items-center gap-2 font-mono text-xs', view.tagC)}>
+                            {status === 'success' && <HiCheckCircle className="h-4 w-4" />}
+                            {status === 'failed' && <HiXCircle className="h-4 w-4" />}
+                            {view.tag}
+                        </span>
+                        <h1 className={cn('text-4xl font-bold leading-[1.05] tracking-[-0.03em]', ink)}>{view.title}</h1>
+                        <p className={cn('text-[15px] leading-relaxed', muted)}>{view.body}</p>
+                        {status === 'loading' && (
+                            <span className={cn('block h-1.5 overflow-hidden rounded-full', isDark ? 'bg-slate-800' : 'bg-stone-100')}>
+                                <span className="block h-full w-1/2 animate-pulse bg-stone-950 dark:bg-white" />
+                            </span>
+                        )}
+                        {status === 'success' && transactionId && (
+                            <dl className={cn('grid grid-cols-[auto_1fr] gap-x-5 gap-y-2 rounded-md p-4 text-sm', isDark ? 'bg-slate-800' : 'bg-stone-50')}>
+                                <dt className={muted}>Mã giao dịch</dt>
+                                <dd className={cn('m-0 font-mono', ink)}>{transactionId}</dd>
+                            </dl>
+                        )}
+                        {status === 'success' && (
+                            <div className="flex flex-wrap gap-2.5">
+                                <Link to="/my-orders" className={primary}>Xem đơn hàng</Link>
+                                <Link to="/" className={secondary}>Tiếp tục mua sắm</Link>
                             </div>
-                        </div>
-                    )}
-
-                    {status === 'failed' && (
-                        <div className="flex flex-col items-center animate-in zoom-in duration-300">
-                            <HiXCircle className="w-20 h-20 text-red-500 mb-6" />
-                            <h2 className={cn("text-2xl font-bold text-red-500 mb-2")}>Thanh toán thất bại</h2>
-                            <p className={cn("text-sm mb-8", isDark ? "text-slate-400" : "text-stone-500")}>
-                                {message}
-                            </p>
-                            <div className="flex gap-3 w-full">
-                                <Link to="/cart" className={cn("flex-1 py-3 rounded-xl font-semibold transition text-center", isDark ? "bg-slate-800 text-white hover:bg-slate-700" : "bg-stone-100 text-stone-900 hover:bg-stone-200")}>
-                                    Về giỏ hàng
-                                </Link>
-                                <Link to="/checkout" className="flex-1 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-semibold transition text-center">
-                                    Thử lại
-                                </Link>
+                        )}
+                        {status === 'failed' && (
+                            <div className="flex flex-wrap gap-2.5">
+                                <Link to="/my-orders" className={primary}>Thanh toán lại từ đơn hàng</Link>
+                                <Link to="/cart" className={secondary}>Về giỏ hàng</Link>
                             </div>
-                        </div>
-                    )}
-                </div>
-            </div>
-
+                        )}
+                    </div>
+                </section>
+            </main>
             <Footer />
         </div>
     );

@@ -27,6 +27,7 @@ import com.marketplace.ecommerce.product.service.ProductImageService;
 import com.marketplace.ecommerce.product.service.impl.ProductServiceImpl;
 import com.marketplace.ecommerce.product.validate.ProductValidation;
 import com.marketplace.ecommerce.request.dto.request.CreateReportRequest;
+import com.marketplace.ecommerce.request.policy.ReportRateLimiter;
 import com.marketplace.ecommerce.request.policy.RequestPolicy;
 import com.marketplace.ecommerce.request.repository.ReportRepository;
 import com.marketplace.ecommerce.request.repository.RequestRepository;
@@ -144,6 +145,7 @@ class UserDisciplineEnforcementTest {
     private ReplyServiceImpl replyService;
     private ReviewValidation reviewValidationInstance;
     private ReportServiceImpl reportService;
+    private ReportRateLimiter reportRateLimiter;
 
     @BeforeEach
     void setUp() {
@@ -181,7 +183,8 @@ class UserDisciplineEnforcementTest {
                 notificationRepository,
                 userRepository,
                 chatService,
-                accountDisciplineService
+                accountDisciplineService,
+                reportRateLimiter
         );
     }
 

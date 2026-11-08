@@ -6,13 +6,14 @@ import {
   HiOutlineTag,
   HiOutlineExclamationCircle,
   HiOutlineExternalLink,
-  HiOutlineCheckCircle
+  HiOutlineCheckCircle,
 } from 'react-icons/hi'
 import { Link } from 'react-router-dom'
 import { useThemeStore } from '../store/useThemeStore'
 import { cn } from '../lib/cn'
 import policyService from '../services/policy'
-import { getPolicyMeta } from './policyMetaConstants'
+import { getCategoryIcon } from './policyMetaConstants'
+import PolicyMarkdownRenderer from './PolicyMarkdownRenderer'
 
 export default function TermsModal({ open, onClose, onAccept }) {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
@@ -52,14 +53,13 @@ export default function TermsModal({ open, onClose, onAccept }) {
     }
   }, [open])
 
-  // Dynamic Tabs generated 100% from backend policies
+  // Dynamic Tabs generated 100% from backend policies - zero hardcoded keys
   const tabs = useMemo(() => {
     return policies.map((p) => {
-      const meta = getPolicyMeta(p.policyKey)
       return {
         key: p.policyKey,
-        label: meta.label || p.title,
-        icon: meta.icon,
+        label: p.title || 'Chính Sách Nền Tảng',
+        icon: getCategoryIcon(p.category, p.policyKey),
         policy: p,
       }
     })
@@ -70,151 +70,6 @@ export default function TermsModal({ open, onClose, onAccept }) {
     if (!activeKey) return policies[0] || null
     return policies.find((p) => p.policyKey === activeKey) || policies[0] || null
   }, [policies, activeKey])
-
-  // Parse inline formatting: **bold**, `code`
-  const formatInlineText = (text) => {
-    if (!text) return null
-    const parts = text.split(/(\*\*.*?\*\*|`.*?`)/g)
-    return parts.map((part, idx) => {
-      if (part.startsWith('**') && part.endsWith('**')) {
-        return (
-          <strong key={idx} className="font-bold text-stone-900 dark:text-white">
-            {part.slice(2, -2)}
-          </strong>
-        )
-      }
-      if (part.startsWith('`') && part.endsWith('`')) {
-        return (
-          <code
-            key={idx}
-            className="rounded bg-stone-100 dark:bg-slate-800 px-1.5 py-0.5 font-mono text-[11px] font-semibold text-amber-700 dark:text-amber-300 border border-stone-200 dark:border-slate-700"
-          >
-            {part.slice(1, -1)}
-          </code>
-        )
-      }
-      return part
-    })
-  }
-
-  // Markdown renderer with high Light/Dark theme contrast
-  const renderContent = (content) => {
-    if (!content) return null
-
-    const lines = content.split('\n')
-    const elements = []
-    let inCodeBlock = false
-    let codeBuffer = []
-
-    lines.forEach((line, idx) => {
-      const trimmed = line.trim()
-
-      if (trimmed.startsWith('```')) {
-        if (inCodeBlock) {
-          elements.push(
-            <pre
-              key={`code-${idx}`}
-              className="my-3 p-3.5 rounded-xl border border-stone-200 dark:border-slate-800 bg-stone-100/90 dark:bg-slate-950 font-mono text-[11px] text-stone-800 dark:text-slate-200 overflow-x-auto whitespace-pre leading-relaxed"
-            >
-              <code>{codeBuffer.join('\n')}</code>
-            </pre>
-          )
-          codeBuffer = []
-          inCodeBlock = false
-        } else {
-          inCodeBlock = true
-        }
-        return
-      }
-
-      if (inCodeBlock) {
-        codeBuffer.push(line)
-        return
-      }
-
-      if (!trimmed) {
-        elements.push(<div key={`gap-${idx}`} className="h-2" />)
-        return
-      }
-
-      if (trimmed.startsWith('# ')) {
-        elements.push(
-          <h3 key={`h1-${idx}`} className="mt-4 mb-2 text-base font-extrabold text-amber-700 dark:text-amber-400">
-            {trimmed.replace('# ', '')}
-          </h3>
-        )
-        return
-      }
-
-      if (trimmed.startsWith('## ')) {
-        elements.push(
-          <h4 key={`h2-${idx}`} className="mt-3.5 mb-1.5 text-sm font-bold text-stone-900 dark:text-white flex items-center gap-1.5">
-            <span className="h-1.5 w-1.5 rounded-full bg-amber-500 inline-block" />
-            {trimmed.replace('## ', '')}
-          </h4>
-        )
-        return
-      }
-
-      if (trimmed.startsWith('### ')) {
-        elements.push(
-          <h5 key={`h3-${idx}`} className="mt-3 mb-1 text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wide">
-            {trimmed.replace('### ', '')}
-          </h5>
-        )
-        return
-      }
-
-      if (trimmed.startsWith('> ')) {
-        elements.push(
-          <blockquote
-            key={`quote-${idx}`}
-            className="my-2.5 border-l-4 border-amber-500 bg-amber-50 dark:bg-amber-500/10 px-3.5 py-2 rounded-r-xl text-xs font-medium text-amber-950 dark:text-amber-200"
-          >
-            {formatInlineText(trimmed.replace('> ', ''))}
-          </blockquote>
-        )
-        return
-      }
-
-      if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
-        elements.push(
-          <li key={`li-${idx}`} className="ml-4 list-disc text-xs leading-relaxed text-stone-800 dark:text-slate-200 my-0.5">
-            {formatInlineText(trimmed.slice(2))}
-          </li>
-        )
-        return
-      }
-
-      if (/^\d+\.\s/.test(trimmed)) {
-        elements.push(
-          <li key={`num-${idx}`} className="ml-4 list-decimal text-xs leading-relaxed text-stone-800 dark:text-slate-200 my-0.5">
-            {formatInlineText(trimmed.replace(/^\d+\.\s/, ''))}
-          </li>
-        )
-        return
-      }
-
-      elements.push(
-        <p key={`p-${idx}`} className="my-1.5 text-xs text-stone-800 dark:text-slate-200 leading-relaxed">
-          {formatInlineText(trimmed)}
-        </p>
-      )
-    })
-
-    if (inCodeBlock && codeBuffer.length > 0) {
-      elements.push(
-        <pre
-          key="code-final"
-          className="my-3 p-3.5 rounded-xl border border-stone-200 dark:border-slate-800 bg-stone-100/90 dark:bg-slate-950 font-mono text-[11px] text-stone-800 dark:text-slate-200 overflow-x-auto whitespace-pre leading-relaxed"
-        >
-          <code>{codeBuffer.join('\n')}</code>
-        </pre>
-      )
-    }
-
-    return elements
-  }
 
   return (
     <Modal
@@ -239,15 +94,16 @@ export default function TermsModal({ open, onClose, onAccept }) {
                     key={tab.key}
                     type="button"
                     onClick={() => setActiveKey(tab.key)}
+                    title={tab.label}
                     className={cn(
-                      'flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all select-none shrink-0',
+                      'flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all select-none shrink-0 max-w-[260px]',
                       isActive
                         ? 'bg-amber-500 text-white shadow-sm shadow-amber-500/25 font-bold'
                         : 'text-stone-700 dark:text-slate-300 hover:text-stone-950 dark:hover:text-white hover:bg-stone-200/70 dark:hover:bg-slate-800'
                     )}
                   >
                     <Icon className={cn('h-4 w-4 shrink-0', isActive ? 'text-white' : 'text-stone-500 dark:text-slate-400')} />
-                    {tab.label}
+                    <span className="truncate">{tab.label}</span>
                   </button>
                 )
               })}
@@ -256,7 +112,7 @@ export default function TermsModal({ open, onClose, onAccept }) {
         )}
 
         {/* Tab Content Body (Scrollable, High Contrast in Both Modes) */}
-        <div className="flex-1 overflow-y-auto px-6 py-5 text-sm text-stone-800 dark:text-slate-200 space-y-4">
+        <div className="flex-1 overflow-y-auto px-5 sm:px-6 py-5 text-sm text-stone-800 dark:text-slate-200 space-y-4">
           {loading ? (
             <div className="py-24 flex flex-col items-center justify-center gap-3 text-stone-500 dark:text-slate-400">
               <div className="h-8 w-8 animate-spin rounded-full border-3 border-amber-500 border-t-transparent" />
@@ -295,7 +151,7 @@ export default function TermsModal({ open, onClose, onAccept }) {
                   </span>
                   {currentPolicy.effectiveDate && (
                     <span className="flex items-center gap-1 text-stone-500 dark:text-slate-400">
-                      <HiOutlineCalendar className="h-3 w-3" />
+                      <HiOutlineCalendar className="h-3.5 w-3.5" />
                       {new Date(currentPolicy.effectiveDate).toLocaleDateString('vi-VN')}
                     </span>
                   )}
@@ -312,9 +168,9 @@ export default function TermsModal({ open, onClose, onAccept }) {
                 </div>
               )}
 
-              {/* Content Body */}
+              {/* Content Body with Markdown and Table support */}
               <div className="text-xs leading-relaxed space-y-1">
-                {renderContent(currentPolicy.content)}
+                <PolicyMarkdownRenderer content={currentPolicy.content} isDark={isDark} />
               </div>
             </div>
           ) : (

@@ -122,11 +122,11 @@ class RequestPolicyTest {
                 .build();
 
         // Đơn hàng không tồn tại
-        when(orderRepository.findById(orderId)).thenReturn(Optional.empty());
+        when(orderRepository.findByIdForUpdate(orderId)).thenReturn(Optional.empty());
         assertThrows(CustomException.class, () -> requestPolicy.validateOrderReport(buyerAccId, orderId));
 
         // Không phải chủ đơn hàng
-        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+        when(orderRepository.findByIdForUpdate(orderId)).thenReturn(Optional.of(order));
         assertThrows(CustomException.class, () -> requestPolicy.validateOrderReport(UUID.randomUUID(), orderId));
 
         // Đơn hàng bị CANCELLED hoặc REFUNDED
@@ -144,13 +144,14 @@ class RequestPolicyTest {
         order.setDeliveredAt(LocalDateTime.now().minusDays(8));
         assertThrows(CustomException.class, () -> requestPolicy.validateOrderReport(buyerAccId, orderId));
 
-        // Đang có khiếu nại pending
+        // Đã có khiếu nại trước đó
         order.setDeliveredAt(LocalDateTime.now().minusDays(1));
-        when(reportRepository.existsPendingReportByOrderId(orderId)).thenReturn(true);
-        assertThrows(CustomException.class, () -> requestPolicy.validateOrderReport(buyerAccId, orderId));
+        when(reportRepository.existsByOrderId(orderId)).thenReturn(true);
+        CustomException ex = assertThrows(CustomException.class, () -> requestPolicy.validateOrderReport(buyerAccId, orderId));
+        assertEquals("Đơn hàng này đã được gửi khiếu nại trước đó và không thể gửi lại.", ex.getMessage());
 
         // Hợp lệ
-        when(reportRepository.existsPendingReportByOrderId(orderId)).thenReturn(false);
+        when(reportRepository.existsByOrderId(orderId)).thenReturn(false);
         assertDoesNotThrow(() -> requestPolicy.validateOrderReport(buyerAccId, orderId));
     }
 
@@ -185,7 +186,7 @@ class RequestPolicyTest {
     @Test
     @DisplayName("validateOrderReport: Ném ngoại lệ khi đơn hàng không tồn tại")
     void validateOrderReport_ThrowsException_WhenOrderNotFound() {
-        when(orderRepository.findById(orderId)).thenReturn(Optional.empty());
+        when(orderRepository.findByIdForUpdate(orderId)).thenReturn(Optional.empty());
 
         CustomException ex = assertThrows(CustomException.class, () ->
                 requestPolicy.validateOrderReport(accountId, orderId));
@@ -199,7 +200,7 @@ class RequestPolicyTest {
         User user = User.builder().account(otherAccount).build();
         Order order = Order.builder().id(orderId).user(user).status(OrderStatus.DELIVERED).build();
 
-        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+        when(orderRepository.findByIdForUpdate(orderId)).thenReturn(Optional.of(order));
 
         CustomException ex = assertThrows(CustomException.class, () ->
                 requestPolicy.validateOrderReport(accountId, orderId));
@@ -213,7 +214,7 @@ class RequestPolicyTest {
         User user = User.builder().account(account).build();
         Order order = Order.builder().id(orderId).user(user).status(OrderStatus.SHIPPED).build();
 
-        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+        when(orderRepository.findByIdForUpdate(orderId)).thenReturn(Optional.of(order));
 
         CustomException ex = assertThrows(CustomException.class, () ->
                 requestPolicy.validateOrderReport(accountId, orderId));
@@ -221,7 +222,7 @@ class RequestPolicyTest {
     }
 
     @Test
-    @DisplayName("validateOrderReport: Thành công khi đơn hàng DELIVERED trong vòng 3 ngày và không có báo cáo pending")
+    @DisplayName("validateOrderReport: Thành công khi đơn hàng DELIVERED trong vòng 3 ngày và chưa từng có khiếu nại")
     void validateOrderReport_Success_WhenOrderDeliveredWithin3Days() {
         Account account = Account.builder().id(accountId).build();
         User user = User.builder().account(account).build();
@@ -232,10 +233,30 @@ class RequestPolicyTest {
                 .deliveredAt(LocalDateTime.now().minusDays(1))
                 .build();
 
-        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
-        when(reportRepository.existsPendingReportByOrderId(orderId)).thenReturn(false);
+        when(orderRepository.findByIdForUpdate(orderId)).thenReturn(Optional.of(order));
+        when(reportRepository.existsByOrderId(orderId)).thenReturn(false);
 
         assertDoesNotThrow(() -> requestPolicy.validateOrderReport(accountId, orderId));
+    }
+
+    @Test
+    @DisplayName("validateOrderReport: Ném ngoại lệ khi đơn hàng đã từng được khiếu nại trước đó")
+    void validateOrderReport_ThrowsException_WhenOrderAlreadyReported() {
+        Account account = Account.builder().id(accountId).build();
+        User user = User.builder().account(account).build();
+        Order order = Order.builder()
+                .id(orderId)
+                .user(user)
+                .status(OrderStatus.DELIVERED)
+                .deliveredAt(LocalDateTime.now().minusDays(1))
+                .build();
+
+        when(orderRepository.findByIdForUpdate(orderId)).thenReturn(Optional.of(order));
+        when(reportRepository.existsByOrderId(orderId)).thenReturn(true);
+
+        CustomException ex = assertThrows(CustomException.class, () ->
+                requestPolicy.validateOrderReport(accountId, orderId));
+        assertEquals("Đơn hàng này đã được gửi khiếu nại trước đó và không thể gửi lại.", ex.getMessage());
     }
 
     @Test
@@ -306,5 +327,36 @@ class RequestPolicyTest {
         assertNotNull(ctx);
         assertEquals("Official Tech Store", ctx.shopName());
         assertEquals(user, ctx.ownerUser());
+    }
+
+    @Test
+    @DisplayName("validateMarketplaceReport - Ném lỗi khi tài khoản đã có Report đang PENDING cho cùng đối tượng")
+    void testValidateMarketplaceReport_WhenActiveReportExists_ShouldThrowException() {
+        UUID reporterId = UUID.randomUUID();
+        UUID targetId = UUID.randomUUID();
+        TargetType targetType = TargetType.PRODUCT;
+
+        when(reportRepository.existsActiveReportByReporterAndTarget(reporterId, targetType, targetId))
+                .thenReturn(true);
+
+        CustomException ex = assertThrows(CustomException.class,
+                () -> requestPolicy.validateMarketplaceReport(reporterId, targetType, targetId));
+
+        assertTrue(ex.getMessage().contains("đang chờ xử lý"));
+        verify(reportRepository).existsActiveReportByReporterAndTarget(reporterId, targetType, targetId);
+    }
+
+    @Test
+    @DisplayName("validateMarketplaceReport - Cho phép khi không có Report nào đang PENDING")
+    void testValidateMarketplaceReport_WhenNoActiveReport_ShouldPass() {
+        UUID reporterId = UUID.randomUUID();
+        UUID targetId = UUID.randomUUID();
+        TargetType targetType = TargetType.PRODUCT;
+
+        when(reportRepository.existsActiveReportByReporterAndTarget(reporterId, targetType, targetId))
+                .thenReturn(false);
+
+        assertDoesNotThrow(() -> requestPolicy.validateMarketplaceReport(reporterId, targetType, targetId));
+        verify(reportRepository).existsActiveReportByReporterAndTarget(reporterId, targetType, targetId);
     }
 }

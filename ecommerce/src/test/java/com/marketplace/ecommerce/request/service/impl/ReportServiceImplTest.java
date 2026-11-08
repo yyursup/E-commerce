@@ -344,7 +344,7 @@ class ReportServiceImplTest {
         reportService.handleReport(adminAccountId, requestId, approveReq);
         assertEquals(ReturnStatus.CANCELLED, orderReturn.getStatus());
         assertEquals(OrderStatus.COMPLETED, order.getStatus());
-        assertEquals(4, shopOwner.getViolationCount());
+        assertEquals(3, shopOwner.getViolationCount());
         assertEquals(3, shop.getViolationCount());
         assertEquals(ShopStatus.WARNED, shop.getStatus());
         verify(escrowService).releaseByOrder(orderId);

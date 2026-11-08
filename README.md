@@ -1,7 +1,7 @@
 # NỀN TẢNG THƯƠNG MẠI ĐIỆN TỬ ĐỒ CÔNG NGHỆ (FULLSTACK)
 ## Smart Multi-Vendor Tech Marketplace — Group G87 (SEP490)
 
-> Hệ thống Thương mại Điện tử Đa phân hệ chuyên sâu cho thiết bị công nghệ và linh kiện điện tử, tích hợp ký quỹ tự động (**Escrow Protection**), xác thực danh tính sinh trắc học (**VNPT eKYC**), phát trực tiếp bán hàng (**LiveKit WebRTC**), đề xuất thông minh (**Hybrid AI Recommendations**) và phân định khiếu nại hoàn trả minh bạch.
+> Hệ thống Thương mại Điện tử Đa phân hệ chuyên sâu cho thiết bị công nghệ và linh kiện điện tử, tích hợp ký quỹ tự động (**Escrow Protection**), xác thực danh tính sinh trắc học (**VNPT eKYC**), đề xuất thông minh (**Hybrid AI Recommendations**) và phân định khiếu nại hoàn trả minh bạch.
 
 ---
 
@@ -13,7 +13,7 @@ Hệ thống được thiết kế theo mô hình phân tách hoàn toàn giữa
 |:---|:---|:---|:---:|:---|
 | **Backend Core API** | `ecommerce/` | Java 21, Spring Boot 3, PostgreSQL, Redis, MinIO, STOMP | **8080** | Cung cấp RESTful APIs, WebSocket server, xử lý nghiệp vụ Escrow, tính hoa hồng, Cron jobs |
 | **Buyer Portal** | `ecommerce-fe/` | React 19, Vite, Tailwind CSS v4, Zustand, Axios Mutex | **3000** | Trải nghiệm mua sắm, tìm kiếm AI, giỏ hàng, thanh toán VNPay, theo dõi đơn GHN, khiếu nại trả hàng |
-| **Seller Portal** | `ecommerce-seller-fe/` | React 19, Vite, Tailwind CSS v4, LiveKit Client | **3001** | Onboarding sinh trắc học eKYC, quản lý kho đồ công nghệ, xử lý đơn hàng GHN, thẩm định hàng hoàn 72h |
+| **Seller Portal** | `ecommerce-seller-fe/` | React 19, Vite, Tailwind CSS v4 | **3001** | Onboarding sinh trắc học eKYC, quản lý kho đồ công nghệ, xử lý đơn hàng GHN, thẩm định hàng hoàn 72h |
 | **Admin Portal** | `ecommerce-admin-fe/` | React 19, Vite, Tailwind CSS v4, Headless UI | **3002** | Phân xử tranh chấp bồi hoàn, phê duyệt shop, điều chỉnh biểu phí hoa hồng sàn, giám sát ví sàn |
 
 ```mermaid
@@ -35,7 +35,6 @@ graph TD
         ORDER_SVC["Order & GHN Logistics Service"]
         RETURN_SVC["72h Return & Dispute Service"]
         RECOMMEND_SVC["AI Hybrid Recommendation"]
-        LIVEKIT_SVC["LiveKit WebRTC Live Streaming"]
         COMMISSION_SVC["Dynamic Commission & Seniority"]
     end
 
@@ -106,10 +105,6 @@ graph TD
 2. **Tầng 2 (Collaborative Filtering):** Dựa trên ma trận lịch sử click xem (`product_views`), thêm vào giỏ và lịch sử mua sắm tương quan giữa các người dùng.
 3. **Tầng 3 (Business Re-ranking):** Tái xếp hạng ưu tiên các sản phẩm có điểm uy tín Shop cao, số lượng hoàn trả thấp và còn sẵn hàng trong kho.
 
-### 6. Phòng Phát Trực Tiếp Đồ Công Nghệ (LiveKit WebRTC Streaming)
-- Tích hợp chuẩn WebRTC độ trễ siêu thấp (< 500ms) thông qua máy chủ LiveKit.
-- Cho phép Người bán mở phòng live, vừa thuyết trình vừa pin trực tiếp thông số và link mua nhanh sản phẩm lên góc màn hình người xem.
-
 ---
 
 ## ⚙️ CẤU HÌNH BIẾN MÔI TRƯỜNG TOÀN DIỆN (.ENV)
@@ -163,11 +158,6 @@ VNPT_EKYC_ACCESS_TOKEN=your_vnpt_access_token
 VNPT_EKYC_TOKEN_ID=your_vnpt_token_id
 VNPT_EKYC_TOKEN_KEY=your_vnpt_token_key
 
-# LiveKit WebRTC
-LIVEKIT_URL=ws://localhost:7880
-LIVEKIT_API_KEY=devkey
-LIVEKIT_API_SECRET=secret
-
 # Google Gemini AI
 GEMINI_API_KEY=your_gemini_api_key_here
 GEMINI_VERSION=v1beta
@@ -189,7 +179,6 @@ APPEAL_WINDOW_HOURS=72
 ```env
 VITE_API_URL=http://localhost:8080
 VITE_API_BASE_URL=http://localhost:8080
-VITE_LIVEKIT_WS_URL=ws://localhost:7880
 ```
 
 ### 3. Cấu hình Frontend Người bán (`E-commerce/ecommerce-seller-fe/.env`)
@@ -197,7 +186,6 @@ VITE_LIVEKIT_WS_URL=ws://localhost:7880
 ```env
 VITE_API_URL=http://localhost:8080
 VITE_API_BASE_URL=http://localhost:8080
-VITE_LIVEKIT_WS_URL=ws://localhost:7880
 ```
 
 ### 4. Cấu hình Frontend Quản trị (`E-commerce/ecommerce-admin-fe/.env`)

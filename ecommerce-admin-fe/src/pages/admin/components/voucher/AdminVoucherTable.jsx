@@ -1,8 +1,23 @@
 import { useRef, useEffect } from 'react'
-import { HiOutlineTicket, HiOutlinePlus } from 'react-icons/hi'
+import { HiOutlineTicket, HiOutlinePlus, HiOutlinePencilAlt, HiOutlineTrash, HiOutlineEye } from 'react-icons/hi'
 import { cn } from '../../../../lib/cn'
+import {
+  getVoucherDisplayStatus,
+  getVoucherBadgeConfig,
+  canEditVoucher,
+  canDeleteVoucher,
+  isVoucherStarted,
+} from '../../../../lib/voucherStatus'
 
-export default function AdminVoucherTable({ vouchers, loading, isDark, onOpenCreateModal }) {
+export default function AdminVoucherTable({
+  vouchers,
+  loading,
+  isDark,
+  onOpenCreateModal,
+  onEditVoucher,
+  onDeleteVoucher,
+  onSelectVoucher,
+}) {
   const tableContainerRef = useRef(null)
 
   useEffect(() => {
@@ -67,7 +82,7 @@ export default function AdminVoucherTable({ vouchers, loading, isDark, onOpenCre
           isDark ? 'custom-scrollbar-dark' : 'custom-scrollbar-light'
         )}
       >
-        <table className="w-full text-left text-xs min-w-[950px] border-collapse">
+        <table className="w-full text-left text-xs min-w-[1100px] border-collapse">
           <thead className={cn('border-b text-[11px] font-bold uppercase tracking-wider', isDark ? 'border-slate-800 bg-slate-800/60 text-slate-400' : 'border-stone-200 bg-stone-50 text-stone-600')}>
             <tr>
               <th className="p-4 min-w-[280px]">Mã Voucher Sàn & Chiến Dịch</th>
@@ -77,15 +92,24 @@ export default function AdminVoucherTable({ vouchers, loading, isDark, onOpenCre
               <th className="p-4 whitespace-nowrap">Lượt Dùng / Giới Hạn</th>
               <th className="p-4 whitespace-nowrap">Thời Gian Hiệu Lực</th>
               <th className="p-4 whitespace-nowrap text-center">Trạng Thái</th>
+              <th className="p-4 whitespace-nowrap text-center">Thao Tác</th>
             </tr>
           </thead>
           <tbody className={cn('divide-y', isDark ? 'divide-slate-800' : 'divide-stone-100')}>
             {vouchers.map((v) => {
-              const isExpired = v.endDate && new Date(v.endDate) < new Date()
-              const statusLabel = isExpired ? 'Hết hạn' : v.status === 'ACTIVE' ? 'Đang chạy' : 'Tạm dừng'
+              const displayStatus = getVoucherDisplayStatus(v)
+              const badgeConfig = getVoucherBadgeConfig(displayStatus.key, isDark)
+              const canEdit = canEditVoucher(v)
+              const canDelete = canDeleteVoucher(v)
+              const isStarted = isVoucherStarted(v)
 
               return (
-                <tr key={v.id || v.code} className={cn('transition-colors', isDark ? 'hover:bg-slate-800/60' : 'hover:bg-stone-50/50')}>
+                <tr
+                  key={v.id || v.code}
+                  onClick={() => onSelectVoucher?.(v)}
+                  className={cn('transition-colors cursor-pointer', isDark ? 'hover:bg-slate-800/60' : 'hover:bg-stone-50/50')}
+                  title="Nhấp để xem chi tiết voucher sàn"
+                >
                   <td className="p-4">
                     <div className="flex items-center gap-3">
                       <span className="font-mono text-xs font-bold text-blue-500 uppercase px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 shrink-0">
@@ -108,15 +132,15 @@ export default function AdminVoucherTable({ vouchers, loading, isDark, onOpenCre
                         v.voucherType === 'FREE_SHIPPING'
                           ? 'bg-blue-500/10 text-blue-500 border border-blue-500/20'
                           : v.voucherType === 'PERCENTAGE'
-                          ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20'
-                          : 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
+                            ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20'
+                            : 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
                       )}
                     >
                       {v.voucherType === 'FREE_SHIPPING'
                         ? 'Trợ Phí Ship GHN'
                         : v.voucherType === 'PERCENTAGE'
-                        ? 'Giảm Theo %'
-                        : 'Giảm Tiền Mặt'}
+                          ? 'Giảm Theo %'
+                          : 'Giảm Tiền Mặt'}
                     </span>
                   </td>
                   <td className="p-4 whitespace-nowrap">
@@ -124,8 +148,8 @@ export default function AdminVoucherTable({ vouchers, loading, isDark, onOpenCre
                       {v.voucherType === 'PERCENTAGE'
                         ? `Giảm ${v.discountValue}% (Tối đa ${v.maxDiscountAmount ? Number(v.maxDiscountAmount).toLocaleString('vi-VN') + 'đ' : '∞'})`
                         : v.voucherType === 'FREE_SHIPPING'
-                        ? `Tối đa ${Number(v.discountValue || 50000).toLocaleString('vi-VN')}₫`
-                        : `Giảm ${Number(v.discountValue).toLocaleString('vi-VN')}₫`}
+                          ? `Tối đa ${Number(v.discountValue || 50000).toLocaleString('vi-VN')}₫`
+                          : `Giảm ${Number(v.discountValue).toLocaleString('vi-VN')}₫`}
                     </span>
                   </td>
                   <td className={cn('p-4 whitespace-nowrap font-semibold', isDark ? 'text-slate-200' : 'text-stone-800')}>
@@ -145,14 +169,96 @@ export default function AdminVoucherTable({ vouchers, loading, isDark, onOpenCre
                     <span
                       className={cn(
                         'rounded-full px-2.5 py-1 text-[11px] font-bold inline-flex items-center gap-1.5',
-                        statusLabel === 'Đang chạy'
-                          ? (isDark ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20' : 'bg-emerald-50 text-emerald-700 border border-emerald-200')
-                          : (isDark ? 'bg-slate-800 text-slate-400 border border-slate-700' : 'bg-stone-100 text-stone-600 border border-stone-200')
+                        badgeConfig.badgeClass
                       )}
                     >
-                      <span className={cn('h-1.5 w-1.5 rounded-full', statusLabel === 'Đang chạy' ? 'bg-emerald-500 animate-pulse' : 'bg-stone-400')} />
-                      {statusLabel}
+                      <span className={cn('h-1.5 w-1.5 rounded-full', badgeConfig.dotClass)} />
+                      {displayStatus.label}
                     </span>
+                  </td>
+                  <td className="p-4 whitespace-nowrap text-center">
+                    <div className="flex items-center justify-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onSelectVoucher?.(v)
+                        }}
+                        className={cn(
+                          'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all active:scale-95',
+                          isDark
+                            ? 'border-blue-500/30 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20'
+                            : 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100'
+                        )}
+                        title="Xem chi tiết voucher sàn"
+                      >
+                        <HiOutlineEye className="h-4 w-4" />
+                        <span>Chi tiết</span>
+                      </button>
+
+                      {canEdit && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onEditVoucher?.(v)
+                          }}
+                          className={cn(
+                            'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all active:scale-95',
+                            isDark
+                              ? 'border-amber-500/30 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20'
+                              : 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100'
+                          )}
+                          title="Chỉnh sửa voucher sàn"
+                        >
+                          <HiOutlinePencilAlt className="h-4 w-4" />
+                          <span>Sửa</span>
+                        </button>
+                      )}
+
+                      {canDelete && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onDeleteVoucher?.(v)
+                          }}
+                          className={cn(
+                            'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all active:scale-95',
+                            isStarted
+                              ? isDark
+                                ? 'border-amber-500/30 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20'
+                                : 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100'
+                              : isDark
+                                ? 'border-rose-500/30 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20'
+                                : 'border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100'
+                          )}
+                          title={isStarted ? 'Kết thúc sớm voucher toàn sàn' : 'Xóa voucher toàn sàn'}
+                        >
+                          <HiOutlineTrash className="h-4 w-4" />
+                          <span>{isStarted ? 'Dừng' : 'Xóa'}</span>
+                        </button>
+                      )}
+
+                      {!canEdit && !canDelete && (
+                        <span
+                          className={cn(
+                            'text-[11px] font-medium italic select-none px-1',
+                            isDark ? 'text-slate-600' : 'text-stone-400'
+                          )}
+                          title={
+                            v.status === 'DELETED'
+                              ? 'Voucher đã bị xóa'
+                              : v.status === 'EXPIRED'
+                                ? 'Voucher đã hết hạn'
+                                : v.status === 'EXHAUSTED'
+                                  ? 'Voucher đã hết lượt sử dụng'
+                                  : 'Voucher không khả dụng để thao tác'
+                          }
+                        >
+                        </span>
+                      )}
+                    </div>
                   </td>
                 </tr>
               )

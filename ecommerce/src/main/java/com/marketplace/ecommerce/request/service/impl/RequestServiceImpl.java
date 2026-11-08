@@ -37,7 +37,6 @@ import com.marketplace.ecommerce.shop.service.ShopEscrowFundService;
 import com.marketplace.ecommerce.auth.entity.User;
 import com.marketplace.ecommerce.auth.repository.UserRepository;
 import com.marketplace.ecommerce.product.entity.ProductImage;
-import com.marketplace.ecommerce.review.entity.ReviewImage;
 import com.marketplace.ecommerce.file.service.FileService;
 import org.springframework.web.multipart.MultipartFile;
 import lombok.RequiredArgsConstructor;
@@ -362,9 +361,8 @@ public class RequestServiceImpl implements RequestService {
                                         + " | Nội dung: " + (rv.getComment() != null ? rv.getComment() : "");
 
                                 if (coverImageUrl == null || coverImageUrl.isBlank()) {
-                                    if (rv.getImages() != null && !rv.getImages().isEmpty()) {
-                                        coverImageUrl = rv.getImages().stream()
-                                                .map(ReviewImage::getImageUrl)
+                                    if (rv.getImageUrls() != null && !rv.getImageUrls().isEmpty()) {
+                                        coverImageUrl = rv.getImageUrls().stream()
                                                 .filter(url -> url != null && !url.isBlank())
                                                 .collect(Collectors.joining(","));
                                     } else if (rv.getProduct() != null && rv.getProduct().getImages() != null && !rv.getProduct().getImages().isEmpty()) {

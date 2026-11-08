@@ -307,28 +307,46 @@ export default function OrderDisputeBanner({ order, returnInfo, report: reportPr
               isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white border-stone-200 text-stone-900'
             )}
           >
-            <h4 className="text-base font-bold text-stone-900 dark:text-white">
-              Xác Nhận Hủy Khiếu Nại Đơn Hàng?
-            </h4>
+            <div className="flex items-center gap-2.5 text-rose-600 dark:text-rose-400">
+              <HiOutlineExclamationCircle className="h-6 w-6 shrink-0" />
+              <h4 className="text-base font-bold text-stone-900 dark:text-white">
+                Xác Nhận Rút Khiếu Nại Đơn Hàng?
+              </h4>
+            </div>
+
             <p className="text-xs text-stone-600 dark:text-slate-300 leading-relaxed">
-              Bạn có chắc chắn muốn rút khiếu nại này? Tiền ký quỹ sẽ được phục hồi trạng thái tạm giữ bình thường và hệ thống sẽ giải ngân cho Shop nếu không còn sự cố nào khác. Thao tác này không thể hoàn tác.
+              Bạn có chắc chắn muốn rút khiếu nại đơn hàng này? Thao tác này có hiệu lực ngay lập tức và <strong>không thể hoàn tác</strong>.
             </p>
+
+            {/* Khối cảnh báo mất quyền vĩnh viễn */}
+            <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-3.5 text-xs text-rose-700 dark:text-rose-300 space-y-1.5">
+              <p className="font-bold flex items-center gap-1.5 text-rose-600 dark:text-rose-400">
+                <span>⚠️</span> Mất quyền khiếu nại vĩnh viễn
+              </p>
+              <p className="text-[11px] leading-relaxed opacity-90">
+                Mỗi đơn hàng chỉ được khiếu nại <strong>1 lần duy nhất</strong> trong toàn bộ vòng đời. Khi bạn xác nhận rút, bạn sẽ <strong>vĩnh viễn không thể gửi lại khiếu nại</strong> cho đơn hàng này dưới bất kỳ lý do nào.
+              </p>
+              <p className="text-[11px] leading-relaxed opacity-90 pt-0.5">
+                Tiền thanh toán đang tạm giữ sẽ được chuyển về trạng thái bình thường và tự động giải ngân cho Người bán.
+              </p>
+            </div>
+
             <div className="flex items-center justify-end gap-2 pt-2">
               <button
                 type="button"
                 onClick={() => setShowCancelModal(false)}
                 disabled={submitting}
-                className="rounded-xl px-4 py-2 text-xs font-bold border border-stone-200 dark:border-slate-700 hover:bg-stone-100 dark:hover:bg-slate-800"
+                className="rounded-xl px-4 py-2 text-xs font-bold border border-stone-200 dark:border-slate-700 hover:bg-stone-100 dark:hover:bg-slate-800 transition-colors"
               >
-                Đóng
+                Giữ khiếu nại
               </button>
               <button
                 type="button"
                 onClick={handleCancelReport}
                 disabled={submitting}
-                className="rounded-xl bg-amber-500 hover:bg-amber-600 px-4 py-2 text-xs font-bold text-white shadow-sm"
+                className="rounded-xl bg-rose-600 hover:bg-rose-700 px-4 py-2 text-xs font-bold text-white shadow-sm transition-colors"
               >
-                {submitting ? 'Đang hủy...' : 'Đồng ý rút khiếu nại'}
+                {submitting ? 'Đang hủy...' : 'Tôi hiểu, xác nhận rút'}
               </button>
             </div>
           </div>

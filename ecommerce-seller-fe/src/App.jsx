@@ -16,8 +16,6 @@ import ShopVouchers from './pages/business/ShopVouchers'
 import ShopLiveChat from './pages/business/ShopLiveChat'
 import ShopInventoryHistory from './pages/business/ShopInventoryHistory'
 import ShopSettings from './pages/ShopSettings'
-import LiveManagement from './pages/live/LiveManagement'
-import SellerLiveStudio from './pages/live/SellerLiveStudio'
 import ShopViolations from './pages/business/ShopViolations'
 import ShopEscrowFund from './pages/business/ShopEscrowFund'
 import SellerPolicy from './pages/business/SellerPolicy'
@@ -51,8 +49,6 @@ export default function App() {
         }
       >
         <Route path="/dashboard" element={<BusinessDashboard />} />
-        <Route path="/live" element={<LiveManagement />} />
-        <Route path="/live/studio/:id" element={<SellerLiveStudio />} />
         <Route path="/orders" element={<ShopOrders />} />
         <Route path="/orders/:orderId" element={<ShopOrderDetail />} />
         <Route path="/products" element={<ShopProducts />} />

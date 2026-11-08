@@ -77,10 +77,4 @@ public class AuthenticationController {
         LoginResponse response = authenticationService.oauth2LoginGoogle(request);
         return ResponseEntity.ok(response);
     }
-
-    @PostMapping("/oauth2/facebook")
-    public ResponseEntity<LoginResponse> oauth2LoginFacebook(@RequestBody @Valid com.marketplace.ecommerce.auth.dto.request.OAuth2Request request) {
-        LoginResponse response = authenticationService.oauth2LoginFacebook(request);
-        return ResponseEntity.ok(response);
-    }
 }

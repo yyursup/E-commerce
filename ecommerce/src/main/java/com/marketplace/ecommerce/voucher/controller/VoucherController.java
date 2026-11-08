@@ -12,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -45,6 +46,7 @@ public class VoucherController {
     }
 
     @GetMapping("/my-vouchers")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<UserVoucherResponse>> getMyVouchers(
             @CurrentUser CurrentUserInfo c
     ) {
@@ -52,6 +54,7 @@ public class VoucherController {
     }
 
     @PostMapping("/{voucherId}/claim")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<UserVoucherResponse> claimVoucher(
             @CurrentUser CurrentUserInfo c,
             @PathVariable UUID voucherId
@@ -60,6 +63,7 @@ public class VoucherController {
     }
 
     @PostMapping("/calculate")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<VoucherCalculationResponse> calculateDiscount(
             @CurrentUser CurrentUserInfo c,
             @Valid @RequestBody ApplyVoucherRequest request
@@ -90,6 +94,7 @@ public class VoucherController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'BUSINESS')")
     public ResponseEntity<VoucherResponse> createVoucher(
             @CurrentUser CurrentUserInfo c,
             @Valid @RequestBody CreateVoucherRequest request
@@ -97,10 +102,38 @@ public class VoucherController {
         return ResponseEntity.ok(voucherService.createVoucher(c.getAccountId(), request));
     }
 
+    @PutMapping("/{voucherId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'BUSINESS')")
+    public ResponseEntity<VoucherResponse> updateVoucher(
+            @CurrentUser CurrentUserInfo c,
+            @PathVariable UUID voucherId,
+            @Valid @RequestBody UpdateVoucherRequest request
+    ) {
+        return ResponseEntity.ok(voucherService.updateVoucher(c.getAccountId(), voucherId, request));
+    }
+
+    @DeleteMapping("/{voucherId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'BUSINESS')")
+    public ResponseEntity<VoucherResponse> deleteVoucher(
+            @CurrentUser CurrentUserInfo c,
+            @PathVariable UUID voucherId
+    ) {
+        return ResponseEntity.ok(voucherService.deleteVoucher(c.getAccountId(), voucherId));
+    }
+
     @GetMapping("/shop-manage")
+    @PreAuthorize("hasRole('BUSINESS')")
     public ResponseEntity<List<VoucherResponse>> getShopManageVouchers(
             @CurrentUser CurrentUserInfo c
     ) {
         return ResponseEntity.ok(voucherService.getShopManageVouchers(c.getAccountId()));
+    }
+
+    @GetMapping("/platform-manage")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<VoucherResponse>> getPlatformManageVouchers(
+            @CurrentUser CurrentUserInfo c
+    ) {
+        return ResponseEntity.ok(voucherService.getPlatformManageVouchers(c.getAccountId()));
     }
 }

@@ -86,7 +86,7 @@ public class AiChatServiceImpl implements AiChatService {
             Dùng lookup_location (province -> district -> ward) để lấy đúng mã, nếu không chắc thì hỏi lại khách, rồi gọi create_address.
               4) Gọi prepare_checkout để tính phí ship và tổng tiền. Báo khách tạm tính, phí ship, giảm giá, tổng. \
             Nếu otherItemsInOrder không rỗng thì nói rõ các món đó (đang có sẵn trong giỏ cùng shop) cũng sẽ vào đơn.
-              5) Hỏi phương thức thanh toán (COD, WALLET là ví của sàn, VNPAY) và xin khách xác nhận đặt hàng.
+              5) Hỏi phương thức thanh toán (WALLET là ví của sàn, hoặc VNPAY; sàn không hỗ trợ COD) và xin khách xác nhận đặt hàng.
               6) CHỈ gọi place_order khi tin nhắn mới nhất của khách đồng ý rõ ràng sau khi đã thấy tổng tiền. \
             Với VNPAY, nói khách bấm nút "Thanh toán VNPay" hiện bên dưới tin nhắn.
             - Không đọc mã UUID cho khách. Các dòng [Dữ liệu hệ thống ...] trong lịch sử là id từ lượt trước để bạn dùng lại, không nhắc tới chúng.
@@ -292,7 +292,7 @@ public class AiChatServiceImpl implements AiChatService {
                     "Tạo đơn hàng thật cho toàn bộ món của shop trong giỏ. CHỈ gọi sau khi khách đã xem tổng tiền và đồng ý rõ ràng.",
                     props("shopId", prop("string", "UUID shop (lấy từ prepare_checkout)"),
                             "addressId", prop("string", "UUID địa chỉ giao hàng"),
-                            "paymentMethod", enumProp(PaymentMethod.class, "Phương thức thanh toán khách đã chọn"),
+                            "paymentMethod", Map.of("type", "string", "enum", List.of("VNPAY", "WALLET"), "description", "Phương thức thanh toán khách đã chọn"),
                             "notes", prop("string", "Ghi chú cho shop (tuỳ chọn)")),
                     List.of("shopId", "addressId", "paymentMethod")));
             tools.add(tool("get_my_orders", "Xem các đơn hàng của người dùng đang đăng nhập.",

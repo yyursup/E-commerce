@@ -40,7 +40,7 @@ export default function BuyerReputationCard({ user, isDark }) {
           ? 'border-emerald-500/20 bg-gradient-to-br from-emerald-950/20 via-slate-900 to-slate-900'
           : 'border-emerald-200/80 bg-gradient-to-br from-emerald-50/50 via-white to-white',
         statusDesc: 'Tài khoản tuyệt đối tuân thủ quy tắc ứng xử sàn SEB. Không có vi phạm nào được ghi nhận.',
-        benefits: 'Ưu tiên duyệt khiếu nại trong 24h, mở toàn quyền thanh toán COD & hoàn tiền tự động.',
+        benefits: 'Ưu tiên duyệt khiếu nại trong 24h, hoàn tiền tự động.',
       }
     }
     if (score >= 70) {
@@ -87,7 +87,7 @@ export default function BuyerReputationCard({ user, isDark }) {
         cardBg: isDark
           ? 'border-orange-500/20 bg-gradient-to-br from-orange-950/20 via-slate-900 to-slate-900'
           : 'border-orange-200/80 bg-gradient-to-br from-orange-50/50 via-white to-white',
-        statusDesc: `Tài khoản có ${strikes} gậy vi phạm. Bị tạm khóa phương thức thanh toán nhận hàng trả tiền (COD).`,
+        statusDesc: `Tài khoản có ${strikes} gậy vi phạm. Khiếu nại mới phải qua admin duyệt thủ công.`,
         benefits: 'Cần duy trì hành vi chuẩn mực để kích hoạt cơ chế xóa gậy 30 ngày.',
       }
     }
@@ -391,7 +391,7 @@ export default function BuyerReputationCard({ user, isDark }) {
                       <td className="py-1.5 pr-3 font-bold text-orange-500">15 - 25 điểm</td>
                       <td className="py-1.5 px-3 font-mono">5 - 6 gậy</td>
                       <td className="py-1.5 px-3 font-semibold text-orange-500">Rủi ro cao</td>
-                      <td className="py-1.5 pl-3">Khóa thanh toán COD, yêu cầu thanh toán trước.</td>
+                      <td className="py-1.5 pl-3">Hạn chế giao dịch, khiếu nại phải qua admin duyệt.</td>
                     </tr>
                     <tr>
                       <td className="py-1.5 pr-3 font-bold text-rose-500">0 điểm</td>

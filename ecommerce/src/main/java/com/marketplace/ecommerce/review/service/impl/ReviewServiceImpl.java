@@ -13,7 +13,6 @@ import com.marketplace.ecommerce.review.dto.request.CreateReviewRequest;
 import com.marketplace.ecommerce.review.dto.request.UpdateReviewRequest;
 import com.marketplace.ecommerce.review.dto.response.ReviewResponse;
 import com.marketplace.ecommerce.review.entity.Review;
-import com.marketplace.ecommerce.review.entity.ReviewImage;
 import com.marketplace.ecommerce.review.repository.ReviewRepository;
 import com.marketplace.ecommerce.review.service.ReviewService;
 import com.marketplace.ecommerce.review.validate.ReviewValidation;
@@ -172,23 +171,19 @@ public class ReviewServiceImpl implements ReviewService {
     private void processImages(Review review, List<MultipartFile> files) {
         if (files == null || files.isEmpty()) return;
 
-        List<ReviewImage> images = review.getImages();
-        if (images == null) images = new ArrayList<>();
+        List<String> imageUrls = review.getImageUrls();
+        if (imageUrls == null) imageUrls = new ArrayList<>();
 
         for (MultipartFile file : files) {
             if (!file.isEmpty()) {
                 try {
                     String url = fileService.getFileUrl(fileService.uploadFile(file, "reviews"));
-                    images.add(ReviewImage.builder()
-                            .review(review)
-                            .imageUrl(url)
-                            .displayOrder(images.size())
-                            .build());
+                    imageUrls.add(url);
                 } catch (Exception e) {
                     System.err.println("Upload failed: " + e.getMessage());
                 }
             }
         }
-        review.setImages(images);
+        review.setImageUrls(imageUrls);
     }
 }

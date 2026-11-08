@@ -165,13 +165,30 @@ public interface ReportRepository extends JpaRepository<Report, UUID> {
 
     @Query("""
         select case when count(r) > 0 then true else false end
-        from Report r join r.request req
+        from Report r
         where r.targetType = 'ORDER'
           and r.targetId = :orderId
-          and req.type = 'REPORT'
-          and req.status = 'PENDING'
     """)
-    boolean existsPendingReportByOrderId(@Param("orderId") UUID orderId);
+    boolean existsByOrderId(@Param("orderId") UUID orderId);
+
+    @Deprecated
+    default boolean existsPendingReportByOrderId(UUID orderId) {
+        return existsByOrderId(orderId);
+    }
+
+    @Query("""
+        SELECT CASE WHEN COUNT(r) > 0 THEN TRUE ELSE FALSE END
+        FROM Report r JOIN r.request req
+        WHERE req.account.id = :reporterAccountId
+          AND r.targetType = :targetType
+          AND r.targetId = :targetId
+          AND req.status = com.marketplace.ecommerce.request.valueObjects.RequestStatus.PENDING
+    """)
+    boolean existsActiveReportByReporterAndTarget(
+        @Param("reporterAccountId") UUID reporterAccountId,
+        @Param("targetType") TargetType targetType,
+        @Param("targetId") UUID targetId
+    );
 
     @Query("""
         select r from Report r

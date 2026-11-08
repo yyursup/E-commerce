@@ -28,7 +28,7 @@ public interface ReviewRepository extends JpaRepository<Review, UUID> {
             UUID userId, UUID productId, UUID subOrderId
     );
 
-    @EntityGraph(attributePaths = {"product", "product.images", "images", "reply"})
+    @EntityGraph(attributePaths = {"product", "product.images", "reply"})
     @Query("SELECT r FROM Review r WHERE r.user.id = :userId ORDER BY r.createdAt DESC")
     Page<Review> findByUserIdWithDetails(@Param("userId") UUID userId, Pageable pageable);
 
@@ -36,7 +36,7 @@ public interface ReviewRepository extends JpaRepository<Review, UUID> {
     @Query("select r from Review r where r.id = :id")
     Optional<Review> findByIdForUpdate(@Param("id") UUID id);
 
-    @EntityGraph(attributePaths = {"user", "images", "reply"})
+    @EntityGraph(attributePaths = {"user", "reply"})
     @Query("""
             SELECT r FROM Review r
             WHERE r.product.id = :productId
@@ -44,8 +44,8 @@ public interface ReviewRepository extends JpaRepository<Review, UUID> {
               AND (:rating IS NULL OR r.rating = :rating)
               AND (
                     :hasImages IS NULL
-                    OR (:hasImages = true  AND SIZE(r.images) > 0)
-                    OR (:hasImages = false AND SIZE(r.images) = 0)
+                    OR (:hasImages = true  AND function('jsonb_array_length', r.imageUrls) > 0)
+                    OR (:hasImages = false AND function('jsonb_array_length', r.imageUrls) = 0)
                   )
             """)
     Page<Review> findWithFilters(
@@ -62,10 +62,7 @@ public interface ReviewRepository extends JpaRepository<Review, UUID> {
                   avg(r.rating) as avgRating,
                   count(r) as totalReviews,
             
-                  sum(case when exists (
-                      select 1 from ReviewImage i
-                      where i.review = r
-                  ) then 1 else 0 end) as withImages,
+                  sum(case when function('jsonb_array_length', r.imageUrls) > 0 then 1 else 0 end) as withImages,
             
                   sum(case when r.comment is not null and r.comment <> '' then 1 else 0 end) as withComments,
             

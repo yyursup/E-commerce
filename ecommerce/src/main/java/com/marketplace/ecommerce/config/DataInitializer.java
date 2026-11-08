@@ -61,7 +61,6 @@ import com.marketplace.ecommerce.voucher.valueObjects.VoucherType;
 import com.marketplace.ecommerce.review.dto.projection.ShopReviewStatsProjection;
 import com.marketplace.ecommerce.review.entity.Reply;
 import com.marketplace.ecommerce.review.entity.Review;
-import com.marketplace.ecommerce.review.entity.ReviewImage;
 import com.marketplace.ecommerce.review.repository.ReplyRepository;
 import com.marketplace.ecommerce.review.repository.ReviewRepository;
 import com.marketplace.ecommerce.review.valueObjects.ReviewStatus;
@@ -1125,20 +1124,14 @@ public class DataInitializer implements CommandLineRunner {
                                                 .status(ReviewStatus.ACTIVE)
                                                 .rating(rating)
                                                 .comment(comment)
-                                                .images(new ArrayList<>())
+                                                .imageUrls(new ArrayList<>())
                                                 .build();
                                 review.setCreatedAt(reviewTime);
                                 review.setUpdatedAt(reviewTime);
 
                                 if (product.getImages() != null && !product.getImages().isEmpty() && random.nextBoolean()) {
                                         ProductImage firstImg = product.getImages().iterator().next();
-                                        ReviewImage rImg = ReviewImage.builder()
-                                                        .review(review)
-                                                        .imageUrl(firstImg.getImageUrl())
-                                                        .displayOrder(0)
-                                                        .build();
-                                        rImg.setCreatedAt(reviewTime);
-                                        review.getImages().add(rImg);
+                                        review.getImageUrls().add(firstImg.getImageUrl());
                                 }
 
                                 Review savedReview = reviewRepository.save(review);
@@ -2115,7 +2108,7 @@ public class DataInitializer implements CommandLineRunner {
                 initializeSingleTrustLevel(3, "Uy tín Tiêu chuẩn", new BigDecimal("5000000"), new BigDecimal("20000000"), new BigDecimal("0.50"),
                                 "Huy hiệu Bảo chứng 3 sao. Ưu tiên hiển thị kết quả tìm kiếm, hỗ trợ phân xử khiếu nại nhanh, giảm 0.5% hoa hồng sàn.");
                 initializeSingleTrustLevel(4, "Đối tác Vàng", new BigDecimal("20000000"), new BigDecimal("50000000"), new BigDecimal("1.00"),
-                                "Huy hiệu Đối tác Vàng 4 sao. Được gắn nhãn Gian hàng Đảm bảo, ưu tiên đẩy top tìm kiếm và livestream, giảm 1.0% hoa hồng sàn.");
+                                "Huy hiệu Đối tác Vàng 4 sao. Được gắn nhãn Gian hàng Đảm bảo, ưu tiên đẩy top tìm kiếm, giảm 1.0% hoa hồng sàn.");
                 initializeSingleTrustLevel(5, "Kim Cương / Cam Kết Tối Đa", new BigDecimal("50000000"), null, new BigDecimal("1.50"),
                                 "Huy hiệu Kim Cương 5 sao danh giá nhất. Cam kết bảo chứng tối đa, ưu tiên nổi bật trên banner sàn, đền bù tức thì nếu có lỗi, giảm 1.5% hoa hồng sàn.");
         }

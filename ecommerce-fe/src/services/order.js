@@ -35,7 +35,7 @@ const orderService = {
   },
 
   // Create Order
-  createOrder: async (shopId, addressId, notes, voucherParam = null, paymentMethod = 'COD') => {
+  createOrder: async (shopId, addressId, notes, voucherParam = null, paymentMethod = 'VNPAY') => {
     try {
       const payload = { shopId, addressId, notes, paymentMethod };
       if (typeof voucherParam === 'string') {

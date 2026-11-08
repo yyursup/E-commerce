@@ -17,7 +17,6 @@
   * Cổng thanh toán: **VNPay Sandbox** (HMAC-SHA512 verification)
   * Đơn vị giao vận: **Giao Hàng Nhanh (GHN Open API)**
   * Xác thực sinh trắc: **VNPT eKYC Gateway** (OCR & Face Liveness API)
-  * Livestreaming: **LiveKit Server SDK** (WebRTC SFU)
   * Trí tuệ nhân tạo: **Google Gemini v1beta** (Semantic embeddings & AI Chatbot)
 
 ---
@@ -46,7 +45,6 @@ src/main/java/com/marketplace/ecommerce/
 ├── shop/                 # Hồ sơ Shop, Quỹ ký quỹ cố định (ShopEscrowFund), Điểm uy tín
 ├── wallet/               # Quản lý Ví điện tử nội bộ, Lịch sử giao dịch & Đối soát
 ├── kyc/                  # Tích hợp VNPT eKYC (OCR mặt trước/sau, Face Liveness, Match)
-├── live/                 # Quản lý phòng LiveKit, Cấp phát Token WebRTC cho Viewer/Host
 ├── chat/                 # Chatbot AI (Gemini), Cây quyết định & Live STOMP WebSocket
 ├── shipping/             # Tích hợp GHN (Lấy tỉnh/huyện/xã, tính phí ship, webhook)
 └── config/               # SecurityConfig, WebSocketConfig, DataInitializer, MinioConfig
@@ -146,10 +144,6 @@ flowchart TD
 - `POST /api/v1/escrow/orders/{orderId}/release` — *(ADMIN)* Can thiệp giải phóng ký quỹ thủ công
 - `GET /api/v1/wallet/me` — Truy vấn số dư ví khả dụng và lịch sử biến động số dư
 - `GET /api/v1/wallet/admin` — *(ADMIN)* Tra cứu số dư ví của bất kỳ người dùng/shop nào
-
-### 6. Phân hệ Livestreaming WebRTC (`/api/v1/live`)
-- `POST /api/v1/live/rooms` — Tạo phòng phát trực tiếp mới
-- `GET /api/v1/live/rooms/{roomId}/token` — Cấp phát LiveKit JWT token cho người xem hoặc chủ phòng
 
 ---
 

@@ -15,7 +15,6 @@ import AddressFormModal from './AddressFormModal'
 const fmt = (v) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(v) || 0)
 
 const PAYMENT_METHODS = [
-  { value: 'COD', label: 'Thanh toán khi nhận hàng (COD)' },
   { value: 'WALLET', label: 'Ví số dư tài khoản' },
   { value: 'VNPAY', label: 'VNPay (ATM / QR)' },
 ]
@@ -35,7 +34,7 @@ export default function ChatQuickCheckout({ productId, isDark, onClose }) {
   const [addressId, setAddressId] = useState(null)
   const [showAddressForm, setShowAddressForm] = useState(false)
   const [otherShopItems, setOtherShopItems] = useState(0)
-  const [paymentMethod, setPaymentMethod] = useState('COD')
+  const [paymentMethod, setPaymentMethod] = useState('VNPAY')
   const [quote, setQuote] = useState(null) // có quote = đã thêm vào giỏ, đang ở bước xác nhận
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)

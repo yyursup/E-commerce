@@ -24,6 +24,8 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
 
     boolean existsBySkuAndDeletedFalse(String sku);
 
+    Optional<Product> findBySkuAndDeletedFalse(String sku);
+
     Optional<Product> findByIdAndDeletedFalse(UUID id);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)

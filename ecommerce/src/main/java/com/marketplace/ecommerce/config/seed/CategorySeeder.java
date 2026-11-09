@@ -59,6 +59,7 @@ public class CategorySeeder {
         ProductCategory accessories = initializeCategory(null, "Phụ Kiện Điện Tử & Gaming Gear", new BigDecimal("8.50"));
         categoryMap.put("accessories", accessories);
         categoryMap.put("chargingPacks", initializeCategory(accessories, "Củ Cáp Sạc & Sạc Dự Phòng"));
+        categoryMap.put("casesCovers", initializeCategory(accessories, "Ốp Lưng & Bao Da"));
         categoryMap.put("gearPeripherals", initializeCategory(accessories, "Bàn Phím Cơ & Chuột Gaming"));
         categoryMap.put("hubsCables", initializeCategory(accessories, "Cáp Chuyển Đổi & Hub Type-C"));
 

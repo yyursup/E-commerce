@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Thông Báo Rút Tiền - E-Commerce</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #f8fafc;
+      margin: 0;
+      padding: 20px 0;
+      color: #1e293b;
+    }
+    .email-container {
+      width: 100%;
+      background-color: #ffffff;
+      max-width: 600px;
+      margin: 0 auto;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      border: 1px solid #e2e8f0;
+    }
+    .header {
+      text-align: center;
+      padding: 28px 24px;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #ffffff;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+    .header p {
+      margin: 6px 0 0;
+      font-size: 13px;
+      color: #94a3b8;
+    }
+    .content {
+      padding: 28px 24px;
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+    .amount-box {
+      background-color: #f1f5f9;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      margin: 20px 0;
+      border: 1px dashed #cbd5e1;
+    }
+    .amount-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      color: #64748b;
+      font-weight: 600;
+      letter-spacing: 1px;
+    }
+    .amount-value {
+      font-size: 32px;
+      font-weight: 800;
+      color: #0f172a;
+      margin-top: 4px;
+    }
+    .info-table {
+      width: 100%;
+      margin: 20px 0;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .info-table td {
+      padding: 10px 0;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .info-table td.label {
+      color: #64748b;
+      width: 40%;
+    }
+    .info-table td.val {
+      font-weight: 600;
+      color: #0f172a;
+      text-align: right;
+    }
+    .note-box {
+      background-color: #fffbeb;
+      border-left: 4px solid #f59e0b;
+      padding: 12px 16px;
+      font-size: 12.5px;
+      color: #92400e;
+      border-radius: 4px;
+      margin: 20px 0;
+      line-height: 1.5;
+    }
+    .footer {
+      text-align: center;
+      padding: 20px;
+      font-size: 12px;
+      color: #94a3b8;
+      background-color: #f8fafc;
+      border-top: 1px solid #f1f5f9;
+    }
+    .footer a {
+      color: #2563eb;
+      text-decoration: none;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+<div class="email-container">
+  <div class="header">
+    <h1>E-COMMERCE MARKETPLACE</h1>
+    <p>Thông Báo Giao Dịch Rút Tiền Về Ngân Hàng</p>
+  </div>
+
+  <div class="content">
+    <p>Xin chào <strong>[[${name}]]</strong>,</p>
+    <p>[[${message}]]</p>
+
+    <div class="amount-box">
+      <div class="amount-label">Số tiền rút</div>
+      <div class="amount-value">[[${amountFormatted}]]</div>
+    </div>
+
+    <table class="info-table">
+      <tr>
+        <td class="label">Mã giao dịch</td>
+        <td class="val" style="font-family: monospace;">[[${txRef}]]</td>
+      </tr>
+      <tr>
+        <td class="label">Ngân hàng thụ hưởng</td>
+        <td class="val">[[${bankName}]]</td>
+      </tr>
+      <tr>
+        <td class="label">Số tài khoản</td>
+        <td class="val">[[${bankAccountNumber}]]</td>
+      </tr>
+      <tr>
+        <td class="label">Trạng thái xử lý</td>
+        <td class="val" style="color: [[${statusColor}]];">[[${statusText}]]</td>
+      </tr>
+      <tr>
+        <td class="label">Thời gian</td>
+        <td class="val">[[${time}]]</td>
+      </tr>
+    </table>
+
+    <div class="note-box" th:if="${note != null and !note.isEmpty()}">
+      <strong>Ghi chú từ hệ thống / Ban Quản Trị:</strong><br/>
+      <span>[[${note}]]</span>
+    </div>
+
+    <p style="font-size: 12px; color: #64748b; line-height: 1.6; margin-top: 24px;">
+      Mọi giao dịch rút tiền được bảo chứng an toàn bởi hệ thống Escrow & Quản trị rủi ro E-Commerce. Nếu bạn không thực hiện giao dịch này, vui lòng liên hệ ngay với bộ phận Hỗ trợ khách hàng của chúng tôi.
+    </p>
+  </div>
+
+  <div class="footer">
+    <p>&copy; 2026 E-Commerce Platform. All rights reserved.</p>
+    <p>Hỗ trợ trực tuyến: <a href="mailto:g87ecom@gmail.com">g87ecom@gmail.com</a></p>
+  </div>
+</div>
+</body>
+</html>
+

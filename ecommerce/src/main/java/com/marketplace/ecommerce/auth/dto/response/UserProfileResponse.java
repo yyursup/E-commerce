@@ -25,6 +25,11 @@ public class UserProfileResponse {
     private String email;
     private UUID shopId;
 
+    // Thông tin tài khoản ngân hàng liên kết
+    private String bankName;
+    private String bankAccountNumber;
+    private String bankAccountName;
+
     // Chỉ số Điểm Uy Tín & Kỷ luật người mua hàng (Trust & Safety)
     private Integer violationCount;
     private Integer reputationScore;
@@ -50,6 +55,9 @@ public class UserProfileResponse {
                 .accountVerified(account != null && Boolean.TRUE.equals(account.getAccountVerified()))
                 .role(account != null && account.getRole() != null ? account.getRole().getRoleName() : null)
                 .email(user.getEmail())
+                .bankName(user.getBankName())
+                .bankAccountNumber(user.getBankAccountNumber())
+                .bankAccountName(user.getBankAccountName())
                 .violationCount(vCount)
                 .reputationScore(repScore)
                 .disciplineLevel(discLevel)

@@ -45,6 +45,9 @@ export const TEST_ACCOUNTS = {
     fullName: 'Lê Văn Mua Hàng',
     role: 'CUSTOMER' as const,
     accountId: 'acc-customer-001',
+    bankName: 'MBBank',
+    bankAccountNumber: '0901234567',
+    bankAccountName: 'LE VAN MUA HANG',
   },
   sellerCandidate: {
     username: 'new_seller',
@@ -68,6 +71,9 @@ export const TEST_ACCOUNTS = {
     hasShop: true,
     sellerStatus: 'APPROVED',
     shopStatus: 'ACTIVE',
+    bankName: 'Vietcombank',
+    bankAccountNumber: '9988776655',
+    bankAccountName: 'NGUYEN THANH DAT',
   },
   admin: {
     username: 'admin',
@@ -404,3 +410,59 @@ export const MOCK_SHOP_RANKING = [
     rating: 4.8,
   },
 ];
+
+export interface MockWithdrawal {
+  id: string;
+  userId: string;
+  userFullName: string;
+  userEmail: string;
+  role: 'CUSTOMER' | 'BUSINESS';
+  amount: number;
+  bankName: string;
+  bankAccountNumber: string;
+  bankAccountName: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
+  bankTxNo?: string | null;
+  adminNote?: string | null;
+  userNote?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const MOCK_WITHDRAWALS: MockWithdrawal[] = [
+  {
+    id: 'wd-20261109-001',
+    userId: 'acc-customer-001',
+    userFullName: 'Lê Văn Mua Hàng',
+    userEmail: 'customer1@gmail.com',
+    role: 'CUSTOMER',
+    amount: 500000,
+    bankName: 'MBBank',
+    bankAccountNumber: '0901234567',
+    bankAccountName: 'LE VAN MUA HANG',
+    status: 'PENDING',
+    bankTxNo: null,
+    adminNote: null,
+    userNote: 'Rút tiền tiêu dùng',
+    createdAt: '2026-11-09T08:30:00',
+    updatedAt: '2026-11-09T08:30:00',
+  },
+  {
+    id: 'wd-20261108-002',
+    userId: 'acc-seller-001',
+    userFullName: 'Nguyễn Thành Đạt (Apple Official)',
+    userEmail: 'apple.reseller@gmail.com',
+    role: 'BUSINESS',
+    amount: 15000000,
+    bankName: 'Vietcombank',
+    bankAccountNumber: '9988776655',
+    bankAccountName: 'NGUYEN THANH DAT',
+    status: 'APPROVED',
+    bankTxNo: 'VCB-TXN-20261108-8899',
+    adminNote: 'Đã giải ngân doanh thu',
+    userNote: 'Rút doanh thu tuần 1 tháng 11',
+    createdAt: '2026-11-08T10:00:00',
+    updatedAt: '2026-11-08T11:15:00',
+  },
+];
+

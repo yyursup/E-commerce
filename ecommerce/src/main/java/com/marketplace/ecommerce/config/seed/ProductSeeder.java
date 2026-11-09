@@ -1,18 +1,26 @@
 package com.marketplace.ecommerce.config.seed;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.marketplace.ecommerce.product.entity.Product;
 import com.marketplace.ecommerce.product.entity.ProductCategory;
 import com.marketplace.ecommerce.product.entity.ProductImage;
 import com.marketplace.ecommerce.product.repository.ProductCategoryRepository;
 import com.marketplace.ecommerce.product.repository.ProductImageRepository;
 import com.marketplace.ecommerce.product.repository.ProductRepository;
+import com.marketplace.ecommerce.product.valueObjects.ConditionGrade;
 import com.marketplace.ecommerce.product.valueObjects.ProductStatus;
+import com.marketplace.ecommerce.product.valueObjects.WarrantyType;
 import com.marketplace.ecommerce.shop.entity.Shop;
 import com.marketplace.ecommerce.shop.repository.ShopRepository;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
@@ -44,7 +52,10 @@ public class ProductSeeder {
             return;
         }
 
-        seedShopByName(shopMap, "Apple Authorised Reseller", allCategories, "APPLE");
+        // 1. Seed 60 authentic products from scraped JSON data (iPhone, Apple Watch, AirPods & Accessories)
+        seedRealProductsFromJson(shopMap, allCategories);
+
+        // 2. Seed other verified brand shops
         seedShopByName(shopMap, "Samsung Experience Store", allCategories, "SAMSUNG");
         seedShopByName(shopMap, "GearVN PC & Gaming Hub", allCategories, "GEARVN");
         seedShopByName(shopMap, "Sony Electronics Flagship", allCategories, "SONY");
@@ -532,5 +543,143 @@ public class ProductSeeder {
             }
         }
         return list;
+    }
+
+    private void seedRealProductsFromJson(Map<String, Shop> shopMap, List<ProductCategory> allCategories) {
+        String[] jsonFiles = {
+                "seed/data/seed_iphone.json",
+                "seed/data/seed_apple_watch.json",
+                "seed/data/seed_airpods_accessories.json"
+        };
+
+        ObjectMapper mapper = new ObjectMapper();
+        int totalSeeded = 0;
+
+        for (String jsonPath : jsonFiles) {
+            try {
+                ClassPathResource resource = new ClassPathResource(jsonPath);
+                if (!resource.exists()) {
+                    log.warn("Seed resource file not found: {}", jsonPath);
+                    continue;
+                }
+
+                try (InputStream is = resource.getInputStream()) {
+                    List<SeedProductJsonDto> items = mapper.readValue(
+                            is,
+                            new TypeReference<List<SeedProductJsonDto>>() {}
+                    );
+
+                    for (SeedProductJsonDto item : items) {
+                        Shop targetShop = shopMap.get(item.getShop());
+                        if (targetShop == null) {
+                            targetShop = shopMap.get("Apple Authorised Reseller");
+                        }
+                        if (targetShop == null && !shopMap.isEmpty()) {
+                            targetShop = shopMap.values().iterator().next();
+                        }
+
+                        ProductCategory targetCat = findMatchingCategory(allCategories, item.getCategory());
+
+                        Product product = initializeRealProduct(targetShop, targetCat, item);
+                        if (product != null && item.getImages() != null && !item.getImages().isEmpty()) {
+                            for (int i = 0; i < item.getImages().size(); i++) {
+                                String imgUrl = item.getImages().get(i);
+                                initializeProductImage(product, imgUrl, i == 0, i + 1);
+                            }
+                        }
+                        totalSeeded++;
+                    }
+                }
+            } catch (Exception e) {
+                log.error("Error reading seed JSON file {}: {}", jsonPath, e.getMessage(), e);
+            }
+        }
+        log.info("Total real products seeded from JSON: {}", totalSeeded);
+    }
+
+    private Product initializeRealProduct(Shop shop, ProductCategory category, SeedProductJsonDto item) {
+        final String sku = item.getSku() != null ? item.getSku() : ("APL-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
+        final ConditionGrade grade = parseConditionGrade(item.getConditionGrade());
+        final WarrantyType wType = "SHOP".equalsIgnoreCase(item.getWarrantyType()) ? WarrantyType.SHOP : WarrantyType.OFFICIAL;
+
+        return productRepository.findBySkuAndDeletedFalse(sku)
+                .or(() -> productRepository.findAll().stream()
+                        .filter(p -> p.getName() != null && p.getName().equalsIgnoreCase(item.getName()) && !Boolean.TRUE.equals(p.getDeleted()))
+                        .findFirst())
+                .map(existing -> {
+                    boolean changed = false;
+                    if ((existing.getDescription() == null || existing.getDescription().isBlank()) && item.getDescription() != null) {
+                        existing.setDescription(item.getDescription());
+                        changed = true;
+                    }
+                    if ((existing.getSpecifications() == null || existing.getSpecifications().isBlank()) && item.getSpecifications() != null) {
+                        existing.setSpecifications(item.getSpecifications());
+                        changed = true;
+                    }
+                    if (changed) {
+                        return productRepository.save(existing);
+                    }
+                    return existing;
+                })
+                .orElseGet(() -> {
+                    Product product = Product.builder()
+                            .shop(shop)
+                            .productCategory(category)
+                            .name(item.getName())
+                            .description(item.getDescription())
+                            .specifications(item.getSpecifications())
+                            .sku(sku)
+                            .quantity(item.getQuantity() != null ? item.getQuantity() : 50)
+                            .basePrice(item.getPrice())
+                            .weight(item.getWeight() != null ? item.getWeight() : 450)
+                            .status(ProductStatus.PUBLISHED)
+                            .conditionGrade(grade)
+                            .warrantyType(wType)
+                            .warrantyMonths(item.getWarrantyMonths() != null ? item.getWarrantyMonths() : 12)
+                            .batteryHealth(item.getBatteryHealth())
+                            .featured(Boolean.TRUE.equals(item.getFeatured()))
+                            .deleted(false)
+                            .images(new HashSet<>())
+                            .build();
+                    Product saved = productRepository.save(product);
+                    log.info("Created authentic product: {} (SKU: {}, Price: {} VND, Shop: {})",
+                            item.getName(), sku, item.getPrice(), shop.getName());
+                    return saved;
+                });
+    }
+
+    private ConditionGrade parseConditionGrade(String conditionGrade) {
+        if (conditionGrade == null) {
+            return ConditionGrade.GRADE_NEW;
+        }
+        return switch (conditionGrade.toUpperCase()) {
+            case "GRADE_LIKE_NEW", "GRADE_A" -> ConditionGrade.GRADE_LIKE_NEW;
+            case "GRADE_FAIR", "GRADE_B" -> ConditionGrade.GRADE_FAIR;
+            case "GRADE_OPEN_BOX", "GRADE_C" -> ConditionGrade.GRADE_OPEN_BOX;
+            case "GRADE_AS_IS" -> ConditionGrade.GRADE_AS_IS;
+            default -> ConditionGrade.GRADE_NEW;
+        };
+    }
+
+    @Data
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class SeedProductJsonDto {
+        private String name;
+        private String sku;
+        private String category;
+        private String shop;
+        private BigDecimal price;
+        private BigDecimal originalPrice;
+        private String conditionGrade;
+        private String warrantyType;
+        private Integer warrantyMonths;
+        private Integer batteryHealth;
+        private Integer weight;
+        private Integer quantity;
+        private String status;
+        private Boolean featured;
+        private String specifications;
+        private String description;
+        private List<String> images;
     }
 }

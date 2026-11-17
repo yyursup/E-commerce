@@ -50,9 +50,9 @@ public class VoucherSeeder {
 
         List<ProductCategory> allCategories = categoryRepository.findAll();
         ProductCategory phonesAndTablets = findCategory(allCategories, "Điện Thoại & Máy Tính Bảng");
-        ProductCategory computers = findCategory(allCategories, "Laptop & Máy Tính Để Bàn");
-        ProductCategory components = findCategory(allCategories, "Linh Kiện Máy Tính & PC Build");
-        ProductCategory audio = findCategory(allCategories, "Thiết Bị Âm Thanh");
+        ProductCategory computers = findCategory(allCategories, "Laptop & Máy Tính PC");
+        ProductCategory components = findCategory(allCategories, "Linh Kiện & Gaming Gear");
+        ProductCategory audio = findCategory(allCategories, "Thiết Bị Âm Thanh & Giải Trí");
 
         // 1. FREESHIP50 (Platform)
         initializeOrUpdateVoucher(
@@ -105,10 +105,10 @@ public class VoucherSeeder {
                 false
         );
 
-        // 4. LAPTOP500K (Platform - Category: Laptop & Máy Tính)
+        // 4. LAPTOP500K (Platform - Category: Laptop & Máy Tính PC)
         initializeOrUpdateVoucher(
                 "LAPTOP500K",
-                "Giảm 500K Laptop & Máy Tính Để Bàn",
+                "Giảm 500K Laptop & Máy Tính PC",
                 "Giảm ngay 500.000đ cho đơn hàng từ 10.000.000đ thuộc ngành Laptop Gaming, Văn Phòng & Máy Trạm",
                 VoucherType.FIXED_AMOUNT,
                 BigDecimal.valueOf(50000),
@@ -122,7 +122,7 @@ public class VoucherSeeder {
                 false
         );
 
-        // 5. AUDIO150K (Platform - Category: Thiết Bị Âm Thanh)
+        // 5. AUDIO150K (Platform - Category: Thiết Bị Âm Thanh & Giải Trí)
         initializeOrUpdateVoucher(
                 "AUDIO150K",
                 "Giảm 150K Thiết Bị Âm Thanh & Studio",
@@ -139,7 +139,7 @@ public class VoucherSeeder {
                 false
         );
 
-        // 6. BUILDPC200K (Platform - Category: Linh Kiện Máy Tính & PC Build)
+        // 6. BUILDPC200K (Platform - Category: Linh Kiện & Gaming Gear)
         initializeOrUpdateVoucher(
                 "BUILDPC200K",
                 "Giảm 200K Linh Kiện PC & Build Máy",

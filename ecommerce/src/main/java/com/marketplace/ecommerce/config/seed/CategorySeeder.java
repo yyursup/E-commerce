@@ -24,67 +24,57 @@ public class CategorySeeder {
     private final Map<String, ProductCategory> categoryMap = new HashMap<>();
 
     public void seed() {
-        log.info("Seeding categories...");
+        log.info("Seeding streamlined electronic categories...");
 
-        // Group 1: Điện Thoại & Máy Tính Bảng (3.5%)
-        ProductCategory phonesAndTablets = initializeCategory(null, "Điện Thoại & Máy Tính Bảng", new BigDecimal("3.50"));
-        categoryMap.put("phonesAndTablets", phonesAndTablets);
-        categoryMap.put("smartphones", initializeCategory(phonesAndTablets, "Điện Thoại Thông Minh"));
-        categoryMap.put("tablets", initializeCategory(phonesAndTablets, "Máy Tính Bảng"));
-        categoryMap.put("ereaders", initializeCategory(phonesAndTablets, "Máy Đọc Sách & Phụ Kiện"));
+        // 1. Điện Thoại & Máy Tính Bảng (3.5%)
+        ProductCategory mobile = initializeCategory(null, "Điện Thoại & Máy Tính Bảng", new BigDecimal("3.50"));
+        categoryMap.put("mobile", mobile);
+        categoryMap.put("smartphones", initializeCategory(mobile, "Điện Thoại & Tablet"));
+        categoryMap.put("ereaders", initializeCategory(mobile, "Máy Đọc Sách & Phụ Kiện Khác"));
 
-        // Group 2: Laptop & Máy Tính Để Bàn (4.0%)
-        ProductCategory computers = initializeCategory(null, "Laptop & Máy Tính Để Bàn", new BigDecimal("4.00"));
-        categoryMap.put("computers", computers);
-        categoryMap.put("gamingLaptops", initializeCategory(computers, "Laptop Gaming & Đồ Họa"));
-        categoryMap.put("ultrabooks", initializeCategory(computers, "Laptop Văn Phòng & Mỏng Nhẹ"));
-        categoryMap.put("pcWorkstations", initializeCategory(computers, "PC Đồng Bộ & Máy Trạm"));
+        // 2. Laptop & PC (4.0%)
+        ProductCategory computer = initializeCategory(null, "Laptop & Máy Tính PC", new BigDecimal("4.00"));
+        categoryMap.put("computer", computer);
+        categoryMap.put("laptops", initializeCategory(computer, "Laptop Các Loại (Gaming, Văn Phòng)"));
+        categoryMap.put("pcs", initializeCategory(computer, "PC Đồng Bộ & Máy Trạm"));
 
-        // Group 3: Linh Kiện Máy Tính & PC Build (4.5%)
-        ProductCategory components = initializeCategory(null, "Linh Kiện Máy Tính & PC Build", new BigDecimal("4.50"));
-        categoryMap.put("components", components);
-        categoryMap.put("cpuGpu", initializeCategory(components, "CPU & Card Đồ Họa (VGA)"));
-        categoryMap.put("ramSsd", initializeCategory(components, "RAM, Ổ Cứng SSD & HDD"));
-        categoryMap.put("motherboardPsu", initializeCategory(components, "Bo Mạch Chủ & Nguồn Máy Tính"));
-        categoryMap.put("casesCooling", initializeCategory(components, "Vỏ Case & Tản Nhiệt PC"));
+        // 3. Linh Kiện & Gaming Gear (5.0%)
+        ProductCategory hardware = initializeCategory(null, "Linh Kiện & Gaming Gear", new BigDecimal("5.00"));
+        categoryMap.put("hardware", hardware);
+        categoryMap.put("pcComponents", initializeCategory(hardware, "Linh Kiện PC (CPU, VGA, RAM, Main...)"));
+        categoryMap.put("gamingGear", initializeCategory(hardware, "Gaming Gear (Bàn Phím, Chuột, Tai Nghe)"));
 
-        // Group 4: Thiết Bị Âm Thanh (6.0%)
-        ProductCategory audio = initializeCategory(null, "Thiết Bị Âm Thanh", new BigDecimal("6.00"));
+        // 4. Âm Thanh & Giải Trí (6.0%)
+        ProductCategory audio = initializeCategory(null, "Thiết Bị Âm Thanh & Giải Trí", new BigDecimal("6.00"));
         categoryMap.put("audio", audio);
-        categoryMap.put("headphones", initializeCategory(audio, "Tai Nghe True Wireless & Chụp Tai"));
-        categoryMap.put("speakers", initializeCategory(audio, "Loa Bluetooth & Soundbar"));
-        categoryMap.put("audioStudio", initializeCategory(audio, "Microphone & Soundcard Thu Âm"));
+        categoryMap.put("speakersHeadphones", initializeCategory(audio, "Loa, Tai Nghe & Soundbar"));
+        categoryMap.put("audioStudio", initializeCategory(audio, "Thiết Bị Thu Âm & Livestream"));
 
-        // Group 5: Phụ Kiện Điện Tử & Gaming Gear (8.5%)
-        ProductCategory accessories = initializeCategory(null, "Phụ Kiện Điện Tử & Gaming Gear", new BigDecimal("8.50"));
+        // 5. Phụ Kiện Điện Tử (8.5%)
+        ProductCategory accessories = initializeCategory(null, "Phụ Kiện Điện Tử", new BigDecimal("8.50"));
         categoryMap.put("accessories", accessories);
-        categoryMap.put("chargingPacks", initializeCategory(accessories, "Củ Cáp Sạc & Sạc Dự Phòng"));
-        categoryMap.put("casesCovers", initializeCategory(accessories, "Ốp Lưng & Bao Da"));
-        categoryMap.put("gearPeripherals", initializeCategory(accessories, "Bàn Phím Cơ & Chuột Gaming"));
-        categoryMap.put("hubsCables", initializeCategory(accessories, "Cáp Chuyển Đổi & Hub Type-C"));
+        categoryMap.put("powerAndCables", initializeCategory(accessories, "Củ, Cáp Sạc & Sạc Dự Phòng"));
+        categoryMap.put("protectiveCases", initializeCategory(accessories, "Ốp Lưng, Bao Da & Cáp Chuyển Đổi"));
 
-        // Group 6: Thiết Bị Đeo & Đồng Hồ Thông Minh (6.5%)
-        ProductCategory wearables = initializeCategory(null, "Thiết Bị Đeo & Đồng Hồ Thông Minh", new BigDecimal("6.50"));
+        // 6. Đồng Hồ & Thiết Bị Đeo (6.5%)
+        ProductCategory wearables = initializeCategory(null, "Đồng Hồ & Thiết Bị Đeo", new BigDecimal("6.50"));
         categoryMap.put("wearables", wearables);
-        categoryMap.put("smartwatches", initializeCategory(wearables, "Đồng Hồ Thông Minh (Smartwatch)"));
-        categoryMap.put("smartbands", initializeCategory(wearables, "Vòng Đeo Tay Thể Thao (Smartband)"));
-        categoryMap.put("wearableAccessories", initializeCategory(wearables, "Dây Đeo & Phụ Kiện Smartwatch"));
+        categoryMap.put("smartwatches", initializeCategory(wearables, "Smartwatch & Smartband"));
+        categoryMap.put("wearableAccessories", initializeCategory(wearables, "Phụ Kiện Đồng Hồ Đeo Tay"));
 
-        // Group 7: Thiết Bị Nhà Thông Minh & IoT (5.5%)
-        ProductCategory smartHome = initializeCategory(null, "Thiết Bị Nhà Thông Minh & IoT", new BigDecimal("5.50"));
+        // 7. Smart Home & Camera (5.5%)
+        ProductCategory smartHome = initializeCategory(null, "Smart Home & Camera", new BigDecimal("5.50"));
         categoryMap.put("smartHome", smartHome);
-        categoryMap.put("securityCameras", initializeCategory(smartHome, "Camera An Ninh & Giám Sát"));
-        categoryMap.put("robotVacuums", initializeCategory(smartHome, "Robot Hút Bụi & Lau Nhà"));
-        categoryMap.put("smartLightingControls", initializeCategory(smartHome, "Khóa Cửa & Đèn Thông Minh"));
+        categoryMap.put("cameras", initializeCategory(smartHome, "Camera An Ninh & Giám Sát"));
+        categoryMap.put("smartDevices", initializeCategory(smartHome, "Robot Hút Bụi, Khóa Cửa & Đèn Thông Minh"));
 
-        // Group 8: Máy Ảnh & Thiết Bị Quay Phim (5.0%)
-        ProductCategory cameras = initializeCategory(null, "Máy Ảnh & Thiết Bị Quay Phim", new BigDecimal("5.00"));
-        categoryMap.put("cameras", cameras);
-        categoryMap.put("dslrMirrorless", initializeCategory(cameras, "Máy Ảnh Mirrorless & DSLR"));
-        categoryMap.put("dronesActionCam", initializeCategory(cameras, "Flycam Drone & Action Cam"));
-        categoryMap.put("lensesGimbals", initializeCategory(cameras, "Ống Kính (Lens) & Gimbal Chống Rung"));
+        // 8. Máy Ảnh & Quay Phim (5.0%)
+        ProductCategory cameras = initializeCategory(null, "Máy Ảnh & Quay Phim", new BigDecimal("5.00"));
+        categoryMap.put("camerasAndDrones", cameras);
+        categoryMap.put("camerasGear", initializeCategory(cameras, "Máy Ảnh, Ống Kính & Gimbal"));
+        categoryMap.put("dronesAction", initializeCategory(cameras, "Flycam Drone & Action Camera"));
 
-        log.info("Categories seeded successfully.");
+        log.info("Streamlined categories seeded successfully.");
     }
 
     private ProductCategory initializeCategory(ProductCategory parent, String name) {

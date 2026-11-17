@@ -140,9 +140,9 @@ public class ProductSeeder {
         // Map keyword variations to real category names
         String searchKey = keyword.trim();
         if (searchKey.equalsIgnoreCase("Tablet")) {
-            searchKey = "Máy Tính Bảng";
+            searchKey = "Điện Thoại & Tablet";
         } else if (searchKey.equalsIgnoreCase("Âm Thanh")) {
-            searchKey = "Tai Nghe";
+            searchKey = "Tai Nghe & Soundbar";
         } else if (searchKey.equalsIgnoreCase("Laptop")) {
             searchKey = "Laptop";
         }
@@ -243,12 +243,12 @@ public class ProductSeeder {
                         "Hiệu năng đột phá với chip Apple M2, màn hình Liquid Retina chống chói, camera trước Ultra Wide đặt ở cạnh ngang tối ưu cho gọi video và học tập trực tuyến.",
                         "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=800&h=800&fit=crop",
                         "https://images.unsplash.com/photo-1561154464-82e9adf32764?w=800&h=800&fit=crop"));
-                list.add(new ProductCatalogItem("Tai nghe Apple AirPods Pro (Gen 2) Type-C MagSafe", "Âm Thanh",
+                list.add(new ProductCatalogItem("Tai nghe Apple AirPods Pro (Gen 2) Type-C MagSafe", "Tai Nghe & Soundbar",
                         5690000L, 250,
                         "Chip H2 mang đến khả năng chống ồn chủ động (ANC) gấp 2 lần, tính năng Adaptive Audio tự động điều chỉnh theo môi trường, cổng sạc Type-C hiện đại và khả năng kháng bụi nước IP54.",
                         "https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?w=800&h=800&fit=crop",
                         "https://images.unsplash.com/photo-1588423771073-b8903fbb85b5?w=800&h=800&fit=crop"));
-                list.add(new ProductCatalogItem("Tai nghe Chụp Tai Apple AirPods Max Wireless ANC", "Âm Thanh",
+                list.add(new ProductCatalogItem("Tai nghe Chụp Tai Apple AirPods Max Wireless ANC", "Tai Nghe & Soundbar",
                         12990000L, 600,
                         "Chất lượng âm thanh trung thực Hi-Fi độ méo cực thấp, đệm tai dạng lưới thoáng khí bằng vải dệt kỹ thuật số, núm xoay Digital Crown điều khiển âm lượng và bài hát mượt mà.",
                         "https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=800&h=800&fit=crop",
@@ -300,7 +300,7 @@ public class ProductSeeder {
                         "Viền bezel xoay vật lý trứ danh, mặt kính Sapphire nguyên khối sang trọng, đo huyết áp, điện tâm đồ ECG và phân tích thành phần cơ thể BIA chuyên sâu.",
                         "https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?w=800&h=800&fit=crop",
                         "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&h=800&fit=crop"));
-                list.add(new ProductCatalogItem("Tai Nghe Samsung Galaxy Buds2 Pro Âm Thanh 24bit Hi-Fi", "Âm Thanh",
+                list.add(new ProductCatalogItem("Tai Nghe Samsung Galaxy Buds2 Pro Âm Thanh 24bit Hi-Fi", "Tai Nghe & Soundbar",
                         3290000L, 200,
                         "Âm thanh vòm 360 độ chuẩn phòng thu, công nghệ khử tiếng ồn thông minh ANC 3 micro độ nhạy cao, thiết kế công thái học ôm khít vành tai không cấn đau.",
                         "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=800&h=800&fit=crop",
@@ -332,22 +332,22 @@ public class ProductSeeder {
                         "Quái thú gaming cấu hình khủng: Intel Core i9-14900HX, NVIDIA GeForce RTX 4080 12GB GDDR6, 32GB DDR5 5600MHz, màn hình ROG Nebula 2.5K 240Hz 100% DCI-P3 chuẩn màu đồ họa.",
                         "https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=800&h=800&fit=crop",
                         "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=800&h=800&fit=crop"));
-                list.add(new ProductCatalogItem("Card Màn Hình ASUS TUF Gaming GeForce RTX 4080 Super 16GB", "CPU & Card",
+                list.add(new ProductCatalogItem("Card Màn Hình ASUS TUF Gaming GeForce RTX 4080 Super 16GB", "Linh Kiện PC",
                         29990000L, 2500,
                         "Kiến trúc Ada Lovelace với nhân Ray Tracing thế hệ 3, DLSS 3.5 AI Frame Generation mượt mà ở độ phân giải 4K, 3 quạt tản nhiệt vòng bi kép Axial-tech siêu mát và bền bỉ.",
                         "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=800&h=800&fit=crop",
                         "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800&h=800&fit=crop"));
-                list.add(new ProductCatalogItem("Bộ Vi Xử Lý CPU Intel Core i9-14900K Box Chính Hãng", "CPU & Card",
+                list.add(new ProductCatalogItem("Bộ Vi Xử Lý CPU Intel Core i9-14900K Box Chính Hãng", "Linh Kiện PC",
                         14490000L, 350,
                         "24 nhân 32 luồng (8 P-Core + 16 E-Core), xung nhịp tối đa lên tới 6.0 GHz nhờ công nghệ Intel Thermal Velocity Boost, đáp ứng hoàn hảo render 3D và stream game đỉnh cao.",
                         "https://images.unsplash.com/photo-1555680202-c86f0e12f086?w=800&h=800&fit=crop",
                         "https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&h=800&fit=crop"));
-                list.add(new ProductCatalogItem("RAM Corsair Vengeance RGB 32GB (2x16GB) DDR5 6000MHz", "RAM",
+                list.add(new ProductCatalogItem("RAM Corsair Vengeance RGB 32GB (2x16GB) DDR5 6000MHz", "Linh Kiện PC",
                         3290000L, 200,
                         "Tản nhiệt nhôm nguyên khối anodized, dải LED RGB 10 vùng siêu sáng tương thích phần mềm iCUE, hỗ trợ Intel XMP 3.0 ép xung ổn định bằng một cú click chuột.",
                         "https://images.unsplash.com/photo-1562976540-1502c2145186?w=800&h=800&fit=crop",
                         "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800&h=800&fit=crop"));
-                list.add(new ProductCatalogItem("Ổ Cứng SSD Samsung 990 Pro 2TB PCIe Gen 4.0 x4 NVMe M.2", "RAM",
+                list.add(new ProductCatalogItem("Ổ Cứng SSD Samsung 990 Pro 2TB PCIe Gen 4.0 x4 NVMe M.2", "Linh Kiện PC",
                         4690000L, 150,
                         "Tốc độ đọc/ghi tuần tự đỉnh cao lên tới 7.450 / 6.900 MB/s, bộ điều khiển phủ niken kiểm soát nhiệt độ thông minh tránh sụt giảm hiệu năng khi tải nặng kéo dài.",
                         "https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?w=800&h=800&fit=crop",
@@ -362,12 +362,12 @@ public class ProductSeeder {
                         "Trọng lượng siêu nhẹ chỉ 63g, cảm biến quang học Focus Pro 30K DPI chính xác 99.8%, switch quang học Gen-3 phản hồi 0.2ms không lo bị double click.",
                         "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=800&h=800&fit=crop",
                         "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=800&h=800&fit=crop"));
-                list.add(new ProductCatalogItem("Nguồn Máy Tính Corsair RM850e 850W 80 Plus Gold ATX 3.0", "Bo Mạch",
+                list.add(new ProductCatalogItem("Nguồn Máy Tính Corsair RM850e 850W 80 Plus Gold ATX 3.0", "Linh Kiện PC",
                         3190000L, 2800,
                         "Đạt chứng nhận 80 Plus Gold và chuẩn ATX 3.0 kèm cáp nguồn PCIe 5.0 12VHPWR cho card đồ họa RTX series, tụ điện Nhật Bản 105 độ C vận hành êm ái không tiếng ồn.",
                         "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=800&h=800&fit=crop",
                         "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800&h=800&fit=crop"));
-                list.add(new ProductCatalogItem("Tản Nhiệt Nước AIO DeepCool LT720 ARGB 360mm", "Vỏ Case",
+                list.add(new ProductCatalogItem("Tản Nhiệt Nước AIO DeepCool LT720 ARGB 360mm", "Linh Kiện PC",
                         3150000L, 2500,
                         "Bơm thế hệ thứ 4 với động cơ 3 pha 3100 RPM, mặt pump khối vô cực đa chiều hiệu ứng gương 3D huyền ảo, 3 quạt FK120 PWM áp suất gió cao làm mát CPU tối đa.",
                         "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=800&h=800&fit=crop",
@@ -379,22 +379,22 @@ public class ProductSeeder {
                         "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&h=800&fit=crop"));
             }
             case "SONY" -> {
-                list.add(new ProductCatalogItem("Tai Nghe Chống Ồn Flagship Sony WH-1000XM5 Hi-Res", "Tai Nghe",
+                list.add(new ProductCatalogItem("Tai Nghe Chống Ồn Flagship Sony WH-1000XM5 Hi-Res", "Tai Nghe & Soundbar",
                         7990000L, 700,
                         "Bộ xử lý tích hợp V1 kết hợp bộ xử lý chống ồn chuyên dụng HD QN1, màng loa 30mm gia cố bằng sợi carbon nhẹ cứng, hỗ trợ codec âm thanh độ phân giải cao LDAC và thời lượng pin 30 giờ.",
                         "https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=800&h=800&fit=crop",
                         "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&h=800&fit=crop"));
-                list.add(new ProductCatalogItem("Tai Nghe True Wireless Chống Ồn Sony WF-1000XM5", "Tai Nghe",
+                list.add(new ProductCatalogItem("Tai Nghe True Wireless Chống Ồn Sony WF-1000XM5", "Tai Nghe & Soundbar",
                         5490000L, 250,
                         "Màng loa Dynamic Driver X tái tạo âm trầm sâu lắng và giọng hát chi tiết, 3 micro trên mỗi tai nghe lọc gió khử ồn vượt bậc, sạc không dây chuẩn Qi và kháng nước IPX4.",
                         "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=800&h=800&fit=crop",
                         "https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?w=800&h=800&fit=crop"));
-                list.add(new ProductCatalogItem("Loa Di Động Sony SRS-XG300 Extra Bass Chống Nước IP67", "Loa",
+                list.add(new ProductCatalogItem("Loa Di Động Sony SRS-XG300 Extra Bass Chống Nước IP67", "Loa, Tai Nghe",
                         5990000L, 3500,
                         "Công nghệ củ loa X-Balanced tái tạo áp suất âm thanh mạnh mẽ hạn chế méo tiếng, pin 25 giờ kèm sạc nhanh 10 phút dùng 70 phút, dải đèn LED phát sáng theo điệu nhạc.",
                         "https://images.unsplash.com/photo-1545454675-3531b543be5d?w=800&h=800&fit=crop",
                         "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=800&h=800&fit=crop"));
-                list.add(new ProductCatalogItem("Loa Soundbar Sony HT-A5000 5.1.2 Kênh Dolby Atmos 450W", "Loa",
+                list.add(new ProductCatalogItem("Loa Soundbar Sony HT-A5000 5.1.2 Kênh Dolby Atmos 450W", "Loa, Tai Nghe",
                         17990000L, 9000,
                         "Công nghệ âm thanh vòm 360 Spatial Sound Mapping định vị âm thanh theo từng góc phòng, củ loa đánh trần hướng lên và loa tweeter chùm tái hiện âm thanh phim chiếu rạp chân thực.",
                         "https://images.unsplash.com/photo-1545454675-3531b543be5d?w=800&h=800&fit=crop",
@@ -414,49 +414,49 @@ public class ProductSeeder {
                         "Màn hình LCD xoay lật đa góc hỗ trợ selfie, tính năng Product Showcase lấy nét tự động chuyển vật thể siêu mượt, micro 3 đầu thu định hướng kèm đầu lọc gió khử tạp âm ngoài trời.",
                         "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=800&h=800&fit=crop",
                         "https://images.unsplash.com/photo-1502920917128-1aa500764cbd?w=800&h=800&fit=crop"));
-                list.add(new ProductCatalogItem("Microphone Không Dây Kép Sony ECM-W2BT Thu Âm Studio", "Microphone",
+                list.add(new ProductCatalogItem("Microphone Không Dây Kép Sony ECM-W2BT Thu Âm Studio", "Thu Âm",
                         4990000L, 350,
                         "Kết nối kỹ thuật số qua ngàm MI Shoe không suy giảm tín hiệu âm thanh, khoảng cách truyền tải ổn định lên tới 200m, hỗ trợ 3 chế độ thu âm MIC, MIX và RCVR linh hoạt.",
                         "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=800&h=800&fit=crop",
                         "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&h=800&fit=crop"));
-                list.add(new ProductCatalogItem("Loa Tiệc Tùng Di Động Sony SRS-XV800 Đèn Led Party Pin 25H", "Loa",
+                list.add(new ProductCatalogItem("Loa Tiệc Tùng Di Động Sony SRS-XV800 Đèn Led Party Pin 25H", "Loa, Tai Nghe",
                         11990000L, 19500,
                         "Âm thanh tiệc đa hướng Omni-directional Party Sound lan tỏa khắp không gian, bánh xe và tay kéo di chuyển linh hoạt, hỗ trợ cổng cắm micro karaoke và guitar biểu diễn sống động.",
                         "https://images.unsplash.com/photo-1545454675-3531b543be5d?w=800&h=800&fit=crop",
                         "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=800&h=800&fit=crop"));
-                list.add(new ProductCatalogItem("Tai Nghe Chơi Game Không Dây Sony INZONE H9 Chống Ồn ANC", "Tai Nghe",
+                list.add(new ProductCatalogItem("Tai Nghe Chơi Game Không Dây Sony INZONE H9 Chống Ồn ANC", "Tai Nghe & Soundbar",
                         5990000L, 650,
                         "Công nghệ 360 Spatial Sound for Gaming xác định chính xác vị trí bước chân đối thủ, khử tiếng ồn chủ động kép, micro cần gạt tắt tiếng tiện lợi và kết nối 2.4GHz không độ trễ.",
                         "https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=800&h=800&fit=crop",
                         "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&h=800&fit=crop"));
             }
             case "ANKER" -> {
-                list.add(new ProductCatalogItem("Trạm Sạc Để Bàn Anker Prime 6 Trong 1 GaN 200W USB-C", "Củ Cáp Sạc",
+                list.add(new ProductCatalogItem("Trạm Sạc Để Bàn Anker Prime 6 Trong 1 GaN 200W USB-C", "Cáp Sạc",
                         2390000L, 550,
                         "Tổng công suất 200W với 4 cổng Type-C và 2 cổng USB-A, hỗ trợ sạc nhanh cùng lúc 2 laptop công suất 100W mỗi cổng, chip GaN thế hệ mới bảo vệ quá nhiệt ActiveShield 2.0.",
                         "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=800&h=800&fit=crop",
                         "https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=800&h=800&fit=crop"));
-                list.add(new ProductCatalogItem("Pin Sạc Dự Phòng Anker 737 Power Bank (PowerCore 24K) 140W", "Củ Cáp Sạc",
+                list.add(new ProductCatalogItem("Pin Sạc Dự Phòng Anker 737 Power Bank (PowerCore 24K) 140W", "Cáp Sạc",
                         2890000L, 750,
                         "Dung lượng 24.000mAh chuẩn sạc PD 3.1 140W nạp pin siêu tốc cho MacBook Pro 16 inch, màn hình màu thông minh hiển thị chi tiết công suất sạc theo thời gian thực.",
                         "https://images.unsplash.com/photo-1609592426815-f55a16d80d29?w=800&h=800&fit=crop",
                         "https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=800&h=800&fit=crop"));
-                list.add(new ProductCatalogItem("Củ Sạc Nhanh Baseus GaN5 Pro Fast Charger 65W 3 Cổng", "Củ Cáp Sạc",
+                list.add(new ProductCatalogItem("Củ Sạc Nhanh Baseus GaN5 Pro Fast Charger 65W 3 Cổng", "Cáp Sạc",
                         490000L, 180,
                         "Kích thước nhỏ hơn 55% so với củ sạc thông thường, trang bị 2 cổng Type-C và 1 cổng USB-A sạc đồng thời điện thoại, máy tính bảng và tai nghe tiện lợi khi du lịch.",
                         "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=800&h=800&fit=crop",
                         "https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=800&h=800&fit=crop"));
-                list.add(new ProductCatalogItem("Hub Chuyển Đổi Baseus Metal Gleam Series 9-in-1 Type-C 4K 60Hz", "Hub Chuyển Đổi",
+                list.add(new ProductCatalogItem("Hub Chuyển Đổi Baseus Metal Gleam Series 9-in-1 Type-C 4K 60Hz", "Cáp Chuyển Đổi",
                         890000L, 250,
                         "Vỏ hợp kim nhôm tản nhiệt nhanh, trang bị cổng HDMI 4K 60Hz sắc nét, cổng mạng LAN Gigabit RJ45 1000Mbps, khe thẻ nhớ SD/TF và hỗ trợ sạc xuyên qua PD 100W.",
                         "https://images.unsplash.com/photo-1625842268584-8f3296236761?w=800&h=800&fit=crop",
                         "https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=800&h=800&fit=crop"));
-                list.add(new ProductCatalogItem("Cáp Sạc Baseus Tungsten Gold Type-C to Type-C 100W 1.5m Bện Dù", "Củ Cáp Sạc",
+                list.add(new ProductCatalogItem("Cáp Sạc Baseus Tungsten Gold Type-C to Type-C 100W 1.5m Bện Dù", "Cáp Sạc",
                         159000L, 80,
                         "Đầu cắm phủ hợp kim kẽm đen bóng chống oxy hóa gỉ sét, dây bện dù nylon mật độ cao chống gập gãy trên 10.000 lần uốn cong, hỗ trợ dòng điện tối đa 5A chuẩn E-Marker.",
                         "https://images.unsplash.com/photo-1609081219090-a6d8173087ec?w=800&h=800&fit=crop",
                         "https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=800&h=800&fit=crop"));
-                list.add(new ProductCatalogItem("Sạc Dự Phòng MagSafe Baseus Magnetic 10000mAh 20W LED", "Củ Cáp Sạc",
+                list.add(new ProductCatalogItem("Sạc Dự Phòng MagSafe Baseus Magnetic 10000mAh 20W LED", "Cáp Sạc",
                         590000L, 280,
                         "Lực hít nam châm từ tính mạnh mẽ chuẩn MagSafe cho iPhone 12/13/14/15 series không rơi rớt, sạc không dây 15W kết hợp sạc có dây Type-C 20W tiện lợi.",
                         "https://images.unsplash.com/photo-1609592426815-f55a16d80d29?w=800&h=800&fit=crop",
@@ -471,12 +471,12 @@ public class ProductSeeder {
                         "Bố cục phím bấm dạng cắt kéo Scissor êm ái phản hồi nhanh, kết nối chuyển đổi mượt mà giữa 3 thiết bị cùng lúc tương thích hoàn hảo Windows, macOS, iOS và Android.",
                         "https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=800&h=800&fit=crop",
                         "https://images.unsplash.com/photo-1511467687858-23d96c32e4ae?w=800&h=800&fit=crop"));
-                list.add(new ProductCatalogItem("Giá Đỡ Điện Thoại Baseus Halo Tự Kẹp Kiêm Sạc Không Dây 15W", "Củ Cáp Sạc",
+                list.add(new ProductCatalogItem("Giá Đỡ Điện Thoại Baseus Halo Tự Kẹp Kiêm Sạc Không Dây 15W", "Cáp Sạc",
                         450000L, 320,
                         "Cảm biến hồng ngoại nhận diện điện thoại tự động kẹp giữ chắc chắn, sạc nhanh không dây chuẩn Qi 15W tản nhiệt quạt mini giúp điện thoại không nóng khi chạy bản đồ định vị GPS.",
                         "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=800&h=800&fit=crop",
                         "https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=800&h=800&fit=crop"));
-                list.add(new ProductCatalogItem("Tai Nghe Chống Ồn Soundcore Space One by Anker Adaptive ANC", "Tai Nghe",
+                list.add(new ProductCatalogItem("Tai Nghe Chống Ồn Soundcore Space One by Anker Adaptive ANC", "Tai Nghe & Soundbar",
                         1990000L, 400,
                         "Khử tiếng ồn thích ứng loại bỏ 98% tiếng ồn xung quanh, driver âm thanh 40mm hỗ trợ Hi-Res Wireless qua codec LDAC, thời gian nghe nhạc liên tục lên tới 55 giờ.",
                         "https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=800&h=800&fit=crop",
@@ -503,7 +503,7 @@ public class ProductSeeder {
                         "Hỗ trợ 6 phương thức mở khóa (vân tay sinh trắc học, mật mã, NFC, Bluetooth, chìa cơ, mật khẩu tạm thời), chuông cửa thông minh tích hợp và cảnh báo phá khóa về điện thoại.",
                         "https://images.unsplash.com/photo-1558002038-1055907df827?w=800&h=800&fit=crop",
                         "https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&h=800&fit=crop"));
-                list.add(new ProductCatalogItem("Vòng Đeo Tay Thông Minh Xiaomi Smart Band 8 Màn Hình AMOLED 60Hz", "Vòng Đeo Tay",
+                list.add(new ProductCatalogItem("Vòng Đeo Tay Thông Minh Xiaomi Smart Band 8 Màn Hình AMOLED 60Hz", "Smartband",
                         790000L, 120,
                         "Màn hình AMOLED 1.62 inch tần số quét 60Hz mượt mà tự động chỉnh độ sáng, hơn 150 chế độ thể thao, theo dõi giấc ngủ và nhịp tim liên tục 24/7, thời lượng pin 16 ngày.",
                         "https://images.unsplash.com/photo-1575311373937-040b8e1fd5b6?w=800&h=800&fit=crop",
@@ -535,7 +535,7 @@ public class ProductSeeder {
                         "https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&h=800&fit=crop"));
             }
             default -> {
-                list.add(new ProductCatalogItem("Cáp Sạc Đa Năng 3 Trong 1 Type-C Micro Lightning 100W", "Phụ Kiện",
+                list.add(new ProductCatalogItem("Cáp Sạc Đa Năng 3 Trong 1 Type-C Micro Lightning 100W", "Cáp Sạc",
                         120000L, 80,
                         "Dây bện dù chống rối gãy gập, hỗ trợ sạc nhanh cho mọi thiết bị di động, chiều dài 1.2m tiện dụng.",
                         "https://images.unsplash.com/photo-1609081219090-a6d8173087ec?w=800&h=800&fit=crop",

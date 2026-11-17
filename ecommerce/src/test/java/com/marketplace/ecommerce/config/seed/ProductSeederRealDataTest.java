@@ -33,7 +33,7 @@ class ProductSeederRealDataTest {
             for (ProductSeeder.SeedProductJsonDto p : list) {
                 assertNotNull(p.getName(), "Product name must not be null");
                 assertNotNull(p.getSku(), "SKU must not be null");
-                assertEquals("Điện Thoại Thông Minh", p.getCategory());
+                assertEquals("Điện Thoại & Tablet", p.getCategory());
                 assertEquals("Apple Authorised Reseller", p.getShop());
                 assertTrue(p.getPrice().compareTo(BigDecimal.valueOf(10000000L)) > 0, "iPhone price should be > 10M VND");
                 assertFalse(p.getImages().isEmpty(), "Product should have at least one image");
@@ -58,7 +58,7 @@ class ProductSeederRealDataTest {
             for (ProductSeeder.SeedProductJsonDto p : list) {
                 assertNotNull(p.getName());
                 assertNotNull(p.getSku());
-                assertEquals("Đồng Hồ Thông Minh (Smartwatch)", p.getCategory());
+                assertEquals("Smartwatch & Smartband", p.getCategory());
                 assertEquals("Apple Authorised Reseller", p.getShop());
                 assertTrue(p.getPrice().compareTo(BigDecimal.valueOf(5000000L)) > 0, "Apple Watch price should be > 5M VND");
                 assertFalse(p.getImages().isEmpty());

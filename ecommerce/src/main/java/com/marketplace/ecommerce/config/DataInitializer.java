@@ -282,55 +282,47 @@ public class DataInitializer implements CommandLineRunner {
                 initializeTrustLevels();
                 initializeSeniorityPolicies();
 
-                // 8. Comprehensive Electronics & Tech Category Hierarchy with Category-based Commission Rates
-                // Group 1: Điện Thoại & Máy Tính Bảng (Biên lợi nhuận mỏng: 3.5%)
+                // 8. Streamlined Electronics Category Hierarchy (8 roots / 16 leaves) with Category-based Commission Rates
+                // Group 1: Điện Thoại & Máy Tính Bảng (3.5%)
                 ProductCategory phonesAndTablets = initializeCategory(null, "Điện Thoại & Máy Tính Bảng", new BigDecimal("3.50"));
-                ProductCategory smartphones = initializeCategory(phonesAndTablets, "Điện Thoại Thông Minh");
-                ProductCategory tablets = initializeCategory(phonesAndTablets, "Máy Tính Bảng");
-                ProductCategory ereaders = initializeCategory(phonesAndTablets, "Máy Đọc Sách & Phụ Kiện");
+                ProductCategory smartphones = initializeCategory(phonesAndTablets, "Điện Thoại & Tablet");
+                ProductCategory ereaders = initializeCategory(phonesAndTablets, "Máy Đọc Sách & Phụ Kiện Khác");
 
-                // Group 2: Laptop & Máy Tính Để Bàn (4.0%)
-                ProductCategory computers = initializeCategory(null, "Laptop & Máy Tính Để Bàn", new BigDecimal("4.00"));
-                ProductCategory gamingLaptops = initializeCategory(computers, "Laptop Gaming & Đồ Họa");
-                ProductCategory ultrabooks = initializeCategory(computers, "Laptop Văn Phòng & Mỏng Nhẹ");
-                ProductCategory pcWorkstations = initializeCategory(computers, "PC Đồng Bộ & Máy Trạm");
+                // Group 2: Laptop & Máy Tính PC (4.0%)
+                ProductCategory computers = initializeCategory(null, "Laptop & Máy Tính PC", new BigDecimal("4.00"));
+                ProductCategory laptops = initializeCategory(computers, "Laptop Các Loại (Gaming, Văn Phòng)");
+                ProductCategory pcs = initializeCategory(computers, "PC Đồng Bộ & Máy Trạm");
 
-                // Group 3: Linh Kiện Máy Tính & PC Build (4.5%)
-                ProductCategory components = initializeCategory(null, "Linh Kiện Máy Tính & PC Build", new BigDecimal("4.50"));
-                ProductCategory cpuGpu = initializeCategory(components, "CPU & Card Đồ Họa (VGA)");
-                ProductCategory ramSsd = initializeCategory(components, "RAM, Ổ Cứng SSD & HDD");
-                ProductCategory motherboardPsu = initializeCategory(components, "Bo Mạch Chủ & Nguồn Máy Tính");
-                ProductCategory casesCooling = initializeCategory(components, "Vỏ Case & Tản Nhiệt PC");
+                // Group 3: Linh Kiện & Gaming Gear (5.0%)
+                ProductCategory components = initializeCategory(null, "Linh Kiện & Gaming Gear", new BigDecimal("5.00"));
+                ProductCategory pcComponents = initializeCategory(components, "Linh Kiện PC (CPU, VGA, RAM, Main...)");
+                ProductCategory gamingGear = initializeCategory(components, "Gaming Gear (Bàn Phím, Chuột, Tai Nghe)");
 
-                // Group 4: Thiết Bị Âm Thanh (6.0%)
-                ProductCategory audio = initializeCategory(null, "Thiết Bị Âm Thanh", new BigDecimal("6.00"));
-                ProductCategory headphones = initializeCategory(audio, "Tai Nghe True Wireless & Chụp Tai");
-                ProductCategory speakers = initializeCategory(audio, "Loa Bluetooth & Soundbar");
-                ProductCategory audioStudio = initializeCategory(audio, "Microphone & Soundcard Thu Âm");
+                // Group 4: Thiết Bị Âm Thanh & Giải Trí (6.0%)
+                ProductCategory audio = initializeCategory(null, "Thiết Bị Âm Thanh & Giải Trí", new BigDecimal("6.00"));
+                ProductCategory speakersHeadphones = initializeCategory(audio, "Loa, Tai Nghe & Soundbar");
+                ProductCategory audioStudio = initializeCategory(audio, "Thiết Bị Thu Âm & Livestream");
 
-                // Group 5: Phụ Kiện Điện Tử & Gaming Gear (Biên lợi nhuận cao: 8.5%)
-                ProductCategory accessories = initializeCategory(null, "Phụ Kiện Điện Tử & Gaming Gear", new BigDecimal("8.50"));
-                ProductCategory chargingPacks = initializeCategory(accessories, "Củ Cáp Sạc & Sạc Dự Phòng");
-                ProductCategory gearPeripherals = initializeCategory(accessories, "Bàn Phím Cơ & Chuột Gaming");
-                ProductCategory hubsCables = initializeCategory(accessories, "Cáp Chuyển Đổi & Hub Type-C");
+                // Group 5: Phụ Kiện Điện Tử (8.5%)
+                ProductCategory accessories = initializeCategory(null, "Phụ Kiện Điện Tử", new BigDecimal("8.50"));
+                ProductCategory powerAndCables = initializeCategory(accessories, "Củ, Cáp Sạc & Sạc Dự Phòng");
+                ProductCategory protectiveCases = initializeCategory(accessories, "Ốp Lưng, Bao Da & Cáp Chuyển Đổi");
 
-                // Group 6: Thiết Bị Đeo & Đồng Hồ Thông Minh (6.5%)
-                ProductCategory wearables = initializeCategory(null, "Thiết Bị Đeo & Đồng Hồ Thông Minh", new BigDecimal("6.50"));
-                ProductCategory smartwatches = initializeCategory(wearables, "Đồng Hồ Thông Minh (Smartwatch)");
-                ProductCategory smartbands = initializeCategory(wearables, "Vòng Đeo Tay Thể Thao (Smartband)");
-                ProductCategory wearableAccessories = initializeCategory(wearables, "Dây Đeo & Phụ Kiện Smartwatch");
+                // Group 6: Đồng Hồ & Thiết Bị Đeo (6.5%)
+                ProductCategory wearables = initializeCategory(null, "Đồng Hồ & Thiết Bị Đeo", new BigDecimal("6.50"));
+                ProductCategory smartwatches = initializeCategory(wearables, "Smartwatch & Smartband");
+                ProductCategory wearableAccessories = initializeCategory(wearables, "Phụ Kiện Đồng Hồ Đeo Tay");
 
-                // Group 7: Thiết Bị Nhà Thông Minh & IoT (5.5%)
-                ProductCategory smartHome = initializeCategory(null, "Thiết Bị Nhà Thông Minh & IoT", new BigDecimal("5.50"));
-                ProductCategory securityCameras = initializeCategory(smartHome, "Camera An Ninh & Giám Sát");
-                ProductCategory robotVacuums = initializeCategory(smartHome, "Robot Hút Bụi & Lau Nhà");
-                ProductCategory smartLightingControls = initializeCategory(smartHome, "Khóa Cửa & Đèn Thông Minh");
+                // Group 7: Smart Home & Camera (5.5%)
+                ProductCategory smartHome = initializeCategory(null, "Smart Home & Camera", new BigDecimal("5.50"));
+                ProductCategory cameras = initializeCategory(smartHome, "Camera An Ninh & Giám Sát");
+                ProductCategory smartDevices = initializeCategory(smartHome, "Robot Hút Bụi, Khóa Cửa & Đèn Thông Minh");
 
-                // Group 8: Máy Ảnh & Thiết Bị Quay Phim (5.0%)
-                ProductCategory cameras = initializeCategory(null, "Máy Ảnh & Thiết Bị Quay Phim", new BigDecimal("5.00"));
-                ProductCategory dslrMirrorless = initializeCategory(cameras, "Máy Ảnh Mirrorless & DSLR");
-                ProductCategory dronesActionCam = initializeCategory(cameras, "Flycam Drone & Action Cam");
-                ProductCategory lensesGimbals = initializeCategory(cameras, "Ống Kính (Lens) & Gimbal Chống Rung");
+                // Group 8: Máy Ảnh & Quay Phim (5.0%)
+                ProductCategory camerasAndDrones = initializeCategory(null, "Máy Ảnh & Quay Phim", new BigDecimal("5.00"));
+                ProductCategory camerasGear = initializeCategory(camerasAndDrones, "Máy Ảnh, Ống Kính & Gimbal");
+                ProductCategory dronesAction = initializeCategory(camerasAndDrones, "Flycam Drone & Action Camera");
+
 
                 // 9. Multi-vendor Electronics Shops with Verified eKYC and Real Addresses (HN, HCM, DN)
                 Shop shop1 = initializeShop(
@@ -492,12 +484,12 @@ public class DataInitializer implements CommandLineRunner {
                 initializeShopEscrowAndSeniority(shop6, BigDecimal.ZERO, 1, 1);             // Xiaomi: 0đ, 1 tháng, 1⭐
 
                 // 10. Seed Realistic Products for Each Shop and Category
-                seedShopProducts(shop1, List.of(smartphones, tablets, ultrabooks, headphones, smartwatches, chargingPacks), "APPLE");
-                seedShopProducts(shop2, List.of(smartphones, tablets, smartwatches, headphones, chargingPacks), "SAMSUNG");
-                seedShopProducts(shop3, List.of(gamingLaptops, pcWorkstations, cpuGpu, ramSsd, motherboardPsu, casesCooling, gearPeripherals), "GEARVN");
-                seedShopProducts(shop4, List.of(headphones, speakers, audioStudio, dslrMirrorless, lensesGimbals), "SONY");
-                seedShopProducts(shop5, List.of(chargingPacks, hubsCables, gearPeripherals, headphones), "ANKER");
-                seedShopProducts(shop6, List.of(securityCameras, robotVacuums, smartLightingControls, smartbands), "XIAOMI");
+                seedShopProducts(shop1, List.of(smartphones, laptops, speakersHeadphones, smartwatches, powerAndCables), "APPLE");
+                seedShopProducts(shop2, List.of(smartphones, smartwatches, speakersHeadphones, powerAndCables), "SAMSUNG");
+                seedShopProducts(shop3, List.of(laptops, pcs, pcComponents, gamingGear), "GEARVN");
+                seedShopProducts(shop4, List.of(speakersHeadphones, audioStudio, camerasGear), "SONY");
+                seedShopProducts(shop5, List.of(powerAndCables, protectiveCases, speakersHeadphones, gamingGear), "ANKER");
+                seedShopProducts(shop6, List.of(cameras, smartDevices, smartwatches), "XIAOMI");
 
                 // 11. Seed Realistic Vouchers (Platform Vouchers + Shop Vouchers)
                 initializeVouchers(shop1, shop2, shop3, shop4, phonesAndTablets, computers, components, audio);
@@ -651,12 +643,12 @@ public class DataInitializer implements CommandLineRunner {
                                                 "Hiệu năng đột phá với chip Apple M2, màn hình Liquid Retina chống chói, camera trước Ultra Wide đặt ở cạnh ngang tối ưu cho gọi video và học tập trực tuyến.",
                                                 "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=800&h=800&fit=crop",
                                                 "https://images.unsplash.com/photo-1561154464-82e9adf32764?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Tai nghe Apple AirPods Pro (Gen 2) Type-C MagSafe", "Âm Thanh",
+                                list.add(new ProductCatalogItem("Tai nghe Apple AirPods Pro (Gen 2) Type-C MagSafe", "Loa, Tai Nghe",
                                                 5690000L, 250,
                                                 "Chip H2 mang đến khả năng chống ồn chủ động (ANC) gấp 2 lần, tính năng Adaptive Audio tự động điều chỉnh theo môi trường, cổng sạc Type-C hiện đại và khả năng kháng bụi nước IP54.",
                                                 "https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?w=800&h=800&fit=crop",
                                                 "https://images.unsplash.com/photo-1588423771073-b8903fbb85b5?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Tai nghe Chụp Tai Apple AirPods Max Wireless ANC", "Âm Thanh",
+                                list.add(new ProductCatalogItem("Tai nghe Chụp Tai Apple AirPods Max Wireless ANC", "Loa, Tai Nghe",
                                                 12990000L, 600,
                                                 "Chất lượng âm thanh trung thực Hi-Fi độ méo cực thấp, đệm tai dạng lưới thoáng khí bằng vải dệt kỹ thuật số, núm xoay Digital Crown điều khiển âm lượng và bài hát mượt mà.",
                                                 "https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=800&h=800&fit=crop",
@@ -708,7 +700,7 @@ public class DataInitializer implements CommandLineRunner {
                                                 "Viền bezel xoay vật lý trứ danh, mặt kính Sapphire nguyên khối sang trọng, đo huyết áp, điện tâm đồ ECG và phân tích thành phần cơ thể BIA chuyên sâu.",
                                                 "https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?w=800&h=800&fit=crop",
                                                 "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Tai Nghe Samsung Galaxy Buds2 Pro Âm Thanh 24bit Hi-Fi", "Âm Thanh",
+                                list.add(new ProductCatalogItem("Tai Nghe Samsung Galaxy Buds2 Pro Âm Thanh 24bit Hi-Fi", "Loa, Tai Nghe",
                                                 3290000L, 200,
                                                 "Âm thanh vòm 360 độ chuẩn phòng thu, công nghệ khử tiếng ồn thông minh ANC 3 micro độ nhạy cao, thiết kế công thái học ôm khít vành tai không cấn đau.",
                                                 "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=800&h=800&fit=crop",
@@ -740,22 +732,22 @@ public class DataInitializer implements CommandLineRunner {
                                                 "Quái thú gaming cấu hình khủng: Intel Core i9-14900HX, NVIDIA GeForce RTX 4080 12GB GDDR6, 32GB DDR5 5600MHz, màn hình ROG Nebula 2.5K 240Hz 100% DCI-P3 chuẩn màu đồ họa.",
                                                 "https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=800&h=800&fit=crop",
                                                 "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Card Màn Hình ASUS TUF Gaming GeForce RTX 4080 Super 16GB", "CPU & Card",
+                                list.add(new ProductCatalogItem("Card Màn Hình ASUS TUF Gaming GeForce RTX 4080 Super 16GB", "Linh Kiện PC",
                                                 29990000L, 2500,
                                                 "Kiến trúc Ada Lovelace với nhân Ray Tracing thế hệ 3, DLSS 3.5 AI Frame Generation mượt mà ở độ phân giải 4K, 3 quạt tản nhiệt vòng bi kép Axial-tech siêu mát và bền bỉ.",
                                                 "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=800&h=800&fit=crop",
                                                 "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Bộ Vi Xử Lý CPU Intel Core i9-14900K Box Chính Hãng", "CPU & Card",
+                                list.add(new ProductCatalogItem("Bộ Vi Xử Lý CPU Intel Core i9-14900K Box Chính Hãng", "Linh Kiện PC",
                                                 14490000L, 350,
                                                 "24 nhân 32 luồng (8 P-Core + 16 E-Core), xung nhịp tối đa lên tới 6.0 GHz nhờ công nghệ Intel Thermal Velocity Boost, đáp ứng hoàn hảo render 3D và stream game đỉnh cao.",
                                                 "https://images.unsplash.com/photo-1555680202-c86f0e12f086?w=800&h=800&fit=crop",
                                                 "https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("RAM Corsair Vengeance RGB 32GB (2x16GB) DDR5 6000MHz", "RAM",
+                                list.add(new ProductCatalogItem("RAM Corsair Vengeance RGB 32GB (2x16GB) DDR5 6000MHz", "Linh Kiện PC",
                                                 3290000L, 200,
                                                 "Tản nhiệt nhôm nguyên khối anodized, dải LED RGB 10 vùng siêu sáng tương thích phần mềm iCUE, hỗ trợ Intel XMP 3.0 ép xung ổn định bằng một cú click chuột.",
                                                 "https://images.unsplash.com/photo-1562976540-1502c2145186?w=800&h=800&fit=crop",
                                                 "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Ổ Cứng SSD Samsung 990 Pro 2TB PCIe Gen 4.0 x4 NVMe M.2", "RAM",
+                                list.add(new ProductCatalogItem("Ổ Cứng SSD Samsung 990 Pro 2TB PCIe Gen 4.0 x4 NVMe M.2", "Linh Kiện PC",
                                                 4690000L, 150,
                                                 "Tốc độ đọc/ghi tuần tự đỉnh cao lên tới 7.450 / 6.900 MB/s, bộ điều khiển phủ niken kiểm soát nhiệt độ thông minh tránh sụt giảm hiệu năng khi tải nặng kéo dài.",
                                                 "https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?w=800&h=800&fit=crop",
@@ -770,12 +762,12 @@ public class DataInitializer implements CommandLineRunner {
                                                 "Trọng lượng siêu nhẹ chỉ 63g, cảm biến quang học Focus Pro 30K DPI chính xác 99.8%, switch quang học Gen-3 phản hồi 0.2ms không lo bị double click.",
                                                 "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=800&h=800&fit=crop",
                                                 "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Nguồn Máy Tính Corsair RM850e 850W 80 Plus Gold ATX 3.0", "Bo Mạch",
+                                list.add(new ProductCatalogItem("Nguồn Máy Tính Corsair RM850e 850W 80 Plus Gold ATX 3.0", "Linh Kiện PC",
                                                 3190000L, 2800,
                                                 "Đạt chứng nhận 80 Plus Gold và chuẩn ATX 3.0 kèm cáp nguồn PCIe 5.0 12VHPWR cho card đồ họa RTX series, tụ điện Nhật Bản 105 độ C vận hành êm ái không tiếng ồn.",
                                                 "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=800&h=800&fit=crop",
                                                 "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Tản Nhiệt Nước AIO DeepCool LT720 ARGB 360mm", "Vỏ Case",
+                                list.add(new ProductCatalogItem("Tản Nhiệt Nước AIO DeepCool LT720 ARGB 360mm", "Linh Kiện PC",
                                                 3150000L, 2500,
                                                 "Bơm thế hệ thứ 4 với động cơ 3 pha 3100 RPM, mặt pump khối vô cực đa chiều hiệu ứng gương 3D huyền ảo, 3 quạt FK120 PWM áp suất gió cao làm mát CPU tối đa.",
                                                 "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=800&h=800&fit=crop",
@@ -822,7 +814,7 @@ public class DataInitializer implements CommandLineRunner {
                                                 "Màn hình LCD xoay lật đa góc hỗ trợ selfie, tính năng Product Showcase lấy nét tự động chuyển vật thể siêu mượt, micro 3 đầu thu định hướng kèm đầu lọc gió khử tạp âm ngoài trời.",
                                                 "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=800&h=800&fit=crop",
                                                 "https://images.unsplash.com/photo-1502920917128-1aa500764cbd?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Microphone Không Dây Kép Sony ECM-W2BT Thu Âm Studio", "Microphone",
+                                list.add(new ProductCatalogItem("Microphone Không Dây Kép Sony ECM-W2BT Thu Âm Studio", "Thu Âm",
                                                 4990000L, 350,
                                                 "Kết nối kỹ thuật số qua ngàm MI Shoe không suy giảm tín hiệu âm thanh, khoảng cách truyền tải ổn định lên tới 200m, hỗ trợ 3 chế độ thu âm MIC, MIX và RCVR linh hoạt.",
                                                 "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=800&h=800&fit=crop",
@@ -839,32 +831,32 @@ public class DataInitializer implements CommandLineRunner {
                                                 "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&h=800&fit=crop"));
                         }
                         case "ANKER" -> {
-                                list.add(new ProductCatalogItem("Trạm Sạc Để Bàn Anker Prime 6 Trong 1 GaN 200W USB-C", "Củ Cáp Sạc",
+                                list.add(new ProductCatalogItem("Trạm Sạc Để Bàn Anker Prime 6 Trong 1 GaN 200W USB-C", "Cáp Sạc",
                                                 2390000L, 550,
                                                 "Tổng công suất 200W với 4 cổng Type-C và 2 cổng USB-A, hỗ trợ sạc nhanh cùng lúc 2 laptop công suất 100W mỗi cổng, chip GaN thế hệ mới bảo vệ quá nhiệt ActiveShield 2.0.",
                                                 "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=800&h=800&fit=crop",
                                                 "https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Pin Sạc Dự Phòng Anker 737 Power Bank (PowerCore 24K) 140W", "Củ Cáp Sạc",
+                                list.add(new ProductCatalogItem("Pin Sạc Dự Phòng Anker 737 Power Bank (PowerCore 24K) 140W", "Cáp Sạc",
                                                 2890000L, 750,
                                                 "Dung lượng 24.000mAh chuẩn sạc PD 3.1 140W nạp pin siêu tốc cho MacBook Pro 16 inch, màn hình màu thông minh hiển thị chi tiết công suất sạc theo thời gian thực.",
                                                 "https://images.unsplash.com/photo-1609592426815-f55a16d80d29?w=800&h=800&fit=crop",
                                                 "https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Củ Sạc Nhanh Baseus GaN5 Pro Fast Charger 65W 3 Cổng", "Củ Cáp Sạc",
+                                list.add(new ProductCatalogItem("Củ Sạc Nhanh Baseus GaN5 Pro Fast Charger 65W 3 Cổng", "Cáp Sạc",
                                                 490000L, 180,
                                                 "Kích thước nhỏ hơn 55% so với củ sạc thông thường, trang bị 2 cổng Type-C và 1 cổng USB-A sạc đồng thời điện thoại, máy tính bảng và tai nghe tiện lợi khi du lịch.",
                                                 "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=800&h=800&fit=crop",
                                                 "https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Hub Chuyển Đổi Baseus Metal Gleam Series 9-in-1 Type-C 4K 60Hz", "Hub Chuyển Đổi",
+                                list.add(new ProductCatalogItem("Hub Chuyển Đổi Baseus Metal Gleam Series 9-in-1 Type-C 4K 60Hz", "Cáp Chuyển Đổi",
                                                 890000L, 250,
                                                 "Vỏ hợp kim nhôm tản nhiệt nhanh, trang bị cổng HDMI 4K 60Hz sắc nét, cổng mạng LAN Gigabit RJ45 1000Mbps, khe thẻ nhớ SD/TF và hỗ trợ sạc xuyên qua PD 100W.",
                                                 "https://images.unsplash.com/photo-1625842268584-8f3296236761?w=800&h=800&fit=crop",
                                                 "https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Cáp Sạc Baseus Tungsten Gold Type-C to Type-C 100W 1.5m Bện Dù", "Củ Cáp Sạc",
+                                list.add(new ProductCatalogItem("Cáp Sạc Baseus Tungsten Gold Type-C to Type-C 100W 1.5m Bện Dù", "Cáp Sạc",
                                                 159000L, 80,
                                                 "Đầu cắm phủ hợp kim kẽm đen bóng chống oxy hóa gỉ sét, dây bện dù nylon mật độ cao chống gập gãy trên 10.000 lần uốn cong, hỗ trợ dòng điện tối đa 5A chuẩn E-Marker.",
                                                 "https://images.unsplash.com/photo-1609081219090-a6d8173087ec?w=800&h=800&fit=crop",
                                                 "https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Sạc Dự Phòng MagSafe Baseus Magnetic 10000mAh 20W LED", "Củ Cáp Sạc",
+                                list.add(new ProductCatalogItem("Sạc Dự Phòng MagSafe Baseus Magnetic 10000mAh 20W LED", "Cáp Sạc",
                                                 590000L, 280,
                                                 "Lực hít nam châm từ tính mạnh mẽ chuẩn MagSafe cho iPhone 12/13/14/15 series không rơi rớt, sạc không dây 15W kết hợp sạc có dây Type-C 20W tiện lợi.",
                                                 "https://images.unsplash.com/photo-1609592426815-f55a16d80d29?w=800&h=800&fit=crop",
@@ -879,7 +871,7 @@ public class DataInitializer implements CommandLineRunner {
                                                 "Bố cục phím bấm dạng cắt kéo Scissor êm ái phản hồi nhanh, kết nối chuyển đổi mượt mà giữa 3 thiết bị cùng lúc tương thích hoàn hảo Windows, macOS, iOS và Android.",
                                                 "https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=800&h=800&fit=crop",
                                                 "https://images.unsplash.com/photo-1511467687858-23d96c32e4ae?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Giá Đỡ Điện Thoại Baseus Halo Tự Kẹp Kiêm Sạc Không Dây 15W", "Củ Cáp Sạc",
+                                list.add(new ProductCatalogItem("Giá Đỡ Điện Thoại Baseus Halo Tự Kẹp Kiêm Sạc Không Dây 15W", "Cáp Sạc",
                                                 450000L, 320,
                                                 "Cảm biến hồng ngoại nhận diện điện thoại tự động kẹp giữ chắc chắn, sạc nhanh không dây chuẩn Qi 15W tản nhiệt quạt mini giúp điện thoại không nóng khi chạy bản đồ định vị GPS.",
                                                 "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=800&h=800&fit=crop",
@@ -911,7 +903,7 @@ public class DataInitializer implements CommandLineRunner {
                                                 "Hỗ trợ 6 phương thức mở khóa (vân tay sinh trắc học, mật mã, NFC, Bluetooth, chìa cơ, mật khẩu tạm thời), chuông cửa thông minh tích hợp và cảnh báo phá khóa về điện thoại.",
                                                 "https://images.unsplash.com/photo-1558002038-1055907df827?w=800&h=800&fit=crop",
                                                 "https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Vòng Đeo Tay Thông Minh Xiaomi Smart Band 8 Màn Hình AMOLED 60Hz", "Vòng Đeo Tay",
+                                list.add(new ProductCatalogItem("Vòng Đeo Tay Thông Minh Xiaomi Smart Band 8 Màn Hình AMOLED 60Hz", "Smartband",
                                                 790000L, 120,
                                                 "Màn hình AMOLED 1.62 inch tần số quét 60Hz mượt mà tự động chỉnh độ sáng, hơn 150 chế độ thể thao, theo dõi giấc ngủ và nhịp tim liên tục 24/7, thời lượng pin 16 ngày.",
                                                 "https://images.unsplash.com/photo-1575311373937-040b8e1fd5b6?w=800&h=800&fit=crop",
@@ -943,7 +935,7 @@ public class DataInitializer implements CommandLineRunner {
                                                 "https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&h=800&fit=crop"));
                         }
                         default -> {
-                                list.add(new ProductCatalogItem("Cáp Sạc Đa Năng 3 Trong 1 Type-C Micro Lightning 100W", "Phụ Kiện",
+                                list.add(new ProductCatalogItem("Cáp Sạc Đa Năng 3 Trong 1 Type-C Micro Lightning 100W", "Cáp Sạc",
                                                 120000L, 80,
                                                 "Dây bện dù chống rối gãy gập, hỗ trợ sạc nhanh cho mọi thiết bị di động, chiều dài 1.2m tiện dụng.",
                                                 "https://images.unsplash.com/photo-1609081219090-a6d8173087ec?w=800&h=800&fit=crop",
@@ -1934,7 +1926,7 @@ public class DataInitializer implements CommandLineRunner {
                 // 4. LAPTOP500K (Platform - Category: Laptop & Máy Tính)
                 initializeOrUpdateVoucher(
                                 "LAPTOP500K",
-                                "Giảm 500K Laptop & Máy Tính Để Bàn",
+                                "Giảm 500K Laptop & Máy Tính PC",
                                 "Giảm ngay 500.000đ cho đơn hàng từ 10.000.000đ thuộc ngành Laptop Gaming, Văn Phòng & Máy Trạm",
                                 VoucherType.FIXED_AMOUNT,
                                 BigDecimal.valueOf(500000),
@@ -1948,10 +1940,10 @@ public class DataInitializer implements CommandLineRunner {
                                 false
                 );
 
-                // 5. AUDIO150K (Platform - Category: Thiết Bị Âm Thanh)
+                // 5. AUDIO150K (Platform - Category: Thiết Bị Âm Thanh & Giải Trí)
                 initializeOrUpdateVoucher(
                                 "AUDIO150K",
-                                "Giảm 150K Thiết Bị Âm Thanh & Studio",
+                                "Giảm 150K Thiết Bị Âm Thanh & Giải Trí",
                                 "Giảm ngay 150.000đ cho đơn hàng từ 1.500.000đ mua Tai Nghe, Loa Bluetooth hoặc Soundcard thu âm",
                                 VoucherType.FIXED_AMOUNT,
                                 BigDecimal.valueOf(150000),
@@ -1965,7 +1957,7 @@ public class DataInitializer implements CommandLineRunner {
                                 false
                 );
 
-                // 6. BUILDPC200K (Platform - Category: Linh Kiện Máy Tính & PC Build)
+                // 6. BUILDPC200K (Platform - Category: Linh Kiện & Gaming Gear)
                 initializeOrUpdateVoucher(
                                 "BUILDPC200K",
                                 "Giảm 200K Linh Kiện PC & Build Máy",

@@ -47,14 +47,14 @@
 
 ### 3.1. Phân loại 8 Ngành Hàng Đồ Điện Tử & Thiết Bị Công Nghệ
 Hệ thống chuẩn hóa 8 ngành hàng chuyên sâu trong hệ sinh thái thiết bị công nghệ & điện tử:
-1. *Điện Thoại & Máy Tính Bảng (Smartphones & Tablets)*: Điện thoại thông minh, máy tính bảng, bút cảm ứng, máy đọc sách điện tử.
-2. *Laptop & Máy Tính Để Bàn (Laptops & Desktops)*: Laptop văn phòng, laptop gaming, máy trạm workstation, PC đồng bộ, màn hình máy tính.
-3. *Âm Thanh & Tai Nghe (Audio & Headphones)*: Tai nghe True Wireless (TWS), tai nghe chụp tai (Over-ear), loa bluetooth, loa để bàn, DAC/Amp, micro thu âm.
-4. *Đồng Hồ & Thiết Bị Đeo Thông Minh (Smartwatches & Wearables)*: Smartwatch thể thao, vòng đeo tay theo dõi sức khỏe, kính thực tế ảo VR/AR.
-5. *Máy Ảnh & Thiết Bị Số (Cameras & Digital Imaging)*: Máy ảnh Mirrorless/DSLR, máy quay vlog, action camera, flycam (drone), thiết bị chống rung gimbal.
-6. *Linh Kiện & Phần Cứng Máy Tính (Computer Hardware & Components)*: CPU, Card màn hình (GPU/VGA), RAM, ổ cứng SSD/HDD, Mainboard, bộ nguồn PSU, tản nhiệt.
-7. *Phụ Kiện Công Nghệ & Thiết Bị Ngoại Vi (Tech Accessories & Peripherals)*: Củ cáp sạc nhanh, pin sạc dự phòng, bàn phím cơ, chuột gaming, hub chuyển đổi, giá đỡ công thái học.
-8. *Thiết Bị Nhà Thông Minh & Mạng (Smart Home & Networking)*: Router Wi-Fi 6/Mesh, camera an ninh giám sát gia đình, khóa cửa điện tử thông minh, cảm biến IoT.
+1. *Điện Thoại & Máy Tính Bảng (Mobile & Tablets)*: Điện thoại, máy tính bảng, máy đọc sách và phụ kiện đi kèm. Hoa hồng 3.5%.
+2. *Laptop & Máy Tính PC (Laptops & PCs)*: Laptop gaming/văn phòng, PC đồng bộ, máy trạm workstation. Hoa hồng 4.0%.
+3. *Linh Kiện & Gaming Gear (Components & Gaming Gear)*: CPU, VGA, RAM, Mainboard, bàn phím, chuột, tai nghe gaming. Hoa hồng 5.0%.
+4. *Thiết Bị Âm Thanh & Giải Trí (Audio & Entertainment)*: Loa, tai nghe, soundbar, thiết bị thu âm & livestream. Hoa hồng 6.0%.
+5. *Phụ Kiện Điện Tử (Electronic Accessories)*: Củ cáp sạc, sạc dự phòng, ốp lưng, bao da, cáp chuyển đổi. Hoa hồng 8.5%.
+6. *Đồng Hồ & Thiết Bị Đeo (Watches & Wearables)*: Smartwatch, smartband và phụ kiện đồng hồ. Hoa hồng 6.5%.
+7. *Smart Home & Camera*: Camera an ninh, robot hút bụi, khóa cửa và đèn thông minh. Hoa hồng 5.5%.
+8. *Máy Ảnh & Quay Phim (Cameras & Imaging)*: Máy ảnh, ống kính, gimbal, flycam, action camera. Hoa hồng 5.0%.
 
 ### 3.2. Tiêu chuẩn Phân Hạng Tình Trạng Thiết Bị Điện Tử (Condition Grade)
 Đặc thù ngành thiết bị công nghệ yêu cầu Người bán phân loại chính xác tình trạng thực tế để bảo vệ Người mua:

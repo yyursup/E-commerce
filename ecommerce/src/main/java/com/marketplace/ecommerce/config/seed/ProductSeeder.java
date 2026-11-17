@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 public class ProductSeeder {
 
     private static final int MIN_PRODUCTS_PER_SHOP = 10;
-    private static final int MAX_PRODUCTS_PER_SHOP = 15;
+    private static final int MAX_PRODUCTS_PER_SHOP = 20;
 
     private final ProductRepository productRepository;
     private final ProductImageRepository productImageRepository;
@@ -273,6 +273,26 @@ public class ProductSeeder {
                         "Bề mặt cảm ứng Multi-Touch phẳng liền mạch cho phép cuộn trang, chuyển đổi màn hình máy Mac siêu tiện lợi, thiết kế chân đế tối ưu trơn tru trên mọi mặt bàn.",
                         "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=800&h=800&fit=crop",
                         "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=800&h=800&fit=crop"));
+                list.add(new ProductCatalogItem("MacBook Pro 14 inch M3 Pro (18GB RAM / 512GB SSD) Space Black", "Laptop",
+                        46990000L, 1600,
+                        "Chip M3 Pro 11 nhân CPU, 14 nhân GPU cùng 18GB bộ nhớ thống nhất, màn hình Liquid Retina XDR 14.2 inch 120Hz độ sáng tối đa 1600 nits. Có 3 cổng Thunderbolt 4, HDMI, khe thẻ SDXC và MagSafe 3, pin xem video tới khoảng 18 giờ. Hàng chính hãng Apple Việt Nam.",
+                        "https://cdn2.cellphones.com.vn/insecure/rs:fill:0:358/q:90/plain/https://cellphones.com.vn/media/catalog/product/m/a/macbook-pro-14-inch-m3-pro-2023_1_.png",
+                        "https://cdn2.cellphones.com.vn/insecure/rs:fill:0:358/q:90/plain/https://cellphones.com.vn/media/catalog/product/m/a/macbook-pro-14-inch-m3-pro-2023_4_.png"));
+                list.add(new ProductCatalogItem("Mac mini M2 8GB/256GB Bản Chính Hãng VN/A", "PC Đồng Bộ",
+                        14999000L, 1180,
+                        "Mac mini chip M2 (8 nhân CPU, 10 nhân GPU), RAM 8GB, SSD 256GB, thân máy nhỏ gọn nặng khoảng 1.18kg. Đủ cổng cho bàn làm việc: 2 Thunderbolt 4, 2 USB-A, HDMI, Gigabit Ethernet và giắc tai nghe 3.5mm.",
+                        "https://cdn2.cellphones.com.vn/insecure/rs:fill:0:358/q:90/plain/https://cellphones.com.vn/media/catalog/product/m/a/mac-mini-3_1.jpg",
+                        "https://cdn2.cellphones.com.vn/insecure/rs:fill:0:358/q:90/plain/https://cellphones.com.vn/media/catalog/product/m/a/mac-mini-3_1.jpg"));
+                list.add(new ProductCatalogItem("Dây Đeo Apple Watch Sport Band Silicone Chính Hãng 45mm", "Phụ Kiện Đồng Hồ",
+                        990000L, 40,
+                        "Dây Sport Band chính hãng Apple làm từ fluoroelastomer mềm, dễ lau chùi, khóa cài chốt gọn. Dùng được cho Apple Watch vỏ 42/44/45/49mm, phù hợp tập luyện hằng ngày.",
+                        "https://store.storeimages.cdn-apple.com/1/as-images.apple.com/is/MJUH4ref?wid=1144&hei=1144&fmt=jpeg&qlt=90&.v=TzNIWFZDMnpUWHFJbFZYS21OMUR5ZjFlc25WOEVLY1JSWC9IQlNRYUMrbUNXVjk0TzYwS3Q2V3VwaTE1bnFMYUUzd2tseHhQOFVXNytOVXJ6WTZISlE",
+                        "https://store.storeimages.cdn-apple.com/1/as-images.apple.com/is/MJUH4ref_AV1?wid=2000&hei=2000&fmt=jpeg&qlt=90&.v=RnBEVlFtNU00UTZlOURPQzRXNzZWL1Y1N2w2YnRDOUU3NzYxVzNjaDM5cStpNFY0WVMxUVlnblJXSGt4T2pKc1hESGQ3VHhoaGRlRDg1c3luR1hFRnc"));
+                list.add(new ProductCatalogItem("Dây Đeo Apple Watch Alpine Loop 44/45/46/49mm", "Phụ Kiện Đồng Hồ",
+                        2900000L, 60,
+                        "Dây dệt hai lớp từ polyester và spandex tái chế, móc chữ G bằng titan tái chế, ôm cổ tay chắc cho các hoạt động ngoài trời. Tương thích Apple Watch 44/45/46/49mm, có nhiều cỡ và màu.",
+                        "https://cdn2.cellphones.com.vn/insecure/rs:fill:0:358/q:90/plain/https://cellphones.com.vn/media/catalog/product/g/r/group_647_85__3.png",
+                        "https://cdn2.cellphones.com.vn/insecure/rs:fill:0:358/q:90/plain/https://cellphones.com.vn/media/catalog/product/g/r/group_647_84__3.png"));
             }
             case "SAMSUNG" -> {
                 list.add(new ProductCatalogItem("Samsung Galaxy S24 Ultra 5G 12GB/256GB Titan Xám", "Điện Thoại",
@@ -325,6 +345,16 @@ public class ProductSeeder {
                         "Thiết kế thân bút dày cầm chắc tay, nhận diện 4096 mức cảm ứng lực và độ nghiêng bút hoàn hảo cho đồ họa kỹ thuật số và vẽ sketch chuyên nghiệp.",
                         "https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=800&h=800&fit=crop",
                         "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=800&h=800&fit=crop"));
+                list.add(new ProductCatalogItem("Dây Đeo Silicone Sport Band Samsung Galaxy Watch6 40/43mm", "Phụ Kiện Đồng Hồ",
+                        1460000L, 23,
+                        "Dây Sport Band chính hãng Samsung bằng fluoroelastomer chống mồ hôi, thay dây chỉ cần một nút bấm. Dùng cho Galaxy Watch6 và Watch6 Classic, nặng khoảng 23g.",
+                        "https://cdn2.fptshop.com.vn/unsafe/384x0/filters:format(webp):quality(75)/7317_Vang_760277178216_day_deo_dong_ho_samsung_galaxy_watch6_40_43mm_sport_band_vang_mo_et_sfr93soegww_56_0c7e3938ab.png",
+                        "https://cdn2.fptshop.com.vn/unsafe/384x0/filters:format(webp):quality(75)/2023_8_2_638265672399277264_day-deo-dong-ho-samsung-galaxy-watch6-40-43mm-sport-band-vang-4.jpg"));
+                list.add(new ProductCatalogItem("Dây Đeo Eco-Leather Samsung Galaxy Watch6 40/43mm", "Phụ Kiện Đồng Hồ",
+                        2440000L, 30,
+                        "Dây Eco-Leather chính hãng Samsung có khóa nam châm, chỉnh độ rộng nhanh và vừa cổ tay. Kiểu dáng lịch sự, hợp mang đi làm và dự tiệc với Galaxy Watch6.",
+                        "https://cdn2.fptshop.com.vn/unsafe/384x0/filters:format(webp):quality(75)/7322_Xanh_760277179521_day_deo_dong_ho_samsung_galaxy_watch6_40_43mm_eco_leather_band_et_shr93slegww_61_b354b7e1f5.png",
+                        "https://cdn2.fptshop.com.vn/unsafe/384x0/filters:format(webp):quality(75)/2023_8_2_638265664365141764_day-deo-dong-ho-samsung-galaxy-watch6-40-43mm-eco-leather-band-xanh-1.jpg"));
             }
             case "GEARVN" -> {
                 list.add(new ProductCatalogItem("Laptop Gaming ASUS ROG Strix G16 G614JVR (i9-14900HX / RTX 4080)", "Laptop",
@@ -377,6 +407,31 @@ public class ProductSeeder {
                         "Tấm nền OLED đỉnh cao với độ tương phản vô cực, tần số quét 240Hz thời gian phản hồi thần tốc 0.03ms (GtG), hỗ trợ NVIDIA G-SYNC Compatible và AMD FreeSync Premium.",
                         "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=800&h=800&fit=crop",
                         "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&h=800&fit=crop"));
+                list.add(new ProductCatalogItem("Laptop Gaming Lenovo Legion Pro 5 16IRX9 83DF0047VN (i9-14900HX / RTX 4060 / 32GB / 1TB)", "Laptop",
+                        43890000L, 2500,
+                        "Core i9-14900HX, RTX 4060 8GB, RAM 32GB DDR5 và SSD 1TB. Màn hình 16 inch WQXGA 240Hz phủ 100% DCI-P3, tản nhiệt ColdFront 5.0 hai quạt giữ máy mát khi chơi game dài. Bảo hành chính hãng Lenovo Việt Nam.",
+                        "https://anphat.com.vn/media/product/47463_laptop_lenovo_legion_pro_5_16irx9_83df0047vn__intel_core_i9_14900hx__4_.jpg",
+                        "https://anphat.com.vn/media/product/47463_laptop_lenovo_legion_pro_5_16irx9_83df0047vn__intel_core_i9_14900hx__1_.jpg"));
+                list.add(new ProductCatalogItem("Laptop Dell XPS 13 9340 HXRGT (Ultra 7 155H / 16GB / 1TB / 13.4 inch QHD+ Cảm Ứng)", "Laptop",
+                        54990000L, 1210,
+                        "Vỏ nhôm nguyên khối nặng khoảng 1.21kg, chip Intel Core Ultra 7 155H (16 nhân, 22 luồng), RAM 16GB LPDDR5X, SSD 1TB và màn hình cảm ứng 13.4 inch QHD+ 120Hz. Có 2 cổng Thunderbolt 4, hợp với người dùng văn phòng hay di chuyển.",
+                        "https://anphat.com.vn/media/product/49378_laptop_dell_xps_13_9340_hxrgt_anphatcomputer_1.jpg",
+                        "https://anphat.com.vn/media/product/49378_laptop_dell_xps_13_9340_hxrgt__2_.jpg"));
+                list.add(new ProductCatalogItem("PC GVN Intel i7-14700F / VGA RTX 4070 Super", "PC Đồng Bộ",
+                        38990000L, 12000,
+                        "Bộ PC lắp sẵn của GearVN với Core i7-14700F (20 nhân, 28 luồng, xung tối đa 5.4GHz), card RTX 4070 Super, RAM 16GB và SSD NVMe PCIe Gen 4. Chơi tốt game AAA ở độ phân giải 2K. Linh kiện bảo hành tại GearVN.",
+                        "https://cdn.hstatic.net/products/200000722513/web__4_of_101__732d6c0359294ef6968130c276f51f50_large.jpg",
+                        "https://cdn.hstatic.net/products/200000722513/web__14_of_101__6f8a489d0d374db697099a982e557ca5_large.jpg"));
+                list.add(new ProductCatalogItem("PC GVN x MSI Dragon X (Intel Core Ultra 7 265K / VGA RTX 4070 Super)", "PC Đồng Bộ",
+                        54990000L, 12000,
+                        "Bộ PC phối hợp giữa GearVN và MSI với CPU Core Ultra 7 265K cùng card RTX 4070 Super, đủ mạnh cho game nặng, dựng video và render. Lắp ráp, kiểm tra sẵn, cắm điện là dùng.",
+                        "https://cdn.hstatic.net/products/200000722513/pc_khach_rtx_5090_msi-02261_03cddd72f4164a5d8a0b3b9d717715fc_large.jpg",
+                        "https://product.hstatic.net/200000722513/product/artboard_2_copy_c0584cdc76304664a24e92cde2f41eb2_large.png"));
+                list.add(new ProductCatalogItem("Microphone Thu Âm USB HyperX QuadCast S RGB Chống Rung", "Thu Âm",
+                        3290000L, 600,
+                        "Micro condenser USB với 4 kiểu thu âm, giá treo giảm rung đi kèm, cảm ứng chạm trên đỉnh để tắt tiếng và đèn RGB chỉnh qua phần mềm NGENUITY. Hợp với streamer và người làm podcast.",
+                        "https://row.hyperx.com/cdn/shop/files/hyperx_quadcast_s_1_front.jpg?v=1793386382",
+                        "https://row.hyperx.com/cdn/shop/files/ai-quadcast-s-1-2000x2000.jpg?v=1793386381"));
             }
             case "SONY" -> {
                 list.add(new ProductCatalogItem("Tai Nghe Chống Ồn Flagship Sony WH-1000XM5 Hi-Res", "Tai Nghe & Soundbar",
@@ -429,6 +484,21 @@ public class ProductSeeder {
                         "Công nghệ 360 Spatial Sound for Gaming xác định chính xác vị trí bước chân đối thủ, khử tiếng ồn chủ động kép, micro cần gạt tắt tiếng tiện lợi và kết nối 2.4GHz không độ trễ.",
                         "https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=800&h=800&fit=crop",
                         "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&h=800&fit=crop"));
+                list.add(new ProductCatalogItem("Camera Hành Trình Sony FDR-X3000 Action Cam 4K Chống Rung Quang Học", "Action Camera",
+                        9990000L, 116,
+                        "Quay 4K 30p bitrate 100Mbps, chống rung quang học Balanced Optical SteadyShot, ống kính ZEISS Tessar. Có Wi-Fi và GPS, kèm vỏ chống nước dùng được tới độ sâu 60m.",
+                        "https://channel.vcmedia.vn/thumb_w/640/prupload/441/2016/11/img20161107140820701.jpg",
+                        "https://channel.vcmedia.vn/thumb_w/640/prupload/441/2016/11/img20161107140820701.jpg"));
+                list.add(new ProductCatalogItem("Máy Quay Hành Động Sony RX0 II Siêu Nhỏ Chống Nước 10m", "Action Camera",
+                        15990000L, 132,
+                        "Máy ảnh siêu nhỏ cảm biến 1 inch 15.3MP, ống kính ZEISS Tessar T* 24mm f/4, quay 4K nội bộ XAVC S. Thân máy chống nước, chống va đập và chống nghiền, cổng micro HDMI và jack mic 3.5mm.",
+                        "https://tientranmobile.com/wp-content/uploads/2026/03/sony-rx0-ii-4-510x510.jpg",
+                        "https://tientranmobile.com/wp-content/uploads/2026/03/sony-rx0-ii-6-510x310.jpg"));
+                list.add(new ProductCatalogItem("Gimbal Chống Rung Zhiyun Weebill 3S Cho Máy Ảnh Mirrorless", "Gimbal",
+                        8490000L, 1055,
+                        "Gimbal 3 trục tải tối đa 3kg, đèn trợ sáng 1000 lux, màn hình cảm ứng 0.96 inch, pin dùng đến 11.5 giờ và sạc nhanh PD. Hỗ trợ chuyển ngang dọc nhanh, tương thích nhiều dòng mirrorless của Sony, Canon, Nikon, Panasonic và Fujifilm.",
+                        "https://mayanh24h.com/upload/assets/thumb/2023/0916/ar/weebill-3s-1.jpg",
+                        "https://product.hstatic.net/200000349155/product/logo2_e781c261495740579781b41ae7279d64.jpg"));
             }
             case "ANKER" -> {
                 list.add(new ProductCatalogItem("Trạm Sạc Để Bàn Anker Prime 6 Trong 1 GaN 200W USB-C", "Cáp Sạc",
@@ -532,6 +602,41 @@ public class ProductSeeder {
                         1890000L, 5200,
                         "Luồng gió tự nhiên dịu mát êm ái góc quay siêu rộng 150 độ, động cơ biến tần DC tiết kiệm điện độ ồn chỉ 34.6dB, lồng bảo vệ khe hẹp 6.9mm an toàn tuyệt đối cho trẻ nhỏ.",
                         "https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=800&h=800&fit=crop",
+                        "https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&h=800&fit=crop"));
+                list.add(new ProductCatalogItem("Flycam FIMI X8 SE 2022 V2 Camera 4K Truyền Hình Ảnh 10km", "Flycam",
+                        11490000L, 768,
+                        "Cảm biến Sony 1/2 inch khẩu f/1.6 quay 4K HDR, gimbal 3 trục, bay tối đa khoảng 35 phút, truyền hình ảnh xa 10km. Thân gập gọn khoảng 768g, định vị GPS, GLONASS và BeiDou.",
+                        "https://images.unsplash.com/photo-1557597774-9d273605dfa9?w=800&h=800&fit=crop",
+                        "https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&h=800&fit=crop"));
+                list.add(new ProductCatalogItem("Flycam DJI Mini 3 (+ DJI RC-N1) Dưới 249g Camera 4K HDR", "Flycam",
+                        13499000L, 249,
+                        "Drone DJI Mini 3 nặng dưới 249g, cảm biến 1/1.3 inch 12MP, quay 4K HDR, bay 38 đến 51 phút tùy loại pin. Có quay dọc, QuickShot và Panorama, kèm tay điều khiển RC-N1.",
+                        "https://images.unsplash.com/photo-1557597774-9d273605dfa9?w=800&h=800&fit=crop",
+                        "https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&h=800&fit=crop"));
+                list.add(new ProductCatalogItem("Combo Xiaomi Mi Action Camera 4K + Tay Cầm Chống Rung", "Action Camera",
+                        3490000L, 99,
+                        "Camera hành động Xiaomi quay 4K 30fps góc rộng 145 độ, chống rung điện tử 6 trục, màn hình cảm ứng 2.4 inch, nặng khoảng 99g, kết nối Wi-Fi và Bluetooth. Đi kèm tay cầm chống rung.",
+                        "https://images.unsplash.com/photo-1557597774-9d273605dfa9?w=800&h=800&fit=crop",
+                        "https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&h=800&fit=crop"));
+                list.add(new ProductCatalogItem("Máy Đọc Sách Amazon Kindle Paperwhite 6 16GB (Bản Không Quảng Cáo)", "Máy Đọc Sách",
+                        6390000L, 211,
+                        "Màn hình E Ink 7 inch 300ppi chống chói với đèn nền chỉnh được, bộ nhớ 16GB, chống nước IPX8, sạc USB-C và pin dùng đến khoảng 12 tuần. Bản không quảng cáo.",
+                        "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=800&h=800&fit=crop",
+                        "https://images.unsplash.com/photo-1561154464-82e9adf32764?w=800&h=800&fit=crop"));
+                list.add(new ProductCatalogItem("Máy Đọc Sách Kobo Clara BW 6 inch 16GB Chống Nước", "Máy Đọc Sách",
+                        5299000L, 174,
+                        "Máy đọc sách 6 inch màn hình E Ink Carta 1300 độ phân giải 1072x1448, bộ nhớ 16GB, chống nước IPX8, sạc USB-C, đèn ComfortLight PRO và chế độ nền tối. Đọc được EPUB, PDF và nhiều định dạng khác.",
+                        "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=800&h=800&fit=crop",
+                        "https://images.unsplash.com/photo-1561154464-82e9adf32764?w=800&h=800&fit=crop"));
+                list.add(new ProductCatalogItem("Camera An Ninh Ngoài Trời Xiaomi Outdoor Camera CW300 2.5K", "Camera An Ninh",
+                        990000L, 330,
+                        "Camera ngoài trời 4MP (2560x1440) chống nước bụi IP66, gimbal xoay hai trục, hồng ngoại ban đêm và chế độ đêm có màu. Có đèn và còi báo động, đàm thoại hai chiều, hỗ trợ Wi-Fi lẫn cổng LAN.",
+                        "https://images.unsplash.com/photo-1557597774-9d273605dfa9?w=800&h=800&fit=crop",
+                        "https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&h=800&fit=crop"));
+                list.add(new ProductCatalogItem("Camera An Ninh Xiaomi Smart Camera C200 1080P Xoay 360", "Camera An Ninh",
+                        510000L, 260,
+                        "Camera trong nhà Full HD 1080p xoay ngang 360 độ và dọc 106 độ, hồng ngoại 940nm không đèn đỏ khi quay đêm, nhận diện người bằng AI, lưu thẻ microSD đến 256GB và chuẩn nén H.265.",
+                        "https://images.unsplash.com/photo-1557597774-9d273605dfa9?w=800&h=800&fit=crop",
                         "https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&h=800&fit=crop"));
             }
             default -> {

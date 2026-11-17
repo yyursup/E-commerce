@@ -372,7 +372,7 @@ public class ProductSeeder {
                         "Bơm thế hệ thứ 4 với động cơ 3 pha 3100 RPM, mặt pump khối vô cực đa chiều hiệu ứng gương 3D huyền ảo, 3 quạt FK120 PWM áp suất gió cao làm mát CPU tối đa.",
                         "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=800&h=800&fit=crop",
                         "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&h=800&fit=crop"));
-                list.add(new ProductCatalogItem("Màn Hình Gaming LG UltraGear 27GR95QE-B 27 inch 2K OLED 240Hz", "Laptop",
+                list.add(new ProductCatalogItem("Màn Hình Gaming LG UltraGear 27GR95QE-B 27 inch 2K OLED 240Hz", "PC Đồng Bộ",
                         19900000L, 7500,
                         "Tấm nền OLED đỉnh cao với độ tương phản vô cực, tần số quét 240Hz thời gian phản hồi thần tốc 0.03ms (GtG), hỗ trợ NVIDIA G-SYNC Compatible và AMD FreeSync Premium.",
                         "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=800&h=800&fit=crop",

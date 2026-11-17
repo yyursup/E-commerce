@@ -98,7 +98,8 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
                   and (p.shop.suspendedUntil is null or p.shop.suspendedUntil <= CURRENT_TIMESTAMP)
                   and p.shop.user.account.isActive = true
                   and p.deleted = false
-                  and (:categoryId is null or p.productCategory.id = :categoryId)
+                  and (:categoryId is null or p.productCategory.id = :categoryId
+                       or p.productCategory.parent.id = :categoryId)
                   and (:shopId is null or p.shop.id = :shopId)
                   and (:conditionGrade is null or p.conditionGrade = :conditionGrade)
                   and (:warrantyType is null or p.warrantyType = :warrantyType)

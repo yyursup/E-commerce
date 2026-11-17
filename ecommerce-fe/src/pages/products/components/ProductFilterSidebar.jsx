@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import PriceRangeFilter from './PriceRangeFilter'
 import { useThemeStore } from '../../../store/useThemeStore'
 import { cn } from '../../../lib/cn'
 import categoryService from '../../../services/category'
-import { HiOutlineTag, HiOutlineCheck } from 'react-icons/hi'
+import { HiOutlineCheck, HiOutlineChevronDown } from 'react-icons/hi'
 
 const CONDITION_OPTIONS = [
   { value: '', label: 'Tất cả tình trạng' },
@@ -35,6 +35,7 @@ export default function ProductFilterSidebar({
   const isDark = useThemeStore((s) => s.theme) === 'dark'
   const [categories, setCategories] = useState([])
   const [catLoading, setCatLoading] = useState(false)
+  const [expandedId, setExpandedId] = useState('')
 
   useEffect(() => {
     const fetchCats = async () => {
@@ -51,6 +52,35 @@ export default function ProductFilterSidebar({
     }
     fetchCats()
   }, [])
+
+  // Build 8 root categories, each with its children
+  const rootCategories = useMemo(() => {
+    const roots = categories.filter((c) => !c.parentId)
+    return roots.map((root) => ({
+      ...root,
+      children: categories.filter((c) => c.parentId === root.id),
+    }))
+  }, [categories])
+
+  // Auto-expand the group that contains the selected category
+  useEffect(() => {
+    if (!selectedCategoryId) return
+    const owner = rootCategories.find(
+      (r) => r.id === selectedCategoryId || r.children.some((ch) => ch.id === selectedCategoryId)
+    )
+    if (owner) setExpandedId(owner.id)
+  }, [selectedCategoryId, rootCategories])
+
+  const itemClass = (active, extra = '') =>
+    cn(
+      'w-full flex items-center justify-between rounded-xl px-3 py-2 text-xs font-medium transition-colors text-left',
+      active
+        ? 'dark:text-amber-400 font-bold bg-stone-100 text-stone-950'
+        : isDark
+          ? 'text-slate-300 hover:bg-slate-800'
+          : 'text-stone-600 hover:bg-stone-100',
+      extra
+    )
 
   return (
     <aside className="hidden w-64 shrink-0 lg:block">
@@ -93,7 +123,7 @@ export default function ProductFilterSidebar({
           >
             Ngành Hàng
           </h3>
-          <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
+          <div className="space-y-1 max-h-80 overflow-y-auto pr-1">
             <button
               onClick={() => onCategoryChange?.('')}
               className={cn(
@@ -112,24 +142,42 @@ export default function ProductFilterSidebar({
             {catLoading ? (
               <div className="py-2 text-center text-xs text-stone-400">Đang tải danh mục...</div>
             ) : (
-              categories.map((cat) => {
-                const isSelected = selectedCategoryId === cat.id
+              rootCategories.map((root) => {
+                const isOpen = expandedId === root.id
+                const rootSelected = selectedCategoryId === root.id
                 return (
-                  <button
-                    key={cat.id}
-                    onClick={() => onCategoryChange?.(cat.id)}
-                    className={cn(
-                      'w-full flex items-center justify-between rounded-xl px-3 py-2 text-xs font-medium transition-colors text-left',
-                      isSelected
-                        ? 'dark:text-amber-400 font-bold bg-stone-100 text-stone-950'
-                        : isDark
-                          ? 'text-slate-300 hover:bg-slate-800'
-                          : 'text-stone-600 hover:bg-stone-100'
+                  <div key={root.id}>
+                    <button
+                      onClick={() => {
+                        setExpandedId(isOpen && rootSelected ? '' : root.id)
+                        onCategoryChange?.(root.id)
+                      }}
+                      className={itemClass(rootSelected)}
+                      aria-expanded={isOpen}
+                    >
+                      <span className="truncate">{root.name}</span>
+                      <HiOutlineChevronDown
+                        className={cn('h-4 w-4 shrink-0 transition-transform', isOpen && 'rotate-180')}
+                      />
+                    </button>
+                    {isOpen && root.children.length > 0 && (
+                      <div className="ml-3 mt-1 space-y-1 border-l border-stone-200 pl-2 dark:border-slate-800">
+                        {root.children.map((child) => {
+                          const isSelected = selectedCategoryId === child.id
+                          return (
+                            <button
+                              key={child.id}
+                              onClick={() => onCategoryChange?.(child.id)}
+                              className={itemClass(isSelected)}
+                            >
+                              <span className="truncate">{child.name}</span>
+                              {isSelected && <HiOutlineCheck className="h-4 w-4 shrink-0" />}
+                            </button>
+                          )
+                        })}
+                      </div>
                     )}
-                  >
-                    <span className="truncate">{cat.name}</span>
-                    {isSelected && <HiOutlineCheck className="h-4 w-4 shrink-0" />}
-                  </button>
+                  </div>
                 )
               })
             )}

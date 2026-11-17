@@ -484,12 +484,12 @@ public class DataInitializer implements CommandLineRunner {
                 initializeShopEscrowAndSeniority(shop6, BigDecimal.ZERO, 1, 1);             // Xiaomi: 0đ, 1 tháng, 1⭐
 
                 // 10. Seed Realistic Products for Each Shop and Category
-                seedShopProducts(shop1, List.of(smartphones, laptops, speakersHeadphones, smartwatches, powerAndCables), "APPLE");
+                seedShopProducts(shop1, List.of(smartphones, laptops, speakersHeadphones, smartwatches, powerAndCables, gamingGear), "APPLE");
                 seedShopProducts(shop2, List.of(smartphones, smartwatches, speakersHeadphones, powerAndCables), "SAMSUNG");
                 seedShopProducts(shop3, List.of(laptops, pcs, pcComponents, gamingGear), "GEARVN");
                 seedShopProducts(shop4, List.of(speakersHeadphones, audioStudio, camerasGear), "SONY");
                 seedShopProducts(shop5, List.of(powerAndCables, protectiveCases, speakersHeadphones, gamingGear), "ANKER");
-                seedShopProducts(shop6, List.of(cameras, smartDevices, smartwatches), "XIAOMI");
+                seedShopProducts(shop6, List.of(cameras, smartDevices, smartwatches, powerAndCables), "XIAOMI");
 
                 // 11. Seed Realistic Vouchers (Platform Vouchers + Shop Vouchers)
                 initializeVouchers(shop1, shop2, shop3, shop4, phonesAndTablets, computers, components, audio);
@@ -772,7 +772,7 @@ public class DataInitializer implements CommandLineRunner {
                                                 "Bơm thế hệ thứ 4 với động cơ 3 pha 3100 RPM, mặt pump khối vô cực đa chiều hiệu ứng gương 3D huyền ảo, 3 quạt FK120 PWM áp suất gió cao làm mát CPU tối đa.",
                                                 "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=800&h=800&fit=crop",
                                                 "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&h=800&fit=crop"));
-                                list.add(new ProductCatalogItem("Màn Hình Gaming LG UltraGear 27GR95QE-B 27 inch 2K OLED 240Hz", "Laptop",
+                                list.add(new ProductCatalogItem("Màn Hình Gaming LG UltraGear 27GR95QE-B 27 inch 2K OLED 240Hz", "PC Đồng Bộ",
                                                 19900000L, 7500,
                                                 "Tấm nền OLED đỉnh cao với độ tương phản vô cực, tần số quét 240Hz thời gian phản hồi thần tốc 0.03ms (GtG), hỗ trợ NVIDIA G-SYNC Compatible và AMD FreeSync Premium.",
                                                 "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=800&h=800&fit=crop",

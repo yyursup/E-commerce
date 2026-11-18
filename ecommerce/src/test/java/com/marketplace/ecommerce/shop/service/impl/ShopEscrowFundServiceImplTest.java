@@ -999,4 +999,116 @@ class ShopEscrowFundServiceImplTest {
                 verify(shopEscrowTransactionRepository).save(any(ShopEscrowTransaction.class));
         }
 
+        @Test
+        @DisplayName("Trích cước ship 2 chiều từ quỹ shop: ghi giao dịch SHIPPING_FEE trả GHN, không vào ví hay doanh thu sàn")
+        void deductReturnDisputeShippingFees_PaidToCarrier() {
+                order.setOrderNumber("ORD-RET-1");
+                order.setShippingFee(new BigDecimal("30000"));
+                OrderReturn orderReturn = OrderReturn.builder().id(UUID.randomUUID()).order(order)
+                                .shippingFee(new BigDecimal("25000")).build();
+
+                when(transactionRepository.existsByDedupeKey(anyString())).thenReturn(false);
+                when(shopEscrowFundRepository.findByShopIdForUpdate(shopId)).thenReturn(Optional.of(fund));
+
+                shopEscrowFundService.deductReturnDisputeShippingFees(orderReturn);
+
+                // 30.000 chiều đi + 25.000 chiều về = 55.000 bị trích khỏi quỹ
+                assertEquals(new BigDecimal("4945000"), fund.getBalance());
+                verify(walletRepository, never()).save(any());
+                ArgumentCaptor<Transaction> captor = ArgumentCaptor.forClass(Transaction.class);
+                verify(transactionRepository).save(captor.capture());
+                Transaction tx = captor.getValue();
+                assertEquals(TransactionType.SHIPPING_FEE, tx.getType());
+                assertEquals(new BigDecimal("55000"), tx.getAmount());
+                assertNull(tx.getToWallet(), "Tiền trả GHN, không vào ví hay doanh thu sàn");
+                assertEquals("COMPENSATION:RETURN_SHIPPING:" + orderReturn.getId(), tx.getDedupeKey());
+                assertTrue(Boolean.TRUE.equals(orderReturn.getIsReturnShippingDeducted()));
+        }
+
+        @Test
+        @DisplayName("Trích cước ship: quỹ không đủ thì chỉ trích tối đa số dư và ghi nhận đúng số đã trích")
+        void deductReturnDisputeShippingFees_CappedByFundBalance() {
+                fund.setBalance(new BigDecimal("40000"));
+                order.setOrderNumber("ORD-RET-2");
+                order.setShippingFee(new BigDecimal("30000"));
+                OrderReturn orderReturn = OrderReturn.builder().id(UUID.randomUUID()).order(order).build();
+
+                when(transactionRepository.existsByDedupeKey(anyString())).thenReturn(false);
+                when(shopEscrowFundRepository.findByShopIdForUpdate(shopId)).thenReturn(Optional.of(fund));
+
+                shopEscrowFundService.deductReturnDisputeShippingFees(orderReturn);
+
+                assertEquals(0, fund.getBalance().signum());
+                ArgumentCaptor<Transaction> captor = ArgumentCaptor.forClass(Transaction.class);
+                verify(transactionRepository).save(captor.capture());
+                assertEquals(new BigDecimal("40000"), captor.getValue().getAmount());
+        }
+
+        @Test
+        @DisplayName("Trích cước ship: đã trừ rồi (idempotent) thì không ghi sổ cái lần nữa")
+        void deductReturnDisputeShippingFees_Idempotent() {
+                order.setShippingFee(new BigDecimal("30000"));
+                OrderReturn orderReturn = OrderReturn.builder().id(UUID.randomUUID()).order(order).build();
+                orderReturn.setIsReturnShippingDeducted(true);
+
+                shopEscrowFundService.deductReturnDisputeShippingFees(orderReturn);
+
+                verify(walletRepository, never()).save(any());
+                verify(transactionRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("Hoàn tiền không cần trả hàng: cước chiều đi trích từ quỹ ký quỹ shop, ghi SHIPPING_FEE, không vào ví sàn")
+        void deductOutboundShippingFee_PaidToCarrier() {
+                order.setOrderNumber("ORD-REFUND-ONLY");
+                order.setShippingFee(new BigDecimal("30000"));
+                when(transactionRepository.existsByDedupeKey(anyString())).thenReturn(false);
+                when(shopEscrowFundRepository.findByShopIdForUpdate(shopId)).thenReturn(Optional.of(fund));
+                UUID reportId = UUID.randomUUID();
+
+                shopEscrowFundService.deductOutboundShippingFee(order, reportId);
+
+                assertEquals(new BigDecimal("4970000"), fund.getBalance());
+                verify(walletRepository, never()).save(any());
+                ArgumentCaptor<Transaction> captor = ArgumentCaptor.forClass(Transaction.class);
+                verify(transactionRepository).save(captor.capture());
+                Transaction tx = captor.getValue();
+                assertEquals(TransactionType.SHIPPING_FEE, tx.getType());
+                assertEquals(new BigDecimal("30000"), tx.getAmount());
+                assertNull(tx.getToWallet());
+                assertEquals("COMPENSATION:OUTBOUND_SHIPPING:" + orderId, tx.getDedupeKey());
+                ArgumentCaptor<ShopEscrowTransaction> shopTx = ArgumentCaptor.forClass(ShopEscrowTransaction.class);
+                verify(shopEscrowTransactionRepository).save(shopTx.capture());
+                assertEquals(new BigDecimal("-30000"), shopTx.getValue().getAmount());
+                assertEquals(reportId, shopTx.getValue().getReportId());
+        }
+
+        @Test
+        @DisplayName("Cước chiều đi: quỹ không đủ chỉ trích tối đa số dư; đã trích rồi hoặc miễn ship thì bỏ qua")
+        void deductOutboundShippingFee_CappedAndIdempotent() {
+                order.setShippingFee(new BigDecimal("30000"));
+                fund.setBalance(new BigDecimal("12000"));
+                when(transactionRepository.existsByDedupeKey(anyString())).thenReturn(false);
+                when(shopEscrowFundRepository.findByShopIdForUpdate(shopId)).thenReturn(Optional.of(fund));
+
+                shopEscrowFundService.deductOutboundShippingFee(order, null);
+
+                assertEquals(0, fund.getBalance().signum());
+                ArgumentCaptor<Transaction> captor = ArgumentCaptor.forClass(Transaction.class);
+                verify(transactionRepository).save(captor.capture());
+                assertEquals(new BigDecimal("12000"), captor.getValue().getAmount());
+
+                // Đã trích rồi
+                clearInvocations(transactionRepository, shopEscrowFundRepository);
+                when(transactionRepository.existsByDedupeKey(anyString())).thenReturn(true);
+                shopEscrowFundService.deductOutboundShippingFee(order, null);
+                verify(transactionRepository, never()).save(any());
+                verify(shopEscrowFundRepository, never()).findByShopIdForUpdate(any());
+
+                // Miễn ship
+                order.setShippingFee(BigDecimal.ZERO);
+                shopEscrowFundService.deductOutboundShippingFee(order, null);
+                verify(transactionRepository, never()).save(any());
+        }
+
 }

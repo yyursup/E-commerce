@@ -115,20 +115,20 @@ class EscrowServiceReleaseTest {
     class MoneySplit {
 
         @Test
-        @DisplayName("Shop nhận tiền hàng trừ hoa hồng, sàn giữ hoa hồng và phí ship")
+        @DisplayName("Shop nhận tiền hàng trừ hoa hồng, sàn chỉ hưởng hoa hồng, phí ship trả ra cho GHN")
         void standardOrder() {
             escrowService.releaseByOrder(orderId);
 
             assertEquals(vnd(950_000), sellerWallet.getAvailableBalance());
-            assertEquals(vnd(80_000), escrowWallet.getAvailableBalance());
-            assertEquals(0, escrowWallet.getLockedBalance().signum());
+            assertEquals(vnd(50_000), escrowWallet.getAvailableBalance(), "Doanh thu sàn chỉ gồm hoa hồng");
+            assertEquals(0, escrowWallet.getLockedBalance().signum(), "Toàn bộ ký quỹ đã được phân bổ, không còn công nợ lơ lửng");
             assertEquals(EscrowStatus.RELEASED, escrow.getStatus());
             assertSame(sellerWallet, escrow.getSellerWallet());
             assertEquals(OrderStatus.COMPLETED, order.getStatus());
         }
 
         @Test
-        @DisplayName("Không sinh hay mất tiền: phần shop + phần sàn = số tiền ký quỹ")
+        @DisplayName("Không sinh hay mất tiền: phần shop + doanh thu sàn + ship trả GHN = số tiền ký quỹ")
         void conservesMoney() {
             order.setPlatformDiscountAmount(vnd(100_000));
             escrow.setAmount(vnd(930_000));
@@ -138,7 +138,9 @@ class EscrowServiceReleaseTest {
             escrowService.releaseByOrder(orderId);
 
             BigDecimal platformDelta = escrowWallet.getAvailableBalance().subtract(vnd(500_000));
-            assertEquals(vnd(930_000), sellerWallet.getAvailableBalance().add(platformDelta));
+            BigDecimal paidToCarrier = savedTransactionsByKey().get("SHIPPING_RETAIN").getAmount();
+            assertEquals(vnd(930_000), sellerWallet.getAvailableBalance().add(platformDelta).add(paidToCarrier));
+            assertEquals(0, escrowWallet.getLockedBalance().signum());
         }
 
         @Test
@@ -152,8 +154,9 @@ class EscrowServiceReleaseTest {
             escrowService.releaseByOrder(orderId);
 
             assertEquals(vnd(950_000), sellerWallet.getAvailableBalance(), "Shop nhận như khi không có voucher");
-            // Sàn: +50.000 hoa hồng +30.000 ship -100.000 trợ giá = -20.000
-            assertEquals(vnd(480_000), escrowWallet.getAvailableBalance());
+            // Sàn: +50.000 hoa hồng -100.000 trợ giá = -50.000 (ship 30.000 không phải doanh thu)
+            assertEquals(vnd(450_000), escrowWallet.getAvailableBalance());
+            assertEquals(0, escrowWallet.getLockedBalance().signum());
         }
 
         @Test
@@ -164,7 +167,8 @@ class EscrowServiceReleaseTest {
             escrowService.releaseByOrder(orderId);
 
             assertEquals(0, sellerWallet.getAvailableBalance().signum());
-            assertEquals(vnd(1_030_000), escrowWallet.getAvailableBalance());
+            assertEquals(vnd(1_000_000), escrowWallet.getAvailableBalance(), "Sàn chỉ nhận tối đa tiền hàng, không nhận ship");
+            assertEquals(0, escrowWallet.getLockedBalance().signum());
             assertEquals(vnd(1_000_000), savedTransactionsByKey().get("COMMISSION").getAmount());
         }
 
@@ -180,6 +184,48 @@ class EscrowServiceReleaseTest {
             assertEquals(vnd(1_000_000), sellerWallet.getAvailableBalance());
             assertEquals(0, escrowWallet.getAvailableBalance().signum());
             assertEquals(List.of("ESCROW"), List.copyOf(savedTransactionsByKey().keySet()));
+        }
+    }
+
+    @Nested
+    @DisplayName("Phí ship trả ra cho GHN")
+    class ShippingPaidOut {
+
+        @Test
+        @DisplayName("Ship được ghi là giao dịch SHIPPING_FEE trả ra ngoài, không vào ví nào và không vào doanh thu sàn")
+        void shippingIsPaidOutNotRevenue() {
+            escrowService.releaseByOrder(orderId);
+
+            Transaction ship = savedTransactionsByKey().get("SHIPPING_RETAIN");
+            assertEquals(TransactionType.SHIPPING_FEE, ship.getType());
+            assertEquals(vnd(30_000), ship.getAmount());
+            assertSame(escrowWallet, ship.getFromWallet());
+            assertNull(ship.getToWallet(), "Tiền trả ra cho GHN, không vào ví nội bộ");
+            assertEquals(vnd(50_000), escrowWallet.getAvailableBalance());
+        }
+
+        @Test
+        @DisplayName("Đơn miễn ship thì không có giao dịch phí vận chuyển")
+        void freeShippingHasNoShippingTransaction() {
+            order.setShippingFee(BigDecimal.ZERO);
+            escrow.setAmount(vnd(1_000_000));
+            escrowWallet.setLockedBalance(vnd(1_000_000));
+
+            escrowService.releaseByOrder(orderId);
+
+            assertEquals(0, escrowWallet.getLockedBalance().signum());
+            assertFalse(savedTransactionsByKey().containsKey("SHIPPING_RETAIN"));
+        }
+
+        @Test
+        @DisplayName("Ship không bao giờ vượt quá số tiền ký quỹ")
+        void shippingCappedAtEscrowAmount() {
+            order.setShippingFee(vnd(5_000_000));
+
+            escrowService.releaseByOrder(orderId);
+
+            assertEquals(vnd(1_030_000), savedTransactionsByKey().get("SHIPPING_RETAIN").getAmount());
+            assertEquals(0, sellerWallet.getAvailableBalance().signum());
         }
     }
 
@@ -210,6 +256,8 @@ class EscrowServiceReleaseTest {
             assertEquals(TransactionType.COMMISSION, txs.get("COMMISSION").getType());
             assertEquals(vnd(50_000), txs.get("COMMISSION").getAmount());
             assertEquals(vnd(30_000), txs.get("SHIPPING_RETAIN").getAmount());
+            assertEquals(TransactionType.SHIPPING_FEE, txs.get("SHIPPING_RETAIN").getType(),
+                    "Ship được ghi bằng loại giao dịch riêng, không lẫn với doanh thu sàn");
             assertEquals(vnd(100_000), txs.get("PLATFORM_SUBSIDY").getAmount());
             assertSame(sellerWallet, txs.get("PLATFORM_SUBSIDY").getToWallet());
         }

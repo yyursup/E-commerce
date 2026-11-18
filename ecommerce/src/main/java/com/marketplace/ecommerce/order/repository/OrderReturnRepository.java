@@ -19,6 +19,14 @@ public interface OrderReturnRepository extends JpaRepository<OrderReturn, UUID> 
 
     Optional<OrderReturn> findByOrderId(UUID orderId);
 
+    // Phí vận chuyển các đơn trả hàng đã có mã vận đơn (màn hình admin "Phí vận chuyển")
+    org.springframework.data.domain.Page<OrderReturn> findByReturnTrackingCodeIsNotNull(org.springframework.data.domain.Pageable pageable);
+
+    long countByReturnTrackingCodeIsNotNull();
+
+    @Query("SELECT COALESCE(SUM(r.shippingFee), 0) FROM OrderReturn r WHERE r.returnTrackingCode IS NOT NULL")
+    java.math.BigDecimal sumShippingFeeOfReturnShipments();
+
     List<OrderReturn> findByOrderIdIn(List<UUID> orderIds);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)

@@ -228,17 +228,17 @@ class EscrowServiceRefundTest {
     }
 
     @Nested
-    @DisplayName("refundMerchandiseOnly: hoàn tiền hàng, sàn giữ phí ship chiều đi trả GHN")
+    @DisplayName("refundMerchandiseOnly: hoàn tiền hàng, phí ship chiều đi trả ra cho GHN")
     class RefundMerchandiseOnly {
 
         @Test
-        @DisplayName("Ghi hai giao dịch: hoàn tiền hàng cho người mua và giữ phí ship cho sàn")
+        @DisplayName("Ghi hai giao dịch: hoàn tiền hàng cho người mua và trả phí ship ra cho GHN")
         void recordsRefundAndRetainedShipping() {
             escrowService.refundMerchandiseOnly(orderId, null);
 
             assertEquals(BigDecimal.valueOf(500_000), buyerWallet.getAvailableBalance());
-            assertEquals(SHIPPING, escrowWallet.getAvailableBalance());
-            assertEquals(0, escrowWallet.getLockedBalance().signum());
+            assertEquals(0, escrowWallet.getAvailableBalance().signum(), "Ship không phải doanh thu sàn");
+            assertEquals(0, escrowWallet.getLockedBalance().signum(), "Ship đã trả ra cho GHN, không còn giữ lại");
 
             List<Transaction> txs = savedTransactions();
             assertEquals(2, txs.size());
@@ -248,18 +248,20 @@ class EscrowServiceRefundTest {
             assertSame(buyerWallet, refund.getToWallet());
             assertEquals("ESCROW_MERCHANDISE_REFUND:" + orderId, refund.getDedupeKey());
 
-            Transaction retained = txs.stream().filter(t -> t.getType() == TransactionType.RELEASE).findFirst().orElseThrow();
+            Transaction retained = txs.stream().filter(t -> t.getType() == TransactionType.SHIPPING_FEE).findFirst().orElseThrow();
             assertEquals(SHIPPING, retained.getAmount());
             assertSame(escrowWallet, retained.getFromWallet());
-            assertSame(escrowWallet, retained.getToWallet());
+            assertNull(retained.getToWallet(), "Trả ra cho GHN, không vào ví nội bộ");
             assertEquals("ESCROW_SHIP_RETAINED:" + orderId, retained.getDedupeKey());
         }
 
         @Test
-        @DisplayName("Tổng tiền hoàn + phí ship giữ lại luôn bằng số tiền ký quỹ")
+        @DisplayName("Tổng tiền hoàn + phí ship trả GHN luôn bằng số tiền ký quỹ")
         void conservesMoney() {
             escrowService.refundMerchandiseOnly(orderId, null);
-            assertEquals(TOTAL, buyerWallet.getAvailableBalance().add(escrowWallet.getAvailableBalance()));
+            Transaction ship = savedTransactions().stream()
+                    .filter(t -> t.getType() == TransactionType.SHIPPING_FEE).findFirst().orElseThrow();
+            assertEquals(TOTAL, buyerWallet.getAvailableBalance().add(ship.getAmount()));
         }
 
         @Test
@@ -277,17 +279,19 @@ class EscrowServiceRefundTest {
         }
 
         @Test
-        @DisplayName("Phí ship lớn hơn tiền ký quỹ: sàn giữ tối đa bằng tiền ký quỹ, người mua nhận 0")
+        @DisplayName("Phí ship lớn hơn tiền ký quỹ: trả GHN tối đa bằng tiền ký quỹ, người mua nhận 0")
         void shippingCappedAtEscrowAmount() {
             order.setShippingFee(BigDecimal.valueOf(1_000_000));
 
             escrowService.refundMerchandiseOnly(orderId, null);
 
             assertEquals(0, buyerWallet.getAvailableBalance().signum());
-            assertEquals(TOTAL, escrowWallet.getAvailableBalance());
+            assertEquals(0, escrowWallet.getLockedBalance().signum());
+            assertEquals(0, escrowWallet.getAvailableBalance().signum());
             List<Transaction> txs = savedTransactions();
             assertEquals(1, txs.size(), "Không ghi giao dịch hoàn tiền 0đ");
-            assertEquals(TransactionType.RELEASE, txs.get(0).getType());
+            assertEquals(TransactionType.SHIPPING_FEE, txs.get(0).getType());
+            assertEquals(TOTAL, txs.get(0).getAmount());
         }
 
         @Test

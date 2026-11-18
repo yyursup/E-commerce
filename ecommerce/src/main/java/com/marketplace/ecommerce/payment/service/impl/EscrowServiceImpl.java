@@ -136,8 +136,9 @@ public class EscrowServiceImpl implements EscrowService {
         // 5. Tiền thanh toán thực nhận của Seller (chỉ tiền hàng ròng, không có ship, được bù voucher sàn)
         BigDecimal sellerPayout = effectiveMerchandise.subtract(actualCommission);
 
-        // 6. Doanh thu ròng của Sàn nạp vào số dư khả dụng (Hoa hồng + Phí ship giữ lại - Khoản tài trợ voucher sàn)
-        BigDecimal platformNetCredit = actualCommission.add(shippingRetained).subtract(platformSubsidy);
+        // 6. Doanh thu ròng của Sàn nạp vào số dư khả dụng (Hoa hồng - Khoản tài trợ voucher sàn).
+        //    Phí ship KHÔNG phải doanh thu sàn: nó được ghi nhận là khoản trả ra cho GHN (giao dịch SHIPPING_FEE).
+        BigDecimal platformNetCredit = actualCommission.subtract(platformSubsidy);
 
         if (escrowWallet.getLockedBalance().compareTo(amount) < 0) {
             escrowWallet.setLockedBalance(amount);
@@ -201,15 +202,15 @@ public class EscrowServiceImpl implements EscrowService {
         if (shippingRetained.signum() > 0 && !transactionRepository.existsByDedupeKey(shippingDedupe)) {
             Transaction tShipping = Transaction.builder()
                     .fromWallet(escrowWallet)
-                    .toWallet(escrowWallet)
+                    .toWallet(null)
                     .amount(shippingRetained)
-                    .type(TransactionType.TRANSFER)
+                    .type(TransactionType.SHIPPING_FEE)
                     .status(TransactionStatus.SUCCESS)
                     .referenceType(ReferenceType.ESCROW)
                     .createdAt(LocalDateTime.now())
                     .referenceId(escrow.getId())
                     .dedupeKey(shippingDedupe)
-                    .note("Customer shipping fee retained by platform for order " + order.getOrderNumber())
+                    .note("Shipping fee paid out to GHN for order " + order.getOrderNumber())
                     .build();
             transactionRepository.save(tShipping);
         }
@@ -366,10 +367,8 @@ public class EscrowServiceImpl implements EscrowService {
             buyerWallet.addAvailable(merchandiseRefund);
         }
 
-        // 2. Chuyển phí ship chiều đi vào số dư khả dụng của Sàn để thanh toán cước GHN
-        if (shippingRetained.signum() > 0) {
-            escrowWallet.addAvailable(shippingRetained);
-        }
+        // 2. Ship chiều đi không hoàn lại: ghi nhận khoản trả ra cho GHN (giao dịch SHIPPING_FEE bên dưới),
+        //    không cộng vào doanh thu của sàn
 
         walletRepository.saveAll(List.of(escrowWallet, buyerWallet));
 
@@ -397,15 +396,15 @@ public class EscrowServiceImpl implements EscrowService {
         if (!transactionRepository.existsByDedupeKey(shipRetainedDedupe) && shippingRetained.signum() > 0) {
             Transaction txShipRetained = Transaction.builder()
                     .fromWallet(escrowWallet)
-                    .toWallet(escrowWallet)
+                    .toWallet(null)
                     .amount(shippingRetained)
-                    .type(TransactionType.RELEASE)
+                    .type(TransactionType.SHIPPING_FEE)
                     .status(TransactionStatus.SUCCESS)
                     .referenceType(ReferenceType.ESCROW)
                     .referenceId(escrow.getId())
                     .createdAt(LocalDateTime.now())
                     .dedupeKey(shipRetainedDedupe)
-                    .note("Giữ lại cước vận chuyển chiều đi trả GHN cho đơn hoàn tiền khách giữ hàng "
+                    .note("Shipping fee paid out to GHN (khách giữ hàng) for order "
                             + order.getOrderNumber())
                     .build();
             transactionRepository.save(txShipRetained);
@@ -485,13 +484,19 @@ public class EscrowServiceImpl implements EscrowService {
             throw new CustomException("Escrow amount invalid");
         }
 
+        // Phí ship khách đã trả là tiền hộ GHN, không được đem chia cho Người mua/Người bán:
+        // chuyến giao đã phát sinh nên trả ra cho GHN (giao dịch SHIPPING_FEE)
+        BigDecimal shippingFee = order.getShippingFee() != null ? order.getShippingFee() : BigDecimal.ZERO;
+        BigDecimal shippingRetained = shippingFee.min(totalAmount);
+        BigDecimal merchandiseAmount = totalAmount.subtract(shippingRetained);
+
         BigDecimal commission = order.getPlatformCommission() != null ? order.getPlatformCommission() : BigDecimal.ZERO;
-        BigDecimal netAmount = totalAmount.subtract(commission);
+        BigDecimal netAmount = merchandiseAmount.subtract(commission);
         if (netAmount.signum() < 0) {
-            throw new CustomException("Phí hoa hồng sàn lớn hơn tổng số tiền ký quỹ");
+            throw new CustomException("Phí hoa hồng sàn lớn hơn tổng số tiền hàng ký quỹ");
         }
 
-        // Số tiền chia cho từng bên từ netAmount (đã trừ phí hoa hồng sàn)
+        // Số tiền chia cho từng bên từ netAmount (đã trừ phí ship và phí hoa hồng sàn)
         BigDecimal buyerShare = netAmount.multiply(BigDecimal.valueOf(buyerPercentage))
                 .divide(BigDecimal.valueOf(100), 0, RoundingMode.HALF_UP);
         BigDecimal sellerShare = netAmount.subtract(buyerShare); // Đảm bảo khớp từng đồng, không lệch do làm tròn
@@ -500,6 +505,7 @@ public class EscrowServiceImpl implements EscrowService {
             escrowWallet.setLockedBalance(totalAmount);
         }
 
+        // Mở khóa toàn bộ ký quỹ: tiền hàng chia cho các bên, phần ship ghi nhận trả ra cho GHN
         escrowWallet.subLocked(totalAmount);
 
         if (commission.signum() > 0) {
@@ -515,6 +521,23 @@ public class EscrowServiceImpl implements EscrowService {
         walletRepository.saveAll(List.of(escrowWallet, buyerWallet, sellerWallet));
 
         // Hạch toán Transaction
+        String splitShipDedupe = "SHIPPING_RETAIN:" + order.getId();
+        if (shippingRetained.signum() > 0 && !transactionRepository.existsByDedupeKey(splitShipDedupe)) {
+            Transaction tShip = Transaction.builder()
+                    .fromWallet(escrowWallet)
+                    .toWallet(null)
+                    .amount(shippingRetained)
+                    .type(TransactionType.SHIPPING_FEE)
+                    .status(TransactionStatus.SUCCESS)
+                    .referenceType(ReferenceType.ESCROW)
+                    .createdAt(LocalDateTime.now())
+                    .referenceId(escrow.getId())
+                    .dedupeKey(splitShipDedupe)
+                    .note("Shipping fee paid out to GHN (admin split) for order " + order.getOrderNumber())
+                    .build();
+            transactionRepository.save(tShip);
+        }
+
         if (commission.signum() > 0) {
             String commissionDedupe = "COMMISSION:" + order.getId();
             if (!transactionRepository.existsByDedupeKey(commissionDedupe)) {

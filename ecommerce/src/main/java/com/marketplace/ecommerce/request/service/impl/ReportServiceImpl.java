@@ -491,6 +491,9 @@ public class ReportServiceImpl implements ReportService {
             UUID orderId = report.getTargetId();
 
             if (finalResolution == ResolutionType.REFUND_ONLY) {
+                // Hoàn tiền không cần trả hàng: chuyến giao chiều đi đã phát sinh nên cước do Shop chịu (trích quỹ ký quỹ)
+                orderRepository.findByIdForUpdate(orderId)
+                        .ifPresent(o -> shopEscrowFundService.deductOutboundShippingFee(o, report.getId()));
                 escrowService.refundByOrder(orderId, "Admin chấp thuận khiếu nại của người mua");
                 orderRepository.findByIdForUpdate(orderId).ifPresent(o -> {
                     o.setStatus(OrderStatus.REFUNDED);

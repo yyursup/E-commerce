@@ -21,6 +21,14 @@ import java.util.UUID;
 public interface OrderRepository extends JpaRepository<Order, UUID> {
   Optional<Order> findByOrderNumber(String orderNumber);
 
+  // Phí vận chuyển các đơn đã tạo vận đơn GHN (màn hình admin "Phí vận chuyển")
+  org.springframework.data.domain.Page<Order> findByGhnOrderCodeIsNotNull(org.springframework.data.domain.Pageable pageable);
+
+  long countByGhnOrderCodeIsNotNull();
+
+  @Query("SELECT COALESCE(SUM(o.shippingFee), 0) FROM Order o WHERE o.ghnOrderCode IS NOT NULL")
+  BigDecimal sumShippingFeeOfGhnOrders();
+
   List<Order> findByUserIdOrderByCreatedAtDesc(UUID userId);
 
   List<Order> findByUserIdAndStatusOrderByCreatedAtDesc(UUID userId, OrderStatus status);

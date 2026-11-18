@@ -1,5 +1,6 @@
 package com.marketplace.ecommerce.shop.service;
 
+import com.marketplace.ecommerce.order.entity.Order;
 import com.marketplace.ecommerce.order.entity.OrderReturn;
 import com.marketplace.ecommerce.shop.dto.request.AdminAdjustEscrowFundRequest;
 import com.marketplace.ecommerce.shop.dto.request.AdminDeductCompensationRequest;
@@ -48,4 +49,10 @@ public interface ShopEscrowFundService {
     void processVnpayCallback(java.util.Map<String, String> params, String rawQueryString);
 
     void deductReturnDisputeShippingFees(OrderReturn orderReturn);
+
+    /**
+     * Hoàn tiền cho người mua mà không cần trả hàng: chuyến giao chiều đi đã phát sinh nên cước chiều đi
+     * (order.shippingFee) được trích từ Quỹ ký quỹ gian hàng và trả ra cho GHN (SHIPPING_FEE). Idempotent theo đơn.
+     */
+    void deductOutboundShippingFee(Order order, UUID reportId);
 }

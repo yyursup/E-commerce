@@ -1,19 +1,46 @@
 import { useState, useEffect } from 'react'
-import {
-  HiOutlineCog,
-  HiOutlinePencil,
-  HiOutlineCheck,
-  HiOutlineX,
-  HiOutlineRefresh,
-  HiOutlineInformationCircle,
-  HiOutlineShieldCheck,
-  HiOutlineSparkles,
-} from 'react-icons/hi'
+import { HiOutlinePencil, HiOutlineCheck, HiOutlineX, HiOutlineRefresh } from 'react-icons/hi'
 import { useThemeStore } from '../../../../store/useThemeStore'
 import { cn } from '../../../../lib/cn'
 import toast from 'react-hot-toast'
 import categoryService from '../../../../services/category'
 import platformService from '../../../../services/platform'
+
+// Cấu hình hoa hồng áp dụng toàn sàn (key lưu ở platform settings)
+const PLATFORM_SETTINGS = [
+  {
+    id: 'default',
+    key: 'commission_rate',
+    label: 'Tỷ lệ cơ bản mặc định',
+    description: 'Áp dụng khi sản phẩm chưa phân loại hoặc danh mục chưa có biểu phí riêng.',
+    initial: '5.0',
+    success: 'Cập nhật tỷ lệ hoa hồng mặc định toàn sàn thành công',
+    invalid: 'Tỷ lệ hoa hồng mặc định phải từ 0 đến 100',
+    failure: 'Không thể cập nhật tỷ lệ dự phòng',
+  },
+  {
+    id: 'floor',
+    key: 'commission_floor_rate',
+    label: 'Ngưỡng sàn tối thiểu',
+    description: 'Mức hoa hồng thấp nhất còn thu được sau khi trừ ưu đãi ký quỹ và thâm niên.',
+    initial: '1.5',
+    success: 'Cập nhật ngưỡng sàn tối thiểu thành công',
+    invalid: 'Tỷ lệ sàn tối thiểu phải từ 0 đến 100',
+    failure: 'Không thể cập nhật tỷ lệ sàn tối thiểu',
+  },
+  {
+    id: 'used',
+    key: 'commission_used_goods_rate',
+    label: 'Hàng cũ / đã qua sử dụng',
+    description: 'Tỷ lệ thu cho thiết bị LIKE NEW, 99%, hàng cũ hoặc linh kiện tháo máy.',
+    initial: '6.0',
+    success: 'Cập nhật tỷ lệ hoa hồng hàng cũ thành công',
+    invalid: 'Tỷ lệ hàng cũ phải từ 0 đến 100',
+    failure: 'Không thể cập nhật tỷ lệ hàng cũ',
+  },
+]
+
+const initialValues = () => Object.fromEntries(PLATFORM_SETTINGS.map((s) => [s.id, s.initial]))
 
 export default function CategoryRatesTab() {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
@@ -24,15 +51,8 @@ export default function CategoryRatesTab() {
   const [editRateValue, setEditRateValue] = useState('')
   const [savingCatId, setSavingCatId] = useState(null)
 
-  // 3 Platform Settings
-  const [defaultRate, setDefaultRate] = useState('5.0')
-  const [isUpdatingDefaultRate, setIsUpdatingDefaultRate] = useState(false)
-
-  const [floorRate, setFloorRate] = useState('1.5')
-  const [isUpdatingFloorRate, setIsUpdatingFloorRate] = useState(false)
-
-  const [usedGoodsRate, setUsedGoodsRate] = useState('6.0')
-  const [isUpdatingUsedGoodsRate, setIsUpdatingUsedGoodsRate] = useState(false)
+  const [values, setValues] = useState(initialValues)
+  const [savingSettingId, setSavingSettingId] = useState(null)
 
   const fetchCategories = async () => {
     try {
@@ -56,14 +76,18 @@ export default function CategoryRatesTab() {
           settings.forEach((s) => {
             map[s.key] = s.value
           })
-          if (map['commission_rate'] != null) setDefaultRate(map['commission_rate'])
-          if (map['commission_floor_rate'] != null) setFloorRate(map['commission_floor_rate'])
-          if (map['commission_used_goods_rate'] != null) setUsedGoodsRate(map['commission_used_goods_rate'])
+          setValues((prev) => {
+            const next = { ...prev }
+            PLATFORM_SETTINGS.forEach((s) => {
+              if (map[s.key] != null) next[s.id] = String(map[s.key])
+            })
+            return next
+          })
           return
         }
       }
       const single = await platformService.getPlatformSettings()
-      if (single?.value) setDefaultRate(single.value)
+      if (single?.value) setValues((prev) => ({ ...prev, default: String(single.value) }))
     } catch (err) {
       console.error('Error fetching platform settings:', err)
     }
@@ -94,9 +118,7 @@ export default function CategoryRatesTab() {
     try {
       setSavingCatId(catId)
       await categoryService.updateCommissionRate(catId, rate)
-      setCategories((prev) =>
-        prev.map((c) => (c.id === catId ? { ...c, commissionRate: rate } : c))
-      )
+      setCategories((prev) => prev.map((c) => (c.id === catId ? { ...c, commissionRate: rate } : c)))
       setEditingCatId(null)
       toast.success('Cập nhật biểu phí ngành hàng thành công!')
     } catch (err) {
@@ -107,375 +129,242 @@ export default function CategoryRatesTab() {
     }
   }
 
-  const handleUpdateDefaultRate = async () => {
-    const rate = parseFloat(defaultRate)
+  const handleSaveSetting = async (setting) => {
+    const rate = parseFloat(values[setting.id])
     if (isNaN(rate) || rate < 0 || rate > 100) {
-      toast.error('Tỷ lệ hoa hồng mặc định phải từ 0 đến 100')
+      toast.error(setting.invalid)
       return
     }
 
     try {
-      setIsUpdatingDefaultRate(true)
-      await platformService.updatePlatformSetting('commission_rate', rate)
-      toast.success('Cập nhật tỷ lệ hoa hồng mặc định toàn sàn thành công')
+      setSavingSettingId(setting.id)
+      await platformService.updatePlatformSetting(setting.key, rate)
+      toast.success(setting.success)
     } catch (err) {
-      console.error('Error updating commission rate:', err)
-      toast.error(err?.response?.data?.message || 'Không thể cập nhật tỷ lệ dự phòng')
+      console.error(`Error updating ${setting.key}:`, err)
+      toast.error(err?.response?.data?.message || setting.failure)
     } finally {
-      setIsUpdatingDefaultRate(false)
+      setSavingSettingId(null)
     }
   }
 
-  const handleUpdateFloorRate = async () => {
-    const rate = parseFloat(floorRate)
-    if (isNaN(rate) || rate < 0 || rate > 100) {
-      toast.error('Tỷ lệ sàn tối thiểu phải từ 0 đến 100')
-      return
-    }
+  const muted = isDark ? 'text-slate-400' : 'text-stone-500'
+  const panel = cn('rounded-md border', isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white')
+  const divider = isDark ? 'divide-slate-800 border-slate-800' : 'divide-stone-200 border-stone-200'
+  const inputCls = cn(
+    'w-full rounded-md border py-1.5 pl-3 pr-7 text-right font-mono text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-stone-950/20 dark:focus:ring-white/30',
+    isDark ? 'border-slate-700 bg-slate-950 text-white' : 'border-stone-300 bg-white text-stone-900',
+  )
+  const primaryBtn =
+    'rounded-md bg-stone-950 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-stone-800 disabled:opacity-50 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
 
-    try {
-      setIsUpdatingFloorRate(true)
-      await platformService.updatePlatformSetting('commission_floor_rate', rate)
-      toast.success('Cập nhật ngưỡng sàn tối thiểu thành công')
-    } catch (err) {
-      console.error('Error updating floor rate:', err)
-      toast.error(err?.response?.data?.message || 'Không thể cập nhật tỷ lệ sàn tối thiểu')
-    } finally {
-      setIsUpdatingFloorRate(false)
-    }
-  }
-
-  const handleUpdateUsedGoodsRate = async () => {
-    const rate = parseFloat(usedGoodsRate)
-    if (isNaN(rate) || rate < 0 || rate > 100) {
-      toast.error('Tỷ lệ hàng cũ phải từ 0 đến 100')
-      return
-    }
-
-    try {
-      setIsUpdatingUsedGoodsRate(true)
-      await platformService.updatePlatformSetting('commission_used_goods_rate', rate)
-      toast.success('Cập nhật tỷ lệ hoa hồng hàng cũ thành công')
-    } catch (err) {
-      console.error('Error updating used goods rate:', err)
-      toast.error(err?.response?.data?.message || 'Không thể cập nhật tỷ lệ hàng cũ')
-    } finally {
-      setIsUpdatingUsedGoodsRate(false)
-    }
-  }
-
-  const getCategoryIcon = (name) => {
-    const n = (name || '').toLowerCase()
-    if (n.includes('điện thoại') || n.includes('máy tính bảng')) return '📱'
-    if (n.includes('laptop') || n.includes('máy tính')) return '💻'
-    if (n.includes('linh kiện') || n.includes('pc build')) return '🧩'
-    if (n.includes('âm thanh')) return '🎧'
-    if (n.includes('phụ kiện') || n.includes('gaming gear')) return '🎮'
-    if (n.includes('đeo') || n.includes('đồng hồ')) return '⌚'
-    if (n.includes('nhà thông minh') || n.includes('iot')) return '🏠'
-    if (n.includes('máy ảnh') || n.includes('quay phim')) return '📷'
-    return '📦'
-  }
+  const defaultRate = parseFloat(values.default)
+  const floorRate = values.floor
+  const rootCategories = categories.filter((c) => !c.parentId)
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="text-lg font-bold flex items-center gap-2">
-            <HiOutlineCog className="h-5 w-5 text-amber-500" />
-            Biểu phí hoa hồng theo danh mục ngành hàng
-          </h2>
-          <p className={cn('text-xs', isDark ? 'text-slate-400' : 'text-stone-500')}>
-            Admin thiết lập tỷ lệ hoa hồng cơ bản riêng biệt cho từng nhóm sản phẩm công nghệ.
+          <h2 className="text-lg font-bold">Biểu phí hoa hồng</h2>
+          <p className={cn('mt-0.5 text-sm', muted)}>
+            Tỷ lệ cơ bản theo ngành hàng và các ngưỡng áp dụng toàn sàn.
           </p>
         </div>
-
-        <div className="flex items-center gap-2">
-          <div className="inline-flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-semibold dark:text-amber-400 border bg-stone-100 text-stone-950 border-stone-950">
-            <span>Sàn tối thiểu: {floorRate}%</span>
-          </div>
-          <button
-            onClick={() => {
-              fetchCategories()
-              fetchPlatformSettings()
-            }}
-            className={cn(
-              'flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-semibold transition',
-              isDark
-                ? 'border-slate-800 bg-slate-900 text-slate-200 hover:bg-slate-800'
-                : 'border-stone-200 bg-white text-stone-700 hover:bg-stone-50',
-            )}
-          >
-            <HiOutlineRefresh className="h-4 w-4" />
-            Làm mới
-          </button>
-        </div>
+        <button
+          onClick={() => {
+            fetchCategories()
+            fetchPlatformSettings()
+          }}
+          className={cn(
+            'inline-flex items-center gap-2 self-start rounded-md border px-3 py-1.5 text-xs font-semibold transition sm:self-auto',
+            isDark
+              ? 'border-slate-800 bg-slate-900 text-slate-200 hover:bg-slate-800'
+              : 'border-stone-200 bg-white text-stone-700 hover:bg-stone-50',
+          )}
+        >
+          <HiOutlineRefresh className="h-4 w-4" />
+          Làm mới
+        </button>
       </div>
 
-      {/* Guide Banner */}
-      <div
-        className={cn(
-          'rounded-2xl border p-5 flex items-start gap-4',
-          isDark ? 'border-blue-500/20 bg-blue-500/5 text-slate-300' : 'border-blue-200 bg-blue-50/60 text-slate-800'
-        )}
-      >
-        <HiOutlineInformationCircle className="h-6 w-6 flex-shrink-0 text-blue-500 mt-0.5" />
-        <div className="text-xs leading-relaxed space-y-1">
-          <p className="font-semibold text-blue-500 text-sm">Cơ chế áp dụng biểu phí ngành hàng:</p>
-          <p>
-            - Khi người mua đặt hàng, hệ thống tự động dò tìm tỷ lệ hoa hồng cơ bản theo danh mục của từng sản phẩm trong đơn.
-          </p>
-          <p>
-            - Tỷ lệ này là <strong>Base Rate</strong> trong công thức: <code>FinalRate = Math.max(BaseRate - DepositDiscount - SeniorityDiscount, {floorRate}%)</code>.
-          </p>
+      {/* Cấu hình toàn sàn */}
+      <section>
+        <h3 className="mb-2 font-mono text-[11px] font-semibold uppercase tracking-wider text-stone-500 dark:text-slate-400">
+          Cấu hình toàn sàn
+        </h3>
+        <div className={cn(panel, 'divide-y', divider)}>
+          {PLATFORM_SETTINGS.map((setting) => (
+            <div
+              key={setting.id}
+              className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-8"
+            >
+              <div className="min-w-0">
+                <p className="text-sm font-semibold">{setting.label}</p>
+                <p className={cn('mt-0.5 text-xs leading-relaxed', muted)}>{setting.description}</p>
+              </div>
+              <div className="flex shrink-0 items-center gap-2">
+                <div className="relative w-28">
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    value={values[setting.id]}
+                    onChange={(e) => setValues((prev) => ({ ...prev, [setting.id]: e.target.value }))}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSaveSetting(setting)}
+                    aria-label={setting.label}
+                    className={inputCls}
+                  />
+                  <span className={cn('pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-xs', muted)}>%</span>
+                </div>
+                <button
+                  onClick={() => handleSaveSetting(setting)}
+                  disabled={savingSettingId === setting.id}
+                  className={primaryBtn}
+                >
+                  {savingSettingId === setting.id ? 'Đang lưu...' : 'Lưu'}
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
-      </div>
+        <p className={cn('mt-3 text-xs leading-relaxed', muted)}>
+          Công thức áp dụng khi đặt hàng:{' '}
+          <code className="rounded bg-stone-100 px-1.5 py-0.5 font-mono text-[11px] text-stone-800 dark:bg-slate-800 dark:text-slate-200">
+            Tỷ lệ cuối = max(Tỷ lệ cơ bản − Ưu đãi ký quỹ − Ưu đãi thâm niên, {floorRate}%)
+          </code>
+        </p>
+      </section>
 
-      {/* Grid các nhóm ngành hàng */}
-      {loading ? (
-        <div className="py-16 text-center">
-          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent mb-2" />
-          <p className={cn('text-xs', isDark ? 'text-slate-400' : 'text-stone-500')}>Đang tải biểu phí ngành hàng...</p>
+      {/* Biểu phí theo ngành hàng */}
+      <section>
+        <div className="mb-2 flex items-baseline justify-between">
+          <h3 className="font-mono text-[11px] font-semibold uppercase tracking-wider text-stone-500 dark:text-slate-400">
+            Theo ngành hàng cấp 1
+          </h3>
+          {!loading && <span className={cn('text-xs', muted)}>{rootCategories.length} ngành hàng</span>}
         </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {categories
-            .filter((c) => !c.parentId)
-            .map((cat) => {
-              const isEditing = editingCatId === cat.id
-              const isSaving = savingCatId === cat.id
-              const currentRate = cat.commissionRate != null ? Number(cat.commissionRate) : 5.0
 
-              return (
-                <div
-                  key={cat.id}
+        <div className={cn(panel, 'overflow-hidden')}>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[560px] text-sm">
+              <thead>
+                <tr
                   className={cn(
-                    'relative rounded-2xl border p-5 transition-all duration-200 flex flex-col justify-between gap-4',
-                    isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white',
+                    'border-b text-left font-mono text-[11px] uppercase tracking-wider',
+                    isDark ? 'border-slate-800 bg-slate-950/40 text-slate-400' : 'border-stone-200 bg-stone-50 text-stone-500',
                   )}
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-3">
-                      <span className="text-3xl">{getCategoryIcon(cat.name)}</span>
-                      <div>
-                        <h3 className={cn('text-sm font-bold line-clamp-1', isDark ? 'text-white' : 'text-stone-900')}>
-                          {cat.name}
-                        </h3>
-                        <span className="text-[11px] text-slate-400">Ngành hàng cấp 1</span>
-                      </div>
-                    </div>
+                  <th className="px-5 py-2.5 font-semibold">Ngành hàng</th>
+                  <th className="px-5 py-2.5 text-right font-semibold">Tỷ lệ cơ bản</th>
+                  <th className="px-5 py-2.5 text-right font-semibold">So với mặc định</th>
+                  <th className="w-28 px-5 py-2.5 text-right font-semibold">
+                    <span className="sr-only">Thao tác</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody className={cn('divide-y', divider)}>
+                {loading ? (
+                  <tr>
+                    <td colSpan={4} className={cn('px-5 py-12 text-center text-sm', muted)}>
+                      Đang tải biểu phí ngành hàng...
+                    </td>
+                  </tr>
+                ) : rootCategories.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className={cn('px-5 py-12 text-center text-sm', muted)}>
+                      Chưa có ngành hàng nào.
+                    </td>
+                  </tr>
+                ) : (
+                  rootCategories.map((cat) => {
+                    const isEditing = editingCatId === cat.id
+                    const isSaving = savingCatId === cat.id
+                    const currentRate = cat.commissionRate != null ? Number(cat.commissionRate) : 5.0
+                    const delta = isNaN(defaultRate) ? null : currentRate - defaultRate
 
-                    {!isEditing && (
-                      <button
-                        onClick={() => handleStartEdit(cat)}
-                        title="Chỉnh sửa tỷ lệ hoa hồng"
-                        className={cn(
-                          'rounded-xl p-2 transition text-slate-400 hover:text-amber-500 hover:bg-amber-500/10 border border-transparent hover:border-amber-500/20',
-                          isDark ? 'hover:bg-slate-800' : 'hover:bg-stone-100',
-                        )}
-                      >
-                        <HiOutlinePencil className="h-4 w-4" />
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="pt-3 border-t border-slate-700/30">
-                    {isEditing ? (
-                      <div className="flex items-center gap-2">
-                        <div className="relative flex-1">
-                          <input
-                            type="number"
-                            min="0"
-                            max="100"
-                            step="0.1"
-                            value={editRateValue}
-                            onChange={(e) => setEditRateValue(e.target.value)}
-                            className={cn(
-                              'w-full rounded-xl border px-3 py-2 text-sm font-bold text-center focus:outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
-                              isDark
-                                ? 'border-slate-700 bg-slate-950 text-white'
-                                : 'border-stone-300 bg-white text-stone-900',
-                            )}
-                            autoFocus
-                          />
-                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">%</span>
-                        </div>
-
-                        <button
-                          onClick={() => handleSaveCategoryRate(cat.id)}
-                          disabled={isSaving}
-                          className="rounded-xl bg-emerald-600 p-2.5 text-white hover:bg-emerald-700 disabled:opacity-50 transition shadow-sm"
-                          title="Lưu thay đổi"
-                        >
-                          <HiOutlineCheck className="h-4 w-4" />
-                        </button>
-
-                        <button
-                          onClick={handleCancelEdit}
-                          disabled={isSaving}
-                          className={cn(
-                            'rounded-xl p-2.5 transition',
-                            isDark ? 'bg-slate-800 text-slate-400 hover:text-white' : 'bg-stone-200 text-stone-600 hover:text-stone-900',
+                    return (
+                      <tr key={cat.id} className={isDark ? 'hover:bg-slate-800/40' : 'hover:bg-stone-50'}>
+                        <td className="px-5 py-3 font-medium">{cat.name}</td>
+                        <td className="px-5 py-3 text-right">
+                          {isEditing ? (
+                            <div className="relative ml-auto w-28">
+                              <input
+                                type="number"
+                                min="0"
+                                max="100"
+                                step="0.1"
+                                value={editRateValue}
+                                onChange={(e) => setEditRateValue(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') handleSaveCategoryRate(cat.id)
+                                  if (e.key === 'Escape') handleCancelEdit()
+                                }}
+                                aria-label={`Tỷ lệ hoa hồng ${cat.name}`}
+                                className={inputCls}
+                                autoFocus
+                              />
+                              <span className={cn('pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-xs', muted)}>%</span>
+                            </div>
+                          ) : (
+                            <span className="font-mono tabular-nums">{currentRate.toFixed(1)}%</span>
                           )}
-                          title="Hủy"
-                        >
-                          <HiOutlineX className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Tỷ lệ cơ bản thu sàn:</span>
-                        <span className="inline-flex items-center rounded-xl px-3 py-1 text-sm font-extrabold dark:text-amber-400 border bg-stone-100 text-stone-950 border-stone-950">
-                          {currentRate.toFixed(1)}%
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )
-            })}
-        </div>
-      )}
-
-      {/* 3 Cấu hình chính sách sàn toàn hệ thống (Platform Infrastructure Policies) */}
-      <div className="space-y-3 pt-2">
-        <h3 className="text-sm font-bold flex items-center gap-2">
-          <HiOutlineShieldCheck className="h-4 w-4 text-amber-500" />
-          Cấu hình chính sách hoa hồng toàn sàn
-        </h3>
-
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          {/* Card 1: Default Rate */}
-          <div
-            className={cn(
-              'rounded-2xl p-5 border flex flex-col justify-between gap-3',
-              isDark ? 'border-slate-800 bg-slate-900 text-slate-300' : 'border-stone-200 bg-white text-stone-700'
-            )}
-          >
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-lg">⚙️</span>
-                <h4 className="font-bold text-xs uppercase tracking-wider text-amber-500">Tỷ lệ cơ bản mặc định</h4>
-              </div>
-              <p className={cn('text-[11px] leading-relaxed', isDark ? 'text-slate-400' : 'text-stone-500')}>
-                Áp dụng khi sản phẩm chưa phân loại hoặc danh mục chưa có biểu phí riêng.
-              </p>
-            </div>
-
-            <div className="flex items-center gap-2 pt-2 border-t border-slate-700/20">
-              <div className="relative flex-1">
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.1"
-                  value={defaultRate}
-                  onChange={(e) => setDefaultRate(e.target.value)}
-                  className={cn(
-                    'w-full rounded-xl border px-3 py-1.5 text-xs font-bold text-center focus:outline-none focus:ring-1 focus:ring-stone-950/30 dark:focus:ring-white/40',
-                    isDark ? 'border-slate-700 bg-slate-950 text-white' : 'border-stone-300 bg-white text-stone-900',
-                  )}
-                />
-                <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 font-bold">%</span>
-              </div>
-              <button
-                onClick={handleUpdateDefaultRate}
-                disabled={isUpdatingDefaultRate}
-                className="rounded-xl px-3 py-1.5 text-xs font-bold disabled:opacity-50 transition bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
-              >
-                {isUpdatingDefaultRate ? 'Đang lưu...' : 'Lưu'}
-              </button>
-            </div>
-          </div>
-
-          {/* Card 2: Floor Rate */}
-          <div
-            className={cn(
-              'rounded-2xl p-5 border flex flex-col justify-between gap-3',
-              isDark ? 'border-slate-800 bg-slate-900 text-slate-300' : 'border-stone-200 bg-white text-stone-700'
-            )}
-          >
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-lg">🛡️</span>
-                <h4 className="font-bold text-xs uppercase tracking-wider text-emerald-500">Ngưỡng sàn tối thiểu</h4>
-              </div>
-              <p className={cn('text-[11px] leading-relaxed', isDark ? 'text-slate-400' : 'text-stone-500')}>
-                Mức hoa hồng tối thiểu thu sau khi trừ hết ưu đãi ký quỹ và thâm niên.
-              </p>
-            </div>
-
-            <div className="flex items-center gap-2 pt-2 border-t border-slate-700/20">
-              <div className="relative flex-1">
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.1"
-                  value={floorRate}
-                  onChange={(e) => setFloorRate(e.target.value)}
-                  className={cn(
-                    'w-full rounded-xl border px-3 py-1.5 text-xs font-bold text-center focus:outline-none focus:ring-1 focus:ring-emerald-500',
-                    isDark ? 'border-slate-700 bg-slate-950 text-white' : 'border-stone-300 bg-white text-stone-900',
-                  )}
-                />
-                <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 font-bold">%</span>
-              </div>
-              <button
-                onClick={handleUpdateFloorRate}
-                disabled={isUpdatingFloorRate}
-                className="rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-50 transition shadow-sm"
-              >
-                {isUpdatingFloorRate ? 'Đang lưu...' : 'Lưu'}
-              </button>
-            </div>
-          </div>
-
-          {/* Card 3: Used Goods Rate */}
-          <div
-            className={cn(
-              'rounded-2xl p-5 border flex flex-col justify-between gap-3',
-              isDark ? 'border-slate-800 bg-slate-900 text-slate-300' : 'border-stone-200 bg-white text-stone-700'
-            )}
-          >
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-lg">🔄</span>
-                <h4 className="font-bold text-xs uppercase tracking-wider text-purple-500">Hàng cũ / Đã qua sử dụng</h4>
-              </div>
-              <p className={cn('text-[11px] leading-relaxed', isDark ? 'text-slate-400' : 'text-stone-500')}>
-                Tỷ lệ thu cho các thiết bị LIKE NEW, 99%, hàng Cũ hoặc Linh kiện tháo máy.
-              </p>
-            </div>
-
-            <div className="flex items-center gap-2 pt-2 border-t border-slate-700/20">
-              <div className="relative flex-1">
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.1"
-                  value={usedGoodsRate}
-                  onChange={(e) => setUsedGoodsRate(e.target.value)}
-                  className={cn(
-                    'w-full rounded-xl border px-3 py-1.5 text-xs font-bold text-center focus:outline-none focus:ring-1 focus:ring-purple-500',
-                    isDark ? 'border-slate-700 bg-slate-950 text-white' : 'border-stone-300 bg-white text-stone-900',
-                  )}
-                />
-                <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 font-bold">%</span>
-              </div>
-              <button
-                onClick={handleUpdateUsedGoodsRate}
-                disabled={isUpdatingUsedGoodsRate}
-                className="rounded-xl px-3 py-1.5 text-xs font-bold disabled:opacity-50 transition shadow-sm bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
-              >
-                {isUpdatingUsedGoodsRate ? 'Đang lưu...' : 'Lưu'}
-              </button>
-            </div>
+                        </td>
+                        <td className={cn('px-5 py-3 text-right font-mono text-xs tabular-nums', muted)}>
+                          {delta === null || Math.abs(delta) < 0.05
+                            ? '—'
+                            : `${delta > 0 ? '+' : '−'}${Math.abs(delta).toFixed(1)} điểm %`}
+                        </td>
+                        <td className="px-5 py-3 text-right">
+                          {isEditing ? (
+                            <div className="inline-flex items-center gap-1">
+                              <button
+                                onClick={() => handleSaveCategoryRate(cat.id)}
+                                disabled={isSaving}
+                                className="rounded-md bg-stone-950 p-1.5 text-white transition hover:bg-stone-800 disabled:opacity-50 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
+                                title="Lưu thay đổi"
+                                aria-label="Lưu thay đổi"
+                              >
+                                <HiOutlineCheck className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={handleCancelEdit}
+                                disabled={isSaving}
+                                className={cn(
+                                  'rounded-md p-1.5 transition',
+                                  isDark ? 'text-slate-400 hover:bg-slate-800 hover:text-white' : 'text-stone-500 hover:bg-stone-100 hover:text-stone-900',
+                                )}
+                                title="Hủy"
+                                aria-label="Hủy"
+                              >
+                                <HiOutlineX className="h-4 w-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => handleStartEdit(cat)}
+                              title="Chỉnh sửa tỷ lệ hoa hồng"
+                              aria-label={`Chỉnh sửa tỷ lệ hoa hồng ${cat.name}`}
+                              className={cn(
+                                'rounded-md p-1.5 transition',
+                                isDark ? 'text-slate-400 hover:bg-slate-800 hover:text-white' : 'text-stone-500 hover:bg-stone-100 hover:text-stone-900',
+                              )}
+                            >
+                              <HiOutlinePencil className="h-4 w-4" />
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
-      </div>
+      </section>
     </div>
   )
 }

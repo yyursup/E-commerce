@@ -146,7 +146,7 @@ export default function AdminDashboard() {
         isDark ? 'bg-slate-950 text-slate-100' : 'bg-stone-50 text-stone-900',
       )}
     >
-      <div className="mx-auto max-w-7xl space-y-8">
+      <div className="w-full space-y-8">
         {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>

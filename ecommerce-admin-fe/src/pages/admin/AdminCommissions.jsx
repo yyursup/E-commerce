@@ -1,9 +1,4 @@
 import { useSearchParams } from 'react-router-dom'
-import {
-  HiOutlineChartBar,
-  HiOutlineViewGrid,
-  HiOutlineShieldCheck,
-} from 'react-icons/hi'
 import { useThemeStore } from '../../store/useThemeStore'
 import { cn } from '../../lib/cn'
 import CommissionAnalyticsTab from './components/commissions/CommissionAnalyticsTab'
@@ -14,20 +9,14 @@ const TABS = [
   {
     id: 'analytics',
     label: 'Thống kê & lịch sử thu phí',
-    icon: HiOutlineChartBar,
-    desc: 'Tổng quan doanh thu, biểu đồ phân tích và danh sách đơn hàng',
   },
   {
     id: 'categories',
     label: 'Biểu phí ngành hàng',
-    icon: HiOutlineViewGrid,
-    desc: 'Cấu hình tỷ lệ hoa hồng cơ bản theo danh mục sản phẩm công nghệ',
   },
   {
     id: 'policies',
     label: 'Ưu đãi thâm niên & mô phỏng phí',
-    icon: HiOutlineShieldCheck,
-    desc: 'Quản trị thâm niên hoạt động, tra cứu ma trận ký quỹ và công cụ mô phỏng phí sàn',
   },
 ]
 
@@ -45,40 +34,32 @@ export default function AdminCommissions() {
     <div className={cn('space-y-6', isDark ? 'text-slate-100' : 'text-stone-900')}>
       {/* Page Header */}
       <div>
-        <h1 className="text-2xl font-bold flex items-center gap-2.5">
-          <HiOutlineChartBar className="h-7 w-7 text-amber-500" />
-          Trung tâm quản lý hoa hồng & biểu phí toàn sàn
-        </h1>
+        <h1 className="text-2xl font-bold">Hoa hồng & biểu phí</h1>
         <p className={cn('mt-1 text-sm', isDark ? 'text-slate-400' : 'text-stone-500')}>
-          Quản lý toàn diện cơ chế tính hoa hồng động 3 tầng (Biểu phí ngành hàng - Giảm trừ ký quỹ - Ưu đãi thâm niên)
+          Hoa hồng tính theo ba lớp: biểu phí ngành hàng, giảm trừ theo ký quỹ và ưu đãi thâm niên.
         </p>
       </div>
 
       {/* Navigation Tabs Bar */}
-      <div
-        className={cn(
-          'flex flex-wrap gap-2 border-b p-1.5 rounded-2xl',
-          isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-stone-200 shadow-sm'
-        )}
-      >
+      <div role="tablist" className={cn('flex flex-wrap gap-x-6 border-b', isDark ? 'border-slate-800' : 'border-stone-200')}>
         {TABS.map((tab) => {
-          const Icon = tab.icon
           const isActive = currentTab === tab.id
           return (
             <button
               key={tab.id}
+              role="tab"
+              aria-selected={isActive}
               onClick={() => handleTabChange(tab.id)}
               className={cn(
-                'flex items-center gap-2.5 rounded-xl px-4 py-3 text-xs font-bold transition-all duration-200',
+                '-mb-px border-b-2 py-3 text-sm font-semibold transition-colors',
                 isActive
-                  ? 'bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
+                  ? 'border-stone-950 text-stone-950 dark:border-white dark:text-white'
                   : isDark
-                    ? 'text-slate-400 hover:text-white hover:bg-slate-800/80'
-                    : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
+                    ? 'border-transparent text-slate-400 hover:text-white'
+                    : 'border-transparent text-stone-500 hover:text-stone-900'
               )}
             >
-              <Icon className={cn('h-4 w-4', isActive ? 'text-white' : 'text-amber-500')} />
-              <span>{tab.label}</span>
+              {tab.label}
             </button>
           )
         })}

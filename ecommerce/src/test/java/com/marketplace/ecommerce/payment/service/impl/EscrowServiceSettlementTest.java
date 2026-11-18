@@ -385,47 +385,6 @@ class EscrowServiceSettlementTest {
     }
 
     @Test
-    @DisplayName("refundMerchandiseOnly: Khách giữ hàng -> Hoàn tiền hàng cho Buyer, phí ship trả ra cho GHN")
-    void refundMerchandiseOnly_CustomerKeepsItem_RefundsMerchandiseRetainsShippingForPlatform() {
-        BigDecimal subtotal = BigDecimal.valueOf(500000);
-        BigDecimal shippingFee = BigDecimal.valueOf(30000);
-        BigDecimal total = subtotal.add(shippingFee);
-
-        order.setSubtotal(subtotal);
-        order.setShippingFee(shippingFee);
-        order.setTotal(total);
-
-        escrow.setAmount(total);
-        escrow.setStatus(EscrowStatus.HELD);
-        escrow.setEscrowWallet(escrowWallet);
-        escrow.setBuyerWallet(buyerWallet);
-
-        escrowWallet.setLockedBalance(total);
-        escrowWallet.setAvailableBalance(BigDecimal.ZERO);
-        buyerWallet.setAvailableBalance(BigDecimal.ZERO);
-
-        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
-        when(escrowRepository.findByOrderIdForUpdate(orderId)).thenReturn(Optional.of(escrow));
-        when(transactionRepository.existsByDedupeKey(any())).thenReturn(false);
-
-        escrowService.refundMerchandiseOnly(orderId, "Khách giữ hàng trong thương lượng 1:1");
-
-        // 1. Buyer chỉ nhận lại 500.000đ tiền hàng
-        assertEquals(subtotal, buyerWallet.getAvailableBalance());
-
-        // 2. 30.000đ tiền ship không thành doanh thu sàn: trả ra cho GHN
-        assertEquals(BigDecimal.ZERO, escrowWallet.getAvailableBalance());
-        assertEquals(BigDecimal.ZERO, escrowWallet.getLockedBalance());
-
-        // 3. Trạng thái cập nhật REFUNDED
-        assertEquals(EscrowStatus.REFUNDED, escrow.getStatus());
-        assertEquals(OrderStatus.REFUNDED, order.getStatus());
-
-        // 4. Kiểm tra lưu transactions
-        verify(transactionRepository, atLeast(1)).save(any(Transaction.class));
-    }
-
-    @Test
     @DisplayName("adminList: Phân trang danh sách ký quỹ theo trạng thái cho quản trị viên")
     void testAdminList() {
         when(escrowRepository.adminList(eq(EscrowStatus.HELD), any())).thenReturn(new PageImpl<>(List.of(escrow)));

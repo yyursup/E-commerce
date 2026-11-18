@@ -49,14 +49,14 @@ public class ShippingFeeAdminServiceImpl implements ShippingFeeAdminService {
                     .map(this::toOutbound);
         }
         if (RETURN.equals(dir)) {
-            return orderReturnRepository.findByReturnTrackingCodeIsNotNull(PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), newestFirst))
+            return orderReturnRepository.findByBuyerShippedAtIsNotNull(PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), newestFirst))
                     .map(this::toReturn);
         }
 
         PageRequest head = PageRequest.of(0, MERGE_LIMIT, newestFirst);
         List<ShippingFeeRecordResponse> all = new ArrayList<>();
         orderRepository.findByGhnOrderCodeIsNotNull(head).forEach(o -> all.add(toOutbound(o)));
-        orderReturnRepository.findByReturnTrackingCodeIsNotNull(head).forEach(r -> all.add(toReturn(r)));
+        orderReturnRepository.findByBuyerShippedAtIsNotNull(head).forEach(r -> all.add(toReturn(r)));
         all.sort(Comparator.comparing(ShippingFeeRecordResponse::getCreatedAt,
                 Comparator.nullsLast(Comparator.reverseOrder())));
 
@@ -73,7 +73,7 @@ public class ShippingFeeAdminServiceImpl implements ShippingFeeAdminService {
         return ShippingFeeSummaryResponse.builder()
                 .outboundCount(orderRepository.countByGhnOrderCodeIsNotNull())
                 .outboundTotal(outboundTotal)
-                .returnCount(orderReturnRepository.countByReturnTrackingCodeIsNotNull())
+                .returnCount(orderReturnRepository.countByBuyerShippedAtIsNotNull())
                 .returnTotal(returnTotal)
                 .grandTotal(outboundTotal.add(returnTotal))
                 .build();
@@ -109,12 +109,20 @@ public class ShippingFeeAdminServiceImpl implements ShippingFeeAdminService {
                 .createdBy("BUYER")
                 .carrier(r.getCarrierName() != null ? r.getCarrierName() : "GHN")
                 .trackingCode(r.getReturnTrackingCode())
-                .fee(nz(r.getShippingFee()))
+                .fee(effectiveReturnFee(r, o))
                 .status(r.getStatus() != null ? r.getStatus().name() : null)
                 .payer("SHOP_FUND")
                 .deductedFromShopFund(Boolean.TRUE.equals(r.getIsReturnShippingDeducted()))
                 .createdAt(at)
                 .build();
+    }
+
+    /** Cùng quy tắc trích quỹ: cước người mua khai báo nếu > 0, ngược lại bằng cước chiều đi của đơn. */
+    private static BigDecimal effectiveReturnFee(OrderReturn r, Order o) {
+        if (r.getShippingFee() != null && r.getShippingFee().signum() > 0) {
+            return r.getShippingFee();
+        }
+        return nz(o != null ? o.getShippingFee() : null);
     }
 
     private static BigDecimal nz(BigDecimal v) {

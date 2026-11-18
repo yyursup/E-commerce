@@ -78,6 +78,8 @@ public class OrderReturnServiceTest {
         private UserRepository userRepository;
         @Mock
         private ShopEscrowFundService shopEscrowFundService;
+        @Mock
+        private com.marketplace.ecommerce.shipping.service.ShippingService shippingService;
 
         @InjectMocks
         private OrderReturnServiceImpl orderReturnService;
@@ -168,6 +170,40 @@ public class OrderReturnServiceTest {
         }
 
         @Test
+        @DisplayName("Mở kiện hoàn: cước chiều về lấy từ GHN báo giá theo chiều ngược lại")
+        void createReturn_UsesGhnQuotedReturnFee() {
+                order.setShippingFee(BigDecimal.valueOf(30000));
+                when(orderReturnRepository.findByOrderId(orderId)).thenReturn(Optional.empty());
+                when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+                when(reportRepository.findById(reportId)).thenReturn(Optional.of(report));
+                when(shippingService.quoteReturnFee(order)).thenReturn(BigDecimal.valueOf(26000));
+                when(orderReturnRepository.save(any(OrderReturn.class))).thenAnswer(i -> i.getArgument(0));
+
+                orderReturnService.createReturn(orderId, reportId);
+
+                org.mockito.ArgumentCaptor<OrderReturn> captor = org.mockito.ArgumentCaptor.forClass(OrderReturn.class);
+                verify(orderReturnRepository).save(captor.capture());
+                assertEquals(BigDecimal.valueOf(26000), captor.getValue().getShippingFee());
+        }
+
+        @Test
+        @DisplayName("Mở kiện hoàn: GHN không báo được giá thì tạm tính bằng cước chiều đi của đơn")
+        void createReturn_FallsBackToOutboundFee() {
+                order.setShippingFee(BigDecimal.valueOf(30000));
+                when(orderReturnRepository.findByOrderId(orderId)).thenReturn(Optional.empty());
+                when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+                when(reportRepository.findById(reportId)).thenReturn(Optional.of(report));
+                when(shippingService.quoteReturnFee(order)).thenReturn(null);
+                when(orderReturnRepository.save(any(OrderReturn.class))).thenAnswer(i -> i.getArgument(0));
+
+                orderReturnService.createReturn(orderId, reportId);
+
+                org.mockito.ArgumentCaptor<OrderReturn> captor = org.mockito.ArgumentCaptor.forClass(OrderReturn.class);
+                verify(orderReturnRepository).save(captor.capture());
+                assertEquals(BigDecimal.valueOf(30000), captor.getValue().getShippingFee());
+        }
+
+        @Test
         @DisplayName("CASE 3: Customer nộp tracking hợp lệ -> Chuyển sang SHIPPED")
         void submitTracking_Success() {
                 SubmitReturnTrackingRequest req = SubmitReturnTrackingRequest.builder()
@@ -186,6 +222,44 @@ public class OrderReturnServiceTest {
                 assertEquals(ReturnStatus.SHIPPED, res.getStatus());
                 assertEquals("TRACK-123456", res.getReturnTrackingCode());
                 assertNotNull(res.getBuyerShippedAt());
+                // Cước đã báo giá từ GHN lúc mở kiện hoàn, không bị ghi đè bởi số người mua tự nhập (30.000)
+                assertNotEquals(BigDecimal.valueOf(30000), orderReturn.getShippingFee());
+        }
+
+        @Test
+        @DisplayName("CASE 3b: Người mua không nhập mã -> tạo đơn GHN thật, dùng mã GHN làm tracking")
+        void submitTracking_NoCode_CreatesGhnReturnOrder() {
+                SubmitReturnTrackingRequest req = SubmitReturnTrackingRequest.builder()
+                                .buyerEvidenceUrls("http://minio/bill.jpg").build();
+                when(orderReturnRepository.findByIdForUpdate(returnId)).thenReturn(Optional.of(orderReturn));
+                when(userRepository.findByAccountId(buyerAccountId)).thenReturn(Optional.of(buyer));
+                when(orderReturnRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+                when(shippingService.createReturnShipment(any())).thenReturn("GHNRET123");
+
+                OrderReturnResponse res = orderReturnService.submitTracking(buyerAccountId, returnId, req);
+
+                assertEquals("GHNRET123", res.getReturnTrackingCode());
+                verify(shippingService).createReturnShipment(any());
+        }
+
+        @Test
+        @DisplayName("CASE 3c: Người mua tự nhập mã -> không tạo đơn GHN; GHN lỗi -> giữ mã dự phòng")
+        void submitTracking_TypedCodeOrGhnFailure() {
+                when(orderReturnRepository.findByIdForUpdate(returnId)).thenReturn(Optional.of(orderReturn));
+                when(userRepository.findByAccountId(buyerAccountId)).thenReturn(Optional.of(buyer));
+                when(orderReturnRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+                orderReturnService.submitTracking(buyerAccountId, returnId, SubmitReturnTrackingRequest.builder()
+                                .returnTrackingCode("MY-CODE").build());
+                verify(shippingService, never()).createReturnShipment(any());
+
+                orderReturn.setStatus(ReturnStatus.WAITING_FOR_SHIPMENT);
+                orderReturn.setReturnTrackingCode(null);
+                when(shippingService.createReturnShipment(any())).thenReturn(null);
+                OrderReturnResponse res = orderReturnService.submitTracking(buyerAccountId, returnId,
+                                SubmitReturnTrackingRequest.builder().build());
+                assertNotNull(res.getReturnTrackingCode());
+                assertTrue(res.getReturnTrackingCode().startsWith("GHN-RET-"));
         }
 
         @Test

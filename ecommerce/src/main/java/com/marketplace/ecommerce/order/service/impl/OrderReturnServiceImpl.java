@@ -31,6 +31,7 @@ import com.marketplace.ecommerce.request.valueObjects.ReportStage;
 import com.marketplace.ecommerce.request.valueObjects.RequestStatus;
 import com.marketplace.ecommerce.shop.entity.Shop;
 import com.marketplace.ecommerce.chat.service.ChatService;
+import com.marketplace.ecommerce.shipping.service.ShippingService;
 import com.marketplace.ecommerce.shop.service.ShopEscrowFundService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +39,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
@@ -63,6 +65,7 @@ public class OrderReturnServiceImpl implements OrderReturnService {
     private final UserRepository userRepository;
     private final ShopEscrowFundService shopEscrowFundService;
     private final ChatService chatService;
+    private final ShippingService shippingService;
 
     @Override
     @Transactional
@@ -96,9 +99,16 @@ public class OrderReturnServiceImpl implements OrderReturnService {
         String defaultTracking = "GHN-RET-" + (order.getOrderNumber() != null ? order.getOrderNumber()
                 : order.getId().toString().substring(0, 8).toUpperCase());
 
+        // Cước trả hàng lấy từ GHN theo chiều ngược lại (người mua -> shop); GHN lỗi thì tạm tính bằng cước chiều đi
+        BigDecimal returnFee = shippingService.quoteReturnFee(order);
+        if (returnFee == null || returnFee.signum() <= 0) {
+            returnFee = order.getShippingFee();
+        }
+
         OrderReturn orderReturn = OrderReturn.builder()
                 .order(order)
                 .report(report)
+                .shippingFee(returnFee)
                 .status(ReturnStatus.WAITING_FOR_SHIPMENT)
                 .returnAddress(returnAddress)
                 .returnRecipientName(recipientName)
@@ -143,9 +153,18 @@ public class OrderReturnServiceImpl implements OrderReturnService {
                 ? request.getReturnTrackingCode()
                 : (returnObj.getReturnTrackingCode() != null ? returnObj.getReturnTrackingCode() : defaultTracking);
 
+        // Tạo đơn GHN thật cho chiều về nếu người mua không tự nhập mã; GHN lỗi thì giữ mã dự phòng
+        boolean buyerTyped = request.getReturnTrackingCode() != null && !request.getReturnTrackingCode().isBlank();
+        if (!buyerTyped) {
+            String ghnCode = shippingService.createReturnShipment(returnObj.getOrder());
+            if (ghnCode != null && !ghnCode.isBlank()) {
+                tracking = ghnCode;
+            }
+        }
+
         returnObj.setCarrierName(carrier);
         returnObj.setReturnTrackingCode(tracking);
-        returnObj.setShippingFee(request.getShippingFee());
+        // Cước trả hàng đã được báo giá từ GHN khi mở kiện hoàn: không nhận số do người mua tự nhập (request.shippingFee)
         returnObj.setBuyerEvidenceUrls(request.getBuyerEvidenceUrls());
         returnObj.setBuyerShippedAt(LocalDateTime.now());
         returnObj.setStatus(ReturnStatus.SHIPPED);

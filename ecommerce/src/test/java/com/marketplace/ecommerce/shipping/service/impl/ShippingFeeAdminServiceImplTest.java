@@ -78,7 +78,7 @@ class ShippingFeeAdminServiceImplTest {
         orderReturn.setIsReturnShippingDeducted(true);
 
         when(orderRepository.findByGhnOrderCodeIsNotNull(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(order)));
-        when(orderReturnRepository.findByReturnTrackingCodeIsNotNull(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(orderReturn)));
+        when(orderReturnRepository.findByBuyerShippedAtIsNotNull(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(orderReturn)));
     }
 
     @Test
@@ -137,7 +137,7 @@ class ShippingFeeAdminServiceImplTest {
     }
 
     @Test
-    @DisplayName("Phí rỗng được coi là 0đ, chiều về không có tên hãng thì mặc định GHN")
+    @DisplayName("Phí rỗng được coi là 0đ, chiều về có tên hãng thì hiển thị đúng tên hãng")
     void nullFeeIsZero() {
         order.setShippingFee(null);
         orderReturn.setShippingFee(null);
@@ -147,6 +147,19 @@ class ShippingFeeAdminServiceImplTest {
 
         assertTrue(all.stream().allMatch(r -> r.getFee().signum() == 0));
         assertTrue(all.stream().anyMatch(r -> "GHN Express".equals(r.getCarrier())));
+    }
+
+    @Test
+    @DisplayName("Chiều về: người mua không khai cước (hoặc khai 0) thì tính bằng cước chiều đi, đúng như khi trích quỹ shop")
+    void returnFeeFallsBackToOutboundFee() {
+        orderReturn.setShippingFee(null);
+        assertEquals(new BigDecimal("30000"), service.list("RETURN", pageable).getContent().get(0).getFee());
+
+        orderReturn.setShippingFee(BigDecimal.ZERO);
+        assertEquals(new BigDecimal("30000"), service.list("RETURN", pageable).getContent().get(0).getFee());
+
+        orderReturn.setShippingFee(new BigDecimal("22000"));
+        assertEquals(new BigDecimal("22000"), service.list("RETURN", pageable).getContent().get(0).getFee());
     }
 
     @Test
@@ -161,7 +174,7 @@ class ShippingFeeAdminServiceImplTest {
         when(orderRepository.sumShippingFeeOfGhnOrders()).thenReturn(new BigDecimal("90000"));
         when(orderRepository.countByGhnOrderCodeIsNotNull()).thenReturn(3L);
         when(orderReturnRepository.sumShippingFeeOfReturnShipments()).thenReturn(new BigDecimal("25000"));
-        when(orderReturnRepository.countByReturnTrackingCodeIsNotNull()).thenReturn(1L);
+        when(orderReturnRepository.countByBuyerShippedAtIsNotNull()).thenReturn(1L);
 
         ShippingFeeSummaryResponse s = service.summary();
 

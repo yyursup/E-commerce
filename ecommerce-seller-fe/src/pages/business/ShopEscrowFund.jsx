@@ -19,11 +19,15 @@ import { useThemeStore } from '../../store/useThemeStore'
 import { useAuthStore } from '../../store/useAuthStore'
 import { cn } from '../../lib/cn'
 import escrowFundService from '../../services/escrowFund'
+import walletService from '../../services/wallet'
+import SellerRevenueTab from './components/SellerRevenueTab'
 
 export default function ShopEscrowFund() {
   const [searchParams, setSearchParams] = useSearchParams()
   const isDark = useThemeStore((state) => state.theme) === 'dark'
   const updateUser = useAuthStore((state) => state.updateUser)
+  const user = useAuthStore((state) => state.user)
+  const activeTab = searchParams.get('tab') === 'revenue' ? 'revenue' : 'escrow'
   const vnpayHandledRef = useRef(false)
 
   const [fund, setFund] = useState(null)
@@ -40,6 +44,19 @@ export default function ShopEscrowFund() {
   const [topUpAmount, setTopUpAmount] = useState('')
   const [topUpNote, setTopUpNote] = useState('')
   const [topUpSubmitting, setTopUpSubmitting] = useState(false)
+
+  // Ví doanh thu & rút tiền
+  const [wallet, setWallet] = useState(null)
+  const [walletLoading, setWalletLoading] = useState(false)
+  const [withdrawals, setWithdrawals] = useState([])
+  const [withdrawalsLoading, setWithdrawalsLoading] = useState(false)
+  const [withdrawalPage, setWithdrawalPage] = useState(0)
+  const [withdrawalTotalPages, setWithdrawalTotalPages] = useState(0)
+  const [cancellingWithdrawalId, setCancellingWithdrawalId] = useState(null)
+  const [showWithdrawModal, setShowWithdrawModal] = useState(false)
+  const [withdrawAmount, setWithdrawAmount] = useState('')
+  const [withdrawNote, setWithdrawNote] = useState('')
+  const [withdrawSubmitting, setWithdrawSubmitting] = useState(false)
 
   const [showCloseShopModal, setShowCloseShopModal] = useState(false)
   const [closeShopSubmitting, setCloseShopSubmitting] = useState(false)
@@ -88,9 +105,100 @@ export default function ShopEscrowFund() {
     }
   }, [page])
 
+  const loadWallet = useCallback(async () => {
+    try {
+      setWalletLoading(true)
+      const data = await walletService.getMyWallet()
+      setWallet(data)
+    } catch (err) {
+      console.error('Lỗi tải ví doanh thu:', err)
+    } finally {
+      setWalletLoading(false)
+    }
+  }, [])
+
+  const loadWithdrawals = useCallback(async () => {
+    try {
+      setWithdrawalsLoading(true)
+      const data = await walletService.getMyWithdrawals({ page: withdrawalPage, size: 10 })
+      const list = Array.isArray(data) ? data : data?.content
+      setWithdrawals(Array.isArray(list) ? list : [])
+      setWithdrawalTotalPages(data?.totalPages || 0)
+    } catch (err) {
+      console.error('Lỗi tải lịch sử rút tiền:', err)
+    } finally {
+      setWithdrawalsLoading(false)
+    }
+  }, [withdrawalPage])
+
   useEffect(() => {
     loadFundData()
   }, [loadFundData])
+
+  useEffect(() => {
+    loadWallet()
+  }, [loadWallet])
+
+  useEffect(() => {
+    loadWithdrawals()
+  }, [loadWithdrawals])
+
+  const handleTabChange = (tabId) => {
+    setSearchParams(tabId === 'escrow' ? {} : { tab: tabId })
+  }
+
+  const handleOpenWithdrawModal = () => {
+    if (!user?.bankAccountNumber) {
+      toast.error('Vui lòng liên kết tài khoản ngân hàng trong phần Cài đặt gian hàng trước khi rút tiền.')
+      return
+    }
+    setWithdrawAmount('')
+    setWithdrawNote('')
+    setShowWithdrawModal(true)
+  }
+
+  const handleWithdrawSubmit = async (e) => {
+    e.preventDefault()
+    const amount = Number(withdrawAmount)
+    if (!amount || amount < 100000) {
+      toast.error('Số tiền rút tối thiểu là 100.000 ₫')
+      return
+    }
+    if (amount > Number(wallet?.availableBalance || 0)) {
+      toast.error('Số tiền rút vượt quá số dư khả dụng')
+      return
+    }
+
+    try {
+      setWithdrawSubmitting(true)
+      await walletService.requestWithdrawal({ amount, note: withdrawNote.trim() || undefined })
+      toast.success('Đã gửi yêu cầu rút tiền, vui lòng chờ Admin phê duyệt.')
+      setShowWithdrawModal(false)
+      setWithdrawalPage(0)
+      loadWallet()
+      loadWithdrawals()
+    } catch (err) {
+      console.error('Lỗi yêu cầu rút tiền:', err)
+      toast.error(err?.message || 'Không thể gửi yêu cầu rút tiền.')
+    } finally {
+      setWithdrawSubmitting(false)
+    }
+  }
+
+  const handleCancelWithdrawal = async (id) => {
+    try {
+      setCancellingWithdrawalId(id)
+      await walletService.cancelWithdrawal(id)
+      toast.success('Đã hủy yêu cầu rút tiền.')
+      loadWallet()
+      loadWithdrawals()
+    } catch (err) {
+      console.error('Lỗi hủy yêu cầu rút tiền:', err)
+      toast.error(err?.message || 'Không thể hủy yêu cầu rút tiền.')
+    } finally {
+      setCancellingWithdrawalId(null)
+    }
+  }
 
   useEffect(() => {
     loadTransactions()
@@ -278,6 +386,8 @@ export default function ShopEscrowFund() {
             onClick={() => {
               loadFundData()
               loadTransactions()
+              loadWallet()
+              loadWithdrawals()
             }}
             className={cn(
               'flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold border transition',
@@ -289,7 +399,7 @@ export default function ShopEscrowFund() {
             <HiOutlineRefresh className="h-4 w-4" />
             Làm mới
           </button>
-          {!isRefundPending && !isClosed && (
+          {activeTab === 'escrow' && !isRefundPending && !isClosed && (
             <button
               onClick={() => {
                 if (isPendingActivation && remainingToActivate > 0) {
@@ -311,6 +421,52 @@ export default function ShopEscrowFund() {
         </div>
       </div>
 
+      {/* Tabs: Quỹ ký quỹ / Doanh thu */}
+      <div role="tablist" className={cn('flex gap-6 border-b', isDark ? 'border-slate-800' : 'border-stone-200')}>
+        {[
+          { id: 'escrow', label: 'Quỹ ký quỹ' },
+          { id: 'revenue', label: 'Doanh thu & rút tiền' },
+        ].map((t) => (
+          <button
+            key={t.id}
+            role="tab"
+            aria-selected={activeTab === t.id}
+            onClick={() => handleTabChange(t.id)}
+            className={cn(
+              '-mb-px border-b-2 py-3 text-sm font-semibold transition-colors',
+              activeTab === t.id
+                ? 'border-stone-950 text-stone-950 dark:border-white dark:text-white'
+                : 'border-transparent text-stone-500 hover:text-stone-900 dark:text-slate-400 dark:hover:text-white'
+            )}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === 'revenue' && (
+        <SellerRevenueTab
+          wallet={wallet}
+          walletLoading={walletLoading}
+          withdrawals={withdrawals}
+          withdrawalsLoading={withdrawalsLoading}
+          withdrawalPage={withdrawalPage}
+          withdrawalTotalPages={withdrawalTotalPages}
+          onPageChange={setWithdrawalPage}
+          onRefresh={() => {
+            loadWallet()
+            loadWithdrawals()
+          }}
+          onOpenWithdrawModal={handleOpenWithdrawModal}
+          onCancelWithdrawal={handleCancelWithdrawal}
+          cancellingWithdrawalId={cancellingWithdrawalId}
+          user={user}
+          isDark={isDark}
+        />
+      )}
+
+      {activeTab === 'escrow' && (
+        <>
       {/* THÔNG BÁO CHỜ DUYỆT ĐÓNG GIAN HÀNG & HOÀN TRẢ QUỸ */}
       {isRefundPending && (
         <div className="rounded-2xl border border-purple-500/50 bg-gradient-to-r from-purple-500/15 via-purple-500/10 to-transparent p-6 shadow-sm">
@@ -768,6 +924,9 @@ export default function ShopEscrowFund() {
           </div>
         )}
       </div>
+
+        </>
+      )}
 
       {/* MODAL NẠP TIỀN QUỸ KÝ QUỸ */}
       {showTopUpModal && (

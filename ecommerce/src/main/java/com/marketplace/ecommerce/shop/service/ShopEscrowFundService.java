@@ -55,4 +55,12 @@ public interface ShopEscrowFundService {
      * (order.shippingFee) được trích từ Quỹ ký quỹ gian hàng và trả ra cho GHN (SHIPPING_FEE). Idempotent theo đơn.
      */
     void deductOutboundShippingFee(Order order, UUID reportId);
+
+    /**
+     * Quét các quỹ ký quỹ đang thiếu hụt đã quá hạn nạp bù (72 giờ): giáng bậc uy tín xuống bậc cao nhất mà số dư
+     * hiện tại còn đáp ứng. Chạy định kỳ; idempotent.
+     *
+     * @return số gian hàng đã bị xử lý giáng cấp
+     */
+    int downgradeExpiredDeficits();
 }

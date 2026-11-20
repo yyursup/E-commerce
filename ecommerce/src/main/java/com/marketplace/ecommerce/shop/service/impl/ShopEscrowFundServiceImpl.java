@@ -54,6 +54,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -491,6 +492,94 @@ public class ShopEscrowFundServiceImpl implements ShopEscrowFundService {
             notificationRepository.save(notif);
         } catch (Exception e) {
             log.error("Lỗi gửi thông báo cảnh báo hụt quỹ ký quỹ cho shop: {}", fund.getShop().getId(), e);
+        }
+    }
+
+    @Override
+    @Scheduled(cron = "0 */10 * * * *")
+    @Transactional
+    public int downgradeExpiredDeficits() {
+        LocalDateTime now = LocalDateTime.now();
+        List<ShopEscrowFund> expired = shopEscrowFundRepository.findByIsDeficitTrueAndDeficitDeadlineBefore(now);
+        int processed = 0;
+        for (ShopEscrowFund candidate : expired) {
+            try {
+                if (candidate.getShop() != null && downgradeIfDeficitExpired(candidate.getShop().getId(), now)) {
+                    processed++;
+                }
+            } catch (Exception e) {
+                log.error("Lỗi giáng cấp uy tín do quá hạn nạp bù quỹ, fundId={}", candidate.getId(), e);
+            }
+        }
+        return processed;
+    }
+
+    private boolean downgradeIfDeficitExpired(UUID shopId, LocalDateTime now) {
+        ShopEscrowFund fund = shopEscrowFundRepository.findByShopIdForUpdate(shopId).orElse(null);
+        // Đọc lại sau khi khóa: shop có thể vừa nạp bù hoặc đổi trạng thái
+        if (fund == null || !Boolean.TRUE.equals(fund.getIsDeficit())
+                || fund.getStatus() != EscrowFundStatus.DEFICIT
+                || fund.getDeficitDeadline() == null || fund.getDeficitDeadline().isAfter(now)) {
+            return false;
+        }
+
+        BigDecimal balance = fund.getBalance() != null ? fund.getBalance() : BigDecimal.ZERO;
+        int oldLevel = fund.getCurrentTrustLevel();
+        int newLevel = Math.min(oldLevel, trustLevelConfigService.resolveTrustLevel(balance));
+
+        TrustLevelConfig tier = trustLevelConfigService.getConfigByStarLevel(newLevel);
+        BigDecimal minRequired = tier != null && tier.getMinDeposit() != null ? tier.getMinDeposit() : BigDecimal.ZERO;
+
+        fund.setCurrentTrustLevel(newLevel);
+        fund.setDeficitDeadline(null); // đã xử lý, không quét lại
+        if (balance.compareTo(minRequired) >= 0) {
+            fund.setIsDeficit(false);
+            fund.setDeficitAmount(BigDecimal.ZERO);
+            fund.setStatus(EscrowFundStatus.ACTIVE);
+            if (fund.getCommittedAmount() == null || fund.getCommittedAmount().compareTo(balance) > 0) {
+                fund.setCommittedAmount(balance);
+            }
+        } else {
+            // Số dư thấp hơn cả bậc thấp nhất: giữ trạng thái thiếu hụt để Admin/Shop xử lý tiếp
+            fund.setDeficitAmount(minRequired.subtract(balance));
+        }
+        shopEscrowFundRepository.save(fund);
+
+        Shop shop = fund.getShop();
+        shop.setTrustLevel(newLevel);
+        shopRepository.save(shop);
+
+        log.warn("GIÁNG CẤP UY TÍN: Shop {} từ {} sao xuống {} sao do quá hạn nạp bù quỹ ký quỹ",
+                shop.getName(), oldLevel, newLevel);
+        sendDowngradeNotification(fund, oldLevel, newLevel);
+        return true;
+    }
+
+    private void sendDowngradeNotification(ShopEscrowFund fund, int oldLevel, int newLevel) {
+        try {
+            Shop shop = fund.getShop();
+            if (shop == null || shop.getUser() == null) {
+                return;
+            }
+            Notification notif = Notification.builder()
+                    .eventId("ESCROW_DOWNGRADE_" + UUID.randomUUID())
+                    .user(shop.getUser())
+                    .type(NotificationType.SYSTEM)
+                    .channel(NotificationChannelType.IN_APP)
+                    .status(NotificationStatus.SENT)
+                    .title("Gian hàng bị giáng cấp uy tín do chưa nạp bù Quỹ ký quỹ")
+                    .content("Quỹ ký quỹ của gian hàng \"" + shop.getName() + "\" chưa được nạp bù trong thời hạn 72 giờ. "
+                            + "Cấp uy tín đã giảm từ " + oldLevel + " sao xuống " + newLevel + " sao theo số dư hiện tại ("
+                            + fund.getBalance() + " VNĐ). Bạn có thể nạp thêm để được nâng lại cấp.")
+                    .payload(Map.of(
+                            "shopId", shop.getId().toString(),
+                            "oldTrustLevel", oldLevel,
+                            "newTrustLevel", newLevel))
+                    .sentAt(LocalDateTime.now())
+                    .build();
+            notificationRepository.save(notif);
+        } catch (Exception e) {
+            log.error("Lỗi gửi thông báo giáng cấp uy tín cho shop: {}", fund.getShop().getId(), e);
         }
     }
 

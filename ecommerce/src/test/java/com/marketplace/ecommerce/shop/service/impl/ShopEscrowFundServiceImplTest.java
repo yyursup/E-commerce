@@ -65,6 +65,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.util.Collections;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -605,7 +606,7 @@ class ShopEscrowFundServiceImplTest {
                 assertNotNull(res);
                 assertEquals(EscrowFundStatus.ACTIVE, fund.getStatus());
                 assertEquals(ShopStatus.ACTIVE, fund.getShop().getStatus());
-                assertEquals(3, fund.getCurrentTrustLevel());
+                assertEquals(3, (int) fund.getCurrentTrustLevel());
                 verify(shopRepository).save(fund.getShop());
                 verify(notificationRepository).save(any(Notification.class));
         }
@@ -1109,6 +1110,75 @@ class ShopEscrowFundServiceImplTest {
                 order.setShippingFee(BigDecimal.ZERO);
                 shopEscrowFundService.deductOutboundShippingFee(order, null);
                 verify(transactionRepository, never()).save(any());
+        }
+
+        private void expireDeficit(BigDecimal balance, int level) {
+                fund.setBalance(balance);
+                fund.setCommittedAmount(new BigDecimal("5000000"));
+                fund.setCurrentTrustLevel(level);
+                fund.setIsDeficit(true);
+                fund.setDeficitAmount(new BigDecimal("1000000"));
+                fund.setDeficitDeadline(LocalDateTime.now().minusHours(1));
+                fund.setStatus(EscrowFundStatus.DEFICIT);
+                when(shopEscrowFundRepository.findByIsDeficitTrueAndDeficitDeadlineBefore(any()))
+                                .thenReturn(List.of(fund));
+                when(shopEscrowFundRepository.findByShopIdForUpdate(shopId)).thenReturn(Optional.of(fund));
+        }
+
+        @Test
+        @DisplayName("downgradeExpiredDeficits: quá hạn 72h -> giáng xuống bậc phù hợp số dư, hết thiếu hụt và gửi thông báo")
+        void downgradeExpiredDeficits_DowngradesToAffordableTier() {
+                expireDeficit(new BigDecimal("3600000"), 3);
+                TrustLevelConfig tier2 = TrustLevelConfig.builder().starLevel(2)
+                                .minDeposit(new BigDecimal("3500000")).tierName("2 Sao").build();
+                when(trustLevelConfigService.resolveTrustLevel(new BigDecimal("3600000"))).thenReturn(2);
+                when(trustLevelConfigService.getConfigByStarLevel(2)).thenReturn(tier2);
+
+                int processed = shopEscrowFundService.downgradeExpiredDeficits();
+
+                assertEquals(1, processed);
+                assertEquals(2, (int) fund.getCurrentTrustLevel());
+                assertEquals(2, (int) shop.getTrustLevel());
+                assertFalse(fund.getIsDeficit());
+                assertEquals(EscrowFundStatus.ACTIVE, fund.getStatus());
+                assertEquals(0, fund.getDeficitAmount().signum());
+                assertNull(fund.getDeficitDeadline());
+                assertEquals(new BigDecimal("3600000"), fund.getCommittedAmount());
+                verify(notificationRepository).save(any(Notification.class));
+        }
+
+        @Test
+        @DisplayName("downgradeExpiredDeficits: số dư thấp hơn cả bậc thấp nhất -> giữ thiếu hụt nhưng xóa hạn để không quét lại")
+        void downgradeExpiredDeficits_BelowLowestTierKeepsDeficit() {
+                expireDeficit(new BigDecimal("500000"), 2);
+                TrustLevelConfig tier1 = TrustLevelConfig.builder().starLevel(1)
+                                .minDeposit(new BigDecimal("2000000")).tierName("1 Sao").build();
+                when(trustLevelConfigService.resolveTrustLevel(new BigDecimal("500000"))).thenReturn(1);
+                when(trustLevelConfigService.getConfigByStarLevel(1)).thenReturn(tier1);
+
+                assertEquals(1, shopEscrowFundService.downgradeExpiredDeficits());
+
+                assertEquals(1, (int) fund.getCurrentTrustLevel());
+                assertTrue(fund.getIsDeficit());
+                assertEquals(new BigDecimal("1500000"), fund.getDeficitAmount());
+                assertNull(fund.getDeficitDeadline());
+        }
+
+        @Test
+        @DisplayName("downgradeExpiredDeficits: shop đã nạp bù hoặc chưa hết hạn sau khi khóa thì bỏ qua")
+        void downgradeExpiredDeficits_SkipsWhenResolvedMeanwhile() {
+                expireDeficit(new BigDecimal("3600000"), 3);
+                fund.setIsDeficit(false);
+                fund.setStatus(EscrowFundStatus.ACTIVE);
+
+                assertEquals(0, shopEscrowFundService.downgradeExpiredDeficits());
+                assertEquals(3, (int) fund.getCurrentTrustLevel());
+
+                fund.setIsDeficit(true);
+                fund.setStatus(EscrowFundStatus.DEFICIT);
+                fund.setDeficitDeadline(LocalDateTime.now().plusHours(5));
+                assertEquals(0, shopEscrowFundService.downgradeExpiredDeficits());
+                verify(notificationRepository, never()).save(any(Notification.class));
         }
 
 }

@@ -169,10 +169,7 @@ Phán quyết của Quản trị viên bắt buộc phải gắn mã Điều kho
   - Hạng 4 sao: Tối thiểu 7.500.000 VNĐ.
   - Hạng 5 sao: Tối thiểu 10.000.000 VNĐ.
 - Khi xảy ra bồi thường hoặc phạt vi phạm, hệ thống tự động cấn trừ từ Quỹ này.
-- **Quy định bù quỹ hụt (Deficit Top-up)**: Trong vòng 48 giờ kể từ khi quỹ bị âm hoặc dưới hạn mức, Người bán phải nạp bù đủ số dư. Nếu quá hạn:
-  - Hạ bậc uy tín gian hàng.
-  - Tạm khóa tính năng đăng bán sản phẩm mới.
-  - Cố định lệnh rút tiền từ ví cho đến khi hoàn tất bổ sung quỹ.
+- **Quy định bù quỹ hụt (Deficit Top-up)**: Khi quỹ bị trích xuống dưới hạn mức của bậc sao hiện tại, gian hàng chuyển sang trạng thái thiếu hụt (`DEFICIT`) và có 72 giờ để nạp bù. Nạp đủ trong hạn thì trạng thái thiếu hụt được xóa. Quá hạn, hệ thống tự động (job quét mỗi 10 phút) giáng bậc uy tín xuống bậc cao nhất mà số dư hiện tại còn đáp ứng, cập nhật lại mức cam kết và gửi thông báo cho Người bán; Người bán có thể nạp thêm để được nâng lại bậc. Nếu số dư thấp hơn cả bậc thấp nhất thì giữ trạng thái thiếu hụt và không đặt lại hạn.
 
 ---
 

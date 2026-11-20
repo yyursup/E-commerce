@@ -284,7 +284,7 @@ export default function SellerLayout() {
           ))}
         </nav>
 
-        <main className="w-full max-w-[1280px] flex-1 px-4 py-7 sm:px-8">
+        <main className="mx-auto w-full min-w-0 max-w-[1760px] flex-1 px-4 py-7 sm:px-8">
             {/* Banner thông báo gian hàng đã đóng cửa (CLOSED) */}
             {user?.shopStatus === 'CLOSED' && (
               <div className="mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-lg border border-rose-500/40 bg-rose-500/10 px-4 py-3.5 text-xs text-rose-800 dark:text-rose-200">

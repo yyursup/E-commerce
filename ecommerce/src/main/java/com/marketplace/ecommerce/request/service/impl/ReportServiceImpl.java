@@ -379,6 +379,9 @@ public class ReportServiceImpl implements ReportService {
                     + "Admin phán quyết Người mua thắng: " + (note != null ? note : ""));
             orderReturnRepository.save(ret);
             shopEscrowFundService.deductReturnDisputeShippingFees(ret);
+        } else {
+            // Không có kiện hoàn (khách giữ hàng): Shop chịu cước chiều đi
+            shopEscrowFundService.deductOutboundShippingFee(order, report.getId());
         }
 
         // 3. Hoàn tiền Escrow về cho Người mua (nếu trạng thái Escrow chưa hoàn)
@@ -491,6 +494,9 @@ public class ReportServiceImpl implements ReportService {
             UUID orderId = report.getTargetId();
 
             if (finalResolution == ResolutionType.REFUND_ONLY) {
+                // Hoàn tiền không cần trả hàng: chuyến giao chiều đi đã phát sinh nên cước do Shop chịu (trích quỹ ký quỹ)
+                orderRepository.findByIdForUpdate(orderId)
+                        .ifPresent(o -> shopEscrowFundService.deductOutboundShippingFee(o, report.getId()));
                 escrowService.refundByOrder(orderId, "Admin chấp thuận khiếu nại của người mua");
                 orderRepository.findByIdForUpdate(orderId).ifPresent(o -> {
                     o.setStatus(OrderStatus.REFUNDED);
@@ -763,7 +769,9 @@ public class ReportServiceImpl implements ReportService {
                         + (req.getResponseNote() != null ? req.getResponseNote() : ""));
                 report.getRequest().setReviewedAt(now);
 
-                escrowService.refundMerchandiseOnly(orderId, "Shop chấp nhận hoàn tiền (khách giữ hàng)");
+                // Khách giữ hàng: hoàn đủ 100% cho người mua; chuyến giao chiều đi đã phát sinh nên Shop chịu cước (trích quỹ ký quỹ)
+                shopEscrowFundService.deductOutboundShippingFee(order, report.getId());
+                escrowService.refundByOrder(orderId, "Shop chấp nhận hoàn tiền (khách giữ hàng)");
                 order.setStatus(OrderStatus.REFUNDED);
                 orderRepository.save(order);
 

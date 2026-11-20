@@ -158,7 +158,105 @@ class EscrowServiceSettlementTest {
     }
 
     @Test
-    @DisplayName("RELEASE: Thành công đơn bình thường có phí ship (Seller nhận hàng ròng 90k, Sàn giữ ship 30k + hoa hồng 10k)")
+    @DisplayName("SPLIT SETTLE: Phí ship không được đem chia cho Buyer/Seller, trả ra cho GHN")
+    void splitSettleByOrder_ShippingFeeIsNotSplit() {
+        order.setShippingFee(BigDecimal.valueOf(30000));
+        escrow.setAmount(BigDecimal.valueOf(1030000));
+        escrowWallet.setLockedBalance(BigDecimal.valueOf(1030000));
+
+        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+        when(escrowRepository.findByOrderIdForUpdate(orderId)).thenReturn(Optional.of(escrow));
+        when(transactionRepository.existsByDedupeKey(any())).thenReturn(false);
+
+        // Tiền hàng = 1.030.000 - 30.000 ship = 1.000.000; trừ hoa hồng 50.000 còn 950.000 để chia
+        escrowService.splitSettleByOrder(orderId, 60, 40, "Chia sau khi tách ship");
+
+        assertEquals(BigDecimal.valueOf(570000), buyerWallet.getAvailableBalance());
+        assertEquals(BigDecimal.valueOf(380000), sellerWallet.getAvailableBalance());
+        assertEquals(BigDecimal.valueOf(50000), escrowWallet.getAvailableBalance(), "Sàn chỉ nhận hoa hồng");
+        assertEquals(0, escrowWallet.getLockedBalance().signum(), "Ship đã trả ra cho GHN, không còn giữ lại");
+
+        // Bảo toàn tiền: người mua + người bán + sàn + ship trả GHN (30.000) = ký quỹ
+        assertEquals(escrow.getAmount(), buyerWallet.getAvailableBalance().add(sellerWallet.getAvailableBalance())
+                .add(escrowWallet.getAvailableBalance()).add(BigDecimal.valueOf(30000)));
+
+        org.mockito.ArgumentCaptor<Transaction> captor = org.mockito.ArgumentCaptor.forClass(Transaction.class);
+        verify(transactionRepository, times(4)).save(captor.capture());
+        Transaction shipTx = captor.getAllValues().stream()
+                .filter(t -> t.getType() == TransactionType.SHIPPING_FEE).findFirst().orElseThrow();
+        assertEquals(BigDecimal.valueOf(30000), shipTx.getAmount());
+        assertNull(shipTx.getToWallet());
+        assertEquals("SHIPPING_RETAIN:" + orderId, shipTx.getDedupeKey());
+    }
+
+    @Test
+    @DisplayName("SPLIT SETTLE: Buyer 100% vẫn không được hoàn phần ship đã giao")
+    void splitSettleByOrder_FullBuyerShare_StillKeepsShipping() {
+        order.setShippingFee(BigDecimal.valueOf(30000));
+        escrow.setAmount(BigDecimal.valueOf(1030000));
+        escrowWallet.setLockedBalance(BigDecimal.valueOf(1030000));
+
+        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+        when(escrowRepository.findByOrderIdForUpdate(orderId)).thenReturn(Optional.of(escrow));
+        when(transactionRepository.existsByDedupeKey(any())).thenReturn(false);
+
+        escrowService.splitSettleByOrder(orderId, 100, 0, "Buyer thắng");
+
+        assertEquals(BigDecimal.valueOf(950000), buyerWallet.getAvailableBalance());
+        assertEquals(BigDecimal.ZERO, sellerWallet.getAvailableBalance());
+        assertEquals(EscrowStatus.REFUNDED, escrow.getStatus());
+    }
+
+    @Test
+    @DisplayName("SPLIT SETTLE: Báo lỗi khi hoa hồng lớn hơn tiền hàng sau khi tách ship")
+    void splitSettleByOrder_CommissionExceedsMerchandise_Throws() {
+        order.setShippingFee(BigDecimal.valueOf(980000));
+        escrow.setAmount(BigDecimal.valueOf(1000000));
+
+        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+        when(escrowRepository.findByOrderIdForUpdate(orderId)).thenReturn(Optional.of(escrow));
+
+        // Tiền hàng chỉ còn 20.000 < hoa hồng 50.000
+        assertThrows(CustomException.class, () -> escrowService.splitSettleByOrder(orderId, 50, 50, "x"));
+        assertEquals(BigDecimal.ZERO, buyerWallet.getAvailableBalance());
+    }
+
+    @Test
+    @DisplayName("SettlementInfo: nhận diện phí ship trả GHN theo loại giao dịch SHIPPING_FEE và cả dữ liệu cũ (TRANSFER + ghi chú shipping)")
+    void settlementInfo_RecognisesShippingFeeTransactions() {
+        escrow.setAmount(BigDecimal.valueOf(1030000));
+        when(escrowRepository.findByOrderId(orderId)).thenReturn(Optional.of(escrow));
+
+        Transaction ship = Transaction.builder().type(TransactionType.SHIPPING_FEE).amount(BigDecimal.valueOf(30000)).build();
+        Transaction legacyShip = Transaction.builder().type(TransactionType.TRANSFER)
+                .note("Customer shipping fee retained by platform").amount(BigDecimal.valueOf(10000)).build();
+        Transaction commission = Transaction.builder().type(TransactionType.COMMISSION).amount(BigDecimal.valueOf(50000)).build();
+        Transaction release = Transaction.builder().type(TransactionType.RELEASE).amount(BigDecimal.valueOf(950000)).build();
+        when(transactionRepository.findByReferenceTypeAndReferenceId(eq(ReferenceType.ESCROW), eq(escrow.getId())))
+                .thenReturn(List.of(ship, legacyShip, commission, release));
+
+        com.marketplace.ecommerce.payment.dto.SettlementInfo info = escrowService.getSettlementByOrderId(orderId);
+
+        assertNotNull(info);
+        assertEquals(BigDecimal.valueOf(40000), info.getShippingRetainedAmount());
+        assertEquals(BigDecimal.valueOf(50000), info.getCommissionAmount());
+        assertEquals(BigDecimal.valueOf(950000), info.getSellerReleaseAmount());
+    }
+
+    @Test
+    @DisplayName("SettlementInfo: giao dịch ship không bị tính là giải ngân/hoàn tiền (đơn chỉ mới giữ ship)")
+    void settlementInfo_ShippingOnlyIsNotASettlement() {
+        escrow.setAmount(BigDecimal.valueOf(30000));
+        when(escrowRepository.findByOrderId(orderId)).thenReturn(Optional.of(escrow));
+        Transaction ship = Transaction.builder().type(TransactionType.SHIPPING_FEE).amount(BigDecimal.valueOf(30000)).build();
+        when(transactionRepository.findByReferenceTypeAndReferenceId(eq(ReferenceType.ESCROW), eq(escrow.getId())))
+                .thenReturn(List.of(ship));
+
+        assertNull(escrowService.getSettlementByOrderId(orderId));
+    }
+
+    @Test
+    @DisplayName("RELEASE: Thành công đơn bình thường có phí ship (Seller nhận hàng ròng 90k, Sàn thu hoa hồng 10k, ship 30k trả GHN)")
     void releaseByOrder_Success_NormalOrderWithShipping() {
         order.setStatus(OrderStatus.DELIVERED);
         order.setShippingFee(BigDecimal.valueOf(30000));
@@ -181,12 +279,13 @@ class EscrowServiceSettlementTest {
 
         // Seller nhận tiền hàng ròng: (130k - 30k ship) - 10k hoa hồng = 90k
         assertEquals(BigDecimal.valueOf(90000), sellerWallet.getAvailableBalance());
-        // Sàn nhận: 10k hoa hồng + 30k ship = 40k
-        assertEquals(BigDecimal.valueOf(40000), escrowWallet.getAvailableBalance());
-        assertEquals(BigDecimal.ZERO, escrowWallet.getLockedBalance());
+        // Sàn chỉ nhận 10k hoa hồng; 30k ship trả ra cho GHN, không phải doanh thu sàn
+        assertEquals(BigDecimal.valueOf(10000), escrowWallet.getAvailableBalance());
+        assertEquals(0, escrowWallet.getLockedBalance().signum());
 
-        // Đảm bảo bảo toàn tiền: 90k + 40k = 130k
-        assertEquals(escrow.getAmount(), sellerWallet.getAvailableBalance().add(escrowWallet.getAvailableBalance()));
+        // Đảm bảo bảo toàn tiền: 90k (shop) + 10k (sàn) + 30k (trả GHN) = 130k
+        assertEquals(escrow.getAmount(), sellerWallet.getAvailableBalance()
+                .add(escrowWallet.getAvailableBalance()).add(BigDecimal.valueOf(30000)));
 
         assertEquals(EscrowStatus.RELEASED, escrow.getStatus());
         assertEquals(OrderStatus.COMPLETED, order.getStatus());
@@ -218,8 +317,8 @@ class EscrowServiceSettlementTest {
 
         // Seller nhận 0đ
         assertEquals(BigDecimal.ZERO, sellerWallet.getAvailableBalance());
-        // Sàn giữ lại 30k tiền ship
-        assertEquals(BigDecimal.valueOf(30000), escrowWallet.getAvailableBalance());
+        // Sàn không có doanh thu; 30k ship trả ra cho GHN
+        assertEquals(BigDecimal.ZERO, escrowWallet.getAvailableBalance());
         assertEquals(BigDecimal.ZERO, escrowWallet.getLockedBalance());
 
         assertEquals(EscrowStatus.RELEASED, escrow.getStatus());
@@ -242,7 +341,7 @@ class EscrowServiceSettlementTest {
     }
 
     @Test
-    @DisplayName("RELEASE: Thành công đơn có Voucher Sàn ECOMNEW15 (-150k), Seller nhận đủ 16.160.200đ, Sàn thu ròng 240.300đ")
+    @DisplayName("RELEASE: Thành công đơn có Voucher Sàn ECOMNEW15 (-150k), Seller nhận đủ 16.160.200đ, Sàn thu ròng 179.800đ, ship 60.500đ trả GHN")
     void releaseByOrder_Success_WithPlatformVoucherSubsidy() {
         order.setStatus(OrderStatus.DELIVERED);
         order.setSubtotal(BigDecimal.valueOf(16490000));
@@ -270,59 +369,19 @@ class EscrowServiceSettlementTest {
         // Seller nhận đúng: 16.490.000 - 329.800 = 16.160.200 VND (Được sàn bù 150.000đ voucher)
         assertEquals(BigDecimal.valueOf(16160200), sellerWallet.getAvailableBalance());
 
-        // Sàn nhận ròng: 329.800 (hoa hồng) + 60.500 (ship) - 150.000 (voucher sàn) = 240.300 VND
-        assertEquals(BigDecimal.valueOf(240300), escrowWallet.getAvailableBalance());
+        // Sàn nhận ròng: 329.800 (hoa hồng) - 150.000 (voucher sàn) = 179.800 VND, ship không phải doanh thu
+        assertEquals(BigDecimal.valueOf(179800), escrowWallet.getAvailableBalance());
         assertEquals(BigDecimal.ZERO, escrowWallet.getLockedBalance());
 
-        // Bảo toàn tiền: 16.160.200 + 240.300 = 16.400.500 VND
-        assertEquals(escrowAmt, sellerWallet.getAvailableBalance().add(escrowWallet.getAvailableBalance()));
+        // Bảo toàn tiền: 16.160.200 + 179.800 + 60.500 (trả GHN) = 16.400.500 VND
+        assertEquals(escrowAmt, sellerWallet.getAvailableBalance()
+                .add(escrowWallet.getAvailableBalance()).add(BigDecimal.valueOf(60500)));
 
         // Verify transactions: RELEASE, COMMISSION, SHIPPING_RETAIN, PLATFORM_SUBSIDY (4 transactions)
         verify(transactionRepository, times(4)).save(any(Transaction.class));
 
         assertEquals(EscrowStatus.RELEASED, escrow.getStatus());
         assertEquals(OrderStatus.COMPLETED, order.getStatus());
-    }
-
-    @Test
-    @DisplayName("refundMerchandiseOnly: Khách giữ hàng -> Hoàn tiền hàng cho Buyer, giữ lại phí ship cho Sàn trả GHN")
-    void refundMerchandiseOnly_CustomerKeepsItem_RefundsMerchandiseRetainsShippingForPlatform() {
-        BigDecimal subtotal = BigDecimal.valueOf(500000);
-        BigDecimal shippingFee = BigDecimal.valueOf(30000);
-        BigDecimal total = subtotal.add(shippingFee);
-
-        order.setSubtotal(subtotal);
-        order.setShippingFee(shippingFee);
-        order.setTotal(total);
-
-        escrow.setAmount(total);
-        escrow.setStatus(EscrowStatus.HELD);
-        escrow.setEscrowWallet(escrowWallet);
-        escrow.setBuyerWallet(buyerWallet);
-
-        escrowWallet.setLockedBalance(total);
-        escrowWallet.setAvailableBalance(BigDecimal.ZERO);
-        buyerWallet.setAvailableBalance(BigDecimal.ZERO);
-
-        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
-        when(escrowRepository.findByOrderIdForUpdate(orderId)).thenReturn(Optional.of(escrow));
-        when(transactionRepository.existsByDedupeKey(any())).thenReturn(false);
-
-        escrowService.refundMerchandiseOnly(orderId, "Khách giữ hàng trong thương lượng 1:1");
-
-        // 1. Buyer chỉ nhận lại 500.000đ tiền hàng
-        assertEquals(subtotal, buyerWallet.getAvailableBalance());
-
-        // 2. Sàn giữ lại 30.000đ tiền ship để trả cước GHN
-        assertEquals(shippingFee, escrowWallet.getAvailableBalance());
-        assertEquals(BigDecimal.ZERO, escrowWallet.getLockedBalance());
-
-        // 3. Trạng thái cập nhật REFUNDED
-        assertEquals(EscrowStatus.REFUNDED, escrow.getStatus());
-        assertEquals(OrderStatus.REFUNDED, order.getStatus());
-
-        // 4. Kiểm tra lưu transactions
-        verify(transactionRepository, atLeast(1)).save(any(Transaction.class));
     }
 
     @Test

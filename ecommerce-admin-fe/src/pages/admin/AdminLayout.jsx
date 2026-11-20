@@ -158,7 +158,7 @@ export default function AdminLayout() {
           ))}
         </nav>
 
-        <main className="w-full max-w-[1280px] flex-1 px-4 py-7 sm:px-8">
+        <main className="mx-auto w-full min-w-0 max-w-[1760px] flex-1 px-4 py-7 sm:px-8">
           <Outlet />
         </main>
       </div>

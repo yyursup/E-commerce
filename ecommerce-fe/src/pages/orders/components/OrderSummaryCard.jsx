@@ -120,10 +120,7 @@ export default function OrderSummaryCard({
           </div>
 
           {(order.status === 'REFUNDED' || order.returnInfo?.status === 'COMPLETED') && (() => {
-            const isReturnProcess = Boolean(order.returnInfo && order.returnInfo.status !== 'CANCELLED')
-            const shippingFee = Number(order.shippingFee || 0)
-            const orderTotal = Number(order.total || 0)
-            const actualRefund = isReturnProcess ? orderTotal : Math.max(0, orderTotal - shippingFee)
+            const actualRefund = Number(order.total || 0)
 
             return (
               <div className="flex justify-between items-center text-xs pt-1 border-t border-dashed border-stone-200 dark:border-slate-800 text-blue-600 dark:text-blue-400 font-medium">
@@ -154,9 +151,7 @@ export default function OrderSummaryCard({
             </h3>
             {(() => {
               const isReturnProcess = Boolean(order.returnInfo && order.returnInfo.status !== 'CANCELLED')
-              const shippingFee = Number(order.shippingFee || 0)
-              const orderTotal = Number(order.total || 0)
-              const actualRefund = isReturnProcess ? orderTotal : Math.max(0, orderTotal - shippingFee)
+              const actualRefund = Number(order.total || 0)
 
               return (
                 <div className="flex items-start gap-3 rounded-xl p-4 bg-blue-500/10 border border-blue-500/25">
@@ -165,9 +160,7 @@ export default function OrderSummaryCard({
                   </div>
                   <div className="space-y-1">
                     <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">
-                      {isReturnProcess
-                        ? 'Đã hoàn 100% tiền đơn hàng về ví số dư tài khoản'
-                        : 'Đã hoàn tiền hàng về ví số dư tài khoản'}
+                      Đã hoàn 100% tiền đơn hàng về ví số dư tài khoản
                     </p>
                     <p className={cn('text-xs', isDark ? 'text-slate-300' : 'text-stone-700')}>
                       Số tiền hoàn thực tế:{' '}
@@ -175,9 +168,9 @@ export default function OrderSummaryCard({
                         {formatCurrency(actualRefund)}
                       </strong>
                     </p>
-                    {!isReturnProcess && shippingFee > 0 && (
+                    {!isReturnProcess && report && (
                       <p className={cn('text-[11px] leading-relaxed', isDark ? 'text-slate-400' : 'text-stone-500')}>
-                        * Cước vận chuyển chiều đi ({formatCurrency(shippingFee)}) không hoàn lại do Quý khách tiếp tục giữ sản phẩm (chuyến giao hàng của bưu tá GHN đã hoàn thành nhiệm vụ).
+                        * Đã hoàn đủ gồm cả cước vận chuyển. Cước chiều đi do Shop chịu theo quy định giải quyết khiếu nại.
                       </p>
                     )}
                     {isReturnProcess && (

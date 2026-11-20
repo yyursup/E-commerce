@@ -4,10 +4,7 @@ package com.marketplace.ecommerce.auth.entity;
 import com.marketplace.ecommerce.auth.valueObjects.GenderType;
 import com.marketplace.ecommerce.common.BaseEntity;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -17,6 +14,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "users")
 @Data
+@EqualsAndHashCode(callSuper = false)
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -68,6 +66,7 @@ public class User extends BaseEntity {
     @JoinColumn(name = "account_id", unique = true, nullable = false)
     private Account account;
 
+    @Builder.Default
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UserAddress> addresses = new ArrayList<>();
 }

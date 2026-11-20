@@ -320,7 +320,7 @@ export default function SellerReturnSection({ returnInfo, order, report, isDark:
             </div>
           </div>
           <p className="text-[10px] text-stone-400 dark:text-slate-500 italic pt-0.5">
-            * Khoản cước này được tự động trích từ Quỹ Ký Quỹ Gian Hàng nộp về Sàn để thanh toán cho đơn vị vận chuyển GHN khi hoàn tất.
+            * Khoản cước này được tự động trích từ Quỹ Ký Quỹ Gian Hàng và trả cho đơn vị vận chuyển GHN khi hoàn tất, không tính vào doanh thu sàn.
           </p>
         </div>
       )}

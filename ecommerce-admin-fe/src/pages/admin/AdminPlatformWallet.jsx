@@ -4,6 +4,7 @@ import {
   HiOutlineCurrencyDollar,
   HiOutlineSearch,
   HiOutlineCash,
+  HiOutlineTruck,
 } from 'react-icons/hi'
 import { useThemeStore } from '../../store/useThemeStore'
 import { cn } from '../../lib/cn'
@@ -11,6 +12,7 @@ import PlatformWalletTab from './components/finances/PlatformWalletTab'
 import OrderEscrowsTab from './components/finances/OrderEscrowsTab'
 import WalletLookupTab from './components/finances/WalletLookupTab'
 import WithdrawalsTab from './components/finances/WithdrawalsTab'
+import ShippingFeesTab from './components/finances/ShippingFeesTab'
 
 const TABS = [
   {
@@ -30,6 +32,12 @@ const TABS = [
     label: 'Tạm giữ đơn hàng',
     icon: HiOutlineCurrencyDollar,
     desc: 'Bảo lãnh tiền người mua thanh toán trước, giải ngân cưỡng chế',
+  },
+  {
+    id: 'shipping',
+    label: 'Phí vận chuyển',
+    icon: HiOutlineTruck,
+    desc: 'Phí GHN của từng lần giao, chiều đi và chiều về (không phải doanh thu sàn)',
   },
   {
     id: 'lookup',
@@ -97,6 +105,7 @@ export default function AdminPlatformWallet() {
         {currentTab === 'wallet' && <PlatformWalletTab />}
         {currentTab === 'withdrawals' && <WithdrawalsTab />}
         {currentTab === 'escrows' && <OrderEscrowsTab />}
+        {currentTab === 'shipping' && <ShippingFeesTab />}
         {currentTab === 'lookup' && <WalletLookupTab />}
       </div>
     </div>

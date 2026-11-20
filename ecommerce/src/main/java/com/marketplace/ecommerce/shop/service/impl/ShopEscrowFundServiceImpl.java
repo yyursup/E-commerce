@@ -54,6 +54,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -491,6 +492,94 @@ public class ShopEscrowFundServiceImpl implements ShopEscrowFundService {
             notificationRepository.save(notif);
         } catch (Exception e) {
             log.error("Lỗi gửi thông báo cảnh báo hụt quỹ ký quỹ cho shop: {}", fund.getShop().getId(), e);
+        }
+    }
+
+    @Override
+    @Scheduled(cron = "0 */10 * * * *")
+    @Transactional
+    public int downgradeExpiredDeficits() {
+        LocalDateTime now = LocalDateTime.now();
+        List<ShopEscrowFund> expired = shopEscrowFundRepository.findByIsDeficitTrueAndDeficitDeadlineBefore(now);
+        int processed = 0;
+        for (ShopEscrowFund candidate : expired) {
+            try {
+                if (candidate.getShop() != null && downgradeIfDeficitExpired(candidate.getShop().getId(), now)) {
+                    processed++;
+                }
+            } catch (Exception e) {
+                log.error("Lỗi giáng cấp uy tín do quá hạn nạp bù quỹ, fundId={}", candidate.getId(), e);
+            }
+        }
+        return processed;
+    }
+
+    private boolean downgradeIfDeficitExpired(UUID shopId, LocalDateTime now) {
+        ShopEscrowFund fund = shopEscrowFundRepository.findByShopIdForUpdate(shopId).orElse(null);
+        // Đọc lại sau khi khóa: shop có thể vừa nạp bù hoặc đổi trạng thái
+        if (fund == null || !Boolean.TRUE.equals(fund.getIsDeficit())
+                || fund.getStatus() != EscrowFundStatus.DEFICIT
+                || fund.getDeficitDeadline() == null || fund.getDeficitDeadline().isAfter(now)) {
+            return false;
+        }
+
+        BigDecimal balance = fund.getBalance() != null ? fund.getBalance() : BigDecimal.ZERO;
+        int oldLevel = fund.getCurrentTrustLevel();
+        int newLevel = Math.min(oldLevel, trustLevelConfigService.resolveTrustLevel(balance));
+
+        TrustLevelConfig tier = trustLevelConfigService.getConfigByStarLevel(newLevel);
+        BigDecimal minRequired = tier != null && tier.getMinDeposit() != null ? tier.getMinDeposit() : BigDecimal.ZERO;
+
+        fund.setCurrentTrustLevel(newLevel);
+        fund.setDeficitDeadline(null); // đã xử lý, không quét lại
+        if (balance.compareTo(minRequired) >= 0) {
+            fund.setIsDeficit(false);
+            fund.setDeficitAmount(BigDecimal.ZERO);
+            fund.setStatus(EscrowFundStatus.ACTIVE);
+            if (fund.getCommittedAmount() == null || fund.getCommittedAmount().compareTo(balance) > 0) {
+                fund.setCommittedAmount(balance);
+            }
+        } else {
+            // Số dư thấp hơn cả bậc thấp nhất: giữ trạng thái thiếu hụt để Admin/Shop xử lý tiếp
+            fund.setDeficitAmount(minRequired.subtract(balance));
+        }
+        shopEscrowFundRepository.save(fund);
+
+        Shop shop = fund.getShop();
+        shop.setTrustLevel(newLevel);
+        shopRepository.save(shop);
+
+        log.warn("GIÁNG CẤP UY TÍN: Shop {} từ {} sao xuống {} sao do quá hạn nạp bù quỹ ký quỹ",
+                shop.getName(), oldLevel, newLevel);
+        sendDowngradeNotification(fund, oldLevel, newLevel);
+        return true;
+    }
+
+    private void sendDowngradeNotification(ShopEscrowFund fund, int oldLevel, int newLevel) {
+        try {
+            Shop shop = fund.getShop();
+            if (shop == null || shop.getUser() == null) {
+                return;
+            }
+            Notification notif = Notification.builder()
+                    .eventId("ESCROW_DOWNGRADE_" + UUID.randomUUID())
+                    .user(shop.getUser())
+                    .type(NotificationType.SYSTEM)
+                    .channel(NotificationChannelType.IN_APP)
+                    .status(NotificationStatus.SENT)
+                    .title("Gian hàng bị giáng cấp uy tín do chưa nạp bù Quỹ ký quỹ")
+                    .content("Quỹ ký quỹ của gian hàng \"" + shop.getName() + "\" chưa được nạp bù trong thời hạn 72 giờ. "
+                            + "Cấp uy tín đã giảm từ " + oldLevel + " sao xuống " + newLevel + " sao theo số dư hiện tại ("
+                            + fund.getBalance() + " VNĐ). Bạn có thể nạp thêm để được nâng lại cấp.")
+                    .payload(Map.of(
+                            "shopId", shop.getId().toString(),
+                            "oldTrustLevel", oldLevel,
+                            "newTrustLevel", newLevel))
+                    .sentAt(LocalDateTime.now())
+                    .build();
+            notificationRepository.save(notif);
+        } catch (Exception e) {
+            log.error("Lỗi gửi thông báo giáng cấp uy tín cho shop: {}", fund.getShop().getId(), e);
         }
     }
 
@@ -1037,9 +1126,6 @@ public class ShopEscrowFundServiceImpl implements ShopEscrowFundService {
             return;
         }
 
-        Wallet systemEscrowWallet = walletRepository.findSystemWalletForUpdate(WalletType.ESCROW)
-                .orElseThrow(() -> new CustomException("System ESCROW wallet not found"));
-
         BigDecimal oldBalance = fund.getBalance() != null ? fund.getBalance() : BigDecimal.ZERO;
         BigDecimal actualDeduct = totalShippingCost.min(oldBalance);
         BigDecimal newBalance = oldBalance.subtract(actualDeduct);
@@ -1062,11 +1148,8 @@ public class ShopEscrowFundServiceImpl implements ShopEscrowFundService {
 
         ShopEscrowFund savedFund = shopEscrowFundRepository.save(fund);
 
-        // 6. Chuyển số tiền trích được vào số dư khả dụng của Sàn để thanh toán cước GHN
-        if (actualDeduct.signum() > 0) {
-            systemEscrowWallet.addAvailable(actualDeduct);
-            walletRepository.save(systemEscrowWallet);
-        }
+        // 6. Số tiền trích được dùng để trả cước GHN, KHÔNG phải doanh thu sàn: chỉ ghi sổ cái SHIPPING_FEE bên dưới,
+        //    không cộng vào ví hệ thống.
 
         // 7. Ghi sổ cái ShopEscrowTransaction
         ShopEscrowTransaction shopTx = ShopEscrowTransaction.builder()
@@ -1084,25 +1167,103 @@ public class ShopEscrowFundServiceImpl implements ShopEscrowFundService {
         shopEscrowTransactionRepository.save(shopTx);
 
         // 8. Ghi sổ cái Transaction hệ thống
-        Transaction systemTx = Transaction.builder()
-                .fromWallet(null)
-                .toWallet(systemEscrowWallet)
-                .amount(actualDeduct)
-                .type(TransactionType.COMPENSATION)
-                .status(TransactionStatus.SUCCESS)
-                .referenceType(ReferenceType.ORDER)
-                .referenceId(order.getId())
-                .dedupeKey(dedupeKey)
-                .createdAt(LocalDateTime.now())
-                .note("Bù cước vận chuyển 2 chiều từ Quỹ ký quỹ Shop " + fund.getShop().getName()
-                        + " cho đơn hoàn " + order.getOrderNumber() + " (Đã trích: " + actualDeduct + "đ/" + totalShippingCost + "đ)")
-                .build();
-        transactionRepository.save(systemTx);
+        //    Cước 2 chiều trích từ quỹ ký quỹ shop được trả ra cho GHN (SHIPPING_FEE), không vào ví hay doanh thu của sàn
+        if (actualDeduct.signum() > 0) {
+            Transaction systemTx = Transaction.builder()
+                    .fromWallet(null)
+                    .toWallet(null)
+                    .amount(actualDeduct)
+                    .type(TransactionType.SHIPPING_FEE)
+                    .status(TransactionStatus.SUCCESS)
+                    .referenceType(ReferenceType.ORDER)
+                    .referenceId(order.getId())
+                    .dedupeKey(dedupeKey)
+                    .createdAt(LocalDateTime.now())
+                    .note("Cước vận chuyển 2 chiều trả GHN, trích từ Quỹ ký quỹ Shop " + fund.getShop().getName()
+                            + " cho đơn hoàn " + order.getOrderNumber() + " (Đã trích: " + actualDeduct + "đ/" + totalShippingCost + "đ)")
+                    .build();
+            transactionRepository.save(systemTx);
+        }
 
         // 9. Đánh dấu đã trừ cước thành công
         orderReturn.setIsReturnShippingDeducted(true);
 
         log.warn("ĐÃ TRÍCH PHÍ VẬN CHUYỂN HOÀN TRẢ: Shop {} bị trích {}đ (Tổng cước 2 chiều: {}đ) bù cho Sàn/GHN đơn {}. Số dư quỹ: {}đ -> {}đ",
                 fund.getShop().getName(), actualDeduct, totalShippingCost, order.getOrderNumber(), oldBalance, newBalance);
+    }
+
+    @Override
+    @Transactional
+    public void deductOutboundShippingFee(Order order, UUID reportId) {
+        if (order == null || order.getId() == null || order.getShop() == null) {
+            return;
+        }
+        BigDecimal outboundFee = order.getShippingFee() != null ? order.getShippingFee() : BigDecimal.ZERO;
+        if (outboundFee.signum() <= 0) {
+            return;
+        }
+
+        String dedupeKey = "COMPENSATION:OUTBOUND_SHIPPING:" + order.getId();
+        if (transactionRepository.existsByDedupeKey(dedupeKey)) {
+            log.info("Cước chiều đi của đơn {} đã được trích từ Quỹ ký quỹ Shop trước đó, bỏ qua", order.getOrderNumber());
+            return;
+        }
+
+        ShopEscrowFund fund = shopEscrowFundRepository.findByShopIdForUpdate(order.getShop().getId()).orElse(null);
+        if (fund == null) {
+            log.warn("Shop {} chưa khởi tạo ShopEscrowFund, không thể khấu trừ cước chiều đi đơn {}",
+                    order.getShop().getId(), order.getOrderNumber());
+            return;
+        }
+
+        BigDecimal oldBalance = fund.getBalance() != null ? fund.getBalance() : BigDecimal.ZERO;
+        BigDecimal actualDeduct = outboundFee.min(oldBalance);
+        BigDecimal newBalance = oldBalance.subtract(actualDeduct);
+        fund.setBalance(newBalance);
+
+        TrustLevelConfig currentTier = trustLevelConfigService.getConfigByStarLevel(fund.getCurrentTrustLevel());
+        BigDecimal minRequired = currentTier != null ? currentTier.getMinDeposit() : BigDecimal.ZERO;
+        if (newBalance.compareTo(minRequired) < 0) {
+            fund.setIsDeficit(true);
+            fund.setDeficitAmount(minRequired.subtract(newBalance));
+            if (fund.getDeficitDeadline() == null || fund.getDeficitDeadline().isBefore(LocalDateTime.now())) {
+                fund.setDeficitDeadline(LocalDateTime.now().plusHours(72));
+            }
+            fund.setStatus(EscrowFundStatus.DEFICIT);
+            sendDeficitAlertNotification(fund, minRequired);
+        }
+        ShopEscrowFund savedFund = shopEscrowFundRepository.save(fund);
+
+        shopEscrowTransactionRepository.save(ShopEscrowTransaction.builder()
+                .fund(savedFund)
+                .transactionType(EscrowFundTransactionType.COMPENSATION_DEDUCTION)
+                .amount(actualDeduct.negate())
+                .balanceBefore(oldBalance)
+                .balanceAfter(newBalance)
+                .orderId(order.getId())
+                .reportId(reportId)
+                .referenceCode("SHIPDEDUCT-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase())
+                .note("Trích Quỹ ký quỹ chi trả cước vận chuyển chiều đi (" + outboundFee
+                        + "đ) cho đơn hoàn tiền không cần trả hàng " + order.getOrderNumber())
+                .build());
+
+        if (actualDeduct.signum() > 0) {
+            transactionRepository.save(Transaction.builder()
+                    .fromWallet(null)
+                    .toWallet(null)
+                    .amount(actualDeduct)
+                    .type(TransactionType.SHIPPING_FEE)
+                    .status(TransactionStatus.SUCCESS)
+                    .referenceType(ReferenceType.ORDER)
+                    .referenceId(order.getId())
+                    .dedupeKey(dedupeKey)
+                    .createdAt(LocalDateTime.now())
+                    .note("Cước vận chuyển chiều đi trả GHN, trích từ Quỹ ký quỹ Shop " + fund.getShop().getName()
+                            + " cho đơn " + order.getOrderNumber() + " (Đã trích: " + actualDeduct + "đ/" + outboundFee + "đ)")
+                    .build());
+        }
+
+        log.warn("ĐÃ TRÍCH CƯỚC CHIỀU ĐI: Shop {} bị trích {}đ (cước chiều đi {}đ) cho đơn {} hoàn tiền không cần trả hàng. Số dư quỹ: {}đ -> {}đ",
+                fund.getShop().getName(), actualDeduct, outboundFee, order.getOrderNumber(), oldBalance, newBalance);
     }
 }

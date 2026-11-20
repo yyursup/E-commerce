@@ -43,7 +43,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 /**
- * Hoàn tiền ký quỹ: hoàn toàn bộ (refundByOrder) và hoàn tiền hàng, sàn giữ phí ship (refundMerchandiseOnly).
+ * Hoàn tiền ký quỹ: hoàn toàn bộ (refundByOrder).
  */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -227,119 +227,4 @@ class EscrowServiceRefundTest {
         }
     }
 
-    @Nested
-    @DisplayName("refundMerchandiseOnly: hoàn tiền hàng, sàn giữ phí ship chiều đi trả GHN")
-    class RefundMerchandiseOnly {
-
-        @Test
-        @DisplayName("Ghi hai giao dịch: hoàn tiền hàng cho người mua và giữ phí ship cho sàn")
-        void recordsRefundAndRetainedShipping() {
-            escrowService.refundMerchandiseOnly(orderId, null);
-
-            assertEquals(BigDecimal.valueOf(500_000), buyerWallet.getAvailableBalance());
-            assertEquals(SHIPPING, escrowWallet.getAvailableBalance());
-            assertEquals(0, escrowWallet.getLockedBalance().signum());
-
-            List<Transaction> txs = savedTransactions();
-            assertEquals(2, txs.size());
-
-            Transaction refund = txs.stream().filter(t -> t.getType() == TransactionType.REFUND).findFirst().orElseThrow();
-            assertEquals(BigDecimal.valueOf(500_000), refund.getAmount());
-            assertSame(buyerWallet, refund.getToWallet());
-            assertEquals("ESCROW_MERCHANDISE_REFUND:" + orderId, refund.getDedupeKey());
-
-            Transaction retained = txs.stream().filter(t -> t.getType() == TransactionType.RELEASE).findFirst().orElseThrow();
-            assertEquals(SHIPPING, retained.getAmount());
-            assertSame(escrowWallet, retained.getFromWallet());
-            assertSame(escrowWallet, retained.getToWallet());
-            assertEquals("ESCROW_SHIP_RETAINED:" + orderId, retained.getDedupeKey());
-        }
-
-        @Test
-        @DisplayName("Tổng tiền hoàn + phí ship giữ lại luôn bằng số tiền ký quỹ")
-        void conservesMoney() {
-            escrowService.refundMerchandiseOnly(orderId, null);
-            assertEquals(TOTAL, buyerWallet.getAvailableBalance().add(escrowWallet.getAvailableBalance()));
-        }
-
-        @Test
-        @DisplayName("Đơn miễn phí ship: hoàn toàn bộ cho người mua, không ghi giao dịch giữ phí ship")
-        void noShippingFee() {
-            order.setShippingFee(null);
-
-            escrowService.refundMerchandiseOnly(orderId, null);
-
-            assertEquals(TOTAL, buyerWallet.getAvailableBalance());
-            assertEquals(0, escrowWallet.getAvailableBalance().signum());
-            List<Transaction> txs = savedTransactions();
-            assertEquals(1, txs.size());
-            assertEquals(TransactionType.REFUND, txs.get(0).getType());
-        }
-
-        @Test
-        @DisplayName("Phí ship lớn hơn tiền ký quỹ: sàn giữ tối đa bằng tiền ký quỹ, người mua nhận 0")
-        void shippingCappedAtEscrowAmount() {
-            order.setShippingFee(BigDecimal.valueOf(1_000_000));
-
-            escrowService.refundMerchandiseOnly(orderId, null);
-
-            assertEquals(0, buyerWallet.getAvailableBalance().signum());
-            assertEquals(TOTAL, escrowWallet.getAvailableBalance());
-            List<Transaction> txs = savedTransactions();
-            assertEquals(1, txs.size(), "Không ghi giao dịch hoàn tiền 0đ");
-            assertEquals(TransactionType.RELEASE, txs.get(0).getType());
-        }
-
-        @Test
-        @DisplayName("Dùng lý do được truyền vào cho giao dịch hoàn tiền hàng")
-        void usesGivenReason() {
-            escrowService.refundMerchandiseOnly(orderId, "Khách giữ hàng, giảm giá 100%");
-            Transaction refund = savedTransactions().stream()
-                    .filter(t -> t.getType() == TransactionType.REFUND).findFirst().orElseThrow();
-            assertEquals("Khách giữ hàng, giảm giá 100%", refund.getNote());
-        }
-
-        @Test
-        @DisplayName("Không ghi trùng giao dịch khi đã có khóa chống trùng")
-        void skipsDuplicates() {
-            when(transactionRepository.existsByDedupeKey(anyString())).thenReturn(true);
-
-            escrowService.refundMerchandiseOnly(orderId, null);
-
-            verify(transactionRepository, never()).save(any());
-            assertEquals(EscrowStatus.REFUNDED, escrow.getStatus());
-            assertEquals(OrderStatus.REFUNDED, order.getStatus());
-        }
-
-        @Test
-        @DisplayName("Gọi lại khi đã hoàn tiền thì không làm gì (idempotent)")
-        void idempotentWhenAlreadyRefunded() {
-            escrow.setStatus(EscrowStatus.REFUNDED);
-
-            escrowService.refundMerchandiseOnly(orderId, null);
-
-            verifyNoInteractions(walletRepository);
-            assertEquals(0, buyerWallet.getAvailableBalance().signum());
-        }
-
-        @Test
-        @DisplayName("Từ chối khi ký quỹ đã giải ngân cho shop")
-        void rejectsReleasedEscrow() {
-            escrow.setStatus(EscrowStatus.RELEASED);
-            assertThrows(CustomException.class, () -> escrowService.refundMerchandiseOnly(orderId, null));
-            verifyNoInteractions(walletRepository);
-        }
-
-        @Test
-        @DisplayName("Báo lỗi khi thiếu ví hoặc số tiền ký quỹ không hợp lệ")
-        void rejectsInvalidState() {
-            escrow.setBuyerWallet(null);
-            assertThrows(CustomException.class, () -> escrowService.refundMerchandiseOnly(orderId, null));
-
-            escrow.setBuyerWallet(buyerWallet);
-            escrow.setAmount(BigDecimal.valueOf(-1));
-            assertThrows(CustomException.class, () -> escrowService.refundMerchandiseOnly(orderId, null));
-            verifyNoInteractions(walletRepository);
-        }
-    }
 }

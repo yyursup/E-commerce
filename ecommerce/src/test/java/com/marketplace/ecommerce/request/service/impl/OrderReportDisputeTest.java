@@ -802,5 +802,7 @@ class OrderReportDisputeTest {
                 assertEquals("Quy Trình 4 Bước Xử Lý Khiếu Nại, Đổi Trả & Hoàn Tiền", report.getPolicyClauseTitle());
                 verify(reportRepository).save(report);
                 verify(escrowService).refundByOrder(eq(orderId), anyString());
+                // Hoàn tiền không cần trả hàng: cước chiều đi do Shop chịu, trích từ quỹ ký quỹ
+                verify(shopEscrowFundService).deductOutboundShippingFee(eq(deliveredOrder), any());
         }
 }

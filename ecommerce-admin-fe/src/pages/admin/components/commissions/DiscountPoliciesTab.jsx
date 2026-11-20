@@ -1,19 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import {
-  HiOutlineShieldCheck,
-  HiOutlinePencilAlt,
-  HiOutlineRefresh,
-  HiStar,
-  HiOutlineInformationCircle,
-  HiOutlineCheckCircle,
-  HiOutlineXCircle,
-  HiOutlineClock,
-  HiOutlineExternalLink,
-  HiOutlineCalculator,
-  HiOutlineCash,
-  HiOutlineSparkles,
-} from 'react-icons/hi'
+import { HiOutlineRefresh, HiOutlineExternalLink } from 'react-icons/hi'
 import toast from 'react-hot-toast'
 import { useThemeStore } from '../../../../store/useThemeStore'
 import { cn } from '../../../../lib/cn'
@@ -257,6 +244,7 @@ export default function DiscountPoliciesTab() {
       orderAmt,
       feeAmount,
       sellerPayout,
+      isUsedGoods: selectedCondition !== 'GRADE_NEW',
     }
   }, [
     categories,
@@ -271,17 +259,31 @@ export default function DiscountPoliciesTab() {
     seniorityPolicies,
   ])
 
+  const muted = isDark ? 'text-slate-400' : 'text-stone-500'
+  const divider = isDark ? 'divide-slate-800 border-slate-800' : 'divide-stone-200 border-stone-200'
+  const panel = cn('rounded-md border', isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white')
+  const sectionLabel = 'font-mono text-[11px] font-semibold uppercase tracking-wider text-stone-500 dark:text-slate-400'
+  const thCls = cn(
+    'px-5 py-2.5 font-mono text-[11px] font-semibold uppercase tracking-wider',
+    isDark ? 'text-slate-400' : 'text-stone-500'
+  )
+  const theadCls = isDark ? 'border-b border-slate-800 bg-slate-950/40' : 'border-b border-stone-200 bg-stone-50'
+  const fieldCls = cn(
+    'w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-stone-950/20 dark:focus:ring-white/30',
+    isDark ? 'border-slate-700 bg-slate-950 text-white' : 'border-stone-300 bg-white text-stone-800'
+  )
+  const labelCls = 'mb-1.5 block text-xs font-medium'
+  const primaryBtn =
+    'rounded-md bg-stone-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-stone-800 disabled:opacity-50 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
+
   return (
     <div className="space-y-10">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="text-lg font-bold flex items-center gap-2">
-            <HiOutlineShieldCheck className="h-5 w-5 text-amber-500" />
-            Ưu đãi thâm niên & ma trận phí sàn
-          </h2>
-          <p className={cn('text-xs', isDark ? 'text-slate-400' : 'text-stone-500')}>
-            Quản trị ưu đãi thâm niên hoạt động, tra cứu ma trận giảm trừ ký quỹ tập trung và công cụ mô phỏng phí sàn đa chiều.
+          <h2 className="text-lg font-bold">Ưu đãi thâm niên & mô phỏng phí</h2>
+          <p className={cn('mt-0.5 text-sm', muted)}>
+            Ưu đãi theo ký quỹ và thâm niên hoạt động, kèm công cụ tính thử hoa hồng cho một đơn hàng.
           </p>
         </div>
         <button
@@ -291,7 +293,7 @@ export default function DiscountPoliciesTab() {
             loadCategoriesAndSettings()
           }}
           className={cn(
-            'flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-semibold border transition',
+            'inline-flex items-center gap-2 self-start rounded-md border px-3 py-1.5 text-xs font-semibold transition sm:self-auto',
             isDark
               ? 'border-slate-800 bg-slate-900 text-slate-200 hover:bg-slate-800'
               : 'border-stone-200 bg-white text-stone-700 hover:bg-stone-50'
@@ -302,196 +304,130 @@ export default function DiscountPoliciesTab() {
         </button>
       </div>
 
-      {/* SECTION 1: MA TRẬN GIẢM TRỪ KÝ QUỸ (READ-ONLY REFERENCE CARD) */}
-      <div
-        className={cn(
-          'rounded-2xl border p-5 space-y-4 shadow-sm',
-          isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
-        )}
-      >
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-slate-700/20">
-          <div>
-            <h3 className="text-sm font-bold flex items-center gap-2">
-              <HiStar className="h-4 w-4 text-amber-400" />
-              Ma trận ưu đãi ký quỹ đang áp dụng
-            </h3>
-            <p className={cn('text-xs mt-0.5', isDark ? 'text-slate-400' : 'text-stone-500')}>
-              Hạn mức tiền ký quỹ và mức % hoa hồng được giảm trừ tương ứng cho 5 bậc sao uy tín.
-            </p>
-          </div>
-
+      {/* Giảm trừ theo ký quỹ (chỉ đọc) */}
+      <section>
+        <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
+          <h3 className={sectionLabel}>Giảm trừ theo bậc ký quỹ</h3>
           <button
             onClick={() => navigate('/trust-config?tab=configs')}
             className={cn(
-              'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition self-start sm:self-auto',
-              'dark:text-amber-400 border hover:bg-amber-500 hover:text-white bg-stone-100 text-stone-950 border-stone-950'
+              'inline-flex items-center gap-1.5 text-xs font-semibold underline-offset-4 hover:underline',
+              isDark ? 'text-slate-200' : 'text-stone-800'
             )}
-            title="Chuyển đến Hub Quỹ Ký Quỹ để cấu hình số tiền và quyền lợi bậc sao"
           >
-            <HiOutlineExternalLink className="h-4 w-4" />
-            <span>Quản lý bậc sao tại hub ký quỹ</span>
+            Cấu hình tại Ký quỹ & bậc sao
+            <HiOutlineExternalLink className="h-3.5 w-3.5" />
           </button>
         </div>
 
-        {/* 5 Bậc sao Bento Cards Grid */}
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-          {loadingTrust ? (
-            <div className="col-span-full py-6 text-center text-xs text-slate-400">
-              Đang tải dữ liệu ma trận ký quỹ...
-            </div>
-          ) : (
-            trustConfigs.map((cfg) => {
-              const discount = Number(cfg.commissionDiscount || 0)
-              return (
-                <div
-                  key={cfg.starLevel}
-                  className={cn(
-                    'rounded-xl border p-3 flex flex-col justify-between gap-2 transition hover:border-amber-500/50',
-                    isDark ? 'border-slate-800 bg-slate-950/60' : 'border-stone-200 bg-stone-50/80'
-                  )}
-                >
-                  <div>
-                    <div className="flex items-center justify-between gap-1 mb-1">
-                      <span className="font-extrabold text-amber-500 text-xs">
-                        {cfg.starLevel} ★
-                      </span>
-                      <span
-                        className={cn(
-                          'px-2 py-0.5 rounded-md text-[11px] font-extrabold',
-                          discount > 0
-                            ? 'bg-emerald-500/15 text-emerald-500 border border-emerald-500/30'
-                            : 'bg-slate-500/10 text-slate-400'
-                        )}
-                      >
-                        {discount > 0 ? `-${discount}%` : '0%'}
-                      </span>
-                    </div>
-                    <div className="text-xs font-bold truncate" title={cfg.tierName}>
-                      {cfg.tierName}
-                    </div>
-                  </div>
-
-                  <div className="pt-2 border-t border-slate-700/20 text-[11px]">
-                    <span className={cn('block font-medium truncate', isDark ? 'text-slate-400' : 'text-stone-500')}>
-                      {formatRange(cfg.minDeposit, cfg.maxDeposit)}
-                    </span>
-                  </div>
-                </div>
-              )
-            })
-          )}
-        </div>
-
-        <div className="flex items-center gap-2 text-[11px] text-slate-400 pt-1">
-          <HiOutlineInformationCircle className="h-4 w-4 text-amber-500 flex-shrink-0" />
-          <span>
-            Bậc sao ký quỹ được quản lý tập trung tại <strong>Trung tâm quỹ ký quỹ & bậc sao</strong> nhằm bảo toàn nguyên tắc duy nhất nguồn dữ liệu (Single Source of Truth).
-          </span>
-        </div>
-      </div>
-
-      {/* SECTION 2: QUẢN LÝ CHÍNH SÁCH THÂM NIÊN (CRUD) */}
-      <div className="space-y-4">
-        <div>
-          <h3 className="text-base font-bold flex items-center gap-2">
-            <HiOutlineClock className="h-5 w-5 text-blue-500" />
-            2. Chính sách ưu đãi thâm niên hoạt động
-          </h3>
-          <p className={cn('text-xs', isDark ? 'text-slate-400' : 'text-stone-500')}>
-            Chính sách khuyến khích các gian hàng đồng hành lâu dài cùng sàn và duy trì tiêu chuẩn vận hành không vi phạm.
-          </p>
-        </div>
-
-        <div
-          className={cn(
-            'rounded-2xl border overflow-hidden',
-            isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
-          )}
-        >
-          <table className="w-full text-left text-sm">
-            <thead
-              className={cn(
-                'text-xs uppercase border-b',
-                isDark ? 'bg-slate-950 text-slate-400 border-slate-800' : 'bg-stone-50 text-stone-600 border-stone-200'
-              )}
-            >
+        <div className={cn(panel, 'overflow-x-auto')}>
+          <table className="w-full min-w-[520px] text-left text-sm">
+            <thead className={theadCls}>
               <tr>
-                <th className="px-4 py-3.5 w-48">Mốc thâm niên</th>
-                <th className="px-4 py-3.5 w-32 text-center">Giảm Thêm</th>
-                <th className="px-4 py-3.5 min-w-[220px]">Quy chuẩn áp dụng</th>
-                <th className="px-4 py-3.5 w-44 text-right">Thao Tác</th>
+                <th className={thCls}>Bậc</th>
+                <th className={thCls}>Tên bậc</th>
+                <th className={thCls}>Hạn mức ký quỹ</th>
+                <th className={cn(thCls, 'text-right')}>Giảm hoa hồng</th>
               </tr>
             </thead>
-            <tbody className={cn('divide-y', isDark ? 'divide-slate-800' : 'divide-stone-100')}>
+            <tbody className={cn('divide-y', divider)}>
+              {loadingTrust ? (
+                <tr>
+                  <td colSpan={4} className={cn('px-5 py-8 text-center text-sm', muted)}>
+                    Đang tải ma trận ký quỹ...
+                  </td>
+                </tr>
+              ) : trustConfigs.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className={cn('px-5 py-8 text-center text-sm', muted)}>
+                    Chưa có cấu hình bậc sao.
+                  </td>
+                </tr>
+              ) : (
+                trustConfigs.map((cfg) => {
+                  const discount = Number(cfg.commissionDiscount || 0)
+                  return (
+                    <tr key={cfg.starLevel} className={isDark ? 'hover:bg-slate-800/40' : 'hover:bg-stone-50'}>
+                      <td className="px-5 py-3 font-mono tabular-nums">{cfg.starLevel} ★</td>
+                      <td className="px-5 py-3 font-medium">{cfg.tierName}</td>
+                      <td className={cn('px-5 py-3 font-mono text-xs tabular-nums', muted)}>
+                        {formatRange(cfg.minDeposit, cfg.maxDeposit)}
+                      </td>
+                      <td className="px-5 py-3 text-right font-mono tabular-nums">
+                        {discount > 0 ? `−${discount}%` : '—'}
+                      </td>
+                    </tr>
+                  )
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+        <p className={cn('mt-2 text-xs', muted)}>
+          Bảng này chỉ để tra cứu; bậc sao được quản lý tại một nơi duy nhất là trang Ký quỹ & bậc sao.
+        </p>
+      </section>
+
+      {/* Chính sách thâm niên */}
+      <section>
+        <h3 className={cn(sectionLabel, 'mb-2')}>Ưu đãi thâm niên hoạt động</h3>
+        <div className={cn(panel, 'overflow-x-auto')}>
+          <table className="w-full min-w-[640px] text-left text-sm">
+            <thead className={theadCls}>
+              <tr>
+                <th className={thCls}>Mốc thâm niên</th>
+                <th className={cn(thCls, 'text-right')}>Giảm thêm</th>
+                <th className={thCls}>Điều kiện áp dụng</th>
+                <th className={thCls}>Trạng thái</th>
+                <th className={cn(thCls, 'w-24')}>
+                  <span className="sr-only">Thao tác</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody className={cn('divide-y', divider)}>
               {loadingSeniority ? (
                 <tr>
-                  <td colSpan="4" className="px-6 py-8 text-center text-slate-400">
-                    <HiOutlineRefresh className="mx-auto h-5 w-5 animate-spin text-blue-500 mb-2" />
+                  <td colSpan={5} className={cn('px-5 py-8 text-center text-sm', muted)}>
                     Đang tải chính sách thâm niên...
                   </td>
                 </tr>
               ) : seniorityPolicies.length === 0 ? (
                 <tr>
-                  <td colSpan="4" className="px-6 py-8 text-center text-slate-400">
+                  <td colSpan={5} className={cn('px-5 py-8 text-center text-sm', muted)}>
                     Chưa có chính sách thâm niên nào được thiết lập.
                   </td>
                 </tr>
               ) : (
                 seniorityPolicies.map((pol) => (
-                  <tr
-                    key={pol.id}
-                    onClick={() => handleOpenEditSeniority(pol)}
-                    className={cn(
-                      'group transition cursor-pointer',
-                      isDark ? 'hover:bg-slate-800/40' : 'hover:bg-stone-50'
-                    )}
-                    title="Nhấn để chỉnh sửa chính sách này"
-                  >
-                    <td className="px-4 py-3.5">
-                      <div className="font-bold text-xs text-blue-500 flex items-center gap-1.5">
-                        <HiOutlineClock className="h-4 w-4" />
-                        <span>{pol.tierName || `Mốc ${pol.minMonths} tháng`}</span>
-                      </div>
-                      <div className={cn('text-[11px]', isDark ? 'text-slate-400' : 'text-stone-500')}>
-                        Hoạt động liên tục ≥ <strong>{pol.minMonths} tháng</strong>
-                      </div>
+                  <tr key={pol.id} className={isDark ? 'hover:bg-slate-800/40' : 'hover:bg-stone-50'}>
+                    <td className="px-5 py-3">
+                      <p className="font-medium">{pol.tierName || `Mốc ${pol.minMonths} tháng`}</p>
+                      <p className={cn('text-xs', muted)}>Hoạt động liên tục từ {pol.minMonths} tháng</p>
                     </td>
-
-                    <td className="px-4 py-3.5 text-center">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-bold bg-blue-500/15 text-blue-500 border border-blue-500/20">
-                        -{Number(pol.discountRate || 0)}%
+                    <td className="px-5 py-3 text-right font-mono tabular-nums">−{Number(pol.discountRate || 0)}%</td>
+                    <td className={cn('max-w-xs px-5 py-3 text-xs leading-relaxed', muted)}>
+                      {pol.description || 'Áp dụng cho shop không có vi phạm trong kỳ đánh giá.'}
+                    </td>
+                    <td className="px-5 py-3">
+                      <span className="inline-flex items-center gap-1.5 text-xs">
+                        <span
+                          className={cn('h-1.5 w-1.5 rounded-full', pol.isActive !== false ? 'bg-emerald-500' : 'bg-stone-400')}
+                        />
+                        {pol.isActive !== false ? 'Đang bật' : 'Đang tắt'}
                       </span>
                     </td>
-
-                    <td className="px-4 py-3.5">
-                      <p className={cn('text-xs leading-relaxed', isDark ? 'text-slate-300' : 'text-stone-600')}>
-                        {pol.description || 'Áp dụng cho shop không có vi phạm trong kỳ đánh giá.'}
-                      </p>
-                    </td>
-
-                    <td className="px-4 py-3.5 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex items-center justify-end gap-2.5">
-                        {pol.isActive !== false ? (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-500">
-                            <HiOutlineCheckCircle className="h-3.5 w-3.5" /> Bật
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-500">
-                            <HiOutlineXCircle className="h-3.5 w-3.5" /> Tắt
-                          </span>
+                    <td className="px-5 py-3 text-right">
+                      <button
+                        onClick={() => handleOpenEditSeniority(pol)}
+                        className={cn(
+                          'rounded-md border px-2.5 py-1 text-xs font-semibold transition',
+                          isDark
+                            ? 'border-slate-700 text-slate-200 hover:bg-slate-800'
+                            : 'border-stone-300 text-stone-700 hover:bg-stone-100'
                         )}
-
-                        <button
-                          onClick={() => handleOpenEditSeniority(pol)}
-                          className={cn(
-                            'inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition shadow-sm',
-                            'active:scale-95 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
-                          )}
-                        >
-                          <HiOutlinePencilAlt className="h-3.5 w-3.5" />
-                          <span>Chỉnh sửa</span>
-                        </button>
-                      </div>
+                      >
+                        Sửa
+                      </button>
                     </td>
                   </tr>
                 ))
@@ -499,48 +435,24 @@ export default function DiscountPoliciesTab() {
             </tbody>
           </table>
         </div>
-      </div>
+      </section>
 
-      {/* SECTION 3: TRÌNH MÔ PHỎNG & THỬ NGHIỆM PHÍ SÀN LIVE (INTERACTIVE SIMULATOR) */}
-      <div
-        className={cn(
-          'rounded-2xl border p-6 space-y-6 shadow-sm',
-          isDark ? 'border-slate-800 bg-slate-900' : 'border-stone-200 bg-white'
-        )}
-      >
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b border-slate-700/20">
-          <div>
-            <h3 className="text-base font-bold flex items-center gap-2">
-              <HiOutlineCalculator className="h-5 w-5 text-emerald-500" />
-              3. Trình mô phỏng & thử nghiệm phí sàn live
-            </h3>
-            <p className={cn('text-xs mt-0.5', isDark ? 'text-slate-400' : 'text-stone-500')}>
-              Thử nghiệm trực tiếp công thức tính hoa hồng động 3 tầng theo từng thông số ngành hàng, mức ký quỹ và thâm niên hoạt động.
-            </p>
-          </div>
-
-          <div className="inline-flex items-center gap-2 rounded-xl bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-            <HiOutlineSparkles className="h-4 w-4" />
-            <span>Ngưỡng sàn bảo vệ: {platformSettings.commission_floor_rate}%</span>
-          </div>
+      {/* Mô phỏng phí */}
+      <section>
+        <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
+          <h3 className={sectionLabel}>Mô phỏng hoa hồng</h3>
+          <span className={cn('text-xs', muted)}>
+            Ngưỡng sàn tối thiểu: <span className="font-mono tabular-nums">{platformSettings.commission_floor_rate}%</span>
+          </span>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-          {/* Controls Form (7 Cols) */}
-          <div className="space-y-4 lg:col-span-7">
-            {/* Row 1: Category & Condition */}
+        <div className={cn(panel, 'grid grid-cols-1 lg:grid-cols-12')}>
+          <div className="space-y-4 p-5 lg:col-span-7">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <label className="block text-xs font-semibold mb-1.5">Ngành hàng sản phẩm</label>
-                <select
-                  value={selectedCatId}
-                  onChange={(e) => setSelectedCatId(e.target.value)}
-                  className={cn(
-                    'w-full rounded-xl border px-3 py-2 text-xs font-semibold outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
-                    isDark ? 'border-slate-700 bg-slate-950 text-white' : 'border-stone-300 bg-stone-50 text-stone-800'
-                  )}
-                >
-                  <option value="">Toàn sàn / Chưa phân loại ({platformSettings.commission_rate}%)</option>
+                <label className={labelCls}>Ngành hàng</label>
+                <select value={selectedCatId} onChange={(e) => setSelectedCatId(e.target.value)} className={fieldCls}>
+                  <option value="">Toàn sàn / chưa phân loại ({platformSettings.commission_rate}%)</option>
                   {categories
                     .filter((c) => !c.parentId)
                     .map((cat) => (
@@ -552,176 +464,142 @@ export default function DiscountPoliciesTab() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold mb-1.5">Tình trạng thiết bị</label>
-                <select
-                  value={selectedCondition}
-                  onChange={(e) => setSelectedCondition(e.target.value)}
-                  className={cn(
-                    'w-full rounded-xl border px-3 py-2 text-xs font-semibold outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
-                    isDark ? 'border-slate-700 bg-slate-950 text-white' : 'border-stone-300 bg-stone-50 text-stone-800'
-                  )}
-                >
-                  <option value="GRADE_NEW">Mới 100% Nguyên Seal (Áp dụng Base Rate ngành)</option>
-                  <option value="GRADE_LIKE_NEW">Like New 99% (Thu {platformSettings.commission_used_goods_rate}%)</option>
-                  <option value="GRADE_FAIR">Cũ Dùng Tốt 90-95% (Thu {platformSettings.commission_used_goods_rate}%)</option>
-                  <option value="GRADE_AS_IS">Xác / linh kiện bán đứt (Thu {platformSettings.commission_used_goods_rate}%)</option>
+                <label className={labelCls}>Tình trạng thiết bị</label>
+                <select value={selectedCondition} onChange={(e) => setSelectedCondition(e.target.value)} className={fieldCls}>
+                  <option value="GRADE_NEW">Mới 100% nguyên seal (tỷ lệ theo ngành hàng)</option>
+                  <option value="GRADE_LIKE_NEW">Like New 99% (thu {platformSettings.commission_used_goods_rate}%)</option>
+                  <option value="GRADE_FAIR">Cũ dùng tốt 90–95% (thu {platformSettings.commission_used_goods_rate}%)</option>
+                  <option value="GRADE_AS_IS">Xác / linh kiện bán đứt (thu {platformSettings.commission_used_goods_rate}%)</option>
                 </select>
               </div>
-            </div>
 
-            {/* Row 2: Star Level & Active Months */}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <label className="block text-xs font-semibold mb-1.5">Bậc sao Ký Quỹ gian hàng</label>
+                <label className={labelCls}>Bậc sao ký quỹ</label>
                 <select
                   value={selectedStarLevel}
                   onChange={(e) => setSelectedStarLevel(Number(e.target.value))}
-                  className={cn(
-                    'w-full rounded-xl border px-3 py-2 text-xs font-semibold outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
-                    isDark ? 'border-slate-700 bg-slate-950 text-white' : 'border-stone-300 bg-stone-50 text-stone-800'
-                  )}
+                  className={fieldCls}
                 >
                   {trustConfigs.map((t) => (
                     <option key={t.starLevel} value={t.starLevel}>
-                      {t.starLevel} ★ - {t.tierName} (Giảm {Number(t.commissionDiscount || 0)}%)
+                      {t.starLevel} ★ – {t.tierName} (giảm {Number(t.commissionDiscount || 0)}%)
                     </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-semibold">Thâm niên hoạt động</label>
-                  <span className="text-xs font-bold text-blue-500">{simActiveMonths} tháng</span>
+                <div className="mb-1.5 flex items-center justify-between">
+                  <label htmlFor="sim-months" className="text-xs font-medium">
+                    Thâm niên hoạt động
+                  </label>
+                  <span className="font-mono text-xs tabular-nums">{simActiveMonths} tháng</span>
                 </div>
                 <input
+                  id="sim-months"
                   type="range"
                   min="0"
                   max="24"
                   step="1"
                   value={simActiveMonths}
                   onChange={(e) => setSimActiveMonths(Number(e.target.value))}
-                  className="w-full accent-blue-500 h-2 bg-slate-700/20 rounded-lg cursor-pointer"
+                  className="h-2 w-full cursor-pointer accent-stone-900 dark:accent-white"
                 />
               </div>
-            </div>
 
-            {/* Row 3: Violation toggle & Test Amount */}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 items-center pt-1">
-              <label className="flex items-center gap-2 cursor-pointer select-none">
+              <div className="sm:col-span-2">
+                <label className={labelCls}>Giá trị đơn hàng thử (VNĐ)</label>
                 <input
-                  type="checkbox"
-                  checked={hasViolation}
-                  onChange={(e) => setHasViolation(e.target.checked)}
-                  className="h-4 w-4 rounded border-slate-600 text-rose-500 focus:ring-rose-500"
+                  type="number"
+                  step="500000"
+                  min="100000"
+                  value={testOrderAmount}
+                  onChange={(e) => setTestOrderAmount(e.target.value)}
+                  className={cn(fieldCls, 'font-mono tabular-nums sm:max-w-xs')}
                 />
-                <span className={cn('text-xs font-semibold', hasViolation ? 'text-rose-500' : '')}>
-                  Gian hàng có vi phạm / kỷ luật (Mất ưu đãi thâm niên)
-                </span>
-              </label>
-
-              <div>
-                <label className="block text-xs font-semibold mb-1">Giá trị đơn hàng thử nghiệm (VNĐ)</label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    step="500000"
-                    min="100000"
-                    value={testOrderAmount}
-                    onChange={(e) => setTestOrderAmount(e.target.value)}
-                    className={cn(
-                      'w-full rounded-xl border px-3 py-1.5 text-xs font-bold outline-none focus:ring-2 focus:ring-emerald-500',
-                      isDark ? 'border-slate-700 bg-slate-950 text-white' : 'border-stone-300 bg-stone-50 text-stone-800'
-                    )}
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 font-bold">VNĐ</span>
-                </div>
               </div>
             </div>
+
+            <label className="flex cursor-pointer select-none items-center gap-2 pt-1">
+              <input
+                type="checkbox"
+                checked={hasViolation}
+                onChange={(e) => setHasViolation(e.target.checked)}
+                className="h-4 w-4 rounded border-stone-400 accent-stone-900 dark:accent-white"
+              />
+              <span className="text-sm">Gian hàng có vi phạm (mất ưu đãi thâm niên)</span>
+            </label>
           </div>
 
-          {/* Results Card (5 Cols) */}
+          {/* Kết quả */}
           <div
             className={cn(
-              'rounded-2xl border p-5 flex flex-col justify-between gap-4 lg:col-span-5 shadow-sm',
-              isDark ? 'border-slate-800 bg-slate-950/80' : 'border-stone-200 bg-stone-50'
+              'border-t p-5 lg:col-span-5 lg:border-l lg:border-t-0',
+              isDark ? 'border-slate-800 bg-slate-950/40' : 'border-stone-200 bg-stone-50'
             )}
           >
-            <div>
-              <div className="flex items-center justify-between pb-3 border-b border-slate-700/20">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Kết quả tính toán</span>
-                <span className="inline-flex items-center rounded-xl px-2.5 py-1 text-xs font-extrabold bg-stone-100 text-stone-950">
-                  {simulationResult.finalRate.toFixed(2)}%
-                </span>
-              </div>
-
-              {/* Breakdown steps */}
-              <div className="space-y-2.5 pt-3 text-xs">
-                <div className="flex items-center justify-between">
-                  <span className={isDark ? 'text-slate-400' : 'text-stone-500'}>
-                    Tỷ lệ cơ bản ({simulationResult.selectedCondition !== 'GRADE_NEW' ? 'Hàng cũ' : 'Danh mục'}):
-                  </span>
-                  <span className="font-bold">{simulationResult.baseRate.toFixed(1)}%</span>
-                </div>
-
-                <div className="flex items-center justify-between text-emerald-500">
-                  <span>- Ưu đãi Ký Quỹ ({simulationResult.trustTierName}):</span>
-                  <span className="font-bold">-{simulationResult.depositDiscount.toFixed(2)}%</span>
-                </div>
-
-                <div className="flex items-center justify-between text-blue-500">
-                  <span>- Ưu đãi Thâm Niên ({simulationResult.matchedPolicyName}):</span>
-                  <span className="font-bold">-{simulationResult.seniorityDiscount.toFixed(2)}%</span>
-                </div>
-
-                {simulationResult.isFloorApplied && (
-                  <div className="flex items-center justify-between p-2 rounded-lg text-[11px] bg-stone-100 text-stone-950">
-                    <span>⚠️ Kích hoạt ngưỡng sàn tối thiểu:</span>
-                    <span className="font-bold">{simulationResult.floorRate.toFixed(1)}%</span>
-                  </div>
-                )}
-              </div>
+            <div className="flex items-baseline justify-between">
+              <span className={sectionLabel}>Tỷ lệ áp dụng</span>
+              <span className="font-mono text-2xl font-bold tabular-nums">{simulationResult.finalRate.toFixed(2)}%</span>
             </div>
 
-            {/* Payout simulation */}
-            <div className="pt-3 border-t border-slate-700/20 space-y-2">
-              <div className="flex items-center justify-between text-xs">
-                <span className={isDark ? 'text-slate-400' : 'text-stone-500'}>Giá trị đơn hàng:</span>
-                <span className="font-bold">{formatVND(simulationResult.orderAmt)}</span>
+            <dl className="mt-4 space-y-2 text-sm">
+              <div className="flex items-center justify-between gap-4">
+                <dt className={muted}>Tỷ lệ cơ bản ({simulationResult.isUsedGoods ? 'hàng cũ' : simulationResult.categoryName})</dt>
+                <dd className="font-mono tabular-nums">{simulationResult.baseRate.toFixed(2)}%</dd>
               </div>
+              <div className="flex items-center justify-between gap-4">
+                <dt className={muted}>Ưu đãi ký quỹ ({simulationResult.trustTierName})</dt>
+                <dd className="font-mono tabular-nums">−{simulationResult.depositDiscount.toFixed(2)}%</dd>
+              </div>
+              <div className="flex items-center justify-between gap-4">
+                <dt className={muted}>Ưu đãi thâm niên ({simulationResult.matchedPolicyName})</dt>
+                <dd className="font-mono tabular-nums">−{simulationResult.seniorityDiscount.toFixed(2)}%</dd>
+              </div>
+              {simulationResult.isFloorApplied && (
+                <div className="flex items-center justify-between gap-4 border-t border-dashed pt-2 text-xs">
+                  <dt className={muted}>Áp dụng ngưỡng sàn tối thiểu</dt>
+                  <dd className="font-mono tabular-nums">{simulationResult.floorRate.toFixed(2)}%</dd>
+                </div>
+              )}
+            </dl>
 
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-rose-500 font-semibold">Phí hoa hồng sàn thu:</span>
-                <span className="font-bold text-rose-500">-{formatVND(simulationResult.feeAmount)}</span>
+            <dl className={cn('mt-5 space-y-2 border-t pt-4 text-sm', isDark ? 'border-slate-800' : 'border-stone-200')}>
+              <div className="flex items-center justify-between gap-4">
+                <dt className={muted}>Giá trị đơn hàng</dt>
+                <dd className="font-mono tabular-nums">{formatVND(simulationResult.orderAmt)}</dd>
               </div>
-
-              <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-700/20">
-                <span className="font-bold text-emerald-500">Shop thực nhận:</span>
-                <span className="text-sm font-extrabold text-emerald-500">{formatVND(simulationResult.sellerPayout)}</span>
+              <div className="flex items-center justify-between gap-4">
+                <dt className={muted}>Hoa hồng sàn thu</dt>
+                <dd className="font-mono tabular-nums">−{formatVND(simulationResult.feeAmount)}</dd>
               </div>
-            </div>
+              <div className="flex items-center justify-between gap-4 font-semibold">
+                <dt>Shop thực nhận</dt>
+                <dd className="font-mono text-base tabular-nums">{formatVND(simulationResult.sellerPayout)}</dd>
+              </div>
+            </dl>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* MODAL EDIT SENIORITY POLICY */}
+      {/* Modal sửa chính sách thâm niên */}
       {editingSeniority && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div
+            role="dialog"
+            aria-modal="true"
             className={cn(
-              'w-full max-w-md rounded-2xl border p-6 shadow-2xl transition-all',
+              'w-full max-w-md rounded-md border p-6 shadow-xl',
               isDark ? 'border-slate-800 bg-slate-900 text-white' : 'border-stone-200 bg-white text-stone-900'
             )}
           >
-            <div className="flex items-center justify-between pb-4 border-b border-slate-700/30">
-              <h3 className="text-base font-bold flex items-center gap-2">
-                <HiOutlineClock className="h-5 w-5 text-blue-500" />
-                <span>Chỉnh sửa chính sách thâm niên</span>
-              </h3>
+            <div className={cn('flex items-center justify-between border-b pb-3', isDark ? 'border-slate-800' : 'border-stone-200')}>
+              <h3 className="text-base font-bold">Chỉnh sửa chính sách thâm niên</h3>
               <button
                 type="button"
                 onClick={() => setEditingSeniority(null)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg"
+                aria-label="Đóng"
+                className={cn('rounded p-1 text-sm', muted)}
               >
                 ✕
               </button>
@@ -730,7 +608,7 @@ export default function DiscountPoliciesTab() {
             <form onSubmit={handleSaveSeniority} className="space-y-4 pt-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold mb-1">Mốc thâm niên tối thiểu (tháng)</label>
+                  <label className={labelCls}>Mốc tối thiểu (tháng)</label>
                   <input
                     type="number"
                     min="0"
@@ -738,16 +616,11 @@ export default function DiscountPoliciesTab() {
                     required
                     value={seniorityMonths}
                     onChange={(e) => setSeniorityMonths(e.target.value)}
-                    className={cn(
-                      'w-full rounded-xl border px-4 py-2.5 text-sm font-semibold outline-none focus:ring-2 focus:ring-blue-500',
-                      isDark ? 'border-slate-700 bg-slate-950 text-white' : 'border-stone-300 bg-stone-50 text-stone-800'
-                    )}
+                    className={fieldCls}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold mb-1">
-                    Giảm trừ hoa hồng (%)
-                  </label>
+                  <label className={labelCls}>Giảm hoa hồng (%)</label>
                   <input
                     type="number"
                     min="0"
@@ -756,69 +629,53 @@ export default function DiscountPoliciesTab() {
                     required
                     value={seniorityDiscount}
                     onChange={(e) => setSeniorityDiscount(e.target.value)}
-                    className={cn(
-                      'w-full rounded-xl border px-4 py-2.5 text-sm font-semibold outline-none focus:ring-2 focus:ring-blue-500',
-                      isDark ? 'border-slate-700 bg-slate-950 text-white' : 'border-stone-300 bg-stone-50 text-stone-800'
-                    )}
+                    className={fieldCls}
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold mb-1">Tên hạng / nhãn chính sách</label>
+                <label className={labelCls}>Tên hạng</label>
                 <input
                   type="text"
                   required
                   value={seniorityTierName}
                   onChange={(e) => setSeniorityTierName(e.target.value)}
-                  className={cn(
-                    'w-full rounded-xl border px-4 py-2.5 text-sm font-semibold outline-none focus:ring-2 focus:ring-blue-500',
-                    isDark ? 'border-slate-700 bg-slate-950 text-white' : 'border-stone-300 bg-stone-50 text-stone-800'
-                  )}
+                  className={fieldCls}
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold mb-1">Mô tả áp dụng</label>
+                <label className={labelCls}>Mô tả áp dụng</label>
                 <textarea
                   rows="3"
                   value={seniorityDesc}
                   onChange={(e) => setSeniorityDesc(e.target.value)}
                   placeholder="Áp dụng cho shop hoạt động liên tục trên X tháng..."
-                  className={cn(
-                    'w-full rounded-xl border px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500',
-                    isDark ? 'border-slate-700 bg-slate-950 text-white' : 'border-stone-300 bg-stone-50 text-stone-800'
-                  )}
+                  className={fieldCls}
                 />
               </div>
 
-              <div className="flex items-center gap-2 pt-2">
+              <label className="flex cursor-pointer items-center gap-2">
                 <input
                   type="checkbox"
-                  id="isActiveSeniority"
                   checked={seniorityActive}
                   onChange={(e) => setSeniorityActive(e.target.checked)}
-                  className="h-4 w-4 rounded border-slate-600 text-blue-500 focus:ring-blue-500"
+                  className="h-4 w-4 rounded border-stone-400 accent-stone-900 dark:accent-white"
                 />
-                <label htmlFor="isActiveSeniority" className="text-xs font-semibold cursor-pointer">
-                  Kích hoạt chính sách thâm niên này
-                </label>
-              </div>
+                <span className="text-sm">Kích hoạt chính sách này</span>
+              </label>
 
-              <div className="mt-6 flex justify-end gap-3 pt-3 border-t border-slate-700/40">
+              <div className={cn('flex justify-end gap-2 border-t pt-4', isDark ? 'border-slate-800' : 'border-stone-200')}>
                 <button
                   type="button"
                   disabled={submittingSeniority}
                   onClick={() => setEditingSeniority(null)}
-                  className="rounded-xl px-4 py-2 text-sm font-semibold text-slate-400 hover:text-white"
+                  className={cn('rounded-md px-4 py-2 text-sm font-semibold', muted)}
                 >
-                  Hủy bỏ
+                  Hủy
                 </button>
-                <button
-                  type="submit"
-                  disabled={submittingSeniority}
-                  className="rounded-xl px-5 py-2 text-sm font-bold disabled:opacity-50 shadow-sm bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
-                >
+                <button type="submit" disabled={submittingSeniority} className={primaryBtn}>
                   {submittingSeniority ? 'Đang lưu...' : 'Lưu thay đổi'}
                 </button>
               </div>

@@ -13,6 +13,7 @@ import com.marketplace.ecommerce.shop.repository.ShopRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -32,6 +33,7 @@ public class PlatformSettingController {
         return ResponseEntity.ok(platformSettingService.getPlatformSetting());
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping
     public ResponseEntity<PlatformSettingResponse> updateCommissionRate(
             @Valid @RequestBody UpdateCommissionRateRequest updateCommissionRateRequest
@@ -44,6 +46,7 @@ public class PlatformSettingController {
         return ResponseEntity.ok(platformSettingService.getAllSettings());
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/setting")
     public ResponseEntity<PlatformSettingResponse> updateSetting(
             @RequestParam String key,

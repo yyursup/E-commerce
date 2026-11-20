@@ -65,6 +65,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.util.Collections;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -605,7 +606,7 @@ class ShopEscrowFundServiceImplTest {
                 assertNotNull(res);
                 assertEquals(EscrowFundStatus.ACTIVE, fund.getStatus());
                 assertEquals(ShopStatus.ACTIVE, fund.getShop().getStatus());
-                assertEquals(3, fund.getCurrentTrustLevel());
+                assertEquals(3, (int) fund.getCurrentTrustLevel());
                 verify(shopRepository).save(fund.getShop());
                 verify(notificationRepository).save(any(Notification.class));
         }
@@ -997,6 +998,187 @@ class ShopEscrowFundServiceImplTest {
                 shopEscrowFundService.processVnpayCallback(Map.of("vnp_ResponseCode", "00", "vnp_Amount", "300000000"), rawQuery);
 
                 verify(shopEscrowTransactionRepository).save(any(ShopEscrowTransaction.class));
+        }
+
+        @Test
+        @DisplayName("Trích cước ship 2 chiều từ quỹ shop: ghi giao dịch SHIPPING_FEE trả GHN, không vào ví hay doanh thu sàn")
+        void deductReturnDisputeShippingFees_PaidToCarrier() {
+                order.setOrderNumber("ORD-RET-1");
+                order.setShippingFee(new BigDecimal("30000"));
+                OrderReturn orderReturn = OrderReturn.builder().id(UUID.randomUUID()).order(order)
+                                .shippingFee(new BigDecimal("25000")).build();
+
+                when(transactionRepository.existsByDedupeKey(anyString())).thenReturn(false);
+                when(shopEscrowFundRepository.findByShopIdForUpdate(shopId)).thenReturn(Optional.of(fund));
+
+                shopEscrowFundService.deductReturnDisputeShippingFees(orderReturn);
+
+                // 30.000 chiều đi + 25.000 chiều về = 55.000 bị trích khỏi quỹ
+                assertEquals(new BigDecimal("4945000"), fund.getBalance());
+                verify(walletRepository, never()).save(any());
+                ArgumentCaptor<Transaction> captor = ArgumentCaptor.forClass(Transaction.class);
+                verify(transactionRepository).save(captor.capture());
+                Transaction tx = captor.getValue();
+                assertEquals(TransactionType.SHIPPING_FEE, tx.getType());
+                assertEquals(new BigDecimal("55000"), tx.getAmount());
+                assertNull(tx.getToWallet(), "Tiền trả GHN, không vào ví hay doanh thu sàn");
+                assertEquals("COMPENSATION:RETURN_SHIPPING:" + orderReturn.getId(), tx.getDedupeKey());
+                assertTrue(Boolean.TRUE.equals(orderReturn.getIsReturnShippingDeducted()));
+        }
+
+        @Test
+        @DisplayName("Trích cước ship: quỹ không đủ thì chỉ trích tối đa số dư và ghi nhận đúng số đã trích")
+        void deductReturnDisputeShippingFees_CappedByFundBalance() {
+                fund.setBalance(new BigDecimal("40000"));
+                order.setOrderNumber("ORD-RET-2");
+                order.setShippingFee(new BigDecimal("30000"));
+                OrderReturn orderReturn = OrderReturn.builder().id(UUID.randomUUID()).order(order).build();
+
+                when(transactionRepository.existsByDedupeKey(anyString())).thenReturn(false);
+                when(shopEscrowFundRepository.findByShopIdForUpdate(shopId)).thenReturn(Optional.of(fund));
+
+                shopEscrowFundService.deductReturnDisputeShippingFees(orderReturn);
+
+                assertEquals(0, fund.getBalance().signum());
+                ArgumentCaptor<Transaction> captor = ArgumentCaptor.forClass(Transaction.class);
+                verify(transactionRepository).save(captor.capture());
+                assertEquals(new BigDecimal("40000"), captor.getValue().getAmount());
+        }
+
+        @Test
+        @DisplayName("Trích cước ship: đã trừ rồi (idempotent) thì không ghi sổ cái lần nữa")
+        void deductReturnDisputeShippingFees_Idempotent() {
+                order.setShippingFee(new BigDecimal("30000"));
+                OrderReturn orderReturn = OrderReturn.builder().id(UUID.randomUUID()).order(order).build();
+                orderReturn.setIsReturnShippingDeducted(true);
+
+                shopEscrowFundService.deductReturnDisputeShippingFees(orderReturn);
+
+                verify(walletRepository, never()).save(any());
+                verify(transactionRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("Hoàn tiền không cần trả hàng: cước chiều đi trích từ quỹ ký quỹ shop, ghi SHIPPING_FEE, không vào ví sàn")
+        void deductOutboundShippingFee_PaidToCarrier() {
+                order.setOrderNumber("ORD-REFUND-ONLY");
+                order.setShippingFee(new BigDecimal("30000"));
+                when(transactionRepository.existsByDedupeKey(anyString())).thenReturn(false);
+                when(shopEscrowFundRepository.findByShopIdForUpdate(shopId)).thenReturn(Optional.of(fund));
+                UUID reportId = UUID.randomUUID();
+
+                shopEscrowFundService.deductOutboundShippingFee(order, reportId);
+
+                assertEquals(new BigDecimal("4970000"), fund.getBalance());
+                verify(walletRepository, never()).save(any());
+                ArgumentCaptor<Transaction> captor = ArgumentCaptor.forClass(Transaction.class);
+                verify(transactionRepository).save(captor.capture());
+                Transaction tx = captor.getValue();
+                assertEquals(TransactionType.SHIPPING_FEE, tx.getType());
+                assertEquals(new BigDecimal("30000"), tx.getAmount());
+                assertNull(tx.getToWallet());
+                assertEquals("COMPENSATION:OUTBOUND_SHIPPING:" + orderId, tx.getDedupeKey());
+                ArgumentCaptor<ShopEscrowTransaction> shopTx = ArgumentCaptor.forClass(ShopEscrowTransaction.class);
+                verify(shopEscrowTransactionRepository).save(shopTx.capture());
+                assertEquals(new BigDecimal("-30000"), shopTx.getValue().getAmount());
+                assertEquals(reportId, shopTx.getValue().getReportId());
+        }
+
+        @Test
+        @DisplayName("Cước chiều đi: quỹ không đủ chỉ trích tối đa số dư; đã trích rồi hoặc miễn ship thì bỏ qua")
+        void deductOutboundShippingFee_CappedAndIdempotent() {
+                order.setShippingFee(new BigDecimal("30000"));
+                fund.setBalance(new BigDecimal("12000"));
+                when(transactionRepository.existsByDedupeKey(anyString())).thenReturn(false);
+                when(shopEscrowFundRepository.findByShopIdForUpdate(shopId)).thenReturn(Optional.of(fund));
+
+                shopEscrowFundService.deductOutboundShippingFee(order, null);
+
+                assertEquals(0, fund.getBalance().signum());
+                ArgumentCaptor<Transaction> captor = ArgumentCaptor.forClass(Transaction.class);
+                verify(transactionRepository).save(captor.capture());
+                assertEquals(new BigDecimal("12000"), captor.getValue().getAmount());
+
+                // Đã trích rồi
+                clearInvocations(transactionRepository, shopEscrowFundRepository);
+                when(transactionRepository.existsByDedupeKey(anyString())).thenReturn(true);
+                shopEscrowFundService.deductOutboundShippingFee(order, null);
+                verify(transactionRepository, never()).save(any());
+                verify(shopEscrowFundRepository, never()).findByShopIdForUpdate(any());
+
+                // Miễn ship
+                order.setShippingFee(BigDecimal.ZERO);
+                shopEscrowFundService.deductOutboundShippingFee(order, null);
+                verify(transactionRepository, never()).save(any());
+        }
+
+        private void expireDeficit(BigDecimal balance, int level) {
+                fund.setBalance(balance);
+                fund.setCommittedAmount(new BigDecimal("5000000"));
+                fund.setCurrentTrustLevel(level);
+                fund.setIsDeficit(true);
+                fund.setDeficitAmount(new BigDecimal("1000000"));
+                fund.setDeficitDeadline(LocalDateTime.now().minusHours(1));
+                fund.setStatus(EscrowFundStatus.DEFICIT);
+                when(shopEscrowFundRepository.findByIsDeficitTrueAndDeficitDeadlineBefore(any()))
+                                .thenReturn(List.of(fund));
+                when(shopEscrowFundRepository.findByShopIdForUpdate(shopId)).thenReturn(Optional.of(fund));
+        }
+
+        @Test
+        @DisplayName("downgradeExpiredDeficits: quá hạn 72h -> giáng xuống bậc phù hợp số dư, hết thiếu hụt và gửi thông báo")
+        void downgradeExpiredDeficits_DowngradesToAffordableTier() {
+                expireDeficit(new BigDecimal("3600000"), 3);
+                TrustLevelConfig tier2 = TrustLevelConfig.builder().starLevel(2)
+                                .minDeposit(new BigDecimal("3500000")).tierName("2 Sao").build();
+                when(trustLevelConfigService.resolveTrustLevel(new BigDecimal("3600000"))).thenReturn(2);
+                when(trustLevelConfigService.getConfigByStarLevel(2)).thenReturn(tier2);
+
+                int processed = shopEscrowFundService.downgradeExpiredDeficits();
+
+                assertEquals(1, processed);
+                assertEquals(2, (int) fund.getCurrentTrustLevel());
+                assertEquals(2, (int) shop.getTrustLevel());
+                assertFalse(fund.getIsDeficit());
+                assertEquals(EscrowFundStatus.ACTIVE, fund.getStatus());
+                assertEquals(0, fund.getDeficitAmount().signum());
+                assertNull(fund.getDeficitDeadline());
+                assertEquals(new BigDecimal("3600000"), fund.getCommittedAmount());
+                verify(notificationRepository).save(any(Notification.class));
+        }
+
+        @Test
+        @DisplayName("downgradeExpiredDeficits: số dư thấp hơn cả bậc thấp nhất -> giữ thiếu hụt nhưng xóa hạn để không quét lại")
+        void downgradeExpiredDeficits_BelowLowestTierKeepsDeficit() {
+                expireDeficit(new BigDecimal("500000"), 2);
+                TrustLevelConfig tier1 = TrustLevelConfig.builder().starLevel(1)
+                                .minDeposit(new BigDecimal("2000000")).tierName("1 Sao").build();
+                when(trustLevelConfigService.resolveTrustLevel(new BigDecimal("500000"))).thenReturn(1);
+                when(trustLevelConfigService.getConfigByStarLevel(1)).thenReturn(tier1);
+
+                assertEquals(1, shopEscrowFundService.downgradeExpiredDeficits());
+
+                assertEquals(1, (int) fund.getCurrentTrustLevel());
+                assertTrue(fund.getIsDeficit());
+                assertEquals(new BigDecimal("1500000"), fund.getDeficitAmount());
+                assertNull(fund.getDeficitDeadline());
+        }
+
+        @Test
+        @DisplayName("downgradeExpiredDeficits: shop đã nạp bù hoặc chưa hết hạn sau khi khóa thì bỏ qua")
+        void downgradeExpiredDeficits_SkipsWhenResolvedMeanwhile() {
+                expireDeficit(new BigDecimal("3600000"), 3);
+                fund.setIsDeficit(false);
+                fund.setStatus(EscrowFundStatus.ACTIVE);
+
+                assertEquals(0, shopEscrowFundService.downgradeExpiredDeficits());
+                assertEquals(3, (int) fund.getCurrentTrustLevel());
+
+                fund.setIsDeficit(true);
+                fund.setStatus(EscrowFundStatus.DEFICIT);
+                fund.setDeficitDeadline(LocalDateTime.now().plusHours(5));
+                assertEquals(0, shopEscrowFundService.downgradeExpiredDeficits());
+                verify(notificationRepository, never()).save(any(Notification.class));
         }
 
 }

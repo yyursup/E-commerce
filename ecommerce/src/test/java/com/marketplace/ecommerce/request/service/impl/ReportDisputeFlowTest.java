@@ -234,7 +234,9 @@ class ReportDisputeFlowTest {
                 assertEquals(ReportStage.RESOLVED, reportEntity.getStage());
                 assertEquals(ResolutionType.REFUND_ONLY, reportEntity.getResolutionType());
                 assertEquals(OrderStatus.REFUNDED, orderEntity.getStatus());
-                verify(escrowService).refundMerchandiseOnly(eq(orderId), any());
+                // Khách giữ hàng: hoàn đủ cho người mua, Shop chịu cước chiều đi từ quỹ ký quỹ
+                verify(escrowService).refundByOrder(eq(orderId), any());
+                verify(shopEscrowFundService).deductOutboundShippingFee(eq(orderEntity), eq(reportId));
                 verify(reportRepository).save(reportEntity);
         }
 

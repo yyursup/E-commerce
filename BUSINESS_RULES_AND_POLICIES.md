@@ -47,14 +47,14 @@
 
 ### 3.1. Phân loại 8 Ngành Hàng Đồ Điện Tử & Thiết Bị Công Nghệ
 Hệ thống chuẩn hóa 8 ngành hàng chuyên sâu trong hệ sinh thái thiết bị công nghệ & điện tử:
-1. *Điện Thoại & Máy Tính Bảng (Smartphones & Tablets)*: Điện thoại thông minh, máy tính bảng, bút cảm ứng, máy đọc sách điện tử.
-2. *Laptop & Máy Tính Để Bàn (Laptops & Desktops)*: Laptop văn phòng, laptop gaming, máy trạm workstation, PC đồng bộ, màn hình máy tính.
-3. *Âm Thanh & Tai Nghe (Audio & Headphones)*: Tai nghe True Wireless (TWS), tai nghe chụp tai (Over-ear), loa bluetooth, loa để bàn, DAC/Amp, micro thu âm.
-4. *Đồng Hồ & Thiết Bị Đeo Thông Minh (Smartwatches & Wearables)*: Smartwatch thể thao, vòng đeo tay theo dõi sức khỏe, kính thực tế ảo VR/AR.
-5. *Máy Ảnh & Thiết Bị Số (Cameras & Digital Imaging)*: Máy ảnh Mirrorless/DSLR, máy quay vlog, action camera, flycam (drone), thiết bị chống rung gimbal.
-6. *Linh Kiện & Phần Cứng Máy Tính (Computer Hardware & Components)*: CPU, Card màn hình (GPU/VGA), RAM, ổ cứng SSD/HDD, Mainboard, bộ nguồn PSU, tản nhiệt.
-7. *Phụ Kiện Công Nghệ & Thiết Bị Ngoại Vi (Tech Accessories & Peripherals)*: Củ cáp sạc nhanh, pin sạc dự phòng, bàn phím cơ, chuột gaming, hub chuyển đổi, giá đỡ công thái học.
-8. *Thiết Bị Nhà Thông Minh & Mạng (Smart Home & Networking)*: Router Wi-Fi 6/Mesh, camera an ninh giám sát gia đình, khóa cửa điện tử thông minh, cảm biến IoT.
+1. *Điện Thoại & Máy Tính Bảng (Mobile & Tablets)*: Điện thoại, máy tính bảng, máy đọc sách và phụ kiện đi kèm. Hoa hồng 3.5%.
+2. *Laptop & Máy Tính PC (Laptops & PCs)*: Laptop gaming/văn phòng, PC đồng bộ, máy trạm workstation. Hoa hồng 4.0%.
+3. *Linh Kiện & Gaming Gear (Components & Gaming Gear)*: CPU, VGA, RAM, Mainboard, bàn phím, chuột, tai nghe gaming. Hoa hồng 5.0%.
+4. *Thiết Bị Âm Thanh & Giải Trí (Audio & Entertainment)*: Loa, tai nghe, soundbar, thiết bị thu âm & livestream. Hoa hồng 6.0%.
+5. *Phụ Kiện Điện Tử (Electronic Accessories)*: Củ cáp sạc, sạc dự phòng, ốp lưng, bao da, cáp chuyển đổi. Hoa hồng 8.5%.
+6. *Đồng Hồ & Thiết Bị Đeo (Watches & Wearables)*: Smartwatch, smartband và phụ kiện đồng hồ. Hoa hồng 6.5%.
+7. *Smart Home & Camera*: Camera an ninh, robot hút bụi, khóa cửa và đèn thông minh. Hoa hồng 5.5%.
+8. *Máy Ảnh & Quay Phim (Cameras & Imaging)*: Máy ảnh, ống kính, gimbal, flycam, action camera. Hoa hồng 5.0%.
 
 ### 3.2. Tiêu chuẩn Phân Hạng Tình Trạng Thiết Bị Điện Tử (Condition Grade)
 Đặc thù ngành thiết bị công nghệ yêu cầu Người bán phân loại chính xác tình trạng thực tế để bảo vệ Người mua:
@@ -96,6 +96,9 @@ Hệ thống chuẩn hóa 8 ngành hàng chuyên sâu trong hệ sinh thái thi�
 - **BR-SHP-02 (Tách đơn hàng đa shop - Sub-Orders)**: Giỏ hàng chứa sản phẩm từ nhiều Shop khác nhau sẽ được tự động tách thành các đơn hàng độc lập, mỗi đơn có mã vận đơn GHN riêng biệt và lộ trình giao nhận độc lập.
 - **BR-SHP-03 (Trách nhiệm đóng gói)**: Người bán có trách nhiệm đóng gói theo tiêu chuẩn vận chuyển thương mại điện tử (bọc xốp bóng khí chống sốc, dán tem cảnh báo hàng dễ vỡ, niêm phong băng keo có logo hoặc ký hiệu bảo mật).
 - **BR-SHP-04 (Quyền đồng kiểm)**: Khi nhận hàng, Người mua được đồng kiểm ngoại quan cùng bưu tá GHN (kiểm tra tình trạng hộp ngoài, niêm phong). Khuyến cáo bắt buộc quay video mở hộp (Unbox Video) liên tục không cắt ghép để làm bằng chứng khiếu nại.
+- **BR-SHP-05 (Phí ship không phải doanh thu sàn)**: Phí vận chuyển Người mua đã trả không tính hoa hồng và không vào doanh thu của sàn. Khi đơn kết thúc (giải ngân hoặc phân xử chia tỷ lệ), phần ship được ghi nhận ngay là khoản trả ra cho GHN (giao dịch `SHIPPING_FEE`, không có ví nhận) và không được đem chia cho Người mua/Người bán.
+- **BR-SHP-06 (Người mua thắng tranh chấp)**: Cước chiều trả hàng được báo giá từ GHN API theo chiều ngược lại (từ địa chỉ Người mua về Shop) khi mở kiện hoàn, không dùng số do Người mua tự nhập; nếu GHN không báo được giá thì tạm tính bằng cước chiều đi. Khi Người mua gửi hàng hoàn mà không tự nhập mã vận đơn, hệ thống tạo đơn GHN thật cho chiều về (từ địa chỉ Người mua về Shop, mã `client_order_code` có hậu tố `-RET`) và dùng mã GHN trả về làm mã vận đơn; nếu GHN lỗi thì dùng mã dự phòng `GHN-RET-<mã đơn>`. Người mua được hoàn đủ 100% số tiền đã thanh toán, gồm cả phí ship. Cước vận chuyển hai chiều (chiều đi và chiều về do Người mua tạo đơn GHN) do Người bán chịu, trích từ Quỹ ký quỹ gian hàng và ghi nhận bằng giao dịch `SHIPPING_FEE`, không vào doanh thu sàn. Trường hợp hoàn tiền mà Người mua giữ hàng, không cần trả (`REFUND_ONLY`: Admin chấp thuận khiếu nại, Người bán chủ động đồng ý hoàn tiền, hoặc Admin phán quyết Người mua thắng khi chưa có kiện hoàn), Người mua được hoàn đủ 100% gồm cả phí ship từ ký quỹ đơn hàng, và Người bán chịu cước chiều đi (trích Quỹ ký quỹ gian hàng, ghi nhận bằng giao dịch `SHIPPING_FEE`).
+- **BR-SHP-07 (Tra cứu phí vận chuyển)**: Quản trị viên xem phí GHN của từng lần giao tại tab "Phí vận chuyển" (`GET /shipping-fees`): chiều đi do Shop tạo đơn GHN, chiều về do Người mua tạo đơn trả hàng, kèm mã vận đơn, phí, bên chịu phí và tổng cộng. Đây là màn hình chỉ đọc, hệ thống không đối soát công nợ với GHN.
 
 ---
 
@@ -160,16 +163,14 @@ Phán quyết của Quản trị viên bắt buộc phải gắn mã Điều kho
 
 ### 7.2. Quỹ Ký Quỹ Bảo Lãnh Gian Hàng (Shop Escrow Fund)
 - Mọi gian hàng hoạt động bắt buộc duy trì số dư Quỹ ký quỹ bảo lãnh theo Cấp độ uy tín sao:
-  - Hạng 1 sao: Tối thiểu 2.000.000 VNĐ.
-  - Hạng 2 sao: Tối thiểu 3.500.000 VNĐ.
+  - Hạng 1 sao: dưới 1.000.000 VNĐ (cơ bản).
+  - Hạng 2 sao: Tối thiểu 1.000.000 VNĐ.
   - Hạng 3 sao: Tối thiểu 5.000.000 VNĐ.
-  - Hạng 4 sao: Tối thiểu 7.500.000 VNĐ.
-  - Hạng 5 sao: Tối thiểu 10.000.000 VNĐ.
+  - Hạng 4 sao: Tối thiểu 20.000.000 VNĐ.
+  - Hạng 5 sao: Tối thiểu 50.000.000 VNĐ.
+  - Các mức trên là cấu hình mặc định, Admin có thể thay đổi tại trang cấu hình bậc sao. Gian hàng có thể ký quỹ cao hơn mức tối thiểu của bậc để có khoảng đệm trước khi các khoản trích (bồi thường, cước vận chuyển) làm số dư xuống dưới ngưỡng.
 - Khi xảy ra bồi thường hoặc phạt vi phạm, hệ thống tự động cấn trừ từ Quỹ này.
-- **Quy định bù quỹ hụt (Deficit Top-up)**: Trong vòng 48 giờ kể từ khi quỹ bị âm hoặc dưới hạn mức, Người bán phải nạp bù đủ số dư. Nếu quá hạn:
-  - Hạ bậc uy tín gian hàng.
-  - Tạm khóa tính năng đăng bán sản phẩm mới.
-  - Cố định lệnh rút tiền từ ví cho đến khi hoàn tất bổ sung quỹ.
+- **Quy định bù quỹ hụt (Deficit Top-up)**: Khi quỹ bị trích xuống dưới hạn mức của bậc sao hiện tại, gian hàng chuyển sang trạng thái thiếu hụt (`DEFICIT`) và có 72 giờ để nạp bù. Nạp đủ trong hạn thì trạng thái thiếu hụt được xóa. Quá hạn, hệ thống tự động (job quét mỗi 10 phút) giáng bậc uy tín xuống bậc cao nhất mà số dư hiện tại còn đáp ứng, cập nhật lại mức cam kết và gửi thông báo cho Người bán; Người bán có thể nạp thêm để được nâng lại bậc. Nếu số dư thấp hơn cả bậc thấp nhất thì giữ trạng thái thiếu hụt và không đặt lại hạn.
 
 ---
 

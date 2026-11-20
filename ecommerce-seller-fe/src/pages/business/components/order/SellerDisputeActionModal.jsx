@@ -27,7 +27,6 @@ export default function SellerDisputeActionModal({
 
   const outboundShippingFee = Number(order?.shippingFee || 0)
   const orderTotal = Number(order?.total || 0)
-  const merchandiseRefund = Math.max(0, orderTotal - outboundShippingFee)
   const roundtripShippingFee = outboundShippingFee * 2
 
   return (
@@ -59,21 +58,21 @@ export default function SellerDisputeActionModal({
               <div>
                 <p className="font-bold">Lợi ích thương lượng thành công (Khách giữ hàng):</p>
                 <p className="mt-1">
-                  Hệ thống sẽ hoàn <strong>tiền hàng</strong> về ví của Người mua. Cước ship chiều đi được chuyển cho Sàn thanh toán cho GHN vì chuyến giao hàng đã hoàn thành. <strong>Shop KHÔNG bị trừ điểm uy tín</strong> và <strong>KHÔNG bị trích Quỹ ký quỹ</strong>.
+                  Hệ thống sẽ hoàn <strong>100% tiền đơn hàng (gồm cả phí ship)</strong> về ví của Người mua. Chuyến giao chiều đi đã phát sinh nên <strong>cước ship chiều đi do Shop chịu</strong>: khoản này được trích từ <strong>Quỹ ký quỹ</strong> của Shop và trả cho GHN, không tính vào doanh thu sàn. <strong>Shop KHÔNG bị trừ điểm uy tín.</strong>
                 </p>
               </div>
 
               {order && (
                 <div className="pt-2 border-t border-emerald-500/20 space-y-1 font-mono text-[11px]">
                   <div className="flex justify-between">
-                    <span className="font-sans">Tiền hàng hoàn cho Người mua:</span>
+                    <span className="font-sans">Hoàn cho Người mua (100%):</span>
                     <strong className="text-emerald-700 dark:text-emerald-300">
-                      {formatOrderCurrency(merchandiseRefund)}
+                      {formatOrderCurrency(orderTotal)}
                     </strong>
                   </div>
-                  <div className="flex justify-between text-stone-500 dark:text-slate-400">
-                    <span className="font-sans">Cước ship chiều đi (chuyển Sàn trả GHN):</span>
-                    <span>{formatOrderCurrency(outboundShippingFee)}</span>
+                  <div className="flex justify-between text-rose-700 dark:text-rose-300">
+                    <span className="font-sans">Cước ship chiều đi trích Quỹ ký quỹ Shop (trả GHN):</span>
+                    <strong>-{formatOrderCurrency(outboundShippingFee)}</strong>
                   </div>
                 </div>
               )}
@@ -109,7 +108,7 @@ export default function SellerDisputeActionModal({
                     </div>
                   </div>
                   <p className="text-[10px] text-stone-500 dark:text-slate-400 italic">
-                    * Khoản cước này chỉ được trích khi hoàn tất nhận hàng trả, để Sàn thanh toán cho GHN.
+                    * Khoản cước này được trích khi hoàn tất nhận hàng trả và trả cho GHN, không tính vào doanh thu sàn.
                   </p>
                 </div>
               )}

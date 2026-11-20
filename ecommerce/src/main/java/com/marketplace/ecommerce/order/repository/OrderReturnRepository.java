@@ -19,6 +19,21 @@ public interface OrderReturnRepository extends JpaRepository<OrderReturn, UUID> 
 
     Optional<OrderReturn> findByOrderId(UUID orderId);
 
+    // Phí vận chuyển các kiện hoàn mà người mua đã gửi đi (màn hình admin "Phí vận chuyển").
+    // Mã vận đơn được tạo sẵn khi mở kiện hoàn nên phải lọc theo thời điểm người mua gửi hàng.
+    org.springframework.data.domain.Page<OrderReturn> findByBuyerShippedAtIsNotNull(org.springframework.data.domain.Pageable pageable);
+
+    long countByBuyerShippedAtIsNotNull();
+
+    // Cước chiều về thực tính = cước người mua khai báo (nếu > 0), ngược lại bằng cước chiều đi của đơn
+    // (cùng quy tắc với ShopEscrowFundService.deductReturnDisputeShippingFees)
+    @Query("""
+            SELECT COALESCE(SUM(CASE WHEN r.shippingFee > 0 THEN r.shippingFee ELSE o.shippingFee END), 0)
+            FROM OrderReturn r JOIN r.order o
+            WHERE r.buyerShippedAt IS NOT NULL
+            """)
+    java.math.BigDecimal sumShippingFeeOfReturnShipments();
+
     List<OrderReturn> findByOrderIdIn(List<UUID> orderIds);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)

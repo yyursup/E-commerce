@@ -74,7 +74,11 @@ public class SettlementInfo {
                 }
                 case COMMISSION -> commissionTotal = commissionTotal.add(tx.getAmount() != null ? tx.getAmount() : BigDecimal.ZERO);
 
+                // Phí vận chuyển trả ra cho GHN (loại giao dịch riêng, không phải doanh thu sàn)
+                case SHIPPING_FEE -> shippingRetainedTotal = shippingRetainedTotal.add(tx.getAmount() != null ? tx.getAmount() : BigDecimal.ZERO);
+
                 case TRANSFER -> {
+                    // Tương thích dữ liệu cũ: trước đây ship được ghi là TRANSFER kèm ghi chú "shipping"
                     if (tx.getNote() != null && tx.getNote().toLowerCase().contains("shipping")) {
                         shippingRetainedTotal = shippingRetainedTotal.add(tx.getAmount() != null ? tx.getAmount() : BigDecimal.ZERO);
                     } else if (tx.getNote() != null && (tx.getNote().toLowerCase().contains("subsidy") || tx.getNote().toLowerCase().contains("voucher"))) {

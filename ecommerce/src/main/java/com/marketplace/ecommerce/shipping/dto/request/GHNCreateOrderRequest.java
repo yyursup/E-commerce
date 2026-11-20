@@ -1,5 +1,6 @@
 package com.marketplace.ecommerce.shipping.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -20,6 +21,12 @@ public class GHNCreateOrderRequest {
     private String to_address;            // Địa chỉ chi tiết
     private String to_ward_code;          // Mã phường/xã
     private String to_district_id;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String from_name;             // Chỉ dùng cho đơn trả hàng (người mua gửi)
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String from_phone;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String from_address;
     private Integer from_district_id;
     private String from_ward_code;
     private Integer cod_amount;           // Số tiền thu hộ (VNĐ) - nếu có COD

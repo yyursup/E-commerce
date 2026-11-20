@@ -13,4 +13,17 @@ public interface ShippingService {
     BigDecimal quoteFee(Shop shop, List<CartItem> cartItems, Integer toDistrictId, String toWardCode);
 
     GHNCreateOrderRequest build(Order order);
+
+    /**
+     * Báo giá cước GHN cho chiều trả hàng (ngược chiều giao): từ địa chỉ người mua về kho/địa chỉ của shop.
+     *
+     * @return cước GHN báo, hoặc null nếu thiếu dữ liệu địa chỉ / GHN lỗi (người gọi tự quyết định phương án thay thế)
+     */
+    BigDecimal quoteReturnFee(Order order);
+
+    /**
+     * Tạo đơn GHN thật cho chiều trả hàng (người mua -> shop).
+     * @return mã đơn GHN, hoặc null nếu thiếu địa chỉ / GHN lỗi (caller dùng mã dự phòng).
+     */
+    String createReturnShipment(Order order);
 }

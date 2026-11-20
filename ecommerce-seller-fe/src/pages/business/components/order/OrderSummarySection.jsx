@@ -154,6 +154,7 @@ export default function OrderSummarySection({ order, isDark, returnInfo }) {
           <span className={cn('flex items-center gap-1.5', isDark ? 'text-slate-400' : 'text-stone-600')}>
             <HiOutlineTruck className="h-4 w-4 text-indigo-500" />
             <span>Cước giao hàng</span>
+            <span className="text-xs text-stone-400 hidden sm:inline">(trả cho GHN, không tính vào doanh thu Shop)</span>
           </span>
           <span className={cn('font-semibold font-mono', isDark ? 'text-white' : 'text-stone-900')}>
             {formatCurrency(shippingFee)}
@@ -308,7 +309,6 @@ export default function OrderSummarySection({ order, isDark, returnInfo }) {
             const outboundFee = Number(order?.shippingFee || 0)
             const returnFee = Number(activeReturn?.shippingFee || outboundFee)
             const totalReturnShipping = outboundFee + returnFee
-            const merchandiseRefund = Math.max(0, Number(order?.total || 0) - outboundFee)
 
             return (
               <div
@@ -324,7 +324,7 @@ export default function OrderSummarySection({ order, isDark, returnInfo }) {
                   <p className={cn('text-sm font-bold', isDark ? 'text-blue-400' : 'text-blue-900')}>
                     {isReturnProcess
                       ? 'Đơn hàng đã hoàn tất đổi trả & Hoàn tiền'
-                      : 'Đơn hàng đã hoàn tiền hàng (Khách giữ hàng)'}
+                      : 'Đơn hàng đã hoàn tiền (Khách giữ hàng)'}
                   </p>
                   {isReturnProcess ? (
                     <div className="space-y-1 leading-relaxed">
@@ -349,11 +349,14 @@ export default function OrderSummarySection({ order, isDark, returnInfo }) {
                   ) : (
                     <div className="space-y-1 leading-relaxed">
                       <p className={isDark ? 'text-slate-300' : 'text-stone-600'}>
-                        Đã hoàn tiền hàng <strong className="font-mono text-blue-600 dark:text-blue-400">{formatCurrency(merchandiseRefund)}</strong> về Ví người mua do Shop đồng ý thương lượng.
+                        Đã hoàn 100% tiền đơn <strong className="font-mono text-blue-600 dark:text-blue-400">{formatCurrency(order?.total || 0)}</strong> về Ví người mua do Shop đồng ý thương lượng.
                       </p>
-                      <p className="text-[11px] text-stone-500 dark:text-slate-400">
-                        * Cước vận chuyển chiều đi ({formatCurrency(outboundFee)}) được chuyển cho Sàn thanh toán cho GHN vì chuyến giao hàng thành công. Quỹ ký quỹ của Shop không bị trích.
-                      </p>
+                      {outboundFee > 0 && (
+                        <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-900 dark:text-amber-300 font-mono text-[11px] flex justify-between font-bold">
+                          <span className="font-sans">Cước chiều đi đã trích Quỹ ký quỹ Shop (trả GHN):</span>
+                          <span>{formatCurrency(outboundFee)}</span>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

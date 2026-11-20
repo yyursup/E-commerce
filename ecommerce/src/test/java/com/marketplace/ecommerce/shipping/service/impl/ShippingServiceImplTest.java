@@ -199,4 +199,74 @@ class ShippingServiceImplTest {
         assertThrows(CustomException.class, () -> shippingService.quoteFee(shop, List.of(usedCartItem), 1442, "  "));
         assertThrows(CustomException.class, () -> shippingService.quoteFee(shop, List.of(usedCartItem), 1442, null));
     }
+
+    @Test
+    @DisplayName("quoteReturnFee: báo giá GHN theo chiều ngược lại, điểm đi là địa chỉ người mua và điểm đến là shop")
+    void quoteReturnFee_ReversesRoute() {
+        order.setShippingDistrictId(1542);
+        order.setShippingWardCode("21211");
+        GHNCalculateFeeResponse res = new GHNCalculateFeeResponse();
+        res.setTotal(26000);
+        when(ghnClient.calculateFee(any())).thenReturn(res);
+
+        BigDecimal fee = shippingService.quoteReturnFee(order);
+
+        assertEquals(BigDecimal.valueOf(26000), fee);
+        org.mockito.ArgumentCaptor<GHNCalculateFeeRequest> captor = org.mockito.ArgumentCaptor.forClass(GHNCalculateFeeRequest.class);
+        verify(ghnClient).calculateFee(captor.capture());
+        assertEquals(1542, captor.getValue().getFrom_district_id());
+        assertEquals("21211", captor.getValue().getFrom_ward_code());
+        assertEquals(1442, captor.getValue().getTo_district_id());
+        assertEquals("20101", captor.getValue().getTo_ward_code());
+    }
+
+    @Test
+    @DisplayName("quoteReturnFee: thiếu địa chỉ người mua hoặc GHN lỗi thì trả null để người gọi dùng phương án thay thế")
+    void quoteReturnFee_ReturnsNullWhenUnavailable() {
+        order.setShippingDistrictId(null);
+        assertNull(shippingService.quoteReturnFee(order));
+        assertNull(shippingService.quoteReturnFee(null));
+        verifyNoInteractions(ghnClient);
+
+        order.setShippingDistrictId(1542);
+        order.setShippingWardCode("21211");
+        when(ghnClient.calculateFee(any())).thenThrow(new RuntimeException("GHN timeout"));
+        assertNull(shippingService.quoteReturnFee(order));
+    }
+
+    @Test
+    @DisplayName("createReturnShipment: tạo đơn GHN với from = người mua, to = shop, client_order_code có hậu tố -RET")
+    void createReturnShipment_BuildsReverseOrder() {
+        order.setShippingDistrictId(1542);
+        order.setShippingWardCode("21211");
+        com.marketplace.ecommerce.shipping.dto.response.GHNCreateOrderResponse res =
+                new com.marketplace.ecommerce.shipping.dto.response.GHNCreateOrderResponse();
+        res.setOrderCode("GHNRET1");
+        when(ghnClient.createOrder(any())).thenReturn(res);
+
+        assertEquals("GHNRET1", shippingService.createReturnShipment(order));
+
+        org.mockito.ArgumentCaptor<GHNCreateOrderRequest> captor = org.mockito.ArgumentCaptor.forClass(GHNCreateOrderRequest.class);
+        verify(ghnClient).createOrder(captor.capture());
+        assertEquals(1542, captor.getValue().getFrom_district_id());
+        assertEquals("21211", captor.getValue().getFrom_ward_code());
+        assertEquals(order.getShippingName(), captor.getValue().getFrom_name());
+        assertEquals("1442", captor.getValue().getTo_district_id());
+        assertEquals(0, captor.getValue().getCod_amount());
+        assertTrue(captor.getValue().getClient_order_code().endsWith("-RET"));
+    }
+
+    @Test
+    @DisplayName("createReturnShipment: thiếu địa chỉ hoặc GHN lỗi thì trả null")
+    void createReturnShipment_ReturnsNullWhenUnavailable() {
+        order.setShippingDistrictId(null);
+        assertNull(shippingService.createReturnShipment(order));
+        assertNull(shippingService.createReturnShipment(null));
+        verifyNoInteractions(ghnClient);
+
+        order.setShippingDistrictId(1542);
+        order.setShippingWardCode("21211");
+        when(ghnClient.createOrder(any())).thenThrow(new RuntimeException("GHN timeout"));
+        assertNull(shippingService.createReturnShipment(order));
+    }
 }

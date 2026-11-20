@@ -6,6 +6,7 @@ import com.marketplace.ecommerce.order.entity.Order;
 import com.marketplace.ecommerce.order.entity.OrderReturn;
 import com.marketplace.ecommerce.order.repository.OrderRepository;
 import com.marketplace.ecommerce.order.repository.OrderReturnRepository;
+import com.marketplace.ecommerce.payment.repository.TransactionRepository;
 import com.marketplace.ecommerce.order.valueObjects.OrderStatus;
 import com.marketplace.ecommerce.order.valueObjects.ReturnStatus;
 import com.marketplace.ecommerce.shipping.dto.response.ShippingFeeRecordResponse;
@@ -42,6 +43,8 @@ class ShippingFeeAdminServiceImplTest {
     private OrderRepository orderRepository;
     @Mock
     private OrderReturnRepository orderReturnRepository;
+    @Mock
+    private TransactionRepository transactionRepository;
 
     @InjectMocks
     private ShippingFeeAdminServiceImpl service;
@@ -187,5 +190,27 @@ class ShippingFeeAdminServiceImplTest {
         when(orderRepository.sumShippingFeeOfGhnOrders()).thenReturn(null);
         when(orderReturnRepository.sumShippingFeeOfReturnShipments()).thenReturn(null);
         assertEquals(0, service.summary().getGrandTotal().signum());
+    }
+
+    @Test
+    @DisplayName("Chiều đi: hoàn tiền không cần trả hàng đã trích quỹ ký quỹ -> Shop chịu")
+    void outbound_RefundOnlyChargedToShopFund() {
+        when(transactionRepository.existsByDedupeKey("COMPENSATION:OUTBOUND_SHIPPING:" + order.getId())).thenReturn(true);
+
+        ShippingFeeRecordResponse r = service.list("OUTBOUND", pageable).getContent().get(0);
+
+        assertEquals("SHOP_FUND", r.getPayer());
+        assertTrue(r.isDeductedFromShopFund());
+    }
+
+    @Test
+    @DisplayName("Chiều đi: kiện trả hàng đã trích cước hai chiều -> Shop chịu cả chiều đi")
+    void outbound_ReturnCompletedChargedToShopFund() {
+        when(orderReturnRepository.findByOrderId(order.getId())).thenReturn(java.util.Optional.of(orderReturn));
+
+        ShippingFeeRecordResponse r = service.list("OUTBOUND", pageable).getContent().get(0);
+
+        assertEquals("SHOP_FUND", r.getPayer());
+        assertTrue(r.isDeductedFromShopFund());
     }
 }

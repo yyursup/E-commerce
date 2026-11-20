@@ -13,7 +13,7 @@ export const directionLabel = (direction) =>
 export const createdByLabel = (createdBy) =>
   createdBy === 'BUYER' ? 'Người mua tạo đơn' : 'Shop tạo đơn'
 
-/** Ai chịu phí: chiều đi do người mua đã trả khi đặt hàng; chiều về trích từ quỹ ký quỹ shop khi người mua thắng. */
+/** Ai chịu phí: mặc định chiều đi do người mua đã trả; khi người mua được hoàn tiền (thắng tranh chấp) cước hai chiều trích từ quỹ ký quỹ shop. */
 export const payerLabel = (record) => {
   if (record?.payer === 'SHOP_FUND') {
     return record.deductedFromShopFund ? 'Đã trích quỹ ký quỹ shop' : 'Quỹ ký quỹ shop (chờ phán quyết)'

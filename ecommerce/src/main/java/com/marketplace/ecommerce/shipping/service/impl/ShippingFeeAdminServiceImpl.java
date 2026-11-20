@@ -5,6 +5,7 @@ import com.marketplace.ecommerce.order.entity.Order;
 import com.marketplace.ecommerce.order.entity.OrderReturn;
 import com.marketplace.ecommerce.order.repository.OrderRepository;
 import com.marketplace.ecommerce.order.repository.OrderReturnRepository;
+import com.marketplace.ecommerce.payment.repository.TransactionRepository;
 import com.marketplace.ecommerce.shipping.dto.response.ShippingFeeRecordResponse;
 import com.marketplace.ecommerce.shipping.dto.response.ShippingFeeSummaryResponse;
 import com.marketplace.ecommerce.shipping.service.ShippingFeeAdminService;
@@ -34,6 +35,7 @@ public class ShippingFeeAdminServiceImpl implements ShippingFeeAdminService {
 
     private final OrderRepository orderRepository;
     private final OrderReturnRepository orderReturnRepository;
+    private final TransactionRepository transactionRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -79,7 +81,25 @@ public class ShippingFeeAdminServiceImpl implements ShippingFeeAdminService {
                 .build();
     }
 
+    /**
+     * Cước chiều đi do Shop chịu khi đơn kết thúc bằng hoàn tiền cho người mua (trích quỹ ký quỹ):
+     * hoàn tiền không cần trả hàng (khóa COMPENSATION:OUTBOUND_SHIPPING) hoặc hoàn tất kiện trả hàng
+     * (cước hai chiều đã trích). Ngược lại chiều đi là tiền người mua đã trả.
+     */
+    private boolean isOutboundBorneByShop(Order o) {
+        if (o.getId() == null) {
+            return false;
+        }
+        if (transactionRepository.existsByDedupeKey("COMPENSATION:OUTBOUND_SHIPPING:" + o.getId())) {
+            return true;
+        }
+        return orderReturnRepository.findByOrderId(o.getId())
+                .map(r -> Boolean.TRUE.equals(r.getIsReturnShippingDeducted()))
+                .orElse(false);
+    }
+
     private ShippingFeeRecordResponse toOutbound(Order o) {
+        boolean shopBorne = isOutboundBorneByShop(o);
         return ShippingFeeRecordResponse.builder()
                 .direction(OUTBOUND)
                 .orderId(o.getId())
@@ -91,8 +111,8 @@ public class ShippingFeeAdminServiceImpl implements ShippingFeeAdminService {
                 .trackingCode(o.getGhnOrderCode())
                 .fee(nz(o.getShippingFee()))
                 .status(o.getStatus() != null ? o.getStatus().name() : null)
-                .payer("BUYER")
-                .deductedFromShopFund(false)
+                .payer(shopBorne ? "SHOP_FUND" : "BUYER")
+                .deductedFromShopFund(shopBorne)
                 .createdAt(o.getCreatedAt())
                 .build();
     }

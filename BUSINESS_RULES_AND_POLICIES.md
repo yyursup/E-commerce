@@ -163,11 +163,12 @@ Phán quyết của Quản trị viên bắt buộc phải gắn mã Điều kho
 
 ### 7.2. Quỹ Ký Quỹ Bảo Lãnh Gian Hàng (Shop Escrow Fund)
 - Mọi gian hàng hoạt động bắt buộc duy trì số dư Quỹ ký quỹ bảo lãnh theo Cấp độ uy tín sao:
-  - Hạng 1 sao: Tối thiểu 2.000.000 VNĐ.
-  - Hạng 2 sao: Tối thiểu 3.500.000 VNĐ.
+  - Hạng 1 sao: dưới 1.000.000 VNĐ (cơ bản).
+  - Hạng 2 sao: Tối thiểu 1.000.000 VNĐ.
   - Hạng 3 sao: Tối thiểu 5.000.000 VNĐ.
-  - Hạng 4 sao: Tối thiểu 7.500.000 VNĐ.
-  - Hạng 5 sao: Tối thiểu 10.000.000 VNĐ.
+  - Hạng 4 sao: Tối thiểu 20.000.000 VNĐ.
+  - Hạng 5 sao: Tối thiểu 50.000.000 VNĐ.
+  - Các mức trên là cấu hình mặc định, Admin có thể thay đổi tại trang cấu hình bậc sao. Gian hàng có thể ký quỹ cao hơn mức tối thiểu của bậc để có khoảng đệm trước khi các khoản trích (bồi thường, cước vận chuyển) làm số dư xuống dưới ngưỡng.
 - Khi xảy ra bồi thường hoặc phạt vi phạm, hệ thống tự động cấn trừ từ Quỹ này.
 - **Quy định bù quỹ hụt (Deficit Top-up)**: Khi quỹ bị trích xuống dưới hạn mức của bậc sao hiện tại, gian hàng chuyển sang trạng thái thiếu hụt (`DEFICIT`) và có 72 giờ để nạp bù. Nạp đủ trong hạn thì trạng thái thiếu hụt được xóa. Quá hạn, hệ thống tự động (job quét mỗi 10 phút) giáng bậc uy tín xuống bậc cao nhất mà số dư hiện tại còn đáp ứng, cập nhật lại mức cam kết và gửi thông báo cho Người bán; Người bán có thể nạp thêm để được nâng lại bậc. Nếu số dư thấp hơn cả bậc thấp nhất thì giữ trạng thái thiếu hụt và không đặt lại hạn.
 

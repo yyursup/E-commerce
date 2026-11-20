@@ -321,7 +321,7 @@ export default function ShopEscrowFund() {
     return stars
   }
 
-  const getTxTypeBadge = (type) => {
+  const getTxTypeBadge = (type, referenceCode) => {
     switch (type) {
       case 'INITIAL_DEPOSIT':
         return (
@@ -336,6 +336,13 @@ export default function ShopEscrowFund() {
           </span>
         )
       case 'COMPENSATION_DEDUCTION':
+        if (String(referenceCode || '').startsWith('SHIPDEDUCT')) {
+          return (
+            <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-600 border border-amber-500/20">
+              <HiOutlineArrowSmDown className="h-3.5 w-3.5" /> Cước vận chuyển (trả GHN)
+            </span>
+          )
+        }
         return (
           <span className="inline-flex items-center gap-1 rounded-md bg-rose-500/10 px-2.5 py-1 text-xs font-semibold text-rose-500 border border-rose-500/20">
             <HiOutlineArrowSmDown className="h-3.5 w-3.5" /> Trích đền bù
@@ -565,10 +572,10 @@ export default function ShopEscrowFund() {
               </div>
               <div>
                 <h3 className="text-base font-bold text-rose-500">
-                  CẢNH BÁO HỤT QUỸ KÝ QUỸ DO TRÍCH BỒI THƯỜNG
+                  CẢNH BÁO HỤT QUỸ KÝ QUỸ
                 </h3>
                 <p className={cn('text-sm mt-1', isDark ? 'text-slate-300' : 'text-stone-700')}>
-                  Số dư Quỹ ký quỹ của bạn vừa bị trích tiền bồi thường tranh chấp và đang thiếu hụt{' '}
+                  Số dư Quỹ ký quỹ của bạn vừa bị trích tiền (bồi thường tranh chấp hoặc cước vận chuyển) và đang thiếu hụt{' '}
                   <span className="font-bold text-rose-500">{formatVND(fund?.deficitAmount)}</span>{' '}
                   so với ngưỡng tối thiểu của bậc {fund?.currentTrustLevel} sao.
                 </p>
@@ -576,6 +583,9 @@ export default function ShopEscrowFund() {
                   <HiOutlineClock className="h-4 w-4" />
                   Hạn chót nạp bù để giữ nguyên {fund?.currentTrustLevel} sao: {formatDateTime(fund?.deficitDeadline)} (Hệ thống sẽ tự động giáng cấp sau thời hạn này).
                 </div>
+                <p className={cn('mt-2 text-xs', isDark ? 'text-slate-400' : 'text-stone-600')}>
+                  Gợi ý: bạn có thể nạp dư so với mức tối thiểu của bậc để có khoảng đệm, tránh bị giáng cấp khi phát sinh thêm các khoản trích (bồi thường, cước vận chuyển).
+                </p>
               </div>
             </div>
             <button
@@ -829,7 +839,7 @@ export default function ShopEscrowFund() {
           <div>
             <h2 className="text-base font-bold">Lịch sử biến động số dư quỹ ký quỹ</h2>
             <p className={cn('text-xs mt-1', isDark ? 'text-slate-400' : 'text-stone-500')}>
-              Sổ cái minh bạch ghi lại mọi giao dịch nạp đầu, nạp bù, trích đền bù tranh chấp.
+              Sổ cái minh bạch ghi lại mọi giao dịch nạp đầu, nạp bù, trích đền bù tranh chấp và cước vận chuyển.
             </p>
           </div>
           <span className="text-xs text-slate-400">Tổng cộng: {totalElements} giao dịch</span>
@@ -871,7 +881,7 @@ export default function ShopEscrowFund() {
                         {formatDateTime(tx.createdAt)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        {getTxTypeBadge(tx.transactionType)}
+                        {getTxTypeBadge(tx.transactionType, tx.referenceCode)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap font-bold">
                         <span className={isPositive ? 'text-emerald-500' : 'text-rose-500'}>

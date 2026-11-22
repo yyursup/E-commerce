@@ -1,6 +1,7 @@
 package com.marketplace.ecommerce.product.validate;
 
 import com.marketplace.ecommerce.common.exception.CustomException;
+import com.marketplace.ecommerce.product.dto.request.CreateProductRequest;
 import com.marketplace.ecommerce.product.dto.request.ProductVariantRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -43,6 +44,27 @@ public class ProductValidation {
                 String label = (!color.isEmpty() && !size.isEmpty()) ? (color + " - " + size) : (!color.isEmpty() ? color : size);
                 throw new CustomException("Phát hiện phân loại hàng bị trùng lặp: '" + label + "'. Mỗi phân loại hàng phải có ít nhất một thuộc tính khác biệt.");
             }
+        }
+    }
+
+    /**
+     * BR-07: sản phẩm đăng bán phải có ít nhất 1 ảnh và còn hàng
+     * (ít nhất 1 phân loại còn tồn kho, hoặc tồn kho chung > 0 nếu không có phân loại).
+     */
+    public void validatePublishable(CreateProductRequest request) {
+        if (request.getImages() == null || request.getImages().isEmpty()) {
+            throw new CustomException("Sản phẩm phải có ít nhất 1 ảnh.");
+        }
+
+        List<ProductVariantRequest> variants = request.getVariants();
+        boolean inStock;
+        if (variants != null && !variants.isEmpty()) {
+            inStock = variants.stream().anyMatch(v -> v.getStock() != null && v.getStock() > 0);
+        } else {
+            inStock = request.getStockQuantity() != null && request.getStockQuantity() > 0;
+        }
+        if (!inStock) {
+            throw new CustomException("Sản phẩm phải còn hàng: cần ít nhất 1 phân loại có tồn kho lớn hơn 0.");
         }
     }
 }

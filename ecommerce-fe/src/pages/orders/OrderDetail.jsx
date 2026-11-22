@@ -16,6 +16,7 @@ import returnService from '../../services/returnService'
 import escrowService from '../../services/escrow'
 import reportService from '../../services/report'
 import ReviewModal from '../../components/ReviewModal'
+import reviewService from '../../services/review'
 import OrderReportModal from '../../components/OrderReportModal'
 import CustomerReturnCard from './components/CustomerReturnCard'
 import OrderDisputeBanner from './components/OrderDisputeBanner'
@@ -34,7 +35,7 @@ export default function OrderDetail() {
   const [order, setOrder] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [reviewModal, setReviewModal] = useState({ open: false, productId: null, productName: '' })
+  const [reviewModal, setReviewModal] = useState({ open: false, productId: null, productName: '', existingReview: null })
   const [showReportModal, setShowReportModal] = useState(false)
   const [returnInfo, setReturnInfo] = useState(null)
   const [report, setReport] = useState(null)
@@ -166,6 +167,23 @@ export default function OrderDetail() {
   const stepIndex = TRACK_INDEX[order.status]
   const paymentLabel = order.paymentMethod === 'VNPAY' ? 'VNPay' : order.paymentMethod === 'WALLET' ? 'Ví sàn' : 'COD'
 
+
+  // Mở form đánh giá: nếu đã có đánh giá thì cho sửa (trong 7 ngày), chưa có thì viết mới
+  const handleOpenReview = async (reviewTarget) => {
+    const base = { open: true, productId: reviewTarget.productId, productName: reviewTarget.productName }
+    try {
+      const existing = await reviewService.getMyReview(reviewTarget.productId, order?.id)
+      const ageMs = Date.now() - new Date(existing.createdAt).getTime()
+      if (ageMs > 7 * 24 * 60 * 60 * 1000) {
+        toast.error('Đánh giá chỉ có thể chỉnh sửa trong vòng 7 ngày kể từ khi tạo.')
+        return
+      }
+      setReviewModal({ ...base, existingReview: existing })
+    } catch {
+      setReviewModal({ ...base, existingReview: null })
+    }
+  }
+
   return (
     <div className={cn('min-h-screen px-4 py-6 sm:px-6 lg:px-8', isDark ? 'bg-slate-950' : 'bg-stone-50')}>
       <div className="mx-auto flex max-w-7xl flex-col gap-5">
@@ -255,9 +273,7 @@ export default function OrderDetail() {
                 orderStatus={order.status}
                 isDark={isDark}
                 formatCurrency={formatOrderCurrency}
-                onOpenReview={(reviewTarget) =>
-                  setReviewModal({ open: true, productId: reviewTarget.productId, productName: reviewTarget.productName })
-                }
+                onOpenReview={handleOpenReview}
               />
             </section>
           </div>
@@ -287,10 +303,11 @@ export default function OrderDetail() {
 
         <ReviewModal
           isOpen={reviewModal.open}
-          onClose={() => setReviewModal({ open: false, productId: null, productName: '' })}
+          onClose={() => setReviewModal({ open: false, productId: null, productName: '', existingReview: null })}
           subOrderId={order?.id}
           productId={reviewModal.productId}
           productName={reviewModal.productName}
+          existingReview={reviewModal.existingReview}
           onPageRefresh={fetchOrder}
         />
         <OrderReportModal isOpen={showReportModal} onClose={() => setShowReportModal(false)} order={order} onSuccess={fetchOrder} />

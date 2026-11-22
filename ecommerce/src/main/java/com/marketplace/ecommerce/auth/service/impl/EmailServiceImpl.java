@@ -37,7 +37,11 @@ public class EmailServiceImpl implements EmailService {
 
     private final JavaMailSender javaMailSender;
 
+    private static final long OTP_TTL_MILLIS = 5 * 60 * 1000L;
+
     public final Map<String, String> storageMap = new ConcurrentHashMap<>();
+
+    private final Map<String, Long> otpCreatedAt = new ConcurrentHashMap<>();
 
     @Override
     @Async
@@ -116,12 +120,20 @@ public class EmailServiceImpl implements EmailService {
             return false;
         }
         String storedOtp = storageMap.get(email);
+        Long createdAt = otpCreatedAt.get(email);
+        if (storedOtp != null && createdAt != null
+                && System.currentTimeMillis() - createdAt > OTP_TTL_MILLIS) {
+            log.warn("OTP expired for email: {}", email);
+            storageMap.remove(email);
+            otpCreatedAt.remove(email);
+            return false;
+        }
         if (storedOtp != null && storedOtp.equals(otpVerify)) {
             log.info("OTP verification successful for email: {}", email);
 
             return true;
         }
-        log.warn("OTP verification failed for email: {}. Stored OTP: {}, Provided OTP: {}", email, storedOtp, otpVerify);
+        log.warn("OTP verification failed for email: {}. OTP did not match or is missing.", email);
         return false;
 
     }
@@ -133,6 +145,7 @@ public class EmailServiceImpl implements EmailService {
                 log.warn("Cannot clear OTP. Email is null.");
                 return;
             }
+            otpCreatedAt.remove(email);
             String removedOtp = storageMap.remove(email);
             if (removedOtp != null) {
                 log.info("OTP for {} cleared successfully.", email);
@@ -146,6 +159,7 @@ public class EmailServiceImpl implements EmailService {
     public String storageOtp(MailBody mailBody, String otp) {
         if (mailBody != null && mailBody.getTo() != null && mailBody.getTo().getEmail() != null && otp != null) {
             storageMap.put(mailBody.getTo().getEmail(), otp);
+            otpCreatedAt.put(mailBody.getTo().getEmail(), System.currentTimeMillis());
             log.info("OTP for {} stored successfully.", mailBody.getTo().getEmail());
         } else {
             log.warn("Could not store OTP. MailBody, recipient email, or OTP is null.");

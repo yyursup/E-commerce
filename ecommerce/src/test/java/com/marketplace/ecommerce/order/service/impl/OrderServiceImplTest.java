@@ -198,6 +198,7 @@ class OrderServiceImplTest {
         });
 
         when(productVariantRepository.findById(sampleVariant.getId())).thenReturn(Optional.of(sampleVariant));
+        org.mockito.Mockito.lenient().when(productVariantRepository.findByIdForUpdate(sampleVariant.getId())).thenReturn(Optional.of(sampleVariant));
 
         OrderResponse res = orderService.convertCartToOrder(accountId, req);
         assertNotNull(res);
@@ -248,6 +249,7 @@ class OrderServiceImplTest {
             return o;
         });
         when(productVariantRepository.findById(sampleVariant.getId())).thenReturn(Optional.of(sampleVariant));
+        org.mockito.Mockito.lenient().when(productVariantRepository.findByIdForUpdate(sampleVariant.getId())).thenReturn(Optional.of(sampleVariant));
 
         OrderResponse res = orderService.convertCartToOrder(accountId, req);
         assertNotNull(res);
@@ -279,6 +281,7 @@ class OrderServiceImplTest {
             return o;
         });
         when(productVariantRepository.findById(sampleVariant.getId())).thenReturn(Optional.of(sampleVariant));
+        org.mockito.Mockito.lenient().when(productVariantRepository.findByIdForUpdate(sampleVariant.getId())).thenReturn(Optional.of(sampleVariant));
 
         OrderResponse res = orderService.convertCartToOrder(accountId, req);
         assertNotNull(res);
@@ -386,6 +389,7 @@ class OrderServiceImplTest {
                 .thenReturn(Optional.of(sampleAddress));
         when(cartRepository.findByUserIdWithItems(sampleBuyer.getId())).thenReturn(Optional.of(sampleCart));
         when(productVariantRepository.findById(sampleVariant.getId())).thenReturn(Optional.of(sampleVariant));
+        org.mockito.Mockito.lenient().when(productVariantRepository.findByIdForUpdate(sampleVariant.getId())).thenReturn(Optional.of(sampleVariant));
 
         CustomException ex = assertThrows(CustomException.class, () -> orderService.convertCartToOrder(accountId, req));
         assertTrue(ex.getMessage().contains("không đủ số lượng"));
@@ -1032,6 +1036,7 @@ class OrderServiceImplTest {
         when(userRepository.findByAccountId(accountId)).thenReturn(Optional.of(sampleSellerUser));
         when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
         when(productVariantRepository.findById(varId)).thenReturn(Optional.of(variant));
+        org.mockito.Mockito.lenient().when(productVariantRepository.findByIdForUpdate(varId)).thenReturn(Optional.of(variant));
         when(orderRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         OrderResponse res = orderService.updateOrderStatus(accountId, orderId, "CANCELLED");

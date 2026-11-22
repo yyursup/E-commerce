@@ -396,16 +396,21 @@ public class OrderServiceImpl implements OrderService {
         order.setNotes(request.getNotes());
         order.setSubtotal(subtotal);
         order.setShippingFee(shippingFee);
-        ProductCategory primaryCategory = (cartItems != null && !cartItems.isEmpty() && cartItems.get(0).getProduct() != null)
-                ? cartItems.get(0).getProduct().getProductCategory()
-                : null;
-        ConditionGrade primaryCondition = (cartItems != null && !cartItems.isEmpty() && cartItems.get(0).getProduct() != null)
-                ? cartItems.get(0).getProduct().getConditionGrade()
-                : ConditionGrade.GRADE_NEW;
-
-        BigDecimal commissionRate = commissionCalculationService.calculateFinalRate(shop, primaryCategory, primaryCondition);
-        BigDecimal platformCommission = subtotal.multiply(commissionRate).divide(BigDecimal.valueOf(100), 2,
-                RoundingMode.HALF_UP);
+        // Hoa hồng tính theo từng sản phẩm (danh mục + tình trạng của chính nó), cộng lại thành hoa hồng của đơn
+        BigDecimal platformCommission = BigDecimal.ZERO;
+        for (CartItem ci : cartItems) {
+            Product p = ci.getProduct();
+            BigDecimal itemRate = commissionCalculationService.calculateFinalRate(shop,
+                    p != null ? p.getProductCategory() : null,
+                    p != null && p.getConditionGrade() != null ? p.getConditionGrade() : ConditionGrade.GRADE_NEW);
+            platformCommission = platformCommission.add(
+                    cartItemLineAmount(ci).multiply(itemRate).divide(BigDecimal.valueOf(100), 6, RoundingMode.HALF_UP));
+        }
+        platformCommission = platformCommission.setScale(2, RoundingMode.HALF_UP);
+        // Tỷ lệ lưu trên đơn là tỷ lệ bình quân gia quyền theo giá trị từng sản phẩm
+        BigDecimal commissionRate = subtotal.signum() > 0
+                ? platformCommission.multiply(BigDecimal.valueOf(100)).divide(subtotal, 4, RoundingMode.HALF_UP)
+                : BigDecimal.ZERO;
         order.setPlatformCommission(platformCommission);
         order.setCommissionRate(commissionRate.doubleValue());
         order.calculateTotal();
@@ -434,7 +439,8 @@ public class OrderServiceImpl implements OrderService {
 
             BigDecimal unitPrice = product.getBasePrice();
             if (cartItem.getVariantId() != null) {
-                ProductVariant variant = productVariantRepository.findById(cartItem.getVariantId())
+                ProductVariant variant = // Khóa bi quan (BR-05): chặn hai đơn cùng trừ một lượng tồn kho
+                productVariantRepository.findByIdForUpdate(cartItem.getVariantId())
                         .filter(v -> !Boolean.TRUE.equals(v.getDeleted()))
                         .orElseThrow(
                                 () -> new CustomException("Biến thể sản phẩm không tồn tại: " + product.getName()));
@@ -526,6 +532,21 @@ public class OrderServiceImpl implements OrderService {
             }
         }
         return subtotal;
+    }
+
+    /** Thành tiền của một dòng giỏ hàng, cùng cách tính đơn giá với getBigDecimal. */
+    private BigDecimal cartItemLineAmount(CartItem cartItem) {
+        Product product = cartItem.getProduct();
+        BigDecimal unitPrice;
+        if (cartItem.getVariantId() != null) {
+            unitPrice = productVariantRepository.findById(cartItem.getVariantId())
+                    .map(ProductVariant::getPrice)
+                    .orElse(product.getBasePrice());
+            if (unitPrice == null) unitPrice = product.getBasePrice();
+        } else {
+            unitPrice = cartItem.getUnitPrice() != null ? cartItem.getUnitPrice() : product.getBasePrice();
+        }
+        return unitPrice.multiply(BigDecimal.valueOf(cartItem.getQuantity()));
     }
 
     private List<CartItem> findActiveItemByProduct(Cart cart, UUID shopId) {

@@ -20,6 +20,7 @@ import com.marketplace.ecommerce.request.entity.Report;
 import com.marketplace.ecommerce.request.entity.Request;
 import com.marketplace.ecommerce.request.repository.ReportRepository;
 import com.marketplace.ecommerce.request.repository.RequestRepository;
+import com.marketplace.ecommerce.shipping.service.ShippingService;
 import com.marketplace.ecommerce.shop.entity.Shop;
 import com.marketplace.ecommerce.shop.service.ShopEscrowFundService;
 import org.junit.jupiter.api.BeforeEach;
@@ -69,6 +70,7 @@ class OrderReturnServiceLifecycleTest {
     @Mock private UserRepository userRepository;
     @Mock private ShopEscrowFundService shopEscrowFundService;
     @Mock private ChatService chatService;
+    @Mock private ShippingService shippingService;
 
     @InjectMocks private OrderReturnServiceImpl orderReturnService;
 

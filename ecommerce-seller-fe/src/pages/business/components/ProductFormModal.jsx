@@ -227,6 +227,22 @@ export default function ProductFormModal({ product = null, onClose, onSuccess })
       }
     }
 
+    // BR-07: sản phẩm mới phải có ít nhất 1 ảnh và còn hàng
+    if (!product) {
+      if (imageUrls.length === 0) {
+        toast.error('Vui lòng thêm ít nhất 1 ảnh cho sản phẩm')
+        return
+      }
+      const hasStock =
+        variants.length > 0
+          ? variants.some((v) => Number(v.stock) > 0)
+          : Number(formData.stockQuantity) > 0
+      if (!hasStock) {
+        toast.error('Sản phẩm phải còn hàng: cần ít nhất 1 phân loại có tồn kho lớn hơn 0')
+        return
+      }
+    }
+
     try {
       setSubmitting(true)
 

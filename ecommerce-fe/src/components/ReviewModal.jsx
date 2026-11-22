@@ -12,7 +12,8 @@ import { useThemeStore } from '../store/useThemeStore';
 import reviewService from '../services/review';
 import toast from 'react-hot-toast';
 
-export default function ReviewModal({ isOpen, onClose, subOrderId, productId, productName, onPageRefresh }) {
+export default function ReviewModal({ isOpen, onClose, subOrderId, productId, productName, onPageRefresh, existingReview = null }) {
+    const isEdit = !!existingReview;
     const isDark = useThemeStore((s) => s.theme) === 'dark';
     const [loading, setLoading] = useState(false);
     const [rating, setRating] = useState(5);
@@ -22,6 +23,14 @@ export default function ReviewModal({ isOpen, onClose, subOrderId, productId, pr
     // Media states (Images & Videos)
     const [images, setImages] = useState([]); // [{ id, file, previewUrl, name, size }]
     const [videos, setVideos] = useState([]); // [{ id, file, previewUrl, name, size }]
+
+    // Pre-fill rating/comment when editing an existing review
+    useEffect(() => {
+        if (isOpen && existingReview) {
+            setRating(existingReview.rating || 5);
+            setComment(existingReview.comment || '');
+        }
+    }, [isOpen, existingReview]);
 
     const imageInputRef = useRef(null);
     const videoInputRef = useRef(null);
@@ -160,15 +169,24 @@ export default function ReviewModal({ isOpen, onClose, subOrderId, productId, pr
             const imageFiles = images.map((img) => img.file);
             const videoFiles = videos.map((vid) => vid.file);
 
-            await reviewService.createReview(productId, {
-                subOrderId,
-                rating,
-                comment,
-                images: imageFiles,
-                videos: videoFiles,
-            });
-
-            toast.success('Cảm ơn bạn đã đánh giá sản phẩm!');
+            if (isEdit) {
+                await reviewService.updateReview(existingReview.id, {
+                    rating,
+                    comment,
+                    newImages: imageFiles,
+                    newVideos: videoFiles,
+                });
+                toast.success('Đã cập nhật đánh giá của bạn!');
+            } else {
+                await reviewService.createReview(productId, {
+                    subOrderId,
+                    rating,
+                    comment,
+                    images: imageFiles,
+                    videos: videoFiles,
+                });
+                toast.success('Cảm ơn bạn đã đánh giá sản phẩm!');
+            }
             if (onPageRefresh) onPageRefresh();
             handleClose();
         } catch (error) {
@@ -207,7 +225,7 @@ export default function ReviewModal({ isOpen, onClose, subOrderId, productId, pr
                         <div className="flex items-center justify-between border-b p-5 sm:p-6 dark:border-slate-800 shrink-0">
                             <div className="min-w-0 pr-4">
                                 <h3 className="text-lg sm:text-xl font-bold text-amber-500 truncate">
-                                    Đánh giá sản phẩm
+                                    {isEdit ? 'Sửa đánh giá' : 'Đánh giá sản phẩm'}
                                 </h3>
                                 <p className={cn('text-xs sm:text-sm font-medium mt-0.5 truncate', isDark ? 'text-slate-400' : 'text-stone-500')}>
                                     {productName}
@@ -435,7 +453,7 @@ export default function ReviewModal({ isOpen, onClose, subOrderId, productId, pr
                                             <span>Đang tải tệp & gửi đánh giá...</span>
                                         </>
                                     ) : (
-                                        'Gửi đánh giá'
+                                        isEdit ? 'Lưu thay đổi' : 'Gửi đánh giá'
                                     )}
                                 </button>
                             </div>

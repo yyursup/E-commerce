@@ -83,6 +83,19 @@ class EmailServiceImplTest {
     }
 
     @Test
+    @DisplayName("verifyOtp trả false khi OTP đã quá 5 phút")
+    void testVerifyOtp_Expired() throws Exception {
+        emailService.storageOtp(mailBody, "654321");
+        java.lang.reflect.Field f = EmailServiceImpl.class.getDeclaredField("otpCreatedAt");
+        f.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        java.util.Map<String, Long> created = (java.util.Map<String, Long>) f.get(emailService);
+        created.put("customer@example.com", System.currentTimeMillis() - 5 * 60 * 1000L - 1000L);
+
+        assertFalse(emailService.verifyOtp("customer@example.com", "654321"));
+    }
+
+    @Test
     @DisplayName("clearOtp: email null, rỗng hoặc không tồn tại trong map")
     void testClearOtp_EdgeCases() {
         assertDoesNotThrow(() -> emailService.clearOtp(null));

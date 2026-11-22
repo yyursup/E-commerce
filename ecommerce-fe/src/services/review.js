@@ -99,6 +99,18 @@ const reviewService = {
         }
     },
 
+    // Get the current user's review of a product in a sub-order (throws if none)
+    getMyReview: async (productId, subOrderId) => {
+        try {
+            const response = await axiosClient.get(`${REVIEW_BASE}/reviews/me`, {
+                params: { productId, subOrderId }
+            });
+            return response.data;
+        } catch (error) {
+            throw error.response ? error.response.data : error;
+        }
+    },
+
     // Get all reviews written by current user
     getMyAllReviews: async ({ page = 0, size = 10 } = {}) => {
         try {

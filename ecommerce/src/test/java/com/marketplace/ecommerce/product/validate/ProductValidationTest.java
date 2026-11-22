@@ -1,6 +1,8 @@
 package com.marketplace.ecommerce.product.validate;
 
 import com.marketplace.ecommerce.common.exception.CustomException;
+import com.marketplace.ecommerce.product.dto.request.CreateProductRequest;
+import com.marketplace.ecommerce.product.dto.request.ProductImageRequest;
 import com.marketplace.ecommerce.product.dto.request.ProductVariantRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -114,5 +116,61 @@ class ProductValidationTest {
         v2.setStock(3);
 
         assertDoesNotThrow(() -> validator.validateVariants(List.of(v1, v2)));
+    }
+
+    private CreateProductRequest publishable(int stock, boolean withImage) {
+        CreateProductRequest req = new CreateProductRequest();
+        req.setStockQuantity(stock);
+        if (withImage) {
+            ProductImageRequest img = new ProductImageRequest();
+            img.setImageUrl("http://img/1.png");
+            req.setImages(List.of(img));
+        }
+        return req;
+    }
+
+    @Test
+    @DisplayName("BR-07: ném lỗi khi không có ảnh")
+    void testValidatePublishable_NoImage() {
+        CustomException ex = assertThrows(CustomException.class,
+                () -> validator.validatePublishable(publishable(5, false)));
+        assertTrue(ex.getMessage().contains("ít nhất 1 ảnh"));
+    }
+
+    @Test
+    @DisplayName("BR-07: ném lỗi khi hết hàng (không phân loại)")
+    void testValidatePublishable_NoStock() {
+        CustomException ex = assertThrows(CustomException.class,
+                () -> validator.validatePublishable(publishable(0, true)));
+        assertTrue(ex.getMessage().contains("còn hàng"));
+    }
+
+    @Test
+    @DisplayName("BR-07: ném lỗi khi mọi phân loại đều hết hàng")
+    void testValidatePublishable_AllVariantsOutOfStock() {
+        CreateProductRequest req = publishable(10, true);
+        ProductVariantRequest v = new ProductVariantRequest();
+        v.setColor("Đen");
+        v.setPrice(BigDecimal.TEN);
+        v.setStock(0);
+        req.setVariants(List.of(v));
+        assertThrows(CustomException.class, () -> validator.validatePublishable(req));
+    }
+
+    @Test
+    @DisplayName("BR-07: hợp lệ khi có ảnh và ít nhất 1 phân loại còn hàng")
+    void testValidatePublishable_Ok() {
+        CreateProductRequest req = publishable(0, true);
+        ProductVariantRequest v1 = new ProductVariantRequest();
+        v1.setColor("Đen");
+        v1.setPrice(BigDecimal.TEN);
+        v1.setStock(0);
+        ProductVariantRequest v2 = new ProductVariantRequest();
+        v2.setColor("Trắng");
+        v2.setPrice(BigDecimal.TEN);
+        v2.setStock(3);
+        req.setVariants(List.of(v1, v2));
+        assertDoesNotThrow(() -> validator.validatePublishable(req));
+        assertDoesNotThrow(() -> validator.validatePublishable(publishable(5, true)));
     }
 }

@@ -172,7 +172,7 @@ public class QueryProductServiceImpl implements QueryProductService {
 //    @Transactional(readOnly = true)
 //    public List<ProductResponse> getAllProductsByShop(UUID shopId) {
 //        if (!shopRepository.existsById(shopId)) {
-//            throw new CustomException("Shop not found");
+//            throw new CustomException("Không tìm thấy gian hàng");
 //        }
 //
 //        return productRepository.findAllByShopIdWithDetails(shopId).stream()
@@ -190,10 +190,10 @@ public class QueryProductServiceImpl implements QueryProductService {
 
     private Shop getShopByAccountId(UUID accountId) {
         User user = userRepository.findByAccountId(accountId)
-                .orElseThrow(() -> new CustomException("User not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy người dùng"));
 
         return shopRepository.findByUserId(user.getId())
-                .orElseThrow(() -> new CustomException("Shop not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy gian hàng"));
     }
 
     @Override

@@ -44,10 +44,10 @@ public class ReviewServiceImpl implements ReviewService {
     @Transactional(readOnly = true)
     public ReviewResponse getMyReview(UUID accountId, UUID productId, UUID subOrderId) {
         User user = userRepository.findByAccountId(accountId)
-                .orElseThrow(() -> new CustomException("Account not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy tài khoản"));
 
         Review review = reviewRepository.findByUserIdAndProductIdAndSubOrderId(user.getId(), productId, subOrderId)
-                .orElseThrow(() -> new CustomException("Review not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy đánh giá"));
 
         return ReviewResponse.fromEntity(review);
     }
@@ -56,7 +56,7 @@ public class ReviewServiceImpl implements ReviewService {
     @Transactional(readOnly = true)
     public Page<ReviewResponse> getMyReviews(UUID accountId, Pageable pageable) {
         User user = userRepository.findByAccountId(accountId)
-                .orElseThrow(() -> new CustomException("Account not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy tài khoản"));
 
         return reviewRepository.findByUserIdWithDetails(user.getId(), pageable)
                 .map(ReviewResponse::fromEntity);

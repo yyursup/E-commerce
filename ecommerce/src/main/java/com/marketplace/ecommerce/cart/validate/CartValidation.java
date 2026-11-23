@@ -14,7 +14,7 @@ public class CartValidation {
 
     public int normalizeAndValidateQuantity(Integer qty) {
         if (qty == null || qty <= 0) {
-            throw new RuntimeException("Quantity must be > 0");
+            throw new RuntimeException("Số lượng phải lớn hơn 0");
         }
         return qty;
     }

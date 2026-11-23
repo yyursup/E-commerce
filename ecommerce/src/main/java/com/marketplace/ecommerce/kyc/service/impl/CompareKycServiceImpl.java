@@ -33,10 +33,10 @@ public class CompareKycServiceImpl implements CompareKycService {
         EKycSession s = get(sessionId, accountId);
 
         if (s.getFrontHash() == null || s.getFrontHash().isBlank()) {
-            throw new IllegalStateException("Front not uploaded");
+            throw new IllegalStateException("Chưa tải lên ảnh mặt trước CCCD");
         }
         if (s.getSelfieHash() == null || s.getSelfieHash().isBlank()) {
-            throw new IllegalStateException("Selfie not uploaded");
+            throw new IllegalStateException("Chưa tải lên ảnh khuôn mặt");
         }
 
         CompareResponse res = vnpt.compare(s.getFrontHash(), s.getSelfieHash(), sessionId.toString());
@@ -55,7 +55,7 @@ public class CompareKycServiceImpl implements CompareKycService {
 
         if (passed) {
             Account account = accountRepository.findById(accountId)
-                    .orElseThrow(() -> new IllegalStateException("No account found"));
+                    .orElseThrow(() -> new IllegalStateException("Không tìm thấy tài khoản"));
             account.setAccountVerified(true);
             accountRepository.save(account);
         }

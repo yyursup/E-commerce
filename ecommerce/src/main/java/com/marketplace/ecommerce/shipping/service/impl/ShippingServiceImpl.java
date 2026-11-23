@@ -47,7 +47,7 @@ public class ShippingServiceImpl implements ShippingService {
         }
 
         if (order.getShippingDistrictId() == null || order.getShippingWardCode() == null) {
-            throw new CustomException("Missing information about the district and wardCode (district_id, ward_code).");
+            throw new CustomException("Thiếu thông tin quận/huyện và phường/xã (district_id, ward_code).");
         }
 
         List<GHNCreateOrderRequest.GHNItem> ghnItems = new ArrayList<>();
@@ -220,7 +220,7 @@ public class ShippingServiceImpl implements ShippingService {
 
     public BigDecimal quoteFee(Shop shop, List<CartItem> cartItems, Integer toDistrictId, String toWardCode) {
         if (toDistrictId == null || toWardCode == null || toWardCode.isBlank()) {
-            throw new CustomException("Missing information about the district and wardCode");
+            throw new CustomException("Thiếu thông tin quận/huyện và phường/xã");
         }
 
         Integer fromDistrictId = shop.getDistrictId();
@@ -253,7 +253,7 @@ public class ShippingServiceImpl implements ShippingService {
             return BigDecimal.valueOf(feeRes.getTotal());
         } catch (Exception e) {
             log.error("GHN calculate fee failed", e);
-            throw new CustomException("Can not calculate fee for district " + fromDistrictId);
+            throw new CustomException("Không tính được phí vận chuyển cho quận/huyện " + fromDistrictId);
         }
     }
 }

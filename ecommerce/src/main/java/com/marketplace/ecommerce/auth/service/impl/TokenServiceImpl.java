@@ -51,7 +51,7 @@ public class TokenServiceImpl implements TokenService {
                 .getBody();
         String username = claims.getSubject();
         return accountRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("Account not found"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản"));
     }
 
     @Override

@@ -1452,7 +1452,7 @@ public class DataInitializer implements CommandLineRunner {
                                 .map(existing -> {
                                         if (existing.getWalletType() != WalletType.ESCROW) {
                                                 throw new IllegalStateException(
-                                                                "Admin user already has non-ESCROW wallet");
+                                                                "Tài khoản admin đã có ví không phải ví ký quỹ");
                                         }
                                         return existing;
                                 })
@@ -1877,25 +1877,25 @@ public class DataInitializer implements CommandLineRunner {
 
         private Commission initializeCommission(Order order) {
                 if (order == null || order.getId() == null) {
-                        throw new IllegalArgumentException("Order is null");
+                        throw new IllegalArgumentException("Đơn hàng không được để trống");
                 }
 
                 return commissionRepository.findByOrderId(order.getId())
                                 .orElseGet(() -> {
                                         if (order.getStatus() != OrderStatus.DELIVERED
                                                         && order.getStatus() != OrderStatus.COMPLETED) {
-                                                throw new IllegalStateException("Order is not eligible for commission: "
+                                                throw new IllegalStateException("Đơn hàng chưa đủ điều kiện tính hoa hồng: "
                                                                 + order.getStatus());
                                         }
 
                                         if (order.getShop() == null || order.getShop().getUser() == null
                                                         || order.getShop().getUser().getId() == null) {
-                                                throw new IllegalStateException("Seller not found for order: "
+                                                throw new IllegalStateException("Không tìm thấy người bán của đơn hàng: "
                                                                 + order.getOrderNumber());
                                         }
 
                                         if (order.getItems() == null || order.getItems().isEmpty()) {
-                                                throw new IllegalStateException("Order items not found for order: "
+                                                throw new IllegalStateException("Không tìm thấy sản phẩm của đơn hàng: "
                                                                 + order.getOrderNumber());
                                         }
 

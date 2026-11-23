@@ -49,7 +49,7 @@ class AuthValidationTest {
     void testValidate_UsernameExists() {
         when(accountRepository.validateAccountUniqueness(any(), any(), any())).thenReturn("USERNAME_EXISTS");
         CustomException ex = assertThrows(CustomException.class, () -> authValidation.validate(req));
-        assertEquals("Username is already taken", ex.getMessage());
+        assertEquals("Tên đăng nhập đã được sử dụng", ex.getMessage());
     }
 
     @Test
@@ -64,7 +64,7 @@ class AuthValidationTest {
     void testValidate_PhoneExists() {
         when(accountRepository.validateAccountUniqueness(any(), any(), any())).thenReturn("PHONE_EXISTS");
         CustomException ex = assertThrows(CustomException.class, () -> authValidation.validate(req));
-        assertEquals("Phone number is already taken", ex.getMessage());
+        assertEquals("Số điện thoại đã được sử dụng", ex.getMessage());
     }
 
     @Test

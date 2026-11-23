@@ -23,11 +23,11 @@ public class ProductVariantRequest {
 
     private String size;
 
-    @NotNull(message = "Variant price must not be null")
-    @DecimalMin(value = "0.0", inclusive = true, message = "Variant price must be greater than or equal to 0")
+    @NotNull(message = "Vui lòng nhập giá biến thể")
+    @DecimalMin(value = "0.0", inclusive = true, message = "Giá biến thể phải từ 0 trở lên")
     private BigDecimal price;
 
-    @NotNull(message = "Variant stock must not be null")
-    @Min(value = 0, message = "Variant stock must be greater than or equal to 0")
+    @NotNull(message = "Vui lòng nhập tồn kho biến thể")
+    @Min(value = 0, message = "Tồn kho biến thể phải từ 0 trở lên")
     private Integer stock;
 }

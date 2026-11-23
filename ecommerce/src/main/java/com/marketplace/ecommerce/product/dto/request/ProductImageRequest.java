@@ -15,8 +15,8 @@ public class ProductImageRequest {
 
     private UUID id;
 
-    @NotBlank(message = "Image URL must not be blank")
-    @Size(max = 255, message = "Image URL must not exceed 255 characters")
+    @NotBlank(message = "Vui lòng nhập đường dẫn ảnh")
+    @Size(max = 255, message = "Đường dẫn ảnh tối đa 255 ký tự")
     private String imageUrl;
 
     private Boolean isThumbnail = false;

@@ -86,10 +86,10 @@ public class RequestServiceImpl implements RequestService {
     public RequestResponse approveSellerRegistration(UUID requestId, UUID adminAccountId, String response) {
 
         Account acc = accountRepository.findById(adminAccountId)
-                .orElseThrow(() -> new CustomException("Account not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy tài khoản"));
 
         Request req = requestRepository.findById(requestId)
-                .orElseThrow(() -> new CustomException("Request not found: " + requestId));
+                .orElseThrow(() -> new CustomException("Không tìm thấy yêu cầu: " + requestId));
 
         ApproveSellerContext ctx = requestValidation.validateApproveSellerRequest(req, requestId);
 
@@ -107,7 +107,7 @@ public class RequestServiceImpl implements RequestService {
         // Update account role from CUSTOMER to BUSINESS
         Account ownerAccount = req.getAccount();
         Role businessRole = roleRepository.findByRoleName("BUSINESS")
-                .orElseThrow(() -> new CustomException("BUSINESS role not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy vai trò BUSINESS"));
         ownerAccount.setRole(businessRole);
         accountRepository.save(ownerAccount);
 
@@ -120,7 +120,7 @@ public class RequestServiceImpl implements RequestService {
     @Transactional
     public RequestResponse approveRequest(UUID requestId, UUID adminAccountId, String response) {
         Request req = requestRepository.findById(requestId)
-                .orElseThrow(() -> new CustomException("Request not found: " + requestId));
+                .orElseThrow(() -> new CustomException("Không tìm thấy yêu cầu: " + requestId));
 
         if (req.getType() == RequestType.SELLER_REGISTRATION) {
             return approveSellerRegistration(requestId, adminAccountId, response);
@@ -130,17 +130,17 @@ public class RequestServiceImpl implements RequestService {
             return approveBanReview(requestId, adminAccountId, response);
         }
 
-        throw new CustomException("Unsupported request type for approve: " + req.getType());
+        throw new CustomException("Loại yêu cầu không hỗ trợ duyệt: " + req.getType());
     }
 
     @Override
     @Transactional
     public RequestResponse approveBanReview(UUID requestId, UUID adminAccountId, String response) {
         Account admin = accountRepository.findById(adminAccountId)
-                .orElseThrow(() -> new CustomException("Account not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy tài khoản"));
 
         Request req = requestRepository.findById(requestId)
-                .orElseThrow(() -> new CustomException("Request not found: " + requestId));
+                .orElseThrow(() -> new CustomException("Không tìm thấy yêu cầu: " + requestId));
 
         if (req.getType() != RequestType.APPEAL) {
             throw new CustomException("Yêu cầu này không phải là đơn xem xét kỷ luật.");
@@ -203,10 +203,10 @@ public class RequestServiceImpl implements RequestService {
     @Transactional
     public RequestResponse rejectRequest(UUID adminAccountId, UUID requestId, String response) {
         Account acc = accountRepository.findById(adminAccountId)
-                .orElseThrow(() -> new CustomException("Account not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy tài khoản"));
 
         Request request = requestRepository.findById(requestId)
-                .orElseThrow(() -> new CustomException("Request not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy yêu cầu"));
 
         if (request.getStatus() != RequestStatus.PENDING) {
             throw new CustomException("Yêu cầu này đã được xử lý trước đó.");
@@ -228,7 +228,7 @@ public class RequestServiceImpl implements RequestService {
     public RequestDetailsResponse getDetails(UUID requestId) {
 
         Request r = requestRepository.findById(requestId)
-                .orElseThrow(() -> new CustomException("Request not found: " + requestId));
+                .orElseThrow(() -> new CustomException("Không tìm thấy yêu cầu: " + requestId));
 
         Object detail = switch (r.getType()) {
 
@@ -436,7 +436,7 @@ public class RequestServiceImpl implements RequestService {
             case SELLER_REGISTRATION -> {
                 Seller s = sellerRepository.findByRequestId(requestId);
                 if (s == null)
-                    throw new CustomException("Seller detail not found for request: " + requestId);
+                    throw new CustomException("Không tìm thấy thông tin người bán của yêu cầu: " + requestId);
 
                 yield RegisterSellerResponse.from(s);
             }
@@ -484,7 +484,7 @@ public class RequestServiceImpl implements RequestService {
                         .build();
             }
 
-            default -> throw new CustomException("Unsupported request type: " + r.getType());
+            default -> throw new CustomException("Loại yêu cầu không được hỗ trợ: " + r.getType());
         };
 
         return RequestDetailsResponse.from(r, detail);
@@ -534,7 +534,7 @@ public class RequestServiceImpl implements RequestService {
         }
 
         Account account = accountRepository.findByIdForUpdate(accountId)
-                .orElseThrow(() -> new CustomException("Account not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy tài khoản"));
 
         if (!account.isBanned()) {
             throw new CustomException("Chỉ tài khoản đang bị khóa vĩnh viễn mới có thể gửi yêu cầu xem xét.");
@@ -643,7 +643,7 @@ public class RequestServiceImpl implements RequestService {
     @Transactional(readOnly = true)
     public BanReviewStatusResponse getBanReviewStatus(UUID accountId) {
         Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new CustomException("Account not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy tài khoản"));
 
         List<Request> appeals = requestRepository.findByAccountIdAndTypeOrderByCreatedAtDesc(accountId, RequestType.APPEAL);
         CreateRequestResponse latest = appeals.isEmpty() ? null : CreateRequestResponse.from(appeals.get(0));

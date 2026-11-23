@@ -24,7 +24,7 @@ public class PlatformSettingServiceImpl implements PlatformSettingService {
         return repository.findByKey(PlatformConstant.KEY_COMMISSION_RATE)
                 .map(PlatformSettingResponse::from)
                 .orElseThrow(() -> new CustomException(
-                        "Platform setting not found: " + PlatformConstant.KEY_COMMISSION_RATE
+                        "Không tìm thấy cài đặt sàn: " + PlatformConstant.KEY_COMMISSION_RATE
                 ));
     }
 
@@ -97,7 +97,7 @@ public class PlatformSettingServiceImpl implements PlatformSettingService {
     @Transactional
     public PlatformSettingResponse updateSetting(String key, String value) {
         if (key == null || key.isBlank()) {
-            throw new CustomException("Setting key cannot be empty");
+            throw new CustomException("Khóa cài đặt không được để trống");
         }
         PlatformSetting setting = setValue(key, value);
         return PlatformSettingResponse.from(setting);

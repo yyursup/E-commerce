@@ -15,11 +15,11 @@ public class CreateReviewRequest {
 
     private UUID subOrderId;
 
-    @NotNull(message = "Please rate from one to five")
+    @NotNull(message = "Vui lòng đánh giá từ 1 đến 5 sao")
     @Min(1) @Max(5)
     private Integer rating;
 
-    @Size(max = 2000, message = "The content is too long ")
+    @Size(max = 2000, message = "Nội dung quá dài")
     private String comment;
 
     private List<MultipartFile> images;

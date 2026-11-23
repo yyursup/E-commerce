@@ -38,7 +38,7 @@ public class QueryOrderServiceImpl implements QueryOrderService {
         requireUserByAccountId(accountId);
 
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new CustomException("Order not found."));
+                .orElseThrow(() -> new CustomException("Không tìm thấy đơn hàng."));
 
         return OrderResponse.from(order, orderDisputeService.getDisputeInfo(order.getId()),
                 getReturnInfo(order.getId()));
@@ -76,10 +76,10 @@ public class QueryOrderServiceImpl implements QueryOrderService {
         User user = requireUserByAccountId(accountId);
 
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new CustomException("Order not found."));
+                .orElseThrow(() -> new CustomException("Không tìm thấy đơn hàng."));
 
         if (order.getUser() == null || !order.getUser().getId().equals(user.getId())) {
-            throw new CustomException("Forbidden");
+            throw new CustomException("Bạn không có quyền truy cập");
         }
 
         return OrderResponse.from(order, orderDisputeService.getDisputeInfo(order.getId()),
@@ -92,10 +92,10 @@ public class QueryOrderServiceImpl implements QueryOrderService {
         Shop shop = requireOwnedShop(seller);
 
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new CustomException("Order not found."));
+                .orElseThrow(() -> new CustomException("Không tìm thấy đơn hàng."));
 
         if (order.getShop() == null || !order.getShop().getId().equals(shop.getId())) {
-            throw new CustomException("Order not found.");
+            throw new CustomException("Không tìm thấy đơn hàng.");
         }
 
         return OrderResponse.from(order, orderDisputeService.getDisputeInfo(order.getId()),
@@ -153,19 +153,19 @@ public class QueryOrderServiceImpl implements QueryOrderService {
 
     private User requireUserByAccountId(UUID accountId) {
         return userRepository.findByAccountId(accountId)
-                .orElseThrow(() -> new CustomException("User not found."));
+                .orElseThrow(() -> new CustomException("Không tìm thấy người dùng."));
     }
 
     private Shop requireShop(User user) {
         return shopRepository.findByUserId(user.getId())
-                .orElseThrow(() -> new CustomException("Shop not found."));
+                .orElseThrow(() -> new CustomException("Không tìm thấy gian hàng."));
     }
 
     private Shop requireOwnedShop(User seller) {
         Shop shop = requireShop(seller);
 
         if (shop.getUser() == null || !shop.getUser().getId().equals(seller.getId())) {
-            throw new CustomException("Forbidden");
+            throw new CustomException("Bạn không có quyền truy cập");
         }
         return shop;
     }

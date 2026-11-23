@@ -69,23 +69,23 @@ public class CommissionServiceImpl implements CommissionService {
     @Transactional
     public void createCommission(UUID orderId) {
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new CustomException("Order not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy đơn hàng"));
 
         if (commissionRepository.existsByOrderId(order.getId())) {
             return;
         }
 
         if (order.getStatus() != OrderStatus.DELIVERED && order.getStatus() != OrderStatus.COMPLETED) {
-            throw new CustomException("Order is not eligible for commission: " + order.getStatus());
+            throw new CustomException("Đơn hàng chưa đủ điều kiện tính hoa hồng: " + order.getStatus());
         }
 
         if (order.getShop() == null || order.getShop().getUser() == null || order.getShop().getUser().getId() == null) {
-            throw new CustomException("Seller not found");
+            throw new CustomException("Không tìm thấy người bán");
         }
 
         Set<OrderItem> orderItems = order.getItems();
         if (orderItems == null || orderItems.isEmpty()) {
-            throw new CustomException("Order items not found");
+            throw new CustomException("Không tìm thấy sản phẩm của đơn hàng");
         }
 
         BigDecimal orderAmount = order.getSubtotal() == null ? BigDecimal.ZERO : order.getSubtotal();
@@ -133,7 +133,7 @@ public class CommissionServiceImpl implements CommissionService {
     @Transactional(readOnly = true)
     public CommissionDetailResponse getByOrderId(UUID orderId) {
         Commission commission = commissionRepository.findByOrderId(orderId)
-                .orElseThrow(() -> new CustomException("Commission not found for orderId=" + orderId));
+                .orElseThrow(() -> new CustomException("Không tìm thấy hoa hồng của đơn hàng orderId=" + orderId));
 
         String sellerName = userRepository.findById(commission.getSellerId())
                 .map(User::getFullName)
@@ -146,7 +146,7 @@ public class CommissionServiceImpl implements CommissionService {
     @Transactional(readOnly = true)
     public BigDecimal getTotalCommissionBySeller(UUID accountId) {
         User seller = userRepository.findByAccountId(accountId)
-                .orElseThrow(() -> new RuntimeException("can not find seller"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người bán"));
 
         BigDecimal result = commissionRepository.getTotalCommissionBySeller(seller.getId());
         return result == null ? BigDecimal.ZERO : result;
@@ -156,7 +156,7 @@ public class CommissionServiceImpl implements CommissionService {
     @Transactional(readOnly = true)
     public BigDecimal getTotalNetIncomeBySeller(UUID accountId) {
         User seller = userRepository.findByAccountId(accountId)
-                .orElseThrow(() -> new RuntimeException("can not find seller"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người bán"));
         BigDecimal result = commissionRepository.getTotalNetIncomeBySeller(seller.getId());
         return result == null ? BigDecimal.ZERO : result;
     }

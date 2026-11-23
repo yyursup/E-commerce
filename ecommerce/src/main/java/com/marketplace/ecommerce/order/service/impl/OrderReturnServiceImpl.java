@@ -77,10 +77,10 @@ public class OrderReturnServiceImpl implements OrderReturnService {
         }
 
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new CustomException("Order not found: " + orderId));
+                .orElseThrow(() -> new CustomException("Không tìm thấy đơn hàng: " + orderId));
 
         Report report = reportRepository.findById(reportId)
-                .orElseThrow(() -> new CustomException("Report not found: " + reportId));
+                .orElseThrow(() -> new CustomException("Không tìm thấy khiếu nại: " + reportId));
 
         Shop shop = order.getShop();
         String returnAddress = (shop.getAddress() != null && !shop.getAddress().isBlank())
@@ -511,7 +511,7 @@ public class OrderReturnServiceImpl implements OrderReturnService {
 
     private User getUserByAccountId(UUID accountId) {
         return userRepository.findByAccountId(accountId)
-                .orElseThrow(() -> new CustomException("User not found for account: " + accountId));
+                .orElseThrow(() -> new CustomException("Không tìm thấy người dùng của tài khoản: " + accountId));
     }
 
     private void validateBuyerOwnership(OrderReturn returnObj, User user) {

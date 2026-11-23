@@ -55,7 +55,7 @@ class ProductImageServiceImplTest {
         req.setImages(List.of(img1, img2));
 
         CustomException ex = assertThrows(CustomException.class, () -> service.createProductImage(product, req));
-        assertTrue(ex.getMessage().contains("Only one thumbnail is allowed"));
+        assertTrue(ex.getMessage().contains("Chỉ được chọn một ảnh đại diện"));
     }
 
     @Test

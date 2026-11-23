@@ -61,10 +61,10 @@ public class InventoryHistoryServiceImpl implements InventoryHistoryService {
     @Override
     public Page<InventoryHistoryResponse> getHistoryByShopId(UUID accountId, int page, int size) {
         User user = userRepository.findByAccountId(accountId)
-                .orElseThrow(() -> new CustomException("User not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy người dùng"));
 
         Shop shop = shopRepository.findByUserId(user.getId())
-                .orElseThrow(() -> new CustomException("Shop not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy gian hàng"));
 
         Pageable pageable = PageRequest.of(page, size);
         Page<InventoryHistory> histories = inventoryHistoryRepository.findByShopIdOrderByCreatedAtDesc(shop.getId(), pageable);

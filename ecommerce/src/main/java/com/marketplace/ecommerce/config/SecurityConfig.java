@@ -40,7 +40,7 @@ public class SecurityConfig {
     public UserDetailsService userDetailsService() {
         return username -> userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException(
-                        "User not found: " + username));
+                        "Không tìm thấy người dùng: " + username));
     }
 
     @Bean

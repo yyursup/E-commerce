@@ -235,7 +235,7 @@ public class GlobalExceptionHandler {
     }
 
     private String sanitize(String message) {
-        if (message == null) return "Unexpected error";
+        if (message == null) return "Đã xảy ra lỗi không mong muốn";
         return message.replaceAll("(?i)(select|insert|update|delete).*", "[SQL]");
     }
 }

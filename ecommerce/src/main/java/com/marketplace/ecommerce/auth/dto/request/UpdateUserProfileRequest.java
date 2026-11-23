@@ -11,15 +11,15 @@ import java.time.LocalDate;
 
 @Data
 public class UpdateUserProfileRequest {
-    @Size(max = 100, message = "fullName max 100 chars")
+    @Size(max = 100, message = "Họ tên tối đa 100 ký tự")
     private String fullName;
 
-    @Pattern(regexp = "^(\\+84|0)(3|5|7|8|9)\\d{8}$", message = "phoneNumber invalid")
+    @Pattern(regexp = "^(\\+84|0)(3|5|7|8|9)\\d{8}$", message = "Số điện thoại không hợp lệ")
     private String phoneNumber;
 
     private GenderType gender;
 
-    @Past(message = "dateOfBirth must be in the past")
+    @Past(message = "Ngày sinh phải là một ngày trong quá khứ")
     private LocalDate dateOfBirth;
 
     private MultipartFile avatarFile;

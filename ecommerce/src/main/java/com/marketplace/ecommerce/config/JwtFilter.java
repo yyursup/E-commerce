@@ -109,7 +109,7 @@ public class JwtFilter extends OncePerRequestFilter {
                 filterChain.doFilter(request, response);
             } else {
                 resolver.resolveException(request, response, null,
-                        new InvalidCredentialsException("Missing Authorization Bearer token"));
+                        new InvalidCredentialsException("Thiếu token xác thực (Authorization Bearer)"));
             }
             return;
         }
@@ -198,7 +198,7 @@ public class JwtFilter extends OncePerRequestFilter {
                 filterChain.doFilter(request, response);
             } else {
                 resolver.resolveException(request, response, null,
-                        new InvalidCredentialsException("Token expired"));
+                        new InvalidCredentialsException("Token đã hết hạn"));
             }
 
         } catch (Exception ex) {
@@ -206,7 +206,7 @@ public class JwtFilter extends OncePerRequestFilter {
                 filterChain.doFilter(request, response);
             } else {
                 resolver.resolveException(request, response, null,
-                        new InvalidCredentialsException("Invalid token"));
+                        new InvalidCredentialsException("Token không hợp lệ"));
             }
         }
     }

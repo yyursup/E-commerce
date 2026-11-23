@@ -1021,7 +1021,7 @@ export default function ShopEscrowFund() {
               )}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg font-bold text-xs tracking-wider bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-stone-200 bg-white text-[9px] font-extrabold tracking-tight text-[#005BAA]">
                       VNPAY
                     </div>
                     <div>

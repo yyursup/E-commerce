@@ -32,6 +32,6 @@ public enum ShopStatus {
                 return status;
             }
         }
-        throw new IllegalArgumentException("Unknown ShopStatus code: " + code);
+        throw new IllegalArgumentException("Mã trạng thái gian hàng không hợp lệ: " + code);
     }
 }

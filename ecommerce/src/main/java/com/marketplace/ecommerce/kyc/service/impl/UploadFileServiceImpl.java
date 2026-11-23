@@ -17,7 +17,7 @@ public class UploadFileServiceImpl implements UploadFileService {
         UploadResponse up = vnpt.addFile(file, title, description);
         String hash = up != null && up.getObject() != null ? up.getObject().getHash() : null;
         if (hash == null || hash.isBlank()) {
-            throw new IllegalStateException("VNPT addFile returned empty hash");
+            throw new IllegalStateException("VNPT không trả về mã file khi tải lên");
         }
         return hash;
     }

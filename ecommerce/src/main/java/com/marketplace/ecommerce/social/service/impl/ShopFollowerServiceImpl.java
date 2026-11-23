@@ -30,10 +30,10 @@ public class ShopFollowerServiceImpl implements ShopFollowerService {
     @Transactional
     public FollowStatusResponse toggleFollowShop(UUID accountId, UUID shopId) {
         User user = userRepository.findByAccountId(accountId)
-                .orElseThrow(() -> new CustomException("User not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy người dùng"));
 
         Shop shop = shopRepository.findById(shopId)
-                .orElseThrow(() -> new CustomException("Shop not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy gian hàng"));
 
         // Don't allow following own shop
         if (shop.getUser() != null && shop.getUser().getId().equals(user.getId())) {

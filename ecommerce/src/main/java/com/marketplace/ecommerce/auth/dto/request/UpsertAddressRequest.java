@@ -9,36 +9,36 @@ import lombok.Data;
 @Data
 public class UpsertAddressRequest {
 
-    @NotBlank(message = "receiverName is required")
-    @Size(max = 100, message = "receiverName max 100 chars")
+    @NotBlank(message = "Vui lòng nhập tên người nhận")
+    @Size(max = 100, message = "Tên người nhận tối đa 100 ký tự")
     private String receiverName;
 
-    @NotBlank(message = "receiverPhone is required")
-    @Size(max = 20, message = "receiverPhone max 20 chars")
+    @NotBlank(message = "Vui lòng nhập số điện thoại người nhận")
+    @Size(max = 20, message = "Số điện thoại người nhận tối đa 20 ký tự")
     @Pattern(
             regexp = "^(\\+84|0)(3|5|7|8|9)\\d{8}$",
-            message = "receiverPhone invalid"
+            message = "Số điện thoại người nhận không hợp lệ"
     )
     private String receiverPhone;
 
-    @NotBlank(message = "addressLine is required")
-    @Size(max = 255, message = "addressLine max 255 chars")
+    @NotBlank(message = "Vui lòng nhập địa chỉ")
+    @Size(max = 255, message = "Địa chỉ tối đa 255 ký tự")
     private String addressLine;
 
-    @Size(max = 100, message = "city max 100 chars")
+    @Size(max = 100, message = "Tỉnh/thành phố tối đa 100 ký tự")
     private String city;
 
-    @Size(max = 100, message = "district max 100 chars")
+    @Size(max = 100, message = "Quận/huyện tối đa 100 ký tự")
     private String district;
 
-    @Size(max = 100, message = "ward max 100 chars")
+    @Size(max = 100, message = "Phường/xã tối đa 100 ký tự")
     private String ward;
 
-    @NotNull(message = "districtId is required")
+    @NotNull(message = "Vui lòng chọn quận/huyện")
     private Integer districtId;
 
-    @NotBlank(message = "wardCode is required")
-    @Size(max = 50, message = "wardCode max 50 chars")
+    @NotBlank(message = "Vui lòng chọn phường/xã")
+    @Size(max = 50, message = "Mã phường/xã tối đa 50 ký tự")
     private String wardCode;
 
     private Boolean isDefault;

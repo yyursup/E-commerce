@@ -350,7 +350,7 @@ class OrderServiceImplTest {
         when(cartRepository.findByUserIdWithItems(sampleBuyer.getId())).thenReturn(Optional.of(sampleCart));
 
         CustomException ex = assertThrows(CustomException.class, () -> orderService.convertCartToOrder(accountId, req));
-        assertTrue(ex.getMessage().contains("There's no items in this cart from the shop"));
+        assertTrue(ex.getMessage().contains("Giỏ hàng không có sản phẩm nào của gian hàng này"));
     }
 
     @Test
@@ -472,7 +472,7 @@ class OrderServiceImplTest {
         when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
 
         CustomException ex = assertThrows(CustomException.class, () -> orderService.retryCreateGhnOrder(orderId, accountId));
-        assertTrue(ex.getMessage().contains("You don't have any permissions"));
+        assertTrue(ex.getMessage().contains("Bạn không có quyền thực hiện thao tác này"));
     }
 
     @Test
@@ -488,7 +488,7 @@ class OrderServiceImplTest {
         when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
 
         CustomException ex = assertThrows(CustomException.class, () -> orderService.retryCreateGhnOrder(orderId, accountId));
-        assertTrue(ex.getMessage().contains("already has a GHN tracking code"));
+        assertTrue(ex.getMessage().contains("đã có mã vận đơn GHN"));
     }
 
     @Test
@@ -556,7 +556,7 @@ class OrderServiceImplTest {
         when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
 
         CustomException ex = assertThrows(CustomException.class, () -> orderService.setGhnOrderCodeManually(orderId, "GHN-123", accountId));
-        assertTrue(ex.getMessage().contains("You don't have permission"));
+        assertTrue(ex.getMessage().contains("Bạn không có quyền"));
     }
 
     @Test
@@ -571,7 +571,7 @@ class OrderServiceImplTest {
         when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
 
         CustomException ex = assertThrows(CustomException.class, () -> orderService.setGhnOrderCodeManually(orderId, "   ", accountId));
-        assertTrue(ex.getMessage().contains("must not be empty"));
+        assertTrue(ex.getMessage().contains("không được để trống"));
     }
 
     @Test
@@ -683,7 +683,7 @@ class OrderServiceImplTest {
         when(orderRepository.findByIdForUpdate(orderId)).thenReturn(Optional.of(order));
 
         CustomException ex = assertThrows(CustomException.class, () -> orderService.markReceivedByBuyer(orderId, accountId));
-        assertTrue(ex.getMessage().contains("You don't have permission"));
+        assertTrue(ex.getMessage().contains("Bạn không có quyền"));
     }
 
     @Test
@@ -844,16 +844,16 @@ class OrderServiceImplTest {
 
         // CONFIRMED không thể nhảy vọt sang DELIVERED
         CustomException ex1 = assertThrows(CustomException.class, () -> orderService.updateOrderStatus(accountId, orderId, "DELIVERED"));
-        assertTrue(ex1.getMessage().contains("Invalid transition"));
+        assertTrue(ex1.getMessage().contains("Không thể chuyển trạng thái"));
 
         // Mã trạng thái không tồn tại
         CustomException ex2 = assertThrows(CustomException.class, () -> orderService.updateOrderStatus(accountId, orderId, "INVALID_STATUS"));
-        assertTrue(ex2.getMessage().contains("Invalid status"));
+        assertTrue(ex2.getMessage().contains("Trạng thái không hợp lệ"));
 
         // Trạng thái SHIPPING không thể CANCELLED
         order.setStatus(OrderStatus.SHIPPING);
         CustomException ex3 = assertThrows(CustomException.class, () -> orderService.updateOrderStatus(accountId, orderId, "CANCELLED"));
-        assertTrue(ex3.getMessage().contains("Can not cancelOrder with status SHIPPING"));
+        assertTrue(ex3.getMessage().contains("Không thể hủy đơn hàng ở trạng thái SHIPPING"));
     }
 
     @Test
@@ -868,7 +868,7 @@ class OrderServiceImplTest {
         when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
 
         CustomException ex = assertThrows(CustomException.class, () -> orderService.updateOrderStatus(accountId, orderId, "PROCESSING"));
-        assertTrue(ex.getMessage().contains("You don't have any permission"));
+        assertTrue(ex.getMessage().contains("Bạn không có quyền"));
     }
 
     @Test

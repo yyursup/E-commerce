@@ -50,7 +50,7 @@ public class PaymentServiceImpl implements PaymentService {
         }
 
         if (!isChecksumValid) {
-            throw new CustomException("Invalid VNPay checksum");
+            throw new CustomException("Chữ ký VNPay không hợp lệ");
         }
 
         String txnRef = params.get("vnp_TxnRef");
@@ -70,7 +70,7 @@ public class PaymentServiceImpl implements PaymentService {
         }
 
         Payment payment = paymentRepository.findByTxnRef(txnRef)
-                .orElseThrow(() -> new CustomException("Payment not found by txnRef"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy giao dịch thanh toán theo txnRef"));
 
         if (payment.getStatus() == PaymentStatus.SUCCESS) {
             return;
@@ -120,17 +120,17 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     public String createPayment(UUID orderId, UUID accountId) {
         User user = userRepository.findByAccountId(accountId)
-                .orElseThrow(() -> new CustomException("User not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy người dùng"));
 
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new CustomException("Order not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy đơn hàng"));
 
         if (!user.getId().equals(order.getUser().getId())) {
-            throw new CustomException("You don't have permission to pay this order");
+            throw new CustomException("Bạn không có quyền thanh toán đơn hàng này");
         }
 
         if (order.getStatus() != OrderStatus.PENDING_PAYMENT) {
-            throw new CustomException("Order is not payable in current status: " + order.getStatus());
+            throw new CustomException("Đơn hàng không thể thanh toán ở trạng thái hiện tại: " + order.getStatus());
         }
 
         Payment payment = paymentRepository.findByOrderId(order.getId())
@@ -141,7 +141,7 @@ public class PaymentServiceImpl implements PaymentService {
                 );
 
         if (payment.getStatus() == PaymentStatus.SUCCESS) {
-            throw new CustomException("Payment already SUCCESS");
+            throw new CustomException("Đơn hàng đã được thanh toán thành công");
         }
         // Always generate a new txnRef per attempt (VNPay rejects duplicate refs)
         payment.setMethod(PaymentMethod.VNPAY);
@@ -170,7 +170,7 @@ public class PaymentServiceImpl implements PaymentService {
         for (OrderItem item : order.getItems()) {
             Product p = item.getProduct();
             if (p.getQuantity() < item.getQuantity()) {
-                throw new CustomException("Not enough stock");
+                throw new CustomException("Không đủ hàng trong kho");
             }
             p.setQuantity(p.getQuantity() - item.getQuantity());
         }

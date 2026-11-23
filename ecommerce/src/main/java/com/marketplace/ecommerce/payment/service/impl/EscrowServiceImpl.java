@@ -55,14 +55,14 @@ public class EscrowServiceImpl implements EscrowService {
     public void releaseByOrder(UUID orderId) {
 
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new CustomException("Order not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy đơn hàng"));
 
         if (order.getStatus() != OrderStatus.DELIVERED && order.getStatus() != OrderStatus.COMPLETED) {
             throw new CustomException("Order chưa đủ điều kiện release: " + order.getStatus());
         }
 
         Escrow escrow = escrowRepository.findByOrderIdForUpdate(orderId)
-                .orElseThrow(() -> new CustomException("Escrow not found for order"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy ký quỹ của đơn hàng"));
 
         if (escrow.getStatus() == EscrowStatus.RELEASED) {
             return;
@@ -104,11 +104,11 @@ public class EscrowServiceImpl implements EscrowService {
         escrow.setSellerWallet(sellerWallet);
 
         Wallet escrowWallet = walletRepository.findSystemWalletForUpdate(WalletType.ESCROW)
-                .orElseThrow(() -> new CustomException("System ESCROW wallet not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy ví ký quỹ của hệ thống"));
 
         BigDecimal amount = escrow.getAmount();
         if (amount == null || amount.signum() <= 0) {
-            throw new CustomException("Escrow amount invalid");
+            throw new CustomException("Số tiền ký quỹ không hợp lệ");
         }
 
         // 1. Phí ship khách trả (Sàn giữ lại trong ví ESCROW, Seller tuyệt đối không nhận)
@@ -256,10 +256,10 @@ public class EscrowServiceImpl implements EscrowService {
     public void refundByOrder(UUID orderId, String reason) {
 
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new CustomException("Order not found: " + orderId));
+                .orElseThrow(() -> new CustomException("Không tìm thấy đơn hàng: " + orderId));
 
         Escrow escrow = escrowRepository.findByOrderIdForUpdate(orderId)
-                .orElseThrow(() -> new CustomException("Escrow not found for order: " + orderId));
+                .orElseThrow(() -> new CustomException("Không tìm thấy ký quỹ của đơn hàng: " + orderId));
 
         if (escrow.getStatus() == EscrowStatus.REFUNDED) {
             return;
@@ -273,13 +273,13 @@ public class EscrowServiceImpl implements EscrowService {
         Wallet buyerWallet = escrow.getBuyerWallet();
 
         if (escrowWallet == null)
-            throw new CustomException("Escrow wallet missing");
+            throw new CustomException("Thiếu ví ký quỹ");
         if (buyerWallet == null)
-            throw new CustomException("Buyer wallet missing");
+            throw new CustomException("Thiếu ví người mua");
 
         BigDecimal amount = escrow.getAmount();
         if (amount == null || amount.signum() <= 0) {
-            throw new CustomException("Escrow amount invalid");
+            throw new CustomException("Số tiền ký quỹ không hợp lệ");
         }
 
         if (escrowWallet.getLockedBalance().compareTo(amount) < 0) {
@@ -340,10 +340,10 @@ public class EscrowServiceImpl implements EscrowService {
 
 
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new CustomException("Order not found: " + orderId));
+                .orElseThrow(() -> new CustomException("Không tìm thấy đơn hàng: " + orderId));
 
         Escrow escrow = escrowRepository.findByOrderIdForUpdate(orderId)
-                .orElseThrow(() -> new CustomException("Escrow not found for order: " + orderId));
+                .orElseThrow(() -> new CustomException("Không tìm thấy ký quỹ của đơn hàng: " + orderId));
 
         if (escrow.getStatus() == EscrowStatus.RELEASED || escrow.getStatus() == EscrowStatus.REFUNDED) {
             throw new CustomException("Ký quỹ đơn hàng đã được xử lý hoàn tất trước đó: " + escrow.getStatus());
@@ -358,10 +358,10 @@ public class EscrowServiceImpl implements EscrowService {
         Wallet sellerWallet = escrow.getSellerWallet();
 
         if (escrowWallet == null) {
-            throw new CustomException("Escrow wallet missing");
+            throw new CustomException("Thiếu ví ký quỹ");
         }
         if (buyerWallet == null) {
-            throw new CustomException("Buyer wallet missing");
+            throw new CustomException("Thiếu ví người mua");
         }
         if (sellerWallet == null) {
             sellerWallet = walletRepository.findByUserIdForUpdate(order.getShop().getUser().getId())
@@ -381,7 +381,7 @@ public class EscrowServiceImpl implements EscrowService {
 
         BigDecimal totalAmount = escrow.getAmount();
         if (totalAmount == null || totalAmount.signum() <= 0) {
-            throw new CustomException("Escrow amount invalid");
+            throw new CustomException("Số tiền ký quỹ không hợp lệ");
         }
 
         // Phí ship khách đã trả là tiền hộ GHN, không được đem chia cho Người mua/Người bán:

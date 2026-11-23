@@ -47,7 +47,7 @@ public class UserAddressServiceImpl implements UserAddressService {
     public UserAddressResponse updateMyAddress(UUID accountId, UUID addressId, UpsertAddressRequest req) {
         User u = requireUser(accountId);
         UserAddress a = userAddressRepository.findByIdAndUserIdAndDeletedFalse(addressId, u.getId())
-                .orElseThrow(() -> new CustomException("Address not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy địa chỉ"));
         apply(req, a);
         if (Boolean.TRUE.equals(req.getIsDefault())) {
             userAddressRepository.unsetDefaultExcept(u.getId(), a.getId());
@@ -64,7 +64,7 @@ public class UserAddressServiceImpl implements UserAddressService {
         User u = requireUser(accountId);
 
         UserAddress a = userAddressRepository.findByIdAndUserIdAndDeletedFalse(addressId, u.getId())
-                .orElseThrow(() -> new CustomException("Address not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy địa chỉ"));
 
         boolean wasDefault = Boolean.TRUE.equals(a.getIsDefault());
 
@@ -89,7 +89,7 @@ public class UserAddressServiceImpl implements UserAddressService {
         User u = requireUser(accountId);
 
         UserAddress a = userAddressRepository.findByIdAndUserIdAndDeletedFalse(addressId, u.getId())
-                .orElseThrow(() -> new CustomException("Address not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy địa chỉ"));
 
         userAddressRepository.unsetDefaultExcept(u.getId(), a.getId());
         a.setIsDefault(true);
@@ -100,7 +100,7 @@ public class UserAddressServiceImpl implements UserAddressService {
 
     private User requireUser(UUID accountId) {
         return userRepository.findByAccountId(accountId)
-                .orElseThrow(() -> new CustomException("User not found for accountId=" + accountId));
+                .orElseThrow(() -> new CustomException("Không tìm thấy người dùng với accountId=" + accountId));
     }
 
     @Override

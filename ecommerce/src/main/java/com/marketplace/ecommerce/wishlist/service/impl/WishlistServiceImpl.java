@@ -33,10 +33,10 @@ public class WishlistServiceImpl implements WishlistService {
     @Transactional
     public WishlistStatusResponse toggleWishlist(UUID accountId, UUID productId) {
         User user = userRepository.findByAccountId(accountId)
-                .orElseThrow(() -> new CustomException("User not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy người dùng"));
 
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new CustomException("Product not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy sản phẩm"));
 
         Optional<Wishlist> existing = wishlistRepository.findByUserIdAndProductId(user.getId(), product.getId());
         boolean isWishlisted;
@@ -83,7 +83,7 @@ public class WishlistServiceImpl implements WishlistService {
     @Transactional(readOnly = true)
     public Page<ProductResponse> getMyWishlist(UUID accountId, Pageable pageable) {
         User user = userRepository.findByAccountId(accountId)
-                .orElseThrow(() -> new CustomException("User not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy người dùng"));
 
         return wishlistRepository.findByUserId(user.getId(), pageable)
                 .map(w -> ProductResponse.from(w.getProduct()));

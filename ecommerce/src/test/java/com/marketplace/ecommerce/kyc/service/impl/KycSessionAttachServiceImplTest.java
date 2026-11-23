@@ -72,13 +72,29 @@ class KycSessionAttachServiceImplTest {
     }
 
     @Test
+    @DisplayName("attachFile gán backHash cho các biến thể tên mặt sau và lưu tài liệu loại BACK")
+    void testAttachFile_BackVariants() {
+        when(sessions.findByIdAndAccountId(sessionId, accountId)).thenReturn(Optional.of(session));
+
+        for (String name : new String[]{"new_back", "old_back", "old_ver_back", "NEW_VER_BACK"}) {
+            AttachDecision dec = attachService.attachFile(sessionId, accountId, "HASH_" + name, name);
+            assertTrue(dec.attached(), name);
+            assertEquals("backHash", dec.savedTo(), name);
+            assertEquals("HASH_" + name, session.getBackHash(), name);
+        }
+        assertNull(session.getFrontHash(), "Ảnh mặt sau không được ghi đè mặt trước");
+        verify(docs, times(4)).save(argThat((EKycDocument d) ->
+                d.getType() == com.marketplace.ecommerce.kyc.valueObjects.KycDocumentType.BACK));
+    }
+
+    @Test
     @DisplayName("attachFile từ chối khi tên phân loại không hỗ trợ")
     void testAttachFile_Unsupported() {
         when(sessions.findByIdAndAccountId(sessionId, accountId)).thenReturn(Optional.of(session));
 
         AttachDecision dec = attachService.attachFile(sessionId, accountId, "HASH_3", "unknown_card");
         assertFalse(dec.attached());
-        assertTrue(dec.reason().contains("not FRONT side"));
+        assertTrue(dec.reason().contains("không phải mặt trước, mặt sau CCCD"));
     }
 
     @Test

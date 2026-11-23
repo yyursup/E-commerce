@@ -51,7 +51,7 @@ function getKycUploadErrorMessage(type, res) {
   }
   if (type === 'front') return 'Ảnh không phải mặt trước CMND/CCCD. Vui lòng chụp lại mặt trước rõ nét, đủ 4 góc.'
   if (type === 'back') return 'Ảnh không phải mặt sau CMND/CCCD. Vui lòng chụp lại mặt sau rõ nét, đủ 4 góc.'
-  return 'Không nhận diện được khuôn mặt. Vui lòng chụp lại khuôn mặt rõ nét, ở nơi đủ sáng.'
+  return 'Ảnh chưa đúng là ảnh khuôn mặt. Vui lòng chụp lại, nhìn thẳng vào camera và để lộ rõ cả khuôn mặt.'
 }
 
 const KYC_STORAGE_KEY = 'seller_kyc_session_progress'
@@ -388,55 +388,42 @@ export default function SellerRegister() {
       return
     }
 
-    let file, docType
+    let file
     if (type === 'front') {
       if (!frontFile) {
         toast.error('Vui lòng chọn ảnh mặt trước CCCD.')
         return
       }
       file = frontFile
-      docType = 'FRONT'
     } else if (type === 'back') {
       if (!backFile) {
         toast.error('Vui lòng chọn ảnh mặt sau CCCD.')
         return
       }
       file = backFile
-      docType = 'BACK'
     } else if (type === 'selfie') {
       if (!selfieFile) {
         toast.error('Vui lòng chụp ảnh khuôn mặt.')
         return
       }
       file = selfieFile
-      docType = 'SELFIE'
     }
 
     setIsUploading(true)
     setKycError(null)
     try {
       const autoTitle = file?.name || `kyc-${type}-${Date.now()}`
-      if (type === 'back') {
-        // fullFlow-upload chưa lưu được mặt sau: backend chỉ nhận mặt trước và ảnh khuôn mặt
-        await kycService.uploadWithType({
-          sessionId,
-          type: docType,
-          file,
-          title: autoTitle,
-          description: `Upload ${type}`,
-        })
-      } else {
-        const res = await kycService.fullFlowUpload({
-          sessionId,
-          file,
-          title: autoTitle,
-          description: `Upload ${type}`,
-        })
-        // Backend tự nhận diện loại ảnh, nên phải kiểm tra ảnh được lưu đúng chỗ của bước hiện tại
-        const expectedSlot = type === 'front' ? 'frontHash' : 'selfieHash'
-        if (!res?.ok || res.savedTo !== expectedSlot) {
-          throw new Error(getKycUploadErrorMessage(type, res))
-        }
+      const res = await kycService.fullFlowUpload({
+        sessionId,
+        file,
+        title: autoTitle,
+        description: `Upload ${type}`,
+        type: type.toUpperCase(),
+      })
+      // Backend tự nhận diện loại ảnh, nên phải kiểm tra ảnh được lưu đúng chỗ của bước hiện tại
+      const expectedSlot = { front: 'frontHash', back: 'backHash', selfie: 'selfieHash' }[type]
+      if (!res?.ok || res.savedTo !== expectedSlot) {
+        throw new Error(getKycUploadErrorMessage(type, res))
       }
 
       if (type === 'front') {

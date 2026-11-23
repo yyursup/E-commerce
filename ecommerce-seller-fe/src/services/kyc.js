@@ -20,9 +20,9 @@ const kycService = {
     }
   },
 
-  fullFlowUpload: async ({ sessionId, file, title, description }) => {
+  fullFlowUpload: async ({ sessionId, file, title, description, type }) => {
     try {
-      const form = toFormData({ file, title, description });
+      const form = toFormData({ file, title, description, type });
       const response = await api.post(
         `${KYC_BASE}/sessions/${sessionId}/fullFlow-upload`,
         form,

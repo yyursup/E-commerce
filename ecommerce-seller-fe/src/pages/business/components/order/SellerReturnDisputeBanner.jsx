@@ -33,9 +33,9 @@ export default function SellerReturnDisputeBanner({
             <span>⚖️ Căn cứ Điều khoản: <strong>{report.policyClauseTitle || report.policyClauseCode}</strong></span>
           </div>
         )}
-        {report?.adminNote && (
+        {(report?.adminNote || report?.moderatorNote || report?.response) && (
           <p className="text-xs italic text-stone-600 dark:text-slate-300">
-            Ghi chú phán quyết BQT: &ldquo;{report.adminNote}&rdquo;
+            Ghi chú phán quyết BQT: &ldquo;{report.adminNote || report.moderatorNote || report.response}&rdquo;
           </p>
         )}
 

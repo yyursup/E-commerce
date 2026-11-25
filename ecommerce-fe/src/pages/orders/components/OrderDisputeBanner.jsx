@@ -97,6 +97,18 @@ export default function OrderDisputeBanner({ order, returnInfo, report: reportPr
   const isNegotiating = report?.stage === 'DIRECT_NEGOTIATION'
   const isReturnProgress = report?.stage === 'RETURN_IN_PROGRESS'
   const isEscalated = report?.stage === 'ESCALATED_TO_ADMIN' || (!report && order.hasActiveDispute)
+  const resolvedAdminNote = report?.adminNote || report?.moderatorNote || report?.response
+  const isClosedDispute =
+    !order.hasActiveDispute &&
+    Boolean(
+      report?.stage === 'CLOSED' ||
+      report?.status === 'APPROVED' ||
+      report?.status === 'REJECTED' ||
+      order.status === 'REFUNDED' ||
+      resolvedAdminNote ||
+      report?.policyClauseTitle ||
+      report?.policyClauseCode
+    )
 
   return (
     <>
@@ -215,15 +227,19 @@ export default function OrderDisputeBanner({ order, returnInfo, report: reportPr
           )}
 
           {/* Căn cứ Điều khoản chính sách khi BQT phán quyết */}
-          {(report?.policyClauseTitle || report?.policyClauseCode) && (
+          {(report?.policyClauseTitle || report?.policyClauseCode || resolvedAdminNote) && (
             <div className="rounded-xl bg-purple-500/15 border border-purple-500/30 p-3 text-purple-900 dark:text-purple-200 flex items-start gap-2.5">
               <HiOutlineScale className="h-4 w-4 shrink-0 mt-0.5 text-purple-600 dark:text-purple-400" />
               <div className="space-y-0.5">
-                <span className="font-bold text-xs">⚖️ Căn cứ Điều khoản phán quyết: </span>
-                <span className="font-semibold text-xs">{report.policyClauseTitle || report.policyClauseCode}</span>
-                {report.adminNote && (
+                {(report?.policyClauseTitle || report?.policyClauseCode) && (
+                  <div>
+                    <span className="font-bold text-xs">⚖️ Căn cứ Điều khoản phán quyết: </span>
+                    <span className="font-semibold text-xs">{report.policyClauseTitle || report.policyClauseCode}</span>
+                  </div>
+                )}
+                {resolvedAdminNote && (
                   <p className="text-[11px] opacity-90 leading-relaxed italic pt-0.5">
-                    Ghi chú phán quyết BQT: &ldquo;{report.adminNote}&rdquo;
+                    Ghi chú phán quyết BQT: &ldquo;{resolvedAdminNote}&rdquo;
                   </p>
                 )}
               </div>
@@ -267,7 +283,7 @@ export default function OrderDisputeBanner({ order, returnInfo, report: reportPr
       )}
 
       {/* 3. Phán quyết BQT khi tranh chấp đã khép lại */}
-      {!order.hasActiveDispute && (report?.policyClauseTitle || report?.policyClauseCode || (report?.adminNote && order.status === 'REFUNDED')) && (
+      {isClosedDispute && (
         <div
           className={cn(
             'rounded-2xl p-4 border text-xs space-y-2 shadow-xs',
@@ -282,7 +298,13 @@ export default function OrderDisputeBanner({ order, returnInfo, report: reportPr
         >
           <div className="flex items-center gap-2 font-bold text-sm">
             <HiOutlineScale className="h-5 w-5 text-purple-500 shrink-0" />
-            <span>Kết luận giải quyết khiếu nại từ Ban Quản Trị</span>
+            <span>
+              {report?.status === 'APPROVED' || order.status === 'REFUNDED'
+                ? 'Kết luận giải quyết khiếu nại: Chấp thuận bồi hoàn cho Người mua'
+                : report?.status === 'REJECTED'
+                  ? 'Kết luận giải quyết khiếu nại: Bác bỏ yêu cầu khiếu nại'
+                  : 'Kết luận giải quyết khiếu nại từ Ban Quản Trị'}
+            </span>
           </div>
           {(report?.policyClauseTitle || report?.policyClauseCode) && (
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-purple-500/15 border border-purple-500/30 text-xs font-semibold text-purple-800 dark:text-purple-300">
@@ -290,9 +312,9 @@ export default function OrderDisputeBanner({ order, returnInfo, report: reportPr
               <span>{report.policyClauseTitle || report.policyClauseCode}</span>
             </div>
           )}
-          {report?.adminNote && (
-            <p className="text-xs leading-relaxed opacity-90 pl-1">
-              Phán quyết BQT: &ldquo;{report.adminNote}&rdquo;
+          {resolvedAdminNote && (
+            <p className="text-xs leading-relaxed opacity-95 pl-1">
+              Phán quyết BQT: &ldquo;{resolvedAdminNote}&rdquo;
             </p>
           )}
         </div>

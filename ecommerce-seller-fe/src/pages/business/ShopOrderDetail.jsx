@@ -438,8 +438,10 @@ export default function ShopOrderDetail() {
             }
 
             const isDisputeWithoutReturn =
-              order?.hasActiveDispute ||
-              ['REPORT_PENDING', 'DISPUTED', 'DIRECT_NEGOTIATION', 'ESCALATED_TO_ADMIN'].includes(order?.disputeStatus)
+              (order?.hasActiveDispute ||
+                ['REPORT_PENDING', 'DISPUTED', 'DIRECT_NEGOTIATION', 'ESCALATED_TO_ADMIN'].includes(order?.disputeStatus) ||
+                Boolean(report)) &&
+              !currentReturn
 
             if (isDisputeWithoutReturn) {
               return (
@@ -453,7 +455,7 @@ export default function ShopOrderDetail() {
               )
             }
 
-            if (currentReturn || order?.status === 'REFUNDED') {
+            if (currentReturn || order?.status === 'REFUNDED' || Boolean(report)) {
               return (
                 <div className="space-y-6">
                   {currentReturn && (
@@ -465,7 +467,7 @@ export default function ShopOrderDetail() {
                       onRefresh={fetchOrder}
                     />
                   )}
-                  {order?.hasActiveDispute && (
+                  {(order?.hasActiveDispute || Boolean(report)) && (
                     <SellerDisputeSection
                       orderId={order.id}
                       order={order}

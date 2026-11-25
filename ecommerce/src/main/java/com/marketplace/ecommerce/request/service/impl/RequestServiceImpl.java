@@ -403,6 +403,10 @@ public class RequestServiceImpl implements RequestService {
                     }
                 }
 
+                String resolvedAdminNote = rep.getModeratorNote() != null && !rep.getModeratorNote().isBlank()
+                        ? rep.getModeratorNote()
+                        : (r.getResponse() != null ? r.getResponse() : null);
+
                 yield ReportDetailsResponse.builder()
                         .id(rep.getId())
                         .requestId(r.getId())
@@ -411,6 +415,7 @@ public class RequestServiceImpl implements RequestService {
                         .evidenceUrl(rep.getEvidenceUrl())
                         .coverImageUrl(coverImageUrl)
                         .moderatorNote(rep.getModeratorNote())
+                        .adminNote(resolvedAdminNote)
                         .targetName(targetName)
                         .targetInfo(targetInfo)
                         .stage(rep.getStage())

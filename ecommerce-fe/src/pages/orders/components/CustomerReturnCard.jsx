@@ -357,9 +357,9 @@ export default function CustomerReturnCard({ returnInfo, order, report, isDark: 
                     <span>Căn cứ Điều khoản: <strong>{report.policyClauseTitle || report.policyClauseCode}</strong></span>
                   </div>
                 )}
-                {report?.adminNote && (
+                {(report?.adminNote || report?.moderatorNote || report?.response) && (
                   <p className="text-[11px] italic text-stone-600 dark:text-slate-300 pt-1">
-                    Ghi chú phán quyết BQT: &ldquo;{report.adminNote}&rdquo;
+                    Ghi chú phán quyết BQT: &ldquo;{report.adminNote || report.moderatorNote || report.response}&rdquo;
                   </p>
                 )}
               </div>

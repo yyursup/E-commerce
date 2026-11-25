@@ -1132,6 +1132,9 @@ public class ReportServiceImpl implements ReportService {
         DisputeSellerAction sellerAction = report.getSellerAction();
 
         OrderReturnResponse orderReturnDto = orderReturnService.getReturnByOrderId(orderId);
+        String resolvedAdminNote = report.getModeratorNote() != null && !report.getModeratorNote().isBlank()
+                ? report.getModeratorNote()
+                : (req != null ? req.getResponse() : null);
 
         return ReportDetailsResponse.builder()
                 .id(report.getId())
@@ -1140,6 +1143,7 @@ public class ReportServiceImpl implements ReportService {
                 .targetId(report.getTargetId())
                 .evidenceUrl(report.getEvidenceUrl())
                 .moderatorNote(report.getModeratorNote())
+                .adminNote(resolvedAdminNote)
                 .resolutionType(report.getResolutionType())
                 .stage(report.getStage())
                 .sellerResponseDeadline(report.getSellerResponseDeadline())

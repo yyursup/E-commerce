@@ -1,115 +1,99 @@
-# CỔNG TRẢI NGHIỆM NGƯỜI MUA (BUYER PORTAL)
-## E-commerce Tech Consumer Experience — Port 3000
+# CỔNG NGƯỜI MUA (BUYER PORTAL)
+## E-commerce Customer Web App — cổng 3000
 
-> Ứng dụng Web dành cho khách hàng tìm kiếm, so sánh và mua sắm thiết bị công nghệ, điện thoại, máy tính, linh kiện điện tử. Được xây dựng trên nền tảng **React 19**, **Vite** và **Tailwind CSS v4**, tối ưu hóa trải nghiệm mượt mà, gợi ý sản phẩm thông minh bằng AI, xem livestream bán hàng trực tiếp và đảm bảo an toàn tuyệt đối qua quy trình Ký quỹ Escrow.
-
----
-
-## 💻 CÔNG NGHỆ CHỦ ĐẠO
-
-- **Giao diện & Thành phần:** React 19 (React Compiler Ready), Vite (Rolldown engine), Tailwind CSS v4
-- **Quản lý Trạng thái (State Management):** Zustand 5 (Persist middleware cho Cart, Auth và User preferences)
-- **Truyền thông Mạng (Networking):** Axios 1.13 kèm **Custom Mutex Refresh Interceptor**:
-  * Bắt lỗi `401 Unauthorized`.
-  * Tạm hoãn các request đồng thời vào hàng đợi.
-  * Tự động gọi API cấp lại Token mới.
-  * Tự động xóa sạch `localStorage` và chuyển trang về `/login` nếu Refresh Token hết hạn.
-- **Phát sóng Trực tiếp (Live Commerce):** `@livekit/components-react` & `livekit-client` (Chuẩn WebRTC độ trễ siêu thấp)
-- **Giao tiếp Realtime:** `@stomp/stompjs` & `sockjs-client` (Chat trực tiếp với người bán và hỗ trợ kỹ thuật sàn)
-- **Hiệu ứng & Giao diện:** Framer Motion, Headless UI, React Slick Carousel, React Hot Toast
-- **Kiểm thử Tự động:** Vitest 5, React Testing Library, jsdom
+> Ứng dụng web cho khách hàng: tìm và so sánh thiết bị công nghệ, mua hàng từ nhiều cửa hàng trong một giỏ, thanh toán an toàn qua **ký quỹ Escrow**, theo dõi đơn hàng, trả hàng/khiếu nại, quản lý ví, chat với người bán và hỏi trợ lý mua sắm AI. Ứng dụng gọi Backend Spring Boot ở `http://localhost:8080` (xem [README gốc](../README.md) để chạy cả hệ thống).
 
 ---
 
-## 📱 CÁC TÍNH NĂNG VÀ LUỒNG TRẢI NGHIỆM CHÍNH
+## 💻 CÔNG NGHỆ
 
-### 1. Khám phá Sản phẩm & Gợi ý Thông minh bằng AI
-- **Tìm kiếm theo thông số công nghệ:** Lọc chi tiết theo hãng (Apple, Samsung, Sony, Dell, Asus...), tình trạng máy (Mới 100%, 99% Like New, Đã qua sử dụng - AS-IS), dung lượng RAM/SSD và khoảng giá.
-- **Khối gợi ý cá nhân hóa (Recommendation Engine):** Tự động phân tích sản phẩm đang xem và lịch sử tìm kiếm để hiển thị "Sản phẩm tương tự" hoặc "Thiết bị cùng cấu hình tối ưu".
-
-### 2. Giỏ hàng Đa Cửa Hàng & Thanh toán VNPay
-- Gom nhóm sản phẩm theo từng Shop riêng biệt trong giỏ hàng.
-- Tự động tính phí vận chuyển theo thời gian thực kết nối với API **Giao Hàng Nhanh (GHN)** dựa trên địa chỉ giao hàng của người mua.
-- Áp dụng mã giảm giá (Voucher) toàn sàn hoặc voucher riêng của từng Shop.
-- Tích hợp cổng thanh toán an toàn **VNPay Sandbox** và kiểm tra chữ ký số bảo mật HMAC-SHA512.
-
-### 3. Vòng đời Trả hàng / Khiếu nại 7 Ngày (Return & Refund)
-- Khách hàng có quyền gửi yêu cầu trả hàng trong vòng **7 ngày** kể từ khi shipper giao kiện hàng thành công.
-- Tải lên hình ảnh/video bằng chứng sản phẩm bị lỗi hoặc không đúng mô tả.
-- Sau khi yêu cầu được duyệt, người mua nhập mã vận đơn GHN trả hàng về kho người bán.
-- Theo dõi toàn bộ tiến trình thẩm định 72h của người bán và tiến trình hoàn tiền trực tiếp về Ví sàn.
-
-### 4. Xem Livestream Trực tiếp & Mua hàng Tức thì (LiveKit)
-- Xem luồng phát trực tiếp của các cửa hàng công nghệ với chất lượng HD và độ trễ dưới 500ms.
-- Xem danh sách sản phẩm được Shop ghim trực tiếp trên màn hình livestream, bấm mua hàng nhanh mà không bị gián đoạn video.
-
-### 5. Trợ lý Mua sắm AI & Hỗ trợ Khách hàng Realtime
-- Chatbot tự động hướng dẫn chọn cấu hình máy tính hoặc kiểm tra trạng thái đơn hàng.
-- Chuyển giao thông minh (Handoff) sang nhân viên tư vấn người thật qua giao thức WebSocket STOMP.
+- **Nền tảng:** React 19.2 (kèm `babel-plugin-react-compiler`), Vite (gói `rolldown-vite` 7.2.5), React Router 7.
+- **Giao diện:** Tailwind CSS 4.1, Headless UI, Framer Motion, React Slick, AOS, React Hot Toast, React Icons.
+- **Trạng thái:** Zustand 5 — các store `useAuthStore`, `useCartStore`, `useChatStore`, `useWishlistStore`, `useThemeStore` (thư mục `src/store`).
+- **Gọi API:** Axios 1.13 (`src/api/axiosClient.js`) với interceptor làm mới token có **mutex**: khi nhiều request cùng nhận `401`, chỉ một request gọi `POST /api/v1/auth/refresh-token`, các request còn lại xếp hàng rồi gửi lại với token mới; nếu refresh thất bại, `localStorage` và store được xóa và người dùng quay về `/login`. Hook `useTokenLifecycle` làm mới token trước khi hết hạn.
+- **Chat thời gian thực:** WebSocket thuần tới `ws://localhost:8080/api/v1/ws/chat?token=<access token>` (`src/services/websocketService.js`, có tự kết nối lại).
+- **Biểu mẫu và đăng nhập:** React Hook Form; đăng nhập Google bằng `@react-oauth/google`.
+- **Kiểm thử:** Vitest 5, React Testing Library, jsdom.
 
 ---
 
-## ⚙️ THIẾT LẬP MÔI TRƯỜNG & KHỞI CHẠY
+## 📱 TÍNH NĂNG VÀ MÀN HÌNH CHÍNH
 
-### 1. Cấu hình file `.env`
-Tạo file `ecommerce-fe/.env` trong thư mục `ecommerce-fe/`:
+| Nhóm | Route | Nội dung |
+|:---|:---|:---|
+| Khám phá | `/`, `/deals`, `/marketplace`, `/products`, `/products/:productId`, `/shop/:shopId` | Trang chủ, ưu đãi, danh sách và tìm kiếm nâng cao (có lịch sử tìm kiếm), chi tiết sản phẩm với biến thể và đánh giá, trang cửa hàng (theo dõi shop) |
+| Mua hàng | `/cart`, `/checkout`, `/payment/vnpay_return` | Giỏ hàng gom theo shop, chọn địa chỉ (chọn tỉnh/huyện/xã theo GHN), tính phí ship GHN, áp voucher sàn và voucher shop, thanh toán bằng ví nội bộ hoặc VNPAY, trang kết quả thanh toán |
+| Đơn hàng | `/my-orders`, `/orders`, `/orders/:orderId` | Theo dõi đơn, xác nhận đã nhận hàng, yêu cầu trả hàng và nhập mã vận đơn hàng trả, chat tranh chấp, xem tiến độ hoàn tiền, phiếu hóa đơn |
+| Khiếu nại | `/report` | Gửi khiếu nại kèm bằng chứng (trong 3 ngày sau khi giao) |
+| Hồ sơ | `/profile`, `/profile/wallet` | Thông tin cá nhân, đổi mật khẩu, sổ địa chỉ, thông tin ngân hàng, ví nội bộ (số dư, lịch sử giao dịch, yêu cầu rút tiền về ngân hàng), thông báo, yêu thích, đánh giá của tôi, thống kê chi tiêu |
+| Tài khoản | `/login`, `/register`, `/verify`, `/forgot-password`, `/banned` | Đăng nhập (kể cả Google), đăng ký với OTP e-mail, quên mật khẩu, trang tài khoản bị khóa và kháng cáo |
+| Chính sách | `/policy`, `/escrow-policy`, `/returns`, `/seller-policy`, `/shipping`, `/grading`, `/privacy`, `/terms` | Các trang quy định của sàn |
+| Hỗ trợ | nút chat nổi | Trợ lý AI (`POST /api/v1/chat/ai`), chatbot kịch bản, chat với người bán và hỗ trợ sàn |
 
-```env
-# Địa chỉ máy chủ Backend Spring Boot
-VITE_API_URL=http://localhost:8080
-VITE_API_BASE_URL=http://localhost:8080
+Gợi ý sản phẩm ("sản phẩm tương tự", phụ kiện, gợi ý cá nhân hóa) gọi nhóm endpoint `/api/v1/recommendations`. Đường dẫn `/seller/register` chuyển người dùng sang Seller Portal (địa chỉ lấy từ `VITE_SELLER_URL`).
 
-# Địa chỉ máy chủ WebRTC LiveKit
-VITE_LIVEKIT_WS_URL=ws://localhost:7880
-```
+---
 
-### 2. Cài đặt các gói phụ thuộc
+## ⚙️ THIẾT LẬP VÀ CHẠY
+
+Yêu cầu Node.js 20.19+ hoặc 22.12+ và Backend đang chạy ở cổng 8080.
+
 ```bash
 cd ecommerce-fe
 npm install
+npm run dev        # http://localhost:3000
 ```
 
-### 3. Chạy môi trường phát triển (Development)
-```bash
-npm run dev
-```
-Ứng dụng sẽ chạy tại cổng mặc định: **`http://localhost:3000`**.
+### Biến môi trường (tùy chọn)
+Không cần file `.env` để chạy cục bộ. Nếu cần, tạo `ecommerce-fe/.env` (đã nằm trong `.gitignore`):
 
-### 4. Kiểm thử tự động (Unit Test)
-```bash
-npm run test
+```env
+VITE_API_URL=http://localhost:8080
+VITE_GOOGLE_CLIENT_ID=<google-oauth-client-id>
+VITE_SELLER_URL=http://localhost:3001
 ```
 
-### 5. Đóng gói triển khai (Production Build)
-```bash
-npm run build
-```
-Thư mục xuất bản tĩnh sẽ nằm tại `dist/`.
+- `VITE_API_URL` (hoặc `VITE_API_BASE_URL`): địa chỉ Backend, mặc định `http://localhost:8080`.
+- `VITE_GOOGLE_CLIENT_ID`: Client ID cho nút đăng nhập Google (mặc định chuỗi giữ chỗ nên nút Google không hoạt động nếu không đặt).
+- `VITE_SELLER_URL`: địa chỉ Seller Portal, mặc định `http://localhost:3001`.
+
+### Lệnh npm
+| Lệnh | Tác dụng |
+|:---|:---|
+| `npm run dev` | Chạy máy chủ phát triển ở cổng 3000 |
+| `npm run build` | Đóng gói production vào `dist/` |
+| `npm run preview` | Xem thử bản build |
+| `npm run lint` | Kiểm tra ESLint |
+| `npm run test` | Chạy Vitest (chế độ theo dõi); dùng `npx vitest run` để chạy một lần |
 
 ---
 
-## 🧭 CẤU TRÚC THƯ MỤC SOURCE CODE
+## 🧭 CẤU TRÚC THƯ MỤC
 
 ```text
 ecommerce-fe/
+├── public/                  # Tài nguyên tĩnh
 ├── src/
-│   ├── assets/          # Hình ảnh, biểu tượng và tài nguyên đồ họa tĩnh
-│   ├── components/      # Các thành phần UI tái sử dụng (Navbar, Footer, Modal, Card...)
-│   ├── contexts/        # React Contexts (SocketContext, LiveContext...)
-│   ├── hooks/           # Custom React Hooks (useCart, useAuth, useDebounce...)
-│   ├── pages/           # Các trang giao diện chính:
-│   │   ├── Home/        # Trang chủ & Banner khuyến mãi
-│   │   ├── Product/     # Chi tiết sản phẩm & Thông số kỹ thuật
-│   │   ├── Cart/        # Giỏ hàng đa shop
-│   │   ├── Checkout/    # Đặt hàng & Chọn phương thức thanh toán
-│   │   ├── Order/       # Quản lý đơn hàng & Yêu cầu trả hàng
-│   │   ├── Live/        # Phòng xem Livestream tương tác
-│   │   └── Profile/     # Hồ sơ người dùng, Sổ địa chỉ & Số dư ví
-│   ├── services/        # Tầng giao tiếp API (api.js với Mutex Axios Interceptor)
-│   ├── stores/          # Zustand State Stores (useAuthStore, useCartStore)
-│   ├── App.jsx          # Cấu hình Route chính của ứng dụng
-│   └── main.jsx         # Điểm khởi tạo ứng dụng React
-├── index.html           # HTML template gốc
-├── vite.config.js       # Cấu hình Vite & Port 3000
-└── package.json         # Danh sách thư viện phụ thuộc
+│   ├── api/                 # axiosClient.js — Axios + mutex làm mới token
+│   ├── assets/              # Hình ảnh, biểu tượng
+│   ├── components/          # Thành phần dùng chung (Navbar, Footer, tìm kiếm nâng cao, chọn địa chỉ GHN, chatbot...)
+│   ├── data/                # Dữ liệu tĩnh
+│   ├── hooks/               # useTokenLifecycle, useDebounce, useSearchHistory, useChatNotification
+│   ├── lib/                 # Tiện ích (auth, jwt, orderStatus, techBadges, mediaUtils...)
+│   ├── pages/               # Trang: Home, Marketplace, Cart, Login, Register, Verify, Profile, ReportCreate, ShopProfile...
+│   │   ├── checkout/        # Trang đặt hàng và các khối địa chỉ – thanh toán – voucher
+│   │   ├── deals/           # Trang ưu đãi
+│   │   ├── orders/          # Danh sách và chi tiết đơn, trả hàng, tranh chấp
+│   │   ├── product-detail/  # Chi tiết sản phẩm
+│   │   ├── products/        # Danh sách sản phẩm
+│   │   └── profile/         # Thông tin cá nhân, ví, thông báo, yêu thích, đánh giá, thống kê chi tiêu
+│   ├── services/            # Tầng gọi API theo miền (auth, order, product, returnService, websocketService...)
+│   ├── store/               # Zustand stores
+│   ├── __tests__/           # Kiểm thử Vitest (components, hooks, lib, services, store)
+│   ├── App.jsx              # Khai báo route
+│   └── main.jsx             # Điểm khởi tạo
+├── index.html
+├── vite.config.js           # Cấu hình Vite, cổng 3000
+├── eslint.config.js
+└── package.json
 ```

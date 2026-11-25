@@ -1,117 +1,97 @@
-# CỔNG QUẢN TRỊ DÀNH CHO NGƯỜI BÁN (SELLER PORTAL)
-## E-commerce Merchant Studio & Operations — Port 3001
+# CỔNG NGƯỜI BÁN (SELLER PORTAL)
+## E-commerce Merchant Center — cổng 3001
 
-> Ứng dụng Web dành cho các chủ cửa hàng, đại lý phân phối thiết bị công nghệ và linh kiện điện tử. Được thiết kế chuyên biệt để hỗ trợ định danh sinh trắc học bắt buộc (**VNPT eKYC**), quản lý kho hàng linh kiện, đóng gói giao vận qua **GHN**, thẩm định hàng hoàn trong **khung giờ vàng 72 giờ** và phát sóng bán hàng trực tiếp qua **LiveKit WebRTC Studio**.
-
----
-
-## 💻 CÔNG NGHỆ CHỦ ĐẠO
-
-- **Giao diện & Nền tảng:** React 19, Vite (Rolldown engine), Tailwind CSS v4
-- **Quản lý Trạng thái:** Zustand 5 (Đồng bộ thông tin Shop, trạng thái eKYC và cài đặt phiên làm việc)
-- **Truyền thông Mạng & Bảo mật:** Axios 1.13 tích hợp **Concurrency Mutex Interceptor**:
-  * Đảm bảo không xảy ra xung đột khi làm mới Access Token.
-  * Tự động dọn sạch State và chuyển hướng về màn hình đăng nhập nếu tài khoản bị khóa hoặc token hết hạn.
-  * Hỗ trợ cơ chế đăng xuất an toàn ngay cả khi đang ở bước dở dang của quy trình eKYC.
-- **Phát sóng Bán hàng Trực tiếp (Live Studio):** `@livekit/components-react` & `livekit-client` (Phát sóng HD, điều khiển Camera/Mic, quản lý người xem)
-- **Xử lý Hình ảnh & Đa phương tiện:** `react-easy-crop` (Cắt và căn chỉnh ảnh sản phẩm đạt chuẩn trước khi đẩy lên MinIO S3)
-- **Biểu mẫu & Xác thực dữ liệu:** `react-hook-form`
-- **Giao tiếp Realtime:** `@stomp/stompjs` & `sockjs-client` (Nhận thông báo đơn hàng mới và chat với người mua)
+> Ứng dụng web cho chủ cửa hàng: đăng ký bán hàng bằng định danh sinh trắc học **eKYC**, quản lý sản phẩm – kho – voucher, xử lý đơn hàng và hàng trả về, theo dõi **quỹ ký quỹ** và uy tín của shop, chat với khách. Ứng dụng gọi Backend Spring Boot ở `http://localhost:8080` (xem [README gốc](../README.md) để chạy cả hệ thống).
 
 ---
 
-## 🚀 CÁC QUY TRÌNH NGHIỆP VỤ CỐT LÕI
+## 💻 CÔNG NGHỆ
 
-### 1. Quy trình Onboarding & Định danh Sinh trắc học Bắt buộc (VNPT eKYC)
-- **Bắt buộc 100%:** Người bán không thể đăng bán sản phẩm nếu chưa vượt qua khâu kiểm định danh tính:
-  1. Quét OCR mặt trước và mặt sau Căn cước công dân gắn chip.
-  2. Thực hiện quét nhận diện khuôn mặt sống (Face Liveness) để phòng ngừa giả mạo hình ảnh tĩnh/Deepfake.
-  3. So khớp độ tương đồng khuôn mặt với ảnh trên CCCD.
-- **Xử lý các tình huống gián đoạn mạng:** Nếu gặp sự cố mạng hoặc tắt trình duyệt giữa chừng, hệ thống lưu vết session an toàn, cho phép người dùng đăng xuất hoặc tiếp tục bước đang dở mà không bị kẹt màn hình hay mất dữ liệu.
-
-### 2. Quản lý Danh mục Thiết bị & Linh kiện Công nghệ
-- Thiết lập thông số kỹ thuật chi tiết theo danh mục: Bộ vi xử lý (CPU), Bộ nhớ (RAM), Ổ cứng (SSD), Card màn hình (GPU), Tình trạng máy (Mới 100%, 99% Like New, hoặc AS-IS).
-- Hỗ trợ tải lên nhiều hình ảnh sắc nét lưu trữ trực tiếp trên hệ thống phân tán MinIO S3.
-- Cơ chế quản lý tồn kho chặt chẽ, đồng bộ theo thời gian thực với khóa bi quan (Pessimistic Locking) từ Backend.
-
-### 3. Xử lý Đơn hàng & Giao vận Tự động qua GHN
-- Nhận thông báo tức thì khi khách đặt hàng thành công.
-- Xác nhận đơn, đóng gói và tạo lệnh vận chuyển trực tiếp sang hệ thống **Giao Hàng Nhanh (GHN)** chỉ với một cú nhấp chuột.
-- In phiếu gửi hàng có mã vạch vận đơn GHN tiêu chuẩn.
-- Theo dõi vị trí và trạng thái di chuyển của kiện hàng theo thời gian thực.
-
-### 4. Quy trình Thẩm định Hàng Hoàn 72 Giờ & Khiếu nại (Return & Dispute)
-- **Đặc thù đồ công nghệ:** Nguy cơ bị tráo tráo linh kiện (RAM zin thành RAM hỏng, pin chai, tráo màn hình) khi nhận hàng hoàn.
-- **Đếm ngược 72 giờ:** Ngay khi bưu tá GHN giao kiện hàng hoàn về địa chỉ Shop (`DELIVERED_TO_SELLER`), đồng hồ đếm ngược 72h kích hoạt:
-  * **Trường hợp A — Hàng còn nguyên vẹn:** Người bán bấm nút **"Xác nhận đã nhận & Hoàn tiền"** $\rightarrow$ Hệ thống hoàn tiền cho người mua, kết thúc phiên đổi trả.
-  * **Trường hợp B — Phát hiện gian lận/hư hại:** Người bán bấm nút **"Khiếu nại bồi hoàn (Dispute)"**, cung cấp video quay lúc khui hộp và hình ảnh linh kiện bị tổn hại. Hồ sơ lập tức được chuyển sang Cổng Quản trị sàn (Admin Portal) để mở phiên trọng tài phân xử.
-  * **Cơ chế tự động:** Nếu quá 72 giờ mà người bán không thực hiện bất kỳ hành động nào, Cron Job của sàn sẽ tự động hoàn tiền cho người mua để đảm bảo quyền lợi khách hàng.
-
-### 5. Quản trị Tài chính & Quỹ Ký Quỹ Cửa Hàng (Shop Escrow Fund)
-- Tra cứu dòng tiền đang được giữ tại tài khoản Ký quỹ Escrow và dòng tiền đã được giải phóng về Ví khả dụng.
-- Quản lý mức ký quỹ cố định đảm bảo trách nhiệm bảo hành theo cấp bậc thâm niên (Seniority Tier).
-- Thực hiện lệnh rút tiền từ Ví sàn về tài khoản ngân hàng liên kết.
-
-### 6. Phòng Thu Trực Tiếp Đồ Công Nghệ (LiveKit Live Studio)
-- Dành cho chủ Shop mở phiên bán hàng trực tiếp trên sóng.
-- Tính năng ghim sản phẩm (Pin Product): Đưa thiết bị đang trên tay lên màn hình của tất cả người xem kèm giá khuyến mãi độc quyền trong phiên live.
+- **Nền tảng:** React 19.2 (kèm `babel-plugin-react-compiler`), Vite (gói `rolldown-vite` 7.2.5), React Router 7, Tailwind CSS 4.1, Headless UI, Framer Motion, React Hot Toast.
+- **Trạng thái:** Zustand 5 — `useAuthStore`, `useCartStore`, `useThemeStore` (thư mục `src/store`).
+- **Gọi API:** Axios 1.13 (`src/api/axiosClient.js`) với interceptor làm mới token có **mutex** (một request `refresh-token` duy nhất, các request `401` khác chờ rồi gửi lại; refresh thất bại thì xóa phiên và về trang đăng nhập); hook `useTokenLifecycle` làm mới token trước khi hết hạn.
+- **Chat thời gian thực:** WebSocket thuần tới `ws://localhost:8080/api/v1/ws/chat?token=<access token>` (`src/services/websocketService.js`, có tự kết nối lại).
+- **Ảnh và biểu mẫu:** `react-easy-crop` (cắt ảnh sản phẩm trước khi tải lên), React Hook Form; chụp ảnh CCCD và khuôn mặt bằng camera trình duyệt (`CameraCapture`).
+- **Kiểm thử:** Vitest 5, React Testing Library, jsdom.
 
 ---
 
-## ⚙️ THIẾT LẬP MÔI TRƯỜNG & KHỞI CHẠY
+## 🚀 CÁC LUỒNG NGHIỆP VỤ
 
-### 1. Cấu hình file `.env`
-Tạo file `ecommerce-seller-fe/.env` trong thư mục `ecommerce-seller-fe/`:
+### 1. Đăng ký bán hàng và eKYC
+Route `/seller-register` dẫn người dùng qua các bước: chụp CCCD mặt trước và mặt sau, quét khuôn mặt (liveness), so khớp khuôn mặt với ảnh CCCD qua nhóm endpoint `/api/v1/kyc/**`. Khi độ tương đồng đạt từ **95% trở lên**, biểu mẫu thông tin shop (mã số thuế, tên shop, tài khoản ngân hàng, giấy phép kinh doanh, địa chỉ GHN) được mở để gửi yêu cầu `POST /api/v1/request/regis-seller`.
+- Tiến trình eKYC dở dang được lưu ở trình duyệt và khôi phục khi tải lại trang.
+- `/pending`: chờ Admin duyệt; `/rejected`: thông báo bị từ chối kèm lý do. Khi được duyệt, tài khoản trở thành `BUSINESS` và vào được khu quản lý.
 
-```env
-# Địa chỉ API Backend Spring Boot
-VITE_API_URL=http://localhost:8080
-VITE_API_BASE_URL=http://localhost:8080
+### 2. Sản phẩm, kho và voucher
+- `/products`: danh sách sản phẩm của shop, thêm/sửa sản phẩm với nhiều biến thể (giá, tồn kho, ảnh), bật/tắt hiển thị, đánh dấu nổi bật. Sản phẩm mới hoặc đã sửa phải được Admin duyệt (kiểm duyệt) trước khi hiển thị công khai.
+- `/inventory-history`: lịch sử biến động tồn kho.
+- `/vouchers`: tạo và quản lý voucher của shop (giảm theo phần trăm, giảm số tiền cố định, miễn phí vận chuyển).
 
-# Địa chỉ WebRTC LiveKit Server
-VITE_LIVEKIT_WS_URL=ws://localhost:7880
-```
+### 3. Đơn hàng và vận chuyển
+- `/orders`, `/orders/:orderId`: xử lý đơn theo trạng thái, xác nhận và đóng gói, tạo/đồng bộ mã vận đơn **GHN**.
+- Hàng trả về: khi hàng về đến shop, người bán có **72 giờ** để kiểm tra và chọn *hoàn tiền cho người mua* hoặc *khiếu nại tráo hàng/hư hỏng kèm bằng chứng*; quá hạn không phản hồi thì hệ thống tự hoàn tiền cho người mua. Khiếu nại của người mua được thương lượng trực tiếp trong 48 giờ trước khi chuyển lên Admin.
+- Xuất báo cáo đối soát đơn hàng (`utils/exportSettlementReport.js`).
 
-### 2. Cài đặt thư viện
+### 4. Quỹ ký quỹ, uy tín và vi phạm
+- `/escrow-fund`: xem số dư quỹ ký quỹ, cấp uy tín (1–5 sao), nạp quỹ qua VNPAY, yêu cầu hoàn quỹ, theo dõi cảnh báo thiếu quỹ và hạn nạp bù.
+- `/violations`: các vi phạm và tình trạng đình chỉ của shop.
+- Phí hoa hồng của shop = tỷ lệ cơ bản − ưu đãi theo cấp ký quỹ − ưu đãi thâm niên, không thấp hơn ngưỡng sàn (xem README gốc).
+
+### 5. Dashboard, chat và cài đặt
+- `/dashboard`: số liệu doanh thu và đơn hàng (`GET /api/v1/statistics/seller/dashboard`).
+- `/chat`: hội thoại với người mua và hỗ trợ sàn, thông báo tin nhắn mới.
+- `/settings`: hồ sơ shop; `/policy`, `/seller-policy`, `/escrow-policy`: quy định dành cho người bán.
+
+---
+
+## ⚙️ THIẾT LẬP VÀ CHẠY
+
+Yêu cầu Node.js 20.19+ hoặc 22.12+ và Backend đang chạy ở cổng 8080.
+
 ```bash
 cd ecommerce-seller-fe
 npm install
+npm run dev        # http://localhost:3001
 ```
 
-### 3. Khởi động môi trường phát triển (Port 3001)
-```bash
-npm run dev
-```
-Truy cập giao diện tại: **`http://localhost:3001`**.
+Không cần file `.env` để chạy cục bộ. Muốn đổi địa chỉ Backend, tạo `ecommerce-seller-fe/.env`:
 
-### 4. Đóng gói triển khai
-```bash
-npm run build
+```env
+VITE_API_URL=http://localhost:8080
 ```
+
+| Lệnh | Tác dụng |
+|:---|:---|
+| `npm run dev` | Máy chủ phát triển ở cổng 3001 |
+| `npm run build` | Đóng gói production vào `dist/` |
+| `npm run preview` | Xem thử bản build |
+| `npm run lint` | Kiểm tra ESLint |
+| `npm run test` | Vitest chế độ theo dõi; `npx vitest run` để chạy một lần |
 
 ---
 
-## 🧭 CẤU TRÚC THƯ MỤC NGUỒN
+## 🧭 CẤU TRÚC THƯ MỤC
 
 ```text
 ecommerce-seller-fe/
+├── public/
 ├── src/
-│   ├── assets/          # Logo, icon, hình ảnh đồ họa
-│   ├── components/      # Component giao diện (Sidebar, Topbar, ReturnTimer, CropModal...)
-│   ├── contexts/        # Contexts chia sẻ trạng thái
-│   ├── hooks/           # Custom React hooks
-│   ├── pages/           # Các màn hình nghiệp vụ chính:
-│   │   ├── Dashboard/   # Bảng điều khiển doanh thu & đơn hàng cần xử lý
-│   │   ├── Product/     # Đăng bán thiết bị, danh sách sản phẩm & kho hàng
-│   │   ├── Order/       # Quản lý đơn hàng, xuất mã GHN & in hóa đơn
-│   │   ├── Return/      # Quản lý hàng hoàn & Thẩm định linh kiện trong 72h
-│   │   ├── Live/        # Studio phát sóng trực tiếp LiveKit WebRTC
-│   │   ├── Kyc/         # Màn hình định danh CCCD và quét khuôn mặt sống
-│   │   └── Finance/     # Ví doanh thu, quỹ ký quỹ & lịch sử quyết toán
-│   ├── services/        # Gọi API Backend với cơ chế Mutex Axios Interceptor
-│   ├── stores/          # Zustand store cho Shop & Auth
-│   ├── App.jsx          # Định tuyến các trang chức năng
-│   └── main.jsx         # Điểm khởi tạo ứng dụng
-├── vite.config.js       # Thiết lập cổng 3001
+│   ├── api/                 # axiosClient.js — Axios + mutex làm mới token
+│   ├── assets/
+│   ├── components/          # Layout, Modal, CameraCapture, BusinessLicenseUpload, GhnAddressSelector, BankSelector...
+│   ├── hooks/               # useTokenLifecycle, useChatNotification
+│   ├── lib/                 # auth, jwt, orderStatus, voucherStatus, variantMapping, mediaUtils...
+│   ├── pages/               # Login, Register, Verify, SellerLanding, SellerRegister (eKYC), PendingApproval, RejectedNotice, ShopProducts, ShopSettings
+│   │   └── business/        # Khu quản lý: BusinessLayout, BusinessDashboard, ShopOrders, ShopOrderDetail,
+│   │                        # ShopInventoryHistory, ShopVouchers, ShopEscrowFund, ShopViolations, ShopLiveChat, SellerPolicy
+│   ├── services/            # Tầng gọi API theo miền (kyc, order, product, escrowFund, returnService, websocketService...)
+│   ├── store/               # Zustand stores
+│   ├── utils/               # cropImage, exportSettlementReport
+│   ├── __tests__/           # Kiểm thử Vitest (hooks, lib, services, store, utils)
+│   ├── App.jsx              # Khai báo route
+│   └── main.jsx
+├── index.html
+├── vite.config.js           # Cấu hình Vite, cổng 3001
 └── package.json
 ```

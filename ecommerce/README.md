@@ -1,169 +1,191 @@
-# TÀI LIỆU KỸ THUẬT PHÂN HỆ BACKEND API (SPRING BOOT 3)
-## E-commerce Core Engine — Java 21 & High-Concurrency Architecture
+# TÀI LIỆU KỸ THUẬT BACKEND (SPRING BOOT 4)
+## E-commerce Core API — Java 21, ký quỹ Escrow và kiểm soát đồng thời
 
-> Phân hệ Backend đóng vai trò hạt nhân trung tâm của nền tảng, chịu trách nhiệm quản lý nghiệp vụ tài chính ký quỹ (**Escrow**), khóa đồng thời kiểm soát tồn kho (**Pessimistic Locking**), xác thực danh tính sinh trắc học (**VNPT eKYC**), tính toán hoa hồng động (**Dynamic Commission**), điều phối đơn vị vận chuyển (**GHN**) và phát sóng tương tác trực tiếp (**LiveKit WebRTC**).
-
----
-
-## 🛠️ CÔNG NGHỆ & THƯ VIỆN NỀN TẢNG
-
-- **Ngôn ngữ & Runtime:** Java 21 LTS (sử dụng các tính năng hiện đại: Virtual Threads, Pattern Matching, Record, Text Blocks)
-- **Framework chính:** Spring Boot 3.3.x (Spring Web, Spring Security, Spring Data JPA, Spring WebSocket)
-- **Hệ quản trị CSDL:** PostgreSQL 16 (Hỗ trợ ACID, JSONB, Full-text Search)
-- **Hệ thống Cache & Bộ nhớ đệm:** Redis 7 (Quản lý phiên, rate limit và token blacklist)
-- **Lưu trữ đối tượng (Object Storage):** MinIO S3 Compatible Storage (Lưu trữ ảnh sản phẩm, bằng chứng khiếu nại)
-- **Giao tiếp Thời gian thực (Real-time):** STOMP qua SockJS WebSocket (`/api/v1/ws-chat`)
-- **Tích hợp bên ngoài:**
-  * Cổng thanh toán: **VNPay Sandbox** (HMAC-SHA512 verification)
-  * Đơn vị giao vận: **Giao Hàng Nhanh (GHN Open API)**
-  * Xác thực sinh trắc: **VNPT eKYC Gateway** (OCR & Face Liveness API)
-  * Trí tuệ nhân tạo: **Google Gemini v1beta** (Semantic embeddings & AI Chatbot)
+> Backend là lõi của nền tảng: quản lý tài khoản – phân quyền (JWT), sản phẩm và kho, giỏ hàng – đơn hàng – thanh toán, **ký quỹ Escrow** và ví nội bộ, khiếu nại – trả hàng – phân xử, định danh **VNPT eKYC**, vận chuyển **GHN**, chat thời gian thực, trợ lý AI và gợi ý sản phẩm. Hướng dẫn chạy toàn hệ thống (cả ba cổng giao diện) nằm ở [README gốc](../README.md); tài liệu này tập trung vào backend.
 
 ---
 
-## 🏛️ KIẾN TRÚC MÃ NGUỒN THEO TẦNG VÀ PHÂN KHU NGHIỆP VỤ
+## 🛠️ CÔNG NGHỆ
 
-Mã nguồn được cấu trúc theo mô hình **Domain-Driven Design (DDD)** kết hợp **Layered Architecture**:
+| Thành phần | Chi tiết |
+|:---|:---|
+| Ngôn ngữ / Framework | Java 21; Spring Boot 4.0.1 (Web MVC, Security, Data JPA, WebSocket, Validation, Data Redis, Mail, Thymeleaf); jjwt; MinIO Java client; Lombok |
+| Cơ sở dữ liệu | PostgreSQL 17, schema do Hibernate sinh (`spring.jpa.hibernate.ddl-auto=create-drop`) từ 47 thực thể JPA |
+| Cache / giới hạn tần suất | Redis 7 (`StringRedisTemplate`: khóa giới hạn tần suất gửi báo cáo vi phạm, thao tác của shop) |
+| Lưu trữ tệp | MinIO (S3 tương thích): ảnh sản phẩm, bằng chứng khiếu nại, ảnh/video chat |
+| Realtime | WebSocket thuần: `/ws/chat` và `/api/v1/ws/chat?token=<access token>` |
+| Xác thực | JWT (access + refresh, thư viện jjwt), đăng nhập Google qua `POST /api/v1/auth/oauth2/google`, OTP e-mail; phân quyền `CUSTOMER`, `BUSINESS`, `ADMIN` |
+| Tích hợp ngoài | VNPAY (chữ ký HMAC-SHA512), GHN, VNPT eKYC, Google Gemini (giao thức tương thích OpenAI), SMTP |
+| Cấu hình | `application.properties` đọc biến từ `ecommerce/.env` qua `DotEnvConfig` |
+| Kiểm thử | JUnit 5, Mockito, JaCoCo (98 lớp kiểm thử) |
+
+API được đánh phiên bản bằng `ApiVersioningConfig`: mọi controller khai báo `version = "1"` nên đường dẫn thực tế có tiền tố `/api/v1`.
+
+---
+
+## 🏛️ CẤU TRÚC MÃ NGUỒN
+
+Mã nguồn chia theo miền nghiệp vụ (mỗi miền có `controller`, `service` + `service/impl`, `repository`, `entity`, `dto`, `valueObjects` khi cần):
 
 ```text
 src/main/java/com/marketplace/ecommerce/
-├── auth/                 # Định danh, Tài khoản, Phân quyền, JWT & Địa chỉ người dùng
-│   ├── controller/       # AuthController, UserController, AddressController
-│   ├── entity/           # Account, User, Role, UserAddress, RefreshToken
-│   └── service/          # AuthService, JwtService, UserDetailsService
-├── cart/                 # Giỏ hàng & Quản lý sản phẩm trong giỏ
-├── checkout/             # Báo giá (Quote), Áp dụng Voucher & Xác nhận thanh toán
-├── order/                # Quản lý Đơn hàng, Trả hàng (Return) & Phân xử tranh chấp
-│   ├── controller/       # OrderController, OrderReturnController, ReportController
-│   ├── entity/           # Order, OrderItem, OrderReturn, Report
-│   └── service/          # OrderService, OrderReturnService, ReportService
-├── payment/              # Tích hợp VNPay, Tạo URL thanh toán & Xử lý IPN Webhook
-├── platform/             # Quản trị Hoa hồng sàn, Cấu hình phí & Thâm niên nhà bán
-│   ├── entity/           # Commission, CommissionItem, PlatformSetting, SeniorityPolicy
-│   └── service/          # CommissionCalculationService, PlatformSettingService
-├── product/              # Danh mục, Sản phẩm công nghệ, Thuộc tính kỹ thuật & MinIO
-├── shop/                 # Hồ sơ Shop, Quỹ ký quỹ cố định (ShopEscrowFund), Điểm uy tín
-├── wallet/               # Quản lý Ví điện tử nội bộ, Lịch sử giao dịch & Đối soát
-├── kyc/                  # Tích hợp VNPT eKYC (OCR mặt trước/sau, Face Liveness, Match)
-├── chat/                 # Chatbot AI (Gemini), Cây quyết định & Live STOMP WebSocket
-├── shipping/             # Tích hợp GHN (Lấy tỉnh/huyện/xã, tính phí ship, webhook)
-└── config/               # SecurityConfig, WebSocketConfig, DataInitializer, MinioConfig
+├── auth/            # Tài khoản, người dùng, vai trò, địa chỉ, đăng nhập/đăng ký/OTP/Google, kỷ luật tài khoản
+├── kyc/             # Phiên eKYC: tải ảnh, OCR mặt trước/sau, liveness, so khớp khuôn mặt (ngưỡng 95%)
+├── shop/            # Cửa hàng, quỹ ký quỹ (ShopEscrowFund), cấp uy tín (TrustLevelConfig), đình chỉ shop
+├── product/         # Danh mục, sản phẩm, biến thể, ảnh, lịch sử tồn kho, kiểm duyệt sản phẩm
+├── cart/            # Giỏ hàng nhiều shop
+├── voucher/         # Voucher sàn (PLATFORM) và voucher shop (SHOP): PERCENTAGE, FIXED_AMOUNT, FREE_SHIPPING
+├── order/           # Báo giá và xác nhận thanh toán (checkout), đơn hàng, trả hàng (OrderReturn)
+├── payment/         # VNPAY, Escrow (giữ – giải ngân – hoàn tiền – chia tiền)
+├── wallet/          # Ví nội bộ, thông tin ngân hàng, yêu cầu rút tiền
+├── platform/        # Cấu hình sàn, hoa hồng (Commission), chính sách thâm niên, chính sách nền tảng
+├── request/         # Yêu cầu (đăng ký bán hàng, cập nhật shop, rút tiền, kháng cáo) và báo cáo/khiếu nại (Report)
+├── review/          # Đánh giá sản phẩm và phản hồi của shop
+├── shipping/        # Tích hợp GHN: tỉnh/huyện/xã, phí vận chuyển, tạo đơn; quản trị phí ship
+├── webhook/         # Webhook trạng thái giao hàng từ GHN
+├── chat/            # Chat thời gian thực (WebSocket + REST), chatbot kịch bản
+├── chatbot/         # Trợ lý mua sắm AI (Gemini) và tải tệp trong hội thoại AI
+├── recommendation/  # Gợi ý sản phẩm: cá nhân hóa, tương tự, phụ kiện, theo dõi hành vi
+├── notification/    # Thông báo trong ứng dụng
+├── social/          # Theo dõi cửa hàng (ShopFollower)
+├── wishlist/        # Danh sách yêu thích
+├── statistics/      # Thống kê và phân tích cho người mua, người bán, Admin
+├── file/            # Dịch vụ tệp (MinIO)
+├── common/          # BaseEntity, ErrorResponse, xử lý ngoại lệ toàn cục
+└── config/          # SecurityConfig, JwtFilter, DotEnvConfig, MinIOConfig, VNPayConfig, GHNConfig, EKycConfig,
+                     # ApiVersioningConfig, DataInitializer và thư mục seed/ (DatabaseSeeder + 14 seeder)
 ```
 
----
-
-## 🔒 THIẾT KẾ XỬ LÝ ĐỒNG THỜI & BẢO VỆ DÒNG TIỀN (CONCURRENCY CONTROL)
-
-Trong môi trường thương mại điện tử với các sự kiện Flash Sale và hoàn trả tiền ký quỹ, xung đột dữ liệu (Race Condition) và chi tiêu kép (Double-spending) là rủi ro lớn nhất. Hệ thống áp dụng nghiêm ngặt các biện pháp bảo vệ:
-
-### 1. Khóa Bi quan (Pessimistic Locking) trong Trừ kho & Hoàn kho
-- Tại `ProductRepository` và `ProductVariantRepository`, các truy vấn cập nhật tồn kho sử dụng:
-  ```java
-  @Lock(LockModeType.PESSIMISTIC_WRITE)
-  @Query("SELECT p FROM Product p WHERE p.id = :id")
-  Optional<Product> findByIdForUpdate(@Param("id") UUID id);
-  ```
-- **Ý nghĩa:** Khi đơn hàng checkout được xử lý, bản ghi sản phẩm trong cơ sở dữ liệu sẽ bị khóa chặt ở tầng DB (Row-level lock). Không có 2 giao dịch nào có thể cùng lúc mua quá số lượng hàng tồn sẵn có.
-
-### 2. Khóa Giao dịch Ví (Wallet Balance Protection)
-- Trong `WalletServiceImpl`, trước khi cộng tiền hoặc trừ tiền ví Người bán/Người mua, hệ thống gọi `findByIdForUpdate` trên bản ghi `Wallet`.
-- Đảm bảo việc giải phóng tiền từ Escrow hoặc hoàn tiền khiếu nại (Refund) luôn tuyệt đối chính xác, không thể xảy ra hiện tượng số dư ví bị âm hoặc nhận tiền hai lần.
-
-### 3. Mutex Hàng đợi Refresh Token (Zero Race Condition)
-- Khi Access Token hết hạn, hàng loạt API frontend cùng trả về `401 Unauthorized`.
-- Backend hỗ trợ endpoint `/api/v1/auth/refresh-token` với cơ chế kiểm tra token duy nhất:
-  - Nếu refresh token hợp lệ $\rightarrow$ Cấp cặp token mới và xoay vòng (Rotate) Refresh Token.
-  - Ngăn chặn triệt để việc tấn công Replay Attack bằng token cũ.
+### Khởi tạo dữ liệu
+`DatabaseSeeder` gọi lần lượt 14 seeder trong `config/seed`: vai trò, người dùng (12 tài khoản mẫu: 1 admin, 6 người bán, 5 người mua — xem bảng ở README gốc), danh mục, shop, cấu hình sàn, chính sách, ví, giỏ hàng, địa chỉ giao hàng, sản phẩm, voucher, yêu cầu đăng ký bán hàng, đơn hàng và đánh giá. `DataInitializer` là runner bổ sung cùng loại. Cả hai là `CommandLineRunner` chạy mỗi lần khởi động và đều kiểm tra bản ghi đã tồn tại trước khi tạo.
 
 ---
 
-## ⏰ BẢNG ĐẶC TẢ TÁC VỤ ĐỊNH KỲ (SCHEDULED DAEMONS)
+## 🔒 KIỂM SOÁT ĐỒNG THỜI VÀ BẢO VỆ DÒNG TIỀN
 
-Backend tích hợp các tiến trình chạy ngầm định kỳ bằng Spring `@Scheduled`:
+### 1. Khóa bi quan (Pessimistic Locking)
+12 repository khai báo truy vấn khóa ghi `PESSIMISTIC_WRITE` với tên `findByIdForUpdate` (hoặc biến thể): `AccountRepository`, `ChatThreadRepository`, `EscrowRepository`, `OrderRepository`, `OrderReturnRepository`, `ProductRepository`, `ProductVariantRepository`, `ReportRepository`, `ReviewRepository`, `ShopEscrowFundRepository`, `ShopRepository`, `WalletRepository`.
+
+```java
+@Lock(LockModeType.PESSIMISTIC_WRITE)
+@Query("select p from Product p where p.id = :id")
+Optional<Product> findByIdForUpdate(@Param("id") UUID id);
+```
+
+- Trừ/hoàn tồn kho khi đặt hoặc hủy đơn khóa dòng `Product`/`ProductVariant`, nên hai giao dịch không thể cùng bán vượt số lượng còn lại.
+- Mọi thao tác tiền (`WalletServiceImpl`, `EscrowServiceImpl`) khóa ví người mua, ví người bán và ví hệ thống Escrow (`findByUserIdForUpdate`, `findSystemWalletForUpdate`) trong cùng một giao dịch, tránh số dư âm và giải ngân hai lần.
+- Các tác vụ định kỳ và thao tác chuyển trạng thái (đơn, trả hàng, báo cáo, quỹ ký quỹ, shop, tài khoản) đều đọc lại bản ghi bằng khóa trước khi quyết định.
+
+### 2. Làm mới token an toàn khi có nhiều request đồng thời
+- Backend: `POST /api/v1/auth/refresh-token` kiểm tra refresh token và cấp lại cặp token mới; refresh token rỗng, sai hoặc hết hạn bị từ chối với thông báo yêu cầu đăng nhập lại.
+- Frontend: Axios interceptor dùng mutex (một request refresh duy nhất, các request `401` khác xếp hàng rồi gửi lại), xem README của từng cổng.
+- Tài khoản bị khóa nhận token giới hạn chỉ dùng để gửi kháng cáo (`POST /api/v1/request/ban-review`), không có refresh token và không có quyền marketplace.
+
+---
+
+## ⏰ TÁC VỤ ĐỊNH KỲ
 
 ```mermaid
 flowchart TD
-    CRON_RETURN_EXPIRE["Cron 10 phút/lần:\nKiểm tra mã vận đơn hoàn trả"]
-    CRON_RETURN_INSPECT["Cron 10 phút/lần:\nKiểm tra hạn 72h thẩm định của Shop"]
-    CRON_ESCROW_RELEASE["Cron Mỗi giờ:\nQuét đơn DELIVERED quá 7 ngày"]
-    CRON_FUND_CHECK["Cron Mỗi giờ:\nKiểm tra thời hạn nộp bù quỹ ký quỹ Shop"]
-
-    CRON_RETURN_EXPIRE -->|Quá hạn không nhập mã vận đơn| CANCEL_RETURN["Hủy yêu cầu trả hàng\nKhôi phục đơn hoàn tất"]
-    CRON_RETURN_INSPECT -->|Shop nhận hàng quá 72h không bấm duyệt/khiếu nại| AUTO_REFUND["TỰ ĐỘNG HOÀN TIỀN VỀ VÍ BUYER\nĐóng khiếu nại"]
-    CRON_ESCROW_RELEASE -->|Giao hàng > 7 ngày không khiếu nại| RELEASE_ESCROW["GIẢI PHÓNG TIỀN KÝ QUỸ\nTrừ hoa hồng sàn -> Cộng ví Shop"]
-    CRON_FUND_CHECK -->|Quá hạn bổ sung quỹ ký quỹ| DOWNGRADE_SHOP["Hạ cấp huy hiệu Shop\nTạm khóa quyền đăng bán mới"]
+    A["autoMarkReceivedOrders<br/>mỗi giờ"] -->|"DELIVERED quá 3 ngày"| A1["Tự đánh dấu đã nhận<br/>và giải ngân Escrow cho shop"]
+    B["processExpiredBuyerShipments<br/>10 phút"] -->|"Quá 3 ngày chưa gửi hàng trả"| B1["Hủy yêu cầu trả hàng"]
+    C["processExpiredSellerInspections<br/>10 phút"] -->|"Quá 72 giờ shop không phản hồi"| C1["Tự hoàn tiền cho người mua"]
+    D["processExpiredDirectNegotiations<br/>10 phút"] -->|"Quá 48 giờ không phản hồi"| D1["Chuyển khiếu nại lên Admin"]
+    E["downgradeExpiredDeficits<br/>10 phút"] -->|"Thiếu quỹ quá hạn nạp bù"| E1["Giáng cấp uy tín của shop"]
+    F["ShopServiceImpl.processExpiredSuspensions<br/>10 phút"] -->|"Hết 14 ngày đình chỉ"| F1["Shop về WARNED, mở bán lại sản phẩm"]
+    G["AccountDisciplineServiceImpl.processExpiredSuspensions<br/>10 phút"] -->|"Hết 14 ngày đình chỉ"| G1["Tài khoản về ACTIVE, mức WARNED"]
 ```
 
-| Lớp xử lý | Biểu thức Cron | Tần suất | Chức năng nghiệp vụ chi tiết |
-|:---|:---:|:---:|:---|
-| `OrderReturnServiceImpl.checkExpiredReturns()` | `0 */10 * * * *` | 10 phút / lần | Quét các yêu cầu trả hàng đã được duyệt nhưng Người mua không cung cấp mã vận đơn GHN trong thời hạn quy định $\rightarrow$ Tự động đóng yêu cầu hoàn trả. |
-| `OrderReturnServiceImpl.autoApproveExpiredInspections()` | `0 */10 * * * *` | 10 phút / lần | **Cơ chế bảo vệ người mua:** Quét các kiện hàng hoàn đã giao tới kho người bán (`DELIVERED_TO_SELLER`) quá **72 giờ** mà người bán không xác nhận cũng không khiếu nại $\rightarrow$ Hệ thống tự động giải phóng tiền hoàn về Ví người mua. |
-| `OrderServiceImpl.autoReleaseEscrowFunds()` | `0 0 * * * *` | Mỗi giờ | Quét các đơn hàng đã ở trạng thái `DELIVERED` quá **7 ngày** mà người mua không gửi báo cáo sự cố (Report) $\rightarrow$ Tự động chuyển trạng thái `COMPLETED` và giải ngân tiền Escrow vào ví Người bán. |
-| `RequestServiceImpl.autoHandleExpiredReports()` | `0 0 * * * *` | Mỗi giờ | Quét các đơn khiếu nại quá hạn xử lý của người bán để tự động can thiệp theo chính sách bảo vệ khách hàng. |
-| `ShopEscrowFundServiceImpl.checkPendingReplenishments()` | `0 0 * * * *` | Mỗi giờ | Kiểm tra các Shop bị trừ tiền phạt/bồi thường dẫn đến thâm hụt quỹ ký quỹ cố định; tự động giới hạn quyền năng của Shop nếu không nộp bù trong thời hạn quy định. |
+| Lớp | Phương thức | Cron | Chu kỳ |
+|:---|:---|:---:|:---:|
+| `OrderServiceImpl` | `autoMarkReceivedOrders` | `0 0 * * * *` | mỗi giờ |
+| `OrderReturnServiceImpl` | `processExpiredBuyerShipments` | `0 */10 * * * *` | 10 phút |
+| `OrderReturnServiceImpl` | `processExpiredSellerInspections` | `0 */10 * * * *` | 10 phút |
+| `ReportServiceImpl` | `processExpiredDirectNegotiations` | `0 */10 * * * *` | 10 phút |
+| `ShopEscrowFundServiceImpl` | `downgradeExpiredDeficits` | `0 */10 * * * *` | 10 phút |
+| `ShopServiceImpl` | `processExpiredSuspensions` | `0 */10 * * * *` | 10 phút |
+| `AccountDisciplineServiceImpl` | `processExpiredSuspensions` | `0 */10 * * * *` | 10 phút |
 
 ---
 
-## 📡 DANH MỤC RESTFUL API CHÍNH
+## 📡 DANH MỤC REST API
 
-### 1. Phân hệ Định danh & Tài khoản (`/api/v1/auth`)
-- `POST /api/v1/auth/register` — Đăng ký tài khoản mới (Gửi mã xác thực qua Email)
-- `POST /api/v1/auth/verify` — Xác thực OTP kích hoạt tài khoản
-- `POST /api/v1/auth/login` — Đăng nhập hệ thống (Trả Access Token & Refresh Token)
-- `POST /api/v1/auth/refresh-token` — Cấp phát lại Access Token bằng Refresh Token
-- `POST /api/v1/auth/logout` — Đăng xuất và vô hiệu hóa Token trong phiên
-- `GET /api/v1/auth/users` — *(ADMIN)* Truy vấn danh sách toàn bộ người dùng trong hệ thống
+Tiền tố chung `/api/v1`. Phân quyền theo vai trò dùng `@PreAuthorize`; nhãn *(ADMIN)*, *(BUSINESS)* bên dưới là các điểm vào bị giới hạn vai trò trong mã nguồn. Danh sách dưới đây là các nhóm chính, không liệt kê toàn bộ.
 
-### 2. Phân hệ Xác thực Sinh trắc học (`/api/v1/kyc`)
-- `POST /api/v1/kyc/sessions:start` — Khởi tạo phiên kiểm định eKYC
-- `POST /api/v1/kyc/session/{id}/upload` — Đẩy hình ảnh giấy tờ lên hệ thống
-- `POST /api/v1/kyc/sessions/{id}/ocr/front` — Trích xuất OCR mặt trước CCCD gắn chip
-- `POST /api/v1/kyc/sessions/{id}/ocr/back` — Trích xuất OCR mặt sau CCCD (Ngày cấp, đặc điểm nhận dạng)
-- `POST /api/v1/kyc/sessions/{id}/ocr/liveness` — Kiểm tra tính sống (Liveness Detection) của khuôn mặt
-- `POST /api/v1/kyc/sessions/{id}/compare` — So khớp ảnh selfie và ảnh trên thẻ CCCD
-- `GET /api/v1/kyc/sessions/{id}` — Lấy kết quả điểm tin cậy của phiên eKYC
+### 1. Tài khoản và xác thực — `/auth`, `/user`, `/address`
+- `POST /auth/register`, `POST /auth/verify` — đăng ký và xác thực OTP e-mail
+- `POST /auth/login`, `POST /auth/oauth2/google` — đăng nhập (tên đăng nhập hoặc Google)
+- `POST /auth/refresh-token` — cấp lại cặp token
+- `POST /auth/forgot-password/send-otp`, `POST /auth/forgot-password/reset` — quên mật khẩu
+- `GET /auth/me`; `GET /auth/users` *(ADMIN)*
+- `GET|PUT /user/me`, `PUT /user/password`; sổ địa chỉ `/address` (CRUD, `PATCH /address/{id}/default`)
 
-### 3. Phân hệ Quản lý Đơn hàng & Giao vận (`/api/v1/order`)
-- `POST /api/v1/order` — Khởi tạo đơn hàng từ giỏ hàng theo từng Shop
-- `PATCH /api/v1/order/{orderId}/status` — Cập nhật trạng thái vòng đời đơn hàng
-- `PATCH /api/v1/order/{orderId}/received` — Người mua xác nhận đã nhận hàng thành công
-- `POST /api/v1/order/{orderId}/ghn/retry` — Thử lại tiến trình đẩy mã vận đơn sang GHN
-- `GET /api/v1/order/me` — Lấy danh sách lịch sử đơn hàng của người dùng hiện tại
-- `GET /api/v1/order/shops` — *(BUSINESS)* Quản lý danh sách đơn hàng thuộc cửa hàng của mình
+Backend **không** có endpoint đăng xuất: đăng xuất là thao tác xóa token ở phía frontend.
 
-### 4. Phân hệ Hoàn trả & Tranh chấp (`/api/v1/returns`)
-- `GET /api/v1/returns/order/{orderId}` — Xem thông tin chi tiết phiên hoàn trả của đơn hàng
-- `POST /api/v1/returns/{returnId}/tracking` — Người mua gửi mã vận đơn chuyển hàng hoàn trả về Shop
-- `POST /api/v1/returns/{returnId}/confirm-delivered` — Shipper/Hệ thống cập nhật hàng đã tới kho Shop (Bắt đầu đếm 72h)
-- `POST /api/v1/returns/{returnId}/complete` — *(BUSINESS)* Shop đồng ý hoàn tiền sau khi kiểm tra máy
-- `POST /api/v1/returns/{returnId}/dispute` — *(BUSINESS)* Shop khiếu nại tráo hàng/hỏng hóc, kèm video bằng chứng
-- `POST /api/v1/returns/{returnId}/resolve-dispute` — *(ADMIN)* Quản trị viên đưa ra phán quyết hoàn tiền hay trả hàng
+### 2. Định danh eKYC — `/kyc`
+`POST /kyc/sessions:start`, `POST /kyc/session/{id}/upload`, `POST /kyc/session/{id}/attach`, `POST /kyc/sessions/{id}/classify`, `POST /kyc/sessions/{id}/ocr/front`, `.../ocr/back`, `.../ocr/liveness`, `POST /kyc/sessions/{id}/compare`, `POST /kyc/sessions/{id}/fullFlow-upload`, `GET /kyc/sessions/{id}`.
 
-### 5. Phân hệ Ký quỹ & Quản lý Tài chính (`/api/v1/escrow` & `/api/v1/wallet`)
-- `GET /api/v1/escrow` — *(ADMIN)* Báo cáo tổng thể quỹ ký quỹ Escrow đang giữ trên toàn hệ thống
-- `POST /api/v1/escrow/orders/{orderId}/release` — *(ADMIN)* Can thiệp giải phóng ký quỹ thủ công
-- `GET /api/v1/wallet/me` — Truy vấn số dư ví khả dụng và lịch sử biến động số dư
-- `GET /api/v1/wallet/admin` — *(ADMIN)* Tra cứu số dư ví của bất kỳ người dùng/shop nào
+### 3. Yêu cầu và khiếu nại — `/request`, `/report`
+- `POST /request/regis-seller` — đăng ký bán hàng; `POST /request/ban-review`, `GET /request/ban-review/status` — kháng cáo khóa tài khoản
+- `GET /request`, `GET /request/{id}`; *(ADMIN)* `GET /request/admin`, `PUT /request/approve`, `PUT /request/reject`
+- `POST /report` — gửi khiếu nại; `PUT /report/{id}/cancel`; *(BUSINESS)* `POST /report/{id}/seller-respond`; `POST /report/{id}/escalate`; *(ADMIN)* `PUT /report/{id}/handle`; `GET /report/by-order/{orderId}`, `GET /report/policy-clauses`
+
+### 4. Sản phẩm, giỏ hàng, voucher, đánh giá
+- Công khai: `GET /product`, `GET /product/{id}`, `GET /product/{id}/similar`, `GET /product/shop/{shopId}/featured`, `GET /category`, `GET /vouchers`, `GET /vouchers/shop/{shopId}`
+- Người bán: `POST|PUT|DELETE /seller/...`, `GET /seller/by-shop`, `PATCH /seller/{id}/featured`; ảnh sản phẩm `/product/image/**`; lịch sử tồn kho `/inventory-history`
+- Admin: `GET /admin/products/pending`, `POST /admin/products/{id}/approve|reject`; `PUT /category/{id}/commission-rate`
+- Giỏ hàng: `GET /cart`, `POST /cart/items`, `POST /cart/items/{id}/plus|minus`, `DELETE /cart/items/{id}`
+- Voucher: `GET /vouchers/my-vouchers`, `POST /vouchers/{id}/claim`, `POST /vouchers/calculate`; quản lý `POST|PUT|DELETE /vouchers`, `GET /vouchers/shop-manage` *(BUSINESS)*, `GET /vouchers/platform-manage` *(ADMIN)*
+- Đánh giá: `/review/products/{productId}`, `POST /review/products/{productId}/reviews`, `/review/reviews/{id}`, `/review/my-reviews`; phản hồi của shop `/reply/reviews/reply`
+- Yêu thích và theo dõi: `/wishlist/toggle/{productId}`, `/wishlist/my`; `/social/shop/toggle-follow/{shopId}`
+
+### 5. Đặt hàng và giao vận — `/checkout`, `/order`, `/shipping`, `/webhooks/ghn`
+- `POST /checkout/quote` — báo giá; `GET /checkout/confirm` — xác nhận kết quả thanh toán
+- `POST /order` — tạo đơn theo từng shop; `PATCH /order/{id}/status`; `PATCH /order/{id}/received` — người mua xác nhận đã nhận
+- `POST /order/{id}/ghn/retry`, `PUT /order/{id}/ghn/code` — đồng bộ mã vận đơn GHN
+- `GET /order/me`, `GET /order/{id}/me` (người mua); `GET /order/shops`, `GET /order/shops/orders/{id}` (người bán); `GET /order`, `GET /order/{id}`, `GET /order/shop-ranking` *(ADMIN)*
+- `GET /shipping/provinces|districts|wards`, `POST /shipping/fee`; `GET /shipping-fees`, `GET /shipping-fees/summary` (quản trị phí ship)
+- `POST /webhooks/ghn` — GHN gọi về cập nhật trạng thái giao hàng
+
+### 6. Thanh toán, Escrow, ví — `/payment`, `/escrow`, `/wallet`
+- `POST /payment/orders/{orderId}/vnpay` — tạo URL thanh toán VNPAY; `GET /payment/vnpay/return` — VNPAY chuyển hướng về sau thanh toán (backend xác minh chữ ký HMAC-SHA512)
+- *(ADMIN)* `GET /escrow`, `POST /escrow/orders/{id}/release|refund|split-settle`; `GET /escrow/orders/{id}/settlement`
+- `GET /wallet/me`, `PUT /wallet/bank-info`, `POST /wallet/withdraw`, `GET /wallet/withdrawals`, `POST /wallet/withdrawals/{id}/cancel`
+- *(ADMIN)* `GET /wallet/admin`, `GET /wallet/admin/withdrawals`, `POST /wallet/admin/withdrawals/{id}/approve|reject`
+
+### 7. Trả hàng và phân xử — `/returns`
+`POST /returns/batch`, `GET /returns/{id}`, `GET /returns/order/{orderId}`, `POST /returns/{id}/tracking`, `POST /returns/{id}/confirm-delivered`, `POST /returns/{id}/confirm-returned`, `POST /returns/{id}/complete` *(BUSINESS)*, `POST /returns/{id}/dispute` *(BUSINESS)*, `POST /returns/{id}/resolve-dispute` *(ADMIN)*.
+
+### 8. Cửa hàng, quỹ ký quỹ, hoa hồng, chính sách
+- Cửa hàng: `GET /shop/{shopId}`, `GET /shop/my-shop`, `GET /shop/my-violations`, `PATCH /shop/my-shop/escrow-status`
+- Quỹ ký quỹ shop (`/shop-escrow-fund`, bí danh `/shop/escrow-funds`): `GET /my-fund`, `GET /my-fund/transactions`, `POST /top-up`, `POST /vnpay/create-payment`, `POST /request-refund`; Admin: `GET /admin`, `POST /admin/{shopId}/deduct`, `PUT /admin/{shopId}/adjust`, duyệt hoặc từ chối yêu cầu đóng shop và hoàn quỹ
+- Cấp uy tín: `GET /trust-levels`; Admin `GET /trust-levels/admin`, `PUT /trust-levels/admin/{starLevel}`, `POST /trust-levels/admin/reset-defaults`
+- Hoa hồng và cấu hình sàn: `GET|PATCH /platform`, `GET /platform/all`, `PUT /platform/setting`, `GET /platform/commission/calculate-preview`; thâm niên `GET /platform/seniority-policies`, `/platform/seniority-policies/admin`; thống kê `/commissions/overview|by-month|by-category|top-sellers`
+- Chính sách hiển thị: `GET /policies`, `GET /policies/{key}`; Admin `/admin/policies`
+
+### 9. Chat, AI, gợi ý, thông báo, thống kê
+- `GET|POST /chat/threads/**`, `/chat/messages/{id}`, `POST /chat/upload` — chat REST; WebSocket tại `/ws/chat`
+- `POST /chat/ai` — trợ lý AI; `GET /chat/init`, `POST /chat/interact` — chatbot kịch bản
+- `GET /recommendations`, `GET /recommendations/similar/{id}`, `GET /recommendations/accessories/{id}`, `POST /recommendations/track`
+- `GET /notifications/my`, `GET /notifications/unread-count`, `PUT /notifications/{id}/read`, `PUT /notifications/read-all`
+- `GET /statistics/admin/dashboard`, `/statistics/admin/shops/performance` *(ADMIN)*; `GET /statistics/seller/dashboard`; `GET /statistics/buyer/spending`
 
 ---
 
-## 🧪 HƯỚNG DẪN BUILD & KIỂM THỬ (TESTING)
+## 🧪 BUILD VÀ KIỂM THỬ
 
-### 1. Build đóng gói JAR (Bỏ qua test nếu cần build nhanh)
+Chạy trong thư mục `ecommerce` (Windows dùng `.\mvnw.cmd`, Linux/macOS dùng `./mvnw`):
+
 ```bash
-# Trên Windows PowerShell:
-.\mvnw.cmd clean package -DskipTests
-# Trên Linux/macOS:
+# Chạy backend ở chế độ phát triển (cần docker compose up -d và file .env)
+./mvnw spring-boot:run
+
+# Đóng gói JAR, bỏ qua kiểm thử
 ./mvnw clean package -DskipTests
+
+# Chạy toàn bộ kiểm thử đơn vị (JUnit 5 + Mockito)
+./mvnw test
 ```
 
-### 2. Thực thi toàn bộ Unit Test & Integration Test
-```bash
-# Chạy toàn bộ test suite:
-.\mvnw.cmd test
-```
-
-### 3. Khởi chạy trực tiếp chế độ Development
-```bash
-.\mvnw.cmd spring-boot:run
-```
+- Bộ kiểm thử gồm 98 lớp trong `src/test`; JaCoCo (cấu hình trong `pom.xml`, loại trừ DTO, entity, enum, hằng số) ghi dữ liệu độ phủ vào `target/jacoco.exec` và báo cáo vào `target/site/jacoco`.
+- Báo cáo kiểm thử của đồ án: `Report5_Unit_Test.xlsx` (kiểm thử đơn vị) và `Report5_Test_Report.xlsx` (kiểm thử hệ thống) trong thư mục `02_Bao_cao`.

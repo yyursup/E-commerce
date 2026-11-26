@@ -302,7 +302,9 @@ public class AiChatServiceImpl implements AiChatService {
     }
 
     private static Map<String, Object> tool(String name, String description, Map<String, Object> properties, List<String> required) {
-        if (properties.isEmpty()) return Map.of("name", name, "description", description);
+        // Tool không tham số vẫn phải có "parameters": một số nhà cung cấp (vLLM) báo json_parse_error nếu thiếu,
+        // còn Gemini lại từ chối "properties" rỗng -> chỉ gửi {"type":"object"}
+        if (properties.isEmpty()) return Map.of("name", name, "description", description, "parameters", Map.of("type", "object"));
         Map<String, Object> params = new LinkedHashMap<>();
         params.put("type", "object");
         params.put("properties", properties);

@@ -131,7 +131,7 @@ export const renderTargetChips = (targetInfo, isDark) => {
 
   const formattedText = targetInfo.replace(/(\d+(?:\.\d+)?)\s*(?:đ|₫)/g, (match, p1) => {
     const parsed = parseFloat(p1)
-    return isNaN ? match : new Intl.NumberFormat('vi-VN').format + ' đ'
+    return isNaN(parsed) ? match : new Intl.NumberFormat('vi-VN').format(parsed) + ' đ'
   })
 
   return (

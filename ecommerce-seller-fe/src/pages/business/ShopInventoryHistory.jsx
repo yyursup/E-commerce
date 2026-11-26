@@ -11,6 +11,7 @@ import { useThemeStore } from '../../store/useThemeStore'
 import { cn } from '../../lib/cn'
 import sellerService from '../../services/seller'
 import toast from 'react-hot-toast'
+import Pagination from '../../components/Pagination'
 
 export default function ShopInventoryHistory() {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
@@ -214,27 +215,7 @@ export default function ShopInventoryHistory() {
         
         {/* Pagination */}
         {!loading && totalPages > 1 && (
-          <div className="px-6 py-4 border-t border-stone-100 dark:border-slate-800 flex items-center justify-between">
-            <span className="text-xs text-stone-500 dark:text-slate-400">
-              Trang {page + 1} / {totalPages}
-            </span>
-            <div className="flex items-center gap-2">
-              <button
-                disabled={page === 0}
-                onClick={() => loadHistory(page - 1)}
-                className="p-1.5 rounded-lg border border-stone-200 dark:border-slate-700 hover:bg-stone-50 dark:hover:bg-slate-800 disabled:opacity-50"
-              >
-                <HiOutlineChevronLeft className="w-4 h-4" />
-              </button>
-              <button
-                disabled={page >= totalPages - 1}
-                onClick={() => loadHistory(page + 1)}
-                className="p-1.5 rounded-lg border border-stone-200 dark:border-slate-700 hover:bg-stone-50 dark:hover:bg-slate-800 disabled:opacity-50"
-              >
-                <HiOutlineChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
+          <div className="px-6 py-4 border-t border-stone-100 dark:border-slate-800"><Pagination currentPage={page + 1} totalPages={totalPages} onPageChange={(p) => loadHistory(p - 1)} isDark={isDark} /></div>
         )}
       </div>
     </div>

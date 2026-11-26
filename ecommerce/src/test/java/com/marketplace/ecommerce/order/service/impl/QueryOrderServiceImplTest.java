@@ -12,7 +12,18 @@ import com.marketplace.ecommerce.order.valueObjects.OrderStatus;
 import com.marketplace.ecommerce.request.service.OrderDisputeService;
 import com.marketplace.ecommerce.shop.entity.Shop;
 import com.marketplace.ecommerce.shop.repository.ShopRepository;
+import com.marketplace.ecommerce.order.dto.response.OrderStatusSummary;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Root;
 import org.junit.jupiter.api.BeforeEach;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+import org.mockito.Answers;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,6 +36,7 @@ import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -241,5 +253,71 @@ class QueryOrderServiceImplTest {
 
         when(orderRepository.findByStatusOrderByCreatedAtDesc(OrderStatus.DELIVERED)).thenReturn(List.of(sampleOrder));
         assertEquals(1, queryOrderService.adminListOrders(accountId, OrderStatus.DELIVERED).size());
+    }
+
+    @Test
+    @DisplayName("pageOrdersForShop chỉ lấy đơn của shop sở hữu và giữ nguyên tổng số bản ghi")
+    @SuppressWarnings("unchecked")
+    void pageOrdersForShop_mapsPageAndKeepsTotal() {
+        when(userRepository.findByAccountId(accountId)).thenReturn(Optional.of(sampleUser));
+        when(shopRepository.findByUserId(sampleUser.getId())).thenReturn(Optional.of(sampleShop));
+        when(orderRepository.findAll(any(Specification.class), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(sampleOrder), PageRequest.of(2, 1), 25));
+
+        Page<OrderResponse> page = queryOrderService.pageOrdersForShop(accountId,
+                List.of(OrderStatus.DELIVERED), null, PageRequest.of(2, 1));
+
+        assertEquals(1, page.getContent().size());
+        assertEquals("ORD-Q-100", page.getContent().get(0).getOrderNumber());
+        assertEquals(25, page.getTotalElements());
+        assertEquals(2, page.getNumber());
+        verify(orderDisputeService).getDisputeInfoBatch(List.of(sampleOrder.getId()));
+    }
+
+    @Test
+    @DisplayName("pageOrdersForShop từ chối khi tài khoản không có gian hàng")
+    void pageOrdersForShop_noShop_throws() {
+        when(userRepository.findByAccountId(accountId)).thenReturn(Optional.of(sampleUser));
+        when(shopRepository.findByUserId(sampleUser.getId())).thenReturn(Optional.empty());
+        assertThrows(CustomException.class,
+                () -> queryOrderService.pageOrdersForShop(accountId, null, null, PageRequest.of(0, 10)));
+    }
+
+    @Test
+    @DisplayName("safePageable bỏ cột sort lạ, mặc định createdAt giảm dần")
+    void safePageable_whitelistsSort() {
+        Pageable bad = PageRequest.of(1, 5, Sort.by("password"));
+        Pageable fixed = QueryOrderServiceImpl.safePageable(bad);
+        assertEquals(Sort.by(Sort.Direction.DESC, "createdAt"), fixed.getSort());
+        assertEquals(1, fixed.getPageNumber());
+        assertEquals(5, fixed.getPageSize());
+
+        Pageable ok = QueryOrderServiceImpl.safePageable(PageRequest.of(0, 10, Sort.by(Sort.Direction.ASC, "total")));
+        assertEquals(Sort.by(Sort.Direction.ASC, "total"), ok.getSort());
+    }
+
+    @Test
+    @DisplayName("filter escape ký tự đặc biệt của LIKE trong từ khóa tìm kiếm")
+    @SuppressWarnings("unchecked")
+    void filter_escapesLikeWildcards() {
+        Root<Order> root = mock(Root.class, Answers.RETURNS_DEEP_STUBS);
+        CriteriaQuery<?> query = mock(CriteriaQuery.class, Answers.RETURNS_DEEP_STUBS);
+        CriteriaBuilder cb = mock(CriteriaBuilder.class, Answers.RETURNS_DEEP_STUBS);
+
+        QueryOrderServiceImpl.filter(null, null, null, " 50%_OFF ").toPredicate(root, query, cb);
+
+        verify(cb, atLeastOnce()).like(any(), eq("%50\\%\\_off%"), eq('\\'));
+    }
+
+    @Test
+    @DisplayName("summarizeForUser trả về thống kê theo trạng thái của người mua")
+    void summarizeForUser_delegates() {
+        when(userRepository.findByAccountId(accountId)).thenReturn(Optional.of(sampleUser));
+        List<OrderStatusSummary> rows = List.of(new OrderStatusSummary(OrderStatus.DELIVERED, 2L, null));
+        when(orderRepository.summarizeByUserId(sampleUser.getId())).thenReturn(rows);
+
+        List<OrderStatusSummary> result = queryOrderService.summarizeForUser(accountId);
+        assertEquals(BigDecimal.ZERO, result.get(0).total());
+        assertEquals(2L, result.get(0).count());
     }
 }

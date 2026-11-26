@@ -20,6 +20,7 @@ import toast from 'react-hot-toast'
 import AdminReportsTab from './components/reports/AdminReportsTab'
 import AdminReportDetailModal from './components/reports/AdminReportDetailModal'
 import AdminActionModal from './components/reports/AdminActionModal'
+import Pagination from './components/order/Pagination'
 import { isSellerReturnDisputeItem } from '../../lib/reportHelpers'
 
 // Helper tách và gom tất cả link ảnh từ các nguồn (hỗ trợ nhiều ảnh phân cách bằng dấu phẩy)
@@ -61,6 +62,11 @@ export default function AdminReports() {
 
   // Data states
   const [reports, setReports] = useState([])
+  // Phân trang phía server (page bắt đầu từ 0 theo Spring Pageable)
+  const [page, setPage] = useState(0)
+  const [pageSize, setPageSize] = useState(10)
+  const [totalElements, setTotalElements] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
   const [policyClauses, setPolicyClauses] = useState([])
 
   // Modal actions (xác nhận/từ chối kèm ghi chú)
@@ -85,10 +91,12 @@ export default function AdminReports() {
     try {
       setLoading(true)
       const [reportRes, clauseRes] = await Promise.all([
-        requestService.getAdminRequests({ type: 'REPORT' }),
+        requestService.getAdminRequests({ type: 'REPORT', page, size: pageSize }),
         reportService.getPolicyClauses().catch(() => []),
       ])
       const reportList = reportRes?.content || (Array.isArray(reportRes) ? reportRes : [])
+      setTotalElements(typeof reportRes?.totalElements === 'number' ? reportRes.totalElements : reportList.length)
+      setTotalPages(typeof reportRes?.totalPages === 'number' ? reportRes.totalPages : 1)
 
       // Enrich chi tiết cho các vụ việc Đơn hàng để nhận diện chính xác Khiếu nại kiện hoàn (Giai đoạn 2)
       const enrichedReports = await Promise.all(
@@ -133,7 +141,7 @@ export default function AdminReports() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [page, pageSize])
 
   useEffect(() => {
     fetchData()
@@ -409,7 +417,7 @@ export default function AdminReports() {
           )}
         >
           <HiOutlineExclamationCircle className="h-4 w-4" />
-          Báo Cáo Vi Phạm & Tranh Chấp ({reports.length})
+          Báo Cáo Vi Phạm & Tranh Chấp ({totalElements})
         </button>
       </div>
 
@@ -434,6 +442,22 @@ export default function AdminReports() {
             handleOpenActionModal={handleOpenActionModal}
             parseImages={parseImages}
           />
+        )}
+        {!loading && totalElements > 0 && (
+          <div className="mt-4 border-t border-stone-200 pt-3 dark:border-slate-800">
+            <Pagination
+              currentPage={page + 1}
+              totalPages={totalPages}
+              totalItems={totalElements}
+              pageSize={pageSize}
+              onPageChange={(p) => setPage(p - 1)}
+              onPageSizeChange={(size) => {
+                setPageSize(size)
+                setPage(0)
+              }}
+              isDark={isDark}
+            />
+          </div>
         )}
       </div>
 

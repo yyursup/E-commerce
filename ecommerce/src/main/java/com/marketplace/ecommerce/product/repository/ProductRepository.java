@@ -20,7 +20,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public interface ProductRepository extends JpaRepository<Product, UUID> {
+public interface ProductRepository extends JpaRepository<Product, UUID>, org.springframework.data.jpa.repository.JpaSpecificationExecutor<Product> {
 
     boolean existsBySkuAndDeletedFalse(String sku);
 
@@ -146,21 +146,6 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
     List<Product> findAllByShopIdWithDetails(@Param("shopId") UUID shopId);
 
     @Query("""
-                select distinct p
-                from Product p
-                join fetch p.shop s
-                join fetch p.productCategory c
-                left join fetch p.images i
-                where s.id = :shopId
-                  and p.status = :status
-                  and p.deleted = false
-            """)
-    List<Product> findAllByShopIdAndStatusWithDetails(
-            @Param("shopId") UUID shopId,
-            @Param("status") ProductStatus status
-    );
-
-    @Query("""
                 select p
                 from Product p
                 join fetch p.shop s
@@ -175,17 +160,6 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
                   and p.deleted = false
             """)
     List<Product> findFeaturedByShopIdWithDetails(@Param("shopId") UUID shopId);
-
-    @Query("""
-                select distinct p
-                from Product p
-                join fetch p.shop s
-                join fetch p.productCategory c
-                left join fetch p.images i
-                where s.id = :shopId
-                  and (p.status = 'DELETED' or p.flagged = true or p.deleted = true)
-            """)
-    List<Product> findAllViolatedProductsByShopId(@Param("shopId") UUID shopId);
 
     long countByShopIdAndFeaturedTrueAndDeletedFalse(UUID shopId);
 

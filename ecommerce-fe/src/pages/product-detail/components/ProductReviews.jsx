@@ -8,6 +8,7 @@ import reviewService from '../../../services/review'
 import replyService from '../../../services/reply'
 import { useAuthStore } from '../../../store/useAuthStore'
 import { useThemeStore } from '../../../store/useThemeStore'
+import Pagination from '../../../components/Pagination'
 
 const isVideoUrl = (url = '') => {
   return /\.(mp4|mov|webm|ogg|m4v)(\?.*)?$/i.test(url) || url.includes('/video/')
@@ -324,39 +325,7 @@ export default function ProductReviews({ productId }) {
         )}
 
         {totalPages > 1 && (
-          <div className="flex justify-center gap-2 pt-4">
-            <button
-              type="button"
-              disabled={page === 0}
-              onClick={() => setPage((currentPage) => currentPage - 1)}
-              className={cn(
-                'rounded-lg px-4 py-2 text-sm font-medium transition disabled:opacity-30',
-                isDark
-                  ? 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-                  : 'bg-stone-100 text-stone-700 hover:bg-stone-200',
-              )}
-            >
-              Trước
-            </button>
-
-            <span className="flex items-center px-4 text-sm font-medium dark:text-slate-400">
-              Trang {page + 1} / {totalPages}
-            </span>
-
-            <button
-              type="button"
-              disabled={page + 1 >= totalPages}
-              onClick={() => setPage((currentPage) => currentPage + 1)}
-              className={cn(
-                'rounded-lg px-4 py-2 text-sm font-medium transition disabled:opacity-30',
-                isDark
-                  ? 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-                  : 'bg-stone-100 text-stone-700 hover:bg-stone-200',
-              )}
-            >
-              Sau
-            </button>
-          </div>
+          <div className="pt-4"><Pagination currentPage={page + 1} totalPages={totalPages} onPageChange={(p) => setPage(p - 1)} isDark={isDark} /></div>
         )}
       </div>
 

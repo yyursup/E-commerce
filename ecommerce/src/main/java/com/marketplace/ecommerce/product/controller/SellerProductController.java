@@ -38,13 +38,21 @@ public class SellerProductController {
     }
 
 
+    // Sản phẩm nổi bật luôn đứng đầu, sau đó theo sort client gửi (mặc định mới nhất)
     @GetMapping("/by-shop")
-    public List<SellerProductResponse> getProductsByShop(
+    public org.springframework.data.domain.Page<SellerProductResponse> getProductsByShop(
             @CurrentUser CurrentUserInfo u,
-            @RequestParam(required = false) String status
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String q,
+            @org.springframework.data.web.PageableDefault(size = 10, sort = "createdAt", direction = org.springframework.data.domain.Sort.Direction.DESC)
+            org.springframework.data.domain.Pageable pageable
     ) {
+        return queryProductService.getProductsByShop(u.getAccountId(), status, q, pageable);
+    }
 
-        return queryProductService.getProductsByShopAndStatus(u.getAccountId(), status);
+    @GetMapping("/by-shop/featured-count")
+    public long countFeaturedProducts(@CurrentUser CurrentUserInfo u) {
+        return queryProductService.countFeaturedProducts(u.getAccountId());
     }
 
     @PutMapping("/{productId}")

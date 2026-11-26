@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   HiOutlinePlus,
@@ -25,6 +25,9 @@ import { cn } from '../lib/cn'
 import sellerService from '../services/seller'
 import ProductFormModal from './business/components/ProductFormModal'
 import ProductDetailModal from './business/components/ProductDetailModal'
+import Pagination from '../components/Pagination'
+
+const PAGE_SIZE = 10
 
 export default function ShopProducts() {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
@@ -42,25 +45,68 @@ export default function ShopProducts() {
   const [selectedProduct, setSelectedProduct] = useState(null) // Product for detail modal
   const [deletingId, setDeletingId] = useState(null)
   const [togglingFeaturedId, setTogglingFeaturedId] = useState(null)
+  const [page, setPage] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
+  const [totalElements, setTotalElements] = useState(0)
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [featuredCount, setFeaturedCount] = useState(0)
+  const requestIdRef = useRef(0)
+
+  const loadFeaturedCount = () =>
+    sellerService.getFeaturedCount().then((n) => setFeaturedCount(Number(n) || 0)).catch(() => {})
 
   const loadProducts = async () => {
+    const requestId = ++requestIdRef.current
     try {
       setLoading(true)
-      const filterParam = statusFilter === 'ALL' ? null : statusFilter
-      const data = await sellerService.getProductsByShop(filterParam)
-      setProducts(Array.isArray(data) ? data : [])
+      const data = await sellerService.getProductsByShop({
+        page,
+        size: PAGE_SIZE,
+        status: statusFilter === 'ALL' ? null : statusFilter,
+        q: debouncedSearch,
+      })
+      if (requestId !== requestIdRef.current) return // bỏ kết quả của lần gọi cũ
+      const content = Array.isArray(data?.content) ? data.content : []
+      // Xóa sản phẩm cuối của trang cuối -> lùi về trang trước
+      if (content.length === 0 && page > 0 && (data?.totalPages || 0) <= page) {
+        setPage(Math.max(0, (data?.totalPages || 1) - 1))
+        return
+      }
+      setProducts(content)
+      setTotalPages(data?.totalPages || 0)
+      setTotalElements(data?.totalElements || 0)
     } catch (err) {
       console.error('Load shop products error:', err)
       toast.error(err?.message || 'Không thể tải danh sách sản phẩm từ máy chủ.')
       setProducts([])
     } finally {
-      setLoading(false)
+      if (requestId === requestIdRef.current) setLoading(false)
     }
   }
 
+  // Tìm kiếm ở server: chờ gõ xong rồi mới gọi
+  useEffect(() => {
+    const t = setTimeout(() => {
+      const q = search.trim()
+      if (q === debouncedSearch) return
+      setDebouncedSearch(q)
+      setPage(0)
+    }, 400)
+    return () => clearTimeout(t)
+  }, [search])
+
   useEffect(() => {
     loadProducts()
-  }, [statusFilter])
+  }, [statusFilter, debouncedSearch, page])
+
+  useEffect(() => {
+    loadFeaturedCount()
+  }, [])
+
+  const changeStatusFilter = (key) => {
+    setStatusFilter(key)
+    setPage(0)
+  }
 
   const handleCreateProduct = () => {
     if (isShopClosed) {
@@ -113,6 +159,7 @@ export default function ShopProducts() {
     setShowProductModal(false)
     setEditingProduct(null)
     loadProducts()
+    loadFeaturedCount()
   }
 
   const handleToggleFeatured = async (product, e) => {
@@ -124,7 +171,9 @@ export default function ShopProducts() {
     try {
       setTogglingFeaturedId(product.id)
       const updated = await sellerService.toggleFeatured(product.id)
-      setProducts((prev) => prev.map((p) => p.id === product.id ? { ...p, featured: updated.featured } : p))
+      // Tải lại để sản phẩm nổi bật nhảy lên đầu danh sách
+      loadProducts()
+      loadFeaturedCount()
       if (updated.featured) {
         toast.success(`Đã đẩy nổi bật "${product.name}"`)
       } else {
@@ -138,16 +187,7 @@ export default function ShopProducts() {
     }
   }
 
-  const featuredCount = products.filter((p) => p.featured).length
-
-  const filtered = products.filter((p) => {
-    const q = search.toLowerCase().trim()
-    if (!q) return true
-    const nameMatch = p.name?.toLowerCase().includes(q)
-    const skuMatch = p.sku?.toLowerCase().includes(q)
-    const catMatch = p.categoryName?.toLowerCase().includes(q)
-    return nameMatch || skuMatch || catMatch
-  })
+  const filtered = products
 
   const formatVND = (amt) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amt || 0)
@@ -228,7 +268,7 @@ export default function ShopProducts() {
           </h1>
           <div className="flex items-center gap-3 mt-1 flex-wrap">
             <p className={cn('text-xs', isDark ? 'text-slate-400' : 'text-stone-500')}>
-              Tổng số: <span className="font-extrabold text-amber-500">{products.length}</span> sản phẩm trong gian hàng
+              Tổng số: <span className="font-extrabold text-amber-500">{totalElements}</span> sản phẩm trong gian hàng
             </p>
             {featuredCount > 0 && (
               <span className="inline-flex items-center gap-1 text-[11px] font-bold border px-2.5 py-0.5 rounded-full bg-stone-100 text-stone-950 border-stone-950">
@@ -349,7 +389,7 @@ export default function ShopProducts() {
             return (
               <button
                 key={tab.key}
-                onClick={() => setStatusFilter(tab.key)}
+                onClick={() => changeStatusFilter(tab.key)}
                 className={cn(
                   'px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all',
                   isActive
@@ -667,6 +707,20 @@ export default function ShopProducts() {
           })
         )}
       </div>
+
+      {!loading && (
+        <Pagination
+          currentPage={page + 1}
+          totalPages={totalPages}
+          totalItems={totalElements}
+          pageSize={PAGE_SIZE}
+          onPageChange={(p) => {
+            setPage(p - 1)
+            window.scrollTo({ top: 0, behavior: 'smooth' })
+          }}
+          isDark={isDark}
+        />
+      )}
 
       {/* Product Detail Modal */}
       {selectedProduct && (

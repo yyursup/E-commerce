@@ -19,6 +19,7 @@ import toast from 'react-hot-toast'
 import { cn } from '../../../../lib/cn'
 import { useThemeStore } from '../../../../store/useThemeStore'
 import walletService from '../../../../services/wallet'
+import Pagination from '../order/Pagination'
 
 const STATUS_FILTERS = [
   { id: 'ALL', label: 'Tất cả' },
@@ -351,27 +352,7 @@ export default function WithdrawalsTab() {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="p-4 border-t border-stone-100 dark:border-slate-800 flex items-center justify-between text-xs">
-            <span className="text-stone-500 dark:text-slate-400">
-              Trang {page + 1} / {totalPages}
-            </span>
-            <div className="flex gap-2">
-              <button
-                disabled={page === 0 || loading}
-                onClick={() => fetchWithdrawals(page - 1, statusFilter)}
-                className="rounded-lg px-3 py-1.5 border border-stone-200 dark:border-slate-700 disabled:opacity-40"
-              >
-                Trang trước
-              </button>
-              <button
-                disabled={page >= totalPages - 1 || loading}
-                onClick={() => fetchWithdrawals(page + 1, statusFilter)}
-                className="rounded-lg px-3 py-1.5 border border-stone-200 dark:border-slate-700 disabled:opacity-40"
-              >
-                Trang sau
-              </button>
-            </div>
-          </div>
+          <div className="p-4 border-t border-stone-100 dark:border-slate-800"><Pagination currentPage={page + 1} totalPages={totalPages} totalItems={totalElements} pageSize={10} onPageChange={(p) => fetchWithdrawals(p - 1, statusFilter)} isDark={isDark} /></div>
         )}
       </div>
 

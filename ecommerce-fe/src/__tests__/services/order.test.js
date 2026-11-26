@@ -9,6 +9,8 @@ vi.mock('../../api/axiosClient', () => ({
 // Service đơn hàng: mỗi dòng là [hàm, tham số, phương thức HTTP, tham số axios mong đợi].
 // Các endpoint này đã được đối chiếu với route của backend (Spring controller) khi viết test.
 const CASES = [
+  ["getMyOrdersPaged", [{"page": 1, "statuses": []}], "get", ["/api/v1/order/me/paged", {"params": {"page": 1, "size": 10}}]],
+  ["getMyOrderSummary", [], "get", ["/api/v1/order/me/summary"]],
   ["getCheckoutConfirm", ["shopid-1"], "get", ["/api/v1/checkout/confirm", {"params": {"shopId": "shopid-1"}}]],
   ["getQuote", ["shopid-1", "addressid-1", "voucherparam-1"], "post", ["/api/v1/checkout/quote", {"shopId": "shopid-1", "addressId": "addressid-1", "voucherCode": "voucherparam-1"}]],
   ["createOrder", ["shopid-1", "addressid-1", "notes-1", "voucherparam-1", "paymentmethod-1"], "post", ["/api/v1/order", {"shopId": "shopid-1", "addressId": "addressid-1", "notes": "notes-1", "paymentMethod": "paymentmethod-1", "voucherCode": "voucherparam-1"}]],

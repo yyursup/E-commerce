@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   HiOutlineShoppingBag,
@@ -21,38 +21,142 @@ import ShopOrderCard from './components/order/ShopOrderCard'
 import ShopOrderTabs from './components/order/ShopOrderTabs'
 import ExportSettlementModal from './components/order/ExportSettlementModal'
 import { formatCurrency } from './components/order/orderHelpers'
+import Pagination from '../../components/Pagination'
+
+const PAGE_SIZE = 10
+
+export const TAB_STATUSES = {
+  ALL: [],
+  PENDING_PAYMENT: ['PENDING_PAYMENT'],
+  PROCESSING: ['CONFIRMED', 'PROCESSING', 'PENDING'],
+  SHIPPING: ['SHIPPING', 'SHIPPED'],
+  DELIVERED: ['DELIVERED', 'COMPLETED'],
+  CANCELLED: ['CANCELLED', 'REFUNDED'],
+}
+
+const SORT_PARAM = {
+  NEWEST: 'createdAt,desc',
+  OLDEST: 'createdAt,asc',
+  PRICE_DESC: 'total,desc',
+  PRICE_ASC: 'total,asc',
+}
+
+// summary: [{ status, count, total }] từ /order/shops/summary
+export function buildOrderStats(summary = []) {
+  const count = (statuses) =>
+    summary.filter((r) => statuses.includes(r.status)).reduce((n, r) => n + Number(r.count || 0), 0)
+  const all = summary.reduce((n, r) => n + Number(r.count || 0), 0)
+  const deliveredRevenue = summary
+    .filter((r) => TAB_STATUSES.DELIVERED.includes(r.status))
+    .reduce((n, r) => n + Number(r.total || 0), 0)
+
+  const processing = count(TAB_STATUSES.PROCESSING)
+  const metrics = {
+    totalCount: all,
+    pendingProcessingCount: count(['CONFIRMED', 'PROCESSING']),
+    shippingCount: count(TAB_STATUSES.SHIPPING),
+    completedCount: count(TAB_STATUSES.DELIVERED),
+    totalDeliveredRevenue: deliveredRevenue,
+  }
+  const tabs = [
+    { id: 'ALL', label: 'Tất cả', count: all },
+    { id: 'PENDING_PAYMENT', label: 'Chờ thanh toán', count: count(TAB_STATUSES.PENDING_PAYMENT) },
+    { id: 'PROCESSING', label: 'Cần xử lý & Đóng gói', count: processing, highlight: processing > 0 },
+    { id: 'SHIPPING', label: 'Đang giao GHN', count: count(TAB_STATUSES.SHIPPING) },
+    { id: 'DELIVERED', label: 'Đã giao thành công', count: count(TAB_STATUSES.DELIVERED) },
+    { id: 'CANCELLED', label: 'Đã hủy / Hoàn tiền', count: count(TAB_STATUSES.CANCELLED) },
+  ]
+  return { metrics, tabs }
+}
 
 export default function ShopOrders() {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
   const { isAuthenticated } = useAuthStore()
 
   const [orders, setOrders] = useState([])
+  const [summary, setSummary] = useState([])
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
   const [selectedTab, setSelectedTab] = useState('ALL')
   const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedQuery, setDebouncedQuery] = useState('')
   const [sortBy, setSortBy] = useState('NEWEST')
+  const [page, setPage] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
+  const [totalElements, setTotalElements] = useState(0)
   const [showExportModal, setShowExportModal] = useState(false)
+  const [exportOrders, setExportOrders] = useState([])
+  const [loadingExport, setLoadingExport] = useState(false)
   const [error, setError] = useState(null)
+  const requestIdRef = useRef(0)
+
+  // Chờ người dùng gõ xong mới gọi server
+  useEffect(() => {
+    const t = setTimeout(() => {
+      const q = searchQuery.trim()
+      if (q === debouncedQuery) return
+      setDebouncedQuery(q)
+      setPage(0)
+    }, 400)
+    return () => clearTimeout(t)
+  }, [searchQuery])
+
+  // Đổi bộ lọc thì quay về trang đầu (đặt cùng lúc để chỉ gọi API một lần)
+  const selectTab = (tab) => {
+    setSelectedTab(tab)
+    setPage(0)
+  }
+  const changeSort = (value) => {
+    setSortBy(value)
+    setPage(0)
+  }
 
   useEffect(() => {
     if (!isAuthenticated) return
     fetchOrders()
-  }, [isAuthenticated])
+  }, [isAuthenticated, selectedTab, debouncedQuery, sortBy, page])
 
   const fetchOrders = async () => {
+    const requestId = ++requestIdRef.current
     try {
       setLoading(true)
       setError(null)
-      const ordersData = await orderService.getShopOrders(null)
-      setOrders(ordersData || [])
+      const [pageData, summaryData] = await Promise.all([
+        orderService.getShopOrdersPaged({
+          page,
+          size: PAGE_SIZE,
+          statuses: TAB_STATUSES[selectedTab],
+          q: debouncedQuery,
+          sort: SORT_PARAM[sortBy],
+        }),
+        orderService.getShopOrderSummary().catch(() => null),
+      ])
+      if (requestId !== requestIdRef.current) return // bỏ kết quả của lần gọi cũ
+      setOrders(pageData?.content || [])
+      setTotalPages(pageData?.totalPages || 0)
+      setTotalElements(pageData?.totalElements || 0)
+      if (Array.isArray(summaryData)) setSummary(summaryData)
     } catch (err) {
       console.error('Error fetching shop orders:', err)
       const msg = err?.response?.data?.message || err?.message || 'Không thể tải danh sách đơn hàng'
       setError(msg)
       toast.error(msg, { id: 'fetch-orders-error' })
     } finally {
-      setLoading(false)
+      if (requestId === requestIdRef.current) setLoading(false)
+    }
+  }
+
+  // Báo cáo đối soát cần toàn bộ đơn nên tải riêng khi mở modal
+  const openExportModal = async () => {
+    try {
+      setLoadingExport(true)
+      const all = await orderService.getShopOrders(null)
+      setExportOrders(all || [])
+      setShowExportModal(true)
+    } catch (err) {
+      toast.error(err?.message || 'Không thể tải đơn hàng để đối soát')
+    } finally {
+      setLoadingExport(false)
     }
   }
 
@@ -71,101 +175,10 @@ export default function ShopOrders() {
     }
   }
 
-  // Metric Calculations
-  const metrics = useMemo(() => {
-    let totalCount = orders.length
-    let pendingProcessingCount = 0
-    let shippingCount = 0
-    let completedCount = 0
-    let totalDeliveredRevenue = 0
+  // Số liệu & số đếm từng tab lấy từ thống kê server (toàn bộ đơn, không chỉ trang hiện tại)
+  const { metrics, tabs } = useMemo(() => buildOrderStats(summary), [summary])
 
-    orders.forEach((o) => {
-      if (['CONFIRMED', 'PROCESSING'].includes(o.status)) {
-        pendingProcessingCount++
-      } else if (['SHIPPING', 'SHIPPED'].includes(o.status)) {
-        shippingCount++
-      } else if (['DELIVERED', 'COMPLETED'].includes(o.status)) {
-        completedCount++
-        totalDeliveredRevenue += Number(o.total || 0)
-      }
-    })
-
-    return {
-      totalCount,
-      pendingProcessingCount,
-      shippingCount,
-      completedCount,
-      totalDeliveredRevenue,
-    }
-  }, [orders])
-
-  // Filter Tabs Definition with Dynamic Counts
-  const tabs = useMemo(() => {
-    const counts = {
-      ALL: orders.length,
-      PENDING_PAYMENT: orders.filter((o) => o.status === 'PENDING_PAYMENT').length,
-      PROCESSING: orders.filter((o) => ['CONFIRMED', 'PROCESSING', 'PENDING'].includes(o.status)).length,
-      SHIPPING: orders.filter((o) => ['SHIPPING', 'SHIPPED'].includes(o.status)).length,
-      DELIVERED: orders.filter((o) => ['DELIVERED', 'COMPLETED'].includes(o.status)).length,
-      CANCELLED: orders.filter((o) => ['CANCELLED', 'REFUNDED'].includes(o.status)).length,
-    }
-
-    return [
-      { id: 'ALL', label: 'Tất cả', count: counts.ALL },
-      { id: 'PENDING_PAYMENT', label: 'Chờ thanh toán', count: counts.PENDING_PAYMENT },
-      { id: 'PROCESSING', label: 'Cần xử lý & Đóng gói', count: counts.PROCESSING, highlight: counts.PROCESSING > 0 },
-      { id: 'SHIPPING', label: 'Đang giao GHN', count: counts.SHIPPING },
-      { id: 'DELIVERED', label: 'Đã giao thành công', count: counts.DELIVERED },
-      { id: 'CANCELLED', label: 'Đã hủy / Hoàn tiền', count: counts.CANCELLED },
-    ]
-  }, [orders])
-
-  // Filtered & Sorted orders
-  const filteredOrders = useMemo(() => {
-    let result = [...orders]
-
-    // 1. Tab Filter
-    if (selectedTab === 'PENDING_PAYMENT') {
-      result = result.filter((o) => o.status === 'PENDING_PAYMENT')
-    } else if (selectedTab === 'PROCESSING') {
-      result = result.filter((o) => ['CONFIRMED', 'PROCESSING', 'PENDING'].includes(o.status))
-    } else if (selectedTab === 'SHIPPING') {
-      result = result.filter((o) => ['SHIPPING', 'SHIPPED'].includes(o.status))
-    } else if (selectedTab === 'DELIVERED') {
-      result = result.filter((o) => ['DELIVERED', 'COMPLETED'].includes(o.status))
-    } else if (selectedTab === 'CANCELLED') {
-      result = result.filter((o) => ['CANCELLED', 'REFUNDED'].includes(o.status))
-    }
-
-    // 2. Search Query
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim()
-      result = result.filter((o) => {
-        const orderNum = (o.orderNumber || '').toLowerCase()
-        const userName = (o.userName || o.shippingName || '').toLowerCase()
-        const phone = (o.shippingPhone || '').toLowerCase()
-        const ghnCode = (o.ghnOrderCode || '').toLowerCase()
-        const productMatch = o.items?.some((it) => (it.productName || '').toLowerCase().includes(q))
-        return orderNum.includes(q) || userName.includes(q) || phone.includes(q) || ghnCode.includes(q) || productMatch
-      })
-    }
-
-    // 3. Sorting
-    result.sort((a, b) => {
-      if (sortBy === 'NEWEST') {
-        return new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
-      } else if (sortBy === 'OLDEST') {
-        return new Date(a.createdAt || 0) - new Date(b.createdAt || 0)
-      } else if (sortBy === 'PRICE_DESC') {
-        return Number(b.total || 0) - Number(a.total || 0)
-      } else if (sortBy === 'PRICE_ASC') {
-        return Number(a.total || 0) - Number(b.total || 0)
-      }
-      return 0
-    })
-
-    return result
-  }, [orders, selectedTab, searchQuery, sortBy])
+  const filteredOrders = orders
 
   if (!isAuthenticated) {
     return (
@@ -196,8 +209,8 @@ export default function ShopOrders() {
         <div className="flex flex-wrap items-center gap-2.5">
           <button
             type="button"
-            onClick={() => setShowExportModal(true)}
-            disabled={orders.length === 0}
+            onClick={openExportModal}
+            disabled={loadingExport || totalElements === 0}
             className={cn(
               'inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-xs sm:text-sm font-bold transition-all active:scale-95',
               isDark
@@ -206,7 +219,7 @@ export default function ShopOrders() {
             )}
           >
             <HiOutlineDocumentReport className="h-4 w-4 text-amber-500" />
-            <span>Xuất báo cáo đối soát</span>
+            <span>{loadingExport ? 'Đang tải đơn...' : 'Xuất báo cáo đối soát'}</span>
           </button>
 
           <button
@@ -316,7 +329,7 @@ export default function ShopOrders() {
       <ShopOrderTabs
         tabs={tabs}
         selectedTab={selectedTab}
-        onSelectTab={setSelectedTab}
+        onSelectTab={selectTab}
         isDark={isDark}
       />
 
@@ -353,7 +366,7 @@ export default function ShopOrders() {
           <HiOutlineFilter className="h-4 w-4 text-stone-400 shrink-0 hidden sm:block" />
           <select
             value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
+            onChange={(e) => changeSort(e.target.value)}
             className={cn(
               'rounded-xl border px-3 py-2.5 text-xs sm:text-sm font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-stone-950/30 dark:focus:ring-white/40',
               isDark
@@ -439,7 +452,7 @@ export default function ShopOrders() {
               type="button"
               onClick={() => {
                 setSearchQuery('')
-                setSelectedTab('ALL')
+                selectTab('ALL')
               }}
               className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all active:scale-95 bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200"
             >
@@ -463,6 +476,10 @@ export default function ShopOrders() {
               />
             ))}
           </AnimatePresence>
+
+          {totalPages > 1 && (
+            <div className="pt-2"><Pagination currentPage={page + 1} totalPages={totalPages} totalItems={totalElements} pageSize={PAGE_SIZE} onPageChange={(p) => setPage(p - 1)} isDark={isDark} /></div>
+          )}
         </div>
       )}
 
@@ -470,8 +487,8 @@ export default function ShopOrders() {
       <ExportSettlementModal
         isOpen={showExportModal}
         onClose={() => setShowExportModal(false)}
-        orders={orders}
-        shopName={orders[0]?.shopName || 'Gian Hàng Của Bạn'}
+        orders={exportOrders}
+        shopName={exportOrders[0]?.shopName || orders[0]?.shopName || 'Gian Hàng Của Bạn'}
         isDark={isDark}
       />
     </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import {
   HiOutlineArrowLeft,
@@ -85,6 +85,10 @@ export default function AdminShopDetail() {
   const [orderSearch, setOrderSearch] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [totalOrdersCount, setTotalOrdersCount] = useState(0)
+  const [totalPages, setTotalPages] = useState(1)
+  const ordersRequestRef = useRef(0)
 
   // Modals
   const [showAdjustModal, setShowAdjustModal] = useState(false)
@@ -99,7 +103,12 @@ export default function AdminShopDetail() {
   useEffect(() => {
     if (!isAuthenticated || !shopId) return
     loadShopOrders()
-  }, [isAuthenticated, shopId, orderStatus])
+  }, [isAuthenticated, shopId, orderStatus, debouncedSearch, currentPage, pageSize])
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(orderSearch.trim()), 400)
+    return () => clearTimeout(t)
+  }, [orderSearch])
 
   const loadShopFullData = async () => {
     try {
@@ -125,9 +134,19 @@ export default function AdminShopDetail() {
   const loadShopOrders = async () => {
     try {
       setLoadingOrders(true)
-      const data = await orderService.getAllOrders(orderStatus || null, shopId)
-      setOrders(Array.isArray(data) ? data : [])
-      setCurrentPage(1)
+      const requestId = ++ordersRequestRef.current
+      // Phân trang + tìm kiếm ở server (mã đơn, tên/SĐT người nhận, mã GHN, tên sản phẩm)
+      const data = await orderService.getOrdersPaged({
+        page: currentPage - 1,
+        size: pageSize,
+        shopId,
+        statuses: orderStatus ? [orderStatus] : [],
+        q: debouncedSearch,
+      })
+      if (requestId !== ordersRequestRef.current) return
+      setOrders(Array.isArray(data?.content) ? data.content : [])
+      setTotalOrdersCount(data?.totalElements || 0)
+      setTotalPages(data?.totalPages || 1)
     } catch (err) {
       console.error('Lỗi tải đơn hàng của gian hàng:', err)
       toast.error('Không thể tải danh sách đơn hàng')
@@ -179,21 +198,8 @@ export default function AdminShopDetail() {
   const stars = Number(shop.trustLevel) || 1
   const isDeficit = fund?.isDeficit === true
 
-  // Filter orders by local search keyword (order code, buyer name, phone)
-  const filteredOrders = orders.filter((o) => {
-    if (!orderSearch.trim()) return true
-    const q = orderSearch.trim().toLowerCase()
-    const matchCode = (o.orderNumber || o.id || '').toLowerCase().includes(q)
-    const matchBuyer = (o.userName || o.customerName || '').toLowerCase().includes(q)
-    const matchPhone = (o.phoneNumber || o.phone || '').includes(q)
-    const matchGhn = (o.shippingCode || o.trackingCode || '').toLowerCase().includes(q)
-    return matchCode || matchBuyer || matchPhone || matchGhn
-  })
-
-  // Pagination for orders
-  const totalOrdersCount = filteredOrders.length
-  const totalPages = Math.ceil(totalOrdersCount / pageSize) || 1
-  const paginatedOrders = filteredOrders.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+  const filteredOrders = orders
+  const paginatedOrders = orders
 
   // Shop modal payload
   const shopModalPayload = {
@@ -295,7 +301,7 @@ export default function AdminShopDetail() {
                     </span>
                   </div>
                   <span className={cn('border-l pl-3', isDark ? 'border-slate-700 text-slate-400' : 'border-stone-300 text-stone-500')}>
-                    Số đơn: <strong>{orders.length}</strong> đơn hàng
+                    Số đơn: <strong>{totalOrdersCount}</strong> đơn hàng
                   </span>
                   <span className={cn('border-l pl-3', isDark ? 'border-slate-700 text-slate-400' : 'border-stone-300 text-stone-500')}>
                     SĐT: <strong>{shop.phoneNumber || 'N/A'}</strong>

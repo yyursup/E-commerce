@@ -11,10 +11,12 @@ export default function Pagination({
   isDark,
   pageSizeOptions = [10, 20, 50],
 }) {
-  if (totalItems === 0) return null
+  // totalItems không bắt buộc: thiếu thì chỉ hiện các nút số trang
+  const hasCount = typeof totalItems === 'number' && typeof pageSize === 'number'
+  if (hasCount ? totalItems === 0 : totalPages <= 1) return null
 
-  const startItem = (currentPage - 1) * pageSize + 1
-  const endItem = Math.min(currentPage * pageSize, totalItems)
+  const startItem = hasCount ? (currentPage - 1) * pageSize + 1 : 0
+  const endItem = hasCount ? Math.min(currentPage * pageSize, totalItems) : 0
 
   // Generate page numbers to show
   const getPageNumbers = () => {
@@ -47,11 +49,17 @@ export default function Pagination({
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-3 px-2 text-xs sm:text-sm">
       {/* Items range info */}
+      {hasCount ? (
       <div className={cn('font-medium', isDark ? 'text-slate-400' : 'text-stone-500')}>
         Hiển thị <span className={cn('font-bold', isDark ? 'text-white' : 'text-stone-900')}>{startItem}</span> -{' '}
         <span className={cn('font-bold', isDark ? 'text-white' : 'text-stone-900')}>{endItem}</span> trên tổng số{' '}
         <span className={cn('font-bold', isDark ? 'text-white' : 'text-stone-900')}>{totalItems}</span>
       </div>
+      ) : (
+        <div className={cn('font-medium', isDark ? 'text-slate-400' : 'text-stone-500')}>
+          Trang <span className={cn('font-bold', isDark ? 'text-white' : 'text-stone-900')}>{currentPage}</span> / {totalPages}
+        </div>
+      )}
 
       <div className="flex items-center gap-4 flex-wrap">
         {/* Page size dropdown */}

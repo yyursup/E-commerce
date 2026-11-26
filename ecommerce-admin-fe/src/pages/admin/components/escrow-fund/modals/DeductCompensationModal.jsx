@@ -12,6 +12,9 @@ import trustConfigService from '../../../../../services/trustConfig'
 import orderService from '../../../../../services/order'
 import requestService from '../../../../../services/request'
 
+
+const REPORT_PAGE_SIZE = 20
+
 export default function DeductCompensationModal({ fund, onClose, onSuccess, formatVND }) {
   const isDark = useThemeStore((state) => state.theme) === 'dark'
 
@@ -27,6 +30,9 @@ export default function DeductCompensationModal({ fund, onClose, onSuccess, form
 
   const [shopReports, setShopReports] = useState([])
   const [loadingReports, setLoadingReports] = useState(false)
+  const [reportPage, setReportPage] = useState(0)
+  const [reportHasMore, setReportHasMore] = useState(false)
+  const [loadingMoreReports, setLoadingMoreReports] = useState(false)
   const [manualReportInput, setManualReportInput] = useState(false)
 
   // Combobox dropdown states
@@ -62,11 +68,10 @@ export default function DeductCompensationModal({ fund, onClose, onSuccess, form
       // 1. Tải danh sách đơn hàng của Shop
       try {
         setLoadingOrders(true)
-        const allOrders = await orderService.getAllOrders()
+        // Lọc theo shop ở server thay vì tải toàn bộ đơn của sàn
+        const allOrders = await orderService.getAllOrders(null, fund.shopId)
         if (isMounted && Array.isArray(allOrders)) {
-          const filtered = allOrders.filter(
-            (o) => o.shopId === fund.shopId || (fund.shopName && o.shopName === fund.shopName)
-          )
+          const filtered = allOrders
           setShopOrders(filtered)
           if (filtered.length > 0) {
             setOrderId(filtered[0].id)
@@ -81,10 +86,12 @@ export default function DeductCompensationModal({ fund, onClose, onSuccess, form
       // 2. Tải danh sách báo cáo khiếu nại
       try {
         setLoadingReports(true)
-        const repData = await requestService.getAdminRequests({ type: 'REPORT' })
+        const repData = await requestService.getAdminRequests({ type: 'REPORT', page: 0, size: REPORT_PAGE_SIZE })
         if (isMounted) {
           const repList = repData?.content || (Array.isArray(repData) ? repData : [])
           setShopReports(repList)
+          setReportPage(0)
+          setReportHasMore(repData?.last === false)
         }
       } catch (err) {
         console.error('Không thể tải danh sách báo cáo:', err)
@@ -99,6 +106,22 @@ export default function DeductCompensationModal({ fund, onClose, onSuccess, form
       isMounted = false
     }
   }, [fund?.shopId, fund?.shopName])
+
+  const loadMoreReports = async () => {
+    try {
+      setLoadingMoreReports(true)
+      const next = reportPage + 1
+      const repData = await requestService.getAdminRequests({ type: 'REPORT', page: next, size: REPORT_PAGE_SIZE })
+      const more = repData?.content || []
+      setShopReports((prev) => [...prev, ...more.filter((r) => !prev.some((p) => p.requestId === r.requestId))])
+      setReportPage(next)
+      setReportHasMore(repData?.last === false)
+    } catch (err) {
+      toast.error(err?.message || 'Không thể tải thêm báo cáo')
+    } finally {
+      setLoadingMoreReports(false)
+    }
+  }
 
   if (!fund) return null
 
@@ -481,6 +504,19 @@ export default function DeductCompensationModal({ fund, onClose, onSuccess, form
                           </button>
                         )
                       })}
+                      {reportHasMore && (
+                        <button
+                          type="button"
+                          onClick={loadMoreReports}
+                          disabled={loadingMoreReports}
+                          className={cn(
+                            'w-full p-2.5 text-center text-xs font-semibold transition disabled:opacity-60',
+                            isDark ? 'text-slate-300 hover:bg-slate-800/60' : 'text-stone-700 hover:bg-stone-50'
+                          )}
+                        >
+                          {loadingMoreReports ? 'Đang tải...' : 'Tải thêm báo cáo cũ hơn'}
+                        </button>
+                      )}
                     </div>
                   </div>
                 )}

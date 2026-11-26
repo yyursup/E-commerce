@@ -5,6 +5,7 @@ import com.marketplace.ecommerce.order.valueObjects.OrderStatus;
 import com.marketplace.ecommerce.shop.entity.Shop;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -18,7 +19,13 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public interface OrderRepository extends JpaRepository<Order, UUID> {
+public interface OrderRepository extends JpaRepository<Order, UUID>, JpaSpecificationExecutor<Order> {
+  @Query("SELECT new com.marketplace.ecommerce.order.dto.response.OrderStatusSummary(o.status, COUNT(o), SUM(o.total)) FROM Order o WHERE o.user.id = :userId GROUP BY o.status")
+  List<com.marketplace.ecommerce.order.dto.response.OrderStatusSummary> summarizeByUserId(@Param("userId") UUID userId);
+
+  @Query("SELECT new com.marketplace.ecommerce.order.dto.response.OrderStatusSummary(o.status, COUNT(o), SUM(o.total)) FROM Order o WHERE o.shop.id = :shopId GROUP BY o.status")
+  List<com.marketplace.ecommerce.order.dto.response.OrderStatusSummary> summarizeByShopId(@Param("shopId") UUID shopId);
+
   Optional<Order> findByOrderNumber(String orderNumber);
 
   // Phí vận chuyển các đơn đã tạo vận đơn GHN (màn hình admin "Phí vận chuyển")

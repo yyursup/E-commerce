@@ -19,7 +19,12 @@ import com.marketplace.ecommerce.review.repository.ReviewRepository;
 import com.marketplace.ecommerce.review.valueObjects.ReviewStatus;
 import com.marketplace.ecommerce.shop.entity.Shop;
 import com.marketplace.ecommerce.shop.repository.ShopRepository;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Root;
 import org.junit.jupiter.api.BeforeEach;
+import org.mockito.Answers;
+import org.springframework.data.jpa.domain.Specification;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -186,28 +191,6 @@ class QueryProductServiceImplTest {
     }
 
     @Test
-    @DisplayName("getProductsByShopAndStatus với các điều kiện status khác nhau")
-    void testGetProductsByShopAndStatus() {
-        when(userRepository.findByAccountId(accountId)).thenReturn(Optional.of(user));
-        when(shopRepository.findByUserId(userId)).thenReturn(Optional.of(shop));
-
-        // 1. status rỗng
-        when(productRepository.findAllByShopIdWithDetails(shopId)).thenReturn(List.of(product));
-        List<SellerProductResponse> list1 = queryProductService.getProductsByShopAndStatus(accountId, "");
-        assertEquals(1, list1.size());
-
-        // 2. status VIOLATION
-        when(productRepository.findAllViolatedProductsByShopId(shopId)).thenReturn(List.of(product));
-        List<SellerProductResponse> list2 = queryProductService.getProductsByShopAndStatus(accountId, "VIOLATION");
-        assertEquals(1, list2.size());
-
-        // 3. status cụ thể PUBLISHED
-        when(productRepository.findAllByShopIdAndStatusWithDetails(shopId, ProductStatus.PUBLISHED)).thenReturn(List.of(product));
-        List<SellerProductResponse> list3 = queryProductService.getProductsByShopAndStatus(accountId, "PUBLISHED");
-        assertEquals(1, list3.size());
-    }
-
-    @Test
     @DisplayName("getPublishedProductsByIds lấy danh sách sản phẩm theo IDs")
     void testGetPublishedProductsByIds() {
         List<ProductResponse> empty = queryProductService.getPublishedProductsByIds(null);
@@ -239,5 +222,61 @@ class QueryProductServiceImplTest {
     void testParseStatus() {
         assertEquals(ProductStatus.PUBLISHED, queryProductService.parseStatus("published"));
         assertThrows(CustomException.class, () -> queryProductService.parseStatus("INVALID_STATUS"));
+    }
+
+    @Test
+    @DisplayName("getProductsByShop trả về trang sản phẩm của shop, giữ tổng số bản ghi")
+    @SuppressWarnings("unchecked")
+    void getProductsByShop_returnsPage() {
+        when(userRepository.findByAccountId(accountId)).thenReturn(Optional.of(user));
+        when(shopRepository.findByUserId(userId)).thenReturn(Optional.of(shop));
+        when(productRepository.findAll(any(Specification.class), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(product), PageRequest.of(1, 1), 12));
+
+        Page<SellerProductResponse> page = queryProductService.getProductsByShop(accountId, "PUBLISHED", "iphone", PageRequest.of(1, 1));
+
+        assertEquals(1, page.getContent().size());
+        assertEquals(12, page.getTotalElements());
+        assertEquals(productId, page.getContent().get(0).getId());
+    }
+
+    @Test
+    @DisplayName("getProductsByShop báo lỗi khi status không hợp lệ")
+    void getProductsByShop_invalidStatus() {
+        when(userRepository.findByAccountId(accountId)).thenReturn(Optional.of(user));
+        when(shopRepository.findByUserId(userId)).thenReturn(Optional.of(shop));
+        assertThrows(CustomException.class,
+                () -> queryProductService.getProductsByShop(accountId, "ABC", null, PageRequest.of(0, 10)));
+    }
+
+    @Test
+    @DisplayName("safeProductPageable: nổi bật lên đầu, bỏ cột sort lạ")
+    void safeProductPageable_whitelist() {
+        Pageable fixed = QueryProductServiceImpl.safeProductPageable(PageRequest.of(0, 10, Sort.by("shop.user.password")));
+        assertEquals(Sort.by(Sort.Direction.DESC, "featured").and(Sort.by(Sort.Direction.DESC, "createdAt")), fixed.getSort());
+        assertEquals(Sort.by(Sort.Direction.DESC, "featured").and(Sort.by("name")),
+                QueryProductServiceImpl.safeProductPageable(PageRequest.of(0, 10, Sort.by("name"))).getSort());
+    }
+
+    @Test
+    @DisplayName("shopProductFilter escape ký tự đặc biệt khi tìm kiếm")
+    @SuppressWarnings("unchecked")
+    void shopProductFilter_escapesLike() {
+        Root<Product> root = mock(Root.class, Answers.RETURNS_DEEP_STUBS);
+        CriteriaQuery<?> query = mock(CriteriaQuery.class, Answers.RETURNS_DEEP_STUBS);
+        CriteriaBuilder cb = mock(CriteriaBuilder.class, Answers.RETURNS_DEEP_STUBS);
+
+        QueryProductServiceImpl.shopProductFilter(shopId, null, false, "a_b").toPredicate(root, query, cb);
+
+        verify(cb, atLeastOnce()).like(any(), eq("%a\\_b%"), eq('\\'));
+    }
+
+    @Test
+    @DisplayName("countFeaturedProducts đếm sản phẩm nổi bật của shop")
+    void countFeaturedProducts() {
+        when(userRepository.findByAccountId(accountId)).thenReturn(Optional.of(user));
+        when(shopRepository.findByUserId(userId)).thenReturn(Optional.of(shop));
+        when(productRepository.countByShopIdAndFeaturedTrueAndDeletedFalse(shopId)).thenReturn(3L);
+        assertEquals(3L, queryProductService.countFeaturedProducts(accountId));
     }
 }

@@ -23,6 +23,9 @@ import SellerProductCard from './components/SellerProductCard'
 import OrderStatusSummary from './components/OrderStatusSummary'
 import ProductFormModal from './components/ProductFormModal'
 import ProductDetailModal from './components/ProductDetailModal'
+import Pagination from '../../components/Pagination'
+
+const PRODUCT_PAGE_SIZE = 8
 
 export default function BusinessDashboard() {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
@@ -34,6 +37,9 @@ export default function BusinessDashboard() {
   const [wallet, setWallet] = useState(null)
   const [products, setProducts] = useState([])
   const [statusFilter, setStatusFilter] = useState('')
+  const [productPage, setProductPage] = useState(0)
+  const [productTotalPages, setProductTotalPages] = useState(0)
+  const [productTotal, setProductTotal] = useState(0)
   const [showProductForm, setShowProductForm] = useState(false)
   const [editingProduct, setEditingProduct] = useState(null)
   const [selectedProduct, setSelectedProduct] = useState(null)
@@ -55,19 +61,36 @@ export default function BusinessDashboard() {
         params.endDate = end
       }
 
-      const [analyticsData, walletData, productsData] = await Promise.all([
+      const [analyticsData, walletData] = await Promise.all([
         statisticsService.getSellerDashboardAnalytics(params).catch((err) => {
           console.warn('Analytics API error fallback:', err)
           return null
         }),
         walletService.getMyWallet().catch(() => null),
-        sellerService.getProductsByShop(statusFilter || null).catch(() => []),
       ])
 
       setAnalytics(analyticsData)
       setWallet(walletData)
+    } catch (err) {
+      console.error('Error fetching dashboard stats:', err)
+      setError('Không thể tải toàn bộ dữ liệu thống kê')
+    } finally {
+      setLoading(false)
+    }
+  }
 
-      const transformedProducts = (productsData || []).map((product) => {
+  // Danh sách sản phẩm tải riêng theo trang, không kéo theo thống kê
+  const loadProducts = async () => {
+    try {
+      const productsData = await sellerService.getProductsByShop({
+        page: productPage,
+        size: PRODUCT_PAGE_SIZE,
+        status: statusFilter || null,
+      })
+      setProductTotalPages(productsData?.totalPages || 0)
+      setProductTotal(productsData?.totalElements || 0)
+
+      const transformedProducts = (productsData?.content || []).map((product) => {
         const thumbnailImage = product.images?.find((img) => img.isThumbnail) || product.images?.[0]
         const imageUrl = thumbnailImage?.imageUrl || thumbnailImage || null
 
@@ -89,10 +112,8 @@ export default function BusinessDashboard() {
       })
       setProducts(transformedProducts)
     } catch (err) {
-      console.error('Error fetching dashboard stats:', err)
-      setError('Không thể tải toàn bộ dữ liệu thống kê')
-    } finally {
-      setLoading(false)
+      console.error('Error fetching shop products:', err)
+      setProducts([])
     }
   }
 
@@ -120,7 +141,11 @@ export default function BusinessDashboard() {
 
   useEffect(() => {
     fetchDashboardData()
-  }, [statusFilter])
+  }, [])
+
+  useEffect(() => {
+    loadProducts()
+  }, [statusFilter, productPage])
 
   const handleDeleteProduct = async (productId) => {
     if (!window.confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')) {
@@ -130,7 +155,7 @@ export default function BusinessDashboard() {
     try {
       await sellerService.deleteProduct(productId)
       toast.success('Đã xóa sản phẩm thành công')
-      fetchDashboardData()
+      loadProducts()
     } catch (err) {
       console.error('Error deleting product:', err)
       const errorMessage = err?.response?.data?.message || err?.message || 'Không thể xóa sản phẩm'
@@ -159,7 +184,7 @@ export default function BusinessDashboard() {
 
   const handleFormSuccess = () => {
     handleFormClose()
-    fetchDashboardData()
+    loadProducts()
   }
 
   const formatCurrency = (amount) => {
@@ -197,7 +222,10 @@ export default function BusinessDashboard() {
         </div>
 
         <button
-          onClick={fetchDashboardData}
+          onClick={() => {
+            fetchDashboardData()
+            loadProducts()
+          }}
           disabled={loading}
           className={cn(
             'inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-sm font-medium transition self-start sm:self-auto',
@@ -809,14 +837,17 @@ export default function BusinessDashboard() {
               Quản lý kho hàng của shop
             </h2>
             <p className={cn('text-xs', isDark ? 'text-slate-400' : 'text-stone-500')}>
-              Tổng số {products.length} sản phẩm đang có trong hệ thống
+              Tổng số {productTotal} sản phẩm đang có trong hệ thống
             </p>
           </div>
 
           <div className="flex items-center gap-3">
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => {
+                setStatusFilter(e.target.value)
+                setProductPage(0)
+              }}
               className={cn(
                 'rounded-xl border px-3 py-2 text-sm font-medium',
                 isDark
@@ -868,6 +899,16 @@ export default function BusinessDashboard() {
             </p>
           </div>
         )}
+        <div className="mt-4">
+          <Pagination
+            currentPage={productPage + 1}
+            totalPages={productTotalPages}
+            totalItems={productTotal}
+            pageSize={PRODUCT_PAGE_SIZE}
+            onPageChange={(p) => setProductPage(p - 1)}
+            isDark={isDark}
+          />
+        </div>
       </div>
 
       {/* Product Form Modal */}

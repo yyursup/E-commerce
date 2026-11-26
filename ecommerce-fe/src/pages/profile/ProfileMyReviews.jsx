@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom'
 import { cn } from '../../lib/cn'
 import reviewService from '../../services/review'
 import toast from 'react-hot-toast'
+import Pagination from '../../components/Pagination'
 
 export default function ProfileMyReviews({ isDark }) {
   const [reviews, setReviews] = useState([])
@@ -215,39 +216,7 @@ export default function ProfileMyReviews({ isDark }) {
 
       {/* Phân trang */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between text-xs pt-2">
-          <button
-            disabled={page <= 0}
-            onClick={() => setPage((p) => Math.max(0, p - 1))}
-            className={cn(
-              'rounded-xl px-4 py-2 font-semibold transition',
-              page <= 0
-                ? 'cursor-not-allowed opacity-50'
-                : isDark
-                  ? 'bg-slate-800 text-slate-100 hover:bg-slate-700'
-                  : 'bg-white text-stone-700 hover:bg-stone-100 border border-stone-200',
-            )}
-          >
-            Trang trước
-          </button>
-          <span className={cn(isDark ? 'text-slate-400' : 'text-stone-500')}>
-            Trang {page + 1} / {totalPages}
-          </span>
-          <button
-            disabled={page + 1 >= totalPages}
-            onClick={() => setPage((p) => p + 1)}
-            className={cn(
-              'rounded-xl px-4 py-2 font-semibold transition',
-              page + 1 >= totalPages
-                ? 'cursor-not-allowed opacity-50'
-                : isDark
-                  ? 'bg-slate-800 text-slate-100 hover:bg-slate-700'
-                  : 'bg-white text-stone-700 hover:bg-stone-100 border border-stone-200',
-            )}
-          >
-            Trang sau
-          </button>
-        </div>
+        <div className="pt-2"><Pagination currentPage={page + 1} totalPages={totalPages} totalItems={totalElements} pageSize={8} onPageChange={(p) => setPage(p - 1)} isDark={isDark} /></div>
       )}
     </div>
   )

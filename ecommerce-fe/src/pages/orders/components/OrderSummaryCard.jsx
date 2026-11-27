@@ -178,21 +178,6 @@ export default function OrderSummaryCard({
                         * Đã bồi hoàn 100% gồm cả tiền hàng và cước vận chuyển ban đầu do đơn hàng đã hoàn tất quy trình trả hàng cho Shop.
                       </p>
                     )}
-
-                    {(report?.policyClauseTitle || report?.policyClauseCode) && (
-                      <div className="mt-2.5 flex items-start gap-2 p-2.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-xs text-amber-800 dark:text-amber-300">
-                        <HiOutlineScale className="h-4 w-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
-                        <div>
-                          <span className="font-bold">Căn cứ Điều khoản: </span>
-                          <span>{report.policyClauseTitle || report.policyClauseCode}</span>
-                          {report.adminNote && (
-                            <p className="mt-1 text-[11px] font-normal italic opacity-90">
-                              Phán quyết BQT: &ldquo;{report.adminNote}&rdquo;
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </div>
               )

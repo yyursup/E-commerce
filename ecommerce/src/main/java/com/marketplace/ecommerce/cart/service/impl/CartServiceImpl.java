@@ -43,7 +43,7 @@ public class CartServiceImpl implements CartService {
         cartItemRepository.save(cartItem);
 
         Cart cart = cartRepository.findByUserIdWithItems(user.getId())
-                .orElseThrow(() -> new CustomException("Cart not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy giỏ hàng"));
 
         return CartResponse.fromCart(cart);
     }
@@ -173,27 +173,27 @@ public class CartServiceImpl implements CartService {
 
     private User getUserByAccountId(UUID accountId) {
         return userRepository.findByAccountId(accountId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
     }
 
     private Product getPublishedProduct(UUID productId) {
         return productRepository.findPublishedByIdWithDetails(productId)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm"));
     }
 
     private Cart getCartByUserId(UUID userId) {
         return cartRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Cart not found"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy giỏ hàng"));
     }
 
     private Cart getCartWithItemsByUserId(UUID userId) {
         return cartRepository.findByUserIdWithItems(userId)
-                .orElseThrow(() -> new CustomException("Cart not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy giỏ hàng"));
     }
 
     private CartItem getActiveCartItemOfUser(UUID userId, UUID cartItemId) {
         return cartItemRepository.findActiveByIdAndUserId(userId, cartItemId)
-                .orElseThrow(() -> new CustomException("CartItem not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy sản phẩm trong giỏ hàng"));
     }
 
     private CartItem findActiveItemByProductAndVariant(Cart cart, UUID productId, UUID variantId) {

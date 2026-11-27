@@ -24,7 +24,7 @@ public class FileServiceImpl implements FileService {
         try {
             // Validate file
             if (file.isEmpty()) {
-                throw new IllegalArgumentException("File is empty");
+                throw new IllegalArgumentException("File rỗng");
             }
 
             // Generate unique filename
@@ -48,7 +48,7 @@ public class FileServiceImpl implements FileService {
             return fileName;
         } catch (Exception e) {
             log.error("Error uploading file: {}", e.getMessage());
-            throw new RuntimeException("Failed to upload file: " + e.getMessage(), e);
+            throw new RuntimeException("Tải file lên thất bại: " + e.getMessage(), e);
         }
     }
 
@@ -67,7 +67,7 @@ public class FileServiceImpl implements FileService {
                             .build());
         } catch (Exception e) {
             log.error("Error downloading file: {}", e.getMessage());
-            throw new RuntimeException("Failed to download file: " + e.getMessage(), e);
+            throw new RuntimeException("Tải file xuống thất bại: " + e.getMessage(), e);
         }
     }
 
@@ -82,7 +82,7 @@ public class FileServiceImpl implements FileService {
             log.info("File deleted successfully: {}", fileName);
         } catch (Exception e) {
             log.error("Error deleting file: {}", e.getMessage());
-            throw new RuntimeException("Failed to delete file: " + e.getMessage(), e);
+            throw new RuntimeException("Xóa file thất bại: " + e.getMessage(), e);
         }
     }
 

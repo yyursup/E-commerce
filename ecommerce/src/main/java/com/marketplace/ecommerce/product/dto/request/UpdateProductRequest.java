@@ -17,21 +17,21 @@ import java.util.UUID;
 @AllArgsConstructor
 public class UpdateProductRequest {
 
-    @Size(max = 255, message = "Product name must not exceed 255 characters")
+    @Size(max = 255, message = "Tên sản phẩm tối đa 255 ký tự")
     private String name;
 
-    @Size(max = 5000, message = "Description must not exceed 5000 characters")
+    @Size(max = 5000, message = "Mô tả tối đa 5000 ký tự")
     private String description;
 
-    @Size(max = 100, message = "SKU must not exceed 100 characters")
+    @Size(max = 100, message = "Mã SKU tối đa 100 ký tự")
     private String sku;
 
-    @DecimalMin(value = "0.0", inclusive = false, message = "Base price must be greater than 0")
-    @Digits(integer = 10, fraction = 2, message = "Base price format is invalid")
+    @DecimalMin(value = "0.0", inclusive = false, message = "Giá gốc phải lớn hơn 0")
+    @Digits(integer = 10, fraction = 2, message = "Giá gốc không đúng định dạng")
     private BigDecimal basePrice;
 
-    @NotNull(message = "Stock quantity must not be null")
-    @Min(value = 0, message = "Stock quantity must be greater than or equal to 0")
+    @NotNull(message = "Vui lòng nhập số lượng tồn kho")
+    @Min(value = 0, message = "Số lượng tồn kho phải từ 0 trở lên")
     private Integer stockQuantity;
 
     private String status;

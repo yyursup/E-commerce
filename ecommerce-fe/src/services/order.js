@@ -3,6 +3,16 @@ import axiosClient from '../api/axiosClient';
 const ORDER_BASE = '/api/v1/order';
 const PAYMENT_BASE = '/api/v1/payment';
 
+
+// Tham số phân trang gửi lên Spring Pageable; status là mảng -> "A,B" (Spring tự tách thành List<OrderStatus>)
+const toPageParams = ({ page = 0, size = 10, statuses, q, sort, ...rest } = {}) => {
+  const params = { page, size, ...rest }
+  if (statuses && statuses.length) params.status = statuses.join(',')
+  if (q && q.trim()) params.q = q.trim()
+  if (sort) params.sort = sort
+  return params
+}
+
 const orderService = {
   // Checkout confirm
   getCheckoutConfirm: async (shopId) => {
@@ -62,6 +72,24 @@ const orderService = {
   },
 
   // Customer: List my orders
+  getMyOrdersPaged: async (opts = {}) => {
+    try {
+      const response = await axiosClient.get(`${ORDER_BASE}/me/paged`, { params: toPageParams(opts) });
+      return response.data;
+    } catch (error) {
+      throw error.response ? error.response.data : error;
+    }
+  },
+
+  getMyOrderSummary: async () => {
+    try {
+      const response = await axiosClient.get(`${ORDER_BASE}/me/summary`);
+      return response.data;
+    } catch (error) {
+      throw error.response ? error.response.data : error;
+    }
+  },
+
   getMyOrders: async (status = null) => {
     try {
       const params = status ? { status } : {};

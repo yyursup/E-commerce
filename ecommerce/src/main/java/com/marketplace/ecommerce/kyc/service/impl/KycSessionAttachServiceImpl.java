@@ -29,6 +29,7 @@ public class KycSessionAttachServiceImpl implements KycSessionAttachService {
             return new AttachDecision(false, "Classify returned empty name", null);
         }
         final String savedTo;
+        final KycDocumentType docType;
 
         switch (classifyName.toLowerCase()) {
             case "new_front":
@@ -38,6 +39,17 @@ public class KycSessionAttachServiceImpl implements KycSessionAttachService {
                 s.setFrontHash(fileHash);
                 sessions.save(s);
                 savedTo = "frontHash";
+                docType = KycDocumentType.FRONT;
+                break;
+
+            case "new_back":
+            case "old_back":
+            case "old_ver_back":
+            case "new_ver_back":
+                s.setBackHash(fileHash);
+                sessions.save(s);
+                savedTo = "backHash";
+                docType = KycDocumentType.BACK;
                 break;
 
             case "other":
@@ -46,10 +58,11 @@ public class KycSessionAttachServiceImpl implements KycSessionAttachService {
                 s.setSelfieHash(fileHash);
                 sessions.save(s);
                 savedTo = "selfieHash";
+                docType = KycDocumentType.SELFIE;
                 break;
 
             default:
-                return new AttachDecision(false, "Uploaded image is not FRONT side", null);
+                return new AttachDecision(false, "Ảnh tải lên không phải mặt trước, mặt sau CCCD hoặc ảnh khuôn mặt", null);
         }
 
         s.setStatus(KycStatus.IN_PROGRESS);
@@ -57,7 +70,7 @@ public class KycSessionAttachServiceImpl implements KycSessionAttachService {
 
         EKycDocument doc = new EKycDocument();
         doc.setSessionId(s.getId());
-        doc.setType(KycDocumentType.FRONT);
+        doc.setType(docType);
         doc.setFileHash(fileHash);
         docs.save(doc);
         return new AttachDecision(true, null, savedTo);

@@ -1,41 +1,15 @@
-import { cn } from '../../../../lib/cn'
+import Pagination from '../order/Pagination'
 
-export default function AdminEscrowPagination({ isDark, page, totalPages, onPrev, onNext }) {
-  if (totalPages <= 1) return null
-
+// page bắt đầu từ 0 (Spring Pageable); Pagination hiển thị từ 1
+export default function AdminEscrowPagination({ isDark, page, totalPages, totalItems, pageSize, onPageChange }) {
   return (
-    <div className="flex items-center justify-between text-sm">
-      <button
-        disabled={page <= 0}
-        onClick={onPrev}
-        className={cn(
-          'rounded-lg px-4 py-2 font-semibold transition',
-          page <= 0
-            ? 'cursor-not-allowed opacity-50'
-            : isDark
-              ? 'bg-slate-800 text-slate-100 hover:bg-slate-700'
-              : 'bg-white text-stone-700 hover:bg-stone-100',
-        )}
-      >
-        Prev
-      </button>
-      <span className={cn(isDark ? 'text-slate-400' : 'text-stone-500')}>
-        Page {page + 1} / {totalPages}
-      </span>
-      <button
-        disabled={page + 1 >= totalPages}
-        onClick={onNext}
-        className={cn(
-          'rounded-lg px-4 py-2 font-semibold transition',
-          page + 1 >= totalPages
-            ? 'cursor-not-allowed opacity-50'
-            : isDark
-              ? 'bg-slate-800 text-slate-100 hover:bg-slate-700'
-              : 'bg-white text-stone-700 hover:bg-stone-100',
-        )}
-      >
-        Next
-      </button>
-    </div>
+    <Pagination
+      currentPage={page + 1}
+      totalPages={totalPages}
+      totalItems={totalItems}
+      pageSize={pageSize}
+      onPageChange={(p) => onPageChange(p - 1)}
+      isDark={isDark}
+    />
   )
 }

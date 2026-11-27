@@ -24,10 +24,22 @@ const sellerService = {
   },
 
   // Get products by shop with optional status filter
-  getProductsByShop: async (status = null) => {
+  // Danh sách sản phẩm của shop (phân trang, sản phẩm nổi bật đứng đầu)
+  getProductsByShop: async ({ page = 0, size = 10, status, q } = {}) => {
     try {
-      const params = status ? { status } : {};
+      const params = { page, size };
+      if (status) params.status = status;
+      if (q && q.trim()) params.q = q.trim();
       const response = await axiosClient.get(`${SELLER_BASE}/by-shop`, { params });
+      return response.data;
+    } catch (error) {
+      throw error.response ? error.response.data : error;
+    }
+  },
+
+  getFeaturedCount: async () => {
+    try {
+      const response = await axiosClient.get(`${SELLER_BASE}/by-shop/featured-count`);
       return response.data;
     } catch (error) {
       throw error.response ? error.response.data : error;

@@ -88,21 +88,21 @@ public class OrderServiceImpl implements OrderService {
     public OrderResponse retryCreateGhnOrder(UUID orderId, UUID accountId) {
 
         User user = userRepository.findByAccountId(accountId)
-                .orElseThrow(() -> new CustomException("User not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy người dùng"));
 
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new CustomException("Order not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy đơn hàng"));
 
         if (!order.getShop().getUser().getId().equals(user.getId())) {
-            throw new CustomException("You don't have any permissions");
+            throw new CustomException("Bạn không có quyền thực hiện thao tác này");
         }
         if (order.getGhnOrderCode() != null && !order.getGhnOrderCode().isEmpty()) {
-            throw new CustomException("Order already has a GHN tracking code:" + order.getGhnOrderCode());
+            throw new CustomException("Đơn hàng đã có mã vận đơn GHN:" + order.getGhnOrderCode());
         }
         OrderStatus s = order.getStatus();
         if (s != OrderStatus.CONFIRMED && s != OrderStatus.PROCESSING && s != OrderStatus.SHIPPING) {
             throw new CustomException(
-                    "GHN shipping order can be created only when status is CONFIRMED/PROCESSING/SHIPPING.");
+                    "Chỉ tạo được đơn vận chuyển GHN khi đơn hàng ở trạng thái CONFIRMED/PROCESSING/SHIPPING.");
         }
         tryCreateGHNOrder(order);
         order = orderRepository.save(order);
@@ -114,16 +114,16 @@ public class OrderServiceImpl implements OrderService {
     public OrderResponse setGhnOrderCodeManually(UUID orderId, String ghnOrderCode, UUID accountId) {
 
         User user = userRepository.findByAccountId(accountId)
-                .orElseThrow(() -> new CustomException("User not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy người dùng"));
 
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new CustomException("Order not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy đơn hàng"));
 
         if (!order.getShop().getUser().getId().equals(user.getId())) {
-            throw new CustomException("You don't have permission to update this order.");
+            throw new CustomException("Bạn không có quyền cập nhật đơn hàng này.");
         }
         if (ghnOrderCode == null || ghnOrderCode.isBlank()) {
-            throw new CustomException("GHN tracking code must not be empty");
+            throw new CustomException("Mã vận đơn GHN không được để trống");
         }
         order.setGhnOrderCode(ghnOrderCode.trim());
         order = orderRepository.save(order);
@@ -135,7 +135,7 @@ public class OrderServiceImpl implements OrderService {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void autoReceiveAndRelease(UUID orderId) {
         Order order = orderRepository.findByIdForUpdate(orderId)
-                .orElseThrow(() -> new CustomException("Order not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy đơn hàng"));
 
         if (order.isReceivedByBuyer())
             return;
@@ -181,13 +181,13 @@ public class OrderServiceImpl implements OrderService {
     @Transactional
     public void markReceivedByBuyer(UUID orderId, UUID accountId) {
         User user = userRepository.findByAccountId(accountId)
-                .orElseThrow(() -> new CustomException("User not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy người dùng"));
 
         Order order = orderRepository.findByIdForUpdate(orderId)
-                .orElseThrow(() -> new CustomException("Order not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy đơn hàng"));
 
         if (!user.getId().equals(order.getUser().getId())) {
-            throw new CustomException("You don't have permission to update this order.");
+            throw new CustomException("Bạn không có quyền cập nhật đơn hàng này.");
         }
 
         if (order.getStatus() != OrderStatus.DELIVERED) {
@@ -215,13 +215,13 @@ public class OrderServiceImpl implements OrderService {
     @Transactional
     public OrderResponse updateOrderStatus(UUID accountId, UUID orderId, String status) {
         User user = userRepository.findByAccountId(accountId)
-                .orElseThrow(() -> new CustomException("User not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy người dùng"));
 
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new CustomException("Order not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy đơn hàng"));
 
         if (!order.getShop().getUser().getId().equals(user.getId())) {
-            throw new CustomException("You don't have any permission to update this order");
+            throw new CustomException("Bạn không có quyền cập nhật đơn hàng này");
         }
 
         OrderStatus currentStatus = order.getStatus();
@@ -229,12 +229,12 @@ public class OrderServiceImpl implements OrderService {
         try {
             newStatus = OrderStatus.valueOf(status);
         } catch (Exception e) {
-            throw new CustomException("Invalid status: " + status);
+            throw new CustomException("Trạng thái không hợp lệ: " + status);
         }
 
         if (newStatus == OrderStatus.CANCELLED &&
                 currentStatus != OrderStatus.PENDING_PAYMENT && currentStatus != OrderStatus.CONFIRMED) {
-            throw new CustomException("Can not cancelOrder with status " + currentStatus);
+            throw new CustomException("Không thể hủy đơn hàng ở trạng thái " + currentStatus);
         }
 
         if (newStatus == OrderStatus.CANCELLED) {
@@ -309,7 +309,7 @@ public class OrderServiceImpl implements OrderService {
         };
 
         if (!valid) {
-            throw new CustomException("Invalid transition: " + currentStatus + " -> " + newStatus);
+            throw new CustomException("Không thể chuyển trạng thái: " + currentStatus + " -> " + newStatus);
         }
     }
 
@@ -331,26 +331,26 @@ public class OrderServiceImpl implements OrderService {
     @Transactional
     public OrderResponse convertCartToOrder(UUID accountId, CreateOrderRequest request) {
         Shop shop = shopRepository.findById(request.getShopId())
-                .orElseThrow(() -> new CustomException("Shop not found."));
+                .orElseThrow(() -> new CustomException("Không tìm thấy gian hàng."));
 
         if (shop.getStatus() == ShopStatus.CLOSED) {
             throw new CustomException("Gian hàng này đã đóng cửa, không thể thực hiện đặt hàng.");
         }
 
         User user = userRepository.findByAccountId(accountId)
-                .orElseThrow(() -> new CustomException("User not found."));
+                .orElseThrow(() -> new CustomException("Không tìm thấy người dùng."));
 
         UserAddress addr = userAddressRepository
                 .findByIdAndUserIdAndDeletedFalse(request.getAddressId(), user.getId())
-                .orElseThrow(() -> new CustomException("Address not found."));
+                .orElseThrow(() -> new CustomException("Không tìm thấy địa chỉ."));
 
         Cart cart = cartRepository.findByUserIdWithItems(user.getId())
-                .orElseThrow(() -> new CustomException("Cart not found."));
+                .orElseThrow(() -> new CustomException("Không tìm thấy giỏ hàng."));
 
         List<CartItem> cartItems = findActiveItemByProduct(cart, shop.getId());
 
         if (cartItems.isEmpty()) {
-            throw new CustomException("There's no items in this cart from the shop.");
+            throw new CustomException("Giỏ hàng không có sản phẩm nào của gian hàng này.");
         }
 
         PaymentMethod paymentMethod = PaymentMethod.WALLET;
@@ -396,16 +396,21 @@ public class OrderServiceImpl implements OrderService {
         order.setNotes(request.getNotes());
         order.setSubtotal(subtotal);
         order.setShippingFee(shippingFee);
-        ProductCategory primaryCategory = (cartItems != null && !cartItems.isEmpty() && cartItems.get(0).getProduct() != null)
-                ? cartItems.get(0).getProduct().getProductCategory()
-                : null;
-        ConditionGrade primaryCondition = (cartItems != null && !cartItems.isEmpty() && cartItems.get(0).getProduct() != null)
-                ? cartItems.get(0).getProduct().getConditionGrade()
-                : ConditionGrade.GRADE_NEW;
-
-        BigDecimal commissionRate = commissionCalculationService.calculateFinalRate(shop, primaryCategory, primaryCondition);
-        BigDecimal platformCommission = subtotal.multiply(commissionRate).divide(BigDecimal.valueOf(100), 2,
-                RoundingMode.HALF_UP);
+        // Hoa hồng tính theo từng sản phẩm (danh mục + tình trạng của chính nó), cộng lại thành hoa hồng của đơn
+        BigDecimal platformCommission = BigDecimal.ZERO;
+        for (CartItem ci : cartItems) {
+            Product p = ci.getProduct();
+            BigDecimal itemRate = commissionCalculationService.calculateFinalRate(shop,
+                    p != null ? p.getProductCategory() : null,
+                    p != null && p.getConditionGrade() != null ? p.getConditionGrade() : ConditionGrade.GRADE_NEW);
+            platformCommission = platformCommission.add(
+                    cartItemLineAmount(ci).multiply(itemRate).divide(BigDecimal.valueOf(100), 6, RoundingMode.HALF_UP));
+        }
+        platformCommission = platformCommission.setScale(2, RoundingMode.HALF_UP);
+        // Tỷ lệ lưu trên đơn là tỷ lệ bình quân gia quyền theo giá trị từng sản phẩm
+        BigDecimal commissionRate = subtotal.signum() > 0
+                ? platformCommission.multiply(BigDecimal.valueOf(100)).divide(subtotal, 4, RoundingMode.HALF_UP)
+                : BigDecimal.ZERO;
         order.setPlatformCommission(platformCommission);
         order.setCommissionRate(commissionRate.doubleValue());
         order.calculateTotal();
@@ -434,7 +439,8 @@ public class OrderServiceImpl implements OrderService {
 
             BigDecimal unitPrice = product.getBasePrice();
             if (cartItem.getVariantId() != null) {
-                ProductVariant variant = productVariantRepository.findById(cartItem.getVariantId())
+                ProductVariant variant = // Khóa bi quan (BR-05): chặn hai đơn cùng trừ một lượng tồn kho
+                productVariantRepository.findByIdForUpdate(cartItem.getVariantId())
                         .filter(v -> !Boolean.TRUE.equals(v.getDeleted()))
                         .orElseThrow(
                                 () -> new CustomException("Biến thể sản phẩm không tồn tại: " + product.getName()));
@@ -526,6 +532,21 @@ public class OrderServiceImpl implements OrderService {
             }
         }
         return subtotal;
+    }
+
+    /** Thành tiền của một dòng giỏ hàng, cùng cách tính đơn giá với getBigDecimal. */
+    private BigDecimal cartItemLineAmount(CartItem cartItem) {
+        Product product = cartItem.getProduct();
+        BigDecimal unitPrice;
+        if (cartItem.getVariantId() != null) {
+            unitPrice = productVariantRepository.findById(cartItem.getVariantId())
+                    .map(ProductVariant::getPrice)
+                    .orElse(product.getBasePrice());
+            if (unitPrice == null) unitPrice = product.getBasePrice();
+        } else {
+            unitPrice = cartItem.getUnitPrice() != null ? cartItem.getUnitPrice() : product.getBasePrice();
+        }
+        return unitPrice.multiply(BigDecimal.valueOf(cartItem.getQuantity()));
     }
 
     private List<CartItem> findActiveItemByProduct(Cart cart, UUID shopId) {

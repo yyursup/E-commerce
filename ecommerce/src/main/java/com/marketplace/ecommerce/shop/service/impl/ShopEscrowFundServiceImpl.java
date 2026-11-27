@@ -1014,7 +1014,7 @@ public class ShopEscrowFundServiceImpl implements ShopEscrowFundService {
 
         if (!isChecksumValid) {
             log.error("Xác thực chữ ký VNPay không hợp lệ cho nạp ký quỹ");
-            throw new CustomException("Invalid VNPay checksum");
+            throw new CustomException("Chữ ký VNPay không hợp lệ");
         }
 
         String txnRef = params.get("vnp_TxnRef");

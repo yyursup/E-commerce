@@ -86,17 +86,21 @@ export default function ProductDetail() {
 
   // 1. Fetch Product
   useEffect(() => {
+    let isMounted = true
+
     const fetchProduct = async () => {
       try {
         setLoading(true)
         setError(null)
         const data = await productService.getProductById(productId)
+        if (!isMounted) return
         setProduct(data)
         recommendationService.trackView(productId)
 
         // Fetch Shop info
         if (data?.shopId) {
           const shopData = await shopService.getShopById(data.shopId)
+          if (!isMounted) return
           setShop(shopData)
 
           // Fetch other products from same shop
@@ -106,6 +110,7 @@ export default function ProductDetail() {
               page: 0,
               size: 6,
             })
+            if (!isMounted) return
             const currentId = String(productId).toLowerCase()
             const filtered = (spRes?.content || [])
               .filter((p) => String(p.id).toLowerCase() !== currentId)
@@ -116,8 +121,8 @@ export default function ProductDetail() {
                   p.basePrice !== undefined && p.basePrice !== null
                     ? Number(p.basePrice)
                     : p.price !== undefined && p.price !== null
-                    ? Number(p.price)
-                    : 0
+                      ? Number(p.price)
+                      : 0
 
                 return {
                   ...p,
@@ -140,11 +145,15 @@ export default function ProductDetail() {
           }
         }
       } catch (err) {
+        if (!isMounted) return
         console.error('Error fetching product:', err)
-        setError(err.message || 'Không thể tải thông tin sản phẩm')
-        toast.error('Không thể tải thông tin sản phẩm')
+        const errorMsg = err?.message || 'Không thể tải thông tin sản phẩm'
+        setError(errorMsg)
+        toast.error(errorMsg, { id: 'fetch-product-detail-error' })
       } finally {
-        setLoading(false)
+        if (isMounted) {
+          setLoading(false)
+        }
       }
     }
 
@@ -154,17 +163,23 @@ export default function ProductDetail() {
       wishlistService
         .getWishlistStatus(productId)
         .then((res) => {
-          if (res?.wishlistCount !== undefined) {
+          if (isMounted && res?.wishlistCount !== undefined) {
             setLikeCount(res.wishlistCount)
           }
         })
-        .catch(() => {})
+        .catch(() => { })
       window.scrollTo(0, 0)
+    }
+
+    return () => {
+      isMounted = false
     }
   }, [productId])
 
   // 2. Fetch Similar Products & Compatible Accessories
   useEffect(() => {
+    let isMounted = true
+
     const fetchRecommendations = async () => {
       if (!productId) return
       const currentId = productId.toLowerCase()
@@ -173,6 +188,7 @@ export default function ProductDetail() {
       try {
         setSimilarLoading(true)
         const list = await recommendationService.getSimilarProducts(productId, 6)
+        if (!isMounted) return
         const mapped = (list || [])
           .filter((p) => p.id && String(p.id).toLowerCase() !== currentId)
           .map((p) => {
@@ -197,16 +213,21 @@ export default function ProductDetail() {
           })
         setSimilarProducts(mapped)
       } catch (err) {
-        console.error('Error fetching similar products:', err)
-        setSimilarProducts([])
+        if (isMounted) {
+          console.error('Error fetching similar products:', err)
+          setSimilarProducts([])
+        }
       } finally {
-        setSimilarLoading(false)
+        if (isMounted) {
+          setSimilarLoading(false)
+        }
       }
 
       // Fetch Accessories
       try {
         setAccessoriesLoading(true)
         const accList = await recommendationService.getCompatibleAccessories(productId, 6)
+        if (!isMounted) return
         const mappedAcc = (accList || [])
           .filter((p) => p.id && String(p.id).toLowerCase() !== currentId)
           .map((p) => {
@@ -231,13 +252,21 @@ export default function ProductDetail() {
           })
         setAccessories(mappedAcc)
       } catch (err) {
-        console.error('Error fetching accessories:', err)
-        setAccessories([])
+        if (isMounted) {
+          console.error('Error fetching accessories:', err)
+          setAccessories([])
+        }
       } finally {
-        setAccessoriesLoading(false)
+        if (isMounted) {
+          setAccessoriesLoading(false)
+        }
       }
     }
     fetchRecommendations()
+
+    return () => {
+      isMounted = false
+    }
   }, [productId])
 
   const handleAddToCart = async () => {
@@ -327,7 +356,7 @@ export default function ProductDetail() {
           text: product.description,
           url: window.location.href,
         })
-      } catch (err) {}
+      } catch (err) { }
     } else {
       navigator.clipboard.writeText(window.location.href)
       toast.success('Đã sao chép liên kết sản phẩm!')
@@ -498,8 +527,8 @@ export default function ProductDetail() {
                     isLiked
                       ? 'border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-400'
                       : isDark
-                      ? 'border-slate-700 bg-slate-800 text-slate-300 hover:border-rose-500/50 hover:text-rose-400'
-                      : 'border-stone-200 bg-white text-stone-600 hover:border-rose-500/50 hover:text-rose-500 shadow-2xs'
+                        ? 'border-slate-700 bg-slate-800 text-slate-300 hover:border-rose-500/50 hover:text-rose-400'
+                        : 'border-stone-200 bg-white text-stone-600 hover:border-rose-500/50 hover:text-rose-500 shadow-2xs'
                   )}
                   title={isLiked ? 'Bỏ thích sản phẩm' : 'Lưu vào danh sách yêu thích'}
                 >
@@ -689,8 +718,8 @@ export default function ProductDetail() {
                             selectedVariant?.id === variant.id
                               ? 'dark:text-amber-400 ring-1 ring-amber-500 bg-stone-100 text-stone-950 border-stone-950'
                               : isDark
-                              ? 'border-slate-700 hover:border-slate-600 text-slate-300'
-                              : 'border-stone-200 hover:border-stone-300 text-stone-700'
+                                ? 'border-slate-700 hover:border-slate-600 text-slate-300'
+                                : 'border-stone-200 hover:border-stone-300 text-stone-700'
                           )}
                         >
                           {label}
@@ -825,8 +854,8 @@ export default function ProductDetail() {
                       (shopData?.trustLevel || 1) >= 4
                         ? 'bg-stone-100 text-stone-950 border-stone-950'
                         : (shopData?.trustLevel || 1) >= 2
-                        ? 'bg-blue-500/15 text-blue-500 border-blue-500/30'
-                        : 'bg-stone-500/10 text-stone-500 border-stone-300 dark:border-slate-700'
+                          ? 'bg-blue-500/15 text-blue-500 border-blue-500/30'
+                          : 'bg-stone-500/10 text-stone-500 border-stone-300 dark:border-slate-700'
                     )}
                     title="Gian hàng có cam kết Quỹ Ký Quỹ Bảo Chứng trách nhiệm trên sàn"
                   >
@@ -929,13 +958,13 @@ export default function ProductDetail() {
                 <span className="font-bold text-stone-900 dark:text-white">
                   {shopData?.createdAt
                     ? (() => {
-                        const date = new Date(shopData.createdAt)
-                        if (isNaN(date.getTime())) return 'Thành viên mới'
-                        const diffMonths = (new Date().getFullYear() - date.getFullYear()) * 12 + (new Date().getMonth() - date.getMonth())
-                        if (diffMonths <= 0) return 'Mới tham gia'
-                        if (diffMonths < 12) return `${diffMonths} tháng trước`
-                        return `${Math.floor(diffMonths / 12)} năm trước`
-                      })()
+                      const date = new Date(shopData.createdAt)
+                      if (isNaN(date.getTime())) return 'Thành viên mới'
+                      const diffMonths = (new Date().getFullYear() - date.getFullYear()) * 12 + (new Date().getMonth() - date.getMonth())
+                      if (diffMonths <= 0) return 'Mới tham gia'
+                      if (diffMonths < 12) return `${diffMonths} tháng trước`
+                      return `${Math.floor(diffMonths / 12)} năm trước`
+                    })()
                     : 'Thành viên mới'}
                 </span>
               </div>

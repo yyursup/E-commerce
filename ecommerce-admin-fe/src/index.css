@@ -168,3 +168,27 @@ input[type="number"] {
   appearance: textfield;
 }
 
+/* select-chevron: mũi tên dropdown thống nhất cho mọi <select>.
+   Mũi tên mặc định của trình duyệt dính sát mép phải và khác nhau giữa Chrome/Edge/Firefox.
+   Không đặt trong @layer nên thắng padding của Tailwind (px-3...). Select tự vẽ icon riêng thì thêm class appearance-none. */
+select:not([multiple]):not([size]):not(.appearance-none) {
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%2378716c' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.6rem center;
+  background-size: 1rem 1rem;
+  padding-right: 2.25rem;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+select:disabled {
+  cursor: not-allowed;
+}
+.dark select:not([multiple]):not([size]):not(.appearance-none) {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%2394a3b8' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+}
+.dark select option {
+  background-color: #0f172a;
+  color: #e2e8f0;
+}

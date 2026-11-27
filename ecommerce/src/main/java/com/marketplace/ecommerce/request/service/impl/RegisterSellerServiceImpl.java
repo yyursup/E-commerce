@@ -39,7 +39,7 @@ public class RegisterSellerServiceImpl implements RegisterSellerService {
     public CreateRequestResponse createSellerRegistration(UUID accountId, RegisterSellerRequest request) {
 
         Account acc = accountRepository.findById(accountId)
-                .orElseThrow(() -> new CustomException("Account not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy tài khoản"));
 
         if (Boolean.FALSE.equals(acc.getAccountVerified())) {
             throw new CustomException("Tài khoản của bạn chưa hoàn tất xác minh danh tính (KYC).");

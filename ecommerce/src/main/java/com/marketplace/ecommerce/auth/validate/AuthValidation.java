@@ -31,11 +31,11 @@ public class AuthValidation {
 
         switch (validationResult) {
             case "USERNAME_EXISTS":
-                throw new CustomException("Username is already taken");
+                throw new CustomException("Tên đăng nhập đã được sử dụng");
             case "EMAIL_EXISTS":
-                throw new EmailAlreadyExistsException("Email is already taken");
+                throw new EmailAlreadyExistsException("Email đã được sử dụng");
             case "PHONE_EXISTS":
-                throw new CustomException("Phone number is already taken");
+                throw new CustomException("Số điện thoại đã được sử dụng");
             case "VALID":
                 break;
             default:

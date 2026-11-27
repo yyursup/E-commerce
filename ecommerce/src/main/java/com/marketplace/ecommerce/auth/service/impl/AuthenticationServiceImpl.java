@@ -77,14 +77,14 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     public AccountCreateResponse verifyAccount(VerifyRequest request) {
         boolean isOtpValid = emailService.verifyOtp(request.getEmail(), request.getOtp());
         if (!isOtpValid) {
-            throw new CustomException("OTP is not valid, has expired, or does not match.");
+            throw new CustomException("Mã OTP không hợp lệ, đã hết hạn hoặc không khớp.");
         }
 
         Optional<Account> accountOptional = accountRepository.findByEmail(request.getEmail());
 
         if (accountOptional.isEmpty()) {
             emailService.clearOtp(request.getEmail());
-            throw new CustomException("Email not found");
+            throw new CustomException("Không tìm thấy email");
         }
         Account account = accountOptional.get();
         if (account.getStatus() == AccountStatus.ACTIVE) {
@@ -151,7 +151,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     public Account createUserAccount(AccountCreateRequest request) {
         Role defaultRole = roleRepository.findByRoleName("CUSTOMER")
-                .orElseThrow(() -> new RoleNotFoundException("Role not found"));
+                .orElseThrow(() -> new RoleNotFoundException("Không tìm thấy vai trò"));
 
         String encodedPassword = passwordEncoder.encode(request.getPassword());
 
@@ -178,7 +178,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Override
     public void forgotPasswordSendOtp(String email) {
         Account account = accountRepository.findByEmail(email)
-                .orElseThrow(() -> new CustomException("Email not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy email"));
 
         String otp = emailService.generateOTP();
 
@@ -193,11 +193,11 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     public void forgotPasswordReset(String email, String otp, String newPassword) {
         boolean isOtpValid = emailService.verifyOtp(email, otp);
         if (!isOtpValid) {
-            throw new CustomException("OTP is not valid, has expired, or does not match.");
+            throw new CustomException("Mã OTP không hợp lệ, đã hết hạn hoặc không khớp.");
         }
 
         Account account = accountRepository.findByEmail(email)
-                .orElseThrow(() -> new CustomException("Email not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy email"));
 
         account.setPasswordHash(passwordEncoder.encode(newPassword));
         accountRepository.save(account);
@@ -310,7 +310,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Override
     public LoginResponse getMyProfile(UUID accountId) {
         Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new CustomException("Account not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy tài khoản"));
 
         String phone = account.getPhoneNumber();
         if (phone == null || phone.isBlank()) {
@@ -410,18 +410,18 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             String tokenInfoUrl = "https://oauth2.googleapis.com/tokeninfo?access_token=" + request.getToken();
             java.util.Map<String, Object> tokenInfo = restTemplate.getForObject(tokenInfoUrl, java.util.Map.class);
             if (tokenInfo == null || !tokenInfo.containsKey("aud")) {
-                throw new CustomException("Invalid Google token");
+                throw new CustomException("Token Google không hợp lệ");
             }
             String aud = (String) tokenInfo.get("aud");
             if (googleClientId != null && !googleClientId.isBlank() && !googleClientId.equals(aud)) {
-                throw new CustomException("Unrecognized Google Client ID");
+                throw new CustomException("Google Client ID không được công nhận");
             }
 
             // Get User Info
             String userInfoUrl = "https://www.googleapis.com/oauth2/v3/userinfo?access_token=" + request.getToken();
             java.util.Map<String, Object> response = restTemplate.getForObject(userInfoUrl, java.util.Map.class);
             if (response == null || !response.containsKey("email")) {
-                throw new CustomException("Google token is invalid");
+                throw new CustomException("Token Google không hợp lệ");
             }
             String email = (String) response.get("email");
             String name = (String) response.get("name");
@@ -441,7 +441,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         Account account = accountRepository.findByEmail(email).orElse(null);
         if (account == null) {
             Role defaultRole = roleRepository.findByRoleName("CUSTOMER")
-                    .orElseThrow(() -> new RoleNotFoundException("Role not found"));
+                    .orElseThrow(() -> new RoleNotFoundException("Không tìm thấy vai trò"));
             account = Account.builder()
                     .username(email)
                     .email(email)

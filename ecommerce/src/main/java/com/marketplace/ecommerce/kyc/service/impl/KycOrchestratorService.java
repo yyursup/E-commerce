@@ -99,7 +99,7 @@ public class KycOrchestratorService implements KycOrchestrator {
                 : getActiveHash(sessionId, accountId, KycDocumentType.FRONT);
 
         if (activeHash == null || activeHash.isBlank()) {
-            throw new IllegalStateException("No active front file hash found");
+            throw new IllegalStateException("Không tìm thấy ảnh mặt trước CCCD của phiên");
         }
 
         ClassifyResponse res = vnpt.classify(activeHash, sessionId.toString());
@@ -118,7 +118,7 @@ public class KycOrchestratorService implements KycOrchestrator {
                 : getActiveHash(sessionId, accountId, KycDocumentType.FRONT);
 
         if (activeHash == null || activeHash.isBlank()) {
-            throw new IllegalStateException("No active front file hash found");
+            throw new IllegalStateException("Không tìm thấy ảnh mặt trước CCCD của phiên");
         }
 
         OcrFrontResponse res = vnpt.ocrFront(activeHash, type, sessionId.toString());
@@ -149,7 +149,7 @@ public class KycOrchestratorService implements KycOrchestrator {
                 : getActiveHash(sessionId, accountId, KycDocumentType.BACK);
 
         if (activeHash == null || activeHash.isBlank()) {
-            throw new IllegalStateException("No active back file hash found");
+            throw new IllegalStateException("Không tìm thấy ảnh mặt sau CCCD của phiên");
         }
 
         OcrBackResponse res = vnpt.ocrBack(activeHash, type, sessionId.toString());
@@ -170,7 +170,7 @@ public class KycOrchestratorService implements KycOrchestrator {
                 : getActiveHash(sessionId, accountId, KycDocumentType.SELFIE);
 
         if (activeHash == null || activeHash.isBlank()) {
-            throw new IllegalStateException("No active selfie file hash found");
+            throw new IllegalStateException("Không tìm thấy ảnh khuôn mặt của phiên");
         }
 
         LivenessResponse res = vnpt.liveness(activeHash, sessionId.toString());
@@ -194,10 +194,10 @@ public class KycOrchestratorService implements KycOrchestrator {
         EKycSession s = get(sessionId, accountId);
 
         if (s.getFrontHash() == null || s.getFrontHash().isBlank()) {
-            throw new IllegalStateException("Front not uploaded");
+            throw new IllegalStateException("Chưa tải lên ảnh mặt trước CCCD");
         }
         if (s.getSelfieHash() == null || s.getSelfieHash().isBlank()) {
-            throw new IllegalStateException("Selfie not uploaded");
+            throw new IllegalStateException("Chưa tải lên ảnh khuôn mặt");
         }
 
         CompareResponse res = vnpt.compare(s.getFrontHash(), s.getSelfieHash(), sessionId.toString());
@@ -216,7 +216,7 @@ public class KycOrchestratorService implements KycOrchestrator {
 
         if (passed) {
             Account account = accountRepository.findById(accountId)
-                    .orElseThrow(() -> new IllegalStateException("No account found"));
+                    .orElseThrow(() -> new IllegalStateException("Không tìm thấy tài khoản"));
             account.setAccountVerified(true);
             accountRepository.save(account);
         }

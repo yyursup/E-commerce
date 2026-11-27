@@ -40,6 +40,20 @@ import ShopCoverImageUpload from '../components/ShopCoverImageUpload'
 import GhnAddressSelector from '../components/GhnAddressSelector'
 import BankSelector from '../components/BankSelector'
 
+// Đổi kết quả upload KYC (ok/step hoặc lỗi từ server) thành thông báo theo từng bước
+function getKycUploadErrorMessage(type, res) {
+  if (res?.step === 'UPLOAD') return 'Không tải được ảnh lên. Vui lòng thử lại.'
+  if (res?.step === 'CARD_LIVENESS') {
+    return 'Ảnh CCCD không hợp lệ (ảnh chụp lại màn hình hoặc bản photo). Vui lòng chụp trực tiếp thẻ CCCD.'
+  }
+  if (res?.step === 'FACE_LIVENESS') {
+    return 'Không xác nhận được khuôn mặt thật. Vui lòng chụp trực tiếp khuôn mặt ở nơi đủ sáng.'
+  }
+  if (type === 'front') return 'Ảnh không phải mặt trước CMND/CCCD. Vui lòng chụp lại mặt trước rõ nét, đủ 4 góc.'
+  if (type === 'back') return 'Ảnh không phải mặt sau CMND/CCCD. Vui lòng chụp lại mặt sau rõ nét, đủ 4 góc.'
+  return 'Ảnh chưa đúng là ảnh khuôn mặt. Vui lòng chụp lại, nhìn thẳng vào camera và để lộ rõ cả khuôn mặt.'
+}
+
 const KYC_STORAGE_KEY = 'seller_kyc_session_progress'
 const FORM_DRAFT_KEY = 'seller_registration_form_draft'
 
@@ -374,41 +388,43 @@ export default function SellerRegister() {
       return
     }
 
-    let file, docType
+    let file
     if (type === 'front') {
       if (!frontFile) {
         toast.error('Vui lòng chọn ảnh mặt trước CCCD.')
         return
       }
       file = frontFile
-      docType = 'FRONT'
     } else if (type === 'back') {
       if (!backFile) {
         toast.error('Vui lòng chọn ảnh mặt sau CCCD.')
         return
       }
       file = backFile
-      docType = 'BACK'
     } else if (type === 'selfie') {
       if (!selfieFile) {
         toast.error('Vui lòng chụp ảnh khuôn mặt.')
         return
       }
       file = selfieFile
-      docType = 'SELFIE'
     }
 
     setIsUploading(true)
     setKycError(null)
     try {
       const autoTitle = file?.name || `kyc-${type}-${Date.now()}`
-      await kycService.uploadWithType({
+      const res = await kycService.fullFlowUpload({
         sessionId,
-        type: docType,
         file,
         title: autoTitle,
         description: `Upload ${type}`,
+        type: type.toUpperCase(),
       })
+      // Backend tự nhận diện loại ảnh, nên phải kiểm tra ảnh được lưu đúng chỗ của bước hiện tại
+      const expectedSlot = { front: 'frontHash', back: 'backHash', selfie: 'selfieHash' }[type]
+      if (!res?.ok || res.savedTo !== expectedSlot) {
+        throw new Error(getKycUploadErrorMessage(type, res))
+      }
 
       if (type === 'front') {
         setFrontUploaded(true)
@@ -428,7 +444,14 @@ export default function SellerRegister() {
       }
     } catch (error) {
       console.error(`Upload ${type} error:`, error)
-      const msg = error?.message || `Upload ảnh ${type} thất bại do lỗi mạng. Vui lòng thử lại.`
+      // Lỗi server (kể cả 500 khi VNPT không đọc được ảnh) đổi thành thông báo của đúng bước đang làm
+      const isOwnCheck = error instanceof Error && !error.isAxiosError
+      const isNetworkError = error?.isAxiosError && !error.response
+      const msg = isOwnCheck
+        ? error.message
+        : isNetworkError
+          ? 'Upload ảnh thất bại do lỗi mạng. Vui lòng thử lại.'
+          : getKycUploadErrorMessage(type, error)
       setKycError(msg)
       toast.error(msg)
     } finally {
@@ -1860,11 +1883,11 @@ export default function SellerRegister() {
                   </div>
                 </div>
 
-                {/* 6. KÝ QUỸ BẢO CHỨNG & CẤP ĐỘ UY TÍN */}
+                {/* 6. KÝ QUỸ BẢO CHỨNG & CẤP ĐỘ TÀI CHÍNH */}
                 <div className="space-y-5">
                   <div className="flex items-center justify-between border-b pb-2">
                     <h3 className={cn("text-lg font-semibold", isDark ? "text-white" : "text-stone-900")}>
-                      6. Ký quỹ bảo chứng & Cấp độ uy tín
+                      6. Ký quỹ bảo chứng & Cấp độ tài chính
                     </h3>
                     <span className="text-xs px-2.5 py-0.5 rounded-full font-medium bg-stone-100 text-stone-600 dark:bg-slate-800 dark:text-slate-400">
                       Không bắt buộc
@@ -1881,7 +1904,7 @@ export default function SellerRegister() {
                         Bảo chứng giao dịch an toàn
                       </p>
                       <p className={isDark ? 'text-slate-300' : 'text-stone-600'}>
-                        Tiền ký quỹ có bản chất tương tự &quot;Vốn điều lệ&quot; cam kết trách nhiệm và uy tín của gian hàng trên sàn. Bạn có thể chọn <strong>bán hàng thông thường (1★)</strong> hoặc <strong>ký quỹ bảo chứng để nâng cao độ uy tín (2★ - 5★)</strong>.
+                        Tiền ký quỹ có bản chất tương tự &quot;Vốn điều lệ&quot; cam kết trách nhiệm và tài chính của gian hàng trên sàn. Bạn có thể chọn <strong>bán hàng thông thường (1★)</strong> hoặc <strong>ký quỹ bảo chứng để nâng cao cấp độ tài chính (2★ - 5★)</strong>.
                       </p>
                     </div>
                   </div>
@@ -1947,11 +1970,11 @@ export default function SellerRegister() {
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-bold text-stone-900 dark:text-white">Ký quỹ bảo chứng</span>
                             <span className="rounded-md bg-amber-500/15 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 text-[10px] font-semibold border border-amber-500/20">
-                              2★ - 5★ Uy Tín
+                              2★ - 5★ Tài Chính
                             </span>
                           </div>
                           <p className="text-xs text-stone-500 dark:text-slate-400 leading-relaxed">
-                            Cam kết ký quỹ để nhận Huy hiệu Uy tín và ưu tiên hiển thị. Kích hoạt gian hàng sau khi nạp đủ số tiền cọc đã cam kết.
+                            Cam kết ký quỹ để nhận Huy hiệu Tài chính và ưu tiên hiển thị. Kích hoạt gian hàng sau khi nạp đủ số tiền cọc đã cam kết.
                           </p>
                         </div>
                         <div className={cn(
@@ -2043,7 +2066,7 @@ export default function SellerRegister() {
                           : 'border-stone-200 bg-stone-50/80'
                       )}>
                         <div>
-                          <div className="text-xs text-stone-500 dark:text-slate-400">Độ uy tín dự kiến đạt được:</div>
+                          <div className="text-xs text-stone-500 dark:text-slate-400">Cấp độ tài chính dự kiến đạt được:</div>
                           <div className="flex items-center gap-2 mt-1">
                             <div className="flex items-center gap-0.5 text-amber-500">
                               {Array.from({ length: 5 }).map((_, i) => (
@@ -2059,7 +2082,7 @@ export default function SellerRegister() {
                               ))}
                             </div>
                             <span className="text-sm font-bold text-amber-600 dark:text-amber-400">
-                              {calculatePreviewStar(selectedDepositAmount)} Sao Uy Tín
+                              {calculatePreviewStar(selectedDepositAmount)} Sao Tài Chính
                             </span>
                           </div>
                         </div>

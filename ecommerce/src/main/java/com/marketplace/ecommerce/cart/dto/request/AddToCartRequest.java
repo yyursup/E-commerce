@@ -12,12 +12,12 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AddToCartRequest {
-    @NotNull(message = "Product ID is required")
+    @NotNull(message = "Vui lòng chọn sản phẩm")
     private UUID productId;
 
 
-    @NotNull(message = "Quantity is required")
-    @Min(value = 1, message = "Quantity must be at least 1")
+    @NotNull(message = "Vui lòng nhập số lượng")
+    @Min(value = 1, message = "Số lượng phải từ 1 trở lên")
     private Integer quantity;
 
     private UUID variantId;

@@ -68,10 +68,10 @@ public class WalletServiceImpl implements WalletService {
     @Override
     public WalletResponse getWalletByUserName(String username) {
         User user = userRepository.findByAccountUsername(username)
-                .orElseThrow(() -> new CustomException("User not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy người dùng"));
 
         Wallet w = walletRepo.findByUserId(user.getId())
-                .orElseThrow(() -> new CustomException("Wallet not found for userName=" + user.getAccount().getUsername()));
+                .orElseThrow(() -> new CustomException("Không tìm thấy ví của userName=" + user.getAccount().getUsername()));
 
         return WalletResponse.from(w);
     }
@@ -81,10 +81,10 @@ public class WalletServiceImpl implements WalletService {
     @Transactional(readOnly = true)
     public WalletResponse getWallet(UUID accountId) {
         User user = userRepository.findByAccountId(accountId)
-                .orElseThrow(() -> new CustomException("User not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy người dùng"));
 
         Wallet w = walletRepo.findByUserId(user.getId())
-                .orElseThrow(() -> new CustomException("Wallet not found for userId=" + user.getId()));
+                .orElseThrow(() -> new CustomException("Không tìm thấy ví của userId=" + user.getId()));
 
         return WalletResponse.from(w);
     }
@@ -97,13 +97,13 @@ public class WalletServiceImpl implements WalletService {
         BigDecimal amount = payment.getAmount();
 
         Wallet buyerWallet = walletRepo.findByUserIdForUpdate(order.getUser().getId())
-                .orElseThrow(() -> new CustomException("Buyer wallet not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy ví người mua"));
 
         Wallet sellerWallet = walletRepo.findByUserIdForUpdate(order.getShop().getUser().getId())
-                .orElseThrow(() -> new CustomException("Seller wallet not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy ví người bán"));
 
         Wallet escrowWallet = walletRepo.findSystemWalletForUpdate(WalletType.ESCROW)
-                .orElseThrow(() -> new CustomException("System ESCROW wallet not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy ví ký quỹ của hệ thống"));
 
         Escrow escrow = escrowRepo.findByOrderId(order.getId())
                 .orElseGet(() -> Escrow.builder()
@@ -144,7 +144,7 @@ public class WalletServiceImpl implements WalletService {
         String holdDedupe = "ESCROW_HOLD:" + escrow.getId();
         if (!txRepo.existsByDedupeKey(holdDedupe)) {
             if (buyerWallet.getAvailableBalance().compareTo(amount) < 0) {
-                throw new CustomException("Buyer available balance insufficient for escrow hold");
+                throw new CustomException("Số dư khả dụng của người mua không đủ để ký quỹ");
             }
 
             Transaction tx2 = Transaction.builder()

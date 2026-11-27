@@ -27,6 +27,6 @@ public enum RequestStatus {
                 return status;
             }
         }
-        throw new IllegalArgumentException("Unknown SellerRequestStatus code: " + code);
+        throw new IllegalArgumentException("Mã trạng thái yêu cầu người bán không hợp lệ: " + code);
     }
 }

@@ -210,8 +210,8 @@ export default function AdminDashboard() {
                     timelineFilter === p.id
                       ? 'shadow-sm bg-stone-950 text-white hover:bg-stone-800 dark:bg-white dark:text-stone-950 dark:hover:bg-stone-200'
                       : isDark
-                      ? 'text-slate-400 hover:text-white'
-                      : 'text-stone-600 hover:text-stone-900',
+                        ? 'text-slate-400 hover:text-white'
+                        : 'text-stone-600 hover:text-stone-900',
                   )}
                 >
                   {p.label}
@@ -445,7 +445,7 @@ export default function AdminDashboard() {
           <div>
             <div className="flex items-center gap-1.5">
               <p className={cn('text-xs font-medium', isDark ? 'text-slate-400' : 'text-stone-500')}>
-                Tranh chấp đang xử lý
+                Tranh chấp
               </p>
             </div>
             <p className="mt-1 text-xl font-bold text-rose-500">{analytics?.pendingDisputesCount || 0} vụ</p>
@@ -507,8 +507,8 @@ export default function AdminDashboard() {
                   ? 'bg-blue-950/40 border-blue-800/60 text-white'
                   : 'bg-blue-50/90 border-blue-200 text-stone-900'
                 : isDark
-                ? 'bg-slate-800/40 border-slate-800 text-slate-400'
-                : 'bg-stone-50 border-stone-200 text-stone-600',
+                  ? 'bg-slate-800/40 border-slate-800 text-slate-400'
+                  : 'bg-stone-50 border-stone-200 text-stone-600',
             )}
           >
             {hoveredPoint ? (
@@ -575,8 +575,8 @@ export default function AdminDashboard() {
                           ? 'bg-slate-800/80 shadow-sm'
                           : 'bg-blue-50/80 shadow-sm'
                         : hoveredPoint
-                        ? 'opacity-40 hover:opacity-100'
-                        : 'hover:bg-slate-500/5',
+                          ? 'opacity-40 hover:opacity-100'
+                          : 'hover:bg-slate-500/5',
                     )}
                   >
                     {/* Tooltip nổi phía trên cột - cố định vị trí, không animation giật */}
@@ -627,8 +627,8 @@ export default function AdminDashboard() {
                         isHovered
                           ? 'text-blue-500'
                           : isDark
-                          ? 'text-slate-400'
-                          : 'text-stone-500',
+                            ? 'text-slate-400'
+                            : 'text-stone-500',
                       )}
                     >
                       {shortDate}

@@ -120,6 +120,8 @@ export default function OrderEscrowsTab() {
         <AdminEscrowPagination
           page={page}
           totalPages={totalPages}
+          totalItems={totalElements}
+          pageSize={size}
           onPageChange={setPage}
           isDark={isDark}
         />

@@ -27,7 +27,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserProfileResponse getUserProfile(UUID accountId) {
         User user = userRepository.findByAccountId(accountId)
-                .orElseThrow(() -> new CustomException("User not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy người dùng"));
         if (user.getAccount() != null) {
             reconcileAccountDecay(user.getAccount());
         }
@@ -63,7 +63,7 @@ public class UserServiceImpl implements UserService {
 
     ) {
         User user = userRepository.findByAccountId(accountId)
-                .orElseThrow(() -> new CustomException("User not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy người dùng"));
 
         if (request.getFullName() != null && !request.getFullName().isBlank()) {
             user.setFullName(request.getFullName().trim());
@@ -97,7 +97,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void changePassword(UUID accountId, com.marketplace.ecommerce.auth.dto.request.ChangePasswordRequest request) {
         com.marketplace.ecommerce.auth.entity.Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new CustomException("Account not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy tài khoản"));
 
         if (!passwordEncoder.matches(request.getOldPassword(), account.getPasswordHash())) {
             throw new CustomException("Mật khẩu cũ không chính xác.");

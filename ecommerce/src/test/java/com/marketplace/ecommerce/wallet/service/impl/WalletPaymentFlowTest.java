@@ -130,7 +130,7 @@ class WalletPaymentFlowTest {
         when(userRepository.findByAccountUsername("unknown")).thenReturn(Optional.empty());
 
         CustomException ex = assertThrows(CustomException.class, () -> walletService.getWalletByUserName("unknown"));
-        assertTrue(ex.getMessage().contains("User not found"));
+        assertTrue(ex.getMessage().contains("Không tìm thấy người dùng"));
     }
 
     @Test
@@ -140,7 +140,7 @@ class WalletPaymentFlowTest {
         when(walletRepo.findByUserId(buyer.getId())).thenReturn(Optional.empty());
 
         CustomException ex = assertThrows(CustomException.class, () -> walletService.getWalletByUserName("buyer_user"));
-        assertTrue(ex.getMessage().contains("Wallet not found for userName="));
+        assertTrue(ex.getMessage().contains("Không tìm thấy ví của userName="));
     }
 
     @Test
@@ -162,7 +162,7 @@ class WalletPaymentFlowTest {
         when(userRepository.findByAccountId(accId)).thenReturn(Optional.empty());
 
         CustomException ex = assertThrows(CustomException.class, () -> walletService.getWallet(accId));
-        assertTrue(ex.getMessage().contains("User not found"));
+        assertTrue(ex.getMessage().contains("Không tìm thấy người dùng"));
     }
 
     @Test
@@ -173,7 +173,7 @@ class WalletPaymentFlowTest {
         when(walletRepo.findByUserId(buyer.getId())).thenReturn(Optional.empty());
 
         CustomException ex = assertThrows(CustomException.class, () -> walletService.getWallet(accId));
-        assertTrue(ex.getMessage().contains("Wallet not found for userId="));
+        assertTrue(ex.getMessage().contains("Không tìm thấy ví của userId="));
     }
 
     @Test
@@ -214,17 +214,17 @@ class WalletPaymentFlowTest {
 
         when(walletRepo.findByUserIdForUpdate(buyer.getId())).thenReturn(Optional.empty());
         CustomException ex1 = assertThrows(CustomException.class, () -> walletService.recordPaymentAndHoldEscrow(payment));
-        assertTrue(ex1.getMessage().contains("Buyer wallet not found"));
+        assertTrue(ex1.getMessage().contains("Không tìm thấy ví người mua"));
 
         when(walletRepo.findByUserIdForUpdate(buyer.getId())).thenReturn(Optional.of(buyerWallet));
         when(walletRepo.findByUserIdForUpdate(seller.getId())).thenReturn(Optional.empty());
         CustomException ex2 = assertThrows(CustomException.class, () -> walletService.recordPaymentAndHoldEscrow(payment));
-        assertTrue(ex2.getMessage().contains("Seller wallet not found"));
+        assertTrue(ex2.getMessage().contains("Không tìm thấy ví người bán"));
 
         when(walletRepo.findByUserIdForUpdate(seller.getId())).thenReturn(Optional.of(sellerWallet));
         when(walletRepo.findSystemWalletForUpdate(WalletType.ESCROW)).thenReturn(Optional.empty());
         CustomException ex3 = assertThrows(CustomException.class, () -> walletService.recordPaymentAndHoldEscrow(payment));
-        assertTrue(ex3.getMessage().contains("System ESCROW wallet not found"));
+        assertTrue(ex3.getMessage().contains("Không tìm thấy ví ký quỹ của hệ thống"));
     }
 
     @Test

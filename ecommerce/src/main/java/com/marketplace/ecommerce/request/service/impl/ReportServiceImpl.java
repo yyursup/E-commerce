@@ -230,7 +230,7 @@ public class ReportServiceImpl implements ReportService {
             case PRODUCT -> handleReportProduct(targetId, now);
             case REVIEW -> handleReportReview(targetId, now);
             case ORDER -> handleReportOrder(targetId, now);
-            default -> throw new CustomException("Unsupported target type: " + type);
+            default -> throw new CustomException("Loại đối tượng không được hỗ trợ: " + type);
         }
 
         approveRequest(r, admin, now, req.getNote(), report, req.getResolutionType());
@@ -240,7 +240,7 @@ public class ReportServiceImpl implements ReportService {
             String note, ReportDecision decision, Optional<OrderReturn> returnOpt, Boolean removeShopPenalty) {
         UUID orderId = report.getTargetId();
         Order order = orderRepository.findByIdForUpdate(orderId)
-                .orElseThrow(() -> new CustomException("Order not found: " + orderId));
+                .orElseThrow(() -> new CustomException("Không tìm thấy đơn hàng: " + orderId));
 
         // 1. Kiểm tra Escrow tránh duplicate release hoặc release trên Escrow đã refund
         Optional<Escrow> escrowOpt = escrowRepository.findByOrderIdForUpdate(orderId);
@@ -350,7 +350,7 @@ public class ReportServiceImpl implements ReportService {
             String note, ReportDecision decision, Optional<OrderReturn> returnOpt) {
         UUID orderId = report.getTargetId();
         Order order = orderRepository.findByIdForUpdate(orderId)
-                .orElseThrow(() -> new CustomException("Order not found: " + orderId));
+                .orElseThrow(() -> new CustomException("Không tìm thấy đơn hàng: " + orderId));
 
         // 1. Kiểm tra Escrow tránh duplicate refund
         Optional<Escrow> escrowOpt = escrowRepository.findByOrderIdForUpdate(orderId);
@@ -760,7 +760,7 @@ public class ReportServiceImpl implements ReportService {
         switch (req.getAction()) {
             case ACCEPT_REFUND -> {
                 Order order = orderRepository.findByIdForUpdate(orderId)
-                        .orElseThrow(() -> new CustomException("Order not found: " + orderId));
+                        .orElseThrow(() -> new CustomException("Không tìm thấy đơn hàng: " + orderId));
 
                 report.setStage(ReportStage.RESOLVED);
                 report.setResolutionType(ResolutionType.REFUND_ONLY);
@@ -1091,7 +1091,7 @@ public class ReportServiceImpl implements ReportService {
 
     private void handleReportShop(UUID shopId, LocalDateTime now) {
         Shop shop = shopRepository.findByIdForUpdate(shopId)
-                .orElseThrow(() -> new CustomException("Shop not found: " + shopId));
+                .orElseThrow(() -> new CustomException("Không tìm thấy gian hàng: " + shopId));
         punishShop(shop, now);
         if (shop.getUser() != null && shop.getUser().getAccount() != null) {
             try {
@@ -1132,6 +1132,9 @@ public class ReportServiceImpl implements ReportService {
         DisputeSellerAction sellerAction = report.getSellerAction();
 
         OrderReturnResponse orderReturnDto = orderReturnService.getReturnByOrderId(orderId);
+        String resolvedAdminNote = report.getModeratorNote() != null && !report.getModeratorNote().isBlank()
+                ? report.getModeratorNote()
+                : (req != null ? req.getResponse() : null);
 
         return ReportDetailsResponse.builder()
                 .id(report.getId())
@@ -1140,6 +1143,7 @@ public class ReportServiceImpl implements ReportService {
                 .targetId(report.getTargetId())
                 .evidenceUrl(report.getEvidenceUrl())
                 .moderatorNote(report.getModeratorNote())
+                .adminNote(resolvedAdminNote)
                 .resolutionType(report.getResolutionType())
                 .stage(report.getStage())
                 .sellerResponseDeadline(report.getSellerResponseDeadline())

@@ -1,5 +1,6 @@
 package com.marketplace.ecommerce.kyc.controller;
 
+import com.marketplace.ecommerce.common.exception.CustomException;
 import com.marketplace.ecommerce.common.CurrentUserInfo;
 import com.marketplace.ecommerce.config.CurrentUser;
 import com.marketplace.ecommerce.kyc.dto.request.KycThumbnailAttachRequest;
@@ -151,16 +152,27 @@ public class KycController {
             @RequestPart("file") @NotNull MultipartFile file,
             @RequestPart(value = "title", required = false) String title,
             @RequestPart(value = "description", required = false) String description,
+            @RequestPart(value = "type", required = false) String type,
             @CurrentUser CurrentUserInfo u
     ) {
+        KycDocumentType expectedType = parseExpectedType(type);
         Map<String, Object> out = orchestratorService.uploadFileAndAttach(
                 sessionId,
                 u.getAccountId(),
                 file,
                 title,
-                description
+                description,
+                expectedType
         );
         return ResponseEntity.ok(out);
     }
 
+    private static KycDocumentType parseExpectedType(String type) {
+        if (type == null || type.isBlank()) return null;
+        try {
+            return KycDocumentType.valueOf(type.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new CustomException("Loại ảnh KYC không hợp lệ: " + type);
+        }
+    }
 }

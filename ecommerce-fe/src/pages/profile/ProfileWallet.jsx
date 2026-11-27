@@ -29,6 +29,7 @@ import authService from '../../services/auth'
 import walletService from '../../services/wallet'
 import orderService from '../../services/order'
 import toast from 'react-hot-toast'
+import Pagination from '../../components/Pagination'
 
 // Buyer money is locked in system escrow wallet during these statuses
 const ESCROW_HELD_STATUSES = new Set(['CONFIRMED', 'PROCESSING', 'SHIPPING', 'SHIPPED', 'DELIVERED'])
@@ -843,29 +844,7 @@ export default function ProfileWallet({ isDark: isDarkProp }) {
 
                 {/* Pagination */}
                 {withdrawalTotalPages > 1 && (
-                    <div className="flex items-center justify-between pt-2 border-t border-stone-100 dark:border-slate-800 text-xs">
-                        <span className="text-stone-500 dark:text-slate-400">
-                            Trang {withdrawalPage + 1} / {withdrawalTotalPages}
-                        </span>
-                        <div className="flex items-center gap-1">
-                            <button
-                                type="button"
-                                disabled={withdrawalPage === 0 || loadingWithdrawals}
-                                onClick={() => fetchWithdrawals(withdrawalPage - 1)}
-                                className="px-2.5 py-1 rounded-lg border border-stone-200 dark:border-slate-700 disabled:opacity-40"
-                            >
-                                Trước
-                            </button>
-                            <button
-                                type="button"
-                                disabled={withdrawalPage >= withdrawalTotalPages - 1 || loadingWithdrawals}
-                                onClick={() => fetchWithdrawals(withdrawalPage + 1)}
-                                className="px-2.5 py-1 rounded-lg border border-stone-200 dark:border-slate-700 disabled:opacity-40"
-                            >
-                                Sau
-                            </button>
-                        </div>
-                    </div>
+                  <div className="pt-2 border-t border-stone-100 dark:border-slate-800"><Pagination currentPage={withdrawalPage + 1} totalPages={withdrawalTotalPages} onPageChange={(p) => fetchWithdrawals(p - 1)} isDark={isDark} /></div>
                 )}
             </motion.div>
 

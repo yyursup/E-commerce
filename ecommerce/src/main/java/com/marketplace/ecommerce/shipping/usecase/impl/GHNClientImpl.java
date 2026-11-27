@@ -156,7 +156,7 @@ public class GHNClientImpl implements GHNClient {
     }
 
     private <T> T unwrap(GHNCommonResponse<T> res, String op) {
-        if (res == null) throw new RuntimeException("GHN " + op + " returned null");
+        if (res == null) throw new RuntimeException("GHN " + op + " trả về rỗng");
         if (res.getCode() == 200) return res.getData();
 
         String msg = res.getMessage() != null ? res.getMessage() : "Unknown error";

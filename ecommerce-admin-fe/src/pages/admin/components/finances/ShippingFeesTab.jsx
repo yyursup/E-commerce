@@ -131,8 +131,9 @@ export default function ShippingFeesTab() {
         isDark={isDark}
         page={page}
         totalPages={totalPages}
-        onPrev={() => setPage((p) => Math.max(0, p - 1))}
-        onNext={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+        totalItems={totalElements}
+        pageSize={size}
+        onPageChange={setPage}
       />
     </div>
   )

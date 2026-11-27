@@ -61,6 +61,7 @@ public class ProductServiceImpl implements ProductService {
         Shop shop = getShopByAccountId(accountId);
 
         productValidation.validateVariants(request.getVariants());
+        productValidation.validatePublishable(request);
 
         if (productRepository.existsBySkuAndDeletedFalse(request.getSku())) {
             throw new CustomException("Mã SKU đã tồn tại: " + request.getSku());

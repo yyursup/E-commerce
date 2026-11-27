@@ -287,7 +287,7 @@ class GHNClientImplTest {
         when(responseSpec.body(any(ParameterizedTypeReference.class))).thenReturn(null);
 
         RuntimeException ex = assertThrows(RuntimeException.class, client::getProvinces);
-        assertTrue(ex.getMessage().contains("returned null"));
+        assertTrue(ex.getMessage().contains("trả về rỗng"));
     }
 
 }

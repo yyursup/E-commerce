@@ -182,7 +182,7 @@ class AuthenticationServiceImplTest {
         when(emailService.verifyOtp(req.getEmail(), req.getOtp())).thenReturn(false);
 
         CustomException ex = assertThrows(CustomException.class, () -> authenticationService.verifyAccount(req));
-        assertTrue(ex.getMessage().contains("OTP is not valid"));
+        assertTrue(ex.getMessage().contains("Mã OTP không hợp lệ"));
     }
 
     @Test
@@ -530,12 +530,12 @@ class AuthenticationServiceImplTest {
     void testRegister_DuplicateErrors() {
         AccountCreateRequest req1 = new AccountCreateRequest();
         req1.setUsername("testuser");
-        doThrow(new CustomException("Username is already taken")).when(validation).validate(req1);
+        doThrow(new CustomException("Tên đăng nhập đã được sử dụng")).when(validation).validate(req1);
         assertThrows(CustomException.class, () -> authenticationService.register(req1));
 
         AccountCreateRequest req2 = new AccountCreateRequest();
         req2.setUsername("newuser");
-        doThrow(new CustomException("Email is already taken")).when(validation).validate(req2);
+        doThrow(new CustomException("Email đã được sử dụng")).when(validation).validate(req2);
         assertThrows(CustomException.class, () -> authenticationService.register(req2));
     }
 

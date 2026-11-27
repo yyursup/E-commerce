@@ -43,20 +43,20 @@ public class CheckoutServiceImpl implements CheckoutService {
     @Transactional(readOnly = true)
     public QuoteResponse quote(UUID accountId, QuoteRequest req) {
         User user = userRepository.findByAccountId(accountId)
-                .orElseThrow(() -> new CustomException("User not found."));
+                .orElseThrow(() -> new CustomException("Không tìm thấy người dùng."));
 
         Shop shop = shopRepository.findById(req.getShopId())
-                .orElseThrow(() -> new CustomException("Shop not found."));
+                .orElseThrow(() -> new CustomException("Không tìm thấy gian hàng."));
 
         if (shop.getStatus() == ShopStatus.CLOSED) {
             throw new CustomException("Gian hàng này đã đóng cửa, không thể thực hiện đặt hàng.");
         }
 
         UserAddress addr = userAddressRepository.findByIdAndUserIdAndDeletedFalse(req.getAddressId(), user.getId())
-                .orElseThrow(() -> new CustomException("Address not found."));
+                .orElseThrow(() -> new CustomException("Không tìm thấy địa chỉ."));
 
         Cart cart = cartRepository.findByUserIdWithItems(user.getId())
-                .orElseThrow(() -> new CustomException("Cart not found."));
+                .orElseThrow(() -> new CustomException("Không tìm thấy giỏ hàng."));
 
         List<CartItem> items = cart.getItems().stream()
                 .filter(i -> !Boolean.TRUE.equals(i.getDeleted()))
@@ -131,17 +131,17 @@ public class CheckoutServiceImpl implements CheckoutService {
     @Transactional(readOnly = true)
     public CheckoutConfirmResponse confirm(UUID accountId, UUID shopId) {
         User user = userRepository.findByAccountId(accountId)
-                .orElseThrow(() -> new CustomException("User not found."));
+                .orElseThrow(() -> new CustomException("Không tìm thấy người dùng."));
 
         Shop shop = shopRepository.findById(shopId)
-                .orElseThrow(() -> new CustomException("Shop not found."));
+                .orElseThrow(() -> new CustomException("Không tìm thấy gian hàng."));
 
         if (shop.getStatus() == ShopStatus.CLOSED) {
             throw new CustomException("Gian hàng này đã đóng cửa, không thể thực hiện đặt hàng.");
         }
 
         Cart cart = cartRepository.findByUserIdWithItems(user.getId())
-                .orElseThrow(() -> new CustomException("Cart not found."));
+                .orElseThrow(() -> new CustomException("Không tìm thấy giỏ hàng."));
 
         List<CartItem> items = cart.getItems().stream()
                 .filter(i -> !Boolean.TRUE.equals(i.getDeleted()))

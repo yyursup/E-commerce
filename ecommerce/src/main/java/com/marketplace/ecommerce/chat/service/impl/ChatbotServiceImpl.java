@@ -62,7 +62,7 @@ public class ChatbotServiceImpl implements ChatbotService {
         String rootNodeId = getRootNodeId(roleContext);
 
         ChatbotNode node = nodeRepository.findById(rootNodeId)
-                .orElseThrow(() -> new IllegalStateException("Root node not found: " + rootNodeId));
+                .orElseThrow(() -> new IllegalStateException("Không tìm thấy nút gốc: " + rootNodeId));
 
         ChatbotResponse resp = buildResponse(node, principal, rootNodeId);
         resp.setCurrentNodeId(rootNodeId);

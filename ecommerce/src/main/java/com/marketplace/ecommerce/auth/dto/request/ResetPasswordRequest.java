@@ -10,13 +10,13 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ResetPasswordRequest {
-    @NotBlank(message = "Email is required")
-    @Email(message = "Invalid email format")
+    @NotBlank(message = "Vui lòng nhập email")
+    @Email(message = "Email không đúng định dạng")
     private String email;
 
-    @NotBlank(message = "OTP is required")
+    @NotBlank(message = "Vui lòng nhập mã OTP")
     private String otp;
 
-    @NotBlank(message = "New password is required")
+    @NotBlank(message = "Vui lòng nhập mật khẩu mới")
     private String newPassword;
 }

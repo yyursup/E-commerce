@@ -23,6 +23,7 @@ import DeductCompensationModal from './modals/DeductCompensationModal'
 import ApproveCloseShopModal from './modals/ApproveCloseShopModal'
 import RejectCloseShopModal from './modals/RejectCloseShopModal'
 import AdjustFundModal from './modals/AdjustFundModal'
+import Pagination from '../order/Pagination'
 
 export default function EscrowFundSupervisionTab() {
   const isDark = useThemeStore((state) => state.theme) === 'dark'
@@ -405,27 +406,7 @@ export default function EscrowFundSupervisionTab() {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="p-4 border-t border-slate-700/40 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-            <span className="text-slate-400">
-              Trang {page + 1} / {totalPages}
-            </span>
-            <div className="flex gap-2">
-              <button
-                disabled={page === 0}
-                onClick={() => setPage((p) => Math.max(0, p - 1))}
-                className="rounded-lg px-3 py-1.5 border border-slate-700 disabled:opacity-40"
-              >
-                Trang trước
-              </button>
-              <button
-                disabled={page >= totalPages - 1}
-                onClick={() => setPage((p) => p + 1)}
-                className="rounded-lg px-3 py-1.5 border border-slate-700 disabled:opacity-40"
-              >
-                Trang sau
-              </button>
-            </div>
-          </div>
+          <div className="p-4 border-t border-slate-700/40"><Pagination currentPage={page + 1} totalPages={totalPages} totalItems={totalElements} pageSize={10} onPageChange={(p) => setPage(p - 1)} isDark={isDark} /></div>
         )}
       </div>
 

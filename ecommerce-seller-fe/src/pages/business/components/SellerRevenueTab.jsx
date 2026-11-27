@@ -13,6 +13,7 @@ import {
 } from 'react-icons/hi'
 import { NavLink } from 'react-router-dom'
 import { cn } from '../../../lib/cn'
+import Pagination from '../../../components/Pagination'
 
 const formatVND = (val) => {
   if (val === null || val === undefined) return '0 ₫'
@@ -260,27 +261,7 @@ export default function SellerRevenueTab({
 
         {/* Pagination */}
         {withdrawalTotalPages > 1 && (
-          <div className="p-4 border-t border-stone-100 dark:border-slate-800 flex items-center justify-between text-xs">
-            <span className="text-stone-500 dark:text-slate-400">
-              Trang {withdrawalPage + 1} / {withdrawalTotalPages}
-            </span>
-            <div className="flex gap-2">
-              <button
-                disabled={withdrawalPage === 0 || withdrawalsLoading}
-                onClick={() => onPageChange(Math.max(0, withdrawalPage - 1))}
-                className="rounded-lg px-3 py-1.5 border border-stone-200 dark:border-slate-700 disabled:opacity-40"
-              >
-                Trang trước
-              </button>
-              <button
-                disabled={withdrawalPage >= withdrawalTotalPages - 1 || withdrawalsLoading}
-                onClick={() => onPageChange(withdrawalPage + 1)}
-                className="rounded-lg px-3 py-1.5 border border-stone-200 dark:border-slate-700 disabled:opacity-40"
-              >
-                Trang sau
-              </button>
-            </div>
-          </div>
+          <div className="p-4 border-t border-stone-100 dark:border-slate-800"><Pagination currentPage={withdrawalPage + 1} totalPages={withdrawalTotalPages} onPageChange={(p) => onPageChange(p - 1)} isDark={isDark} /></div>
         )}
       </div>
     </div>

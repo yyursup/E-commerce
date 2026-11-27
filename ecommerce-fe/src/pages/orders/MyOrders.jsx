@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import {
   HiOutlineShoppingBag,
   HiOutlineCreditCard,
+  HiOutlineDownload,
 } from 'react-icons/hi'
 import { useThemeStore } from '../../store/useThemeStore'
 import { useAuthStore } from '../../store/useAuthStore'
@@ -11,14 +12,17 @@ import toast from 'react-hot-toast'
 import orderService from '../../services/order'
 import OrderReportModal from '../../components/OrderReportModal'
 import OrderItemCard from './components/OrderItemCard'
+import Pagination from '../../components/Pagination'
 import {
   ORDER_STATUSES,
   formatOrderCurrency,
   formatOrderDate,
 } from '../../lib/orderStatus'
+import { exportMyOrdersCsv } from '../../utils/exportMyOrdersReport'
 
 // Statuses where buyer money is held in system escrow
 const ESCROW_HELD_STATUSES = ['CONFIRMED', 'PROCESSING', 'SHIPPING', 'SHIPPED', 'DELIVERED']
+const PAGE_SIZE = 10
 
 export default function MyOrders() {
   const isDark = useThemeStore((s) => s.theme) === 'dark'
@@ -27,29 +31,39 @@ export default function MyOrders() {
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState('')
   const [error, setError] = useState(null)
-  const [walletBalance] = useState(0)
   const [escrowHeld, setEscrowHeld] = useState(0)
   const [reportingOrder, setReportingOrder] = useState(null)
+  const [page, setPage] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
+  const [exporting, setExporting] = useState(false)
 
   useEffect(() => {
     if (!isAuthenticated) return
     fetchData()
-  }, [isAuthenticated, statusFilter])
+  }, [isAuthenticated, statusFilter, page])
+
+  const changeStatus = (value) => {
+    setStatusFilter(value)
+    setPage(0)
+  }
 
   const fetchData = async () => {
     try {
       setLoading(true)
       setError(null)
-      const status = statusFilter || null
 
-      const ordersData = await orderService.getMyOrders(status)
-      setOrders(ordersData || [])
+      const [pageData, summary] = await Promise.all([
+        orderService.getMyOrdersPaged({ page, size: PAGE_SIZE, statuses: statusFilter ? [statusFilter] : [] }),
+        // Số tiền đang giữ ký quỹ tính ở server trên toàn bộ đơn, không phụ thuộc trang đang xem
+        orderService.getMyOrderSummary().catch(() => null),
+      ])
+      setOrders(pageData?.content || [])
+      setTotalPages(pageData?.totalPages || 0)
 
-      // Compute escrow-held from orders (only when showing all orders)
-      if (!statusFilter) {
-        const held = (ordersData || [])
-          .filter((o) => ESCROW_HELD_STATUSES.includes(o.status))
-          .reduce((sum, o) => sum + (o.total || 0), 0)
+      if (Array.isArray(summary)) {
+        const held = summary
+          .filter((row) => ESCROW_HELD_STATUSES.includes(row.status))
+          .reduce((sum, row) => sum + Number(row.total || 0), 0)
         setEscrowHeld(held)
       }
     } catch (err) {
@@ -70,6 +84,21 @@ export default function MyOrders() {
     } catch (error) {
       console.error(error)
       toast.error('Có lỗi xảy ra, vui lòng thử lại.')
+    }
+  }
+
+  // Xuất toàn bộ đơn của tab đang chọn (không chỉ trang hiện tại)
+  const handleExport = async () => {
+    try {
+      setExporting(true)
+      const all = await orderService.getMyOrders(statusFilter || null)
+      const label = ORDER_STATUSES.find((s) => s.value === statusFilter)?.label || 'Tất cả'
+      exportMyOrdersCsv(all || [], { filterLabel: label })
+      toast.success(`Đã xuất ${(all || []).length} đơn hàng`)
+    } catch (err) {
+      toast.error(err?.message || 'Không thể xuất báo cáo')
+    } finally {
+      setExporting(false)
     }
   }
 
@@ -97,6 +126,17 @@ export default function MyOrders() {
           <div>
             <span className={cn('font-mono text-xs uppercase tracking-[0.06em]', muted)}>Tài khoản</span>
             <h1 className={cn('mt-1 text-4xl font-bold tracking-[-0.03em] sm:text-5xl', ink)}>Đơn hàng</h1>
+            <button
+              type="button"
+              onClick={handleExport}
+              disabled={loading || exporting || orders.length === 0}
+              className={cn(
+                'mt-3 inline-flex items-center gap-2 rounded-md border px-3.5 py-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50',
+                isDark ? 'border-slate-700 text-white hover:bg-slate-800' : 'border-stone-300 text-stone-950 hover:bg-stone-100'
+              )}
+            >
+              <HiOutlineDownload className="h-4 w-4" /> {exporting ? 'Đang xuất...' : 'Xuất báo cáo đối soát (CSV)'}
+            </button>
           </div>
 
           {/* Money currently protected by escrow */}
@@ -105,7 +145,7 @@ export default function MyOrders() {
               <HiOutlineCreditCard className="h-4 w-4" /> Đang giữ trong ký quỹ
             </span>
             <strong className="font-mono text-2xl font-semibold">
-              {formatOrderCurrency(statusFilter === '' ? escrowHeld : walletBalance)}
+              {formatOrderCurrency(escrowHeld)}
             </strong>
             <span className="text-xs text-stone-400">Chỉ chuyển cho shop khi bạn xác nhận đã nhận hàng</span>
           </div>
@@ -119,7 +159,7 @@ export default function MyOrders() {
                 key={status.value}
                 role="tab"
                 aria-selected={on}
-                onClick={() => setStatusFilter(status.value)}
+                onClick={() => changeStatus(status.value)}
                 className={cn(
                   '-mb-px shrink-0 border-b-2 px-3.5 py-3 text-sm transition-colors',
                   on
@@ -170,6 +210,7 @@ export default function MyOrders() {
                 onReport={(targetOrder) => setReportingOrder(targetOrder)}
               />
             ))}
+            <Pagination currentPage={page + 1} totalPages={totalPages} onPageChange={(p) => setPage(p - 1)} isDark={isDark} />
           </div>
         )}
 

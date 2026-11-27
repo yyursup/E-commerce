@@ -37,6 +37,10 @@ public class ReportDetailsResponse {
     private String status;
     private String description;
     private String response;
+    /**
+     * Ghi chú phán quyết của Admin (Alias cho moderatorNote/response để tương thích ngược đồng bộ với Frontend)
+     */
+    private String adminNote;
     private LocalDateTime createdAt;
     private LocalDateTime reviewedAt;
 
@@ -52,4 +56,14 @@ public class ReportDetailsResponse {
      * Thông tin Khiếu Nại Kiện Hàng Hoàn Trả (Vòng 2 - Return Inspection Dispute)
      */
     private OrderReturnResponse orderReturn;
+
+    public String getAdminNote() {
+        if (adminNote != null && !adminNote.isBlank()) {
+            return adminNote;
+        }
+        if (moderatorNote != null && !moderatorNote.isBlank()) {
+            return moderatorNote;
+        }
+        return response;
+    }
 }

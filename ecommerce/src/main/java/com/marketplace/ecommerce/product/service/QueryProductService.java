@@ -16,7 +16,10 @@ public interface QueryProductService {
 
 //    List<ProductResponse> getAllProductsByShop(UUID shopId);
 
-    List<SellerProductResponse> getProductsByShopAndStatus(UUID accountId, String status);
+    // Sản phẩm của shop (phân trang); q tìm theo tên, SKU, tên danh mục
+    Page<SellerProductResponse> getProductsByShop(UUID accountId, String status, String q, org.springframework.data.domain.Pageable pageable);
+
+    long countFeaturedProducts(UUID accountId);
 
     Page<ProductResponse> getPublishedProducts(PageQueryRequest req);
 

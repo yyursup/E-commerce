@@ -23,7 +23,7 @@ public class ProductImageServiceImpl implements ProductImageService {
                 .filter(i -> Boolean.TRUE.equals(i.getIsThumbnail()))
                 .count();
         if (thumbnailCount > 1) {
-            throw new CustomException("Only one thumbnail is allowed");
+            throw new CustomException("Chỉ được chọn một ảnh đại diện");
         }
 
         for (ProductImageRequest imageRequest : request.getImages()) {

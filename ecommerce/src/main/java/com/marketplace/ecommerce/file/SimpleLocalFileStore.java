@@ -22,7 +22,7 @@ public class SimpleLocalFileStore {
     public String saveAndGetSha256(MultipartFile file) {
         try {
             if (file == null || file.isEmpty()) {
-                throw new IllegalArgumentException("file is empty");
+                throw new IllegalArgumentException("File rỗng");
             }
             Files.createDirectories(baseDir);
 
@@ -44,7 +44,7 @@ public class SimpleLocalFileStore {
 
             return hash;
         } catch (Exception e) {
-            throw new RuntimeException("Cannot store KYC file: " + e.getMessage(), e);
+            throw new RuntimeException("Không lưu được file KYC: " + e.getMessage(), e);
         }
     }
 

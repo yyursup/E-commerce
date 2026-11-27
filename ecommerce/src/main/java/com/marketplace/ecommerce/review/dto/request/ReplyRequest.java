@@ -7,8 +7,8 @@ import java.util.UUID;
 
 @Data
 public class ReplyRequest {
-    @NotNull(message = "Review Id cannot be null")
+    @NotNull(message = "Thiếu mã đánh giá")
     private UUID reviewId;
-    @NotNull(message = "Reply cannot be null")
+    @NotNull(message = "Vui lòng nhập nội dung phản hồi")
     private String reply;
 }

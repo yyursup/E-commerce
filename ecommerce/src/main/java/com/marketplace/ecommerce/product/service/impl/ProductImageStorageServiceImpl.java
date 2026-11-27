@@ -65,14 +65,14 @@ public class ProductImageStorageServiceImpl implements ProductImageStorageServic
                     .build();
 
         } catch (Exception e) {
-            throw new CustomException("Failed to upload image: " + e.getMessage());
+            throw new CustomException("Tải ảnh lên thất bại: " + e.getMessage());
         }
     }
 
     @Override
     public List<ImageUploadResponse> uploadMultipleProductImages(MultipartFile[] files) {
         if (files == null || files.length == 0) {
-            throw new CustomException("No files provided");
+            throw new CustomException("Chưa chọn file nào");
         }
 
         List<ImageUploadResponse> uploadResponses = Arrays.stream(files)
@@ -102,22 +102,22 @@ public class ProductImageStorageServiceImpl implements ProductImageStorageServic
 
             return ResponseEntity.noContent().build();
         } catch (Exception e) {
-            throw new CustomException("Failed to delete image: " + e.getMessage());
+            throw new CustomException("Xóa ảnh thất bại: " + e.getMessage());
         }
     }
 
     private void validateFile(MultipartFile file) {
         if (file == null || file.isEmpty()) {
-            throw new CustomException("File is empty");
+            throw new CustomException("File rỗng");
         }
 
         if (file.getSize() > MAX_FILE_SIZE) {
-            throw new CustomException("File size exceeds maximum allowed size of 5MB");
+            throw new CustomException("Dung lượng file vượt quá giới hạn 5MB");
         }
 
         String originalFilename = file.getOriginalFilename();
         if (originalFilename == null) {
-            throw new CustomException("File name is null");
+            throw new CustomException("Tên file không được để trống");
         }
 
         String extension = getFileExtension(originalFilename).toLowerCase();
@@ -130,7 +130,7 @@ public class ProductImageStorageServiceImpl implements ProductImageStorageServic
         }
 
         if (!isValidExtension) {
-            throw new CustomException("File type not allowed. Allowed types: jpg, jpeg, png, webp");
+            throw new CustomException("Định dạng file không được hỗ trợ. Chỉ chấp nhận: jpg, jpeg, png, webp");
         }
     }
 

@@ -112,7 +112,7 @@ class PaymentServiceImplTest {
         when(orderRepository.findById(sampleOrder.getId())).thenReturn(Optional.of(sampleOrder));
 
         CustomException ex = assertThrows(CustomException.class, () -> paymentService.createPayment(sampleOrder.getId(), accountId));
-        assertTrue(ex.getMessage().contains("Order is not payable"));
+        assertTrue(ex.getMessage().contains("Đơn hàng không thể thanh toán"));
     }
 
     @Test
@@ -173,7 +173,7 @@ class PaymentServiceImplTest {
         when(vnPayService.verifyChecksumFromMap(any())).thenReturn(false);
 
         CustomException ex = assertThrows(CustomException.class, () -> paymentService.processCallback(Map.of(), null));
-        assertTrue(ex.getMessage().contains("Invalid VNPay checksum"));
+        assertTrue(ex.getMessage().contains("Chữ ký VNPay không hợp lệ"));
     }
 
     @Test
@@ -192,7 +192,7 @@ class PaymentServiceImplTest {
         when(paymentRepository.findByTxnRef("PAY-NOT-FOUND")).thenReturn(Optional.empty());
         CustomException exNotFound = assertThrows(CustomException.class,
                 () -> paymentService.processCallback(Map.of("vnp_TxnRef", "PAY-NOT-FOUND"), null));
-        assertTrue(exNotFound.getMessage().contains("Payment not found"));
+        assertTrue(exNotFound.getMessage().contains("Không tìm thấy giao dịch thanh toán"));
 
         // 3. Thanh toán thất bại và có variant
         samplePayment.setStatus(PaymentStatus.PENDING);
@@ -238,7 +238,7 @@ class PaymentServiceImplTest {
         when(userRepository.findByAccountId(accountId)).thenReturn(Optional.of(stranger));
         CustomException exPerm = assertThrows(CustomException.class,
                 () -> paymentService.createPayment(sampleOrder.getId(), accountId));
-        assertTrue(exPerm.getMessage().contains("permission to pay"));
+        assertTrue(exPerm.getMessage().contains("quyền thanh toán"));
 
         // 4. Payment đã SUCCESS
         when(userRepository.findByAccountId(accountId)).thenReturn(Optional.of(sampleUser));
@@ -246,7 +246,7 @@ class PaymentServiceImplTest {
         when(paymentRepository.findByOrderId(sampleOrder.getId())).thenReturn(Optional.of(samplePayment));
         CustomException exSuccess = assertThrows(CustomException.class,
                 () -> paymentService.createPayment(sampleOrder.getId(), accountId));
-        assertTrue(exSuccess.getMessage().contains("already SUCCESS"));
+        assertTrue(exSuccess.getMessage().contains("đã được thanh toán thành công"));
 
         // 5. Payment chưa tồn tại (orElseGet builder)
         when(paymentRepository.findByOrderId(sampleOrder.getId())).thenReturn(Optional.empty());
@@ -267,7 +267,7 @@ class PaymentServiceImplTest {
         paymentService.handlePaymentSuccess(sampleOrder.getId());
         verify(productRepository, never()).saveAll(any());
 
-        // 2. Thiếu tồn kho -> ném CustomException("Not enough stock")
+        // 2. Thiếu tồn kho -> ném CustomException("Không đủ hàng trong kho")
         sampleOrder.setStockDeducted(false);
         Product prod = new Product();
         prod.setQuantity(2);

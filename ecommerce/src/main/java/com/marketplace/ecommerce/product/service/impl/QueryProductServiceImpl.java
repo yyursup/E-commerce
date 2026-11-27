@@ -17,7 +17,10 @@ import com.marketplace.ecommerce.review.repository.ReviewRepository;
 import com.marketplace.ecommerce.review.dto.projection.ProductReviewStatsProjection;
 import com.marketplace.ecommerce.review.dto.projection.ReviewStatsProjection;
 import com.marketplace.ecommerce.review.valueObjects.ReviewStatus;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -29,6 +32,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -128,30 +132,6 @@ public class QueryProductServiceImpl implements QueryProductService {
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public List<SellerProductResponse> getProductsByShopAndStatus(UUID accountId, String status) {
-        Shop shop = getShopByAccountId(accountId);
-
-        List<SellerProductResponse> list;
-        if (status == null || status.isBlank()) {
-            list = productRepository.findAllByShopIdWithDetails(shop.getId()).stream()
-                    .map(SellerProductResponse::from)
-                    .toList();
-        } else if ("VIOLATION".equalsIgnoreCase(status) || "DELETED".equalsIgnoreCase(status)) {
-            list = productRepository.findAllViolatedProductsByShopId(shop.getId()).stream()
-                    .map(SellerProductResponse::from)
-                    .toList();
-        } else {
-            ProductStatus productStatus = parseStatus(status);
-            list = productRepository.findAllByShopIdAndStatusWithDetails(shop.getId(), productStatus).stream()
-                    .map(SellerProductResponse::from)
-                    .toList();
-        }
-
-        return list;
-    }
-
-    @Override
     public List<ProductResponse> getPublishedProductsByIds(List<UUID> ids) {
         if (ids == null || ids.isEmpty()) return new ArrayList<>();
 
@@ -172,13 +152,72 @@ public class QueryProductServiceImpl implements QueryProductService {
 //    @Transactional(readOnly = true)
 //    public List<ProductResponse> getAllProductsByShop(UUID shopId) {
 //        if (!shopRepository.existsById(shopId)) {
-//            throw new CustomException("Shop not found");
+//            throw new CustomException("Không tìm thấy gian hàng");
 //        }
 //
 //        return productRepository.findAllByShopIdWithDetails(shopId).stream()
 //                .map(ProductResponse::from)
 //                .collect(Collectors.toList());
 //    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<SellerProductResponse> getProductsByShop(UUID accountId, String status, String q, Pageable pageable) {
+        Shop shop = getShopByAccountId(accountId);
+        ProductStatus productStatus = (status == null || status.isBlank() || isViolationFilter(status)) ? null : parseStatus(status);
+        return productRepository
+                .findAll(shopProductFilter(shop.getId(), productStatus, isViolationFilter(status), q), safeProductPageable(pageable))
+                .map(SellerProductResponse::from);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public long countFeaturedProducts(UUID accountId) {
+        return productRepository.countByShopIdAndFeaturedTrueAndDeletedFalse(getShopByAccountId(accountId).getId());
+    }
+
+    private static boolean isViolationFilter(String status) {
+        return "VIOLATION".equalsIgnoreCase(status) || "DELETED".equalsIgnoreCase(status);
+    }
+
+    private static final Set<String> SORTABLE_PRODUCT_FIELDS = Set.of("createdAt", "name", "basePrice", "sold");
+
+    static Pageable safeProductPageable(Pageable pageable) {
+        Sort sort = Sort.by(pageable.getSort().stream()
+                .filter(o -> SORTABLE_PRODUCT_FIELDS.contains(o.getProperty()))
+                .toList());
+        if (sort.isUnsorted()) sort = Sort.by(Sort.Direction.DESC, "createdAt");
+        // Sản phẩm đang đẩy nổi bật luôn lên đầu danh sách
+        return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
+                Sort.by(Sort.Direction.DESC, "featured").and(sort));
+    }
+
+    // Cùng điều kiện với các query list cũ: tab thường bỏ sản phẩm đã xóa, tab Vi phạm lấy DELETED/flagged/deleted
+    static Specification<Product> shopProductFilter(UUID shopId, ProductStatus status, boolean violation, String q) {
+        return (root, query, cb) -> {
+            List<Predicate> ps = new ArrayList<>();
+            ps.add(cb.equal(root.get("shop").get("id"), shopId));
+            if (violation) {
+                ps.add(cb.or(
+                        cb.equal(root.get("status"), ProductStatus.DELETED),
+                        cb.isTrue(root.get("flagged")),
+                        cb.isTrue(root.get("deleted"))));
+            } else {
+                ps.add(cb.isFalse(root.get("deleted")));
+                if (status != null) ps.add(cb.equal(root.get("status"), status));
+            }
+            if (q != null && !q.isBlank()) {
+                String like = "%" + q.trim().toLowerCase()
+                        .replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%";
+                Join<Object, Object> category = root.join("productCategory");
+                ps.add(cb.or(
+                        cb.like(cb.lower(root.get("name")), like, '\\'),
+                        cb.like(cb.lower(root.get("sku")), like, '\\'),
+                        cb.like(cb.lower(category.get("name")), like, '\\')));
+            }
+            return cb.and(ps.toArray(new Predicate[0]));
+        };
+    }
 
     public ProductStatus parseStatus(String status) {
         try {
@@ -190,10 +229,10 @@ public class QueryProductServiceImpl implements QueryProductService {
 
     private Shop getShopByAccountId(UUID accountId) {
         User user = userRepository.findByAccountId(accountId)
-                .orElseThrow(() -> new CustomException("User not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy người dùng"));
 
         return shopRepository.findByUserId(user.getId())
-                .orElseThrow(() -> new CustomException("Shop not found"));
+                .orElseThrow(() -> new CustomException("Không tìm thấy gian hàng"));
     }
 
     @Override

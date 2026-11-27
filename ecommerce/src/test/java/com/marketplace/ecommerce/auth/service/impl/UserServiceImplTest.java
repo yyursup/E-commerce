@@ -96,7 +96,7 @@ class UserServiceImplTest {
             when(userRepository.findByAccountId(accountId)).thenReturn(Optional.empty());
 
             CustomException ex = assertThrows(CustomException.class, () -> userService.getUserProfile(accountId));
-            assertEquals("User not found", ex.getMessage());
+            assertEquals("Không tìm thấy người dùng", ex.getMessage());
         }
 
         @Test
@@ -244,7 +244,7 @@ class UserServiceImplTest {
 
             UpdateUserProfileRequest req = new UpdateUserProfileRequest();
             CustomException ex = assertThrows(CustomException.class, () -> userService.updateProfile(accountId, req));
-            assertEquals("User not found", ex.getMessage());
+            assertEquals("Không tìm thấy người dùng", ex.getMessage());
         }
 
         @Test
@@ -342,7 +342,7 @@ class UserServiceImplTest {
             req.setNewPassword("new_pw");
 
             CustomException ex = assertThrows(CustomException.class, () -> userService.changePassword(accountId, req));
-            assertEquals("Account not found", ex.getMessage());
+            assertEquals("Không tìm thấy tài khoản", ex.getMessage());
         }
 
         @Test

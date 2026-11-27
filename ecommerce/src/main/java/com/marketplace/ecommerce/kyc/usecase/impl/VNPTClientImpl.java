@@ -30,7 +30,7 @@ public class VNPTClientImpl implements VNPTClient {
     public UploadResponse addFile(MultipartFile file, String title, String description) {
         try {
             if (file == null || file.isEmpty()) {
-                throw new IllegalArgumentException("file is empty");
+                throw new IllegalArgumentException("File rỗng");
             }
 
             var form = new LinkedMultiValueMap<String, Object>();
@@ -54,9 +54,9 @@ public class VNPTClientImpl implements VNPTClient {
                     .retrieve()
                     .body(UploadResponse.class);
 
-            return Objects.requireNonNull(res, "VNPT addFile returned null");
+            return Objects.requireNonNull(res, "VNPT addFile trả về rỗng");
         } catch (Exception e) {
-            throw new RuntimeException("VNPT addFile failed: " + e.getMessage(), e);
+            throw new RuntimeException("Tải file lên VNPT thất bại: " + e.getMessage(), e);
         }
     }
 
@@ -72,7 +72,7 @@ public class VNPTClientImpl implements VNPTClient {
                 .retrieve()
                 .body(CardLivenessResponse.class);
 
-        return java.util.Objects.requireNonNull(res, "VNPT cardLiveness returned null");
+        return java.util.Objects.requireNonNull(res, "VNPT cardLiveness trả về rỗng");
     }
 
 
@@ -91,7 +91,7 @@ public class VNPTClientImpl implements VNPTClient {
                 .retrieve()
                 .body(ClassifyResponse.class);
 
-        return Objects.requireNonNull(res, "VNPT classify returned null");
+        return Objects.requireNonNull(res, "VNPT classify trả về rỗng");
     }
 
     @Override
@@ -109,7 +109,7 @@ public class VNPTClientImpl implements VNPTClient {
                     .retrieve()
                     .body(OcrFrontResponse.class);
 
-            return java.util.Objects.requireNonNull(res, "VNPT ocrFront returned null");
+            return java.util.Objects.requireNonNull(res, "VNPT ocrFront trả về rỗng");
 
         } catch (ResourceAccessException e) {
             Throwable root = e.getMostSpecificCause(); // rất quan trọng
@@ -135,7 +135,7 @@ public class VNPTClientImpl implements VNPTClient {
                 .retrieve()
                 .body(OcrBackResponse.class);
 
-        return Objects.requireNonNull(res, "VNPT ocrBack returned null");
+        return Objects.requireNonNull(res, "VNPT ocrBack trả về rỗng");
     }
 
     @Override
@@ -151,7 +151,7 @@ public class VNPTClientImpl implements VNPTClient {
                 .retrieve()
                 .body(LivenessResponse.class);
 
-        return Objects.requireNonNull(res, "VNPT liveness returned null");
+        return Objects.requireNonNull(res, "VNPT liveness trả về rỗng");
     }
 
     @Override
@@ -168,7 +168,7 @@ public class VNPTClientImpl implements VNPTClient {
                 .retrieve()
                 .body(CompareResponse.class);
 
-        return Objects.requireNonNull(res, "VNPT compare returned null");
+        return Objects.requireNonNull(res, "VNPT compare trả về rỗng");
     }
 
 }

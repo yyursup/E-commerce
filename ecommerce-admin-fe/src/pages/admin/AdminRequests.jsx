@@ -7,6 +7,7 @@ import { useThemeStore } from '../../store/useThemeStore'
 import { cn } from '../../lib/cn'
 import requestService from '../../services/request'
 import { getRequestTypeBadge, formatAdminRequestDate, shortUUID } from './components/request/requestHelpers'
+import Pagination from './components/order/Pagination'
 
 const getStatusBadge = (status, isDark) => {
   switch (status) {
@@ -240,39 +241,7 @@ export default function AdminRequests() {
       </motion.div>
 
       {totalPages > 1 && (
-        <div className="flex items-center justify-between text-sm">
-          <button
-            disabled={page <= 0}
-            onClick={() => setPage((p) => Math.max(0, p - 1))}
-            className={cn(
-              'rounded-lg px-4 py-2 font-semibold transition',
-              page <= 0
-                ? 'cursor-not-allowed opacity-50'
-                : isDark
-                  ? 'bg-slate-800 text-slate-100 hover:bg-slate-700'
-                  : 'bg-white text-stone-700 hover:bg-stone-100',
-            )}
-          >
-            Prev
-          </button>
-          <span className={cn(isDark ? 'text-slate-400' : 'text-stone-500')}>
-            Page {page + 1} / {totalPages}
-          </span>
-          <button
-            disabled={page + 1 >= totalPages}
-            onClick={() => setPage((p) => p + 1)}
-            className={cn(
-              'rounded-lg px-4 py-2 font-semibold transition',
-              page + 1 >= totalPages
-                ? 'cursor-not-allowed opacity-50'
-                : isDark
-                  ? 'bg-slate-800 text-slate-100 hover:bg-slate-700'
-                  : 'bg-white text-stone-700 hover:bg-stone-100',
-            )}
-          >
-            Next
-          </button>
-        </div>
+        <Pagination currentPage={page + 1} totalPages={totalPages} totalItems={totalElements} pageSize={size} onPageChange={(p) => setPage(p - 1)} isDark={isDark} />
       )}
     </div>
   )

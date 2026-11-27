@@ -61,7 +61,7 @@ class CompareKycServiceImplTest {
         when(sessions.findByIdAndAccountId(sessionId, accountId)).thenReturn(Optional.of(session));
 
         IllegalStateException ex = assertThrows(IllegalStateException.class, () -> compareKycService.compare(sessionId, accountId));
-        assertTrue(ex.getMessage().contains("Front not uploaded"));
+        assertTrue(ex.getMessage().contains("Chưa tải lên ảnh mặt trước CCCD"));
     }
 
     @Test
@@ -72,7 +72,7 @@ class CompareKycServiceImplTest {
         when(sessions.findByIdAndAccountId(sessionId, accountId)).thenReturn(Optional.of(session));
 
         IllegalStateException ex = assertThrows(IllegalStateException.class, () -> compareKycService.compare(sessionId, accountId));
-        assertTrue(ex.getMessage().contains("Selfie not uploaded"));
+        assertTrue(ex.getMessage().contains("Chưa tải lên ảnh khuôn mặt"));
     }
 
     @Test

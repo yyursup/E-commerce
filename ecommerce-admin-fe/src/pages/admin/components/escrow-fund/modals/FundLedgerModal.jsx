@@ -8,6 +8,7 @@ import { useThemeStore } from '../../../../../store/useThemeStore'
 import { cn } from '../../../../../lib/cn'
 import trustConfigService from '../../../../../services/trustConfig'
 import { useHorizontalScroll } from '../../../../../hooks/useHorizontalScroll'
+import Pagination from '../../order/Pagination'
 
 export default function FundLedgerModal({ fund, onClose, formatVND, formatDateTime }) {
   const isDark = useThemeStore((state) => state.theme) === 'dark'
@@ -150,25 +151,7 @@ export default function FundLedgerModal({ fund, onClose, formatVND, formatDateTi
         {/* Footer & Pagination */}
         <div className="pt-3 border-t border-slate-700/40 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
           {totalPages > 1 ? (
-            <div className="flex items-center gap-2">
-              <span className="text-slate-400">
-                Trang {page + 1} / {totalPages}
-              </span>
-              <button
-                disabled={page === 0}
-                onClick={() => loadTransactions(page - 1)}
-                className="rounded-lg px-2.5 py-1 border border-slate-700 disabled:opacity-40"
-              >
-                Trước
-              </button>
-              <button
-                disabled={page >= totalPages - 1}
-                onClick={() => loadTransactions(page + 1)}
-                className="rounded-lg px-2.5 py-1 border border-slate-700 disabled:opacity-40"
-              >
-                Sau
-              </button>
-            </div>
+            <Pagination currentPage={page + 1} totalPages={totalPages} onPageChange={(p) => loadTransactions(p - 1)} isDark />
           ) : (
             <div />
           )}
